@@ -1,0 +1,190 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { requireRole, canAccessCompany } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '10485760'); // 10MB
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requireRole(['SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPANY_USER']);
+    const { id } = await params;
+
+    if (!canAccessCompany(session, id)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type');
+    const latestOnly = searchParams.get('latest') !== 'false';
+
+    const documents = await prisma.document.findMany({
+      where: {
+        companyId: id,
+        ...(type && { documentType: type }),
+        ...(latestOnly && { isLatest: true }),
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        documentType: true,
+        originalFileName: true,
+        fileSize: true,
+        extractionStatus: true,
+        extractedAt: true,
+        version: true,
+        isLatest: true,
+        createdAt: true,
+        uploadedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(documents);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Unauthorized') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message === 'Forbidden') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requireRole(['SUPER_ADMIN']);
+    const { id: companyId } = await params;
+
+    // Verify company exists
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company || company.deletedAt) {
+      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+    }
+
+    const formData = await request.formData();
+    const file = formData.get('file') as File | null;
+    const documentType = (formData.get('documentType') as string) || 'BIZFILE';
+
+    if (!file) {
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        { status: 400 }
+      );
+    }
+
+    // Validate file type
+    const allowedTypes = ['application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: 'Only PDF files are allowed' },
+        { status: 400 }
+      );
+    }
+
+    // Create upload directory if it doesn't exist
+    const companyDir = join(UPLOAD_DIR, companyId);
+    await mkdir(companyDir, { recursive: true });
+
+    // Generate unique filename
+    const fileId = uuidv4();
+    const fileName = `${fileId}.pdf`;
+    const filePath = join(companyDir, fileName);
+
+    // Save file
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    await writeFile(filePath, buffer);
+
+    // Get previous version count
+    const previousVersion = await prisma.document.findFirst({
+      where: {
+        companyId,
+        documentType,
+        isLatest: true,
+      },
+      select: { id: true, version: true },
+    });
+
+    // Mark previous version as not latest
+    if (previousVersion) {
+      await prisma.document.update({
+        where: { id: previousVersion.id },
+        data: { isLatest: false },
+      });
+    }
+
+    // Create document record
+    const document = await prisma.document.create({
+      data: {
+        companyId,
+        uploadedById: session.id,
+        documentType,
+        fileName,
+        originalFileName: file.name,
+        filePath,
+        fileSize: file.size,
+        mimeType: file.type,
+        version: previousVersion ? previousVersion.version + 1 : 1,
+        previousVersionId: previousVersion?.id,
+        extractionStatus: 'PENDING',
+      },
+    });
+
+    // Create audit log
+    await createAuditLog({
+      userId: session.id,
+      companyId,
+      action: 'UPLOAD',
+      entityType: 'Document',
+      entityId: document.id,
+      changeSource: 'MANUAL',
+      metadata: {
+        documentType,
+        fileName: file.name,
+        fileSize: file.size,
+        version: document.version,
+      },
+    });
+
+    return NextResponse.json(document, { status: 201 });
+  } catch (error) {
+    console.error('Document upload error:', error);
+    if (error instanceof Error) {
+      if (error.message === 'Unauthorized') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message === 'Forbidden') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm audit:*)",
+      "Bash(cat:*)",
+      "Bash(npm view:*)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm install:*)",
+      "Bash(docker exec:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(timeout:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(ping:*)",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\README.md\")",
+      "Bash(dir /b \"C:\\Users\\Scotfield\\oakcloud\\docs\")",
+      "Bash(dir /s node_modules)",
+      "Bash(dir /s /b)",
+      "mcp__ide__getDiagnostics",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\docs\\current_implementation.md\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

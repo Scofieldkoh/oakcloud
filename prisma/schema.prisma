@@ -1,0 +1,515 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  COMPANY_USER
+}
+
+enum EntityType {
+  PRIVATE_LIMITED
+  PUBLIC_LIMITED
+  SOLE_PROPRIETORSHIP
+  PARTNERSHIP
+  LIMITED_PARTNERSHIP
+  LIMITED_LIABILITY_PARTNERSHIP
+  FOREIGN_COMPANY
+  VARIABLE_CAPITAL_COMPANY
+  OTHER
+}
+
+enum CompanyStatus {
+  LIVE
+  STRUCK_OFF
+  WINDING_UP
+  DISSOLVED
+  IN_LIQUIDATION
+  IN_RECEIVERSHIP
+  AMALGAMATED
+  CONVERTED
+  OTHER
+}
+
+enum OfficerRole {
+  DIRECTOR
+  ALTERNATE_DIRECTOR
+  SECRETARY
+  CEO
+  CFO
+  AUDITOR
+  LIQUIDATOR
+  RECEIVER
+  JUDICIAL_MANAGER
+}
+
+enum ContactType {
+  INDIVIDUAL
+  CORPORATE
+}
+
+enum IdentificationType {
+  NRIC
+  FIN
+  PASSPORT
+  UEN
+  OTHER
+}
+
+enum AddressType {
+  REGISTERED_OFFICE
+  MAILING
+  RESIDENTIAL
+  BUSINESS
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  UPLOAD
+  EXTRACT
+}
+
+enum ChangeSource {
+  MANUAL
+  BIZFILE_UPLOAD
+  API
+  SYSTEM
+}
+
+// ============================================================================
+// USER & AUTH
+// ============================================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          UserRole  @default(COMPANY_USER)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  companyId     String?
+  company       Company?  @relation(fields: [companyId], references: [id])
+  auditLogs     AuditLog[]
+  uploadedDocuments Document[]
+
+  @@index([email])
+  @@index([companyId])
+  @@map("users")
+}
+
+// ============================================================================
+// COMPANY MANAGEMENT
+// ============================================================================
+
+model Company {
+  id                    String        @id @default(uuid())
+  uen                   String        @unique
+  name                  String
+  entityType            EntityType    @default(PRIVATE_LIMITED)
+  status                CompanyStatus @default(LIVE)
+  incorporationDate     DateTime?
+  registrationDate      DateTime?
+
+  // Business Activity
+  primarySsicCode       String?
+  primarySsicDescription String?
+  secondarySsicCode     String?
+  secondarySsicDescription String?
+
+  // Financial Year
+  financialYearEndDay   Int?
+  financialYearEndMonth Int?
+
+  // Compliance Dates
+  lastAgmDate           DateTime?
+  lastArFiledDate       DateTime?
+  nextAgmDueDate        DateTime?
+  nextArDueDate         DateTime?
+  accountsDueDate       DateTime?
+
+  // Capital
+  paidUpCapitalCurrency String?       @default("SGD")
+  paidUpCapitalAmount   Decimal?      @db.Decimal(18, 2)
+  issuedCapitalCurrency String?       @default("SGD")
+  issuedCapitalAmount   Decimal?      @db.Decimal(18, 2)
+
+  // Flags
+  hasCharges            Boolean       @default(false)
+  isGstRegistered       Boolean       @default(false)
+  gstRegistrationNumber String?
+  gstRegistrationDate   DateTime?
+
+  // Notes
+  internalNotes         String?
+
+  // Audit & Soft Delete
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  deletedAt             DateTime?
+  deletedReason         String?
+
+  // Relations
+  users                 User[]
+  formerNames           CompanyFormerName[]
+  addresses             CompanyAddress[]
+  officers              CompanyOfficer[]
+  shareholders          CompanyShareholder[]
+  shareCapital          ShareCapital[]
+  charges               CompanyCharge[]
+  documents             Document[]
+  auditLogs             AuditLog[]
+  contacts              CompanyContact[]
+
+  @@index([uen])
+  @@index([name])
+  @@index([status])
+  @@index([entityType])
+  @@index([deletedAt])
+  @@map("companies")
+}
+
+model CompanyFormerName {
+  id              String   @id @default(uuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  formerName      String
+  effectiveFrom   DateTime
+  effectiveTo     DateTime?
+  sourceDocumentId String?
+  document        Document? @relation(fields: [sourceDocumentId], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@index([companyId])
+  @@map("company_former_names")
+}
+
+model CompanyAddress {
+  id              String      @id @default(uuid())
+  companyId       String
+  company         Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  addressType     AddressType
+  block           String?
+  streetName      String
+  level           String?
+  unit            String?
+  buildingName    String?
+  postalCode      String
+  country         String      @default("SINGAPORE")
+  fullAddress     String
+  effectiveFrom   DateTime?
+  effectiveTo     DateTime?
+  isCurrent       Boolean     @default(true)
+  sourceDocumentId String?
+  document        Document?   @relation(fields: [sourceDocumentId], references: [id])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([companyId])
+  @@index([addressType])
+  @@index([isCurrent])
+  @@map("company_addresses")
+}
+
+// ============================================================================
+// CONTACTS
+// ============================================================================
+
+model Contact {
+  id                  String             @id @default(uuid())
+  contactType         ContactType        @default(INDIVIDUAL)
+
+  // For Individuals
+  firstName           String?
+  lastName            String?
+  fullName            String
+  identificationType  IdentificationType?
+  identificationNumber String?
+  nationality         String?
+  dateOfBirth         DateTime?
+
+  // For Corporate
+  corporateName       String?
+  corporateUen        String?
+
+  // Contact Info
+  email               String?
+  phone               String?
+  alternatePhone      String?
+
+  // Address
+  addressLine1        String?
+  addressLine2        String?
+  postalCode          String?
+  city                String?
+  country             String?           @default("SINGAPORE")
+
+  // Meta
+  isActive            Boolean           @default(true)
+  internalNotes       String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+
+  // Relations
+  companyRelations    CompanyContact[]
+  officerPositions    CompanyOfficer[]
+  shareholdings       CompanyShareholder[]
+  chargeHoldings      CompanyCharge[]
+
+  @@unique([identificationType, identificationNumber])
+  @@index([fullName])
+  @@index([identificationNumber])
+  @@index([corporateUen])
+  @@map("contacts")
+}
+
+model CompanyContact {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId   String
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  relationship String  // E.g., "Director", "Shareholder", "Auditor"
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([companyId, contactId, relationship])
+  @@index([companyId])
+  @@index([contactId])
+  @@map("company_contacts")
+}
+
+// ============================================================================
+// OFFICERS
+// ============================================================================
+
+model CompanyOfficer {
+  id                String      @id @default(uuid())
+  companyId         String
+  company           Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId         String?
+  contact           Contact?    @relation(fields: [contactId], references: [id])
+
+  role              OfficerRole
+  designation       String?     // Custom designation if needed
+
+  // Officer Details (denormalized for historical record)
+  name              String
+  identificationType IdentificationType?
+  identificationNumber String?
+  nationality       String?
+  address           String?
+
+  // Appointment
+  appointmentDate   DateTime?
+  cessationDate     DateTime?
+  isCurrent         Boolean     @default(true)
+
+  // Source
+  sourceDocumentId  String?
+  document          Document?   @relation(fields: [sourceDocumentId], references: [id])
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([companyId])
+  @@index([contactId])
+  @@index([role])
+  @@index([isCurrent])
+  @@map("company_officers")
+}
+
+// ============================================================================
+// SHAREHOLDERS & CAPITAL
+// ============================================================================
+
+model ShareCapital {
+  id              String   @id @default(uuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  shareClass      String   @default("ORDINARY")
+  currency        String   @default("SGD")
+  numberOfShares  Int
+  parValue        Decimal? @db.Decimal(18, 4)
+  totalValue      Decimal  @db.Decimal(18, 2)
+  isPaidUp        Boolean  @default(true)
+
+  effectiveDate   DateTime?
+  sourceDocumentId String?
+  document        Document? @relation(fields: [sourceDocumentId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId])
+  @@map("share_capital")
+}
+
+model CompanyShareholder {
+  id                String      @id @default(uuid())
+  companyId         String
+  company           Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId         String?
+  contact           Contact?    @relation(fields: [contactId], references: [id])
+
+  // Shareholder Details (denormalized for historical record)
+  name              String
+  shareholderType   ContactType @default(INDIVIDUAL)
+  identificationType IdentificationType?
+  identificationNumber String?
+  nationality       String?
+  address           String?
+
+  // Shareholding
+  shareClass        String      @default("ORDINARY")
+  numberOfShares    Int
+  percentageHeld    Decimal?    @db.Decimal(5, 2)
+  currency          String      @default("SGD")
+
+  // Dates
+  allotmentDate     DateTime?
+  transferDate      DateTime?
+  isCurrent         Boolean     @default(true)
+
+  // Source
+  sourceDocumentId  String?
+  document          Document?   @relation(fields: [sourceDocumentId], references: [id])
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([companyId])
+  @@index([contactId])
+  @@index([isCurrent])
+  @@map("company_shareholders")
+}
+
+// ============================================================================
+// CHARGES
+// ============================================================================
+
+model CompanyCharge {
+  id                String    @id @default(uuid())
+  companyId         String
+  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  chargeHolderId    String?
+  chargeHolder      Contact?  @relation(fields: [chargeHolderId], references: [id])
+
+  chargeNumber      String?
+  chargeType        String?
+  description       String?
+  chargeHolderName  String
+  amountSecured     Decimal?  @db.Decimal(18, 2)
+  currency          String?   @default("SGD")
+
+  registrationDate  DateTime?
+  dischargeDate     DateTime?
+  isFullyDischarged Boolean   @default(false)
+
+  sourceDocumentId  String?
+  document          Document? @relation(fields: [sourceDocumentId], references: [id])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([chargeHolderId])
+  @@index([isFullyDischarged])
+  @@map("company_charges")
+}
+
+// ============================================================================
+// DOCUMENTS
+// ============================================================================
+
+model Document {
+  id              String    @id @default(uuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  uploadedById    String
+  uploadedBy      User      @relation(fields: [uploadedById], references: [id])
+
+  documentType    String    // "BIZFILE", "CONSTITUTION", "RESOLUTION", etc.
+  fileName        String
+  originalFileName String
+  filePath        String
+  fileSize        Int
+  mimeType        String
+
+  // Extraction
+  extractedAt     DateTime?
+  extractionStatus String?   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  extractionError String?
+  extractedData   Json?     // Raw extracted JSON data
+
+  // Versioning
+  version         Int       @default(1)
+  isLatest        Boolean   @default(true)
+  previousVersionId String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations - data extracted from this document
+  formerNames     CompanyFormerName[]
+  addresses       CompanyAddress[]
+  officers        CompanyOfficer[]
+  shareCapital    ShareCapital[]
+  shareholders    CompanyShareholder[]
+  charges         CompanyCharge[]
+
+  @@index([companyId])
+  @@index([documentType])
+  @@index([uploadedById])
+  @@map("documents")
+}
+
+// ============================================================================
+// AUDIT LOG
+// ============================================================================
+
+model AuditLog {
+  id            String       @id @default(uuid())
+  userId        String?
+  user          User?        @relation(fields: [userId], references: [id])
+  companyId     String?
+  company       Company?     @relation(fields: [companyId], references: [id])
+
+  action        AuditAction
+  entityType    String       // "Company", "Contact", "Officer", etc.
+  entityId      String
+
+  changeSource  ChangeSource @default(MANUAL)
+  changes       Json?        // { field: { old: value, new: value } }
+  reason        String?      // Required for deletions
+  metadata      Json?        // Additional context
+
+  ipAddress     String?
+  userAgent     String?
+
+  createdAt     DateTime     @default(now())
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
