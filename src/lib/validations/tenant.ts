@@ -17,13 +17,6 @@ export const tenantStatusEnum = z.enum([
   'DEACTIVATED',
 ]);
 
-export const tenantPlanEnum = z.enum([
-  'FREE',
-  'STARTER',
-  'PROFESSIONAL',
-  'ENTERPRISE',
-]);
-
 // ============================================================================
 // Create Tenant
 // ============================================================================
@@ -42,13 +35,11 @@ export const createTenantSchema = z.object({
       'Slug must be lowercase alphanumeric with hyphens'
     )
     .optional(),
-  plan: tenantPlanEnum.optional(),
   contactEmail: z.string().email('Invalid email').optional(),
   contactPhone: z
     .string()
     .max(20, 'Phone must be at most 20 characters')
     .optional(),
-  billingEmail: z.string().email('Invalid billing email').optional(),
   addressLine1: z.string().max(200).optional(),
   addressLine2: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
@@ -96,10 +87,9 @@ export type UpdateTenantStatusInput = z.infer<typeof updateTenantStatusSchema>;
 export const tenantSearchSchema = z.object({
   query: z.string().optional(),
   status: tenantStatusEnum.optional(),
-  plan: tenantPlanEnum.optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  sortBy: z.enum(['name', 'createdAt', 'status', 'plan']).default('createdAt'),
+  sortBy: z.enum(['name', 'createdAt', 'status']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 

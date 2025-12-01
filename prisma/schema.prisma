@@ -25,13 +25,6 @@ enum TenantStatus {
   DEACTIVATED
 }
 
-enum TenantPlan {
-  FREE
-  STARTER
-  PROFESSIONAL
-  ENTERPRISE
-}
-
 enum EntityType {
   PRIVATE_LIMITED
   PUBLIC_LIMITED
@@ -142,12 +135,10 @@ model Tenant {
   name              String
   slug              String       @unique // URL-friendly identifier
   status            TenantStatus @default(PENDING_SETUP)
-  plan              TenantPlan   @default(FREE)
 
   // Contact Info
   contactEmail      String?
   contactPhone      String?
-  billingEmail      String?
 
   // Address
   addressLine1      String?
@@ -158,9 +149,9 @@ model Tenant {
 
   // Settings & Limits
   settings          Json?        // Tenant-specific configuration
-  maxUsers          Int          @default(5)
-  maxCompanies      Int          @default(10)
-  maxStorageMb      Int          @default(1024) // 1GB default
+  maxUsers          Int          @default(50)
+  maxCompanies      Int          @default(100)
+  maxStorageMb      Int          @default(10240) // 10GB default
 
   // Branding (optional)
   logoUrl           String?
@@ -180,11 +171,86 @@ model Tenant {
   contacts          Contact[]
   documents         Document[]
   auditLogs         AuditLog[]
+  roles             Role[]
 
   @@index([slug])
   @@index([status])
   @@index([deletedAt])
   @@map("tenants")
+}
+
+// ============================================================================
+// RBAC (Role-Based Access Control)
+// ============================================================================
+
+model Role {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  name        String
+  description String?
+  isSystem    Boolean  @default(false) // System roles cannot be deleted
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  permissions RolePermission[]
+  users       UserRoleAssignment[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  resource    String   // e.g., "company", "document", "user", "contact"
+  action      String   // e.g., "create", "read", "update", "delete", "export"
+  description String?
+
+  // Relations
+  roles       RolePermission[]
+
+  @@unique([resource, action])
+  @@index([resource])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model UserRoleAssignment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  // Optional: scope to specific company (null = tenant-wide)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId, companyId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([companyId])
+  @@map("user_role_assignments")
 }
 
 // ============================================================================
@@ -215,6 +281,7 @@ model User {
   // Relations
   auditLogs     AuditLog[]
   uploadedDocuments Document[]
+  roleAssignments UserRoleAssignment[]
 
   @@index([email])
   @@index([tenantId])
@@ -290,6 +357,7 @@ model Company {
   documents             Document[]
   auditLogs             AuditLog[]
   contacts              CompanyContact[]
+  roleAssignments       UserRoleAssignment[]
 
   @@unique([tenantId, uen]) // UEN unique within tenant
   @@index([tenantId])

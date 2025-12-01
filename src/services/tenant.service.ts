@@ -7,7 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import type { TenantStatus, TenantPlan } from '@prisma/client';
+import type { TenantStatus } from '@prisma/client';
 import {
   createAuditLog,
   computeChanges,
@@ -17,6 +17,12 @@ import {
   type AuditContext,
 } from '@/lib/audit';
 import { generateTenantSlug, getTenantLimits } from '@/lib/tenant';
+import {
+  createSystemRolesForTenant,
+  getSystemRoleId,
+  assignRoleToUser,
+  type SystemRoleName,
+} from '@/lib/rbac';
 import type {
   CreateTenantInput,
   UpdateTenantInput,
@@ -35,7 +41,6 @@ export interface TenantWithStats {
   name: string;
   slug: string;
   status: TenantStatus;
-  plan: TenantPlan;
   contactEmail: string | null;
   createdAt: Date;
   _count: {
@@ -48,10 +53,8 @@ export interface TenantWithStats {
 const TRACKED_FIELDS: (keyof UpdateTenantInput)[] = [
   'name',
   'slug',
-  'plan',
   'contactEmail',
   'contactPhone',
-  'billingEmail',
   'addressLine1',
   'addressLine2',
   'city',
@@ -89,18 +92,16 @@ export async function createTenant(
       name: data.name,
       slug,
       status: 'PENDING_SETUP',
-      plan: data.plan || 'FREE',
       contactEmail: data.contactEmail,
       contactPhone: data.contactPhone,
-      billingEmail: data.billingEmail || data.contactEmail,
       addressLine1: data.addressLine1,
       addressLine2: data.addressLine2,
       city: data.city,
       postalCode: data.postalCode,
       country: data.country || 'SINGAPORE',
-      maxUsers: data.maxUsers || 5,
-      maxCompanies: data.maxCompanies || 10,
-      maxStorageMb: data.maxStorageMb || 1024,
+      maxUsers: data.maxUsers || 50,
+      maxCompanies: data.maxCompanies || 100,
+      maxStorageMb: data.maxStorageMb || 10240,
       logoUrl: data.logoUrl,
       primaryColor: data.primaryColor || '#294d44',
       settings: data.settings ? (data.settings as Prisma.InputJsonValue) : null,
@@ -109,6 +110,9 @@ export async function createTenant(
 
   // Log tenant creation
   await logTenantOperation('TENANT_CREATED', tenant.id, userId, undefined, undefined);
+
+  // Initialize system roles for the new tenant
+  await createSystemRolesForTenant(tenant.id);
 
   return tenant;
 }
@@ -268,7 +272,6 @@ export async function searchTenants(params: TenantSearchInput) {
       ],
     }),
     ...(params.status && { status: params.status }),
-    ...(params.plan && { plan: params.plan }),
   };
 
   const orderBy: Prisma.TenantOrderByWithRelationInput = {
@@ -407,6 +410,21 @@ export async function inviteUserToTenant(
       isActive: true,
     },
   });
+
+  // Assign RBAC role based on user role
+  const roleMapping: Record<string, SystemRoleName> = {
+    TENANT_ADMIN: 'TENANT_ADMIN',
+    COMPANY_ADMIN: 'COMPANY_ADMIN',
+    COMPANY_USER: 'COMPANY_USER',
+  };
+
+  const systemRoleName = roleMapping[data.role];
+  if (systemRoleName) {
+    const roleId = await getSystemRoleId(tenantId, systemRoleName);
+    if (roleId) {
+      await assignRoleToUser(user.id, roleId, data.companyId);
+    }
+  }
 
   // Log user invitation
   const auditContext: AuditContext = {

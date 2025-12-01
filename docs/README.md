@@ -30,8 +30,8 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 2. ✅ **Authentication** - JWT-based authentication with role-based access
 3. ✅ **Multi-Tenancy** - Full tenant isolation with configurable limits
 4. ✅ **Audit Logging** - Comprehensive activity tracking with request context
-5. 🔜 **User Management** - User accounts and profile management
-6. 🔜 **RBAC & Permissions** - Fine-grained role-based access control
+5. ✅ **RBAC & Permissions** - Fine-grained role-based access control
+6. 🔜 **User Management** - User accounts and profile management
 7. 🔜 **Audit Logging Dashboard** - System-wide activity tracking UI
 8. 🔜 **Module Marketplace** - Browse and install modules
 9. 🔜 **Connectors Hub** - External service integrations
@@ -253,17 +253,47 @@ Multi-tenancy support for data isolation.
 | name | String | Tenant display name |
 | slug | String | URL-friendly identifier (unique) |
 | status | Enum | ACTIVE, SUSPENDED, PENDING_SETUP, DEACTIVATED |
-| plan | Enum | FREE, STARTER, PROFESSIONAL, ENTERPRISE |
-| maxUsers | Int | Maximum allowed users |
-| maxCompanies | Int | Maximum allowed companies |
-| maxStorageMb | Int | Storage limit in MB |
+| maxUsers | Int | Maximum allowed users (default: 50) |
+| maxCompanies | Int | Maximum allowed companies (default: 100) |
+| maxStorageMb | Int | Storage limit in MB (default: 10GB) |
 | settings | JSON | Tenant-specific configuration |
+
+#### Role (RBAC)
+Role-based access control for fine-grained permissions.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Primary key |
+| tenantId | UUID | Owning tenant |
+| name | String | Role name (unique per tenant) |
+| description | String | Role description |
+| isSystem | Boolean | System role (cannot be deleted) |
+
+#### Permission
+Permission definitions for RBAC.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Primary key |
+| resource | String | Resource name (company, document, user, etc.) |
+| action | String | Action type (create, read, update, delete, export, manage) |
+| description | String | Permission description |
+
+#### UserRoleAssignment
+Links users to roles with optional company scope.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Primary key |
+| userId | UUID | Assigned user |
+| roleId | UUID | Assigned role |
+| companyId | UUID | Optional company scope (null = tenant-wide) |
 
 ---
 
 ## Multi-Tenancy
 
-Oakcloud supports full multi-tenancy with tenant-level data isolation and configurable limits.
+Oakcloud supports full multi-tenancy with tenant-level data isolation, RBAC, and configurable limits.
 
 ### Architecture
 
@@ -295,7 +325,7 @@ Oakcloud supports full multi-tenancy with tenant-level data isolation and config
 | Role | Scope | Permissions |
 |------|-------|-------------|
 | SUPER_ADMIN | System-wide | Full access to all tenants and system settings |
-| TENANT_ADMIN | Tenant | Manage tenant settings, users, and all companies |
+| TENANT_ADMIN | Tenant | Manage tenant settings, users, roles, and all companies |
 | COMPANY_ADMIN | Company | Manage assigned company and its data |
 | COMPANY_USER | Company | View-only access to assigned company |
 
@@ -303,9 +333,9 @@ Oakcloud supports full multi-tenancy with tenant-level data isolation and config
 
 Each tenant has configurable limits:
 
-- **maxUsers**: Maximum number of users (default: 5)
-- **maxCompanies**: Maximum number of companies (default: 10)
-- **maxStorageMb**: Storage quota in MB (default: 1024)
+- **maxUsers**: Maximum number of users (default: 50)
+- **maxCompanies**: Maximum number of companies (default: 100)
+- **maxStorageMb**: Storage quota in MB (default: 10GB)
 
 Limits are enforced at the service layer before creating new resources.
 
@@ -313,9 +343,116 @@ Limits are enforced at the service layer before creating new resources.
 
 1. **Data Isolation**: All queries are automatically scoped to the user's tenant
 2. **Tenant-aware Authentication**: Session includes tenant context
-3. **Configurable Plans**: FREE, STARTER, PROFESSIONAL, ENTERPRISE
+3. **RBAC**: Fine-grained role-based access control with custom roles
 4. **Tenant Suspension**: Suspended tenants prevent user login
 5. **Audit Trail**: All actions tracked with tenant context
+
+---
+
+## RBAC (Role-Based Access Control)
+
+Oakcloud implements fine-grained role-based access control for managing permissions.
+
+### Permission Model
+
+Permissions are defined as `resource:action` combinations:
+
+**Resources:**
+- `tenant` - Tenant settings
+- `user` - User management
+- `role` - Role management
+- `company` - Company data
+- `contact` - Contact records
+- `document` - Documents
+- `officer` - Company officers
+- `shareholder` - Shareholders
+- `audit_log` - Audit logs
+
+**Actions:**
+- `create` - Create new records
+- `read` - View records
+- `update` - Modify records
+- `delete` - Remove records
+- `export` - Export data
+- `import` - Import data
+- `manage` - Full control (implies all actions)
+
+### System Roles
+
+When a tenant is created, three system roles are automatically provisioned:
+
+#### Tenant Admin
+Full access to all tenant resources:
+- Manage users, roles, companies
+- Access all company data
+- View audit logs and export data
+
+#### Company Admin
+Manage assigned company:
+- Read/update company information
+- Manage contacts, officers, shareholders
+- Upload and manage documents
+- View audit logs
+
+#### Company User
+View-only access to assigned company:
+- Read company information
+- View contacts, officers, shareholders
+- View documents and audit logs
+
+### Custom Roles
+
+Tenant admins can create custom roles with specific permissions:
+
+```typescript
+// Example: Create a custom "Auditor" role
+const auditorPermissions = [
+  'company:read',
+  'document:read',
+  'audit_log:read',
+  'audit_log:export',
+];
+```
+
+### Company-Scoped Roles
+
+Roles can be assigned at:
+- **Tenant level**: Access to all companies in the tenant
+- **Company level**: Access only to the specific company
+
+```typescript
+// Tenant-wide role assignment
+await assignRoleToUser(userId, roleId);
+
+// Company-specific role assignment
+await assignRoleToUser(userId, roleId, companyId);
+```
+
+### Permission Checking
+
+```typescript
+import { hasPermission, requirePermission } from '@/lib/rbac';
+
+// Check if user has permission
+const canEdit = await hasPermission(userId, 'company', 'update', companyId);
+
+// Require permission (throws if denied)
+await requirePermission(session, 'company', 'update', companyId);
+```
+
+### RBAC Utilities (`src/lib/rbac.ts`)
+
+| Function | Description |
+|----------|-------------|
+| `hasPermission()` | Check if user has a specific permission |
+| `hasAnyPermission()` | Check if user has any of the specified permissions |
+| `hasAllPermissions()` | Check if user has all specified permissions |
+| `requirePermission()` | Require permission (throws on denial) |
+| `getUserPermissions()` | Get all permissions for a user |
+| `getTenantRoles()` | Get all roles for a tenant |
+| `assignRoleToUser()` | Assign a role to a user |
+| `removeRoleFromUser()` | Remove a role from a user |
+| `createSystemRolesForTenant()` | Initialize system roles for new tenant |
 
 ---
 
@@ -538,10 +675,9 @@ GET /api/tenants
 Query Parameters:
 - `query` - Search term (name, slug, email)
 - `status` - Filter by status (ACTIVE, SUSPENDED, etc.)
-- `plan` - Filter by plan (FREE, STARTER, etc.)
 - `page` - Page number (default: 1)
 - `limit` - Items per page (default: 20)
-- `sortBy` - Sort field (name, createdAt, status, plan)
+- `sortBy` - Sort field (name, createdAt, status)
 - `sortOrder` - asc or desc (default: desc)
 
 #### Create Tenant
@@ -552,12 +688,13 @@ Content-Type: application/json
 {
   "name": "Acme Corp",
   "slug": "acme-corp",
-  "plan": "PROFESSIONAL",
   "contactEmail": "admin@acme.com",
-  "maxUsers": 20,
-  "maxCompanies": 50
+  "maxUsers": 50,
+  "maxCompanies": 100
 }
 ```
+
+Note: System roles (Tenant Admin, Company Admin, Company User) are automatically created for new tenants.
 
 #### Get Tenant
 ```
@@ -571,7 +708,7 @@ Content-Type: application/json
 
 {
   "name": "Acme Corporation",
-  "plan": "ENTERPRISE"
+  "maxUsers": 100
 }
 ```
 
@@ -1128,6 +1265,7 @@ src/
 │   ├── auth.ts                    # JWT & session management
 │   ├── audit.ts                   # Audit logging with request context
 │   ├── tenant.ts                  # Multi-tenancy utilities
+│   ├── rbac.ts                    # Role-based access control
 │   ├── request-context.ts         # Request context extraction
 │   ├── utils.ts                   # Utility functions
 │   └── validations/
@@ -1261,9 +1399,26 @@ docker ps
 
 ## Version History
 
+### v0.3.0 (2025-12-01)
+- **RBAC (Role-Based Access Control)**: Fine-grained permission system
+  - New Role, Permission, RolePermission, UserRoleAssignment models
+  - Permission format: `resource:action` (e.g., `company:update`)
+  - System roles auto-created for new tenants (Tenant Admin, Company Admin, Company User)
+  - Company-scoped role assignments
+  - Permission checking utilities (`hasPermission`, `requirePermission`)
+  - Custom role creation support
+- **Removed Plan/Billing**: Simplified tenant model
+  - Removed TenantPlan enum and plan field
+  - Increased default limits (50 users, 100 companies, 10GB storage)
+  - Permissions now managed via RBAC instead of plan tiers
+- **Integration**:
+  - User invitations automatically assign RBAC roles
+  - System roles initialized on tenant creation
+  - RBAC utilities in `src/lib/rbac.ts`
+
 ### v0.2.0 (2025-12-01)
 - **Multi-Tenancy**: Full tenant isolation with configurable limits
-  - New Tenant model with status, plan, and limits
+  - New Tenant model with status and limits
   - TenantId added to Company, Contact, Document, AuditLog
   - TENANT_ADMIN role for tenant-level management
   - Tenant-scoped queries with automatic filtering

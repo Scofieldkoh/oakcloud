@@ -25,7 +25,6 @@ export interface TenantInfo {
   name: string;
   slug: string;
   status: TenantStatus;
-  plan: string;
   settings: Record<string, unknown> | null;
   maxUsers: number;
   maxCompanies: number;
@@ -56,7 +55,6 @@ export async function getTenantById(tenantId: string): Promise<TenantInfo | null
       name: true,
       slug: true,
       status: true,
-      plan: true,
       settings: true,
       maxUsers: true,
       maxCompanies: true,
@@ -83,7 +81,6 @@ export async function getTenantBySlug(slug: string): Promise<TenantInfo | null> 
       name: true,
       slug: true,
       status: true,
-      plan: true,
       settings: true,
       maxUsers: true,
       maxCompanies: true,
@@ -125,7 +122,6 @@ export async function resolveTenantContext(
           name: true,
           slug: true,
           status: true,
-          plan: true,
           settings: true,
           maxUsers: true,
           maxCompanies: true,
