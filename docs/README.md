@@ -28,13 +28,15 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 
 1. ✅ **Company Management** - Manage companies, BizFile uploads, compliance tracking
 2. ✅ **Authentication** - JWT-based authentication with role-based access
-3. 🔜 **User Management** - User accounts and profile management
-4. 🔜 **RBAC & Permissions** - Fine-grained role-based access control
-5. 🔜 **Audit Logging Dashboard** - System-wide activity tracking UI
-6. 🔜 **Module Marketplace** - Browse and install modules
-7. 🔜 **Connectors Hub** - External service integrations
-8. 🔜 **Module Linking** - Configure module relationships
-9. 🔜 **SuperAdmin Dashboard** - System administration
+3. ✅ **Multi-Tenancy** - Full tenant isolation with configurable limits
+4. ✅ **Audit Logging** - Comprehensive activity tracking with request context
+5. 🔜 **User Management** - User accounts and profile management
+6. 🔜 **RBAC & Permissions** - Fine-grained role-based access control
+7. 🔜 **Audit Logging Dashboard** - System-wide activity tracking UI
+8. 🔜 **Module Marketplace** - Browse and install modules
+9. 🔜 **Connectors Hub** - External service integrations
+10. 🔜 **Module Linking** - Configure module relationships
+11. 🔜 **SuperAdmin Dashboard** - System administration
 
 ---
 
@@ -232,11 +234,149 @@ Complete audit trail for all changes.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| action | Enum | CREATE, UPDATE, DELETE, etc. |
+| tenantId | UUID | Tenant scope (optional for system events) |
+| action | Enum | CREATE, UPDATE, DELETE, LOGIN, etc. |
 | entityType | String | Table/model name |
 | entityId | String | Record ID |
 | changes | JSON | Old/new value pairs |
-| changeSource | Enum | MANUAL, BIZFILE_UPLOAD, API |
+| changeSource | Enum | MANUAL, BIZFILE_UPLOAD, API, SYSTEM |
+| requestId | String | Correlates related operations |
+| ipAddress | String | Client IP address |
+| userAgent | String | Client browser info |
+
+#### Tenant
+Multi-tenancy support for data isolation.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Primary key |
+| name | String | Tenant display name |
+| slug | String | URL-friendly identifier (unique) |
+| status | Enum | ACTIVE, SUSPENDED, PENDING_SETUP, DEACTIVATED |
+| plan | Enum | FREE, STARTER, PROFESSIONAL, ENTERPRISE |
+| maxUsers | Int | Maximum allowed users |
+| maxCompanies | Int | Maximum allowed companies |
+| maxStorageMb | Int | Storage limit in MB |
+| settings | JSON | Tenant-specific configuration |
+
+---
+
+## Multi-Tenancy
+
+Oakcloud supports full multi-tenancy with tenant-level data isolation and configurable limits.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         SUPER_ADMIN                                  │
+│                    (Cross-tenant access)                             │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+           ┌────────────────────┼────────────────────┐
+           ▼                    ▼                    ▼
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│    Tenant A     │   │    Tenant B     │   │    Tenant C     │
+│  ┌───────────┐  │   │  ┌───────────┐  │   │  ┌───────────┐  │
+│  │TENANT_ADMIN│  │   │  │TENANT_ADMIN│  │   │  │TENANT_ADMIN│  │
+│  └───────────┘  │   │  └───────────┘  │   │  └───────────┘  │
+│       │         │   │       │         │   │       │         │
+│  ┌────┴────┐    │   │  ┌────┴────┐    │   │  ┌────┴────┐    │
+│  │Companies│    │   │  │Companies│    │   │  │Companies│    │
+│  │Users    │    │   │  │Users    │    │   │  │Users    │    │
+│  │Contacts │    │   │  │Contacts │    │   │  │Contacts │    │
+│  │Documents│    │   │  │Documents│    │   │  │Documents│    │
+│  └─────────┘    │   │  └─────────┘    │   │  └─────────┘    │
+└─────────────────┘   └─────────────────┘   └─────────────────┘
+```
+
+### User Roles
+
+| Role | Scope | Permissions |
+|------|-------|-------------|
+| SUPER_ADMIN | System-wide | Full access to all tenants and system settings |
+| TENANT_ADMIN | Tenant | Manage tenant settings, users, and all companies |
+| COMPANY_ADMIN | Company | Manage assigned company and its data |
+| COMPANY_USER | Company | View-only access to assigned company |
+
+### Tenant Limits
+
+Each tenant has configurable limits:
+
+- **maxUsers**: Maximum number of users (default: 5)
+- **maxCompanies**: Maximum number of companies (default: 10)
+- **maxStorageMb**: Storage quota in MB (default: 1024)
+
+Limits are enforced at the service layer before creating new resources.
+
+### Key Features
+
+1. **Data Isolation**: All queries are automatically scoped to the user's tenant
+2. **Tenant-aware Authentication**: Session includes tenant context
+3. **Configurable Plans**: FREE, STARTER, PROFESSIONAL, ENTERPRISE
+4. **Tenant Suspension**: Suspended tenants prevent user login
+5. **Audit Trail**: All actions tracked with tenant context
+
+---
+
+## Audit Logging
+
+Comprehensive audit logging tracks all changes, user actions, and system events.
+
+### Tracked Actions
+
+| Category | Actions |
+|----------|---------|
+| CRUD | CREATE, UPDATE, DELETE, RESTORE |
+| Documents | UPLOAD, DOWNLOAD, EXTRACT |
+| Authentication | LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGED, PASSWORD_RESET |
+| Access Control | PERMISSION_GRANTED, PERMISSION_REVOKED, ROLE_CHANGED |
+| Tenant | TENANT_CREATED, TENANT_UPDATED, TENANT_SUSPENDED, TENANT_ACTIVATED, USER_INVITED, USER_REMOVED |
+| Data | EXPORT, IMPORT, BULK_UPDATE |
+
+### Request Context
+
+Each audit log automatically captures:
+
+- **IP Address**: Client IP (supports proxy headers)
+- **User Agent**: Browser/client information
+- **Request ID**: Correlates related operations
+- **Timestamp**: Immutable creation time
+
+### Change Tracking
+
+For UPDATE actions, the system records:
+
+```json
+{
+  "changes": {
+    "name": { "old": "Old Company Name", "new": "New Company Name" },
+    "status": { "old": "LIVE", "new": "STRUCK_OFF" }
+  }
+}
+```
+
+### Usage in Services
+
+```typescript
+import { createAuditContext, logCreate, logUpdate, logDelete } from '@/lib/audit';
+
+// Create audit context at the start of a request
+const auditContext = await createAuditContext({
+  tenantId: session.tenantId,
+  userId: session.id,
+  changeSource: 'MANUAL',
+});
+
+// Log a creation
+await logCreate(auditContext, 'Company', company.id, { uen: company.uen });
+
+// Log an update with changes
+await logUpdate(auditContext, 'Company', company.id, changes, 'Updated by user request');
+
+// Log a deletion with reason
+await logDelete(auditContext, 'Company', company.id, 'No longer a client');
+```
 
 ---
 
@@ -387,6 +527,164 @@ Response:
 ```
 
 Returns 401 if not authenticated.
+
+### Tenants (SUPER_ADMIN Only)
+
+#### List Tenants
+```
+GET /api/tenants
+```
+
+Query Parameters:
+- `query` - Search term (name, slug, email)
+- `status` - Filter by status (ACTIVE, SUSPENDED, etc.)
+- `plan` - Filter by plan (FREE, STARTER, etc.)
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20)
+- `sortBy` - Sort field (name, createdAt, status, plan)
+- `sortOrder` - asc or desc (default: desc)
+
+#### Create Tenant
+```
+POST /api/tenants
+Content-Type: application/json
+
+{
+  "name": "Acme Corp",
+  "slug": "acme-corp",
+  "plan": "PROFESSIONAL",
+  "contactEmail": "admin@acme.com",
+  "maxUsers": 20,
+  "maxCompanies": 50
+}
+```
+
+#### Get Tenant
+```
+GET /api/tenants/:id
+```
+
+#### Update Tenant
+```
+PATCH /api/tenants/:id
+Content-Type: application/json
+
+{
+  "name": "Acme Corporation",
+  "plan": "ENTERPRISE"
+}
+```
+
+#### Update Tenant Status
+```
+PATCH /api/tenants/:id
+Content-Type: application/json
+
+{
+  "status": "SUSPENDED",
+  "reason": "Payment overdue"
+}
+```
+
+#### Delete Tenant
+```
+DELETE /api/tenants/:id
+Content-Type: application/json
+
+{
+  "reason": "Tenant requested account closure"
+}
+```
+
+Note: Tenant must have no users or companies to be deleted.
+
+### Tenant Users
+
+#### List Tenant Users
+```
+GET /api/tenants/:id/users
+```
+
+Query Parameters:
+- `query` - Search term (name, email)
+- `role` - Filter by role
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20)
+
+#### Invite User to Tenant
+```
+POST /api/tenants/:id/users
+Content-Type: application/json
+
+{
+  "email": "user@acme.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "role": "COMPANY_ADMIN",
+  "companyId": "uuid" // Optional
+}
+```
+
+### Tenant Statistics
+
+#### Get Tenant Stats
+```
+GET /api/tenants/:id/stats
+```
+
+Response includes user counts, company counts, storage usage, and activity metrics.
+
+### Audit Logs
+
+#### List Audit Logs
+```
+GET /api/audit-logs
+```
+
+Query Parameters:
+- `action` - Single action filter
+- `actions` - Comma-separated actions
+- `entityType` - Filter by entity type
+- `entityTypes` - Comma-separated entity types
+- `userId` - Filter by user
+- `companyId` - Filter by company
+- `tenantId` - Filter by tenant (SUPER_ADMIN only)
+- `startDate` - ISO date string
+- `endDate` - ISO date string
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 50)
+- `sortBy` - Sort field (createdAt, action, entityType)
+- `sortOrder` - asc or desc (default: desc)
+
+Note: Non-SUPER_ADMIN users only see logs from their tenant.
+
+#### Get Audit Statistics
+```
+GET /api/audit-logs/stats
+```
+
+Query Parameters:
+- `startDate` - ISO date string (default: 30 days ago)
+- `endDate` - ISO date string (default: now)
+- `tenantId` - Filter by tenant (SUPER_ADMIN only)
+
+Response:
+```json
+{
+  "totalLogs": 1234,
+  "actionCounts": [
+    { "action": "UPDATE", "count": 500 },
+    { "action": "CREATE", "count": 300 }
+  ],
+  "entityTypeCounts": [
+    { "entityType": "Company", "count": 400 },
+    { "entityType": "User", "count": 200 }
+  ],
+  "topUsers": [
+    { "userId": "uuid", "count": 150 }
+  ]
+}
+```
 
 ---
 
@@ -828,14 +1126,19 @@ src/
 ├── lib/
 │   ├── prisma.ts                  # Database client
 │   ├── auth.ts                    # JWT & session management
-│   ├── audit.ts                   # Audit logging
+│   ├── audit.ts                   # Audit logging with request context
+│   ├── tenant.ts                  # Multi-tenancy utilities
+│   ├── request-context.ts         # Request context extraction
 │   ├── utils.ts                   # Utility functions
 │   └── validations/
-│       ├── company.ts             # Zod schemas
-│       └── contact.ts
+│       ├── company.ts             # Company Zod schemas
+│       ├── contact.ts             # Contact Zod schemas
+│       ├── tenant.ts              # Tenant Zod schemas
+│       └── audit.ts               # Audit log query schemas
 └── services/
-    ├── company.service.ts         # Business logic
-    ├── contact.service.ts
+    ├── company.service.ts         # Company business logic (tenant-aware)
+    ├── tenant.service.ts          # Tenant management
+    ├── contact.service.ts         # Contact management
     └── bizfile.service.ts         # AI extraction
 ```
 
@@ -957,6 +1260,27 @@ docker ps
 ---
 
 ## Version History
+
+### v0.2.0 (2025-12-01)
+- **Multi-Tenancy**: Full tenant isolation with configurable limits
+  - New Tenant model with status, plan, and limits
+  - TenantId added to Company, Contact, Document, AuditLog
+  - TENANT_ADMIN role for tenant-level management
+  - Tenant-scoped queries with automatic filtering
+  - User invitation system within tenants
+  - Tenant statistics and usage tracking
+- **Enhanced Audit Logging**: Comprehensive activity tracking
+  - Request context capture (IP, user agent, request ID)
+  - Expanded audit actions (login, logout, permissions, etc.)
+  - Tenant-aware audit history
+  - Audit statistics and reporting endpoints
+  - Batch audit logging for related operations
+- **API Endpoints**:
+  - `/api/tenants` - Tenant CRUD (SUPER_ADMIN)
+  - `/api/tenants/:id/users` - Tenant user management
+  - `/api/tenants/:id/stats` - Tenant statistics
+  - `/api/audit-logs` - Audit log queries
+  - `/api/audit-logs/stats` - Audit statistics
 
 ### v0.1.5 (2025-12-01)
 - **UX Improvement**: UEN and SSIC codes displayed as plain text instead of badge/code styling

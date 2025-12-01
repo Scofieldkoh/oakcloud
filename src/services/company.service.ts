@@ -1,5 +1,13 @@
+/**
+ * Company Service
+ *
+ * Business logic for company management including CRUD operations,
+ * search, and statistics. Fully integrated with multi-tenancy support.
+ */
+
 import { prisma } from '@/lib/prisma';
-import { createAuditLog, computeChanges } from '@/lib/audit';
+import { createAuditLog, computeChanges, type AuditContext } from '@/lib/audit';
+import { canAddCompany } from '@/lib/tenant';
 import type {
   CreateCompanyInput,
   UpdateCompanyInput,
@@ -7,6 +15,10 @@ import type {
 } from '@/lib/validations/company';
 import type { Prisma, Company } from '@prisma/client';
 import type { Decimal } from '@prisma/client/runtime/library';
+
+// ============================================================================
+// Types
+// ============================================================================
 
 export interface CompanyWithRelations extends Company {
   addresses?: Array<{
@@ -36,6 +48,12 @@ export interface CompanyWithRelations extends Company {
   };
 }
 
+export interface TenantAwareParams {
+  tenantId: string;
+  userId: string;
+}
+
+// Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof Company)[] = [
   'name',
   'uen',
@@ -55,12 +73,34 @@ const TRACKED_FIELDS: (keyof Company)[] = [
   'internalNotes',
 ];
 
+// ============================================================================
+// Create Company
+// ============================================================================
+
 export async function createCompany(
   data: CreateCompanyInput,
-  userId: string
+  params: TenantAwareParams
 ): Promise<Company> {
+  const { tenantId, userId } = params;
+
+  // Check tenant company limit
+  const canAdd = await canAddCompany(tenantId);
+  if (!canAdd) {
+    throw new Error('Tenant has reached the maximum number of companies');
+  }
+
+  // Check UEN uniqueness within tenant
+  const existingUen = await prisma.company.findFirst({
+    where: { tenantId, uen: data.uen.toUpperCase(), deletedAt: null },
+  });
+
+  if (existingUen) {
+    throw new Error('A company with this UEN already exists');
+  }
+
   const company = await prisma.company.create({
     data: {
+      tenantId,
       uen: data.uen.toUpperCase(),
       name: data.name,
       entityType: data.entityType,
@@ -85,6 +125,7 @@ export async function createCompany(
   });
 
   await createAuditLog({
+    tenantId,
     userId,
     companyId: company.id,
     action: 'CREATE',
@@ -97,21 +138,39 @@ export async function createCompany(
   return company;
 }
 
+// ============================================================================
+// Update Company
+// ============================================================================
+
 export async function updateCompany(
   data: UpdateCompanyInput,
-  userId: string,
+  params: TenantAwareParams,
   reason?: string
 ): Promise<Company> {
-  const existing = await prisma.company.findUnique({
-    where: { id: data.id },
+  const { tenantId, userId } = params;
+
+  const existing = await prisma.company.findFirst({
+    where: { id: data.id, tenantId, deletedAt: null },
   });
 
   if (!existing) {
     throw new Error('Company not found');
   }
 
-  if (existing.deletedAt) {
-    throw new Error('Cannot update a deleted company');
+  // Check UEN uniqueness if being changed
+  if (data.uen && data.uen.toUpperCase() !== existing.uen) {
+    const existingUen = await prisma.company.findFirst({
+      where: {
+        tenantId,
+        uen: data.uen.toUpperCase(),
+        deletedAt: null,
+        NOT: { id: data.id },
+      },
+    });
+
+    if (existingUen) {
+      throw new Error('A company with this UEN already exists');
+    }
   }
 
   const updateData: Prisma.CompanyUpdateInput = {};
@@ -160,6 +219,7 @@ export async function updateCompany(
 
   if (changes) {
     await createAuditLog({
+      tenantId,
       userId,
       companyId: company.id,
       action: 'UPDATE',
@@ -174,13 +234,19 @@ export async function updateCompany(
   return company;
 }
 
+// ============================================================================
+// Delete Company
+// ============================================================================
+
 export async function deleteCompany(
   id: string,
-  userId: string,
+  params: TenantAwareParams,
   reason: string
 ): Promise<Company> {
-  const existing = await prisma.company.findUnique({
-    where: { id },
+  const { tenantId, userId } = params;
+
+  const existing = await prisma.company.findFirst({
+    where: { id, tenantId },
   });
 
   if (!existing) {
@@ -200,6 +266,7 @@ export async function deleteCompany(
   });
 
   await createAuditLog({
+    tenantId,
     userId,
     companyId: company.id,
     action: 'DELETE',
@@ -213,9 +280,18 @@ export async function deleteCompany(
   return company;
 }
 
-export async function restoreCompany(id: string, userId: string): Promise<Company> {
-  const existing = await prisma.company.findUnique({
-    where: { id },
+// ============================================================================
+// Restore Company
+// ============================================================================
+
+export async function restoreCompany(
+  id: string,
+  params: TenantAwareParams
+): Promise<Company> {
+  const { tenantId, userId } = params;
+
+  const existing = await prisma.company.findFirst({
+    where: { id, tenantId },
   });
 
   if (!existing) {
@@ -235,6 +311,7 @@ export async function restoreCompany(id: string, userId: string): Promise<Compan
   });
 
   await createAuditLog({
+    tenantId,
     userId,
     companyId: company.id,
     action: 'RESTORE',
@@ -247,11 +324,21 @@ export async function restoreCompany(id: string, userId: string): Promise<Compan
   return company;
 }
 
+// ============================================================================
+// Get Company
+// ============================================================================
+
 export async function getCompanyById(
   id: string,
+  tenantId?: string,
   includeDeleted: boolean = false
 ): Promise<CompanyWithRelations | null> {
   const where: Prisma.CompanyWhereInput = { id };
+
+  if (tenantId) {
+    where.tenantId = tenantId;
+  }
+
   if (!includeDeleted) {
     where.deletedAt = null;
   }
@@ -303,9 +390,15 @@ export async function getCompanyById(
 
 export async function getCompanyByUen(
   uen: string,
+  tenantId?: string,
   includeDeleted: boolean = false
 ): Promise<Company | null> {
   const where: Prisma.CompanyWhereInput = { uen: uen.toUpperCase() };
+
+  if (tenantId) {
+    where.tenantId = tenantId;
+  }
+
   if (!includeDeleted) {
     where.deletedAt = null;
   }
@@ -313,7 +406,14 @@ export async function getCompanyByUen(
   return prisma.company.findFirst({ where });
 }
 
-export async function searchCompanies(params: CompanySearchInput): Promise<{
+// ============================================================================
+// Search Companies
+// ============================================================================
+
+export async function searchCompanies(
+  params: CompanySearchInput,
+  tenantId?: string
+): Promise<{
   companies: CompanyWithRelations[];
   total: number;
   page: number;
@@ -323,6 +423,11 @@ export async function searchCompanies(params: CompanySearchInput): Promise<{
   const where: Prisma.CompanyWhereInput = {
     deletedAt: null,
   };
+
+  // Tenant scope
+  if (tenantId) {
+    where.tenantId = tenantId;
+  }
 
   // Text search across multiple fields
   if (params.query) {
@@ -432,9 +537,22 @@ export async function searchCompanies(params: CompanySearchInput): Promise<{
   };
 }
 
-export async function getCompanyFullDetails(id: string): Promise<CompanyWithRelations | null> {
+// ============================================================================
+// Get Company Full Details
+// ============================================================================
+
+export async function getCompanyFullDetails(
+  id: string,
+  tenantId?: string
+): Promise<CompanyWithRelations | null> {
+  const where: Prisma.CompanyWhereInput = { id, deletedAt: null };
+
+  if (tenantId) {
+    where.tenantId = tenantId;
+  }
+
   return prisma.company.findFirst({
-    where: { id, deletedAt: null },
+    where,
     include: {
       formerNames: {
         orderBy: { effectiveFrom: 'desc' },
@@ -502,28 +620,38 @@ export async function getCompanyFullDetails(id: string): Promise<CompanyWithRela
   });
 }
 
-export async function getCompanyStats(): Promise<{
+// ============================================================================
+// Company Statistics
+// ============================================================================
+
+export async function getCompanyStats(tenantId?: string): Promise<{
   total: number;
   byStatus: Record<string, number>;
   byEntityType: Record<string, number>;
   recentlyAdded: number;
   withOverdueFilings: number;
 }> {
+  const baseWhere: Prisma.CompanyWhereInput = { deletedAt: null };
+
+  if (tenantId) {
+    baseWhere.tenantId = tenantId;
+  }
+
   const [total, byStatus, byEntityType, recentlyAdded, withOverdueFilings] = await Promise.all([
-    prisma.company.count({ where: { deletedAt: null } }),
+    prisma.company.count({ where: baseWhere }),
     prisma.company.groupBy({
       by: ['status'],
-      where: { deletedAt: null },
+      where: baseWhere,
       _count: true,
     }),
     prisma.company.groupBy({
       by: ['entityType'],
-      where: { deletedAt: null },
+      where: baseWhere,
       _count: true,
     }),
     prisma.company.count({
       where: {
-        deletedAt: null,
+        ...baseWhere,
         createdAt: {
           gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
         },
@@ -532,7 +660,7 @@ export async function getCompanyStats(): Promise<{
     // Simplified overdue check - companies where AR is overdue
     prisma.company.count({
       where: {
-        deletedAt: null,
+        ...baseWhere,
         status: 'LIVE',
         nextArDueDate: {
           lt: new Date(),
