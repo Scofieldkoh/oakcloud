@@ -2,27 +2,57 @@
 
 This document provides a detailed reference for the Oakcloud database schema.
 
+## Multi-Tenancy Architecture
+
+Oakcloud implements a multi-tenant architecture where data is isolated by tenant. The following entities are tenant-scoped:
+
+- **Companies** - `tenantId` (required)
+- **Contacts** - `tenantId` (required)
+- **Documents** - `tenantId` (required)
+- **AuditLogs** - `tenantId` (optional, for system-level events)
+- **Roles** - `tenantId` (required)
+
+Users are linked to tenants via `tenantId`, except for `SUPER_ADMIN` users who have system-wide access.
+
 ## Entity Relationship Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              CORE ENTITIES                                   │
+│                           MULTI-TENANCY LAYER                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌────────────┐                                                              │
-│  │    User    │                                                              │
-│  ├────────────┤                                                              │
-│  │ id         │◄─────────────────────────────────────┐                      │
-│  │ email      │                                      │                      │
-│  │ role       │                                      │                      │
-│  │ companyId  │─────────────────────────────────┐    │                      │
-│  └────────────┘                                 │    │                      │
-│                                                 │    │                      │
+│  │   Tenant   │◄────────────────────────────────────────────────────┐       │
+│  ├────────────┤                                                      │       │
+│  │ id (PK)    │        ┌────────────┐     ┌────────────┐            │       │
+│  │ name       │        │    Role    │     │ Permission │            │       │
+│  │ slug       │◄───────┤ tenantId   │────▶│ resource   │            │       │
+│  │ status     │        │ name       │     │ action     │            │       │
+│  │ maxUsers   │        │ isSystem   │     └────────────┘            │       │
+│  │ maxCompanies│       └────────────┘                               │       │
+│  └──────┬─────┘                                                      │       │
+│         │                                                            │       │
+│         │ 1:N                                                        │       │
+│         ▼                                                            │       │
+│  ┌────────────┐                                                      │       │
+│  │    User    │                                                      │       │
+│  ├────────────┤                                                      │       │
+│  │ id         │◄─────────────────────────────────────┐               │       │
+│  │ email      │                                      │               │       │
+│  │ role       │  SUPER_ADMIN | TENANT_ADMIN |        │               │       │
+│  │ tenantId   │  COMPANY_ADMIN | COMPANY_USER        │               │       │
+│  │ companyId  │─────────────────────────────────┐    │               │       │
+│  └────────────┘                                 │    │               │       │
+│                                                 │    │               │       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                              CORE ENTITIES                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
 │  ┌────────────────────────────────────────────────────────────────────┐    │
 │  │                            Company                                  │    │
 │  ├─────────────┬──────────────┬────────────────┬───────────────────────┤    │
-│  │ id (PK)     │ uen (UNIQUE) │ name           │ entityType            │    │
-│  │ status      │ incorporation│ primarySsic    │ financialYearEnd      │    │
+│  │ id (PK)     │ tenantId (FK)│ uen (UNIQUE)   │ name                  │    │
+│  │ entityType  │ status       │ incorporation  │ primarySsic           │    │
 │  │ paidUpCap   │ issuedCap    │ hasCharges     │ deleted_at            │    │
 │  └──────┬──────┴──────────────┴────────────────┴───────────────────────┘    │
 │         │                                                                    │
@@ -46,6 +76,7 @@ This document provides a detailed reference for the Oakcloud database schema.
 │  ┌────────────────┐                                                    │    │
 │  │    Contact     │                                                    │    │
 │  ├────────────────┤                                                    │    │
+│  │ tenantId (FK)  │  Required for tenant isolation                     │    │
 │  │ contactType    │  INDIVIDUAL | CORPORATE                            │    │
 │  │ fullName       │                                                    │    │
 │  │ idType         │  NRIC | FIN | PASSPORT | UEN                      │    │
@@ -64,6 +95,7 @@ This document provides a detailed reference for the Oakcloud database schema.
 │  ┌────────────────┐  ┌────────────────┐                               │    │
 │  │   Document     │  │   AuditLog     │◄──────────────────────────────┘    │
 │  ├────────────────┤  ├────────────────┤                                    │
+│  │ tenantId (FK)  │  │ tenantId (FK)  │  Optional for system events        │
 │  │ documentType   │  │ action         │  CREATE | UPDATE | DELETE          │
 │  │ fileName       │  │ entityType     │                                    │
 │  │ extractStatus  │  │ entityId       │                                    │
@@ -77,6 +109,43 @@ This document provides a detailed reference for the Oakcloud database schema.
 
 ## Tables Reference
 
+### tenants
+
+Multi-tenancy support for data isolation.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| name | VARCHAR | No | Tenant display name |
+| slug | VARCHAR | No | URL-friendly identifier (unique) |
+| status | ENUM | No | ACTIVE, SUSPENDED, PENDING_SETUP, DEACTIVATED |
+| contact_email | VARCHAR | Yes | Primary contact email |
+| contact_phone | VARCHAR | Yes | Primary contact phone |
+| address_line_1 | VARCHAR | Yes | Address line 1 |
+| address_line_2 | VARCHAR | Yes | Address line 2 |
+| city | VARCHAR | Yes | City |
+| postal_code | VARCHAR | Yes | Postal code |
+| country | VARCHAR | Yes | Country (default: SINGAPORE) |
+| settings | JSONB | Yes | Tenant-specific configuration |
+| max_users | INT | No | Maximum allowed users (default: 50) |
+| max_companies | INT | No | Maximum allowed companies (default: 100) |
+| max_storage_mb | INT | No | Storage limit in MB (default: 10GB) |
+| logo_url | VARCHAR | Yes | Custom logo URL |
+| primary_color | VARCHAR | Yes | Brand color (default: #294d44) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+| activated_at | TIMESTAMP | Yes | When tenant was activated |
+| suspended_at | TIMESTAMP | Yes | When tenant was suspended |
+| suspend_reason | TEXT | Yes | Reason for suspension |
+
+**Indexes:**
+- `tenants_slug_key` UNIQUE on slug
+- `tenants_status_idx` on status
+- `tenants_deleted_at_idx` on deleted_at
+
+---
+
 ### users
 
 User accounts for authentication and authorization.
@@ -88,27 +157,36 @@ User accounts for authentication and authorization.
 | password_hash | VARCHAR | No | Bcrypt hashed password |
 | first_name | VARCHAR | No | First name |
 | last_name | VARCHAR | No | Last name |
-| role | ENUM | No | SUPER_ADMIN, COMPANY_ADMIN, COMPANY_USER |
+| role | ENUM | No | SUPER_ADMIN, TENANT_ADMIN, COMPANY_ADMIN, COMPANY_USER |
 | is_active | BOOLEAN | No | Account active status |
 | last_login_at | TIMESTAMP | Yes | Last login timestamp |
-| company_id | UUID | Yes | FK to companies (for non-super admins) |
+| must_change_password | BOOLEAN | No | Force password change on next login |
+| password_reset_token | VARCHAR | Yes | Hashed password reset token (unique) |
+| password_reset_expires | TIMESTAMP | Yes | Token expiration time |
+| password_changed_at | TIMESTAMP | Yes | Last password change time |
+| tenant_id | UUID | Yes | FK to tenants (null for SUPER_ADMIN) |
+| company_id | UUID | Yes | FK to companies (primary company) |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 
 **Indexes:**
 - `users_email_key` UNIQUE on email
+- `users_password_reset_token_key` UNIQUE on password_reset_token
+- `users_tenant_id_idx` on tenant_id
 - `users_company_id_idx` on company_id
+- `users_tenant_id_role_idx` on (tenant_id, role)
 
 ---
 
 ### companies
 
-Main company records with ACRA information.
+Main company records with ACRA information. Each company belongs to a tenant.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
 | uen | VARCHAR(10) | No | Unique Entity Number |
 | name | VARCHAR(200) | No | Current company name |
 | entity_type | ENUM | No | Company type (see EntityType enum) |
@@ -142,9 +220,12 @@ Main company records with ACRA information.
 
 **Indexes:**
 - `companies_uen_key` UNIQUE on uen
+- `companies_tenant_id_uen_key` UNIQUE on (tenant_id, uen)
+- `companies_tenant_id_idx` on tenant_id
 - `companies_name_idx` on name
 - `companies_status_idx` on status
 - `companies_entity_type_idx` on entity_type
+- `companies_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
 - `companies_deleted_at_idx` on deleted_at
 
 ---
@@ -193,11 +274,12 @@ Company address records with history.
 
 ### contacts
 
-Unified contact management for individuals and corporates.
+Unified contact management for individuals and corporates. Each contact belongs to a tenant.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
 | contact_type | ENUM | No | INDIVIDUAL or CORPORATE |
 | first_name | VARCHAR(100) | Yes | First name (individuals) |
 | last_name | VARCHAR(100) | Yes | Last name (individuals) |
@@ -223,9 +305,12 @@ Unified contact management for individuals and corporates.
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 
 **Indexes:**
-- `contacts_id_type_number_key` UNIQUE on (identification_type, identification_number)
+- `contacts_tenant_id_id_type_number_key` UNIQUE on (tenant_id, identification_type, identification_number)
+- `contacts_tenant_id_idx` on tenant_id
 - `contacts_full_name_idx` on full_name
+- `contacts_identification_number_idx` on identification_number
 - `contacts_corporate_uen_idx` on corporate_uen
+- `contacts_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
 
 ---
 
@@ -347,11 +432,12 @@ Charges and encumbrances.
 
 ### documents
 
-Document storage and extraction tracking.
+Document storage and extraction tracking. Each document belongs to a tenant.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
 | company_id | UUID | No | FK to companies |
 | uploaded_by_id | UUID | No | FK to users |
 | document_type | VARCHAR(50) | No | BIZFILE, CONSTITUTION, etc. |
@@ -374,14 +460,15 @@ Document storage and extraction tracking.
 
 ### audit_logs
 
-Complete audit trail.
+Complete audit trail. Tenant ID is optional for system-level events.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
+| tenant_id | UUID | Yes | FK to tenants (optional for system events) |
 | user_id | UUID | Yes | FK to users |
 | company_id | UUID | Yes | FK to companies |
-| action | ENUM | No | CREATE, UPDATE, DELETE, RESTORE, UPLOAD, EXTRACT |
+| action | ENUM | No | See AuditAction enum below |
 | entity_type | VARCHAR(50) | No | Table/model name |
 | entity_id | VARCHAR(50) | No | Record ID |
 | change_source | ENUM | No | MANUAL, BIZFILE_UPLOAD, API, SYSTEM |
@@ -390,14 +477,20 @@ Complete audit trail.
 | metadata | JSONB | Yes | Additional context |
 | ip_address | VARCHAR(45) | Yes | Client IP address |
 | user_agent | TEXT | Yes | Browser user agent |
+| request_id | VARCHAR | Yes | For correlating related operations |
+| session_id | VARCHAR | Yes | For tracking user sessions |
 | created_at | TIMESTAMP | No | Record creation time |
 
 **Indexes:**
+- `audit_logs_tenant_id_idx` on tenant_id
 - `audit_logs_user_id_idx` on user_id
 - `audit_logs_company_id_idx` on company_id
 - `audit_logs_entity_idx` on (entity_type, entity_id)
 - `audit_logs_action_idx` on action
 - `audit_logs_created_at_idx` on created_at
+- `audit_logs_tenant_id_created_at_idx` on (tenant_id, created_at)
+- `audit_logs_tenant_id_entity_type_idx` on (tenant_id, entity_type)
+- `audit_logs_request_id_idx` on request_id
 
 ---
 
@@ -405,9 +498,18 @@ Complete audit trail.
 
 ### UserRole
 ```sql
-SUPER_ADMIN
-COMPANY_ADMIN
-COMPANY_USER
+SUPER_ADMIN      -- System-wide administrator
+TENANT_ADMIN     -- Tenant administrator (can manage tenant settings and users)
+COMPANY_ADMIN    -- Company administrator within a tenant
+COMPANY_USER     -- Regular user with limited access
+```
+
+### TenantStatus
+```sql
+ACTIVE
+SUSPENDED
+PENDING_SETUP
+DEACTIVATED
 ```
 
 ### EntityType
@@ -474,12 +576,49 @@ BUSINESS
 
 ### AuditAction
 ```sql
+-- CRUD Operations
 CREATE
 UPDATE
 DELETE
 RESTORE
+
+-- Document Operations
 UPLOAD
+DOWNLOAD
 EXTRACT
+
+-- Authentication Events
+LOGIN
+LOGOUT
+LOGIN_FAILED
+PASSWORD_CHANGED
+PASSWORD_RESET_REQUESTED
+PASSWORD_RESET_COMPLETED
+PASSWORD_CHANGE_REQUIRED
+PASSWORD_CHANGE_CLEARED
+
+-- Access Control
+PERMISSION_GRANTED
+PERMISSION_REVOKED
+ROLE_CHANGED
+
+-- Tenant Operations
+TENANT_CREATED
+TENANT_UPDATED
+TENANT_SUSPENDED
+TENANT_ACTIVATED
+USER_INVITED
+USER_REMOVED
+
+-- User Company Assignment
+USER_COMPANY_ASSIGNED
+USER_COMPANY_UPDATED
+USER_COMPANY_REMOVED
+
+-- Data Operations
+EXPORT
+IMPORT
+BULK_UPDATE
 ```
 
 ### ChangeSource
@@ -490,9 +629,122 @@ API
 SYSTEM
 ```
 
+### CompanyAccessLevel
+```sql
+VIEW      -- Read-only access to company data
+EDIT      -- Can modify company data
+MANAGE    -- Full control including user assignments
+```
+
+---
+
+## RBAC Tables
+
+### roles
+
+Role definitions for fine-grained access control.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants |
+| name | VARCHAR | No | Role name (unique per tenant) |
+| description | TEXT | Yes | Role description |
+| is_system | BOOLEAN | No | System role (cannot be deleted) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Indexes:**
+- `roles_tenant_id_name_key` UNIQUE on (tenant_id, name)
+- `roles_tenant_id_idx` on tenant_id
+
+---
+
+### permissions
+
+Permission definitions for RBAC.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| resource | VARCHAR | No | Resource name (company, document, user, etc.) |
+| action | VARCHAR | No | Action type (create, read, update, delete, export) |
+| description | TEXT | Yes | Permission description |
+
+**Indexes:**
+- `permissions_resource_action_key` UNIQUE on (resource, action)
+- `permissions_resource_idx` on resource
+
+---
+
+### role_permissions
+
+Links roles to permissions.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| role_id | UUID | No | FK to roles |
+| permission_id | UUID | No | FK to permissions |
+| created_at | TIMESTAMP | No | Record creation time |
+
+**Indexes:**
+- `role_permissions_role_id_permission_id_key` UNIQUE on (role_id, permission_id)
+- `role_permissions_role_id_idx` on role_id
+- `role_permissions_permission_id_idx` on permission_id
+
+---
+
+### user_role_assignments
+
+Links users to roles with optional company scope.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| user_id | UUID | No | FK to users |
+| role_id | UUID | No | FK to roles |
+| company_id | UUID | Yes | Optional company scope (null = tenant-wide) |
+| created_at | TIMESTAMP | No | Record creation time |
+
+**Indexes:**
+- `user_role_assignments_user_id_role_id_company_id_key` UNIQUE on (user_id, role_id, company_id)
+- `user_role_assignments_user_id_idx` on user_id
+- `user_role_assignments_role_id_idx` on role_id
+- `user_role_assignments_company_id_idx` on company_id
+
+---
+
+### user_company_assignments
+
+Multi-company user assignments with access levels. Allows a single user to access multiple companies with different permission levels.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| user_id | UUID | No | FK to users |
+| company_id | UUID | No | FK to companies |
+| access_level | ENUM | No | VIEW, EDIT, MANAGE |
+| is_primary | BOOLEAN | No | Whether this is the user's primary company |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Indexes:**
+- `user_company_assignments_user_id_company_id_key` UNIQUE on (user_id, company_id)
+- `user_company_assignments_user_id_idx` on user_id
+- `user_company_assignments_company_id_idx` on company_id
+
 ---
 
 ## Migration Notes
+
+### Multi-Tenancy
+
+All tenant-scoped entities (Company, Contact, Document) require a `tenantId` field. When adding new rows to these tables:
+
+1. Always include the `tenantId` when creating records
+2. The seed script automatically creates a default tenant and assigns all sample data to it
+3. Unique constraints that include tenant-scoped fields also include `tenantId` (e.g., company UEN is unique per tenant)
 
 ### Soft Delete Pattern
 
@@ -508,3 +760,15 @@ Entities that track history (addresses, officers, shareholders) use:
 ### Denormalization
 
 Officer and shareholder records denormalize contact information to preserve historical accuracy even if the contact record is updated.
+
+### Database Initialization
+
+To initialize a fresh database:
+
+```bash
+npm run db:generate   # Generate Prisma client
+npm run db:push       # Push schema to database
+npm run db:seed       # Seed with sample data (creates default tenant)
+```
+
+The seed script is idempotent and can be run multiple times safely.

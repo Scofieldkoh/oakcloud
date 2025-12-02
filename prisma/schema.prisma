@@ -99,6 +99,10 @@ enum AuditAction {
   LOGIN_FAILED
   PASSWORD_CHANGED
   PASSWORD_RESET
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  PASSWORD_CHANGE_REQUIRED
+  PASSWORD_CHANGE_CLEARED
 
   // Access Control
   PERMISSION_GRANTED
@@ -112,6 +116,11 @@ enum AuditAction {
   TENANT_ACTIVATED
   USER_INVITED
   USER_REMOVED
+
+  // User Company Assignment
+  USER_COMPANY_ASSIGNED
+  USER_COMPANY_UPDATED
+  USER_COMPANY_REMOVED
 
   // Data Operations
   EXPORT
@@ -270,11 +279,17 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
+  // Password management
+  mustChangePassword    Boolean   @default(false)
+  passwordResetToken    String?   @unique
+  passwordResetExpires  DateTime?
+  passwordChangedAt     DateTime?
+
   // Tenant relation (required for all non-SUPER_ADMIN users)
   tenantId      String?
   tenant        Tenant?   @relation(fields: [tenantId], references: [id])
 
-  // Company relation (optional, for company-scoped users)
+  // Primary company (optional, for backwards compatibility)
   companyId     String?
   company       Company?  @relation(fields: [companyId], references: [id])
 
@@ -282,12 +297,43 @@ model User {
   auditLogs     AuditLog[]
   uploadedDocuments Document[]
   roleAssignments UserRoleAssignment[]
+  companyAssignments UserCompanyAssignment[]
 
   @@index([email])
   @@index([tenantId])
   @@index([companyId])
   @@index([tenantId, role])
+  @@index([passwordResetToken])
   @@map("users")
+}
+
+// User-Company many-to-many assignment for multi-company access
+model UserCompanyAssignment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Access level for this company
+  accessLevel CompanyAccessLevel @default(VIEW)
+
+  // Whether this is the user's primary company
+  isPrimary Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, companyId])
+  @@index([userId])
+  @@index([companyId])
+  @@map("user_company_assignments")
+}
+
+enum CompanyAccessLevel {
+  VIEW      // Read-only access
+  EDIT      // Can modify company data
+  MANAGE    // Full control including user assignments
 }
 
 // ============================================================================
@@ -358,6 +404,7 @@ model Company {
   auditLogs             AuditLog[]
   contacts              CompanyContact[]
   roleAssignments       UserRoleAssignment[]
+  userAssignments       UserCompanyAssignment[]
 
   @@unique([tenantId, uen]) // UEN unique within tenant
   @@index([tenantId])

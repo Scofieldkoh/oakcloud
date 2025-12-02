@@ -132,18 +132,28 @@ export default function LoginPage() {
               leftIcon={<Mail />}
             />
 
-            <FormInput
-              label="Password"
-              type="password"
-              inputSize="md"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              autoComplete="current-password"
-              disabled={login.isPending}
-              leftIcon={<Lock />}
-            />
+            <div>
+              <FormInput
+                label="Password"
+                type="password"
+                inputSize="md"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                autoComplete="current-password"
+                disabled={login.isPending}
+                leftIcon={<Lock />}
+              />
+              <div className="mt-1 text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-oak-light hover:text-oak-hover transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
 
             <Button
               type="submit"

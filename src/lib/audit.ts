@@ -26,8 +26,8 @@ export interface AuditLogParams {
   changes?: Record<string, { old: unknown; new: unknown }>;
   reason?: string;
   metadata?: Record<string, unknown>;
-  ipAddress?: string;
-  userAgent?: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
   requestId?: string;
   sessionId?: string;
 }
@@ -62,7 +62,11 @@ export interface AuditHistoryOptions {
  */
 export async function createAuditLog(params: AuditLogParams) {
   // Get request context if not provided
-  let requestContext = {
+  let requestContext: {
+    ipAddress: string | null | undefined;
+    userAgent: string | null | undefined;
+    requestId: string | undefined;
+  } = {
     ipAddress: params.ipAddress,
     userAgent: params.userAgent,
     requestId: params.requestId,

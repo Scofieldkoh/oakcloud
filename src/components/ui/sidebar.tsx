@@ -14,6 +14,10 @@ import {
   X,
   Sun,
   Moon,
+  Shield,
+  Activity,
+  Building,
+  UserCog,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -26,6 +30,8 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  adminOnly?: boolean; // Only show to SUPER_ADMIN and TENANT_ADMIN
+  superAdminOnly?: boolean; // Only show to SUPER_ADMIN
 }
 
 const navigation: NavItem[] = [
@@ -35,51 +41,118 @@ const navigation: NavItem[] = [
   { name: 'Settings', href: '/settings', icon: Settings, badge: 'Soon' },
 ];
 
+const adminNavigation: NavItem[] = [
+  { name: 'Tenants', href: '/admin/tenants', icon: Building, superAdminOnly: true },
+  { name: 'Users', href: '/admin/users', icon: UserCog, adminOnly: true },
+  { name: 'Roles', href: '/admin/roles', icon: Shield, adminOnly: true },
+  { name: 'Audit Logs', href: '/admin/audit-logs', icon: Activity, adminOnly: true },
+];
+
+// Navigation link component
+function NavLink({
+  item,
+  collapsed,
+  onNavigate,
+  isActive
+}: {
+  item: NavItem;
+  collapsed: boolean;
+  onNavigate?: () => void;
+  isActive: boolean;
+}) {
+  const Icon = item.icon;
+  const isDisabled = !!item.badge;
+
+  return (
+    <Link
+      key={item.name}
+      href={isDisabled ? '#' : item.href}
+      onClick={(e) => {
+        if (isDisabled) {
+          e.preventDefault();
+        } else {
+          onNavigate?.();
+        }
+      }}
+      className={cn(
+        'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors',
+        isActive
+          ? 'bg-oak-primary/10 text-oak-light'
+          : 'text-text-secondary hover:bg-background-tertiary hover:text-text-primary',
+        isDisabled && 'opacity-50 cursor-not-allowed'
+      )}
+      title={collapsed ? item.name : undefined}
+    >
+      <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+      {!collapsed && (
+        <>
+          <span className="flex-1">{item.name}</span>
+          {item.badge && (
+            <span className="text-2xs px-1.5 py-0.5 rounded bg-background-tertiary text-text-muted">
+              {item.badge}
+            </span>
+          )}
+        </>
+      )}
+    </Link>
+  );
+}
+
 // Shared navigation content
 function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { data: user } = useSession();
+
+  // Filter admin navigation based on user role
+  const filteredAdminNav = adminNavigation.filter((item) => {
+    if (!user) return false;
+    if (item.superAdminOnly) return user.role === 'SUPER_ADMIN';
+    if (item.adminOnly) return user.role === 'SUPER_ADMIN' || user.role === 'TENANT_ADMIN';
+    return true;
+  });
+
+  const showAdminSection = filteredAdminNav.length > 0;
 
   return (
     <nav className="p-2.5 space-y-1">
       {navigation.map((item) => {
-        const Icon = item.icon;
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-        const isDisabled = !!item.badge;
-
         return (
-          <Link
+          <NavLink
             key={item.name}
-            href={isDisabled ? '#' : item.href}
-            onClick={(e) => {
-              if (isDisabled) {
-                e.preventDefault();
-              } else {
-                onNavigate?.();
-              }
-            }}
-            className={cn(
-              'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors',
-              isActive
-                ? 'bg-oak-primary/10 text-oak-light'
-                : 'text-text-secondary hover:bg-background-tertiary hover:text-text-primary',
-              isDisabled && 'opacity-50 cursor-not-allowed'
-            )}
-            title={collapsed ? item.name : undefined}
-          >
-            <Icon className="w-[18px] h-[18px] flex-shrink-0" />
-            {!collapsed && (
-              <>
-                <span className="flex-1">{item.name}</span>
-                {item.badge && (
-                  <span className="text-2xs px-1.5 py-0.5 rounded bg-background-tertiary text-text-muted">
-                    {item.badge}
-                  </span>
-                )}
-              </>
-            )}
-          </Link>
+            item={item}
+            collapsed={collapsed}
+            onNavigate={onNavigate}
+            isActive={isActive}
+          />
         );
       })}
+
+      {/* Admin Section */}
+      {showAdminSection && (
+        <>
+          {!collapsed && (
+            <div className="pt-4 pb-2">
+              <div className="px-2.5 text-2xs font-medium uppercase text-text-muted tracking-wider">
+                Administration
+              </div>
+            </div>
+          )}
+          {collapsed && <div className="pt-3 border-t border-border-primary mt-3" />}
+          {filteredAdminNav.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <NavLink
+                key={item.name}
+                item={item}
+                collapsed={collapsed}
+                onNavigate={onNavigate}
+                isActive={isActive}
+              />
+            );
+          })}
+        </>
+      )}
     </nav>
   );
 }

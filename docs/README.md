@@ -31,12 +31,13 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 3. ✅ **Multi-Tenancy** - Full tenant isolation with configurable limits
 4. ✅ **Audit Logging** - Comprehensive activity tracking with request context
 5. ✅ **RBAC & Permissions** - Fine-grained role-based access control
-6. 🔜 **User Management** - User accounts and profile management
-7. 🔜 **Audit Logging Dashboard** - System-wide activity tracking UI
-8. 🔜 **Module Marketplace** - Browse and install modules
-9. 🔜 **Connectors Hub** - External service integrations
-10. 🔜 **Module Linking** - Configure module relationships
-11. 🔜 **SuperAdmin Dashboard** - System administration
+6. ✅ **User Management** - User accounts, invitations, multi-company assignments
+7. ✅ **Password Management** - Secure reset flow, force change on first login
+8. 🔜 **Audit Logging Dashboard** - System-wide activity tracking UI
+9. 🔜 **Module Marketplace** - Browse and install modules
+10. 🔜 **Connectors Hub** - External service integrations
+11. 🔜 **Module Linking** - Configure module relationships
+12. 🔜 **SuperAdmin Dashboard** - System administration
 
 ---
 
@@ -113,10 +114,12 @@ This will automatically create:
 
 4. **Initialize database:**
 ```bash
-npm run db:generate
-npm run db:push
-npm run db:seed
+npm run db:generate   # Generate Prisma client
+npm run db:push       # Push schema to database (creates tables)
+npm run db:seed       # Seed with sample data
 ```
+
+> **Important:** The seed script is idempotent and can be run multiple times safely. It creates a default tenant and assigns all sample data to it.
 
 5. **Start development server:**
 ```bash
@@ -153,8 +156,13 @@ DATABASE_URL="postgresql://oakcloud:oakcloud_password@localhost:5432/oakcloud?sc
 ### Default Credentials
 
 After seeding, you can login with:
-- Email: `admin@oakcloud.local`
-- Password: `admin123`
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | `admin@oakcloud.local` | `admin123` |
+| Tenant Admin | `tenant@oakcloud.local` | `admin123` |
+
+> **Security:** Change these passwords in production!
 
 ---
 
@@ -288,6 +296,17 @@ Links users to roles with optional company scope.
 | userId | UUID | Assigned user |
 | roleId | UUID | Assigned role |
 | companyId | UUID | Optional company scope (null = tenant-wide) |
+
+#### UserCompanyAssignment
+Multi-company user access with granular permissions.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Primary key |
+| userId | UUID | Assigned user |
+| companyId | UUID | Assigned company |
+| accessLevel | Enum | VIEW, EDIT, MANAGE |
+| isPrimary | Boolean | Whether this is user's primary company |
 
 ---
 
@@ -629,13 +648,17 @@ Response:
     "email": "admin@oakcloud.local",
     "firstName": "Super",
     "lastName": "Admin",
-    "role": "SUPER_ADMIN"
+    "role": "SUPER_ADMIN",
+    "tenantId": "uuid"
   },
+  "mustChangePassword": false,
   "message": "Login successful"
 }
 ```
 
 Sets `auth-token` cookie (httpOnly, 7 days expiry).
+
+> **Note:** If `mustChangePassword` is `true`, the user must change their password before accessing the application. Redirect to `/change-password?forced=true`.
 
 #### Logout
 ```
@@ -664,6 +687,54 @@ Response:
 ```
 
 Returns 401 if not authenticated.
+
+#### Forgot Password
+```
+POST /api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+```
+
+Response (always returns success to prevent email enumeration):
+```json
+{
+  "success": true,
+  "message": "If an account exists with this email, you will receive a password reset link."
+}
+```
+
+> **Development Mode:** Returns `resetToken` and `resetUrl` for testing.
+
+#### Reset Password
+```
+POST /api/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "reset-token-from-email",
+  "password": "newSecurePassword123",
+  "confirmPassword": "newSecurePassword123"
+}
+```
+
+Password requirements: 8+ characters, at least one uppercase, lowercase, and number.
+
+#### Change Password (Authenticated)
+```
+POST /api/auth/change-password
+Content-Type: application/json
+
+{
+  "currentPassword": "oldPassword",
+  "newPassword": "newSecurePassword123",
+  "confirmPassword": "newSecurePassword123"
+}
+```
+
+Requires authentication. Used for voluntary password changes or forced password changes after first login.
 
 ### Tenants (SUPER_ADMIN Only)
 
@@ -759,6 +830,71 @@ Content-Type: application/json
   "lastName": "Doe",
   "role": "COMPANY_ADMIN",
   "companyId": "uuid" // Optional
+}
+```
+
+> **Note:** Invited users have `mustChangePassword: true` by default and will be prompted to change their password on first login.
+
+### User Company Assignments
+
+Users can be assigned to multiple companies with different access levels.
+
+#### List User's Company Assignments
+```
+GET /api/users/:id/companies
+```
+
+Response:
+```json
+{
+  "assignments": [
+    {
+      "id": "uuid",
+      "userId": "uuid",
+      "companyId": "uuid",
+      "accessLevel": "EDIT",
+      "isPrimary": true,
+      "company": {
+        "id": "uuid",
+        "name": "Company Name",
+        "uen": "202012345A"
+      }
+    }
+  ]
+}
+```
+
+#### Assign User to Company
+```
+POST /api/users/:id/companies
+Content-Type: application/json
+
+{
+  "companyId": "uuid",
+  "accessLevel": "VIEW",  // VIEW, EDIT, or MANAGE
+  "isPrimary": false
+}
+```
+
+#### Update Company Assignment
+```
+PATCH /api/users/:id/companies
+Content-Type: application/json
+
+{
+  "assignmentId": "uuid",
+  "accessLevel": "EDIT",
+  "isPrimary": true
+}
+```
+
+#### Remove Company Assignment
+```
+DELETE /api/users/:id/companies
+Content-Type: application/json
+
+{
+  "assignmentId": "uuid"
 }
 ```
 
@@ -1025,7 +1161,7 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | `Alert` | `variant`, `title`, `compact`, `onClose` | Chakra Box-based notifications |
 | `Modal` | `isOpen`, `onClose`, `title`, `size`, `closeOnEscape` | Accessible modal dialog |
 | `ConfirmDialog` | `title`, `description`, `variant`, `requireReason` | Confirmation dialog with optional reason input |
-| `Dropdown` | Composable: `Trigger`, `Menu`, `Item` | Click-outside aware dropdown |
+| `Dropdown` | Composable: `Trigger`, `Menu`, `Item`, `align` | Portal-rendered dropdown (prevents clipping in tables) |
 | `Toast` | Via `useToast()` hook | Toast notifications (success, error, warning, info) |
 | `Sidebar` | - | Responsive navigation with mobile drawer and theme toggle |
 | `AuthGuard` | - | Route protection wrapper |
@@ -1211,14 +1347,19 @@ src/
 ├── app/
 │   ├── (dashboard)/
 │   │   ├── layout.tsx             # Dashboard layout with AuthGuard
-│   │   └── companies/
-│   │       ├── page.tsx           # Company list
-│   │       ├── new/page.tsx       # Create company
-│   │       ├── upload/page.tsx    # BizFile upload
-│   │       └── [id]/
-│   │           ├── page.tsx       # Company detail
-│   │           ├── edit/page.tsx  # Edit company
-│   │           └── audit/page.tsx # Audit history
+│   │   ├── companies/
+│   │   │   ├── page.tsx           # Company list
+│   │   │   ├── new/page.tsx       # Create company
+│   │   │   ├── upload/page.tsx    # BizFile upload
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx       # Company detail
+│   │   │       ├── edit/page.tsx  # Edit company
+│   │   │       └── audit/page.tsx # Audit history
+│   │   └── admin/
+│   │       ├── users/page.tsx     # User management (TENANT_ADMIN+)
+│   │       ├── audit-logs/page.tsx # Audit logs dashboard
+│   │       ├── roles/page.tsx     # Roles & permissions view
+│   │       └── tenants/page.tsx   # Tenant management (SUPER_ADMIN)
 │   ├── login/
 │   │   └── page.tsx               # Login page
 │   └── api/
@@ -1226,13 +1367,23 @@ src/
 │       │   ├── login/route.ts     # POST - Login
 │       │   ├── logout/route.ts    # POST - Logout
 │       │   └── me/route.ts        # GET - Current session
-│       └── companies/
-│           ├── route.ts           # List/Create
-│           ├── stats/route.ts     # Statistics
-│           └── [id]/
-│               ├── route.ts       # Get/Update/Delete
-│               ├── audit/route.ts # Audit history
-│               └── documents/     # Document management
+│       ├── companies/
+│       │   ├── route.ts           # List/Create
+│       │   ├── stats/route.ts     # Statistics
+│       │   └── [id]/
+│       │       ├── route.ts       # Get/Update/Delete
+│       │       ├── audit/route.ts # Audit history
+│       │       └── documents/     # Document management
+│       ├── tenants/
+│       │   ├── route.ts           # List/Create tenants
+│       │   └── [id]/
+│       │       ├── route.ts       # Get/Update/Delete tenant
+│       │       ├── users/route.ts # Tenant user management
+│       │       ├── roles/route.ts # Tenant roles
+│       │       └── stats/route.ts # Tenant statistics
+│       └── audit-logs/
+│           ├── route.ts           # List audit logs
+│           └── stats/route.ts     # Audit statistics
 ├── components/
 │   ├── auth/
 │   │   └── auth-guard.tsx         # Route protection
@@ -1255,6 +1406,7 @@ src/
 ├── hooks/
 │   ├── use-auth.ts                # Auth hooks (useSession, useLogin, useLogout)
 │   ├── use-companies.ts           # Company data hooks
+│   ├── use-admin.ts               # Admin hooks (users, tenants, roles, audit logs)
 │   ├── use-click-outside.ts       # Click outside detection
 │   ├── use-local-storage.ts       # localStorage persistence
 │   └── use-media-query.ts         # Responsive breakpoints
@@ -1398,6 +1550,78 @@ docker ps
 ---
 
 ## Version History
+
+### v0.5.0 (2025-12-02)
+- **Password Reset Flow**: Complete password recovery system
+  - Forgot password page (`/forgot-password`) - request reset link
+  - Reset password page (`/reset-password?token=xxx`) - set new password
+  - Change password page (`/change-password`) - update current password
+  - Secure token-based reset (SHA-256 hashed, 24-hour expiry)
+  - Password validation: 8+ chars, uppercase, lowercase, number required
+- **Force Password Change**: Security enforcement for new users
+  - New users must change password on first login
+  - `mustChangePassword` flag in User model
+  - Automatic redirect to change password page after login
+  - Audit logging for all password-related events
+- **Multi-Company User Assignment**: Flexible user-company relationships
+  - New `UserCompanyAssignment` model with access levels (VIEW, EDIT, MANAGE)
+  - Users can now access multiple companies with different permissions
+  - Primary company designation for default context
+  - "Manage Companies" modal in Admin > Users page
+  - API: `GET/POST/PATCH/DELETE /api/users/:id/companies`
+- **SUPER_ADMIN User Management**: Enhanced admin capabilities
+  - Tenant selector on Users page for SUPER_ADMIN
+  - SUPER_ADMIN can manage users across any tenant
+  - Clear UI guidance when no tenant is selected
+- **Bug Fixes**:
+  - Fixed Modal focus stealing on re-render (input fields losing focus)
+  - Added missing Edit Tenant modal
+  - Added tenantId to JWT token for proper tenant context
+- **Services Added**:
+  - `password.service.ts` - Password reset, change, and validation
+  - `user-company.service.ts` - Multi-company assignment management
+
+### v0.4.2 (2025-12-02)
+- **UI Fixes**: Light mode compatibility and dropdown improvements
+  - Fixed FormInput label, icon, and hint text colors for light mode visibility
+  - Dropdown menu now uses portal rendering to prevent clipping in table containers
+  - Dropdown auto-positions (flips above trigger if insufficient space below)
+  - Alert dismiss button hover state adapts to light/dark mode
+
+### v0.4.1 (2025-12-02)
+- **Security Fixes**: Critical tenant isolation improvements
+  - Fixed `canAccessTenant()` and `canManageTenant()` to properly validate tenant membership
+  - Added tenant validation to company GET/PATCH/DELETE/PUT routes
+  - Contact `linkContactToCompany()` now validates both entities belong to same tenant
+  - Company stats route now returns tenant-scoped stats for TENANT_ADMIN
+- **Bug Fixes**:
+  - Fixed company search for COMPANY_ADMIN/USER to return only their assigned company
+  - Fixed pagination response format in frontend hooks to match API structure
+  - Fixed secondary/ghost button colors for light mode compatibility
+- **Code Quality**:
+  - Added tenant validation to `unlinkContactFromCompany()` and `getContactsByCompany()`
+  - Standardized tenant where clause pattern across company routes
+
+### v0.4.0 (2025-12-02)
+- **Admin Dashboard UI**: Complete admin interface for multi-tenancy management
+  - User Management page (`/admin/users`) - invite, view, and manage users
+  - Audit Logs Dashboard (`/admin/audit-logs`) - view all system activity with filters
+  - Tenant Management page (`/admin/tenants`) - SUPER_ADMIN tenant CRUD
+  - Roles & Permissions page (`/admin/roles`) - view roles and permissions
+- **Sidebar Admin Section**: Dynamic admin navigation based on user role
+  - SUPER_ADMIN sees: Tenants, Users, Roles, Audit Logs
+  - TENANT_ADMIN sees: Users, Roles, Audit Logs
+- **Fine-Grained RBAC Integration**: API routes now use permission-based checks
+  - Replaced `requireRole()` with `requirePermission()` in company routes
+  - COMPANY_ADMIN can now update their assigned company (previously SUPER_ADMIN only)
+  - All permission checks use the RBAC system with `resource:action` format
+- **Tenant-Aware Service Layer**: All services now enforce tenant isolation
+  - `contact.service.ts` - all operations scoped to tenant
+  - `bizfile.service.ts` - contact creation includes tenant context
+  - `TenantAwareParams` pattern: `{ tenantId, userId }` for create/update operations
+  - Search and get operations accept optional `tenantId` for filtering
+- **New Hooks**:
+  - `use-admin.ts` - hooks for users, tenants, roles, and audit logs
 
 ### v0.3.0 (2025-12-01)
 - **RBAC (Role-Based Access Control)**: Fine-grained permission system

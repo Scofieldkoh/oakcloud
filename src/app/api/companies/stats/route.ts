@@ -4,9 +4,12 @@ import { getCompanyStats } from '@/services/company.service';
 
 export async function GET() {
   try {
-    await requireRole(['SUPER_ADMIN']);
+    // Allow both SUPER_ADMIN (global stats) and TENANT_ADMIN (tenant-scoped stats)
+    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
 
-    const stats = await getCompanyStats();
+    // Pass tenantId for non-SUPER_ADMIN users to get tenant-scoped stats
+    const tenantId = session.role === 'SUPER_ADMIN' ? undefined : session.tenantId || undefined;
+    const stats = await getCompanyStats(tenantId);
 
     return NextResponse.json(stats);
   } catch (error) {

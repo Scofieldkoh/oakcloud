@@ -3,6 +3,11 @@ import { createAuditLog } from '@/lib/audit';
 import type { CreateContactInput, UpdateContactInput, ContactSearchInput } from '@/lib/validations/contact';
 import type { Prisma, Contact, ContactType } from '@prisma/client';
 
+export interface TenantAwareParams {
+  tenantId: string;
+  userId: string;
+}
+
 function buildFullName(data: {
   contactType: ContactType;
   firstName?: string | null;
@@ -18,12 +23,14 @@ function buildFullName(data: {
 
 export async function createContact(
   data: CreateContactInput,
-  userId?: string
+  params: TenantAwareParams
 ): Promise<Contact> {
+  const { tenantId, userId } = params;
   const fullName = buildFullName(data);
 
   const contact = await prisma.contact.create({
     data: {
+      tenantId,
       contactType: data.contactType,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -46,26 +53,27 @@ export async function createContact(
     },
   });
 
-  if (userId) {
-    await createAuditLog({
-      userId,
-      action: 'CREATE',
-      entityType: 'Contact',
-      entityId: contact.id,
-      changeSource: 'MANUAL',
-      metadata: { fullName: contact.fullName },
-    });
-  }
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'CREATE',
+    entityType: 'Contact',
+    entityId: contact.id,
+    changeSource: 'MANUAL',
+    metadata: { fullName: contact.fullName },
+  });
 
   return contact;
 }
 
 export async function updateContact(
   data: UpdateContactInput,
-  userId?: string
+  params: TenantAwareParams
 ): Promise<Contact> {
-  const existing = await prisma.contact.findUnique({
-    where: { id: data.id },
+  const { tenantId, userId } = params;
+
+  const existing = await prisma.contact.findFirst({
+    where: { id: data.id, tenantId },
   });
 
   if (!existing) {
@@ -110,27 +118,29 @@ export async function updateContact(
     data: updateData,
   });
 
-  if (userId) {
-    await createAuditLog({
-      userId,
-      action: 'UPDATE',
-      entityType: 'Contact',
-      entityId: contact.id,
-      changeSource: 'MANUAL',
-    });
-  }
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'Contact',
+    entityId: contact.id,
+    changeSource: 'MANUAL',
+  });
 
   return contact;
 }
 
 export async function findOrCreateContact(
   data: CreateContactInput,
-  userId?: string
+  params: TenantAwareParams
 ): Promise<{ contact: Contact; isNew: boolean }> {
-  // Try to find existing contact by identification number
+  const { tenantId } = params;
+
+  // Try to find existing contact by identification number within tenant
   if (data.identificationNumber && data.identificationType) {
     const existing = await prisma.contact.findFirst({
       where: {
+        tenantId,
         identificationType: data.identificationType,
         identificationNumber: data.identificationNumber,
         deletedAt: null,
@@ -142,10 +152,11 @@ export async function findOrCreateContact(
     }
   }
 
-  // Try to find by corporate UEN
+  // Try to find by corporate UEN within tenant
   if (data.corporateUen) {
     const existing = await prisma.contact.findFirst({
       where: {
+        tenantId,
         corporateUen: data.corporateUen,
         deletedAt: null,
       },
@@ -157,11 +168,14 @@ export async function findOrCreateContact(
   }
 
   // Create new contact
-  const contact = await createContact(data, userId);
+  const contact = await createContact(data, params);
   return { contact, isNew: true };
 }
 
-export async function searchContacts(params: ContactSearchInput): Promise<{
+export async function searchContacts(
+  params: ContactSearchInput,
+  tenantId?: string
+): Promise<{
   contacts: Contact[];
   total: number;
   page: number;
@@ -171,6 +185,11 @@ export async function searchContacts(params: ContactSearchInput): Promise<{
   const where: Prisma.ContactWhereInput = {
     deletedAt: null,
   };
+
+  // Apply tenant filter if provided
+  if (tenantId) {
+    where.tenantId = tenantId;
+  }
 
   if (params.query) {
     const searchTerm = params.query.trim();
@@ -219,10 +238,15 @@ export async function searchContacts(params: ContactSearchInput): Promise<{
   };
 }
 
-export async function getContactById(id: string): Promise<Contact | null> {
-  return prisma.contact.findFirst({
-    where: { id, deletedAt: null },
-  });
+export async function getContactById(
+  id: string,
+  tenantId?: string
+): Promise<Contact | null> {
+  const where: Prisma.ContactWhereInput = { id, deletedAt: null };
+  if (tenantId) {
+    where.tenantId = tenantId;
+  }
+  return prisma.contact.findFirst({ where });
 }
 
 export async function linkContactToCompany(
@@ -231,6 +255,20 @@ export async function linkContactToCompany(
   relationship: string,
   isPrimary: boolean = false
 ): Promise<void> {
+  // Validate both contact and company belong to the same tenant
+  const [contact, company] = await Promise.all([
+    prisma.contact.findUnique({ where: { id: contactId }, select: { tenantId: true } }),
+    prisma.company.findUnique({ where: { id: companyId }, select: { tenantId: true } }),
+  ]);
+
+  if (!contact || !company) {
+    throw new Error('Contact or company not found');
+  }
+
+  if (contact.tenantId !== company.tenantId) {
+    throw new Error('Contact and company must belong to the same tenant');
+  }
+
   await prisma.companyContact.upsert({
     where: {
       companyId_contactId_relationship: {
@@ -254,8 +292,21 @@ export async function linkContactToCompany(
 export async function unlinkContactFromCompany(
   contactId: string,
   companyId: string,
-  relationship: string
+  relationship: string,
+  tenantId?: string
 ): Promise<void> {
+  // If tenantId provided, validate the company belongs to the tenant
+  if (tenantId) {
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { tenantId: true },
+    });
+
+    if (!company || company.tenantId !== tenantId) {
+      throw new Error('Company not found or access denied');
+    }
+  }
+
   await prisma.companyContact.delete({
     where: {
       companyId_contactId_relationship: {
@@ -267,13 +318,28 @@ export async function unlinkContactFromCompany(
   });
 }
 
-export async function getContactsByCompany(companyId: string): Promise<
+export async function getContactsByCompany(
+  companyId: string,
+  tenantId?: string
+): Promise<
   Array<{
     contact: Contact;
     relationship: string;
     isPrimary: boolean;
   }>
 > {
+  // If tenantId provided, validate the company belongs to the tenant
+  if (tenantId) {
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { tenantId: true },
+    });
+
+    if (!company || company.tenantId !== tenantId) {
+      throw new Error('Company not found or access denied');
+    }
+  }
+
   const relations = await prisma.companyContact.findMany({
     where: { companyId },
     include: {

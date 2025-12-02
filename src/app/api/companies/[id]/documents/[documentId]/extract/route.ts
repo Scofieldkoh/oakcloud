@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
-import { requireRole } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { extractBizFileData, processBizFileExtraction } from '@/services/bizfile.service';
 
@@ -15,14 +16,20 @@ export async function POST(
   { params }: { params: Promise<{ id: string; documentId: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
     const { id: companyId, documentId } = await params;
 
-    // Get document
+    // Check permission
+    await requirePermission(session, 'document', 'update', companyId);
+
+    // Get document with company info for tenantId
     const document = await prisma.document.findFirst({
       where: {
         id: documentId,
         companyId,
+      },
+      include: {
+        company: { select: { tenantId: true } },
       },
     });
 
@@ -57,7 +64,12 @@ export async function POST(
       const extractedData = await extractBizFileData(pdfText);
 
       // Process and save extracted data
-      const result = await processBizFileExtraction(documentId, extractedData, session.id);
+      const result = await processBizFileExtraction(
+        documentId,
+        extractedData,
+        session.id,
+        document.company.tenantId
+      );
 
       return NextResponse.json({
         success: true,
@@ -99,8 +111,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string; documentId: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
     const { id: companyId, documentId } = await params;
+
+    // Check permission
+    await requirePermission(session, 'document', 'read', companyId);
 
     // Get document
     const document = await prisma.document.findFirst({

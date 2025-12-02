@@ -21,7 +21,17 @@
       "Bash(dir /s node_modules)",
       "Bash(dir /s /b)",
       "mcp__ide__getDiagnostics",
-      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\docs\\current_implementation.md\")"
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\docs\\current_implementation.md\")",
+      "Bash(mkdir:*)",
+      "Bash(npx prisma db execute:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx tsx:*)",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\prisma\\migrations\\add_tenant_to_existing_data.sql\")",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\prisma\\migrate-tenant.ts\")",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run lint)"
     ],
     "deny": [],
     "ask": []

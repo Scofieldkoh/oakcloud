@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       role: user.role,
+      tenantId: user.tenantId,
       companyId: user.companyId,
     });
 
@@ -68,7 +69,9 @@ export async function POST(request: NextRequest) {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        tenantId: user.tenantId,
       },
+      mustChangePassword: user.mustChangePassword,
       message: 'Login successful',
     });
   } catch (error) {

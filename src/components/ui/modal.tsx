@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -39,25 +39,29 @@ export function Modal({
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [wasOpen, setWasOpen] = useState(false);
 
-  // Handle escape key
+  // Handle escape key - use stable callback
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape' && closeOnEscape) {
-        onClose();
+        onCloseRef.current();
       }
     },
-    [onClose, closeOnEscape]
+    [closeOnEscape]
   );
 
   // Handle overlay click
   const handleOverlayClick = useCallback(
     (e: React.MouseEvent) => {
       if (e.target === overlayRef.current && closeOnOverlayClick) {
-        onClose();
+        onCloseRef.current();
       }
     },
-    [onClose, closeOnOverlayClick]
+    [closeOnOverlayClick]
   );
 
   // Add/remove event listeners and body scroll lock
@@ -66,15 +70,20 @@ export function Modal({
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
 
-      // Focus trap - focus the modal content
-      contentRef.current?.focus();
+      // Focus modal content only on initial open, not on re-renders
+      if (!wasOpen) {
+        contentRef.current?.focus();
+        setWasOpen(true);
+      }
+    } else {
+      setWasOpen(false);
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
     };
-  }, [isOpen, handleEscape]);
+  }, [isOpen, handleEscape, wasOpen]);
 
   if (!isOpen) return null;
 

@@ -65,7 +65,6 @@ export interface SessionWithTenant extends SessionUser {
     name: string;
     slug: string;
     status: TenantStatus;
-    plan: string;
   } | null;
 }
 
@@ -191,7 +190,6 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
           name: true,
           slug: true,
           status: true,
-          plan: true,
         },
       },
     },

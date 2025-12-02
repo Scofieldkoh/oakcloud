@@ -104,7 +104,7 @@ export async function createTenant(
       maxStorageMb: data.maxStorageMb || 10240,
       logoUrl: data.logoUrl,
       primaryColor: data.primaryColor || '#294d44',
-      settings: data.settings ? (data.settings as Prisma.InputJsonValue) : null,
+      settings: data.settings ? (data.settings as Prisma.InputJsonValue) : Prisma.JsonNull,
     },
   });
 
@@ -408,6 +408,7 @@ export async function inviteUserToTenant(
       tenantId,
       companyId: data.companyId,
       isActive: true,
+      mustChangePassword: true, // Force password change on first login
     },
   });
 

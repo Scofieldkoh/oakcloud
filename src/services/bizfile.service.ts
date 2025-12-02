@@ -324,13 +324,14 @@ function buildFullAddress(addr: {
 export async function processBizFileExtraction(
   documentId: string,
   extractedData: ExtractedBizFileData,
-  userId: string
+  userId: string,
+  tenantId: string
 ): Promise<{ companyId: string; created: boolean }> {
   const { entityDetails } = extractedData;
 
-  // Check if company exists
-  let company = await prisma.company.findUnique({
-    where: { uen: entityDetails.uen },
+  // Check if company exists within tenant
+  let company = await prisma.company.findFirst({
+    where: { tenantId, uen: entityDetails.uen },
   });
 
   const isNewCompany = !company;
@@ -339,8 +340,9 @@ export async function processBizFileExtraction(
   const result = await prisma.$transaction(async (tx) => {
     // Upsert company
     company = await tx.company.upsert({
-      where: { uen: entityDetails.uen },
+      where: { tenantId_uen: { tenantId, uen: entityDetails.uen } },
       create: {
+        tenantId,
         uen: entityDetails.uen,
         name: entityDetails.name,
         entityType: mapEntityType(entityDetails.entityType),
@@ -522,16 +524,19 @@ export async function processBizFileExtraction(
       const lastName = nameParts.slice(1).join(' ');
 
       // Find or create contact
-      const { contact } = await findOrCreateContact({
-        contactType: 'INDIVIDUAL',
-        firstName,
-        lastName,
-        identificationType: mapIdentificationType(officer.identificationType) || undefined,
-        identificationNumber: officer.identificationNumber,
-        nationality: officer.nationality,
-        addressLine1: officer.address,
-        country: 'SINGAPORE',
-      });
+      const { contact } = await findOrCreateContact(
+        {
+          contactType: 'INDIVIDUAL',
+          firstName,
+          lastName,
+          identificationType: mapIdentificationType(officer.identificationType) || undefined,
+          identificationNumber: officer.identificationNumber,
+          nationality: officer.nationality,
+          addressLine1: officer.address,
+          country: 'SINGAPORE',
+        },
+        { tenantId, userId }
+      );
 
       // Create officer record
       await prisma.companyOfficer.create({
@@ -587,7 +592,7 @@ export async function processBizFileExtraction(
         };
       }
 
-      const { contact } = await findOrCreateContact(contactData);
+      const { contact } = await findOrCreateContact(contactData, { tenantId, userId });
 
       await prisma.companyShareholder.create({
         data: {
@@ -615,11 +620,14 @@ export async function processBizFileExtraction(
   if (extractedData.charges?.length) {
     for (const charge of extractedData.charges) {
       // Find or create charge holder contact
-      const { contact: chargeHolder } = await findOrCreateContact({
-        contactType: 'CORPORATE',
-        corporateName: charge.chargeHolderName,
-        country: 'SINGAPORE',
-      });
+      const { contact: chargeHolder } = await findOrCreateContact(
+        {
+          contactType: 'CORPORATE',
+          corporateName: charge.chargeHolderName,
+          country: 'SINGAPORE',
+        },
+        { tenantId, userId }
+      );
 
       await prisma.companyCharge.create({
         data: {

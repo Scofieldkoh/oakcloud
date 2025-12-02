@@ -10,6 +10,7 @@ import { CompanyFilters, type FilterValues } from '@/components/companies/compan
 import { Pagination } from '@/components/companies/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
+import type { EntityType, CompanyStatus } from '@prisma/client';
 
 export default function CompaniesPage() {
   const router = useRouter();
@@ -24,8 +25,8 @@ export default function CompaniesPage() {
       limit: parseInt(searchParams.get('limit') || '20', 10),
       sortBy: searchParams.get('sortBy') || 'updatedAt',
       sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc',
-      entityType: searchParams.get('entityType') || undefined,
-      status: searchParams.get('status') || undefined,
+      entityType: (searchParams.get('entityType') || undefined) as EntityType | undefined,
+      status: (searchParams.get('status') || undefined) as CompanyStatus | undefined,
       hasCharges: searchParams.get('hasCharges') === 'true' ? true :
                   searchParams.get('hasCharges') === 'false' ? false : undefined,
     };

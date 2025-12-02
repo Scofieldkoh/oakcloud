@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { requireRole, canAccessCompany } from '@/lib/auth';
+import { requireAuth, canAccessCompany } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 
@@ -14,8 +15,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPANY_USER']);
+    const session = await requireAuth();
     const { id } = await params;
+
+    // Check permission
+    await requirePermission(session, 'document', 'read', id);
 
     if (!canAccessCompany(session, id)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -71,8 +75,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
     const { id: companyId } = await params;
+
+    // Check permission
+    await requirePermission(session, 'document', 'create', companyId);
 
     // Verify company exists
     const company = await prisma.company.findUnique({
@@ -143,6 +150,7 @@ export async function POST(
     // Create document record
     const document = await prisma.document.create({
       data: {
+        tenantId: company.tenantId,
         companyId,
         uploadedById: session.id,
         documentType,

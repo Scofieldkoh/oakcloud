@@ -34,12 +34,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            style={{
-              fontSize: '0.75rem',
-              fontWeight: 500,
-              color: 'rgba(255, 255, 255, 0.7)',
-              display: 'block',
-            }}
+            className="text-xs font-medium text-text-secondary block"
           >
             {label}
           </label>
@@ -51,12 +46,12 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               left="3"
               top="50%"
               transform="translateY(-50%)"
-              color="whiteAlpha.500"
               pointerEvents="none"
               display="flex"
               alignItems="center"
               justifyContent="center"
               zIndex="1"
+              className="text-text-muted"
               style={{ width: config.iconSize, height: config.iconSize }}
             >
               {leftIcon}
@@ -71,18 +66,17 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             px={config.px}
             pl={leftIcon ? config.iconPadding : config.px}
             pr={(rightIcon || isPassword) ? config.iconPadding : config.px}
-            bg="background.secondary"
             borderWidth="1px"
-            borderColor={error ? 'red.500' : 'whiteAlpha.100'}
             borderRadius="lg"
-            color="white"
-            _placeholder={{ color: 'whiteAlpha.400' }}
-            _hover={{ borderColor: error ? 'red.500' : 'whiteAlpha.200' }}
-            _focus={{
-              borderColor: error ? 'red.500' : 'oak.400',
-              boxShadow: 'none',
-              outline: 'none'
-            }}
+            className={`
+              bg-background-primary dark:bg-background-secondary
+              border-border-primary
+              text-text-primary
+              placeholder:text-text-muted
+              hover:border-border-secondary
+              focus:border-oak-primary focus:ring-1 focus:ring-oak-primary focus:outline-none
+              ${error ? 'border-red-500 hover:border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+            `}
             aria-invalid={error ? 'true' : 'false'}
             aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
             {...props}
@@ -93,18 +87,8 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               onClick={() => setShowPassword(!showPassword)}
               tabIndex={-1}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center bg-transparent border-none cursor-pointer text-text-muted hover:text-text-secondary transition-colors"
               style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'rgba(255, 255, 255, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
                 width: config.iconSize,
                 height: config.iconSize,
               }}
@@ -118,12 +102,12 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               right="3"
               top="50%"
               transform="translateY(-50%)"
-              color="whiteAlpha.500"
               pointerEvents="none"
               display="flex"
               alignItems="center"
               justifyContent="center"
               zIndex="1"
+              className="text-text-muted"
               style={{ width: config.iconSize, height: config.iconSize }}
             >
               {rightIcon}
@@ -144,7 +128,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           </Box>
         )}
         {hint && !error && (
-          <Box id={`${inputId}-hint`} fontSize="xs" color="whiteAlpha.500">
+          <Box id={`${inputId}-hint`} fontSize="xs" className="text-text-muted">
             {hint}
           </Box>
         )}

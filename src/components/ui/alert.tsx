@@ -75,7 +75,7 @@ export function Alert({ variant = 'info', title, children, onClose, className, c
           aria-label="Dismiss"
           p="1"
           borderRadius="sm"
-          _hover={{ bg: 'whiteAlpha.100' }}
+          className="hover:bg-black/10 dark:hover:bg-white/10"
         >
           <X size={14} />
         </IconButton>

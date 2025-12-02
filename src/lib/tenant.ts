@@ -165,8 +165,7 @@ export function canAccessTenant(session: SessionUser, tenantId: string): boolean
   }
 
   // User must belong to the tenant
-  // Note: We need to fetch tenantId from user if not in session
-  return false; // Will be properly checked after auth update
+  return session.tenantId === tenantId;
 }
 
 /**
@@ -182,8 +181,8 @@ export function isTenantAdmin(session: SessionUser): boolean {
 export function canManageTenant(session: SessionUser, tenantId: string): boolean {
   if (session.role === 'SUPER_ADMIN') return true;
   if (session.role !== 'TENANT_ADMIN') return false;
-  // Additional check needed: user's tenantId === tenantId
-  return true;
+  // User must belong to the tenant they're managing
+  return session.tenantId === tenantId;
 }
 
 // ============================================================================

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 import { createCompanySchema, companySearchSchema } from '@/lib/validations/company';
 import { createCompany, searchCompanies, getCompanyByUen } from '@/services/company.service';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'COMPANY_ADMIN']);
+    const session = await requireAuth();
+
+    // Check read permission
+    await requirePermission(session, 'company', 'read');
 
     const { searchParams } = new URL(request.url);
 
@@ -27,12 +31,31 @@ export async function GET(request: NextRequest) {
       sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
     });
 
-    // Company Admin can only see their own company
-    if (session.role === 'COMPANY_ADMIN' && session.companyId) {
-      params.query = session.companyId;
+    // Company-scoped users can only see their own company
+    if (session.role === 'COMPANY_ADMIN' || session.role === 'COMPANY_USER') {
+      if (session.companyId) {
+        // Return only their assigned company
+        const { getCompanyById } = await import('@/services/company.service');
+        const company = await getCompanyById(session.companyId, session.tenantId || undefined);
+        return NextResponse.json({
+          companies: company ? [company] : [],
+          total: company ? 1 : 0,
+          page: 1,
+          limit: params.limit,
+          totalPages: 1,
+        });
+      }
+      // No company assigned - return empty
+      return NextResponse.json({
+        companies: [],
+        total: 0,
+        page: 1,
+        limit: params.limit,
+        totalPages: 0,
+      });
     }
 
-    const result = await searchCompanies(params);
+    const result = await searchCompanies(params, session.tenantId || undefined);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -40,7 +63,7 @@ export async function GET(request: NextRequest) {
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -51,13 +74,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
+
+    // Check create permission
+    await requirePermission(session, 'company', 'create');
 
     const body = await request.json();
     const data = createCompanySchema.parse(body);
 
-    // Check if UEN already exists
-    const existing = await getCompanyByUen(data.uen, true);
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
+    // Check if UEN already exists within tenant
+    const existing = await getCompanyByUen(data.uen, session.tenantId);
     if (existing) {
       return NextResponse.json(
         { error: 'A company with this UEN already exists' },
@@ -65,7 +95,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const company = await createCompany(data, session.id);
+    const company = await createCompany(data, { tenantId: session.tenantId, userId: session.id });
 
     return NextResponse.json(company, { status: 201 });
   } catch (error) {
@@ -73,7 +103,7 @@ export async function POST(request: NextRequest) {
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       return NextResponse.json({ error: error.message }, { status: 400 });

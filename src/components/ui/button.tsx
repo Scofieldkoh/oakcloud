@@ -20,8 +20,18 @@ export interface ButtonProps {
 
 const variantMap = {
   primary: { bg: 'oak.500', color: 'white', _hover: { bg: 'oak.600' } },
-  secondary: { bg: 'background.elevated', color: 'white', borderWidth: '1px', borderColor: 'whiteAlpha.200', _hover: { bg: 'background.tertiary' } },
-  ghost: { bg: 'transparent', color: 'white', _hover: { bg: 'whiteAlpha.100' } },
+  secondary: {
+    bg: 'var(--bg-elevated)',
+    color: 'var(--text-primary)',
+    borderWidth: '1px',
+    borderColor: 'var(--border-primary)',
+    _hover: { bg: 'var(--bg-tertiary)' }
+  },
+  ghost: {
+    bg: 'transparent',
+    color: 'var(--text-primary)',
+    _hover: { bg: 'var(--bg-tertiary)' }
+  },
   danger: { bg: 'red.600', color: 'white', _hover: { bg: 'red.700' } },
 };
 

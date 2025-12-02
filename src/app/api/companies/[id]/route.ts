@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole, canAccessCompany } from '@/lib/auth';
+import { requireAuth, canAccessCompany } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
+import { prisma } from '@/lib/prisma';
 import { updateCompanySchema, deleteCompanySchema } from '@/lib/validations/company';
 import {
   getCompanyById,
@@ -14,10 +16,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPANY_USER']);
+    const session = await requireAuth();
     const { id } = await params;
 
-    // Check access
+    // Check permission - RBAC will handle SUPER_ADMIN bypass
+    await requirePermission(session, 'company', 'read', id);
+
+    // Additional check for company-scoped users
     if (!canAccessCompany(session, id)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -25,7 +30,11 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const full = searchParams.get('full') === 'true';
 
-    const company = full ? await getCompanyFullDetails(id) : await getCompanyById(id);
+    // Pass tenantId for non-SUPER_ADMIN users to enforce tenant scoping
+    const tenantId = session.role === 'SUPER_ADMIN' ? undefined : session.tenantId || undefined;
+    const company = full
+      ? await getCompanyFullDetails(id, tenantId)
+      : await getCompanyById(id, tenantId);
 
     if (!company) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
@@ -37,7 +46,7 @@ export async function GET(
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
@@ -50,13 +59,40 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
     const { id } = await params;
+
+    // Check permission - allows SUPER_ADMIN, TENANT_ADMIN, and COMPANY_ADMIN (for their company)
+    await requirePermission(session, 'company', 'update', id);
+
+    // Additional check for company-scoped users
+    if (session.role !== 'SUPER_ADMIN' && session.role !== 'TENANT_ADMIN' && !canAccessCompany(session, id)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const body = await request.json();
     const data = updateCompanySchema.parse({ ...body, id });
 
-    const company = await updateCompany(data, session.id, body.reason);
+    // Get the company with tenant validation
+    const whereClause: { id: string; tenantId?: string } = { id };
+    if (session.role !== 'SUPER_ADMIN' && session.tenantId) {
+      whereClause.tenantId = session.tenantId;
+    }
+
+    const existingCompany = await prisma.company.findUnique({
+      where: whereClause,
+      select: { tenantId: true },
+    });
+
+    if (!existingCompany) {
+      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+    }
+
+    const company = await updateCompany(
+      data,
+      { tenantId: existingCompany.tenantId, userId: session.id },
+      body.reason
+    );
 
     return NextResponse.json(company);
   } catch (error) {
@@ -64,7 +100,7 @@ export async function PATCH(
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       if (error.message === 'Company not found') {
@@ -81,13 +117,35 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
     const { id } = await params;
+
+    // Check permission - allows SUPER_ADMIN and TENANT_ADMIN
+    await requirePermission(session, 'company', 'delete', id);
 
     const body = await request.json();
     const data = deleteCompanySchema.parse({ id, reason: body.reason });
 
-    const company = await deleteCompany(data.id, session.id, data.reason);
+    // Get the company with tenant validation
+    const whereClause: { id: string; tenantId?: string } = { id };
+    if (session.role !== 'SUPER_ADMIN' && session.tenantId) {
+      whereClause.tenantId = session.tenantId;
+    }
+
+    const existingCompany = await prisma.company.findUnique({
+      where: whereClause,
+      select: { tenantId: true },
+    });
+
+    if (!existingCompany) {
+      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+    }
+
+    const company = await deleteCompany(
+      data.id,
+      { tenantId: existingCompany.tenantId, userId: session.id },
+      data.reason
+    );
 
     return NextResponse.json(company);
   } catch (error) {
@@ -95,7 +153,7 @@ export async function DELETE(
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       if (error.message === 'Company not found') {
@@ -112,14 +170,35 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
     const { id } = await params;
+
+    // Check permission for restore (treated as update)
+    await requirePermission(session, 'company', 'update', id);
 
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
     if (action === 'restore') {
-      const company = await restoreCompany(id, session.id);
+      // Get the company with tenant validation
+      const whereClause: { id: string; tenantId?: string } = { id };
+      if (session.role !== 'SUPER_ADMIN' && session.tenantId) {
+        whereClause.tenantId = session.tenantId;
+      }
+
+      const existingCompany = await prisma.company.findUnique({
+        where: whereClause,
+        select: { tenantId: true },
+      });
+
+      if (!existingCompany) {
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+      }
+
+      const company = await restoreCompany(
+        id,
+        { tenantId: existingCompany.tenantId, userId: session.id }
+      );
       return NextResponse.json(company);
     }
 
@@ -129,7 +208,7 @@ export async function PUT(
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       if (error.message === 'Company not found') {

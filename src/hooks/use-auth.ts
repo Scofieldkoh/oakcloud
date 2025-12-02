@@ -9,7 +9,8 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER';
+  role: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER';
+  tenantId?: string | null;
   companyId?: string | null;
 }
 
@@ -30,7 +31,12 @@ async function fetchSession(): Promise<User | null> {
   return data.user;
 }
 
-async function login(credentials: LoginCredentials): Promise<User> {
+interface LoginResponse {
+  user: User;
+  mustChangePassword: boolean;
+}
+
+async function login(credentials: LoginCredentials): Promise<LoginResponse> {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -43,7 +49,7 @@ async function login(credentials: LoginCredentials): Promise<User> {
   }
 
   const data = await response.json();
-  return data.user;
+  return { user: data.user, mustChangePassword: data.mustChangePassword };
 }
 
 async function logout(): Promise<void> {
@@ -71,9 +77,15 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: login,
-    onSuccess: (user) => {
-      queryClient.setQueryData(['session'], user);
-      router.push('/companies');
+    onSuccess: (response) => {
+      queryClient.setQueryData(['session'], response.user);
+
+      // Redirect to password change if required
+      if (response.mustChangePassword) {
+        router.push('/change-password?forced=true');
+      } else {
+        router.push('/companies');
+      }
     },
   });
 }

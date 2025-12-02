@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, createContext, useContext, type ReactNode } from 'react';
+import { useState, createContext, useContext, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
-import { useClickOutside } from '@/hooks/use-click-outside';
 import { cn } from '@/lib/utils';
 
 // Context for sharing dropdown state
@@ -10,6 +10,7 @@ interface DropdownContextValue {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   close: () => void;
+  triggerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const DropdownContext = createContext<DropdownContextValue | null>(null);
@@ -30,13 +31,45 @@ interface DropdownProps {
 
 export function Dropdown({ children, className }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const ref = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const close = () => setIsOpen(false);
+  const close = useCallback(() => setIsOpen(false), []);
+
+  // Handle click outside
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      // Check if click is outside both the container and any portal-rendered menu
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        !(target as Element).closest?.('[data-dropdown-menu]')
+      ) {
+        close();
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        close();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, close]);
 
   return (
-    <DropdownContext.Provider value={{ isOpen, setIsOpen, close }}>
-      <div ref={ref} className={cn('relative', className)}>
+    <DropdownContext.Provider value={{ isOpen, setIsOpen, close, triggerRef }}>
+      <div ref={containerRef} className={cn('relative', className)}>
         {children}
       </div>
     </DropdownContext.Provider>
@@ -51,39 +84,44 @@ interface DropdownTriggerProps {
 }
 
 export function DropdownTrigger({ children, className, asChild }: DropdownTriggerProps) {
-  const { isOpen, setIsOpen } = useDropdownContext();
+  const { isOpen, setIsOpen, triggerRef } = useDropdownContext();
 
-  const handleClick = () => setIsOpen(!isOpen);
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
 
   if (asChild) {
     // Clone the child and add onClick
     return (
-      <span onClick={handleClick} className={cn('cursor-pointer', className)}>
+      <div ref={triggerRef} onClick={handleClick} className={cn('cursor-pointer inline-flex', className)}>
         {children}
-      </span>
+      </div>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className={cn(
-        'inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md',
-        'bg-background-elevated border border-border-primary',
-        'hover:bg-background-tertiary text-text-primary',
-        'transition-colors',
-        className
-      )}
-    >
-      {children}
-      <ChevronDown
+    <div ref={triggerRef}>
+      <button
+        type="button"
+        onClick={handleClick}
         className={cn(
-          'w-4 h-4 text-text-muted transition-transform',
-          isOpen && 'rotate-180'
+          'inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md',
+          'bg-background-elevated border border-border-primary',
+          'hover:bg-background-tertiary text-text-primary',
+          'transition-colors',
+          className
         )}
-      />
-    </button>
+      >
+        {children}
+        <ChevronDown
+          className={cn(
+            'w-4 h-4 text-text-muted transition-transform',
+            isOpen && 'rotate-180'
+          )}
+        />
+      </button>
+    </div>
   );
 }
 
@@ -101,24 +139,72 @@ export function DropdownMenu({
   align = 'right',
   sideOffset = 4,
 }: DropdownMenuProps) {
-  const { isOpen } = useDropdownContext();
+  const { isOpen, triggerRef } = useDropdownContext();
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [mounted, setMounted] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  if (!isOpen) return null;
+  // Handle client-side mounting for portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
+  // Calculate position when opening
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const menuWidth = 180; // min-width of the menu
+
+      let left: number;
+      if (align === 'left') {
+        left = rect.left;
+      } else {
+        left = rect.right - menuWidth;
+      }
+
+      // Ensure menu doesn't go off-screen horizontally
+      if (left < 8) {
+        left = 8;
+      } else if (left + menuWidth > window.innerWidth - 8) {
+        left = window.innerWidth - menuWidth - 8;
+      }
+
+      // Calculate vertical position - prefer below, but flip if not enough space
+      let top = rect.bottom + sideOffset;
+      const menuHeight = menuRef.current?.offsetHeight || 150; // Estimate if not yet rendered
+
+      if (top + menuHeight > window.innerHeight - 8) {
+        // Not enough space below, try above
+        top = rect.top - menuHeight - sideOffset;
+        if (top < 8) {
+          // Not enough space above either, position at bottom of viewport
+          top = window.innerHeight - menuHeight - 8;
+        }
+      }
+
+      setPosition({ top, left });
+    }
+  }, [isOpen, triggerRef, align, sideOffset]);
+
+  if (!isOpen || !mounted) return null;
+
+  const menuContent = (
     <div
+      ref={menuRef}
+      data-dropdown-menu
       className={cn(
-        'absolute z-50 min-w-[180px] py-1.5 rounded-xl',
+        'fixed z-[100] min-w-[180px] py-1.5 rounded-xl',
         'bg-background-elevated border border-border-primary shadow-elevation-2',
         'animate-fade-in',
-        align === 'left' ? 'left-0' : 'right-0',
         className
       )}
-      style={{ marginTop: sideOffset }}
+      style={{ top: position.top, left: position.left }}
     >
       {children}
     </div>
   );
+
+  return createPortal(menuContent, document.body);
 }
 
 // Dropdown menu item
