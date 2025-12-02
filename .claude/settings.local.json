@@ -31,7 +31,8 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npm run db:seed:*)"
     ],
     "deny": [],
     "ask": []

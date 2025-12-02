@@ -1,12 +1,13 @@
 /**
  * User Company Assignment Service
  *
- * Handles multi-company user assignments with access levels.
+ * Handles multi-company user assignments.
+ * Note: Permissions are controlled through role assignments (UserRoleAssignment),
+ * not through this table. This service only tracks WHICH companies a user can access.
  */
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
-import type { CompanyAccessLevel } from '@prisma/client';
 
 // ============================================================================
 // Types
@@ -16,7 +17,6 @@ export interface UserCompanyAssignment {
   id: string;
   userId: string;
   companyId: string;
-  accessLevel: CompanyAccessLevel;
   isPrimary: boolean;
   createdAt: Date;
   company: {
@@ -29,12 +29,10 @@ export interface UserCompanyAssignment {
 export interface AssignCompanyInput {
   userId: string;
   companyId: string;
-  accessLevel?: CompanyAccessLevel;
   isPrimary?: boolean;
 }
 
 export interface UpdateAssignmentInput {
-  accessLevel?: CompanyAccessLevel;
   isPrimary?: boolean;
 }
 
@@ -78,7 +76,7 @@ export async function assignUserToCompany(
   tenantId: string,
   assignedByUserId: string
 ): Promise<UserCompanyAssignment> {
-  const { userId, companyId, accessLevel = 'VIEW', isPrimary = false } = input;
+  const { userId, companyId, isPrimary = false } = input;
 
   // Verify user belongs to tenant
   const user = await prisma.user.findUnique({
@@ -126,7 +124,6 @@ export async function assignUserToCompany(
     data: {
       userId,
       companyId,
-      accessLevel,
       isPrimary,
     },
     include: {
@@ -152,7 +149,6 @@ export async function assignUserToCompany(
       targetUserId: userId,
       companyId,
       companyName: company.name,
-      accessLevel,
       isPrimary,
     },
   });
@@ -219,7 +215,6 @@ export async function updateCompanyAssignment(
     entityId: assignmentId,
     changeSource: 'MANUAL',
     changes: {
-      ...(input.accessLevel && { accessLevel: { old: assignment.accessLevel, new: input.accessLevel } }),
       ...(input.isPrimary !== undefined && { isPrimary: { old: assignment.isPrimary, new: input.isPrimary } }),
     },
   });
@@ -299,46 +294,34 @@ export async function removeCompanyAssignment(
 
 export async function checkUserCompanyAccess(
   userId: string,
-  companyId: string,
-  requiredLevel?: CompanyAccessLevel
-): Promise<{ hasAccess: boolean; accessLevel: CompanyAccessLevel | null }> {
+  companyId: string
+): Promise<boolean> {
+  // Check if user has explicit company assignment
   const assignment = await prisma.userCompanyAssignment.findUnique({
     where: { userId_companyId: { userId, companyId } },
   });
 
-  if (!assignment) {
-    // Check if user has the legacy single-company assignment
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { companyId: true, role: true },
-    });
-
-    // Tenant admins have access to all companies in their tenant
-    if (user?.role === 'TENANT_ADMIN') {
-      return { hasAccess: true, accessLevel: 'MANAGE' };
-    }
-
-    // Legacy single-company assignment
-    if (user?.companyId === companyId) {
-      return { hasAccess: true, accessLevel: 'VIEW' };
-    }
-
-    return { hasAccess: false, accessLevel: null };
+  if (assignment) {
+    return true;
   }
 
-  // Check if access level is sufficient
-  if (requiredLevel) {
-    const levels: CompanyAccessLevel[] = ['VIEW', 'EDIT', 'MANAGE'];
-    const userLevelIndex = levels.indexOf(assignment.accessLevel);
-    const requiredLevelIndex = levels.indexOf(requiredLevel);
+  // Check if user has the legacy single-company assignment
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { companyId: true, role: true },
+  });
 
-    return {
-      hasAccess: userLevelIndex >= requiredLevelIndex,
-      accessLevel: assignment.accessLevel,
-    };
+  // SUPER_ADMIN and TENANT_ADMIN have access to all companies in their tenant
+  if (user?.role === 'SUPER_ADMIN' || user?.role === 'TENANT_ADMIN') {
+    return true;
   }
 
-  return { hasAccess: true, accessLevel: assignment.accessLevel };
+  // Legacy single-company assignment
+  if (user?.companyId === companyId) {
+    return true;
+  }
+
+  return false;
 }
 
 // ============================================================================
@@ -348,21 +331,21 @@ export async function checkUserCompanyAccess(
 export async function getUserAccessibleCompanies(
   userId: string,
   tenantId: string
-): Promise<Array<{ id: string; name: string; uen: string; accessLevel: CompanyAccessLevel }>> {
+): Promise<Array<{ id: string; name: string; uen: string }>> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { role: true },
   });
 
-  // Tenant admins can access all companies
-  if (user?.role === 'TENANT_ADMIN') {
+  // SUPER_ADMIN and TENANT_ADMIN can access all companies
+  if (user?.role === 'SUPER_ADMIN' || user?.role === 'TENANT_ADMIN') {
     const companies = await prisma.company.findMany({
       where: { tenantId, deletedAt: null },
       select: { id: true, name: true, uen: true },
       orderBy: { name: 'asc' },
     });
 
-    return companies.map((c) => ({ ...c, accessLevel: 'MANAGE' as CompanyAccessLevel }));
+    return companies;
   }
 
   // Get assigned companies
@@ -386,6 +369,5 @@ export async function getUserAccessibleCompanies(
     id: a.company.id,
     name: a.company.name,
     uen: a.company.uen,
-    accessLevel: a.accessLevel,
   }));
 }

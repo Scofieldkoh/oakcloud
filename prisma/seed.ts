@@ -90,9 +90,298 @@ async function main() {
   console.log(`  Tenant Admin: ${tenantAdmin.email}\n`);
 
   // =========================================================================
-  // STEP 3: Create sample companies
+  // STEP 3: Seed permissions
   // =========================================================================
-  console.log('Step 3: Creating sample companies...');
+  console.log('Step 3: Seeding permissions...');
+
+  const RESOURCES = [
+    'tenant',
+    'user',
+    'role',
+    'company',
+    'contact',
+    'document',
+    'officer',
+    'shareholder',
+    'audit_log',
+  ];
+
+  const ACTIONS = [
+    'create',
+    'read',
+    'update',
+    'delete',
+    'export',
+    'import',
+    'manage',
+  ];
+
+  const PERMISSION_DESCRIPTIONS: Record<string, Record<string, string>> = {
+    tenant: {
+      create: 'Create new tenants',
+      read: 'View tenant information',
+      update: 'Update tenant settings',
+      delete: 'Delete tenants',
+      export: 'Export tenant data',
+      import: 'Import tenant data',
+      manage: 'Full tenant management',
+    },
+    user: {
+      create: 'Invite new users',
+      read: 'View user profiles',
+      update: 'Update user information',
+      delete: 'Remove users',
+      export: 'Export user data',
+      import: 'Import users',
+      manage: 'Full user management',
+    },
+    role: {
+      create: 'Create custom roles',
+      read: 'View roles and permissions',
+      update: 'Update role permissions',
+      delete: 'Delete custom roles',
+      export: 'Export role definitions',
+      import: 'Import role definitions',
+      manage: 'Full role management',
+    },
+    company: {
+      create: 'Create new companies',
+      read: 'View company information',
+      update: 'Update company details',
+      delete: 'Delete companies',
+      export: 'Export company data',
+      import: 'Import company data',
+      manage: 'Full company management',
+    },
+    contact: {
+      create: 'Create new contacts',
+      read: 'View contact information',
+      update: 'Update contact details',
+      delete: 'Delete contacts',
+      export: 'Export contact data',
+      import: 'Import contact data',
+      manage: 'Full contact management',
+    },
+    document: {
+      create: 'Upload documents',
+      read: 'View and download documents',
+      update: 'Update document metadata',
+      delete: 'Delete documents',
+      export: 'Export documents',
+      import: 'Import documents',
+      manage: 'Full document management',
+    },
+    officer: {
+      create: 'Add company officers',
+      read: 'View officer information',
+      update: 'Update officer details',
+      delete: 'Remove officers',
+      export: 'Export officer data',
+      import: 'Import officer data',
+      manage: 'Full officer management',
+    },
+    shareholder: {
+      create: 'Add shareholders',
+      read: 'View shareholder information',
+      update: 'Update shareholder details',
+      delete: 'Remove shareholders',
+      export: 'Export shareholder data',
+      import: 'Import shareholder data',
+      manage: 'Full shareholder management',
+    },
+    audit_log: {
+      create: 'Create audit entries',
+      read: 'View audit logs',
+      update: 'Update audit entries',
+      delete: 'Delete audit entries',
+      export: 'Export audit logs',
+      import: 'Import audit logs',
+      manage: 'Full audit management',
+    },
+  };
+
+  let permissionCount = 0;
+  for (const resource of RESOURCES) {
+    for (const action of ACTIONS) {
+      const description = PERMISSION_DESCRIPTIONS[resource]?.[action] || `${action} ${resource}`;
+      await prisma.permission.upsert({
+        where: {
+          resource_action: {
+            resource,
+            action,
+          },
+        },
+        update: {
+          description,
+        },
+        create: {
+          resource,
+          action,
+          description,
+        },
+      });
+      permissionCount++;
+    }
+  }
+  console.log(`  Created/updated ${permissionCount} permissions\n`);
+
+  // =========================================================================
+  // STEP 4: Create system roles for default tenant
+  // =========================================================================
+  console.log('Step 4: Creating system roles for default tenant...');
+
+  // Get all permissions for role assignments
+  const allPermissions = await prisma.permission.findMany();
+  const permissionMap = new Map(
+    allPermissions.map((p) => [`${p.resource}:${p.action}`, p.id])
+  );
+
+  // Define system role permissions
+  const TENANT_ADMIN_PERMISSIONS = [
+    'user:create', 'user:read', 'user:update', 'user:delete', 'user:manage',
+    'role:create', 'role:read', 'role:update', 'role:delete', 'role:manage',
+    'company:create', 'company:read', 'company:update', 'company:delete', 'company:export', 'company:manage',
+    'contact:create', 'contact:read', 'contact:update', 'contact:delete', 'contact:export', 'contact:manage',
+    'document:create', 'document:read', 'document:update', 'document:delete', 'document:export', 'document:manage',
+    'officer:create', 'officer:read', 'officer:update', 'officer:delete', 'officer:export', 'officer:manage',
+    'shareholder:create', 'shareholder:read', 'shareholder:update', 'shareholder:delete', 'shareholder:export', 'shareholder:manage',
+    'audit_log:read', 'audit_log:export',
+  ];
+
+  const COMPANY_ADMIN_PERMISSIONS = [
+    'company:read', 'company:update',
+    'contact:create', 'contact:read', 'contact:update', 'contact:delete',
+    'document:create', 'document:read', 'document:update', 'document:delete',
+    'officer:create', 'officer:read', 'officer:update', 'officer:delete',
+    'shareholder:create', 'shareholder:read', 'shareholder:update', 'shareholder:delete',
+    'audit_log:read',
+  ];
+
+  const COMPANY_USER_PERMISSIONS = [
+    'company:read',
+    'contact:read',
+    'document:read',
+    'officer:read',
+    'shareholder:read',
+    'audit_log:read',
+  ];
+
+  const systemRoles = [
+    {
+      name: 'Tenant Admin',
+      description: 'Full access to all tenant resources',
+      permissions: TENANT_ADMIN_PERMISSIONS,
+    },
+    {
+      name: 'Company Admin',
+      description: 'Manage assigned company and its data',
+      permissions: COMPANY_ADMIN_PERMISSIONS,
+    },
+    {
+      name: 'Company User',
+      description: 'View-only access to assigned company',
+      permissions: COMPANY_USER_PERMISSIONS,
+    },
+  ];
+
+  for (const roleData of systemRoles) {
+    // Upsert the role
+    const role = await prisma.role.upsert({
+      where: {
+        tenantId_name: {
+          tenantId: defaultTenant.id,
+          name: roleData.name,
+        },
+      },
+      update: {
+        description: roleData.description,
+      },
+      create: {
+        tenantId: defaultTenant.id,
+        name: roleData.name,
+        description: roleData.description,
+        isSystem: true,
+      },
+    });
+
+    // Clear existing role permissions and re-add
+    await prisma.rolePermission.deleteMany({
+      where: { roleId: role.id },
+    });
+
+    // Add permissions to role
+    const permissionIds = roleData.permissions
+      .map((p) => permissionMap.get(p))
+      .filter((id): id is string => !!id);
+
+    if (permissionIds.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: permissionIds.map((permissionId) => ({
+          roleId: role.id,
+          permissionId,
+        })),
+      });
+    }
+
+    console.log(`  Created/updated role: ${role.name} (${permissionIds.length} permissions)`);
+  }
+
+  // =========================================================================
+  // STEP 4b: Create default custom roles
+  // =========================================================================
+  console.log('\nStep 4b: Creating default custom roles...');
+
+  // Import from rbac.ts to ensure consistency
+  const { DEFAULT_CUSTOM_ROLES } = await import('../src/lib/rbac');
+
+  for (const roleData of DEFAULT_CUSTOM_ROLES) {
+    // Check if role already exists
+    const existing = await prisma.role.findUnique({
+      where: {
+        tenantId_name: {
+          tenantId: defaultTenant.id,
+          name: roleData.name,
+        },
+      },
+    });
+
+    if (existing) {
+      console.log(`  Skipping existing role: ${roleData.name}`);
+      continue;
+    }
+
+    // Create the custom role
+    const role = await prisma.role.create({
+      data: {
+        tenantId: defaultTenant.id,
+        name: roleData.name,
+        description: roleData.description,
+        isSystem: false, // Custom roles are not system roles
+      },
+    });
+
+    // Add permissions to role
+    const permissionIds = roleData.permissions
+      .map((p) => permissionMap.get(p))
+      .filter((id): id is string => !!id);
+
+    if (permissionIds.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: permissionIds.map((permissionId) => ({
+          roleId: role.id,
+          permissionId,
+        })),
+      });
+    }
+
+    console.log(`  Created custom role: ${role.name} (${permissionIds.length} permissions)`);
+  }
+  console.log('');
+
+  // =========================================================================
+  // STEP 5: Create sample companies
+  // =========================================================================
+  console.log('Step 5: Creating sample companies...');
 
   const companiesData = [
     {
@@ -318,9 +607,9 @@ async function main() {
   }
 
   // =========================================================================
-  // STEP 4: Create audit logs for seeded data
+  // STEP 6: Create audit logs for seeded data
   // =========================================================================
-  console.log('\nStep 4: Creating audit logs...');
+  console.log('\nStep 6: Creating audit logs...');
 
   const companies = await prisma.company.findMany({
     where: { tenantId: defaultTenant.id },

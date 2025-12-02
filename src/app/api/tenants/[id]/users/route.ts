@@ -6,7 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole, canManageTenant } from '@/lib/auth';
+import { requireAuth, canManageTenant } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { inviteUserSchema } from '@/lib/validations/tenant';
 import { inviteUserToTenant } from '@/services/tenant.service';
@@ -16,13 +17,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
     const { id: tenantId } = await params;
 
-    // Check access
+    // Check tenant access and permission
     if (!canManageTenant(session, tenantId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+    await requirePermission(session, 'user', 'read');
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -81,7 +83,7 @@ export async function GET(
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -95,13 +97,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
     const { id: tenantId } = await params;
 
-    // Check access
+    // Check tenant access and permission
     if (!canManageTenant(session, tenantId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+    await requirePermission(session, 'user', 'create');
 
     const body = await request.json();
     const data = inviteUserSchema.parse(body);
@@ -114,7 +117,7 @@ export async function POST(
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       if (error.message.includes('maximum number of users')) {

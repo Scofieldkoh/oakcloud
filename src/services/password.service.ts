@@ -101,12 +101,15 @@ export async function requestPasswordReset(email: string): Promise<RequestResetR
   });
 
   // Log the reset request
+  const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
   await createAuditLog({
     tenantId: user.tenantId || undefined,
     userId: user.id,
     action: 'PASSWORD_RESET_REQUESTED',
     entityType: 'User',
     entityId: user.id,
+    entityName: userName,
+    summary: `Password reset requested for "${userName}"`,
     changeSource: 'MANUAL',
     metadata: { email: user.email },
   });
@@ -184,12 +187,15 @@ export async function resetPasswordWithToken(
   });
 
   // Log the password reset
+  const resetUserName = `${user.firstName} ${user.lastName}`.trim() || user.email;
   await createAuditLog({
     tenantId: user.tenantId || undefined,
     userId: user.id,
     action: 'PASSWORD_RESET_COMPLETED',
     entityType: 'User',
     entityId: user.id,
+    entityName: resetUserName,
+    summary: `Password reset completed for "${resetUserName}"`,
     changeSource: 'MANUAL',
     metadata: { email: user.email },
   });
@@ -261,12 +267,15 @@ export async function changePassword(
   });
 
   // Log the password change
+  const changeUserName = `${user.firstName} ${user.lastName}`.trim() || user.email;
   await createAuditLog({
     tenantId: user.tenantId || undefined,
     userId: user.id,
     action: 'PASSWORD_CHANGED',
     entityType: 'User',
     entityId: user.id,
+    entityName: changeUserName,
+    summary: `User "${changeUserName}" changed password`,
     changeSource: 'MANUAL',
     metadata: { email: user.email },
   });
@@ -313,12 +322,19 @@ export async function setMustChangePassword(
   });
 
   if (updatedByUserId) {
+    const targetUserName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+    const action = mustChange ? 'PASSWORD_CHANGE_REQUIRED' : 'PASSWORD_CHANGE_CLEARED';
+    const summary = mustChange
+      ? `Password change required for "${targetUserName}"`
+      : `Password change requirement cleared for "${targetUserName}"`;
     await createAuditLog({
       tenantId: user.tenantId || undefined,
       userId: updatedByUserId,
-      action: mustChange ? 'PASSWORD_CHANGE_REQUIRED' : 'PASSWORD_CHANGE_CLEARED',
+      action,
       entityType: 'User',
       entityId: userId,
+      entityName: targetUserName,
+      summary,
       changeSource: 'MANUAL',
       metadata: { email: user.email, targetUserId: userId },
     });

@@ -79,16 +79,16 @@ function ExpandedChanges({ changes }: { changes: Record<string, { old: unknown; 
 
 function AuditLogRow({ log }: { log: AuditLog }) {
   const [expanded, setExpanded] = useState(false);
-  const hasChanges = log.changes && Object.keys(log.changes).length > 0;
+  const hasDetails = (log.changes && Object.keys(log.changes).length > 0) || log.reason || log.metadata;
 
   return (
     <>
       <tr
         className={cn(
-          hasChanges && 'cursor-pointer hover:bg-background-tertiary/50',
+          hasDetails && 'cursor-pointer hover:bg-background-tertiary/50',
           expanded && 'bg-background-tertiary/30'
         )}
-        onClick={() => hasChanges && setExpanded(!expanded)}
+        onClick={() => hasDetails && setExpanded(!expanded)}
       >
         <td>
           <div className="flex items-center gap-2">
@@ -103,11 +103,22 @@ function AuditLogRow({ log }: { log: AuditLog }) {
             {log.action.replace(/_/g, ' ')}
           </span>
         </td>
-        <td>
-          <div className="flex items-center gap-2">
-            <FileText className="w-3.5 h-3.5 text-text-muted" />
-            <span className="text-sm text-text-primary">{log.entityType}</span>
-          </div>
+        <td className="max-w-md">
+          {log.summary ? (
+            <span className="text-sm text-text-primary">{log.summary}</span>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-text-secondary">{log.entityType}</span>
+              {log.entityName && (
+                <span className="text-sm text-text-primary">"{log.entityName}"</span>
+              )}
+            </div>
+          )}
+          {log.reason && !expanded && (
+            <p className="text-xs text-text-muted mt-0.5 truncate max-w-xs">
+              Reason: {log.reason}
+            </p>
+          )}
         </td>
         <td>
           {log.user ? (
@@ -122,24 +133,12 @@ function AuditLogRow({ log }: { log: AuditLog }) {
           )}
         </td>
         <td>
-          {log.company ? (
-            <div className="flex items-center gap-2">
-              <Building2 className="w-3.5 h-3.5 text-text-muted" />
-              <span className="text-sm text-text-secondary truncate max-w-[150px]">
-                {log.company.name}
-              </span>
-            </div>
-          ) : (
-            <span className="text-text-muted text-sm">—</span>
-          )}
-        </td>
-        <td>
           <span className="text-xs text-text-muted font-mono">
             {log.changeSource}
           </span>
         </td>
         <td>
-          {hasChanges && (
+          {hasDetails && (
             <button className="p-1 hover:bg-background-tertiary rounded">
               {expanded ? (
                 <ChevronUp className="w-4 h-4 text-text-muted" />
@@ -150,9 +149,9 @@ function AuditLogRow({ log }: { log: AuditLog }) {
           )}
         </td>
       </tr>
-      {expanded && hasChanges && (
+      {expanded && hasDetails && (
         <tr className="bg-background-tertiary/20">
-          <td colSpan={7} className="p-4">
+          <td colSpan={6} className="p-4">
             <div className="space-y-3">
               {log.reason && (
                 <div>
@@ -160,18 +159,29 @@ function AuditLogRow({ log }: { log: AuditLog }) {
                   <p className="text-sm text-text-primary mt-1">{log.reason}</p>
                 </div>
               )}
-              <div>
-                <span className="text-xs font-medium text-text-muted uppercase">Changes:</span>
-                <div className="mt-2 p-3 bg-background-secondary rounded-md border border-border-primary">
-                  <ExpandedChanges changes={log.changes} />
-                </div>
-              </div>
-              {log.ipAddress && (
-                <div className="flex gap-4 text-xs text-text-muted">
-                  <span>IP: {log.ipAddress}</span>
-                  {log.requestId && <span>Request ID: {log.requestId}</span>}
+              {log.changes && Object.keys(log.changes).length > 0 && (
+                <div>
+                  <span className="text-xs font-medium text-text-muted uppercase">Changes:</span>
+                  <div className="mt-2 p-3 bg-background-secondary rounded-md border border-border-primary">
+                    <ExpandedChanges changes={log.changes} />
+                  </div>
                 </div>
               )}
+              {log.metadata && Object.keys(log.metadata).length > 0 && (
+                <div>
+                  <span className="text-xs font-medium text-text-muted uppercase">Details:</span>
+                  <div className="mt-2 p-3 bg-background-secondary rounded-md border border-border-primary text-sm">
+                    <pre className="whitespace-pre-wrap text-text-secondary">
+                      {JSON.stringify(log.metadata, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-4 text-xs text-text-muted">
+                {log.entityId && <span>Entity ID: {log.entityId}</span>}
+                {log.ipAddress && <span>IP: {log.ipAddress}</span>}
+                {log.requestId && <span>Request ID: {log.requestId}</span>}
+              </div>
             </div>
           </td>
         </tr>
@@ -356,9 +366,8 @@ export default function AuditLogsPage() {
                   <tr>
                     <th>Timestamp</th>
                     <th>Action</th>
-                    <th>Entity</th>
+                    <th>Description</th>
                     <th>User</th>
-                    <th>Company</th>
                     <th>Source</th>
                     <th className="w-10"></th>
                   </tr>
@@ -366,7 +375,7 @@ export default function AuditLogsPage() {
                 <tbody>
                   {data.logs.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-text-secondary">
+                      <td colSpan={6} className="text-center py-8 text-text-secondary">
                         No audit logs found
                       </td>
                     </tr>

@@ -7,6 +7,7 @@ import { useTenants, useCreateTenant, useUpdateTenant, type Tenant } from '@/hoo
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Alert } from '@/components/ui/alert';
 import { Pagination } from '@/components/companies/pagination';
 import { useToast } from '@/components/ui/toast';
@@ -25,6 +26,7 @@ import {
   Pause,
   Play,
   Settings,
+  Trash2,
 } from 'lucide-react';
 import { TenantSetupWizard } from '@/components/admin/tenant-setup-wizard';
 import { format } from 'date-fns';
@@ -59,14 +61,16 @@ export default function TenantsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [setupWizardTenant, setSetupWizardTenant] = useState<Tenant | null>(null);
+  const [deletingTenant, setDeletingTenant] = useState<Tenant | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state for create
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     contactEmail: '',
-    maxUsers: 50,
-    maxCompanies: 100,
+    maxUsers: '50',
+    maxCompanies: '100',
   });
   const [formError, setFormError] = useState('');
 
@@ -76,9 +80,9 @@ export default function TenantsPage() {
     slug: '',
     contactEmail: '',
     contactPhone: '',
-    maxUsers: 50,
-    maxCompanies: 100,
-    maxStorageMb: 10240,
+    maxUsers: '50',
+    maxCompanies: '100',
+    maxStorageMb: '10240',
   });
   const [editFormError, setEditFormError] = useState('');
 
@@ -100,9 +104,9 @@ export default function TenantsPage() {
       slug: tenant.slug,
       contactEmail: tenant.contactEmail || '',
       contactPhone: tenant.contactPhone || '',
-      maxUsers: tenant.maxUsers,
-      maxCompanies: tenant.maxCompanies,
-      maxStorageMb: tenant.maxStorageMb,
+      maxUsers: tenant.maxUsers.toString(),
+      maxCompanies: tenant.maxCompanies.toString(),
+      maxStorageMb: tenant.maxStorageMb.toString(),
     });
     setEditFormError('');
   };
@@ -115,9 +119,9 @@ export default function TenantsPage() {
       slug: '',
       contactEmail: '',
       contactPhone: '',
-      maxUsers: 50,
-      maxCompanies: 100,
-      maxStorageMb: 10240,
+      maxUsers: '50',
+      maxCompanies: '100',
+      maxStorageMb: '10240',
     });
     setEditFormError('');
   };
@@ -136,8 +140,8 @@ export default function TenantsPage() {
         name: formData.name,
         slug: formData.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         contactEmail: formData.contactEmail || undefined,
-        maxUsers: formData.maxUsers,
-        maxCompanies: formData.maxCompanies,
+        maxUsers: parseInt(formData.maxUsers) || 50,
+        maxCompanies: parseInt(formData.maxCompanies) || 100,
       });
 
       success('Tenant created successfully');
@@ -146,8 +150,8 @@ export default function TenantsPage() {
         name: '',
         slug: '',
         contactEmail: '',
-        maxUsers: 50,
-        maxCompanies: 100,
+        maxUsers: '50',
+        maxCompanies: '100',
       });
 
       // Open setup wizard for the new tenant
@@ -172,9 +176,9 @@ export default function TenantsPage() {
         slug: editFormData.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         contactEmail: editFormData.contactEmail || undefined,
         contactPhone: editFormData.contactPhone || undefined,
-        maxUsers: editFormData.maxUsers,
-        maxCompanies: editFormData.maxCompanies,
-        maxStorageMb: editFormData.maxStorageMb,
+        maxUsers: parseInt(editFormData.maxUsers) || 50,
+        maxCompanies: parseInt(editFormData.maxCompanies) || 100,
+        maxStorageMb: parseInt(editFormData.maxStorageMb) || 10240,
       } as Partial<Tenant>);
 
       success('Tenant updated successfully');
@@ -200,6 +204,30 @@ export default function TenantsPage() {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to update tenant');
+    }
+  };
+
+  const handleDelete = async (reason?: string) => {
+    if (!deletingTenant || !reason) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/tenants/${deletingTenant.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to delete tenant');
+      }
+      success('Tenant and all associated data deleted successfully');
+      setDeletingTenant(null);
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to delete tenant');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -289,9 +317,7 @@ export default function TenantsPage() {
                     <th>Tenant</th>
                     <th>Status</th>
                     <th>Contact</th>
-                    <th>Users</th>
-                    <th>Companies</th>
-                    <th>Limits</th>
+                    <th>Usage</th>
                     <th>Created</th>
                     <th className="w-10"></th>
                   </tr>
@@ -299,69 +325,106 @@ export default function TenantsPage() {
                 <tbody>
                   {data.tenants.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-text-secondary">
+                      <td colSpan={6} className="text-center py-8 text-text-secondary">
                         No tenants found
                       </td>
                     </tr>
                   ) : (
-                    data.tenants.map((tenant: Tenant) => (
-                      <tr key={tenant.id}>
-                        <td>
-                          <div>
-                            <div className="font-medium text-text-primary">{tenant.name}</div>
-                            <div className="text-xs text-text-muted font-mono">{tenant.slug}</div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className={cn('badge', getStatusColor(tenant.status))}>
-                            {getStatusLabel(tenant.status)}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="text-xs space-y-0.5">
-                            {tenant.contactEmail && (
-                              <div className="flex items-center gap-1 text-text-secondary">
-                                <Mail className="w-3 h-3" />
-                                <span>{tenant.contactEmail}</span>
+                    data.tenants.map((tenant: Tenant) => {
+                      const userCount = tenant._count?.users || 0;
+                      const companyCount = tenant._count?.companies || 0;
+                      const userPercent = Math.min((userCount / tenant.maxUsers) * 100, 100);
+                      const companyPercent = Math.min((companyCount / tenant.maxCompanies) * 100, 100);
+
+                      return (
+                        <tr key={tenant.id}>
+                          <td>
+                            <div>
+                              <div className="font-medium text-text-primary">{tenant.name}</div>
+                              <div className="text-xs text-text-muted font-mono">{tenant.slug}</div>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={cn('badge', getStatusColor(tenant.status))}>
+                              {getStatusLabel(tenant.status)}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="text-xs space-y-0.5">
+                              {tenant.contactEmail && (
+                                <div className="flex items-center gap-1.5 text-text-secondary">
+                                  <Mail className="w-3 h-3 flex-shrink-0" />
+                                  <span className="truncate max-w-[160px]">{tenant.contactEmail}</span>
+                                </div>
+                              )}
+                              {tenant.contactPhone && (
+                                <div className="flex items-center gap-1.5 text-text-secondary">
+                                  <Phone className="w-3 h-3 flex-shrink-0" />
+                                  <span>{tenant.contactPhone}</span>
+                                </div>
+                              )}
+                              {!tenant.contactEmail && !tenant.contactPhone && (
+                                <span className="text-text-muted">—</span>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <div className="space-y-2 min-w-[140px]">
+                              {/* Users */}
+                              <div>
+                                <div className="flex items-center justify-between text-xs mb-0.5">
+                                  <span className="text-text-muted flex items-center gap-1">
+                                    <Users className="w-3 h-3" />
+                                    Users
+                                  </span>
+                                  <span className="text-text-secondary font-medium">
+                                    {userCount}/{tenant.maxUsers}
+                                  </span>
+                                </div>
+                                <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      'h-full rounded-full transition-all',
+                                      userPercent >= 90 ? 'bg-red-500' : userPercent >= 70 ? 'bg-amber-500' : 'bg-oak-primary'
+                                    )}
+                                    style={{ width: `${userPercent}%` }}
+                                  />
+                                </div>
                               </div>
-                            )}
-                            {tenant.contactPhone && (
-                              <div className="flex items-center gap-1 text-text-secondary">
-                                <Phone className="w-3 h-3" />
-                                <span>{tenant.contactPhone}</span>
+                              {/* Companies */}
+                              <div>
+                                <div className="flex items-center justify-between text-xs mb-0.5">
+                                  <span className="text-text-muted flex items-center gap-1">
+                                    <Building2 className="w-3 h-3" />
+                                    Companies
+                                  </span>
+                                  <span className="text-text-secondary font-medium">
+                                    {companyCount}/{tenant.maxCompanies}
+                                  </span>
+                                </div>
+                                <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      'h-full rounded-full transition-all',
+                                      companyPercent >= 90 ? 'bg-red-500' : companyPercent >= 70 ? 'bg-amber-500' : 'bg-oak-primary'
+                                    )}
+                                    style={{ width: `${companyPercent}%` }}
+                                  />
+                                </div>
                               </div>
-                            )}
-                            {!tenant.contactEmail && !tenant.contactPhone && (
-                              <span className="text-text-muted">—</span>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-1.5 text-text-secondary">
-                            <Users className="w-3.5 h-3.5" />
-                            <span className="text-sm">{tenant._count?.users || 0}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-1.5 text-text-secondary">
-                            <Building2 className="w-3.5 h-3.5" />
-                            <span className="text-sm">{tenant._count?.companies || 0}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="text-xs text-text-muted space-y-0.5">
-                            <div>{tenant.maxUsers} users max</div>
-                            <div>{tenant.maxCompanies} companies max</div>
-                            <div>{Math.round(tenant.maxStorageMb / 1024)}GB storage</div>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-1 text-text-secondary text-sm">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {format(new Date(tenant.createdAt), 'MMM d, yyyy')}
-                          </div>
-                        </td>
-                        <td>
+                              {/* Storage */}
+                              <div className="flex items-center gap-1 text-xs text-text-muted">
+                                <HardDrive className="w-3 h-3" />
+                                <span>{Math.round(tenant.maxStorageMb / 1024)}GB storage</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="text-sm text-text-secondary">
+                              {format(new Date(tenant.createdAt), 'MMM d, yyyy')}
+                            </div>
+                          </td>
+                          <td>
                           <Dropdown>
                             <DropdownTrigger asChild className="p-1.5 hover:bg-background-tertiary rounded">
                               <MoreVertical className="w-4 h-4 text-text-muted" />
@@ -374,14 +437,23 @@ export default function TenantsPage() {
                                 Edit
                               </DropdownItem>
                               {tenant.status === 'PENDING_SETUP' && (
-                                <DropdownItem
-                                  icon={<Settings className="w-4 h-4" />}
-                                  onClick={() => setSetupWizardTenant(tenant)}
-                                >
-                                  Complete Setup
-                                </DropdownItem>
+                                <>
+                                  <DropdownItem
+                                    icon={<Settings className="w-4 h-4" />}
+                                    onClick={() => setSetupWizardTenant(tenant)}
+                                  >
+                                    Complete Setup
+                                  </DropdownItem>
+                                  <DropdownItem
+                                    icon={<Trash2 className="w-4 h-4" />}
+                                    onClick={() => setDeletingTenant(tenant)}
+                                    destructive
+                                  >
+                                    Delete
+                                  </DropdownItem>
+                                </>
                               )}
-                              {tenant.status === 'ACTIVE' ? (
+                              {tenant.status === 'ACTIVE' && (
                                 <DropdownItem
                                   icon={<Pause className="w-4 h-4" />}
                                   onClick={() => handleStatusChange(tenant, 'SUSPENDED')}
@@ -389,19 +461,30 @@ export default function TenantsPage() {
                                 >
                                   Suspend
                                 </DropdownItem>
-                              ) : tenant.status === 'SUSPENDED' ? (
-                                <DropdownItem
-                                  icon={<Play className="w-4 h-4" />}
-                                  onClick={() => handleStatusChange(tenant, 'ACTIVE')}
-                                >
-                                  Activate
-                                </DropdownItem>
-                              ) : null}
+                              )}
+                              {tenant.status === 'SUSPENDED' && (
+                                <>
+                                  <DropdownItem
+                                    icon={<Play className="w-4 h-4" />}
+                                    onClick={() => handleStatusChange(tenant, 'ACTIVE')}
+                                  >
+                                    Activate
+                                  </DropdownItem>
+                                  <DropdownItem
+                                    icon={<Trash2 className="w-4 h-4" />}
+                                    onClick={() => setDeletingTenant(tenant)}
+                                    destructive
+                                  >
+                                    Delete
+                                  </DropdownItem>
+                                </>
+                              )}
                             </DropdownMenu>
                           </Dropdown>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -483,9 +566,9 @@ export default function TenantsPage() {
                 <FormInput
                   label="Max Users"
                   type="number"
-                  value={formData.maxUsers.toString()}
+                  value={formData.maxUsers}
                   onChange={(e) =>
-                    setFormData({ ...formData, maxUsers: parseInt(e.target.value) || 50 })
+                    setFormData({ ...formData, maxUsers: e.target.value })
                   }
                   min={1}
                   inputSize="sm"
@@ -493,9 +576,9 @@ export default function TenantsPage() {
                 <FormInput
                   label="Max Companies"
                   type="number"
-                  value={formData.maxCompanies.toString()}
+                  value={formData.maxCompanies}
                   onChange={(e) =>
-                    setFormData({ ...formData, maxCompanies: parseInt(e.target.value) || 100 })
+                    setFormData({ ...formData, maxCompanies: e.target.value })
                   }
                   min={1}
                   inputSize="sm"
@@ -594,9 +677,9 @@ export default function TenantsPage() {
                 <FormInput
                   label="Max Users"
                   type="number"
-                  value={editFormData.maxUsers.toString()}
+                  value={editFormData.maxUsers}
                   onChange={(e) =>
-                    setEditFormData({ ...editFormData, maxUsers: parseInt(e.target.value) || 50 })
+                    setEditFormData({ ...editFormData, maxUsers: e.target.value })
                   }
                   min={1}
                   inputSize="sm"
@@ -604,9 +687,9 @@ export default function TenantsPage() {
                 <FormInput
                   label="Max Companies"
                   type="number"
-                  value={editFormData.maxCompanies.toString()}
+                  value={editFormData.maxCompanies}
                   onChange={(e) =>
-                    setEditFormData({ ...editFormData, maxCompanies: parseInt(e.target.value) || 100 })
+                    setEditFormData({ ...editFormData, maxCompanies: e.target.value })
                   }
                   min={1}
                   inputSize="sm"
@@ -614,9 +697,9 @@ export default function TenantsPage() {
                 <FormInput
                   label="Storage (MB)"
                   type="number"
-                  value={editFormData.maxStorageMb.toString()}
+                  value={editFormData.maxStorageMb}
                   onChange={(e) =>
-                    setEditFormData({ ...editFormData, maxStorageMb: parseInt(e.target.value) || 10240 })
+                    setEditFormData({ ...editFormData, maxStorageMb: e.target.value })
                   }
                   min={100}
                   inputSize="sm"
@@ -659,6 +742,22 @@ export default function TenantsPage() {
           }}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!deletingTenant}
+        onClose={() => setDeletingTenant(null)}
+        onConfirm={handleDelete}
+        title={`Delete "${deletingTenant?.name}"?`}
+        description={`This will permanently soft-delete the tenant and cascade to all associated users, companies, and contacts. The data can be permanently purged later from the Data Purge page.`}
+        confirmLabel="Delete Tenant"
+        variant="danger"
+        requireReason
+        reasonLabel="Reason for deletion"
+        reasonPlaceholder="Enter the reason for deleting this tenant..."
+        reasonMinLength={10}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

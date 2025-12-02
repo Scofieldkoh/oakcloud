@@ -18,6 +18,7 @@ import {
   Activity,
   Building,
   UserCog,
+  Trash2,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -46,6 +47,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Users', href: '/admin/users', icon: UserCog, adminOnly: true },
   { name: 'Roles', href: '/admin/roles', icon: Shield, adminOnly: true },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: Activity, adminOnly: true },
+  { name: 'Data Purge', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
 ];
 
 // Navigation link component

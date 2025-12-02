@@ -163,6 +163,7 @@ model Tenant {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
   deletedAt         DateTime?
+  deletedReason     String?
   activatedAt       DateTime?
   suspendedAt       DateTime?
   suspendReason     String?
@@ -301,6 +302,8 @@ model User {
 }
 
 // User-Company many-to-many assignment for multi-company access
+// Note: Permissions are controlled via UserRoleAssignment (company-scoped roles)
+// This table only tracks WHICH companies a user can access
 model UserCompanyAssignment {
   id        String   @id @default(uuid())
   userId    String
@@ -308,10 +311,7 @@ model UserCompanyAssignment {
   companyId String
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  // Access level for this company
-  accessLevel CompanyAccessLevel @default(VIEW)
-
-  // Whether this is the user's primary company
+  // Whether this is the user's primary company (for UI purposes)
   isPrimary Boolean  @default(false)
 
   createdAt DateTime @default(now())
@@ -321,12 +321,6 @@ model UserCompanyAssignment {
   @@index([userId])
   @@index([companyId])
   @@map("user_company_assignments")
-}
-
-enum CompanyAccessLevel {
-  VIEW      // Read-only access
-  EDIT      // Can modify company data
-  MANAGE    // Full control including user assignments
 }
 
 // ============================================================================
@@ -740,6 +734,8 @@ model AuditLog {
   changeSource  ChangeSource @default(MANUAL)
   changes       Json?        // { field: { old: value, new: value } }
   reason        String?      // Required for deletions
+  summary       String?      // Human-readable description of the action
+  entityName    String?      // Name of the affected entity (e.g., company name, user name)
   metadata      Json?        // Additional context
 
   // Request context

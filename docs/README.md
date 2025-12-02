@@ -33,7 +33,7 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 5. ✅ **RBAC & Permissions** - Fine-grained role-based access control
 6. ✅ **User Management** - User accounts, invitations, multi-company assignments
 7. ✅ **Password Management** - Secure reset flow, force change on first login
-8. 🔜 **Audit Logging Dashboard** - System-wide activity tracking UI
+8. ✅ **Data Purge** - Permanent deletion of soft-deleted records (SUPER_ADMIN)
 9. 🔜 **Module Marketplace** - Browse and install modules
 10. 🔜 **Connectors Hub** - External service integrations
 11. 🔜 **Module Linking** - Configure module relationships
@@ -246,7 +246,10 @@ Complete audit trail for all changes.
 | action | Enum | CREATE, UPDATE, DELETE, LOGIN, etc. |
 | entityType | String | Table/model name |
 | entityId | String | Record ID |
+| entityName | String | Human-readable name of the affected entity |
+| summary | String | Human-readable description of the action |
 | changes | JSON | Old/new value pairs |
+| reason | String | User-provided reason for the action |
 | changeSource | Enum | MANUAL, BIZFILE_UPLOAD, API, SYSTEM |
 | requestId | String | Correlates related operations |
 | ipAddress | String | Client IP address |
@@ -368,7 +371,10 @@ Limits are enforced at the service layer before creating new resources.
    - Step 4: Review and activate
 3. **Activation** (`ACTIVE`): Setup completion activates the tenant
 4. **Suspension** (`SUSPENDED`): SUPER_ADMIN can suspend for compliance/billing
-5. **Deactivation** (`DEACTIVATED`): Soft-delete marks tenant as deactivated
+5. **Deletion** (`DEACTIVATED`): Tenant must be SUSPENDED or PENDING_SETUP to be deleted
+   - Cascade soft-deletes all users, companies, and contacts
+   - Deleted data appears in Data Purge page for permanent removal
+6. **Permanent Purge**: SUPER_ADMIN can permanently delete from Data Purge page
 
 ### Key Features
 
@@ -409,6 +415,31 @@ Permissions are defined as `resource:action` combinations:
 - `import` - Import data
 - `manage` - Full control (implies all actions)
 
+### Company-Specific Role Assignments
+
+Users can have different roles for different companies, enabling granular control:
+
+| User  | Company       | Role        |
+|-------|---------------|-------------|
+| John  | All Companies | Data Viewer |
+| John  | Company A     | Data Clerk  |
+| John  | Company B     | Auditor     |
+
+**Specificity Priority**: Company-specific roles **override** "All Companies" roles.
+
+When John accesses Company A:
+1. System checks: Any role assigned specifically for Company A? → Yes: Data Clerk
+2. Uses Data Clerk permissions only (not combined with Data Viewer)
+
+When John accesses Company C (no specific assignment):
+1. System checks: Any role for Company C? → No
+2. Falls back to "All Companies" role → Data Viewer
+
+### Special Roles
+
+- **SUPER_ADMIN**: Full access to everything (system-wide)
+- **TENANT_ADMIN**: Full access to all companies within their tenant (no company assignment needed)
+
 ### System Roles
 
 When a tenant is created, three system roles are automatically provisioned:
@@ -416,7 +447,7 @@ When a tenant is created, three system roles are automatically provisioned:
 #### Tenant Admin
 Full access to all tenant resources:
 - Manage users, roles, companies
-- Access all company data
+- Access all company data automatically (no explicit company assignment needed)
 - View audit logs and export data
 
 #### Company Admin
@@ -434,17 +465,47 @@ View-only access to assigned company:
 
 ### Custom Roles
 
-Tenant admins can create custom roles with specific permissions:
+Tenant admins can create, edit, and delete custom roles with specific permissions through the **Admin > Roles & Permissions** page.
+
+**Features:**
+- Create new roles with custom permission sets
+- Edit existing custom roles (name, description, permissions)
+- Delete unused custom roles (only if no users are assigned)
+- Duplicate existing roles as a starting point
+- System roles (Tenant Admin, Company Admin, Company User) cannot be modified or deleted
+
+**UI Features:**
+- Expandable role cards showing all permissions grouped by resource
+- Permission selector with "Select All" and "Clear All" options
+- Toggle individual permissions or entire resource groups
+- Visual indicators for selected permissions
+- **SUPER_ADMIN tenant selector**: SUPER_ADMIN users see a tenant dropdown to select which tenant's roles to view/manage
 
 ```typescript
-// Example: Create a custom "Auditor" role
-const auditorPermissions = [
-  'company:read',
-  'document:read',
-  'audit_log:read',
-  'audit_log:export',
-];
+// Example: Create a custom "Auditor" role via API
+await fetch('/api/tenants/:tenantId/roles', {
+  method: 'POST',
+  body: JSON.stringify({
+    name: 'Auditor',
+    description: 'Read-only access to audit logs and company data',
+    permissions: ['permission-id-1', 'permission-id-2', ...]
+  })
+});
 ```
+
+### Default Custom Roles
+
+The following custom roles are automatically seeded and ready for use:
+
+| Role | Permissions | Use Case |
+|------|-------------|----------|
+| **Auditor** | 7 (read + export audit logs) | Compliance review, read-only access |
+| **Data Entry Clerk** | 15 (create/read/update) | Data input staff, no delete or export |
+| **Report Viewer** | 12 (read + export) | Reporting and analytics users |
+| **Document Manager** | 10 (full document control) | Document specialists |
+| **Manager** | 27 (full data access) | Team leads without admin privileges |
+
+These roles can be customized or deleted if not needed. New tenants receive these roles automatically during setup.
 
 ### Company-Scoped Roles
 
@@ -498,7 +559,7 @@ Comprehensive audit logging tracks all changes, user actions, and system events.
 |----------|---------|
 | CRUD | CREATE, UPDATE, DELETE, RESTORE |
 | Documents | UPLOAD, DOWNLOAD, EXTRACT |
-| Authentication | LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGED, PASSWORD_RESET |
+| Authentication | LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_COMPLETED, PASSWORD_CHANGE_REQUIRED, PASSWORD_CHANGE_CLEARED |
 | Access Control | PERMISSION_GRANTED, PERMISSION_REVOKED, ROLE_CHANGED |
 | Tenant | TENANT_CREATED, TENANT_UPDATED, TENANT_SUSPENDED, TENANT_ACTIVATED, USER_INVITED, USER_REMOVED |
 | Data | EXPORT, IMPORT, BULK_UPDATE |
@@ -537,14 +598,46 @@ const auditContext = await createAuditContext({
   changeSource: 'MANUAL',
 });
 
-// Log a creation
-await logCreate(auditContext, 'Company', company.id, { uen: company.uen });
+// Log a creation (with entity name for human-readable summary)
+await logCreate(auditContext, 'Company', company.id, company.name, { uen: company.uen });
 
 // Log an update with changes
-await logUpdate(auditContext, 'Company', company.id, changes, 'Updated by user request');
+await logUpdate(auditContext, 'Company', company.id, company.name, changes, 'Updated by user request');
 
 // Log a deletion with reason
-await logDelete(auditContext, 'Company', company.id, 'No longer a client');
+await logDelete(auditContext, 'Company', company.id, company.name, 'No longer a client');
+```
+
+### Human-Readable Summaries
+
+All audit log entries include automatically generated summaries:
+
+```typescript
+// Example summaries generated:
+"Created company 'Acme Pte Ltd'"
+"Updated company 'Acme Pte Ltd'"
+"Deleted tenant 'Demo Corp' (cascade: 5 users, 3 companies)"
+"Invited user 'John Doe' as COMPANY_ADMIN"
+"Changed role for 'Jane Smith': COMPANY_USER → COMPANY_ADMIN"
+"User 'admin@example.com' logged in"
+```
+
+### Specialized Logging Functions
+
+```typescript
+// User membership changes
+await logUserMembership(context, 'USER_INVITED', userId, {
+  email: 'user@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  role: 'COMPANY_ADMIN'
+});
+
+// Role changes
+await logRoleChange(context, userId, 'John Doe', 'COMPANY_USER', 'COMPANY_ADMIN');
+
+// Tenant operations (with cascade info)
+await logTenantOperation('TENANT_DELETED', tenantId, 'Acme Corp', userId, undefined, 'Account closure');
 ```
 
 ---
@@ -807,7 +900,7 @@ Content-Type: application/json
 }
 ```
 
-#### Delete Tenant
+#### Delete Tenant (Soft Delete with Cascade)
 ```
 DELETE /api/tenants/:id
 Content-Type: application/json
@@ -817,7 +910,53 @@ Content-Type: application/json
 }
 ```
 
-Note: Tenant must have no users or companies to be deleted.
+Requirements:
+- Tenant must be in `SUSPENDED` or `PENDING_SETUP` status before deletion
+- Reason must be at least 10 characters
+
+Behavior:
+- Cascade soft-deletes all users (sets `deletedAt`, `isActive: false`)
+- Cascade soft-deletes all companies (sets `deletedAt`, adds deletion reason)
+- Cascade soft-deletes all contacts (sets `deletedAt`)
+- Sets tenant status to `DEACTIVATED`
+- Audit log includes cascade counts
+
+Note: Soft-deleted data can be restored or permanently purged via `/api/admin/purge`.
+
+#### Restore Soft-Deleted Records
+```
+PATCH /api/admin/purge
+Content-Type: application/json
+
+{
+  "entityType": "tenant",  // tenant, user, company, or contact
+  "entityIds": ["uuid1", "uuid2"]
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Restored 2 tenant(s)",
+  "restoredCount": 2,
+  "restoredRecords": [
+    { "id": "uuid1", "name": "Tenant A" },
+    { "id": "uuid2", "name": "Tenant B" }
+  ]
+}
+```
+
+Restore behavior by entity type:
+- **Tenant**: Cascade restore - restores tenant + all associated users, companies, contacts
+  - Tenant restored to `SUSPENDED` status (admin must activate)
+  - Users restored with `isActive: false` (admin must activate individually)
+  - Companies and contacts restored to normal state
+- **User**: Restored with `isActive: false` (admin must activate)
+- **Company**: Restored to normal state
+- **Contact**: Restored to normal state
+
+Note: Users, companies, and contacts cannot be restored individually if their parent tenant is still deleted. Restore the tenant first (which will cascade restore all associated data).
 
 #### Complete Tenant Setup (Wizard)
 ```
@@ -897,11 +1036,79 @@ Content-Type: application/json
   "firstName": "John",
   "lastName": "Doe",
   "role": "COMPANY_ADMIN",
-  "companyId": "uuid" // Optional
+  "companyId": "uuid",  // Optional - primary company
+  "companyAssignments": [  // Optional - for multi-company assignment
+    {
+      "companyId": "uuid1",
+      "accessLevel": "MANAGE",
+      "isPrimary": true
+    },
+    {
+      "companyId": "uuid2",
+      "accessLevel": "VIEW",
+      "isPrimary": false
+    }
+  ]
+}
+```
+
+Response:
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "user@acme.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "role": "COMPANY_ADMIN"
+  },
+  "temporaryPassword": "abc123XYZ"  // Only in development
 }
 ```
 
 > **Note:** Invited users have `mustChangePassword: true` by default and will be prompted to change their password on first login.
+
+#### Get User Details
+```
+GET /api/tenants/:id/users/:userId
+```
+
+Response includes user details, company assignments, and role assignments.
+
+#### Update User
+```
+PATCH /api/tenants/:id/users/:userId
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "email": "jane@acme.com",
+  "role": "TENANT_ADMIN",
+  "isActive": true,
+  "sendPasswordReset": true  // Optional - sends password reset email
+}
+```
+
+Notes:
+- Cannot demote the last tenant admin
+- Email must be unique across all users
+- `sendPasswordReset` triggers a password reset email
+
+#### Remove User from Tenant
+```
+DELETE /api/tenants/:id/users/:userId
+Content-Type: application/json
+
+{
+  "reason": "User requested account deletion"
+}
+```
+
+Notes:
+- Cannot remove yourself
+- Cannot remove the last tenant admin
+- Performs soft delete (can be restored from Data Purge)
 
 ### User Company Assignments
 
@@ -998,6 +1205,211 @@ Query Parameters:
 - `sortOrder` - asc or desc (default: desc)
 
 Note: Non-SUPER_ADMIN users only see logs from their tenant.
+
+### Roles Management
+
+#### Get All Permissions
+```
+GET /api/permissions
+```
+
+Response:
+```json
+{
+  "resources": ["tenant", "user", "role", "company", ...],
+  "actions": ["create", "read", "update", "delete", ...],
+  "grouped": {
+    "company": [
+      { "id": "uuid", "action": "create", "description": "Create companies" },
+      { "id": "uuid", "action": "read", "description": "View companies" },
+      ...
+    ],
+    ...
+  },
+  "permissions": [...]
+}
+```
+
+#### List Tenant Roles
+```
+GET /api/tenants/:id/roles
+```
+
+Returns all roles for the tenant including system and custom roles with permission details.
+
+#### Create Role
+```
+POST /api/tenants/:id/roles
+Content-Type: application/json
+
+{
+  "name": "Auditor",
+  "description": "Read-only access to audit logs",
+  "permissions": ["permission-id-1", "permission-id-2"]
+}
+```
+
+Notes:
+- Name must be 2-50 characters
+- Name must be unique within the tenant
+- Permissions array contains permission IDs (from GET /api/permissions)
+
+#### Get Role Details
+```
+GET /api/tenants/:id/roles/:roleId
+```
+
+#### Update Role
+```
+PATCH /api/tenants/:id/roles/:roleId
+Content-Type: application/json
+
+{
+  "name": "Senior Auditor",
+  "description": "Updated description",
+  "permissions": ["permission-id-1", "permission-id-2", "permission-id-3"]
+}
+```
+
+Notes:
+- System roles cannot be modified
+- Permissions array replaces all existing permissions
+
+#### Delete Role
+```
+DELETE /api/tenants/:id/roles/:roleId
+```
+
+Notes:
+- System roles cannot be deleted
+- Roles with assigned users cannot be deleted
+
+#### Duplicate Role
+```
+POST /api/tenants/:id/roles/:roleId/duplicate
+Content-Type: application/json
+
+{
+  "name": "Auditor (Copy)"
+}
+```
+
+Creates a new role with the same permissions as the source role.
+
+#### List Users Assigned to Role
+```
+GET /api/tenants/:id/roles/:roleId/users
+```
+
+Response:
+```json
+{
+  "users": [
+    {
+      "id": "uuid",
+      "user": {
+        "id": "uuid",
+        "email": "user@example.com",
+        "firstName": "John",
+        "lastName": "Doe",
+        "role": "COMPANY_USER",
+        "isActive": true
+      },
+      "company": {
+        "id": "uuid",
+        "name": "Acme Pte Ltd",
+        "uen": "202012345A"
+      }
+    }
+  ]
+}
+```
+
+#### Assign Role to User
+```
+POST /api/tenants/:id/roles/:roleId/users
+Content-Type: application/json
+
+{
+  "userId": "uuid",
+  "companyId": "uuid"  // Optional - for company-scoped assignment
+}
+```
+
+#### Remove Role from User
+```
+DELETE /api/tenants/:id/roles/:roleId/users
+Content-Type: application/json
+
+{
+  "userId": "uuid",
+  "companyId": "uuid"  // Optional - must match original assignment
+}
+```
+
+### Data Purge (SUPER_ADMIN Only)
+
+#### Get Purgeable Records
+```
+GET /api/admin/purge
+```
+
+Response:
+```json
+{
+  "stats": {
+    "tenants": 2,
+    "users": 5,
+    "companies": 3,
+    "contacts": 10
+  },
+  "records": {
+    "tenants": [
+      {
+        "id": "uuid",
+        "name": "Deleted Tenant",
+        "slug": "deleted-tenant",
+        "deletedAt": "2025-01-15T10:30:00Z",
+        "_count": { "users": 2, "companies": 1 }
+      }
+    ],
+    "users": [...],
+    "companies": [...],
+    "contacts": [...]
+  }
+}
+```
+
+#### Permanently Delete Records
+```
+POST /api/admin/purge
+Content-Type: application/json
+
+{
+  "entityType": "tenant",  // tenant, user, company, or contact
+  "entityIds": ["uuid1", "uuid2"],
+  "reason": "Data retention policy - records older than 2 years"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Permanently deleted 2 tenant(s)",
+  "deletedCount": 2,
+  "deletedRecords": [
+    { "id": "uuid1", "name": "Tenant A" },
+    { "id": "uuid2", "name": "Tenant B" }
+  ]
+}
+```
+
+Notes:
+- Only soft-deleted records can be permanently deleted
+- Reason must be at least 10 characters
+- Deleting a tenant also removes all related data (users, companies, documents, audit logs)
+- All purge actions are logged in the audit trail
 
 #### Get Audit Statistics
 ```
@@ -1427,7 +1839,8 @@ src/
 │   │       ├── users/page.tsx     # User management (TENANT_ADMIN+)
 │   │       ├── audit-logs/page.tsx # Audit logs dashboard
 │   │       ├── roles/page.tsx     # Roles & permissions view
-│   │       └── tenants/page.tsx   # Tenant management (SUPER_ADMIN)
+│   │       ├── tenants/page.tsx   # Tenant management (SUPER_ADMIN)
+│   │       └── data-purge/page.tsx # Permanent deletion (SUPER_ADMIN)
 │   ├── login/
 │   │   └── page.tsx               # Login page
 │   └── api/
@@ -1447,11 +1860,20 @@ src/
 │       │   └── [id]/
 │       │       ├── route.ts       # Get/Update/Delete tenant
 │       │       ├── users/route.ts # Tenant user management
-│       │       ├── roles/route.ts # Tenant roles
+│       │       ├── roles/
+│       │       │   ├── route.ts   # List/Create roles
+│       │       │   └── [roleId]/
+│       │       │       ├── route.ts     # Get/Update/Delete role
+│       │       │       ├── duplicate/route.ts # Duplicate role
+│       │       │       └── users/route.ts # Role user management
 │       │       └── stats/route.ts # Tenant statistics
-│       └── audit-logs/
-│           ├── route.ts           # List audit logs
-│           └── stats/route.ts     # Audit statistics
+│       ├── permissions/
+│       │   └── route.ts           # List all permissions
+│       ├── audit-logs/
+│       │   ├── route.ts           # List audit logs
+│       │   └── stats/route.ts     # Audit statistics
+│       └── admin/
+│           └── purge/route.ts     # Data purge (SUPER_ADMIN)
 ├── components/
 │   ├── auth/
 │   │   └── auth-guard.tsx         # Route protection
@@ -1497,6 +1919,7 @@ src/
     ├── company.service.ts         # Company business logic (tenant-aware)
     ├── tenant.service.ts          # Tenant management
     ├── contact.service.ts         # Contact management
+    ├── role.service.ts            # Role management & permissions
     └── bizfile.service.ts         # AI extraction
 ```
 
@@ -1618,6 +2041,182 @@ docker ps
 ---
 
 ## Version History
+
+### v0.5.9 (2025-12-02)
+- **Company-Specific Role Assignments**: Granular permission control per company
+  - Assign different roles to users for different companies
+  - "All Companies" role as default fallback
+  - Company-specific roles override tenant-wide roles (specificity priority)
+  - Example: User can be Data Viewer for most companies but Auditor for Company B
+- **Simplified Permission Model**: Removed `accessLevel` from company assignments
+  - Company assignments now only track which companies a user can access
+  - All permissions controlled through RBAC role assignments
+  - Cleaner separation of concerns: access scope vs. permissions
+- **Enhanced Users Page**:
+  - Role Assignments section in invite form for company-specific roles
+  - Support for "All Companies" or specific company role assignment
+  - Updated Manage Companies modal (simplified without access levels)
+- **Updated RBAC Utilities**:
+  - `hasPermission()` now uses specificity-based role resolution
+  - `getUserPermissions()` respects company-specific roles
+  - TENANT_ADMIN automatically has all permissions (no explicit assignment needed)
+- **Database Schema Change**: Removed `CompanyAccessLevel` enum and `accessLevel` column from `UserCompanyAssignment`
+
+### v0.5.8 (2025-12-02)
+- **Enhanced Users Page**: Complete user management functionality
+  - **Dynamic Role Selection**: Roles fetched from tenant API (includes custom roles)
+    - No more hardcoded roles - shows all system and custom roles for the tenant
+    - Role descriptions displayed for clarity
+  - **Multi-Company Assignment on Invite**: Assign users to multiple companies during invitation
+    - Select multiple companies with checkboxes
+    - Set access level per company (View, Edit, Manage)
+    - Designate primary company
+  - **Edit User Modal**: Comprehensive user editing
+    - Update first name, last name, email
+    - Change user role (with protection against demoting last tenant admin)
+    - Toggle active/inactive status
+  - **Send Password Reset**: One-click password reset emails
+    - Available from actions dropdown and edit modal
+    - Confirmation dialog before sending
+  - **Remove User**: Soft delete with reason tracking
+    - Confirmation dialog with reason input
+    - Protection against removing last tenant admin or self
+    - Full audit trail of removal
+  - **Actions Dropdown**: Per-row actions menu
+    - Edit User, Send Password Reset, Remove User
+    - Uses existing Dropdown component for consistency
+- **New API Endpoint**: `GET/PATCH/DELETE /api/tenants/:id/users/:userId`
+  - GET: Retrieve user details including company assignments and role assignments
+  - PATCH: Update user fields, change role, trigger password reset
+  - DELETE: Soft delete user with reason
+- **New Hooks** (in `use-admin.ts`):
+  - `useUpdateUser()` - Update user details
+  - `useDeleteUser()` - Remove user from tenant
+  - `useSendPasswordReset()` - Trigger password reset email
+- **Updated Validation Schema**: `inviteUserSchema` now supports `companyAssignments` array
+- **Updated Tenant Service**: `inviteUserToTenant()` handles multi-company assignments
+
+### v0.5.7 (2025-12-02)
+- **SUPER_ADMIN Tenant Selector for Roles**: Enhanced roles management for system administrators
+  - SUPER_ADMIN users now see a tenant selector dropdown on the Roles & Permissions page
+  - Select any tenant to view and manage its roles
+  - "Create Role" button disabled until a tenant is selected
+  - Clear UI guidance when no tenant is selected
+  - Maintains consistency with Users page tenant selector pattern
+
+### v0.5.6 (2025-12-02)
+- **RBAC Permission Enforcement**: All API routes now enforce fine-grained permissions
+  - `requirePermission()` used across all protected routes
+  - Permission checks: `user:read`, `user:create`, `role:read`, `role:create`, `role:update`, `role:delete`, `audit_log:read`
+  - Users must have role assignments with appropriate permissions to access routes
+  - SUPER_ADMIN bypasses all permission checks
+- **Default Custom Roles**: 5 ready-to-use custom roles seeded automatically
+  - **Auditor** (7 permissions): Read-only access to audit logs, companies, and documents
+  - **Data Entry Clerk** (15 permissions): Create and update data, no delete or export
+  - **Report Viewer** (12 permissions): Read and export data for reporting
+  - **Document Manager** (10 permissions): Full document management, read-only company access
+  - **Manager** (27 permissions): Full company data access, no user/role management
+- **Database Seed Enhancements**:
+  - 63 permissions auto-seeded (9 resources × 7 actions)
+  - 3 system roles with pre-assigned permissions
+  - 5 default custom roles for common use cases
+  - Idempotent seeding - safe to run multiple times
+
+### v0.5.5 (2025-12-02)
+- **Full Roles Management**: Complete CRUD for custom roles
+  - **Create Roles**: Create custom roles with selected permissions
+  - **Edit Roles**: Update name, description, and permissions for custom roles
+  - **Delete Roles**: Remove unused custom roles (blocked if users assigned)
+  - **Duplicate Roles**: Copy existing roles as starting point for new roles
+  - **Permission Selector**: Interactive UI to select permissions by resource
+    - Toggle individual permissions or entire resource groups
+    - "Select All" / "Clear All" quick actions
+    - Shows selected count per resource
+  - System roles (Tenant Admin, Company Admin, Company User) protected from modification
+- **Role User Management**: View and manage users assigned to each role
+  - See all users with a specific role
+  - Assign roles to users (with optional company scope)
+  - Remove roles from users
+- **New Service**: `role.service.ts` - Business logic for role management
+- **New API Endpoints**:
+  - `POST /api/tenants/:id/roles` - Create role
+  - `GET /api/tenants/:id/roles/:roleId` - Get role details
+  - `PATCH /api/tenants/:id/roles/:roleId` - Update role
+  - `DELETE /api/tenants/:id/roles/:roleId` - Delete role
+  - `POST /api/tenants/:id/roles/:roleId/duplicate` - Duplicate role
+  - `GET /api/tenants/:id/roles/:roleId/users` - List role users
+  - `POST /api/tenants/:id/roles/:roleId/users` - Assign role to user
+  - `DELETE /api/tenants/:id/roles/:roleId/users` - Remove role from user
+  - `GET /api/permissions` - List all available permissions
+- **New Hooks** (in `use-admin.ts`):
+  - `usePermissions()` - Fetch available permissions
+  - `useCreateRole()` - Create a new role
+  - `useUpdateRole()` - Update an existing role
+  - `useDeleteRole()` - Delete a role
+  - `useDuplicateRole()` - Duplicate a role
+  - `useRoleUsers()` - Get users assigned to a role
+  - `useAssignRoleToUser()` - Assign role to user
+  - `useRemoveRoleFromUser()` - Remove role from user
+- **UI Enhancements**:
+  - Roles page completely redesigned with expandable role cards
+  - Permission badges grouped by resource for clarity
+  - Actions dropdown (edit, delete, duplicate) per role
+  - User count displayed on each role card
+  - Permission legend explaining each action type
+
+### v0.5.4 (2025-12-02)
+- **Enhanced Audit Logging**: More informative audit logs with human-readable summaries
+  - New `summary` field: Human-readable description of each action (e.g., "Deleted tenant 'Acme Corp' (cascade: 5 users, 3 companies, 10 contacts)")
+  - New `entityName` field: Name of the affected entity for quick identification
+  - All specialized audit functions now generate contextual summaries:
+    - `logCreate()`, `logUpdate()`, `logDelete()`, `logRestore()` - CRUD operations
+    - `logAuthEvent()` - Login/logout events with user email
+    - `logDocumentOperation()` - Upload/download with document names
+    - `logTenantOperation()` - Tenant lifecycle with cascade counts
+    - `logUserMembership()` - User invites/removals with user names and roles
+    - `logRoleChange()` - Role changes showing old → new role
+  - Audit logs page UI updated:
+    - Description column shows summary prominently instead of entity type
+    - Reason preview shown in collapsed row state
+    - Expanded view shows changes, metadata details, and context info
+  - Data purge/restore actions now include detailed summaries with record names
+- **Authentication Audit Logging**: Complete tracking of all auth events
+  - Login route now logs:
+    - Successful logins with user name, email, role, and tenant info
+    - Failed logins with reason (user not found, inactive, wrong password)
+    - Tenant status blocks (suspended, deactivated, pending setup)
+  - Logout route now logs user logout with session details
+  - Password service audit logs updated with `summary` and `entityName`:
+    - Password reset requested
+    - Password reset completed
+    - Password changed
+    - Password change required/cleared
+
+### v0.5.3 (2025-12-02)
+- **Data Purge Console**: Admin tool for managing soft-deleted records
+  - New page at `/admin/data-purge` (SUPER_ADMIN only)
+  - Supports permanent deletion of: tenants, users, companies, contacts
+  - **Restore functionality**: Recover soft-deleted records before permanent purge
+  - **Cascade restore for tenants**: Restoring a tenant also restores all its users, companies, contacts
+  - Shows counts and details of all soft-deleted records with deletion reason
+  - Multi-select with batch deletion/restore support
+  - Confirmation dialog with required reason for purge (min 10 chars)
+  - Cascade delete for tenants (removes all related data)
+  - All purge/restore actions logged in audit trail
+  - API: `GET/POST/PATCH /api/admin/purge`
+- **Tenant deletedReason field**: Track why tenants were deleted
+  - New `deletedReason` column in Tenant model
+  - Displayed in Data Purge page
+- **Tenant Soft Delete with Cascade**: Soft-delete tenants and all associated data
+  - Tenant must be SUSPENDED or PENDING_SETUP before it can be deleted
+  - Cascade soft-deletes all users, companies, and contacts belonging to the tenant
+  - "Delete" option added to tenant dropdown menu (visible for SUSPENDED and PENDING_SETUP tenants)
+  - Confirmation dialog with required reason
+  - Audit log includes cascade counts (users, companies, contacts deleted)
+- **New Hooks**:
+  - `usePurgeData()` - fetch soft-deleted records
+  - `usePurgeRecords()` - permanently delete records
+- **Sidebar**: Added "Data Purge" link under Administration (SUPER_ADMIN)
 
 ### v0.5.2 (2025-12-02)
 - **Tenant Schema Simplified**: Removed address fields from tenant model
@@ -1800,6 +2399,45 @@ docker ps
 - Authentication with JWT
 - BizFile PDF upload and AI extraction
 - Audit logging
+
+---
+
+## Common Patterns & Best Practices
+
+### Number Input Fields (Controlled Components)
+
+When using controlled number inputs with `useState`, store the value as a **string** and convert to number only on form submission. This prevents the input from reverting to its default value when the user clears the field.
+
+**Problem**: `parseInt(e.target.value) || defaultValue` immediately reverts empty fields because `parseInt('')` returns `NaN`, and `NaN || 50` evaluates to `50`.
+
+```typescript
+// ❌ BAD: Value reverts immediately when field is cleared
+const [maxUsers, setMaxUsers] = useState(50);
+
+<input
+  type="number"
+  value={maxUsers}
+  onChange={(e) => setMaxUsers(parseInt(e.target.value) || 50)}
+/>
+
+// ✅ GOOD: Store as string, parse on submit
+const [maxUsers, setMaxUsers] = useState('50');
+
+<input
+  type="number"
+  value={maxUsers}
+  onChange={(e) => setMaxUsers(e.target.value)}
+/>
+
+// On form submit:
+const handleSubmit = () => {
+  const data = {
+    maxUsers: parseInt(maxUsers) || 50,  // Apply default here
+  };
+};
+```
+
+**Note**: This issue doesn't apply when using `react-hook-form` with `{ valueAsNumber: true }`, which handles the conversion correctly.
 
 ---
 

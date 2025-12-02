@@ -638,13 +638,6 @@ API
 SYSTEM
 ```
 
-### CompanyAccessLevel
-```sql
-VIEW      -- Read-only access to company data
-EDIT      -- Can modify company data
-MANAGE    -- Full control including user assignments
-```
-
 ---
 
 ## RBAC Tables
@@ -726,17 +719,18 @@ Links users to roles with optional company scope.
 
 ### user_company_assignments
 
-Multi-company user assignments with access levels. Allows a single user to access multiple companies with different permission levels.
+Multi-company user assignments. Tracks which companies a user can access. Permissions are controlled separately through `user_role_assignments` with company-specific role scoping.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
 | user_id | UUID | No | FK to users |
 | company_id | UUID | No | FK to companies |
-| access_level | ENUM | No | VIEW, EDIT, MANAGE |
 | is_primary | BOOLEAN | No | Whether this is the user's primary company |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
+
+**Note:** Permissions are NOT stored here. Use `user_role_assignments` with `company_id` to assign company-specific roles. A role assignment with `company_id = NULL` applies to all companies.
 
 **Indexes:**
 - `user_company_assignments_user_id_company_id_key` UNIQUE on (user_id, company_id)

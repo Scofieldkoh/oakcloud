@@ -94,14 +94,33 @@ export type TenantSearchInput = z.infer<typeof tenantSearchSchema>;
 // Tenant User Invite
 // ============================================================================
 
+// Company assignment - just links user to company (permissions via role assignments)
+export const companyAssignmentSchema = z.object({
+  companyId: z.string().uuid('Invalid company ID'),
+  isPrimary: z.boolean().optional(),
+});
+
+// Role assignment - can be tenant-wide (companyId = null) or company-specific
+export const roleAssignmentSchema = z.object({
+  roleId: z.string().uuid('Invalid role ID'),
+  companyId: z.string().uuid('Invalid company ID').nullable().optional(), // null = "All Companies"
+});
+
 export const inviteUserSchema = z.object({
   email: z.string().email('Invalid email'),
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
   role: z.enum(['TENANT_ADMIN', 'COMPANY_ADMIN', 'COMPANY_USER']),
+  // Legacy: single company assignment
   companyId: z.string().uuid('Invalid company ID').optional(),
+  // Multi-company assignments (which companies user can access)
+  companyAssignments: z.array(companyAssignmentSchema).optional(),
+  // Role assignments with company-specific overrides
+  roleAssignments: z.array(roleAssignmentSchema).optional(),
 });
 
+export type CompanyAssignmentInput = z.infer<typeof companyAssignmentSchema>;
+export type RoleAssignmentInput = z.infer<typeof roleAssignmentSchema>;
 export type InviteUserInput = z.infer<typeof inviteUserSchema>;
 
 // ============================================================================

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { createToken } from '@/lib/auth';
+import { logAuthEvent } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,6 +24,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user || !user.isActive || user.deletedAt) {
+      // Log failed login attempt
+      await logAuthEvent('LOGIN_FAILED', undefined, {
+        email: email.toLowerCase(),
+        reason: !user ? 'User not found' : 'Account inactive or deleted',
+      });
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -32,18 +38,39 @@ export async function POST(request: NextRequest) {
     // Check tenant status (skip for SUPER_ADMIN who may not have a tenant)
     if (user.tenant) {
       if (user.tenant.status === 'SUSPENDED') {
+        await logAuthEvent('LOGIN_FAILED', user.id, {
+          email: user.email,
+          userName: `${user.firstName} ${user.lastName}`,
+          reason: 'Tenant suspended',
+          tenantId: user.tenantId,
+          tenantName: user.tenant.name,
+        });
         return NextResponse.json(
           { error: 'Your organization has been suspended. Please contact support.' },
           { status: 403 }
         );
       }
       if (user.tenant.status === 'DEACTIVATED') {
+        await logAuthEvent('LOGIN_FAILED', user.id, {
+          email: user.email,
+          userName: `${user.firstName} ${user.lastName}`,
+          reason: 'Tenant deactivated',
+          tenantId: user.tenantId,
+          tenantName: user.tenant.name,
+        });
         return NextResponse.json(
           { error: 'Your organization has been deactivated. Please contact support.' },
           { status: 403 }
         );
       }
       if (user.tenant.status === 'PENDING_SETUP') {
+        await logAuthEvent('LOGIN_FAILED', user.id, {
+          email: user.email,
+          userName: `${user.firstName} ${user.lastName}`,
+          reason: 'Tenant pending setup',
+          tenantId: user.tenantId,
+          tenantName: user.tenant.name,
+        });
         return NextResponse.json(
           { error: 'Your organization setup is not complete. Please contact your administrator.' },
           { status: 403 }
@@ -54,6 +81,11 @@ export async function POST(request: NextRequest) {
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
+      await logAuthEvent('LOGIN_FAILED', user.id, {
+        email: user.email,
+        userName: `${user.firstName} ${user.lastName}`,
+        reason: 'Invalid password',
+      });
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -64,6 +96,15 @@ export async function POST(request: NextRequest) {
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
+    });
+
+    // Log successful login
+    await logAuthEvent('LOGIN', user.id, {
+      email: user.email,
+      userName: `${user.firstName} ${user.lastName}`,
+      role: user.role,
+      tenantId: user.tenantId,
+      tenantName: user.tenant?.name,
     });
 
     // Create JWT token

@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, isSuperAdmin } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 import { auditLogQuerySchema } from '@/lib/validations/audit';
 import { getTenantAuditHistory, getUserAuditHistory } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
@@ -14,6 +15,10 @@ import type { AuditAction, Prisma } from '@prisma/client';
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth();
+
+    // Check audit_log:read permission
+    await requirePermission(session, 'audit_log', 'read');
+
     const { searchParams } = new URL(request.url);
 
     const params = auditLogQuerySchema.parse({
@@ -130,7 +135,7 @@ export async function GET(request: NextRequest) {
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       return NextResponse.json({ error: error.message }, { status: 400 });

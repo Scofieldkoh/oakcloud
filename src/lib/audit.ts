@@ -25,6 +25,8 @@ export interface AuditLogParams {
   changeSource?: ChangeSource;
   changes?: Record<string, { old: unknown; new: unknown }>;
   reason?: string;
+  summary?: string;      // Human-readable description of the action
+  entityName?: string;   // Name of the affected entity
   metadata?: Record<string, unknown>;
   ipAddress?: string | null;
   userAgent?: string | null;
@@ -93,6 +95,8 @@ export async function createAuditLog(params: AuditLogParams) {
         ? (params.changes as Prisma.InputJsonValue)
         : Prisma.JsonNull,
       reason: params.reason,
+      summary: params.summary,
+      entityName: params.entityName,
       metadata: params.metadata
         ? (params.metadata as Prisma.InputJsonValue)
         : Prisma.JsonNull,
@@ -129,6 +133,8 @@ export async function createAuditLogBatch(entries: AuditLogParams[]) {
         ? (params.changes as Prisma.InputJsonValue)
         : Prisma.JsonNull,
       reason: params.reason,
+      summary: params.summary,
+      entityName: params.entityName,
       metadata: params.metadata
         ? (params.metadata as Prisma.InputJsonValue)
         : Prisma.JsonNull,
@@ -510,6 +516,7 @@ export async function logCreate(
   context: AuditContext,
   entityType: string,
   entityId: string,
+  entityName?: string,
   metadata?: Record<string, unknown>
 ) {
   return createAuditLog({
@@ -517,6 +524,8 @@ export async function logCreate(
     action: 'CREATE',
     entityType,
     entityId,
+    entityName,
+    summary: entityName ? `Created ${entityType.toLowerCase()} "${entityName}"` : `Created ${entityType.toLowerCase()}`,
     metadata,
   });
 }
@@ -529,13 +538,19 @@ export async function logUpdate(
   entityType: string,
   entityId: string,
   changes: Record<string, { old: unknown; new: unknown }>,
+  entityName?: string,
   reason?: string
 ) {
+  const changedFields = Object.keys(changes).join(', ');
   return createAuditLog({
     ...context,
     action: 'UPDATE',
     entityType,
     entityId,
+    entityName,
+    summary: entityName
+      ? `Updated ${entityType.toLowerCase()} "${entityName}" (${changedFields})`
+      : `Updated ${entityType.toLowerCase()} (${changedFields})`,
     changes,
     reason,
   });
@@ -548,6 +563,7 @@ export async function logDelete(
   context: AuditContext,
   entityType: string,
   entityId: string,
+  entityName: string,
   reason: string,
   metadata?: Record<string, unknown>
 ) {
@@ -556,6 +572,8 @@ export async function logDelete(
     action: 'DELETE',
     entityType,
     entityId,
+    entityName,
+    summary: `Deleted ${entityType.toLowerCase()} "${entityName}"`,
     reason,
     metadata,
   });
@@ -568,6 +586,7 @@ export async function logRestore(
   context: AuditContext,
   entityType: string,
   entityId: string,
+  entityName: string,
   metadata?: Record<string, unknown>
 ) {
   return createAuditLog({
@@ -575,6 +594,8 @@ export async function logRestore(
     action: 'RESTORE',
     entityType,
     entityId,
+    entityName,
+    summary: `Restored ${entityType.toLowerCase()} "${entityName}"`,
     metadata,
   });
 }
@@ -585,7 +606,7 @@ export async function logRestore(
 export async function logAuthEvent(
   action: 'LOGIN' | 'LOGOUT' | 'LOGIN_FAILED' | 'PASSWORD_CHANGED' | 'PASSWORD_RESET',
   userId: string | undefined,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown> & { email?: string; userName?: string }
 ) {
   const requestContext = await getAuditRequestContext().catch(() => ({
     ipAddress: null,
@@ -593,11 +614,22 @@ export async function logAuthEvent(
     requestId: '',
   }));
 
+  const userDisplay = metadata?.userName || metadata?.email || userId || 'unknown';
+  const summaryMap: Record<string, string> = {
+    LOGIN: `User "${userDisplay}" logged in`,
+    LOGOUT: `User "${userDisplay}" logged out`,
+    LOGIN_FAILED: `Failed login attempt for "${userDisplay}"`,
+    PASSWORD_CHANGED: `User "${userDisplay}" changed password`,
+    PASSWORD_RESET: `Password reset for "${userDisplay}"`,
+  };
+
   return createAuditLog({
     userId,
     action,
     entityType: 'User',
     entityId: userId || 'unknown',
+    entityName: userDisplay,
+    summary: summaryMap[action] || `Auth event: ${action}`,
     changeSource: 'SYSTEM',
     metadata,
     ...requestContext,
@@ -611,13 +643,18 @@ export async function logDocumentOperation(
   context: AuditContext,
   action: 'UPLOAD' | 'DOWNLOAD' | 'EXTRACT',
   documentId: string,
+  documentName: string,
   metadata?: Record<string, unknown>
 ) {
+  const actionVerb = action === 'UPLOAD' ? 'Uploaded' : action === 'DOWNLOAD' ? 'Downloaded' : 'Extracted data from';
+
   return createAuditLog({
     ...context,
     action,
     entityType: 'Document',
     entityId: documentId,
+    entityName: documentName,
+    summary: `${actionVerb} document "${documentName}"`,
     metadata,
   });
 }
@@ -628,16 +665,26 @@ export async function logDocumentOperation(
 export async function logTenantOperation(
   action: 'TENANT_CREATED' | 'TENANT_UPDATED' | 'TENANT_SUSPENDED' | 'TENANT_ACTIVATED',
   tenantId: string,
+  tenantName: string,
   userId?: string,
   changes?: Record<string, { old: unknown; new: unknown }>,
   reason?: string
 ) {
+  const actionMap: Record<string, string> = {
+    TENANT_CREATED: `Created tenant "${tenantName}"`,
+    TENANT_UPDATED: `Updated tenant "${tenantName}"`,
+    TENANT_SUSPENDED: `Suspended tenant "${tenantName}"`,
+    TENANT_ACTIVATED: `Activated tenant "${tenantName}"`,
+  };
+
   return createAuditLog({
     tenantId,
     userId,
     action,
     entityType: 'Tenant',
     entityId: tenantId,
+    entityName: tenantName,
+    summary: actionMap[action] || `Tenant operation: ${action}`,
     changeSource: 'SYSTEM',
     changes,
     reason,
@@ -651,13 +698,27 @@ export async function logUserMembership(
   context: AuditContext,
   action: 'USER_INVITED' | 'USER_REMOVED',
   targetUserId: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown> & {
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+  }
 ) {
+  const userName = metadata?.firstName && metadata?.lastName
+    ? `${metadata.firstName} ${metadata.lastName}`
+    : metadata?.email || targetUserId;
+
+  const actionVerb = action === 'USER_INVITED' ? 'Invited' : 'Removed';
+  const roleInfo = metadata?.role ? ` as ${metadata.role}` : '';
+
   return createAuditLog({
     ...context,
     action,
     entityType: 'User',
     entityId: targetUserId,
+    entityName: userName,
+    summary: `${actionVerb} user "${userName}"${roleInfo}`,
     metadata,
   });
 }
@@ -668,6 +729,7 @@ export async function logUserMembership(
 export async function logRoleChange(
   context: AuditContext,
   targetUserId: string,
+  userName: string,
   oldRole: string,
   newRole: string
 ) {
@@ -676,6 +738,8 @@ export async function logRoleChange(
     action: 'ROLE_CHANGED',
     entityType: 'User',
     entityId: targetUserId,
+    entityName: userName,
+    summary: `Changed role for "${userName}" from ${oldRole} to ${newRole}`,
     changes: { role: { old: oldRole, new: newRole } },
   });
 }

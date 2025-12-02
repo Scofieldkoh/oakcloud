@@ -99,7 +99,7 @@ export async function createTenant(
   });
 
   // Log tenant creation
-  await logTenantOperation('TENANT_CREATED', tenant.id, userId, undefined, undefined);
+  await logTenantOperation('TENANT_CREATED', tenant.id, tenant.name, userId, undefined, undefined);
 
   // Initialize system roles for the new tenant
   await createSystemRolesForTenant(tenant.id);
@@ -189,7 +189,7 @@ export async function updateTenant(
   );
 
   if (changes) {
-    await logTenantOperation('TENANT_UPDATED', tenant.id, userId, changes, reason);
+    await logTenantOperation('TENANT_UPDATED', tenant.id, tenant.name, userId, changes, reason);
   }
 
   return tenant;
@@ -239,6 +239,7 @@ export async function updateTenantStatus(
   await logTenantOperation(
     action,
     tenant.id,
+    tenant.name,
     userId,
     { status: { old: oldStatus, new: status } },
     reason
@@ -296,7 +297,7 @@ export async function searchTenants(params: TenantSearchInput) {
 }
 
 // ============================================================================
-// Delete Tenant (Soft Delete)
+// Delete Tenant (Soft Delete with Cascade)
 // ============================================================================
 
 export async function deleteTenant(
@@ -311,6 +312,7 @@ export async function deleteTenant(
         select: {
           users: { where: { deletedAt: null } },
           companies: { where: { deletedAt: null } },
+          contacts: { where: { deletedAt: null } },
         },
       },
     },
@@ -320,34 +322,80 @@ export async function deleteTenant(
     throw new Error('Tenant not found');
   }
 
-  // Prevent deletion if tenant has active users or companies
-  if (existing._count.users > 0 || existing._count.companies > 0) {
-    throw new Error(
-      'Cannot delete tenant with active users or companies. Please remove them first.'
-    );
+  // Only allow deletion when tenant is SUSPENDED or PENDING_SETUP
+  if (existing.status !== 'SUSPENDED' && existing.status !== 'PENDING_SETUP') {
+    throw new Error('Tenant must be suspended or pending setup before it can be deleted');
   }
 
-  const tenant = await prisma.tenant.update({
-    where: { id },
-    data: {
-      deletedAt: new Date(),
-      status: 'DEACTIVATED',
-    },
+  const deletedAt = new Date();
+
+  // Cascade soft-delete in a transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // Soft-delete all users belonging to this tenant
+    const usersDeleted = await tx.user.updateMany({
+      where: { tenantId: id, deletedAt: null },
+      data: { deletedAt, isActive: false },
+    });
+
+    // Soft-delete all companies belonging to this tenant
+    const companiesDeleted = await tx.company.updateMany({
+      where: { tenantId: id, deletedAt: null },
+      data: { deletedAt, deletedReason: `Tenant deleted: ${reason}` },
+    });
+
+    // Soft-delete all contacts belonging to this tenant
+    const contactsDeleted = await tx.contact.updateMany({
+      where: { tenantId: id, deletedAt: null },
+      data: { deletedAt },
+    });
+
+    // Soft-delete the tenant itself
+    const tenant = await tx.tenant.update({
+      where: { id },
+      data: {
+        deletedAt,
+        deletedReason: reason,
+        status: 'DEACTIVATED',
+      },
+    });
+
+    return {
+      tenant,
+      usersDeleted: usersDeleted.count,
+      companiesDeleted: companiesDeleted.count,
+      contactsDeleted: contactsDeleted.count,
+    };
   });
 
-  // Log deletion
+  // Log deletion with cascade info
+  const cascadeInfo = [];
+  if (result.usersDeleted > 0) cascadeInfo.push(`${result.usersDeleted} users`);
+  if (result.companiesDeleted > 0) cascadeInfo.push(`${result.companiesDeleted} companies`);
+  if (result.contactsDeleted > 0) cascadeInfo.push(`${result.contactsDeleted} contacts`);
+  const cascadeSummary = cascadeInfo.length > 0 ? ` (cascade: ${cascadeInfo.join(', ')})` : '';
+
   await createAuditLog({
-    tenantId: tenant.id,
+    tenantId: result.tenant.id,
     userId,
     action: 'DELETE',
     entityType: 'Tenant',
-    entityId: tenant.id,
+    entityId: result.tenant.id,
+    entityName: result.tenant.name,
+    summary: `Deleted tenant "${result.tenant.name}"${cascadeSummary}`,
     changeSource: 'MANUAL',
     reason,
-    metadata: { name: tenant.name, slug: tenant.slug },
+    metadata: {
+      name: result.tenant.name,
+      slug: result.tenant.slug,
+      cascade: {
+        usersDeleted: result.usersDeleted,
+        companiesDeleted: result.companiesDeleted,
+        contactsDeleted: result.contactsDeleted,
+      },
+    },
   });
 
-  return tenant;
+  return result.tenant;
 }
 
 // ============================================================================
@@ -384,9 +432,52 @@ export async function inviteUserToTenant(
     }
   }
 
+  // Validate all company assignments belong to tenant
+  if (data.companyAssignments && data.companyAssignments.length > 0) {
+    const companyIds = data.companyAssignments.map((a) => a.companyId);
+    const companies = await prisma.company.findMany({
+      where: { id: { in: companyIds }, tenantId, deletedAt: null },
+      select: { id: true },
+    });
+    if (companies.length !== companyIds.length) {
+      throw new Error('One or more companies not found in this tenant');
+    }
+  }
+
+  // Validate all role assignments have valid roles
+  if (data.roleAssignments && data.roleAssignments.length > 0) {
+    const roleIds = data.roleAssignments.map((a) => a.roleId);
+    const roles = await prisma.role.findMany({
+      where: { id: { in: roleIds }, tenantId },
+      select: { id: true },
+    });
+    if (roles.length !== roleIds.length) {
+      throw new Error('One or more roles not found in this tenant');
+    }
+
+    // Validate company-scoped role assignments reference valid companies
+    const companyIdsInRoles = data.roleAssignments
+      .filter((a) => a.companyId)
+      .map((a) => a.companyId as string);
+    if (companyIdsInRoles.length > 0) {
+      const companiesForRoles = await prisma.company.findMany({
+        where: { id: { in: companyIdsInRoles }, tenantId, deletedAt: null },
+        select: { id: true },
+      });
+      if (companiesForRoles.length !== companyIdsInRoles.length) {
+        throw new Error('One or more companies in role assignments not found in this tenant');
+      }
+    }
+  }
+
   // Generate temporary password (should be changed on first login)
   const tempPassword = generateTemporaryPassword();
   const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+  // Determine primary company ID
+  const primaryCompanyId = data.companyAssignments?.find((a) => a.isPrimary)?.companyId
+    || data.companyAssignments?.[0]?.companyId
+    || data.companyId;
 
   const user = await prisma.user.create({
     data: {
@@ -396,24 +487,58 @@ export async function inviteUserToTenant(
       passwordHash,
       role: data.role,
       tenantId,
-      companyId: data.companyId,
+      companyId: primaryCompanyId,
       isActive: true,
       mustChangePassword: true, // Force password change on first login
     },
   });
 
-  // Assign RBAC role based on user role
-  const roleMapping: Record<string, SystemRoleName> = {
-    TENANT_ADMIN: 'TENANT_ADMIN',
-    COMPANY_ADMIN: 'COMPANY_ADMIN',
-    COMPANY_USER: 'COMPANY_USER',
-  };
+  // Create company assignments if provided (just tracks which companies user can access)
+  if (data.companyAssignments && data.companyAssignments.length > 0) {
+    await prisma.userCompanyAssignment.createMany({
+      data: data.companyAssignments.map((assignment, index) => ({
+        userId: user.id,
+        companyId: assignment.companyId,
+        isPrimary: assignment.isPrimary ?? (index === 0),
+      })),
+    });
+  } else if (data.companyId) {
+    // Create a single assignment for the primary company
+    await prisma.userCompanyAssignment.create({
+      data: {
+        userId: user.id,
+        companyId: data.companyId,
+        isPrimary: true,
+      },
+    });
+  }
 
-  const systemRoleName = roleMapping[data.role];
-  if (systemRoleName) {
-    const roleId = await getSystemRoleId(tenantId, systemRoleName);
-    if (roleId) {
-      await assignRoleToUser(user.id, roleId, data.companyId);
+  // Handle role assignments
+  if (data.roleAssignments && data.roleAssignments.length > 0) {
+    // Use custom role assignments provided
+    await prisma.userRoleAssignment.createMany({
+      data: data.roleAssignments.map((assignment) => ({
+        userId: user.id,
+        roleId: assignment.roleId,
+        companyId: assignment.companyId || null, // null = "All Companies"
+      })),
+    });
+  } else {
+    // Default: Assign system role based on user role (tenant-wide)
+    const roleMapping: Record<string, SystemRoleName> = {
+      TENANT_ADMIN: 'TENANT_ADMIN',
+      COMPANY_ADMIN: 'COMPANY_ADMIN',
+      COMPANY_USER: 'COMPANY_USER',
+    };
+
+    const systemRoleName = roleMapping[data.role];
+    if (systemRoleName) {
+      const roleId = await getSystemRoleId(tenantId, systemRoleName);
+      if (roleId) {
+        // TENANT_ADMIN gets tenant-wide role (no company scope)
+        // Others get tenant-wide role too (can be overridden per company later)
+        await assignRoleToUser(user.id, roleId, null);
+      }
     }
   }
 
@@ -427,6 +552,8 @@ export async function inviteUserToTenant(
     email: user.email,
     role: user.role,
     companyId: user.companyId,
+    companyAssignments: data.companyAssignments?.length || (data.companyId ? 1 : 0),
+    roleAssignments: data.roleAssignments?.length || 1,
   });
 
   // Return user without exposing temp password in response
@@ -540,8 +667,9 @@ export async function updateUserRole(
     tenantId,
     userId: updatedByUserId,
   };
+  const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
 
-  await logRoleChange(auditContext, userId, oldRole, newRole);
+  await logRoleChange(auditContext, userId, userName, oldRole, newRole);
 
   return { success: true, oldRole, newRole };
 }

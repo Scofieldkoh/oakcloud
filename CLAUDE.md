@@ -79,6 +79,29 @@ await logUpdate(ctx, 'Company', id, changes);
 
 **Path Alias**: Use `@/` for imports from `src/` directory.
 
+**Number Input Fields**: When using controlled number inputs with `useState`, store the value as a **string** and convert to number only on form submission. This prevents the input from reverting when the user clears the field.
+
+```typescript
+// ❌ BAD: Value reverts immediately when field is cleared
+const [maxUsers, setMaxUsers] = useState(50);
+<input
+  type="number"
+  value={maxUsers}
+  onChange={(e) => setMaxUsers(parseInt(e.target.value) || 50)}
+/>
+
+// ✅ GOOD: Store as string, parse on submit
+const [maxUsers, setMaxUsers] = useState('50');
+<input
+  type="number"
+  value={maxUsers}
+  onChange={(e) => setMaxUsers(e.target.value)}
+/>
+// On submit: parseInt(maxUsers) || 50
+```
+
+Note: This doesn't apply to `react-hook-form` with `{ valueAsNumber: true }` which handles this correctly.
+
 ### Database
 
 - PostgreSQL with Prisma ORM

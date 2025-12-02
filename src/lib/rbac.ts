@@ -135,12 +135,87 @@ export const SYSTEM_ROLES = {
 
 export type SystemRoleName = keyof typeof SYSTEM_ROLES;
 
+/**
+ * Default custom roles created for every new tenant
+ * These can be modified or deleted by tenant admins
+ */
+export const DEFAULT_CUSTOM_ROLES = [
+  {
+    name: 'Auditor',
+    description: 'Read-only access to audit logs, companies, and documents for compliance review',
+    permissions: [
+      'company:read',
+      'contact:read',
+      'document:read',
+      'officer:read',
+      'shareholder:read',
+      'audit_log:read',
+      'audit_log:export',
+    ] as PermissionString[],
+  },
+  {
+    name: 'Data Entry Clerk',
+    description: 'Create and update companies and contacts, but cannot delete or export',
+    permissions: [
+      'company:create', 'company:read', 'company:update',
+      'contact:create', 'contact:read', 'contact:update',
+      'document:create', 'document:read', 'document:update',
+      'officer:create', 'officer:read', 'officer:update',
+      'shareholder:create', 'shareholder:read', 'shareholder:update',
+    ] as PermissionString[],
+  },
+  {
+    name: 'Report Viewer',
+    description: 'View and export data for reporting purposes',
+    permissions: [
+      'company:read', 'company:export',
+      'contact:read', 'contact:export',
+      'document:read', 'document:export',
+      'officer:read', 'officer:export',
+      'shareholder:read', 'shareholder:export',
+      'audit_log:read', 'audit_log:export',
+    ] as PermissionString[],
+  },
+  {
+    name: 'Document Manager',
+    description: 'Full document management with read-only access to company data',
+    permissions: [
+      'company:read',
+      'contact:read',
+      'document:create', 'document:read', 'document:update', 'document:delete', 'document:export', 'document:manage',
+      'officer:read',
+      'shareholder:read',
+    ] as PermissionString[],
+  },
+  {
+    name: 'Manager',
+    description: 'Full access to company data including delete, but no user or role management',
+    permissions: [
+      'company:create', 'company:read', 'company:update', 'company:delete', 'company:export',
+      'contact:create', 'contact:read', 'contact:update', 'contact:delete', 'contact:export',
+      'document:create', 'document:read', 'document:update', 'document:delete', 'document:export',
+      'officer:create', 'officer:read', 'officer:update', 'officer:delete', 'officer:export',
+      'shareholder:create', 'shareholder:read', 'shareholder:update', 'shareholder:delete', 'shareholder:export',
+      'audit_log:read', 'audit_log:export',
+    ] as PermissionString[],
+  },
+] as const;
+
 // ============================================================================
 // Permission Checking
 // ============================================================================
 
 /**
  * Check if user has a specific permission
+ *
+ * Permission Resolution (Specificity Priority):
+ * 1. If companyId provided, look for role assignment specific to that company
+ * 2. If no company-specific role, fall back to tenant-wide role (companyId = null)
+ * 3. Company-specific roles OVERRIDE tenant-wide roles (not combined)
+ *
+ * Special cases:
+ * - SUPER_ADMIN: Has all permissions everywhere
+ * - TENANT_ADMIN: Has all permissions within their tenant (all companies)
  */
 export async function hasPermission(
   userId: string,
@@ -177,14 +252,16 @@ export async function hasPermission(
     return true;
   }
 
-  // Check role assignments for the permission
-  for (const assignment of user.roleAssignments) {
-    // Check if assignment is scoped to a specific company
-    if (companyId && assignment.companyId && assignment.companyId !== companyId) {
-      continue; // Skip this role assignment if company doesn't match
-    }
+  // TENANT_ADMIN has all permissions within their tenant
+  if (user.role === 'TENANT_ADMIN') {
+    return true;
+  }
 
-    // Check if role has the required permission
+  // Get effective role assignments using specificity priority
+  const effectiveAssignments = getEffectiveRoleAssignments(user.roleAssignments, companyId);
+
+  // Check if any effective role has the required permission
+  for (const assignment of effectiveAssignments) {
     const hasMatch = assignment.role.permissions.some(
       (rp) =>
         rp.permission.resource === resource &&
@@ -197,6 +274,31 @@ export async function hasPermission(
   }
 
   return false;
+}
+
+/**
+ * Get effective role assignments based on specificity
+ * Company-specific roles override tenant-wide roles
+ */
+function getEffectiveRoleAssignments<T extends { companyId: string | null }>(
+  assignments: T[],
+  companyId?: string
+): T[] {
+  if (!companyId) {
+    // No specific company - use tenant-wide roles only
+    return assignments.filter(a => a.companyId === null);
+  }
+
+  // Check if there are company-specific roles
+  const companySpecific = assignments.filter(a => a.companyId === companyId);
+
+  if (companySpecific.length > 0) {
+    // Use ONLY company-specific roles (override behavior)
+    return companySpecific;
+  }
+
+  // Fall back to tenant-wide roles
+  return assignments.filter(a => a.companyId === null);
 }
 
 /**
@@ -233,6 +335,7 @@ export async function hasAllPermissions(
 
 /**
  * Get all permissions for a user
+ * Uses the same specificity-based resolution as hasPermission
  */
 export async function getUserPermissions(
   userId: string,
@@ -261,8 +364,8 @@ export async function getUserPermissions(
     return [];
   }
 
-  // SUPER_ADMIN has all permissions
-  if (user.role === 'SUPER_ADMIN') {
+  // SUPER_ADMIN and TENANT_ADMIN have all permissions
+  if (user.role === 'SUPER_ADMIN' || user.role === 'TENANT_ADMIN') {
     const allPermissions: PermissionString[] = [];
     for (const resource of RESOURCES) {
       for (const action of ACTIONS) {
@@ -272,14 +375,12 @@ export async function getUserPermissions(
     return allPermissions;
   }
 
+  // Get effective role assignments using specificity priority
+  const effectiveAssignments = getEffectiveRoleAssignments(user.roleAssignments, companyId);
+
   const permissions = new Set<PermissionString>();
 
-  for (const assignment of user.roleAssignments) {
-    // Filter by company scope if specified
-    if (companyId && assignment.companyId && assignment.companyId !== companyId) {
-      continue;
-    }
-
+  for (const assignment of effectiveAssignments) {
     for (const rp of assignment.role.permissions) {
       permissions.add(`${rp.permission.resource}:${rp.permission.action}` as PermissionString);
     }
@@ -388,17 +489,19 @@ export async function getUserRoleAssignments(userId: string) {
 
 /**
  * Assign a role to a user
+ * @param companyId - If null/undefined, the role applies to "All Companies" (tenant-wide)
+ *                   If a company ID, the role only applies to that specific company
  */
 export async function assignRoleToUser(
   userId: string,
   roleId: string,
-  companyId?: string
+  companyId?: string | null
 ): Promise<void> {
   await prisma.userRoleAssignment.create({
     data: {
       userId,
       roleId,
-      companyId,
+      companyId: companyId || null, // Explicitly set to null for "All Companies"
     },
   });
 }
@@ -502,6 +605,65 @@ export async function createSystemRolesForTenant(tenantId: string): Promise<void
         permissionId,
       })),
     });
+  }
+
+  // Create default custom roles
+  await createDefaultCustomRolesForTenant(tenantId, permissionMap);
+}
+
+/**
+ * Create default custom roles for a tenant
+ * These are non-system roles that can be modified or deleted
+ */
+export async function createDefaultCustomRolesForTenant(
+  tenantId: string,
+  permissionMap?: Map<string, string>
+): Promise<void> {
+  // Get permission map if not provided
+  if (!permissionMap) {
+    const allPermissions = await prisma.permission.findMany();
+    permissionMap = new Map(
+      allPermissions.map((p) => [`${p.resource}:${p.action}`, p.id])
+    );
+  }
+
+  // Create each default custom role
+  for (const roleConfig of DEFAULT_CUSTOM_ROLES) {
+    // Check if role already exists
+    const existing = await prisma.role.findUnique({
+      where: {
+        tenantId_name: {
+          tenantId,
+          name: roleConfig.name,
+        },
+      },
+    });
+
+    if (existing) continue;
+
+    // Create role (not a system role - can be modified/deleted)
+    const role = await prisma.role.create({
+      data: {
+        tenantId,
+        name: roleConfig.name,
+        description: roleConfig.description,
+        isSystem: false,
+      },
+    });
+
+    // Assign permissions to role
+    const rolePermissions = roleConfig.permissions
+      .map((permStr) => permissionMap!.get(permStr))
+      .filter((id): id is string => id !== undefined);
+
+    if (rolePermissions.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: rolePermissions.map((permissionId) => ({
+          roleId: role.id,
+          permissionId,
+        })),
+      });
+    }
   }
 }
 

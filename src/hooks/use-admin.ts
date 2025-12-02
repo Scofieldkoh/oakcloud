@@ -70,6 +70,8 @@ export interface AuditLog {
   changeSource: string;
   changes: Record<string, { old: unknown; new: unknown }> | null;
   reason: string | null;
+  summary: string | null;
+  entityName: string | null;
   metadata: Record<string, unknown> | null;
   ipAddress: string | null;
   userAgent: string | null;
@@ -137,6 +139,24 @@ export interface CreateUserData {
   lastName: string;
   role: string;
   companyId?: string;
+  companyAssignments?: Array<{
+    companyId: string;
+    isPrimary?: boolean;
+  }>;
+  roleAssignments?: Array<{
+    roleId: string;
+    companyId: string | null; // null = "All Companies"
+  }>;
+}
+
+export interface UpdateUserData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  role?: 'TENANT_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER';
+  isActive?: boolean;
+  companyId?: string | null;
+  sendPasswordReset?: boolean;
 }
 
 // ============================================================================
@@ -196,6 +216,80 @@ export function useInviteUser(tenantId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-users', tenantId] });
+    },
+  });
+}
+
+export function useUpdateUser(tenantId: string | undefined, userId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: UpdateUserData) => {
+      if (!tenantId || !userId) throw new Error('Tenant ID and User ID required');
+
+      const res = await fetch(`/api/tenants/${tenantId}/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update user');
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-users', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-user', tenantId, userId] });
+    },
+  });
+}
+
+export function useDeleteUser(tenantId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
+      if (!tenantId) throw new Error('Tenant ID required');
+
+      const res = await fetch(`/api/tenants/${tenantId}/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to remove user');
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-users', tenantId] });
+    },
+  });
+}
+
+export function useSendPasswordReset(tenantId: string | undefined, userId: string | undefined) {
+  return useMutation({
+    mutationFn: async () => {
+      if (!tenantId || !userId) throw new Error('Tenant ID and User ID required');
+
+      const res = await fetch(`/api/tenants/${tenantId}/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sendPasswordReset: true }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to send password reset');
+      }
+
+      return res.json();
     },
   });
 }
@@ -379,6 +473,217 @@ export function useCurrentTenantRoles() {
   return useTenantRoles(session?.tenantId || undefined);
 }
 
+export interface Permission {
+  id: string;
+  resource: string;
+  action: string;
+  description: string | null;
+}
+
+export interface PermissionsResponse {
+  resources: string[];
+  actions: string[];
+  grouped: Record<string, Array<{ id: string; action: string; description: string | null }>>;
+  permissions: Permission[];
+}
+
+export function usePermissions() {
+  return useQuery<PermissionsResponse>({
+    queryKey: ['permissions'],
+    queryFn: async () => {
+      const res = await fetch('/api/permissions');
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to fetch permissions');
+      }
+      return res.json();
+    },
+  });
+}
+
+export interface CreateRoleData {
+  name: string;
+  description?: string;
+  permissions?: string[];
+}
+
+export interface UpdateRoleData {
+  name?: string;
+  description?: string;
+  permissions?: string[];
+}
+
+export function useCreateRole(tenantId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateRoleData) => {
+      if (!tenantId) throw new Error('Tenant ID required');
+      const res = await fetch(`/api/tenants/${tenantId}/roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to create role');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+    },
+  });
+}
+
+export function useUpdateRole(tenantId: string | undefined, roleId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: UpdateRoleData) => {
+      if (!tenantId || !roleId) throw new Error('Tenant ID and Role ID required');
+      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update role');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+    },
+  });
+}
+
+export function useDeleteRole(tenantId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (roleId: string) => {
+      if (!tenantId) throw new Error('Tenant ID required');
+      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to delete role');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+    },
+  });
+}
+
+export function useDuplicateRole(tenantId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ roleId, name }: { roleId: string; name: string }) => {
+      if (!tenantId) throw new Error('Tenant ID required');
+      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to duplicate role');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+    },
+  });
+}
+
+export interface RoleUser {
+  id: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    isActive: boolean;
+  };
+  company: {
+    id: string;
+    name: string;
+    uen: string;
+  } | null;
+}
+
+export function useRoleUsers(tenantId: string | undefined, roleId: string | undefined) {
+  return useQuery<{ users: RoleUser[] }>({
+    queryKey: ['role-users', tenantId, roleId],
+    queryFn: async () => {
+      if (!tenantId || !roleId) throw new Error('Tenant ID and Role ID required');
+      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}/users`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to fetch role users');
+      }
+      return res.json();
+    },
+    enabled: !!tenantId && !!roleId,
+  });
+}
+
+export function useAssignRoleToUser(tenantId: string | undefined, roleId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { userId: string; companyId?: string }) => {
+      if (!tenantId || !roleId) throw new Error('Tenant ID and Role ID required');
+      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to assign role to user');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['role-users', tenantId, roleId] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+    },
+  });
+}
+
+export function useRemoveRoleFromUser(tenantId: string | undefined, roleId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { userId: string; companyId?: string }) => {
+      if (!tenantId || !roleId) throw new Error('Tenant ID and Role ID required');
+      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}/users`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to remove role from user');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['role-users', tenantId, roleId] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+    },
+  });
+}
+
 // ============================================================================
 // User Company Assignment Hooks
 // ============================================================================
@@ -387,7 +692,6 @@ export interface UserCompanyAssignment {
   id: string;
   userId: string;
   companyId: string;
-  accessLevel: 'VIEW' | 'EDIT' | 'MANAGE';
   isPrimary: boolean;
   createdAt: string;
   company: {
@@ -419,7 +723,6 @@ export function useAssignUserToCompany(userId: string | undefined) {
   return useMutation({
     mutationFn: async (data: {
       companyId: string;
-      accessLevel?: 'VIEW' | 'EDIT' | 'MANAGE';
       isPrimary?: boolean;
     }) => {
       if (!userId) throw new Error('User ID required');
@@ -447,7 +750,6 @@ export function useUpdateCompanyAssignment(userId: string | undefined) {
   return useMutation({
     mutationFn: async (data: {
       assignmentId: string;
-      accessLevel?: 'VIEW' | 'EDIT' | 'MANAGE';
       isPrimary?: boolean;
     }) => {
       if (!userId) throw new Error('User ID required');
@@ -488,6 +790,144 @@ export function useRemoveCompanyAssignment(userId: string | undefined) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-company-assignments', userId] });
       queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
+    },
+  });
+}
+
+// ============================================================================
+// Data Purge Hooks (Permanent Deletion)
+// ============================================================================
+
+export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact';
+
+export interface PurgeStats {
+  tenants: number;
+  users: number;
+  companies: number;
+  contacts: number;
+}
+
+export interface PurgeableTenant {
+  id: string;
+  name: string;
+  slug: string;
+  deletedAt: string;
+  deletedReason: string | null;
+  _count: {
+    users: number;
+    companies: number;
+  };
+}
+
+export interface PurgeableUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  deletedAt: string;
+  tenant: { name: string } | null;
+}
+
+export interface PurgeableCompany {
+  id: string;
+  name: string;
+  uen: string;
+  deletedAt: string;
+  deletedReason: string | null;
+  tenant: { name: string } | null;
+  _count: {
+    documents: number;
+    officers: number;
+    shareholders: number;
+  };
+}
+
+export interface PurgeableContact {
+  id: string;
+  fullName: string;
+  email: string | null;
+  deletedAt: string;
+  tenant: { name: string } | null;
+}
+
+export interface PurgeDataResponse {
+  stats: PurgeStats;
+  records: {
+    tenants: PurgeableTenant[];
+    users: PurgeableUser[];
+    companies: PurgeableCompany[];
+    contacts: PurgeableContact[];
+  };
+}
+
+export function usePurgeData() {
+  return useQuery<PurgeDataResponse>({
+    queryKey: ['purge-data'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/purge');
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to fetch purge data');
+      }
+      return res.json();
+    },
+  });
+}
+
+export function usePurgeRecords() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      entityType: PurgeableEntity;
+      entityIds: string[];
+      reason: string;
+    }) => {
+      const res = await fetch('/api/admin/purge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to purge records');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purge-data'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
+  });
+}
+
+export function useRestoreRecords() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      entityType: PurgeableEntity;
+      entityIds: string[];
+    }) => {
+      const res = await fetch('/api/admin/purge', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to restore records');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purge-data'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
     },
   });
 }
