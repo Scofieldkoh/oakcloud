@@ -12,9 +12,17 @@ datasource db {
 // ============================================================================
 
 enum UserRole {
-  SUPER_ADMIN
-  COMPANY_ADMIN
-  COMPANY_USER
+  SUPER_ADMIN     // System-wide administrator
+  TENANT_ADMIN    // Tenant administrator (can manage tenant settings and users)
+  COMPANY_ADMIN   // Company administrator within a tenant
+  COMPANY_USER    // Regular user with limited access
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_SETUP
+  DEACTIVATED
 }
 
 enum EntityType {
@@ -74,12 +82,41 @@ enum AddressType {
 }
 
 enum AuditAction {
+  // CRUD Operations
   CREATE
   UPDATE
   DELETE
   RESTORE
+
+  // Document Operations
   UPLOAD
+  DOWNLOAD
   EXTRACT
+
+  // Authentication Events
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  PASSWORD_CHANGED
+  PASSWORD_RESET
+
+  // Access Control
+  PERMISSION_GRANTED
+  PERMISSION_REVOKED
+  ROLE_CHANGED
+
+  // Tenant Operations
+  TENANT_CREATED
+  TENANT_UPDATED
+  TENANT_SUSPENDED
+  TENANT_ACTIVATED
+  USER_INVITED
+  USER_REMOVED
+
+  // Data Operations
+  EXPORT
+  IMPORT
+  BULK_UPDATE
 }
 
 enum ChangeSource {
@@ -87,6 +124,133 @@ enum ChangeSource {
   BIZFILE_UPLOAD
   API
   SYSTEM
+}
+
+// ============================================================================
+// TENANT (Multi-Tenancy Core)
+// ============================================================================
+
+model Tenant {
+  id                String       @id @default(uuid())
+  name              String
+  slug              String       @unique // URL-friendly identifier
+  status            TenantStatus @default(PENDING_SETUP)
+
+  // Contact Info
+  contactEmail      String?
+  contactPhone      String?
+
+  // Address
+  addressLine1      String?
+  addressLine2      String?
+  city              String?
+  postalCode        String?
+  country           String?      @default("SINGAPORE")
+
+  // Settings & Limits
+  settings          Json?        // Tenant-specific configuration
+  maxUsers          Int          @default(50)
+  maxCompanies      Int          @default(100)
+  maxStorageMb      Int          @default(10240) // 10GB default
+
+  // Branding (optional)
+  logoUrl           String?
+  primaryColor      String?      @default("#294d44")
+
+  // Timestamps
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  deletedAt         DateTime?
+  activatedAt       DateTime?
+  suspendedAt       DateTime?
+  suspendReason     String?
+
+  // Relations
+  users             User[]
+  companies         Company[]
+  contacts          Contact[]
+  documents         Document[]
+  auditLogs         AuditLog[]
+  roles             Role[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("tenants")
+}
+
+// ============================================================================
+// RBAC (Role-Based Access Control)
+// ============================================================================
+
+model Role {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  name        String
+  description String?
+  isSystem    Boolean  @default(false) // System roles cannot be deleted
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  permissions RolePermission[]
+  users       UserRoleAssignment[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  resource    String   // e.g., "company", "document", "user", "contact"
+  action      String   // e.g., "create", "read", "update", "delete", "export"
+  description String?
+
+  // Relations
+  roles       RolePermission[]
+
+  @@unique([resource, action])
+  @@index([resource])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model UserRoleAssignment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  // Optional: scope to specific company (null = tenant-wide)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId, companyId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([companyId])
+  @@map("user_role_assignments")
 }
 
 // ============================================================================
@@ -106,14 +270,23 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
-  // Relations
+  // Tenant relation (required for all non-SUPER_ADMIN users)
+  tenantId      String?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
+
+  // Company relation (optional, for company-scoped users)
   companyId     String?
   company       Company?  @relation(fields: [companyId], references: [id])
+
+  // Relations
   auditLogs     AuditLog[]
   uploadedDocuments Document[]
+  roleAssignments UserRoleAssignment[]
 
   @@index([email])
+  @@index([tenantId])
   @@index([companyId])
+  @@index([tenantId, role])
   @@map("users")
 }
 
@@ -123,6 +296,11 @@ model User {
 
 model Company {
   id                    String        @id @default(uuid())
+
+  // Tenant (multi-tenancy) - required
+  tenantId              String
+  tenant                Tenant        @relation(fields: [tenantId], references: [id])
+
   uen                   String        @unique
   name                  String
   entityType            EntityType    @default(PRIVATE_LIMITED)
@@ -179,11 +357,15 @@ model Company {
   documents             Document[]
   auditLogs             AuditLog[]
   contacts              CompanyContact[]
+  roleAssignments       UserRoleAssignment[]
 
+  @@unique([tenantId, uen]) // UEN unique within tenant
+  @@index([tenantId])
   @@index([uen])
   @@index([name])
   @@index([status])
   @@index([entityType])
+  @@index([tenantId, deletedAt])
   @@index([deletedAt])
   @@map("companies")
 }
@@ -236,6 +418,11 @@ model CompanyAddress {
 
 model Contact {
   id                  String             @id @default(uuid())
+
+  // Tenant (multi-tenancy) - required
+  tenantId            String
+  tenant              Tenant             @relation(fields: [tenantId], references: [id])
+
   contactType         ContactType        @default(INDIVIDUAL)
 
   // For Individuals
@@ -276,10 +463,12 @@ model Contact {
   shareholdings       CompanyShareholder[]
   chargeHoldings      CompanyCharge[]
 
-  @@unique([identificationType, identificationNumber])
+  @@unique([tenantId, identificationType, identificationNumber])
+  @@index([tenantId])
   @@index([fullName])
   @@index([identificationNumber])
   @@index([corporateUen])
+  @@index([tenantId, deletedAt])
   @@map("contacts")
 }
 
@@ -441,6 +630,11 @@ model CompanyCharge {
 
 model Document {
   id              String    @id @default(uuid())
+
+  // Tenant (multi-tenancy) - required
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id])
+
   companyId       String
   company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   uploadedById    String
@@ -475,9 +669,11 @@ model Document {
   shareholders    CompanyShareholder[]
   charges         CompanyCharge[]
 
+  @@index([tenantId])
   @@index([companyId])
   @@index([documentType])
   @@index([uploadedById])
+  @@index([tenantId, companyId])
   @@map("documents")
 }
 
@@ -487,13 +683,18 @@ model Document {
 
 model AuditLog {
   id            String       @id @default(uuid())
+
+  // Tenant (multi-tenancy) - optional for system-level events
+  tenantId      String?
+  tenant        Tenant?      @relation(fields: [tenantId], references: [id])
+
   userId        String?
   user          User?        @relation(fields: [userId], references: [id])
   companyId     String?
   company       Company?     @relation(fields: [companyId], references: [id])
 
   action        AuditAction
-  entityType    String       // "Company", "Contact", "Officer", etc.
+  entityType    String       // "Tenant", "Company", "Contact", "Officer", etc.
   entityId      String
 
   changeSource  ChangeSource @default(MANUAL)
@@ -501,15 +702,23 @@ model AuditLog {
   reason        String?      // Required for deletions
   metadata      Json?        // Additional context
 
+  // Request context
   ipAddress     String?
   userAgent     String?
+  requestId     String?      // For correlating related operations
+  sessionId     String?      // For tracking user sessions
 
+  // Timestamps
   createdAt     DateTime     @default(now())
 
+  @@index([tenantId])
   @@index([userId])
   @@index([companyId])
   @@index([entityType, entityId])
   @@index([action])
   @@index([createdAt])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType])
+  @@index([requestId])
   @@map("audit_logs")
 }

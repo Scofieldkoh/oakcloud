@@ -1,0 +1,686 @@
+/**
+ * Tenant Service
+ *
+ * Business logic for tenant management including CRUD operations,
+ * user management within tenants, and tenant-level operations.
+ */
+
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+import type { TenantStatus } from '@prisma/client';
+import {
+  createAuditLog,
+  computeChanges,
+  logTenantOperation,
+  logUserMembership,
+  logRoleChange,
+  type AuditContext,
+} from '@/lib/audit';
+import { generateTenantSlug, getTenantLimits } from '@/lib/tenant';
+import {
+  createSystemRolesForTenant,
+  getSystemRoleId,
+  assignRoleToUser,
+  type SystemRoleName,
+} from '@/lib/rbac';
+import type {
+  CreateTenantInput,
+  UpdateTenantInput,
+  TenantSearchInput,
+  InviteUserInput,
+  TenantSettingsInput,
+} from '@/lib/validations/tenant';
+import bcrypt from 'bcryptjs';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface TenantWithStats {
+  id: string;
+  name: string;
+  slug: string;
+  status: TenantStatus;
+  contactEmail: string | null;
+  createdAt: Date;
+  _count: {
+    users: number;
+    companies: number;
+  };
+}
+
+// Fields tracked for audit logging
+const TRACKED_FIELDS: (keyof UpdateTenantInput)[] = [
+  'name',
+  'slug',
+  'contactEmail',
+  'contactPhone',
+  'addressLine1',
+  'addressLine2',
+  'city',
+  'postalCode',
+  'country',
+  'maxUsers',
+  'maxCompanies',
+  'maxStorageMb',
+  'logoUrl',
+  'primaryColor',
+];
+
+// ============================================================================
+// Create Tenant
+// ============================================================================
+
+export async function createTenant(
+  data: CreateTenantInput,
+  userId?: string
+) {
+  // Generate slug if not provided
+  const slug = data.slug || (await generateTenantSlug(data.name));
+
+  // Check slug uniqueness
+  const existing = await prisma.tenant.findUnique({
+    where: { slug },
+  });
+
+  if (existing) {
+    throw new Error('Tenant slug already exists');
+  }
+
+  const tenant = await prisma.tenant.create({
+    data: {
+      name: data.name,
+      slug,
+      status: 'PENDING_SETUP',
+      contactEmail: data.contactEmail,
+      contactPhone: data.contactPhone,
+      addressLine1: data.addressLine1,
+      addressLine2: data.addressLine2,
+      city: data.city,
+      postalCode: data.postalCode,
+      country: data.country || 'SINGAPORE',
+      maxUsers: data.maxUsers || 50,
+      maxCompanies: data.maxCompanies || 100,
+      maxStorageMb: data.maxStorageMb || 10240,
+      logoUrl: data.logoUrl,
+      primaryColor: data.primaryColor || '#294d44',
+      settings: data.settings ? (data.settings as Prisma.InputJsonValue) : null,
+    },
+  });
+
+  // Log tenant creation
+  await logTenantOperation('TENANT_CREATED', tenant.id, userId, undefined, undefined);
+
+  // Initialize system roles for the new tenant
+  await createSystemRolesForTenant(tenant.id);
+
+  return tenant;
+}
+
+// ============================================================================
+// Get Tenant
+// ============================================================================
+
+export async function getTenantById(id: string) {
+  return prisma.tenant.findUnique({
+    where: { id, deletedAt: null },
+    include: {
+      _count: {
+        select: {
+          users: { where: { deletedAt: null, isActive: true } },
+          companies: { where: { deletedAt: null } },
+          documents: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getTenantBySlug(slug: string) {
+  return prisma.tenant.findUnique({
+    where: { slug, deletedAt: null },
+    include: {
+      _count: {
+        select: {
+          users: { where: { deletedAt: null, isActive: true } },
+          companies: { where: { deletedAt: null } },
+        },
+      },
+    },
+  });
+}
+
+// ============================================================================
+// Update Tenant
+// ============================================================================
+
+export async function updateTenant(
+  data: UpdateTenantInput,
+  userId?: string,
+  reason?: string
+) {
+  const { id, ...updateData } = data;
+
+  // Get existing tenant
+  const existing = await prisma.tenant.findUnique({
+    where: { id, deletedAt: null },
+  });
+
+  if (!existing) {
+    throw new Error('Tenant not found');
+  }
+
+  // Check slug uniqueness if being updated
+  if (updateData.slug && updateData.slug !== existing.slug) {
+    const slugExists = await prisma.tenant.findUnique({
+      where: { slug: updateData.slug },
+    });
+    if (slugExists) {
+      throw new Error('Tenant slug already exists');
+    }
+  }
+
+  // Update tenant
+  const tenant = await prisma.tenant.update({
+    where: { id },
+    data: {
+      ...updateData,
+      settings: updateData.settings
+        ? (updateData.settings as Prisma.InputJsonValue)
+        : undefined,
+    },
+  });
+
+  // Compute and log changes
+  const changes = computeChanges(
+    existing as unknown as Record<string, unknown>,
+    updateData as Record<string, unknown>,
+    TRACKED_FIELDS as string[]
+  );
+
+  if (changes) {
+    await logTenantOperation('TENANT_UPDATED', tenant.id, userId, changes, reason);
+  }
+
+  return tenant;
+}
+
+// ============================================================================
+// Update Tenant Status
+// ============================================================================
+
+export async function updateTenantStatus(
+  id: string,
+  status: TenantStatus,
+  userId?: string,
+  reason?: string
+) {
+  const existing = await prisma.tenant.findUnique({
+    where: { id, deletedAt: null },
+  });
+
+  if (!existing) {
+    throw new Error('Tenant not found');
+  }
+
+  const oldStatus = existing.status;
+
+  const updateData: Prisma.TenantUpdateInput = {
+    status,
+  };
+
+  // Set timestamps based on status change
+  if (status === 'ACTIVE' && oldStatus !== 'ACTIVE') {
+    updateData.activatedAt = new Date();
+    updateData.suspendedAt = null;
+    updateData.suspendReason = null;
+  } else if (status === 'SUSPENDED') {
+    updateData.suspendedAt = new Date();
+    updateData.suspendReason = reason;
+  }
+
+  const tenant = await prisma.tenant.update({
+    where: { id },
+    data: updateData,
+  });
+
+  // Log status change
+  const action = status === 'SUSPENDED' ? 'TENANT_SUSPENDED' : 'TENANT_ACTIVATED';
+  await logTenantOperation(
+    action,
+    tenant.id,
+    userId,
+    { status: { old: oldStatus, new: status } },
+    reason
+  );
+
+  return tenant;
+}
+
+// ============================================================================
+// Search Tenants
+// ============================================================================
+
+export async function searchTenants(params: TenantSearchInput) {
+  const where: Prisma.TenantWhereInput = {
+    deletedAt: null,
+    ...(params.query && {
+      OR: [
+        { name: { contains: params.query, mode: 'insensitive' } },
+        { slug: { contains: params.query, mode: 'insensitive' } },
+        { contactEmail: { contains: params.query, mode: 'insensitive' } },
+      ],
+    }),
+    ...(params.status && { status: params.status }),
+  };
+
+  const orderBy: Prisma.TenantOrderByWithRelationInput = {
+    [params.sortBy]: params.sortOrder,
+  };
+
+  const [tenants, totalCount] = await Promise.all([
+    prisma.tenant.findMany({
+      where,
+      include: {
+        _count: {
+          select: {
+            users: { where: { deletedAt: null, isActive: true } },
+            companies: { where: { deletedAt: null } },
+          },
+        },
+      },
+      orderBy,
+      skip: (params.page - 1) * params.limit,
+      take: params.limit,
+    }),
+    prisma.tenant.count({ where }),
+  ]);
+
+  return {
+    tenants,
+    totalCount,
+    page: params.page,
+    limit: params.limit,
+    totalPages: Math.ceil(totalCount / params.limit),
+  };
+}
+
+// ============================================================================
+// Delete Tenant (Soft Delete)
+// ============================================================================
+
+export async function deleteTenant(
+  id: string,
+  userId: string,
+  reason: string
+) {
+  const existing = await prisma.tenant.findUnique({
+    where: { id, deletedAt: null },
+    include: {
+      _count: {
+        select: {
+          users: { where: { deletedAt: null } },
+          companies: { where: { deletedAt: null } },
+        },
+      },
+    },
+  });
+
+  if (!existing) {
+    throw new Error('Tenant not found');
+  }
+
+  // Prevent deletion if tenant has active users or companies
+  if (existing._count.users > 0 || existing._count.companies > 0) {
+    throw new Error(
+      'Cannot delete tenant with active users or companies. Please remove them first.'
+    );
+  }
+
+  const tenant = await prisma.tenant.update({
+    where: { id },
+    data: {
+      deletedAt: new Date(),
+      status: 'DEACTIVATED',
+    },
+  });
+
+  // Log deletion
+  await createAuditLog({
+    tenantId: tenant.id,
+    userId,
+    action: 'DELETE',
+    entityType: 'Tenant',
+    entityId: tenant.id,
+    changeSource: 'MANUAL',
+    reason,
+    metadata: { name: tenant.name, slug: tenant.slug },
+  });
+
+  return tenant;
+}
+
+// ============================================================================
+// Tenant User Management
+// ============================================================================
+
+export async function inviteUserToTenant(
+  tenantId: string,
+  data: InviteUserInput,
+  invitedByUserId: string
+) {
+  // Check tenant limits
+  const limits = await getTenantLimits(tenantId);
+  if (limits.currentUsers >= limits.maxUsers) {
+    throw new Error(`Tenant has reached the maximum number of users (${limits.maxUsers})`);
+  }
+
+  // Check if email already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email: data.email.toLowerCase() },
+  });
+
+  if (existingUser) {
+    throw new Error('A user with this email already exists');
+  }
+
+  // Validate company belongs to tenant if provided
+  if (data.companyId) {
+    const company = await prisma.company.findUnique({
+      where: { id: data.companyId, tenantId, deletedAt: null },
+    });
+    if (!company) {
+      throw new Error('Company not found in this tenant');
+    }
+  }
+
+  // Generate temporary password (should be changed on first login)
+  const tempPassword = generateTemporaryPassword();
+  const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      email: data.email.toLowerCase(),
+      firstName: data.firstName,
+      lastName: data.lastName,
+      passwordHash,
+      role: data.role,
+      tenantId,
+      companyId: data.companyId,
+      isActive: true,
+    },
+  });
+
+  // Assign RBAC role based on user role
+  const roleMapping: Record<string, SystemRoleName> = {
+    TENANT_ADMIN: 'TENANT_ADMIN',
+    COMPANY_ADMIN: 'COMPANY_ADMIN',
+    COMPANY_USER: 'COMPANY_USER',
+  };
+
+  const systemRoleName = roleMapping[data.role];
+  if (systemRoleName) {
+    const roleId = await getSystemRoleId(tenantId, systemRoleName);
+    if (roleId) {
+      await assignRoleToUser(user.id, roleId, data.companyId);
+    }
+  }
+
+  // Log user invitation
+  const auditContext: AuditContext = {
+    tenantId,
+    userId: invitedByUserId,
+  };
+
+  await logUserMembership(auditContext, 'USER_INVITED', user.id, {
+    email: user.email,
+    role: user.role,
+    companyId: user.companyId,
+  });
+
+  // Return user without exposing temp password in response
+  // In production, you'd send an email with the temp password
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    },
+    // Only for development/testing - remove in production
+    temporaryPassword: process.env.NODE_ENV === 'development' ? tempPassword : undefined,
+  };
+}
+
+export async function removeUserFromTenant(
+  tenantId: string,
+  userId: string,
+  removedByUserId: string,
+  reason: string
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId, tenantId, deletedAt: null },
+  });
+
+  if (!user) {
+    throw new Error('User not found in this tenant');
+  }
+
+  // Prevent removing the last tenant admin
+  if (user.role === 'TENANT_ADMIN') {
+    const adminCount = await prisma.user.count({
+      where: {
+        tenantId,
+        role: 'TENANT_ADMIN',
+        deletedAt: null,
+        isActive: true,
+      },
+    });
+
+    if (adminCount <= 1) {
+      throw new Error('Cannot remove the last tenant administrator');
+    }
+  }
+
+  // Soft delete the user
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      deletedAt: new Date(),
+      isActive: false,
+    },
+  });
+
+  // Log user removal
+  const auditContext: AuditContext = {
+    tenantId,
+    userId: removedByUserId,
+  };
+
+  await logUserMembership(auditContext, 'USER_REMOVED', userId, {
+    email: user.email,
+    role: user.role,
+    reason,
+  });
+
+  return { success: true };
+}
+
+export async function updateUserRole(
+  tenantId: string,
+  userId: string,
+  newRole: 'TENANT_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER',
+  updatedByUserId: string
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId, tenantId, deletedAt: null },
+  });
+
+  if (!user) {
+    throw new Error('User not found in this tenant');
+  }
+
+  const oldRole = user.role;
+
+  // Prevent demoting the last tenant admin
+  if (oldRole === 'TENANT_ADMIN' && newRole !== 'TENANT_ADMIN') {
+    const adminCount = await prisma.user.count({
+      where: {
+        tenantId,
+        role: 'TENANT_ADMIN',
+        deletedAt: null,
+        isActive: true,
+      },
+    });
+
+    if (adminCount <= 1) {
+      throw new Error('Cannot demote the last tenant administrator');
+    }
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { role: newRole },
+  });
+
+  // Log role change
+  const auditContext: AuditContext = {
+    tenantId,
+    userId: updatedByUserId,
+  };
+
+  await logRoleChange(auditContext, userId, oldRole, newRole);
+
+  return { success: true, oldRole, newRole };
+}
+
+// ============================================================================
+// Tenant Settings
+// ============================================================================
+
+export async function updateTenantSettings(
+  tenantId: string,
+  settings: TenantSettingsInput,
+  userId: string
+) {
+  const existing = await prisma.tenant.findUnique({
+    where: { id: tenantId, deletedAt: null },
+    select: { settings: true },
+  });
+
+  if (!existing) {
+    throw new Error('Tenant not found');
+  }
+
+  const currentSettings = (existing.settings as Record<string, unknown>) || {};
+  const newSettings = { ...currentSettings, ...settings };
+
+  const tenant = await prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      settings: newSettings as Prisma.InputJsonValue,
+    },
+  });
+
+  // Log settings update
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'TenantSettings',
+    entityId: tenantId,
+    changeSource: 'MANUAL',
+    changes: { settings: { old: currentSettings, new: newSettings } },
+  });
+
+  return tenant;
+}
+
+// ============================================================================
+// Tenant Statistics
+// ============================================================================
+
+export async function getTenantStats(tenantId: string) {
+  const [
+    userStats,
+    companyStats,
+    documentStats,
+    storageUsage,
+    recentActivity,
+  ] = await Promise.all([
+    // User statistics
+    prisma.user.groupBy({
+      by: ['role'],
+      where: { tenantId, deletedAt: null, isActive: true },
+      _count: true,
+    }),
+
+    // Company statistics
+    prisma.company.groupBy({
+      by: ['status'],
+      where: { tenantId, deletedAt: null },
+      _count: true,
+    }),
+
+    // Document statistics
+    prisma.document.groupBy({
+      by: ['documentType'],
+      where: { tenantId },
+      _count: true,
+    }),
+
+    // Storage usage
+    prisma.document.aggregate({
+      where: { tenantId },
+      _sum: { fileSize: true },
+    }),
+
+    // Recent activity (last 30 days)
+    prisma.auditLog.count({
+      where: {
+        tenantId,
+        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+  ]);
+
+  const limits = await getTenantLimits(tenantId);
+
+  return {
+    users: {
+      total: limits.currentUsers,
+      max: limits.maxUsers,
+      byRole: userStats.map((s) => ({ role: s.role, count: s._count })),
+    },
+    companies: {
+      total: limits.currentCompanies,
+      max: limits.maxCompanies,
+      byStatus: companyStats.map((s) => ({ status: s.status, count: s._count })),
+    },
+    documents: {
+      byType: documentStats.map((s) => ({ type: s.documentType, count: s._count })),
+    },
+    storage: {
+      usedMb: limits.currentStorageMb,
+      maxMb: limits.maxStorageMb,
+      usedBytes: storageUsage._sum.fileSize || 0,
+    },
+    activity: {
+      last30Days: recentActivity,
+    },
+  };
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function generateTemporaryPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
