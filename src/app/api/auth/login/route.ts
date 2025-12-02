@@ -16,9 +16,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email
+    // Find user by email with tenant info
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
+      include: { tenant: true },
     });
 
     if (!user || !user.isActive || user.deletedAt) {
@@ -26,6 +27,28 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid email or password' },
         { status: 401 }
       );
+    }
+
+    // Check tenant status (skip for SUPER_ADMIN who may not have a tenant)
+    if (user.tenant) {
+      if (user.tenant.status === 'SUSPENDED') {
+        return NextResponse.json(
+          { error: 'Your organization has been suspended. Please contact support.' },
+          { status: 403 }
+        );
+      }
+      if (user.tenant.status === 'DEACTIVATED') {
+        return NextResponse.json(
+          { error: 'Your organization has been deactivated. Please contact support.' },
+          { status: 403 }
+        );
+      }
+      if (user.tenant.status === 'PENDING_SETUP') {
+        return NextResponse.json(
+          { error: 'Your organization setup is not complete. Please contact your administrator.' },
+          { status: 403 }
+        );
+      }
     }
 
     // Verify password

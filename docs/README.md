@@ -358,6 +358,18 @@ Each tenant has configurable limits:
 
 Limits are enforced at the service layer before creating new resources.
 
+### Tenant Lifecycle
+
+1. **Creation** (`PENDING_SETUP`): SUPER_ADMIN creates tenant via Admin > Tenants
+2. **Setup Wizard**: 4-step wizard guides through initial configuration:
+   - Step 1: Review/update tenant information (name, contact, address)
+   - Step 2: Create first TENANT_ADMIN user
+   - Step 3: Optionally create first company
+   - Step 4: Review and activate
+3. **Activation** (`ACTIVE`): Setup completion activates the tenant
+4. **Suspension** (`SUSPENDED`): SUPER_ADMIN can suspend for compliance/billing
+5. **Deactivation** (`DEACTIVATED`): Soft-delete marks tenant as deactivated
+
 ### Key Features
 
 1. **Data Isolation**: All queries are automatically scoped to the user's tenant
@@ -365,6 +377,7 @@ Limits are enforced at the service layer before creating new resources.
 3. **RBAC**: Fine-grained role-based access control with custom roles
 4. **Tenant Suspension**: Suspended tenants prevent user login
 5. **Audit Trail**: All actions tracked with tenant context
+6. **Setup Wizard**: Guided onboarding for new tenants with admin user creation
 
 ---
 
@@ -805,6 +818,61 @@ Content-Type: application/json
 ```
 
 Note: Tenant must have no users or companies to be deleted.
+
+#### Complete Tenant Setup (Wizard)
+```
+POST /api/tenants/:id/setup
+Content-Type: application/json
+
+{
+  "tenantInfo": {
+    "name": "Updated Name",
+    "contactEmail": "admin@acme.com",
+    "contactPhone": "+65 6123 4567"
+  },
+  "adminUser": {
+    "email": "admin@acme.com",
+    "firstName": "John",
+    "lastName": "Doe"
+  },
+  "firstCompany": {
+    "uen": "202312345A",
+    "name": "Acme Pte Ltd",
+    "entityType": "PRIVATE_LIMITED"
+  }
+}
+```
+
+Response:
+```json
+{
+  "tenant": {
+    "id": "uuid",
+    "name": "Acme Corp",
+    "slug": "acme-corp",
+    "status": "ACTIVE"
+  },
+  "adminUser": {
+    "id": "uuid",
+    "email": "admin@acme.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "temporaryPassword": "abc123XYZ" // Only in development
+  },
+  "company": {
+    "id": "uuid",
+    "uen": "202312345A",
+    "name": "Acme Pte Ltd"
+  }
+}
+```
+
+Notes:
+- Only available for tenants in `PENDING_SETUP` status
+- `tenantInfo` is optional - updates tenant details if provided
+- `firstCompany` is optional - can be `null` to skip company creation
+- On success, tenant status changes to `ACTIVE`
+- Admin user is created with `mustChangePassword: true`
 
 ### Tenant Users
 
@@ -1550,6 +1618,40 @@ docker ps
 ---
 
 ## Version History
+
+### v0.5.2 (2025-12-02)
+- **Tenant Schema Simplified**: Removed address fields from tenant model
+  - Removed: `addressLine1`, `addressLine2`, `city`, `postalCode`, `country`
+  - Updated tenant setup wizard to reflect changes
+  - Database migration applied
+- **Tenant Limits**: Enforcement status
+  - `maxUsers`: ✅ Enforced when inviting users
+  - `maxCompanies`: ✅ Enforced when creating companies
+  - `maxStorageMb`: Helper exists, not yet enforced on upload
+- **UI Improvements**:
+  - Stepper component now horizontally centered with improved label alignment
+  - Modal component supports new `2xl` size option
+  - Tenant table: Added "Contact" column with email and phone
+  - Tenant edit modal: Added Contact Phone and Storage Limit fields
+- **Security Fixes**:
+  - Login now blocks users from suspended/deactivated/pending tenants
+  - Fixed `mustChangePassword` redirect being bypassed on login page
+
+### v0.5.1 (2025-12-02)
+- **Tenant Setup Wizard**: Guided onboarding flow for new tenants
+  - 4-step wizard: Tenant Info → Create Admin → Create Company (optional) → Activate
+  - Auto-opens after tenant creation in Admin > Tenants page
+  - "Complete Setup" action for existing `PENDING_SETUP` tenants
+  - Creates first TENANT_ADMIN user with temporary password
+  - Optional first company creation during setup
+  - Automatic tenant activation on completion
+  - API: `POST /api/tenants/:id/setup`
+- **New UI Components**:
+  - `Stepper` component for multi-step flows (`src/components/ui/stepper.tsx`)
+  - `TenantSetupWizard` modal (`src/components/admin/tenant-setup-wizard.tsx`)
+  - Step components in `src/components/admin/wizard-steps/`
+- **Bug Fixes**:
+  - Fixed `/change-password` page missing Suspense boundary for `useSearchParams()`
 
 ### v0.5.0 (2025-12-02)
 - **Password Reset Flow**: Complete password recovery system

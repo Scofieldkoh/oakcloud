@@ -40,6 +40,7 @@ export interface Tenant {
   slug: string;
   status: string;
   contactEmail: string | null;
+  contactPhone: string | null;
   maxUsers: number;
   maxCompanies: number;
   maxStorageMb: number;

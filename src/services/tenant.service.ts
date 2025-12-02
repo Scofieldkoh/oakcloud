@@ -55,11 +55,6 @@ const TRACKED_FIELDS: (keyof UpdateTenantInput)[] = [
   'slug',
   'contactEmail',
   'contactPhone',
-  'addressLine1',
-  'addressLine2',
-  'city',
-  'postalCode',
-  'country',
   'maxUsers',
   'maxCompanies',
   'maxStorageMb',
@@ -94,11 +89,6 @@ export async function createTenant(
       status: 'PENDING_SETUP',
       contactEmail: data.contactEmail,
       contactPhone: data.contactPhone,
-      addressLine1: data.addressLine1,
-      addressLine2: data.addressLine2,
-      city: data.city,
-      postalCode: data.postalCode,
-      country: data.country || 'SINGAPORE',
       maxUsers: data.maxUsers || 50,
       maxCompanies: data.maxCompanies || 100,
       maxStorageMb: data.maxStorageMb || 10240,
@@ -684,4 +674,256 @@ function generateTemporaryPassword(): string {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return password;
+}
+
+// ============================================================================
+// Complete Tenant Setup (Wizard)
+// ============================================================================
+
+export interface TenantSetupData {
+  tenantInfo?: {
+    name?: string;
+    contactEmail?: string | null;
+    contactPhone?: string | null;
+  };
+  adminUser: {
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  firstCompany?: {
+    uen: string;
+    name: string;
+    entityType?: string;
+  } | null;
+}
+
+export interface TenantSetupResult {
+  tenant: {
+    id: string;
+    name: string;
+    slug: string;
+    status: TenantStatus;
+  };
+  adminUser: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    temporaryPassword?: string;
+  };
+  company?: {
+    id: string;
+    uen: string;
+    name: string;
+  } | null;
+}
+
+/**
+ * Complete tenant setup wizard - creates admin user, optionally creates first company,
+ * and activates the tenant in a single operation.
+ */
+export async function completeTenantSetup(
+  tenantId: string,
+  data: TenantSetupData,
+  performedByUserId: string
+): Promise<TenantSetupResult> {
+  // Validate tenant exists and is in PENDING_SETUP status
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId, deletedAt: null },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  if (tenant.status !== 'PENDING_SETUP') {
+    throw new Error(`Cannot complete setup for tenant with status: ${tenant.status}`);
+  }
+
+  // Check if admin email already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email: data.adminUser.email.toLowerCase() },
+  });
+
+  if (existingUser) {
+    throw new Error('A user with this email already exists');
+  }
+
+  // Check if company UEN already exists (if company provided)
+  if (data.firstCompany) {
+    const existingCompany = await prisma.company.findFirst({
+      where: {
+        uen: data.firstCompany.uen,
+        tenantId,
+        deletedAt: null,
+      },
+    });
+
+    if (existingCompany) {
+      throw new Error('A company with this UEN already exists in this tenant');
+    }
+  }
+
+  // Generate temporary password for admin user
+  const tempPassword = generateTemporaryPassword();
+  const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+  // Execute all operations in a transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Update tenant info if provided
+    let updatedTenant = tenant;
+    if (data.tenantInfo && Object.keys(data.tenantInfo).some(k => data.tenantInfo![k as keyof typeof data.tenantInfo] !== undefined)) {
+      updatedTenant = await tx.tenant.update({
+        where: { id: tenantId },
+        data: {
+          name: data.tenantInfo.name ?? tenant.name,
+          contactEmail: data.tenantInfo.contactEmail,
+          contactPhone: data.tenantInfo.contactPhone,
+        },
+      });
+    }
+
+    // 2. Create admin user
+    const adminUser = await tx.user.create({
+      data: {
+        email: data.adminUser.email.toLowerCase(),
+        firstName: data.adminUser.firstName,
+        lastName: data.adminUser.lastName,
+        passwordHash,
+        role: 'TENANT_ADMIN',
+        tenantId,
+        isActive: true,
+        mustChangePassword: true,
+      },
+    });
+
+    // 3. Assign RBAC role to admin user (must use tx, not external function)
+    const roleId = await getSystemRoleId(tenantId, 'TENANT_ADMIN');
+    if (roleId) {
+      await tx.userRoleAssignment.create({
+        data: {
+          userId: adminUser.id,
+          roleId,
+        },
+      });
+    }
+
+    // 4. Create first company if provided
+    let company = null;
+    if (data.firstCompany) {
+      company = await tx.company.create({
+        data: {
+          uen: data.firstCompany.uen,
+          name: data.firstCompany.name,
+          entityType: (data.firstCompany.entityType || 'PRIVATE_LIMITED') as 'PRIVATE_LIMITED' | 'PUBLIC_LIMITED' | 'SOLE_PROPRIETORSHIP' | 'PARTNERSHIP' | 'LIMITED_PARTNERSHIP' | 'LIMITED_LIABILITY_PARTNERSHIP' | 'FOREIGN_COMPANY' | 'VARIABLE_CAPITAL_COMPANY' | 'OTHER',
+          status: 'LIVE',
+          tenantId,
+        },
+      });
+    }
+
+    // 5. Activate tenant
+    const activatedTenant = await tx.tenant.update({
+      where: { id: tenantId },
+      data: {
+        status: 'ACTIVE',
+        activatedAt: new Date(),
+        suspendedAt: null,
+        suspendReason: null,
+      },
+    });
+
+    return {
+      tenant: activatedTenant,
+      adminUser,
+      company,
+    };
+  });
+
+  // Log audit events (outside transaction for better reliability)
+  const auditContext: AuditContext = {
+    tenantId,
+    userId: performedByUserId,
+  };
+
+  // Log tenant info update if changed
+  if (data.tenantInfo) {
+    await createAuditLog({
+      tenantId,
+      userId: performedByUserId,
+      action: 'UPDATE',
+      entityType: 'Tenant',
+      entityId: tenantId,
+      changeSource: 'MANUAL',
+      metadata: {
+        setupWizard: true,
+        fields: Object.keys(data.tenantInfo).filter(k => data.tenantInfo![k as keyof typeof data.tenantInfo] !== undefined),
+      },
+    });
+  }
+
+  // Log user creation
+  await logUserMembership(auditContext, 'USER_INVITED', result.adminUser.id, {
+    email: result.adminUser.email,
+    role: 'TENANT_ADMIN',
+    setupWizard: true,
+  });
+
+  // Log company creation
+  if (result.company) {
+    await createAuditLog({
+      tenantId,
+      userId: performedByUserId,
+      action: 'CREATE',
+      entityType: 'Company',
+      entityId: result.company.id,
+      changeSource: 'MANUAL',
+      metadata: {
+        uen: result.company.uen,
+        name: result.company.name,
+        setupWizard: true,
+      },
+    });
+  }
+
+  // Log tenant activation
+  await createAuditLog({
+    tenantId,
+    userId: performedByUserId,
+    action: 'UPDATE',
+    entityType: 'Tenant',
+    entityId: tenantId,
+    changeSource: 'MANUAL',
+    changes: {
+      status: { old: 'PENDING_SETUP', new: 'ACTIVE' },
+    },
+    metadata: {
+      setupWizard: true,
+      activated: true,
+    },
+  });
+
+  return {
+    tenant: {
+      id: result.tenant.id,
+      name: result.tenant.name,
+      slug: result.tenant.slug,
+      status: result.tenant.status,
+    },
+    adminUser: {
+      id: result.adminUser.id,
+      email: result.adminUser.email,
+      firstName: result.adminUser.firstName,
+      lastName: result.adminUser.lastName,
+      temporaryPassword: process.env.NODE_ENV === 'development' ? tempPassword : undefined,
+    },
+    company: result.company
+      ? {
+          id: result.company.id,
+          uen: result.company.uen,
+          name: result.company.name,
+        }
+      : null,
+  };
 }

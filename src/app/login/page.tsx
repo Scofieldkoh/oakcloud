@@ -17,11 +17,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Redirect if already logged in (on page load, not after login mutation)
+  // The useLogin hook handles post-login redirect including mustChangePassword check
   useEffect(() => {
-    if (session && !sessionLoading) {
+    if (session && !sessionLoading && !login.isPending && !login.isSuccess) {
       router.push('/companies');
     }
-  }, [session, sessionLoading, router]);
+  }, [session, sessionLoading, router, login.isPending, login.isSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

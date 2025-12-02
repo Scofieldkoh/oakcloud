@@ -121,11 +121,6 @@ Multi-tenancy support for data isolation.
 | status | ENUM | No | ACTIVE, SUSPENDED, PENDING_SETUP, DEACTIVATED |
 | contact_email | VARCHAR | Yes | Primary contact email |
 | contact_phone | VARCHAR | Yes | Primary contact phone |
-| address_line_1 | VARCHAR | Yes | Address line 1 |
-| address_line_2 | VARCHAR | Yes | Address line 2 |
-| city | VARCHAR | Yes | City |
-| postal_code | VARCHAR | Yes | Postal code |
-| country | VARCHAR | Yes | Country (default: SINGAPORE) |
 | settings | JSONB | Yes | Tenant-specific configuration |
 | max_users | INT | No | Maximum allowed users (default: 50) |
 | max_companies | INT | No | Maximum allowed companies (default: 100) |
@@ -143,6 +138,20 @@ Multi-tenancy support for data isolation.
 - `tenants_slug_key` UNIQUE on slug
 - `tenants_status_idx` on status
 - `tenants_deleted_at_idx` on deleted_at
+
+**Tenant Lifecycle:**
+
+1. **Creation** (`PENDING_SETUP`): SUPER_ADMIN creates tenant via `/admin/tenants`
+2. **Setup Wizard**: After creation, a setup wizard guides through:
+   - Review/update tenant information
+   - Create first TENANT_ADMIN user
+   - Optionally create first company
+3. **Activation** (`ACTIVE`): Setup completion activates the tenant
+4. **Suspension** (`SUSPENDED`): SUPER_ADMIN can suspend for compliance/billing
+5. **Deactivation** (`DEACTIVATED`): Soft-delete marks tenant as deactivated
+
+**Setup API Endpoint:**
+- `POST /api/tenants/:id/setup` - Complete tenant setup wizard
 
 ---
 

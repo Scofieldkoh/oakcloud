@@ -40,11 +40,6 @@ export const createTenantSchema = z.object({
     .string()
     .max(20, 'Phone must be at most 20 characters')
     .optional(),
-  addressLine1: z.string().max(200).optional(),
-  addressLine2: z.string().max(200).optional(),
-  city: z.string().max(100).optional(),
-  postalCode: z.string().max(20).optional(),
-  country: z.string().max(100).optional(),
   maxUsers: z.number().int().min(1).max(10000).optional(),
   maxCompanies: z.number().int().min(1).max(10000).optional(),
   maxStorageMb: z.number().int().min(100).max(1000000).optional(),
@@ -133,3 +128,63 @@ export const tenantSettingsSchema = z.object({
 });
 
 export type TenantSettingsInput = z.infer<typeof tenantSettingsSchema>;
+
+// ============================================================================
+// Tenant Setup Wizard
+// ============================================================================
+
+// Admin user for setup (simplified - no role or companyId needed)
+export const setupAdminUserSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  firstName: z.string().min(1, 'First name is required').max(100),
+  lastName: z.string().min(1, 'Last name is required').max(100),
+});
+
+export type SetupAdminUserInput = z.infer<typeof setupAdminUserSchema>;
+
+// First company for setup (optional)
+export const setupFirstCompanySchema = z.object({
+  uen: z
+    .string()
+    .min(9, 'UEN must be at least 9 characters')
+    .max(10, 'UEN must be at most 10 characters')
+    .regex(/^[A-Z0-9]+$/, 'UEN must contain only uppercase letters and numbers'),
+  name: z.string().min(1, 'Company name is required').max(200),
+  entityType: z
+    .enum([
+      'PRIVATE_LIMITED',
+      'PUBLIC_LIMITED',
+      'SOLE_PROPRIETORSHIP',
+      'PARTNERSHIP',
+      'LIMITED_PARTNERSHIP',
+      'LIMITED_LIABILITY_PARTNERSHIP',
+      'FOREIGN_COMPANY',
+      'VARIABLE_CAPITAL_COMPANY',
+      'OTHER',
+    ])
+    .default('PRIVATE_LIMITED'),
+});
+
+export type SetupFirstCompanyInput = z.infer<typeof setupFirstCompanySchema>;
+
+// Tenant info update for setup (subset of update schema)
+export const setupTenantInfoSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be at most 100 characters')
+    .optional(),
+  contactEmail: z.string().email('Invalid email').optional().nullable(),
+  contactPhone: z.string().max(20).optional().nullable(),
+});
+
+export type SetupTenantInfoInput = z.infer<typeof setupTenantInfoSchema>;
+
+// Complete setup wizard payload
+export const tenantSetupWizardSchema = z.object({
+  tenantInfo: setupTenantInfoSchema.optional(),
+  adminUser: setupAdminUserSchema,
+  firstCompany: setupFirstCompanySchema.optional().nullable(),
+});
+
+export type TenantSetupWizardInput = z.infer<typeof tenantSetupWizardSchema>;

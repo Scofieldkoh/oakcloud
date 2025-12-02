@@ -19,11 +19,14 @@ import {
   HardDrive,
   Calendar,
   Mail,
+  Phone,
   MoreVertical,
   Edit,
   Pause,
   Play,
+  Settings,
 } from 'lucide-react';
+import { TenantSetupWizard } from '@/components/admin/tenant-setup-wizard';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
@@ -55,6 +58,7 @@ export default function TenantsPage() {
   const [page, setPage] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [setupWizardTenant, setSetupWizardTenant] = useState<Tenant | null>(null);
 
   // Form state for create
   const [formData, setFormData] = useState({
@@ -71,8 +75,10 @@ export default function TenantsPage() {
     name: '',
     slug: '',
     contactEmail: '',
+    contactPhone: '',
     maxUsers: 50,
     maxCompanies: 100,
+    maxStorageMb: 10240,
   });
   const [editFormError, setEditFormError] = useState('');
 
@@ -93,8 +99,10 @@ export default function TenantsPage() {
       name: tenant.name,
       slug: tenant.slug,
       contactEmail: tenant.contactEmail || '',
+      contactPhone: tenant.contactPhone || '',
       maxUsers: tenant.maxUsers,
       maxCompanies: tenant.maxCompanies,
+      maxStorageMb: tenant.maxStorageMb,
     });
     setEditFormError('');
   };
@@ -106,8 +114,10 @@ export default function TenantsPage() {
       name: '',
       slug: '',
       contactEmail: '',
+      contactPhone: '',
       maxUsers: 50,
       maxCompanies: 100,
+      maxStorageMb: 10240,
     });
     setEditFormError('');
   };
@@ -122,7 +132,7 @@ export default function TenantsPage() {
     }
 
     try {
-      await createTenant.mutateAsync({
+      const newTenant = await createTenant.mutateAsync({
         name: formData.name,
         slug: formData.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         contactEmail: formData.contactEmail || undefined,
@@ -139,6 +149,9 @@ export default function TenantsPage() {
         maxUsers: 50,
         maxCompanies: 100,
       });
+
+      // Open setup wizard for the new tenant
+      setSetupWizardTenant(newTenant);
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to create tenant');
     }
@@ -158,8 +171,10 @@ export default function TenantsPage() {
         name: editFormData.name,
         slug: editFormData.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         contactEmail: editFormData.contactEmail || undefined,
+        contactPhone: editFormData.contactPhone || undefined,
         maxUsers: editFormData.maxUsers,
         maxCompanies: editFormData.maxCompanies,
+        maxStorageMb: editFormData.maxStorageMb,
       } as Partial<Tenant>);
 
       success('Tenant updated successfully');
@@ -273,6 +288,7 @@ export default function TenantsPage() {
                   <tr>
                     <th>Tenant</th>
                     <th>Status</th>
+                    <th>Contact</th>
                     <th>Users</th>
                     <th>Companies</th>
                     <th>Limits</th>
@@ -283,7 +299,7 @@ export default function TenantsPage() {
                 <tbody>
                   {data.tenants.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-text-secondary">
+                      <td colSpan={8} className="text-center py-8 text-text-secondary">
                         No tenants found
                       </td>
                     </tr>
@@ -294,18 +310,31 @@ export default function TenantsPage() {
                           <div>
                             <div className="font-medium text-text-primary">{tenant.name}</div>
                             <div className="text-xs text-text-muted font-mono">{tenant.slug}</div>
-                            {tenant.contactEmail && (
-                              <div className="text-xs text-text-secondary flex items-center gap-1 mt-0.5">
-                                <Mail className="w-3 h-3" />
-                                {tenant.contactEmail}
-                              </div>
-                            )}
                           </div>
                         </td>
                         <td>
                           <span className={cn('badge', getStatusColor(tenant.status))}>
                             {getStatusLabel(tenant.status)}
                           </span>
+                        </td>
+                        <td>
+                          <div className="text-xs space-y-0.5">
+                            {tenant.contactEmail && (
+                              <div className="flex items-center gap-1 text-text-secondary">
+                                <Mail className="w-3 h-3" />
+                                <span>{tenant.contactEmail}</span>
+                              </div>
+                            )}
+                            {tenant.contactPhone && (
+                              <div className="flex items-center gap-1 text-text-secondary">
+                                <Phone className="w-3 h-3" />
+                                <span>{tenant.contactPhone}</span>
+                              </div>
+                            )}
+                            {!tenant.contactEmail && !tenant.contactPhone && (
+                              <span className="text-text-muted">—</span>
+                            )}
+                          </div>
                         </td>
                         <td>
                           <div className="flex items-center gap-1.5 text-text-secondary">
@@ -344,6 +373,14 @@ export default function TenantsPage() {
                               >
                                 Edit
                               </DropdownItem>
+                              {tenant.status === 'PENDING_SETUP' && (
+                                <DropdownItem
+                                  icon={<Settings className="w-4 h-4" />}
+                                  onClick={() => setSetupWizardTenant(tenant)}
+                                >
+                                  Complete Setup
+                                </DropdownItem>
+                              )}
                               {tenant.status === 'ACTIVE' ? (
                                 <DropdownItem
                                   icon={<Pause className="w-4 h-4" />}
@@ -493,7 +530,7 @@ export default function TenantsPage() {
         isOpen={!!editingTenant}
         onClose={closeEditModal}
         title="Edit Tenant"
-        size="md"
+        size="xl"
       >
         <form onSubmit={handleEdit}>
           <ModalBody>
@@ -533,17 +570,27 @@ export default function TenantsPage() {
                 inputSize="sm"
               />
 
-              <FormInput
-                label="Contact Email"
-                type="email"
-                value={editFormData.contactEmail}
-                onChange={(e) => setEditFormData({ ...editFormData, contactEmail: e.target.value })}
-                placeholder="admin@acme.com"
-                inputSize="sm"
-                leftIcon={<Mail className="w-4 h-4" />}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Contact Email"
+                  type="email"
+                  value={editFormData.contactEmail}
+                  onChange={(e) => setEditFormData({ ...editFormData, contactEmail: e.target.value })}
+                  placeholder="admin@acme.com"
+                  inputSize="sm"
+                  leftIcon={<Mail className="w-4 h-4" />}
+                />
+                <FormInput
+                  label="Contact Phone"
+                  value={editFormData.contactPhone}
+                  onChange={(e) => setEditFormData({ ...editFormData, contactPhone: e.target.value })}
+                  placeholder="+65 6123 4567"
+                  inputSize="sm"
+                  leftIcon={<Phone className="w-4 h-4" />}
+                />
+              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <FormInput
                   label="Max Users"
                   type="number"
@@ -562,6 +609,16 @@ export default function TenantsPage() {
                     setEditFormData({ ...editFormData, maxCompanies: parseInt(e.target.value) || 100 })
                   }
                   min={1}
+                  inputSize="sm"
+                />
+                <FormInput
+                  label="Storage (MB)"
+                  type="number"
+                  value={editFormData.maxStorageMb.toString()}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, maxStorageMb: parseInt(e.target.value) || 10240 })
+                  }
+                  min={100}
                   inputSize="sm"
                 />
               </div>
@@ -588,6 +645,20 @@ export default function TenantsPage() {
           </ModalFooter>
         </form>
       </Modal>
+
+      {/* Setup Wizard */}
+      {setupWizardTenant && (
+        <TenantSetupWizard
+          isOpen={!!setupWizardTenant}
+          onClose={() => setSetupWizardTenant(null)}
+          tenant={setupWizardTenant}
+          onComplete={() => {
+            setSetupWizardTenant(null);
+            queryClient.invalidateQueries({ queryKey: ['tenants'] });
+            success('Tenant setup completed successfully');
+          }}
+        />
+      )}
     </div>
   );
 }

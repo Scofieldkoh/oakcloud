@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { useSession } from '@/hooks/use-auth';
 
-export default function ChangePasswordPage() {
+function ChangePasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isForced = searchParams.get('forced') === 'true';
@@ -195,5 +195,26 @@ export default function ChangePasswordPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-background-primary flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-oak-primary/20 flex items-center justify-center animate-pulse">
+          <span className="text-lg font-semibold text-oak-light">O</span>
+        </div>
+        <p className="text-text-tertiary text-sm">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function ChangePasswordPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ChangePasswordContent />
+    </Suspense>
   );
 }
