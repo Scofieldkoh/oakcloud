@@ -305,8 +305,8 @@ function MobileHeader() {
   const { toggleMobileSidebar, theme, toggleTheme } = useUIStore();
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-12 bg-background-secondary border-b border-border-primary z-30 lg:hidden">
-      <div className="flex items-center justify-between h-full px-4">
+    <header className="fixed top-0 left-0 right-0 bg-background-secondary border-b border-border-primary z-30 lg:hidden pt-[env(safe-area-inset-top)]">
+      <div className="flex items-center justify-between h-12 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
         <button
           onClick={toggleMobileSidebar}
           className="p-2 -ml-2 rounded hover:bg-background-tertiary text-text-secondary"

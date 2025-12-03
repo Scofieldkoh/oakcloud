@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
 
     let deletedCount = 0;
     const deletedRecords: { id: string; name: string }[] = [];
+    const failedRecords: { id: string; name: string; error: string }[] = [];
 
     switch (entityType) {
       case 'tenant':
@@ -192,81 +193,88 @@ export async function POST(request: NextRequest) {
         }
 
         // Delete in order: roles, documents, companies, users, then tenant
+        // Each tenant deletion is wrapped in its own transaction with error handling
         for (const tenant of tenantsToDelete) {
-          await prisma.$transaction(async (tx) => {
-            // Delete role assignments and roles
-            await tx.userRoleAssignment.deleteMany({
-              where: { role: { tenantId: tenant.id } },
-            });
-            await tx.rolePermission.deleteMany({
-              where: { role: { tenantId: tenant.id } },
-            });
-            await tx.role.deleteMany({
-              where: { tenantId: tenant.id },
+          try {
+            await prisma.$transaction(async (tx) => {
+              // Delete role assignments and roles
+              await tx.userRoleAssignment.deleteMany({
+                where: { role: { tenantId: tenant.id } },
+              });
+              await tx.rolePermission.deleteMany({
+                where: { role: { tenantId: tenant.id } },
+              });
+              await tx.role.deleteMany({
+                where: { tenantId: tenant.id },
+              });
+
+              // Delete user company assignments
+              await tx.userCompanyAssignment.deleteMany({
+                where: { user: { tenantId: tenant.id } },
+              });
+
+              // Delete company-related data
+              await tx.companyCharge.deleteMany({
+                where: { company: { tenantId: tenant.id } },
+              });
+              await tx.companyShareholder.deleteMany({
+                where: { company: { tenantId: tenant.id } },
+              });
+              await tx.shareCapital.deleteMany({
+                where: { company: { tenantId: tenant.id } },
+              });
+              await tx.companyOfficer.deleteMany({
+                where: { company: { tenantId: tenant.id } },
+              });
+              await tx.companyAddress.deleteMany({
+                where: { company: { tenantId: tenant.id } },
+              });
+              await tx.companyFormerName.deleteMany({
+                where: { company: { tenantId: tenant.id } },
+              });
+              await tx.companyContact.deleteMany({
+                where: { company: { tenantId: tenant.id } },
+              });
+
+              // Delete documents
+              await tx.document.deleteMany({
+                where: { tenantId: tenant.id },
+              });
+
+              // Delete companies
+              await tx.company.deleteMany({
+                where: { tenantId: tenant.id },
+              });
+
+              // Delete contacts
+              await tx.contact.deleteMany({
+                where: { tenantId: tenant.id },
+              });
+
+              // Delete users
+              await tx.user.deleteMany({
+                where: { tenantId: tenant.id },
+              });
+
+              // Delete audit logs for this tenant
+              await tx.auditLog.deleteMany({
+                where: { tenantId: tenant.id },
+              });
+
+              // Finally delete the tenant
+              await tx.tenant.delete({
+                where: { id: tenant.id },
+              });
             });
 
-            // Delete user company assignments
-            await tx.userCompanyAssignment.deleteMany({
-              where: { user: { tenantId: tenant.id } },
-            });
-
-            // Delete company-related data
-            await tx.companyCharge.deleteMany({
-              where: { company: { tenantId: tenant.id } },
-            });
-            await tx.companyShareholder.deleteMany({
-              where: { company: { tenantId: tenant.id } },
-            });
-            await tx.shareCapital.deleteMany({
-              where: { company: { tenantId: tenant.id } },
-            });
-            await tx.companyOfficer.deleteMany({
-              where: { company: { tenantId: tenant.id } },
-            });
-            await tx.companyAddress.deleteMany({
-              where: { company: { tenantId: tenant.id } },
-            });
-            await tx.companyFormerName.deleteMany({
-              where: { company: { tenantId: tenant.id } },
-            });
-            await tx.companyContact.deleteMany({
-              where: { company: { tenantId: tenant.id } },
-            });
-
-            // Delete documents
-            await tx.document.deleteMany({
-              where: { tenantId: tenant.id },
-            });
-
-            // Delete companies
-            await tx.company.deleteMany({
-              where: { tenantId: tenant.id },
-            });
-
-            // Delete contacts
-            await tx.contact.deleteMany({
-              where: { tenantId: tenant.id },
-            });
-
-            // Delete users
-            await tx.user.deleteMany({
-              where: { tenantId: tenant.id },
-            });
-
-            // Delete audit logs for this tenant
-            await tx.auditLog.deleteMany({
-              where: { tenantId: tenant.id },
-            });
-
-            // Finally delete the tenant
-            await tx.tenant.delete({
-              where: { id: tenant.id },
-            });
-          });
-
-          deletedRecords.push({ id: tenant.id, name: tenant.name });
+            deletedRecords.push({ id: tenant.id, name: tenant.name });
+            deletedCount++;
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            console.error(`Failed to purge tenant ${tenant.id}:`, err);
+            failedRecords.push({ id: tenant.id, name: tenant.name, error: errorMessage });
+          }
         }
-        deletedCount = tenantsToDelete.length;
         break;
 
       case 'user':
@@ -286,26 +294,33 @@ export async function POST(request: NextRequest) {
         }
 
         for (const user of usersToDelete) {
-          await prisma.$transaction(async (tx) => {
-            // Delete role assignments
-            await tx.userRoleAssignment.deleteMany({
-              where: { userId: user.id },
+          const userName = `${user.firstName} ${user.lastName}`;
+          try {
+            await prisma.$transaction(async (tx) => {
+              // Delete role assignments
+              await tx.userRoleAssignment.deleteMany({
+                where: { userId: user.id },
+              });
+
+              // Delete company assignments
+              await tx.userCompanyAssignment.deleteMany({
+                where: { userId: user.id },
+              });
+
+              // Delete user
+              await tx.user.delete({
+                where: { id: user.id },
+              });
             });
 
-            // Delete company assignments
-            await tx.userCompanyAssignment.deleteMany({
-              where: { userId: user.id },
-            });
-
-            // Delete user
-            await tx.user.delete({
-              where: { id: user.id },
-            });
-          });
-
-          deletedRecords.push({ id: user.id, name: `${user.firstName} ${user.lastName}` });
+            deletedRecords.push({ id: user.id, name: userName });
+            deletedCount++;
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            console.error(`Failed to purge user ${user.id}:`, err);
+            failedRecords.push({ id: user.id, name: userName, error: errorMessage });
+          }
         }
-        deletedCount = usersToDelete.length;
         break;
 
       case 'company':
@@ -325,54 +340,60 @@ export async function POST(request: NextRequest) {
         }
 
         for (const company of companiesToDelete) {
-          await prisma.$transaction(async (tx) => {
-            // Delete company-related data
-            await tx.companyCharge.deleteMany({
-              where: { companyId: company.id },
-            });
-            await tx.companyShareholder.deleteMany({
-              where: { companyId: company.id },
-            });
-            await tx.shareCapital.deleteMany({
-              where: { companyId: company.id },
-            });
-            await tx.companyOfficer.deleteMany({
-              where: { companyId: company.id },
-            });
-            await tx.companyAddress.deleteMany({
-              where: { companyId: company.id },
-            });
-            await tx.companyFormerName.deleteMany({
-              where: { companyId: company.id },
-            });
-            await tx.companyContact.deleteMany({
-              where: { companyId: company.id },
+          try {
+            await prisma.$transaction(async (tx) => {
+              // Delete company-related data
+              await tx.companyCharge.deleteMany({
+                where: { companyId: company.id },
+              });
+              await tx.companyShareholder.deleteMany({
+                where: { companyId: company.id },
+              });
+              await tx.shareCapital.deleteMany({
+                where: { companyId: company.id },
+              });
+              await tx.companyOfficer.deleteMany({
+                where: { companyId: company.id },
+              });
+              await tx.companyAddress.deleteMany({
+                where: { companyId: company.id },
+              });
+              await tx.companyFormerName.deleteMany({
+                where: { companyId: company.id },
+              });
+              await tx.companyContact.deleteMany({
+                where: { companyId: company.id },
+              });
+
+              // Delete documents
+              await tx.document.deleteMany({
+                where: { companyId: company.id },
+              });
+
+              // Delete user company assignments
+              await tx.userCompanyAssignment.deleteMany({
+                where: { companyId: company.id },
+              });
+
+              // Delete role assignments scoped to this company
+              await tx.userRoleAssignment.deleteMany({
+                where: { companyId: company.id },
+              });
+
+              // Delete the company
+              await tx.company.delete({
+                where: { id: company.id },
+              });
             });
 
-            // Delete documents
-            await tx.document.deleteMany({
-              where: { companyId: company.id },
-            });
-
-            // Delete user company assignments
-            await tx.userCompanyAssignment.deleteMany({
-              where: { companyId: company.id },
-            });
-
-            // Delete role assignments scoped to this company
-            await tx.userRoleAssignment.deleteMany({
-              where: { companyId: company.id },
-            });
-
-            // Delete the company
-            await tx.company.delete({
-              where: { id: company.id },
-            });
-          });
-
-          deletedRecords.push({ id: company.id, name: company.name });
+            deletedRecords.push({ id: company.id, name: company.name });
+            deletedCount++;
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            console.error(`Failed to purge company ${company.id}:`, err);
+            failedRecords.push({ id: company.id, name: company.name, error: errorMessage });
+          }
         }
-        deletedCount = companiesToDelete.length;
         break;
 
       case 'contact':
@@ -392,66 +413,97 @@ export async function POST(request: NextRequest) {
         }
 
         for (const contact of contactsToDelete) {
-          await prisma.$transaction(async (tx) => {
-            // Delete company contact relations
-            await tx.companyContact.deleteMany({
-              where: { contactId: contact.id },
+          try {
+            await prisma.$transaction(async (tx) => {
+              // Delete company contact relations
+              await tx.companyContact.deleteMany({
+                where: { contactId: contact.id },
+              });
+
+              // Update officers to remove contact reference
+              await tx.companyOfficer.updateMany({
+                where: { contactId: contact.id },
+                data: { contactId: null },
+              });
+
+              // Update shareholders to remove contact reference
+              await tx.companyShareholder.updateMany({
+                where: { contactId: contact.id },
+                data: { contactId: null },
+              });
+
+              // Update charges to remove contact reference
+              await tx.companyCharge.updateMany({
+                where: { chargeHolderId: contact.id },
+                data: { chargeHolderId: null },
+              });
+
+              // Delete the contact
+              await tx.contact.delete({
+                where: { id: contact.id },
+              });
             });
 
-            // Update officers to remove contact reference
-            await tx.companyOfficer.updateMany({
-              where: { contactId: contact.id },
-              data: { contactId: null },
-            });
-
-            // Update shareholders to remove contact reference
-            await tx.companyShareholder.updateMany({
-              where: { contactId: contact.id },
-              data: { contactId: null },
-            });
-
-            // Update charges to remove contact reference
-            await tx.companyCharge.updateMany({
-              where: { chargeHolderId: contact.id },
-              data: { chargeHolderId: null },
-            });
-
-            // Delete the contact
-            await tx.contact.delete({
-              where: { id: contact.id },
-            });
-          });
-
-          deletedRecords.push({ id: contact.id, name: contact.fullName });
+            deletedRecords.push({ id: contact.id, name: contact.fullName });
+            deletedCount++;
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            console.error(`Failed to purge contact ${contact.id}:`, err);
+            failedRecords.push({ id: contact.id, name: contact.fullName, error: errorMessage });
+          }
         }
-        deletedCount = contactsToDelete.length;
         break;
     }
 
-    // Log the purge action
-    const recordNames = deletedRecords.map(r => r.name).join(', ');
-    await createAuditLog({
-      userId: session.id,
-      action: 'DELETE',
-      entityType: `Purge_${entityType}`,
-      entityId: entityIds.join(','),
-      entityName: recordNames,
-      summary: `Permanently deleted ${deletedCount} ${entityType}(s): ${recordNames}`,
-      changeSource: 'MANUAL',
-      reason,
-      metadata: {
-        purgeType: 'permanent',
-        entityType,
-        deletedCount,
-        deletedRecords,
-      },
-    });
+    // Log the purge action (only if at least one record was deleted)
+    if (deletedCount > 0) {
+      const recordNames = deletedRecords.map(r => r.name).join(', ');
+      await createAuditLog({
+        userId: session.id,
+        action: 'DELETE',
+        entityType: `Purge_${entityType}`,
+        entityId: deletedRecords.map(r => r.id).join(','),
+        entityName: recordNames,
+        summary: `Permanently deleted ${deletedCount} ${entityType}(s): ${recordNames}`,
+        changeSource: 'MANUAL',
+        reason,
+        metadata: {
+          purgeType: 'permanent',
+          entityType,
+          deletedCount,
+          deletedRecords,
+          failedCount: failedRecords.length,
+          failedRecords: failedRecords.length > 0 ? failedRecords : undefined,
+        },
+      });
+    }
+
+    // Determine success status based on results
+    const hasFailures = failedRecords.length > 0;
+    const allFailed = deletedCount === 0 && hasFailures;
+
+    if (allFailed) {
+      return NextResponse.json({
+        success: false,
+        message: `Failed to delete all ${entityType}(s)`,
+        deletedCount: 0,
+        deletedRecords: [],
+        failedCount: failedRecords.length,
+        failedRecords,
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Permanently deleted ${deletedCount} ${entityType}(s)`,
+      message: hasFailures
+        ? `Deleted ${deletedCount} ${entityType}(s), ${failedRecords.length} failed`
+        : `Permanently deleted ${deletedCount} ${entityType}(s)`,
       deletedCount,
       deletedRecords,
+      ...(hasFailures && {
+        failedCount: failedRecords.length,
+        failedRecords,
+      }),
     });
   } catch (error) {
     console.error('Purge error:', error);

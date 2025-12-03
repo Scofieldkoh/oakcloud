@@ -71,8 +71,13 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Check if this is a status update
-    if (body.status && Object.keys(body).length <= 3) {
+    // Check if this is a status update by looking at the actual fields present
+    // Status updates only have: status (required), reason (optional), id (added)
+    const statusUpdateFields = ['status', 'reason', 'id'];
+    const bodyKeys = Object.keys(body).filter(k => body[k] !== undefined && body[k] !== null);
+    const isStatusUpdate = body.status && bodyKeys.every(k => statusUpdateFields.includes(k));
+
+    if (isStatusUpdate) {
       const data = updateTenantStatusSchema.parse({ ...body, id });
       const tenant = await updateTenantStatus(id, data.status, session.id, data.reason);
       return NextResponse.json(tenant);
@@ -114,7 +119,12 @@ export async function DELETE(
     }
     const { id } = await params;
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const reason = body.reason;
 
     if (!reason || reason.length < 10) {

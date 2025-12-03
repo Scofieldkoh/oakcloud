@@ -11,7 +11,7 @@ export async function GET(
     const session = await requireAuth();
     const { id } = await params;
 
-    if (!canAccessCompany(session, id)) {
+    if (!(await canAccessCompany(session, id))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

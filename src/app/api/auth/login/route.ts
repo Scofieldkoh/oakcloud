@@ -111,11 +111,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update last login
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+    // Update last login - non-critical, don't fail login if this fails
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
+    } catch (updateError) {
+      console.error('Failed to update lastLoginAt:', updateError);
+      // Continue with login - this is non-critical metadata
+    }
 
     // Log successful login
     await logAuthEvent('LOGIN', user.id, {

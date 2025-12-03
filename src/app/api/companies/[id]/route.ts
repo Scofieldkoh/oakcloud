@@ -23,7 +23,7 @@ export async function GET(
     await requirePermission(session, 'company', 'read', id);
 
     // Additional check for company-scoped users
-    if (!canAccessCompany(session, id)) {
+    if (!(await canAccessCompany(session, id))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -66,7 +66,7 @@ export async function PATCH(
     await requirePermission(session, 'company', 'update', id);
 
     // Additional check for company-scoped users
-    if (!session.isSuperAdmin && !session.isTenantAdmin && !canAccessCompany(session, id)) {
+    if (!session.isSuperAdmin && !session.isTenantAdmin && !(await canAccessCompany(session, id))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

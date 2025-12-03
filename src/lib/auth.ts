@@ -328,10 +328,24 @@ export function canAccessTenant(user: SessionUser, tenantId: string): boolean {
 
 /**
  * Check if user can access a specific company
+ * This function verifies:
+ * 1. SUPER_ADMIN can access any company
+ * 2. TENANT_ADMIN can only access companies within their tenant
+ * 3. Regular users can only access their assigned company
  */
-export function canAccessCompany(user: SessionUser, companyId: string): boolean {
+export async function canAccessCompany(user: SessionUser, companyId: string): Promise<boolean> {
   if (user.isSuperAdmin) return true;
-  if (user.isTenantAdmin) return true; // Tenant admins can access all companies in their tenant
+
+  // For TENANT_ADMIN, verify company belongs to their tenant
+  if (user.isTenantAdmin) {
+    if (!user.tenantId) return false;
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { tenantId: true },
+    });
+    return company?.tenantId === user.tenantId;
+  }
+
   // For company admins/users, check direct assignment
   if (user.companyId) {
     return user.companyId === companyId;
@@ -534,7 +548,7 @@ export async function validateCompanyAccess(companyId: string): Promise<SessionU
   }
 
   // Then check company-level access
-  if (!canAccessCompany(session, companyId)) {
+  if (!(await canAccessCompany(session, companyId))) {
     throw new Error('Forbidden');
   }
 

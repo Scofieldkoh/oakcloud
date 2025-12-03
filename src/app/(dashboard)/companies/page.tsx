@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Building2, AlertCircle, FileUp } from 'lucide-react';
@@ -41,11 +41,11 @@ export default function CompaniesPage() {
   const [companyToDelete, setCompanyToDelete] = useState<string | null>(null);
 
   const { data, isLoading, error } = useCompanies(params);
-  const { data: stats } = useCompanyStats();
+  const { data: stats, error: statsError } = useCompanyStats();
   const deleteCompany = useDeleteCompany();
 
-  // Sync URL when params change
-  useEffect(() => {
+  // Memoize URL construction to avoid rebuilding on every render
+  const targetUrl = useMemo(() => {
     const urlParams = new URLSearchParams();
 
     if (params.query) urlParams.set('q', params.query);
@@ -58,13 +58,16 @@ export default function CompaniesPage() {
     if (params.hasCharges !== undefined) urlParams.set('hasCharges', params.hasCharges.toString());
 
     const queryString = urlParams.toString();
-    const newUrl = queryString ? `/companies?${queryString}` : '/companies';
+    return queryString ? `/companies?${queryString}` : '/companies';
+  }, [params]);
 
+  // Sync URL when params change
+  useEffect(() => {
     // Only update if different
-    if (window.location.pathname + window.location.search !== newUrl) {
-      router.replace(newUrl, { scroll: false });
+    if (window.location.pathname + window.location.search !== targetUrl) {
+      router.replace(targetUrl, { scroll: false });
     }
-  }, [params, router]);
+  }, [targetUrl, router]);
 
   const handleSearch = (query: string) => {
     setParams((prev) => ({ ...prev, query, page: 1 }));
@@ -134,7 +137,7 @@ export default function CompaniesPage() {
       </div>
 
       {/* Stats Cards */}
-      {stats && (
+      {stats && !statsError && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="card p-3 sm:p-4">
             <div className="flex items-center gap-3">

@@ -28,8 +28,10 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const query = searchParams.get('query') || undefined;
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100); // Cap at 100
+    // Limit search query length to prevent performance issues
+    const rawQuery = searchParams.get('query') || '';
+    const query = rawQuery.slice(0, 100) || undefined;
 
     const where = {
       tenantId,

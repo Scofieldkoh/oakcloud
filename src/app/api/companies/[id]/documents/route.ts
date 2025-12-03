@@ -21,7 +21,7 @@ export async function GET(
     // Check permission
     await requirePermission(session, 'document', 'read', id);
 
-    if (!canAccessCompany(session, id)) {
+    if (!(await canAccessCompany(session, id))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

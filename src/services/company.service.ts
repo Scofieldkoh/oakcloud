@@ -98,6 +98,18 @@ export async function createCompany(
     throw new Error('A company with this UEN already exists');
   }
 
+  // Validate financial year fields if provided
+  if (data.financialYearEndDay !== undefined && data.financialYearEndDay !== null) {
+    if (data.financialYearEndDay < 1 || data.financialYearEndDay > 31) {
+      throw new Error('Financial year end day must be between 1 and 31');
+    }
+  }
+  if (data.financialYearEndMonth !== undefined && data.financialYearEndMonth !== null) {
+    if (data.financialYearEndMonth < 1 || data.financialYearEndMonth > 12) {
+      throw new Error('Financial year end month must be between 1 and 12');
+    }
+  }
+
   const company = await prisma.company.create({
     data: {
       tenantId,

@@ -235,11 +235,12 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     let reason = 'Removed by administrator';
     try {
       const body = await request.json();
-      if (body.reason) {
+      if (body.reason && typeof body.reason === 'string') {
         reason = body.reason;
       }
     } catch {
-      // No body provided, use default reason
+      // No body or invalid JSON - use default reason (DELETE with no body is valid)
+      console.debug('DELETE request with no/invalid JSON body, using default reason');
     }
 
     await removeUserFromTenant(tenantId, userId, session.id, reason);

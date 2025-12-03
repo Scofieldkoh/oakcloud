@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2 } from 'lucide-react';
@@ -61,7 +62,7 @@ interface CompanyActionsDropdownProps {
   canDelete?: boolean;
 }
 
-function CompanyActionsDropdown({ companyId, onDelete, canEdit, canDelete }: CompanyActionsDropdownProps) {
+const CompanyActionsDropdown = memo(function CompanyActionsDropdown({ companyId, onDelete, canEdit, canDelete }: CompanyActionsDropdownProps) {
   // If user can only view, don't show the dropdown at all - just provide the view link
   const hasAnyAction = canEdit || canDelete;
 
@@ -104,7 +105,7 @@ function CompanyActionsDropdown({ companyId, onDelete, canEdit, canDelete }: Com
       </DropdownMenu>
     </Dropdown>
   );
-}
+});
 
 export function CompanyTable({ companies, onDelete, isLoading, canEdit = true, canDelete = true, canCreate = true }: CompanyTableProps) {
   if (isLoading) {

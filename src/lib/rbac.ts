@@ -262,6 +262,16 @@ export async function hasPermission(
 
   // TENANT_ADMIN has all permissions within their tenant
   if (hasTenantAdminRole) {
+    // If checking for a specific company, verify it belongs to user's tenant
+    if (companyId && user.tenantId) {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: { tenantId: true },
+      });
+      if (!company || company.tenantId !== user.tenantId) {
+        return false;
+      }
+    }
     return true;
   }
 
