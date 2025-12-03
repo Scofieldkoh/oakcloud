@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createCompanySchema, companySearchSchema } from '@/lib/validations/company';
-import { createCompany, searchCompanies, getCompanyByUen } from '@/services/company.service';
+import { createCompany, searchCompanies, getCompanyByUen, getCompanyById } from '@/services/company.service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
 
+    // Let Zod handle all parsing and validation - no manual parseInt or type casts
     const params = companySearchSchema.parse({
       query: searchParams.get('query') || undefined,
       entityType: searchParams.get('entityType') || undefined,
@@ -23,20 +24,19 @@ export async function GET(request: NextRequest) {
         ? searchParams.get('hasCharges') === 'true'
         : undefined,
       financialYearEndMonth: searchParams.get('financialYearEndMonth')
-        ? parseInt(searchParams.get('financialYearEndMonth')!)
+        ? Number(searchParams.get('financialYearEndMonth'))
         : undefined,
-      page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20,
-      sortBy: (searchParams.get('sortBy') as typeof params.sortBy) || 'updatedAt',
-      sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
+      page: searchParams.get('page') ? Number(searchParams.get('page')) : undefined,
+      limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
+      sortBy: searchParams.get('sortBy') || undefined,
+      sortOrder: searchParams.get('sortOrder') || undefined,
     });
 
     // Company-scoped users can only see their own company
     if (!session.isSuperAdmin && !session.isTenantAdmin) {
-      if (session.companyId) {
+      if (session.companyId && session.tenantId) {
         // Return only their assigned company
-        const { getCompanyById } = await import('@/services/company.service');
-        const company = await getCompanyById(session.companyId, session.tenantId || undefined);
+        const company = await getCompanyById(session.companyId, session.tenantId);
         return NextResponse.json({
           companies: company ? [company] : [],
           total: company ? 1 : 0,
@@ -55,7 +55,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const result = await searchCompanies(params, session.tenantId || undefined);
+    // For SUPER_ADMIN without tenantId, allow cross-tenant access
+    const result = await searchCompanies(
+      params,
+      session.tenantId,
+      { skipTenantFilter: session.isSuperAdmin && !session.tenantId }
+    );
 
     return NextResponse.json(result);
   } catch (error) {
@@ -87,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if UEN already exists within tenant
-    const existing = await getCompanyByUen(data.uen, session.tenantId);
+    const existing = await getCompanyByUen(data.uen, session.tenantId, {});
     if (existing) {
       return NextResponse.json(
         { error: 'A company with this UEN already exists' },

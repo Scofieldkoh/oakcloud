@@ -222,7 +222,21 @@ export async function extractBizFileData(
     throw new Error('No response from AI extraction');
   }
 
-  return JSON.parse(content) as ExtractedBizFileData;
+  // Parse AI response with error handling
+  let parsed: ExtractedBizFileData;
+  try {
+    parsed = JSON.parse(content) as ExtractedBizFileData;
+  } catch (parseError) {
+    console.error('[BizFile] Failed to parse AI response:', content.substring(0, 500));
+    throw new Error('Failed to parse AI extraction response. The AI returned invalid JSON.');
+  }
+
+  // Basic validation of required fields
+  if (!parsed.entityDetails?.uen || !parsed.entityDetails?.name) {
+    throw new Error('AI extraction missing required fields (UEN or company name)');
+  }
+
+  return parsed;
 }
 
 function mapEntityType(type: string): EntityType {
@@ -513,9 +527,15 @@ export async function processBizFileExtraction(
     return company;
   });
 
-  // Process officers (outside transaction for contact creation)
-  if (extractedData.officers?.length) {
-    for (const officer of extractedData.officers) {
+  // Process officers, shareholders, and charges
+  // Note: These are processed outside the main transaction because contact
+  // creation uses upsert with unique constraints. If any of these fail,
+  // the company is already created but related data may be incomplete.
+  // TODO: Consider refactoring to use a single transaction for data consistency.
+  try {
+    // Process officers
+    if (extractedData.officers?.length) {
+      for (const officer of extractedData.officers) {
       const isCurrent = !officer.cessationDate;
 
       // Parse name for individual
@@ -646,12 +666,19 @@ export async function processBizFileExtraction(
         },
       });
 
-      await linkContactToCompany(chargeHolder.id, result.id, 'Charge Holder');
+        await linkContactToCompany(chargeHolder.id, result.id, 'Charge Holder');
+      }
     }
+  } catch (error) {
+    // Log error but don't fail the entire extraction
+    // The company is already created, so we can't rollback
+    console.error('[BizFile] Error processing officers/shareholders/charges:', error);
+    // Continue to create audit log even if some data failed
   }
 
-  // Create audit log
+  // Create audit log - MUST include tenantId for proper scoping
   await createAuditLog({
+    tenantId,
     userId,
     companyId: result.id,
     action: isNewCompany ? 'CREATE' : 'UPDATE',

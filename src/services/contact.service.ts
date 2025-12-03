@@ -293,18 +293,26 @@ export async function unlinkContactFromCompany(
   contactId: string,
   companyId: string,
   relationship: string,
-  tenantId?: string
+  tenantId: string
 ): Promise<void> {
-  // If tenantId provided, validate the company belongs to the tenant
-  if (tenantId) {
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      select: { tenantId: true },
-    });
+  // REQUIRED: Validate the company belongs to the tenant
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { tenantId: true },
+  });
 
-    if (!company || company.tenantId !== tenantId) {
-      throw new Error('Company not found or access denied');
-    }
+  if (!company || company.tenantId !== tenantId) {
+    throw new Error('Company not found or access denied');
+  }
+
+  // Also validate that the contact belongs to the same tenant
+  const contact = await prisma.contact.findUnique({
+    where: { id: contactId },
+    select: { tenantId: true },
+  });
+
+  if (!contact || contact.tenantId !== tenantId) {
+    throw new Error('Contact not found or access denied');
   }
 
   await prisma.companyContact.delete({
@@ -320,7 +328,7 @@ export async function unlinkContactFromCompany(
 
 export async function getContactsByCompany(
   companyId: string,
-  tenantId?: string
+  tenantId: string
 ): Promise<
   Array<{
     contact: Contact;
@@ -328,16 +336,14 @@ export async function getContactsByCompany(
     isPrimary: boolean;
   }>
 > {
-  // If tenantId provided, validate the company belongs to the tenant
-  if (tenantId) {
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      select: { tenantId: true },
-    });
+  // REQUIRED: Validate the company belongs to the tenant
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { tenantId: true },
+  });
 
-    if (!company || company.tenantId !== tenantId) {
-      throw new Error('Company not found or access denied');
-    }
+  if (!company || company.tenantId !== tenantId) {
+    throw new Error('Company not found or access denied');
   }
 
   const relations = await prisma.companyContact.findMany({

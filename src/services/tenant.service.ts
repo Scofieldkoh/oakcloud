@@ -79,38 +79,50 @@ export async function createTenant(
   // Generate slug if not provided
   const slug = data.slug || (await generateTenantSlug(data.name));
 
-  // Check slug uniqueness
-  const existing = await prisma.tenant.findUnique({
-    where: { slug },
-  });
+  try {
+    // Use a transaction to prevent race conditions
+    // The unique constraint on slug will be enforced at database level
+    const tenant = await prisma.$transaction(async (tx) => {
+      // Check slug uniqueness within transaction
+      const existing = await tx.tenant.findUnique({
+        where: { slug },
+      });
 
-  if (existing) {
-    throw new Error('Tenant slug already exists');
+      if (existing) {
+        throw new Error('Tenant slug already exists');
+      }
+
+      return tx.tenant.create({
+        data: {
+          name: data.name,
+          slug,
+          status: 'PENDING_SETUP',
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          maxUsers: data.maxUsers || 50,
+          maxCompanies: data.maxCompanies || 100,
+          maxStorageMb: data.maxStorageMb || 10240,
+          logoUrl: data.logoUrl,
+          primaryColor: data.primaryColor || '#294d44',
+          settings: data.settings ? (data.settings as Prisma.InputJsonValue) : Prisma.JsonNull,
+        },
+      });
+    });
+
+    // Log tenant creation (outside transaction - non-critical)
+    await logTenantOperation('TENANT_CREATED', tenant.id, tenant.name, userId, undefined, undefined);
+
+    // Initialize system roles for the new tenant
+    await createSystemRolesForTenant(tenant.id);
+
+    return tenant;
+  } catch (error) {
+    // Handle database unique constraint violation (race condition case)
+    if (error instanceof Error && error.message.includes('Unique constraint')) {
+      throw new Error('Tenant slug already exists');
+    }
+    throw error;
   }
-
-  const tenant = await prisma.tenant.create({
-    data: {
-      name: data.name,
-      slug,
-      status: 'PENDING_SETUP',
-      contactEmail: data.contactEmail,
-      contactPhone: data.contactPhone,
-      maxUsers: data.maxUsers || 50,
-      maxCompanies: data.maxCompanies || 100,
-      maxStorageMb: data.maxStorageMb || 10240,
-      logoUrl: data.logoUrl,
-      primaryColor: data.primaryColor || '#294d44',
-      settings: data.settings ? (data.settings as Prisma.InputJsonValue) : Prisma.JsonNull,
-    },
-  });
-
-  // Log tenant creation
-  await logTenantOperation('TENANT_CREATED', tenant.id, tenant.name, userId, undefined, undefined);
-
-  // Initialize system roles for the new tenant
-  await createSystemRolesForTenant(tenant.id);
-
-  return tenant;
 }
 
 // ============================================================================

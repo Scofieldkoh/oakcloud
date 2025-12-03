@@ -30,11 +30,11 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const full = searchParams.get('full') === 'true';
 
-    // Pass tenantId for non-SUPER_ADMIN users to enforce tenant scoping
-    const tenantId = session.isSuperAdmin ? undefined : session.tenantId || undefined;
+    // SUPER_ADMIN can access cross-tenant, others must have tenantId
+    const skipTenantFilter = session.isSuperAdmin && !session.tenantId;
     const company = full
-      ? await getCompanyFullDetails(id, tenantId)
-      : await getCompanyById(id, tenantId);
+      ? await getCompanyFullDetails(id, session.tenantId, { skipTenantFilter })
+      : await getCompanyById(id, session.tenantId, { skipTenantFilter });
 
     if (!company) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });

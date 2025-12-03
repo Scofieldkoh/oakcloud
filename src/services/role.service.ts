@@ -93,11 +93,29 @@ export async function getPermissionsGroupedByResource() {
 // Role CRUD Operations
 // ============================================================================
 
+export interface GetRoleOptions {
+  /**
+   * If provided, validates that the role belongs to this tenant.
+   * Global/system roles (tenantId = null) are always accessible.
+   */
+  tenantId?: string;
+  /**
+   * Skip tenant validation - ONLY use for SUPER_ADMIN operations.
+   */
+  skipTenantValidation?: boolean;
+}
+
 /**
- * Get a role by ID
+ * Get a role by ID with optional tenant validation.
+ * By default, validates that the role belongs to the specified tenant.
  */
-export async function getRoleById(roleId: string): Promise<RoleWithPermissions | null> {
-  return prisma.role.findUnique({
+export async function getRoleById(
+  roleId: string,
+  options: GetRoleOptions = {}
+): Promise<RoleWithPermissions | null> {
+  const { tenantId, skipTenantValidation = false } = options;
+
+  const role = await prisma.role.findUnique({
     where: { id: roleId },
     include: {
       permissions: {
@@ -110,6 +128,17 @@ export async function getRoleById(roleId: string): Promise<RoleWithPermissions |
       },
     },
   });
+
+  if (!role) return null;
+
+  // Validate tenant access unless skipped
+  // Global roles (tenantId = null) are accessible to all
+  if (!skipTenantValidation && tenantId && role.tenantId && role.tenantId !== tenantId) {
+    // Role belongs to a different tenant - deny access
+    return null;
+  }
+
+  return role;
 }
 
 /**
@@ -179,10 +208,15 @@ export async function createRole(data: CreateRoleData): Promise<RoleWithPermissi
 
 /**
  * Update a role
+ *
+ * @param roleId - The ID of the role to update
+ * @param data - The update data
+ * @param tenantId - Required tenant ID for authorization
  */
 export async function updateRole(
   roleId: string,
-  data: UpdateRoleData
+  data: UpdateRoleData,
+  tenantId: string
 ): Promise<RoleWithPermissions> {
   const role = await prisma.role.findUnique({
     where: { id: roleId },
@@ -191,6 +225,11 @@ export async function updateRole(
 
   if (!role) {
     throw new Error('Role not found');
+  }
+
+  // Security: Verify role belongs to the caller's tenant
+  if (role.tenantId !== tenantId) {
+    throw new Error('Role not found'); // Don't reveal role exists in another tenant
   }
 
   if (role.isSystem) {
@@ -258,8 +297,11 @@ export async function updateRole(
 
 /**
  * Delete a role
+ *
+ * @param roleId - The ID of the role to delete
+ * @param tenantId - Required tenant ID for authorization
  */
-export async function deleteRole(roleId: string): Promise<void> {
+export async function deleteRole(roleId: string, tenantId: string): Promise<void> {
   const role = await prisma.role.findUnique({
     where: { id: roleId },
     include: {
@@ -271,6 +313,11 @@ export async function deleteRole(roleId: string): Promise<void> {
 
   if (!role) {
     throw new Error('Role not found');
+  }
+
+  // Security: Verify role belongs to the caller's tenant
+  if (role.tenantId !== tenantId) {
+    throw new Error('Role not found'); // Don't reveal role exists in another tenant
   }
 
   if (role.isSystem) {
@@ -291,6 +338,10 @@ export async function deleteRole(roleId: string): Promise<void> {
 
 /**
  * Duplicate a role (for creating similar roles)
+ *
+ * Security: Only allows duplicating roles that:
+ * - Belong to the same tenant, OR
+ * - Are global/system roles (tenantId = null)
  */
 export async function duplicateRole(
   roleId: string,
@@ -306,6 +357,19 @@ export async function duplicateRole(
 
   if (!sourceRole) {
     throw new Error('Source role not found');
+  }
+
+  // Security check: Only allow duplicating from same tenant or global/system roles
+  // Global roles have tenantId = null and can be duplicated by any tenant
+  if (sourceRole.tenantId && sourceRole.tenantId !== tenantId) {
+    throw new Error('Cannot duplicate role from another tenant');
+  }
+
+  // Prevent duplicating system roles directly (they should be copied as templates)
+  // This is a soft warning - we allow it but the new role won't be a system role
+  if (sourceRole.isSystem) {
+    // Allow duplicating system roles, but the new role will be a regular role
+    // This is useful for creating custom variations of system roles
   }
 
   // Create new role with same permissions

@@ -38,7 +38,7 @@ export async function GET(
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
 
-    const role = await getRoleById(roleId);
+    const role = await getRoleById(roleId, { tenantId });
     if (!role) {
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
@@ -78,8 +78,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
 
-    // Get current role for comparison
-    const currentRole = await getRoleById(roleId);
+    // Get current role for comparison (pass tenantId for authorization)
+    const currentRole = await getRoleById(roleId, { tenantId });
     if (!currentRole) {
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
@@ -116,12 +116,12 @@ export async function PATCH(
       }
     }
 
-    // Update the role
+    // Update the role (pass tenantId for authorization)
     const updatedRole = await updateRole(roleId, {
       name: name?.trim(),
       description: description?.trim(),
       permissions,
-    });
+    }, tenantId);
 
     // Build changes for audit log
     const changes: Record<string, { old: unknown; new: unknown }> = {};
@@ -191,14 +191,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
 
-    // Get role for audit log
-    const role = await getRoleById(roleId);
+    // Get role for audit log (pass tenantId for authorization)
+    const role = await getRoleById(roleId, { tenantId });
     if (!role) {
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
 
-    // Delete the role
-    await deleteRole(roleId);
+    // Delete the role (pass tenantId for authorization)
+    await deleteRole(roleId, tenantId);
 
     // Log the deletion
     const ctx = await createAuditContext({

@@ -328,14 +328,30 @@ export async function restoreCompany(
 // Get Company
 // ============================================================================
 
+export interface GetCompanyOptions {
+  includeDeleted?: boolean;
+  /**
+   * Skip tenant filtering - ONLY use for SUPER_ADMIN operations that need
+   * cross-tenant access. Regular operations MUST always provide tenantId.
+   */
+  skipTenantFilter?: boolean;
+}
+
 export async function getCompanyById(
   id: string,
-  tenantId?: string,
-  includeDeleted: boolean = false
+  tenantId: string | null,
+  options: GetCompanyOptions = {}
 ): Promise<CompanyWithRelations | null> {
+  const { includeDeleted = false, skipTenantFilter = false } = options;
+
+  // Require tenantId unless explicitly skipping for SUPER_ADMIN
+  if (!tenantId && !skipTenantFilter) {
+    throw new Error('tenantId is required for company queries');
+  }
+
   const where: Prisma.CompanyWhereInput = { id };
 
-  if (tenantId) {
+  if (tenantId && !skipTenantFilter) {
     where.tenantId = tenantId;
   }
 
@@ -390,12 +406,19 @@ export async function getCompanyById(
 
 export async function getCompanyByUen(
   uen: string,
-  tenantId?: string,
-  includeDeleted: boolean = false
+  tenantId: string | null,
+  options: GetCompanyOptions = {}
 ): Promise<Company | null> {
+  const { includeDeleted = false, skipTenantFilter = false } = options;
+
+  // Require tenantId unless explicitly skipping for SUPER_ADMIN
+  if (!tenantId && !skipTenantFilter) {
+    throw new Error('tenantId is required for company queries');
+  }
+
   const where: Prisma.CompanyWhereInput = { uen: uen.toUpperCase() };
 
-  if (tenantId) {
+  if (tenantId && !skipTenantFilter) {
     where.tenantId = tenantId;
   }
 
@@ -410,9 +433,18 @@ export async function getCompanyByUen(
 // Search Companies
 // ============================================================================
 
+export interface SearchCompaniesOptions {
+  /**
+   * Skip tenant filtering - ONLY use for SUPER_ADMIN operations that need
+   * cross-tenant access. Regular operations MUST always provide tenantId.
+   */
+  skipTenantFilter?: boolean;
+}
+
 export async function searchCompanies(
   params: CompanySearchInput,
-  tenantId?: string
+  tenantId: string | null,
+  options: SearchCompaniesOptions = {}
 ): Promise<{
   companies: CompanyWithRelations[];
   total: number;
@@ -420,12 +452,19 @@ export async function searchCompanies(
   limit: number;
   totalPages: number;
 }> {
+  const { skipTenantFilter = false } = options;
+
+  // Require tenantId unless explicitly skipping for SUPER_ADMIN
+  if (!tenantId && !skipTenantFilter) {
+    throw new Error('tenantId is required for company queries');
+  }
+
   const where: Prisma.CompanyWhereInput = {
     deletedAt: null,
   };
 
   // Tenant scope
-  if (tenantId) {
+  if (tenantId && !skipTenantFilter) {
     where.tenantId = tenantId;
   }
 
@@ -543,11 +582,19 @@ export async function searchCompanies(
 
 export async function getCompanyFullDetails(
   id: string,
-  tenantId?: string
+  tenantId: string | null,
+  options: GetCompanyOptions = {}
 ): Promise<CompanyWithRelations | null> {
+  const { skipTenantFilter = false } = options;
+
+  // Require tenantId unless explicitly skipping for SUPER_ADMIN
+  if (!tenantId && !skipTenantFilter) {
+    throw new Error('tenantId is required for company queries');
+  }
+
   const where: Prisma.CompanyWhereInput = { id, deletedAt: null };
 
-  if (tenantId) {
+  if (tenantId && !skipTenantFilter) {
     where.tenantId = tenantId;
   }
 
@@ -624,16 +671,34 @@ export async function getCompanyFullDetails(
 // Company Statistics
 // ============================================================================
 
-export async function getCompanyStats(tenantId?: string): Promise<{
+export interface GetCompanyStatsOptions {
+  /**
+   * Skip tenant filtering - ONLY use for SUPER_ADMIN operations that need
+   * cross-tenant statistics. Regular operations MUST always provide tenantId.
+   */
+  skipTenantFilter?: boolean;
+}
+
+export async function getCompanyStats(
+  tenantId: string | null,
+  options: GetCompanyStatsOptions = {}
+): Promise<{
   total: number;
   byStatus: Record<string, number>;
   byEntityType: Record<string, number>;
   recentlyAdded: number;
   withOverdueFilings: number;
 }> {
+  const { skipTenantFilter = false } = options;
+
+  // Require tenantId unless explicitly skipping for SUPER_ADMIN
+  if (!tenantId && !skipTenantFilter) {
+    throw new Error('tenantId is required for company statistics');
+  }
+
   const baseWhere: Prisma.CompanyWhereInput = { deletedAt: null };
 
-  if (tenantId) {
+  if (tenantId && !skipTenantFilter) {
     baseWhere.tenantId = tenantId;
   }
 

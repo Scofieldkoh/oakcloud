@@ -11,8 +11,11 @@ export async function GET() {
     }
 
     // Pass tenantId for non-SUPER_ADMIN users to get tenant-scoped stats
-    const tenantId = session.isSuperAdmin ? undefined : session.tenantId || undefined;
-    const stats = await getCompanyStats(tenantId);
+    // SUPER_ADMIN can get global stats with skipTenantFilter
+    const stats = await getCompanyStats(
+      session.tenantId,
+      { skipTenantFilter: session.isSuperAdmin && !session.tenantId }
+    );
 
     return NextResponse.json(stats);
   } catch (error) {

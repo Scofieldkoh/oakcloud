@@ -25,6 +25,7 @@ import { useUIStore } from '@/stores/ui-store';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { getSidebarWidth as getSidebarWidthFn, SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from '@/lib/constants/layout';
 
 interface NavItem {
   name: string;
@@ -413,10 +414,12 @@ export function Sidebar() {
 }
 
 // Export for layout to know sidebar width
+export { SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from '@/lib/constants/layout';
+
 export function useSidebarWidth() {
   const { sidebarCollapsed } = useUIStore();
   const isMobile = useIsMobile();
 
-  if (isMobile) return 0;
-  return sidebarCollapsed ? 56 : 224;
+  // Use centralized constants for consistency
+  return getSidebarWidthFn(sidebarCollapsed, isMobile);
 }

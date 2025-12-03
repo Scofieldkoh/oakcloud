@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 
 /**
- * Hook that tracks a CSS media query
+ * Hook that tracks a CSS media query with proper SSR hydration support.
+ *
+ * Uses useSyncExternalStore for proper hydration without layout shifts.
+ * On the server, returns false by default. On the client, returns the
+ * actual media query result.
  *
  * @param query - CSS media query string (e.g., '(min-width: 768px)')
  * @returns Boolean indicating if the media query matches
@@ -15,9 +19,36 @@ import { useState, useEffect } from 'react';
  * ```
  */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  const subscribe = useCallback(
+    (callback: () => void) => {
+      const mediaQuery = window.matchMedia(query);
+      mediaQuery.addEventListener('change', callback);
+      return () => mediaQuery.removeEventListener('change', callback);
+    },
+    [query]
+  );
+
+  const getSnapshot = useCallback(() => {
+    return window.matchMedia(query).matches;
+  }, [query]);
+
+  // Return false during SSR to prevent hydration mismatch
+  const getServerSnapshot = useCallback(() => false, []);
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
+/**
+ * Alternative implementation using useState/useEffect for environments
+ * where useSyncExternalStore is not available.
+ */
+export function useMediaQueryLegacy(query: string): boolean {
+  // Initialize with null to detect SSR
+  const [matches, setMatches] = useState<boolean | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const mediaQuery = window.matchMedia(query);
 
     // Set initial value
@@ -34,7 +65,9 @@ export function useMediaQuery(query: string): boolean {
     return () => mediaQuery.removeEventListener('change', handler);
   }, [query]);
 
-  return matches;
+  // Return false during SSR and initial render to prevent hydration mismatch
+  // After mount, return actual value
+  return mounted ? (matches ?? false) : false;
 }
 
 // Predefined breakpoint hooks for convenience

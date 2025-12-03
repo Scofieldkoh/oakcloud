@@ -80,6 +80,10 @@ export async function requestPasswordReset(email: string): Promise<RequestResetR
 
   // Always return success to prevent email enumeration
   if (!user || !user.isActive) {
+    // Add random delay to prevent timing-based email enumeration
+    // This makes response time similar to successful requests
+    const randomDelay = 50 + Math.random() * 100; // 50-150ms
+    await new Promise((resolve) => setTimeout(resolve, randomDelay));
     return {
       success: true,
       message: 'If an account exists with this email, you will receive a password reset link.',

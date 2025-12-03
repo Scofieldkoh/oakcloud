@@ -122,22 +122,63 @@ export async function assignUserToCompany(
     },
   });
 
-  let assignment: UserCompanyAssignment;
+  // Use a transaction to prevent race conditions when setting primary assignment
+  // This ensures atomicity when updating multiple records
+  const assignment = await prisma.$transaction(async (tx) => {
+    if (existing) {
+      // Company assignment exists - update isPrimary if needed, but don't throw error
+      // This allows adding a new role to a company where user already has access
+      if (isPrimary && !existing.isPrimary) {
+        // Unset other primary assignments
+        await tx.userCompanyAssignment.updateMany({
+          where: { userId, isPrimary: true, id: { not: existing.id } },
+          data: { isPrimary: false },
+        });
 
-  if (existing) {
-    // Company assignment exists - update isPrimary if needed, but don't throw error
-    // This allows adding a new role to a company where user already has access
-    if (isPrimary && !existing.isPrimary) {
-      // Unset other primary assignments
-      await prisma.userCompanyAssignment.updateMany({
-        where: { userId, isPrimary: true, id: { not: existing.id } },
-        data: { isPrimary: false },
-      });
+        // Update this assignment to be primary
+        existing = await tx.userCompanyAssignment.update({
+          where: { id: existing.id },
+          data: { isPrimary: true },
+          include: {
+            company: {
+              select: {
+                id: true,
+                name: true,
+                uen: true,
+              },
+            },
+          },
+        });
 
-      // Update this assignment to be primary
-      existing = await prisma.userCompanyAssignment.update({
-        where: { id: existing.id },
-        data: { isPrimary: true },
+        // Also update the user's primary companyId
+        await tx.user.update({
+          where: { id: userId },
+          data: { companyId },
+        });
+      }
+      return existing;
+    } else {
+      // If setting as primary, unset other primary assignments
+      if (isPrimary) {
+        await tx.userCompanyAssignment.updateMany({
+          where: { userId, isPrimary: true },
+          data: { isPrimary: false },
+        });
+
+        // Also update the user's primary companyId
+        await tx.user.update({
+          where: { id: userId },
+          data: { companyId },
+        });
+      }
+
+      // Create company assignment
+      return tx.userCompanyAssignment.create({
+        data: {
+          userId,
+          companyId,
+          isPrimary,
+        },
         include: {
           company: {
             select: {
@@ -148,47 +189,8 @@ export async function assignUserToCompany(
           },
         },
       });
-
-      // Also update the user's primary companyId
-      await prisma.user.update({
-        where: { id: userId },
-        data: { companyId },
-      });
     }
-    assignment = existing;
-  } else {
-    // If setting as primary, unset other primary assignments
-    if (isPrimary) {
-      await prisma.userCompanyAssignment.updateMany({
-        where: { userId, isPrimary: true },
-        data: { isPrimary: false },
-      });
-
-      // Also update the user's primary companyId
-      await prisma.user.update({
-        where: { id: userId },
-        data: { companyId },
-      });
-    }
-
-    // Create company assignment
-    assignment = await prisma.userCompanyAssignment.create({
-      data: {
-        userId,
-        companyId,
-        isPrimary,
-      },
-      include: {
-        company: {
-          select: {
-            id: true,
-            name: true,
-            uen: true,
-          },
-        },
-      },
-    });
-  }
+  });
 
   // Create role assignment if roleId provided
   if (roleId) {

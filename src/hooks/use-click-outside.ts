@@ -86,7 +86,17 @@ export function useClickOutsideMultiple<T extends HTMLElement = HTMLElement>(
   enabled: boolean = true,
   count: number = 2
 ): RefObject<T | null>[] {
-  const refs = Array.from({ length: count }, () => useRef<T>(null));
+  // Create refs array only once and store it in a ref to prevent
+  // recreation on every render (which would cause infinite loops)
+  const refsContainer = useRef<RefObject<T | null>[]>([]);
+
+  // Initialize refs array if empty or count changed
+  if (refsContainer.current.length !== count) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    refsContainer.current = Array.from({ length: count }, () => ({ current: null }));
+  }
+
+  const refs = refsContainer.current;
 
   useEffect(() => {
     if (!enabled) return;
@@ -110,7 +120,9 @@ export function useClickOutsideMultiple<T extends HTMLElement = HTMLElement>(
       document.removeEventListener('mousedown', listener);
       document.removeEventListener('touchstart', listener);
     };
-  }, [handler, enabled, refs]);
+    // refs is stable since it's stored in refsContainer.current
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handler, enabled]);
 
   return refs;
 }
