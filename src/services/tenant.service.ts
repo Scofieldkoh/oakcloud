@@ -440,16 +440,6 @@ export async function inviteUserToTenant(
     throw new Error('A user with this email already exists');
   }
 
-  // Validate company belongs to tenant if provided
-  if (data.companyId) {
-    const company = await prisma.company.findUnique({
-      where: { id: data.companyId, tenantId, deletedAt: null },
-    });
-    if (!company) {
-      throw new Error('Company not found in this tenant');
-    }
-  }
-
   // Validate all company assignments belong to tenant
   if (data.companyAssignments && data.companyAssignments.length > 0) {
     const companyIds = data.companyAssignments.map((a) => a.companyId);
@@ -511,9 +501,6 @@ export async function inviteUserToTenant(
   if (data.companyAssignments && data.companyAssignments.length > 0) {
     data.companyAssignments.forEach((a) => companyIdsToAssign.add(a.companyId));
   }
-  if (data.companyId) {
-    companyIdsToAssign.add(data.companyId);
-  }
 
   // From role assignments with company scope
   if (data.roleAssignments) {
@@ -526,7 +513,6 @@ export async function inviteUserToTenant(
   if (companyIdsToAssign.size > 0) {
     const companyIds = Array.from(companyIdsToAssign);
     const primaryCompanyIdForAssignment = data.companyAssignments?.find((a) => a.isPrimary)?.companyId
-      || data.companyId
       || companyIds[0];
 
     await prisma.userCompanyAssignment.createMany({

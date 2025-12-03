@@ -2227,6 +2227,22 @@ docker ps
   - New company page: Shows "Access Denied" if user lacks `company:create` permission
   - `CompanyTable` component accepts `canEdit`, `canDelete`, `canCreate` props for permission-based rendering
 
+### v0.6.3 (2025-12-03)
+- **Deprecated `User.companyId`**: Removed legacy single-company field from User model
+  - Company access now exclusively derived from `UserRoleAssignment.companyId`
+  - Session's `companyIds` array populated from all role assignments
+  - Removed `companyId` from JWT payload, SessionUser interface, and API responses
+  - `canAccessCompany()` now checks against `companyIds` array
+- **Per-Company Permission Checks**: Edit/delete buttons now respect company-specific roles
+  - Added `useCompanyPermissions(companyIds)` hook for batch permission checks
+  - `CompanyTable` accepts permission check functions instead of global booleans
+  - Company detail and edit pages pass company ID to `usePermissions(companyId)`
+  - Users with different roles per company see appropriate actions for each
+- **Filtered Role Assignments Display**: Users page filters now affect displayed assignments
+  - Role/company filters show only matching assignments in the table
+  - "(X others hidden)" indicator when some assignments are filtered out
+  - Clicking still opens full "Manage Roles & Companies" modal
+
 ### v0.6.0 (2025-12-03)
 - **RBAC Refactoring**: Migrated from hybrid role system to **pure role assignments**
   - **Removed `User.role` field** - All permissions now exclusively via `UserRoleAssignment`

@@ -21,7 +21,6 @@ const updateUserSchema = z.object({
   lastName: z.string().min(1).max(100).optional(),
   email: z.string().email().optional(),
   isActive: z.boolean().optional(),
-  companyId: z.string().uuid().nullable().optional(),
   sendPasswordReset: z.boolean().optional(),
 });
 
@@ -127,12 +126,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       await requestPasswordReset(existingUser.email);
     }
 
-    // Prepare update data (excluding role which is handled separately)
+    // Prepare update data
     const updateData: Record<string, unknown> = {};
     if (data.firstName !== undefined) updateData.firstName = data.firstName;
     if (data.lastName !== undefined) updateData.lastName = data.lastName;
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
-    if (data.companyId !== undefined) updateData.companyId = data.companyId;
 
     // Handle email change (check uniqueness)
     if (data.email && data.email !== existingUser.email) {

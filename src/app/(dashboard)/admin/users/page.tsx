@@ -208,6 +208,33 @@ export default function UsersPage() {
     return roles;
   })();
 
+  // Helper to filter role assignments based on active filters
+  // When filtering by role or company, only show matching assignments in the table
+  const getFilteredRoleAssignments = (user: TenantUser) => {
+    if (!user.roleAssignments) return [];
+
+    let filtered = user.roleAssignments;
+
+    // Filter by role name if role filter is active
+    if (roleFilter) {
+      filtered = filtered.filter((ra) =>
+        ra.role.name.toLowerCase().includes(roleFilter.toLowerCase()) ||
+        ra.role.systemRoleType?.toLowerCase().includes(roleFilter.toLowerCase().replace(' ', '_'))
+      );
+    }
+
+    // Filter by company name if company filter is active
+    if (companyFilter) {
+      filtered = filtered.filter((ra) =>
+        ra.company?.name.toLowerCase().includes(companyFilter.toLowerCase()) ||
+        // Also match "All Companies" assignments when searching
+        (!ra.company && 'all companies'.includes(companyFilter.toLowerCase()))
+      );
+    }
+
+    return filtered;
+  };
+
   // Handle invite
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -530,42 +557,66 @@ export default function UsersPage() {
                             onClick={() => setManagingUserId(user.id)}
                             className="text-left hover:bg-background-tertiary rounded p-1 -m-1 transition-colors"
                           >
-                            {user.roleAssignments && user.roleAssignments.length > 0 ? (
-                              <div className="space-y-1">
-                                {user.roleAssignments.slice(0, 3).map((ra) => (
-                                  <div key={ra.id} className="flex items-center gap-1.5">
-                                    <span
-                                      className={cn(
-                                        'badge text-xs',
-                                        ra.role.systemRoleType === 'TENANT_ADMIN'
-                                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                                          : ra.role.systemRoleType === 'SUPER_ADMIN'
-                                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                                            : 'bg-oak-primary/10 text-oak-primary dark:bg-oak-primary/20'
-                                      )}
-                                    >
-                                      <Shield className="w-2.5 h-2.5 mr-0.5" />
-                                      {ra.role.name}
-                                    </span>
-                                    <span className="text-xs text-text-muted">→</span>
-                                    <span className="text-xs text-text-secondary flex items-center gap-0.5">
-                                      <Building2 className="w-3 h-3" />
-                                      {ra.company ? ra.company.name : 'All Companies'}
-                                    </span>
+                            {(() => {
+                              // Get filtered role assignments based on active filters
+                              const filteredAssignments = getFilteredRoleAssignments(user);
+                              const totalAssignments = user.roleAssignments?.length || 0;
+                              const hasFilters = roleFilter || companyFilter;
+
+                              if (filteredAssignments.length > 0) {
+                                return (
+                                  <div className="space-y-1">
+                                    {filteredAssignments.slice(0, 3).map((ra) => (
+                                      <div key={ra.id} className="flex items-center gap-1.5">
+                                        <span
+                                          className={cn(
+                                            'badge text-xs',
+                                            ra.role.systemRoleType === 'TENANT_ADMIN'
+                                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                              : ra.role.systemRoleType === 'SUPER_ADMIN'
+                                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                                : 'bg-oak-primary/10 text-oak-primary dark:bg-oak-primary/20'
+                                          )}
+                                        >
+                                          <Shield className="w-2.5 h-2.5 mr-0.5" />
+                                          {ra.role.name}
+                                        </span>
+                                        <span className="text-xs text-text-muted">→</span>
+                                        <span className="text-xs text-text-secondary flex items-center gap-0.5">
+                                          <Building2 className="w-3 h-3" />
+                                          {ra.company ? ra.company.name : 'All Companies'}
+                                        </span>
+                                      </div>
+                                    ))}
+                                    {filteredAssignments.length > 3 && (
+                                      <span className="text-xs text-text-muted">
+                                        +{filteredAssignments.length - 3} more matching
+                                      </span>
+                                    )}
+                                    {hasFilters && filteredAssignments.length < totalAssignments && (
+                                      <span className="text-xs text-text-tertiary italic">
+                                        ({totalAssignments - filteredAssignments.length} other{totalAssignments - filteredAssignments.length > 1 ? 's' : ''} hidden)
+                                      </span>
+                                    )}
                                   </div>
-                                ))}
-                                {user.roleAssignments.length > 3 && (
-                                  <span className="text-xs text-text-muted">
-                                    +{user.roleAssignments.length - 3} more
+                                );
+                              } else if (totalAssignments > 0) {
+                                // Has assignments but none match filter
+                                return (
+                                  <span className="text-text-muted text-sm flex items-center gap-1">
+                                    <Shield className="w-3.5 h-3.5" />
+                                    {totalAssignments} role{totalAssignments > 1 ? 's' : ''} (filtered)
                                   </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-text-muted text-sm flex items-center gap-1">
-                                <Shield className="w-3.5 h-3.5" />
-                                No roles assigned
-                              </span>
-                            )}
+                                );
+                              } else {
+                                return (
+                                  <span className="text-text-muted text-sm flex items-center gap-1">
+                                    <Shield className="w-3.5 h-3.5" />
+                                    No roles assigned
+                                  </span>
+                                );
+                              }
+                            })()}
                           </button>
                         </td>
                         <td>

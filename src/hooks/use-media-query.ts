@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 /**
  * Hook that tracks a CSS media query with proper SSR hydration support.
@@ -36,38 +36,6 @@ export function useMediaQuery(query: string): boolean {
   const getServerSnapshot = useCallback(() => false, []);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-}
-
-/**
- * Alternative implementation using useState/useEffect for environments
- * where useSyncExternalStore is not available.
- */
-export function useMediaQueryLegacy(query: string): boolean {
-  // Initialize with null to detect SSR
-  const [matches, setMatches] = useState<boolean | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const mediaQuery = window.matchMedia(query);
-
-    // Set initial value
-    setMatches(mediaQuery.matches);
-
-    // Define listener
-    const handler = (event: MediaQueryListEvent) => {
-      setMatches(event.matches);
-    };
-
-    // Add listener
-    mediaQuery.addEventListener('change', handler);
-
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, [query]);
-
-  // Return false during SSR and initial render to prevent hydration mismatch
-  // After mount, return actual value
-  return mounted ? (matches ?? false) : false;
 }
 
 // Predefined breakpoint hooks for convenience

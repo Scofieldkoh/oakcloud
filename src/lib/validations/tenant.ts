@@ -110,8 +110,6 @@ export const inviteUserSchema = z.object({
   email: z.string().email('Invalid email'),
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
-  // Legacy: single company assignment
-  companyId: z.string().uuid('Invalid company ID').optional(),
   // Multi-company assignments (which companies user can access)
   companyAssignments: z.array(companyAssignmentSchema).optional(),
   // Role assignments (required - at least one role assignment needed)
