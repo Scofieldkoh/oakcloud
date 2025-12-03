@@ -208,11 +208,17 @@ Primary entity for business records.
 | id | UUID | Primary key |
 | uen | String | Unique Entity Number |
 | name | String | Company name |
+| formerName | String? | Previous company name (if changed) |
+| dateOfNameChange | DateTime? | Date when name was changed |
 | entityType | Enum | PRIVATE_LIMITED, PUBLIC_LIMITED, etc. |
 | status | Enum | LIVE, STRUCK_OFF, etc. |
+| statusDate | DateTime? | Date when status became effective |
 | incorporationDate | DateTime | Date of incorporation |
+| dateOfAddress | DateTime? | Date when registered address became effective |
 | primarySsicCode | String | Primary business activity code |
 | financialYearEndMonth | Int | FYE month (1-12) |
+| fyeAsAtLastAr | DateTime? | Financial year end as at last annual return |
+| homeCurrency | String | Company's home currency (default: SGD) |
 | paidUpCapitalAmount | Decimal | Paid up capital |
 | hasCharges | Boolean | Has outstanding charges |
 
@@ -561,6 +567,8 @@ await requirePermission(session, 'company', 'update', companyId);
 | `assignRoleToUser()` | Assign a role to a user |
 | `removeRoleFromUser()` | Remove a role from a user |
 | `createSystemRolesForTenant()` | Initialize system roles for new tenant |
+
+> **For detailed implementation guidelines**, see [RBAC_GUIDELINE.md](./RBAC_GUIDELINE.md)
 
 ---
 

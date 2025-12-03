@@ -35,7 +35,8 @@
       "Bash(npm run db:seed:*)",
       "Bash(dir:*)",
       "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\prisma\\migrate-user-roles.ts\")",
-      "Bash(npx prisma validate:*)"
+      "Bash(npx prisma validate:*)",
+      "Bash(npm run db:generate:*)"
     ],
     "deny": [],
     "ask": []

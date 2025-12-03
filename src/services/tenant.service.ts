@@ -727,6 +727,8 @@ export async function updateTenantSettings(
     action: 'UPDATE',
     entityType: 'TenantSettings',
     entityId: tenantId,
+    entityName: tenant.name,
+    summary: `Updated settings for tenant "${tenant.name}"`,
     changeSource: 'MANUAL',
     changes: { settings: { old: currentSettings, new: newSettings } },
   });
@@ -995,16 +997,19 @@ export async function completeTenantSetup(
 
   // Log tenant info update if changed
   if (data.tenantInfo) {
+    const updatedFields = Object.keys(data.tenantInfo).filter(k => data.tenantInfo![k as keyof typeof data.tenantInfo] !== undefined);
     await createAuditLog({
       tenantId,
       userId: performedByUserId,
       action: 'UPDATE',
       entityType: 'Tenant',
       entityId: tenantId,
+      entityName: result.tenant.name,
+      summary: `Updated tenant "${result.tenant.name}" info during setup (${updatedFields.join(', ')})`,
       changeSource: 'MANUAL',
       metadata: {
         setupWizard: true,
-        fields: Object.keys(data.tenantInfo).filter(k => data.tenantInfo![k as keyof typeof data.tenantInfo] !== undefined),
+        fields: updatedFields,
       },
     });
   }
@@ -1021,9 +1026,12 @@ export async function completeTenantSetup(
     await createAuditLog({
       tenantId,
       userId: performedByUserId,
+      companyId: result.company.id,
       action: 'CREATE',
       entityType: 'Company',
       entityId: result.company.id,
+      entityName: result.company.name,
+      summary: `Created company "${result.company.name}" (UEN: ${result.company.uen}) during tenant setup`,
       changeSource: 'MANUAL',
       metadata: {
         uen: result.company.uen,
@@ -1040,6 +1048,8 @@ export async function completeTenantSetup(
     action: 'UPDATE',
     entityType: 'Tenant',
     entityId: tenantId,
+    entityName: result.tenant.name,
+    summary: `Activated tenant "${result.tenant.name}" - setup completed`,
     changeSource: 'MANUAL',
     changes: {
       status: { old: 'PENDING_SETUP', new: 'ACTIVE' },

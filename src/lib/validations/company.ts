@@ -24,6 +24,13 @@ export const companyStatusEnum = z.enum([
   'OTHER',
 ]);
 
+// Helper for date string transformation
+const dateStringTransform = z.string().optional().nullable().transform((val) => {
+  if (!val) return null;
+  if (val.includes('T')) return val;
+  return new Date(val).toISOString();
+});
+
 export const createCompanySchema = z.object({
   uen: z
     .string()
@@ -31,37 +38,29 @@ export const createCompanySchema = z.object({
     .max(10, 'UEN must be at most 10 characters')
     .regex(/^[A-Z0-9]+$/, 'UEN must contain only uppercase letters and numbers'),
   name: z.string().min(1, 'Company name is required').max(200, 'Company name is too long'),
+  formerName: z.string().max(200).optional().nullable(),
+  dateOfNameChange: dateStringTransform,
   entityType: entityTypeEnum.default('PRIVATE_LIMITED'),
   status: companyStatusEnum.default('LIVE'),
-  incorporationDate: z.string().optional().nullable().transform((val) => {
-    if (!val) return null;
-    // If it's already an ISO datetime, return as-is
-    if (val.includes('T')) return val;
-    // Convert YYYY-MM-DD to ISO datetime
-    return new Date(val).toISOString();
-  }),
-  registrationDate: z.string().optional().nullable().transform((val) => {
-    if (!val) return null;
-    if (val.includes('T')) return val;
-    return new Date(val).toISOString();
-  }),
+  statusDate: dateStringTransform,
+  incorporationDate: dateStringTransform,
+  registrationDate: dateStringTransform,
+  dateOfAddress: dateStringTransform,
   primarySsicCode: z.string().max(10).optional().nullable(),
   primarySsicDescription: z.string().max(500).optional().nullable(),
   secondarySsicCode: z.string().max(10).optional().nullable(),
   secondarySsicDescription: z.string().max(500).optional().nullable(),
   financialYearEndDay: z.number().min(1).max(31).optional().nullable(),
   financialYearEndMonth: z.number().min(1).max(12).optional().nullable(),
+  fyeAsAtLastAr: dateStringTransform,
+  homeCurrency: z.string().max(3).default('SGD'),
   paidUpCapitalCurrency: z.string().default('SGD'),
   paidUpCapitalAmount: z.number().min(0).optional().nullable(),
   issuedCapitalCurrency: z.string().default('SGD'),
   issuedCapitalAmount: z.number().min(0).optional().nullable(),
   isGstRegistered: z.boolean().default(false),
   gstRegistrationNumber: z.string().max(20).optional().nullable(),
-  gstRegistrationDate: z.string().optional().nullable().transform((val) => {
-    if (!val) return null;
-    if (val.includes('T')) return val;
-    return new Date(val).toISOString();
-  }),
+  gstRegistrationDate: dateStringTransform,
   internalNotes: z.string().max(5000).optional().nullable(),
 });
 

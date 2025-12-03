@@ -82,10 +82,20 @@ export default function EditCompanyPage({
         id: company.id,
         uen: company.uen,
         name: company.name,
+        formerName: company.formerName || undefined,
+        dateOfNameChange: company.dateOfNameChange
+          ? new Date(company.dateOfNameChange).toISOString().split('T')[0]
+          : undefined,
         entityType: company.entityType,
         status: company.status,
+        statusDate: company.statusDate
+          ? new Date(company.statusDate).toISOString().split('T')[0]
+          : undefined,
         incorporationDate: company.incorporationDate
           ? new Date(company.incorporationDate).toISOString().split('T')[0]
+          : undefined,
+        dateOfAddress: company.dateOfAddress
+          ? new Date(company.dateOfAddress).toISOString().split('T')[0]
           : undefined,
         primarySsicCode: company.primarySsicCode || undefined,
         primarySsicDescription: company.primarySsicDescription || undefined,
@@ -93,6 +103,10 @@ export default function EditCompanyPage({
         secondarySsicDescription: company.secondarySsicDescription || undefined,
         financialYearEndDay: company.financialYearEndDay || undefined,
         financialYearEndMonth: company.financialYearEndMonth || undefined,
+        fyeAsAtLastAr: company.fyeAsAtLastAr
+          ? new Date(company.fyeAsAtLastAr).toISOString().split('T')[0]
+          : undefined,
+        homeCurrency: company.homeCurrency || 'SGD',
         paidUpCapitalAmount: company.paidUpCapitalAmount
           ? parseFloat(company.paidUpCapitalAmount.toString())
           : undefined,
@@ -246,19 +260,63 @@ export default function EditCompanyPage({
               </div>
             </div>
 
-            <div>
-              <Controller
-                name="incorporationDate"
-                control={control}
-                render={({ field }) => (
-                  <DateInput
-                    label="Incorporation Date"
-                    value={field.value || ''}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                  />
-                )}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Controller
+                  name="incorporationDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DateInput
+                      label="Incorporation Date"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
+                />
+              </div>
+
+              <div>
+                <Controller
+                  name="statusDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DateInput
+                      label="Status Date"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Former Name</label>
+                <input
+                  type="text"
+                  {...register('formerName')}
+                  className="input input-sm"
+                  placeholder="Previous company name (if any)"
+                />
+              </div>
+
+              <div>
+                <Controller
+                  name="dateOfNameChange"
+                  control={control}
+                  render={({ field }) => (
+                    <DateInput
+                      label="Date of Name Change"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -336,6 +394,47 @@ export default function EditCompanyPage({
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="label">Home Currency</label>
+                <input
+                  type="text"
+                  maxLength={3}
+                  {...register('homeCurrency')}
+                  className="input input-sm uppercase"
+                  placeholder="SGD"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Controller
+                  name="fyeAsAtLastAr"
+                  control={control}
+                  render={({ field }) => (
+                    <DateInput
+                      label="FYE as at Last AR"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
+                />
+              </div>
+              <div>
+                <Controller
+                  name="dateOfAddress"
+                  control={control}
+                  render={({ field }) => (
+                    <DateInput
+                      label="Date of Address"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
+                />
               </div>
             </div>
 

@@ -194,16 +194,22 @@ Main company records with ACRA information. Each company belongs to a tenant.
 | tenant_id | UUID | No | FK to tenants (required) |
 | uen | VARCHAR(10) | No | Unique Entity Number |
 | name | VARCHAR(200) | No | Current company name |
+| former_name | VARCHAR(200) | Yes | Previous company name (if changed) |
+| date_of_name_change | DATE | Yes | Date when name was changed |
 | entity_type | ENUM | No | Company type (see EntityType enum) |
 | status | ENUM | No | Company status (see CompanyStatus enum) |
+| status_date | DATE | Yes | Date when status became effective |
 | incorporation_date | DATE | Yes | Date of incorporation |
 | registration_date | DATE | Yes | Date of registration |
+| date_of_address | DATE | Yes | Date when registered address became effective |
 | primary_ssic_code | VARCHAR(10) | Yes | Primary SSIC code |
 | primary_ssic_description | VARCHAR(500) | Yes | Primary business activity |
 | secondary_ssic_code | VARCHAR(10) | Yes | Secondary SSIC code |
 | secondary_ssic_description | VARCHAR(500) | Yes | Secondary business activity |
 | financial_year_end_day | INT | Yes | FYE day (1-31) |
 | financial_year_end_month | INT | Yes | FYE month (1-12) |
+| fye_as_at_last_ar | DATE | Yes | Financial year end as at last AR |
+| home_currency | VARCHAR(3) | Yes | Company's home currency (default: SGD) |
 | last_agm_date | DATE | Yes | Last AGM date |
 | last_ar_filed_date | DATE | Yes | Last annual return filed |
 | next_agm_due_date | DATE | Yes | Next AGM due date |
@@ -376,6 +382,7 @@ Shareholder records with shareholding details.
 | identification_type | ENUM | Yes | ID type |
 | identification_number | VARCHAR(50) | Yes | ID number |
 | nationality | VARCHAR(100) | Yes | Nationality |
+| place_of_origin | VARCHAR(100) | Yes | Place of origin (for corporate shareholders) |
 | address | TEXT | Yes | Address |
 | share_class | VARCHAR(50) | No | Share class (default: ORDINARY) |
 | number_of_shares | INT | No | Number of shares held |
@@ -404,6 +411,7 @@ Share capital structure.
 | par_value | DECIMAL(18,4) | Yes | Par value per share |
 | total_value | DECIMAL(18,2) | No | Total value |
 | is_paid_up | BOOLEAN | No | Fully paid up flag |
+| is_treasury | BOOLEAN | No | Treasury shares flag (default: false) |
 | effective_date | DATE | Yes | Effective date |
 | source_document_id | UUID | Yes | FK to documents |
 | created_at | TIMESTAMP | No | Record creation time |
@@ -424,7 +432,8 @@ Charges and encumbrances.
 | charge_type | VARCHAR(100) | Yes | Type of charge |
 | description | TEXT | Yes | Charge description |
 | charge_holder_name | VARCHAR(200) | No | Charge holder name |
-| amount_secured | DECIMAL(18,2) | Yes | Amount secured |
+| amount_secured | DECIMAL(18,2) | Yes | Amount secured (numeric) |
+| amount_secured_text | VARCHAR(100) | Yes | Amount secured as text (e.g., "All Monies") |
 | currency | VARCHAR(3) | Yes | Currency (default: SGD) |
 | registration_date | DATE | Yes | Registration date |
 | discharge_date | DATE | Yes | Discharge date |

@@ -167,11 +167,14 @@ export async function POST(
 
     // Create audit log
     await createAuditLog({
+      tenantId: company.tenantId,
       userId: session.id,
       companyId,
       action: 'UPLOAD',
       entityType: 'Document',
       entityId: document.id,
+      entityName: file.name,
+      summary: `Uploaded document "${file.name}" (${documentType}, v${document.version})`,
       changeSource: 'MANUAL',
       metadata: {
         documentType,

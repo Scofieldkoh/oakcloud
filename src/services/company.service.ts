@@ -56,16 +56,22 @@ export interface TenantAwareParams {
 // Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof Company)[] = [
   'name',
+  'formerName',
+  'dateOfNameChange',
   'uen',
   'entityType',
   'status',
+  'statusDate',
   'incorporationDate',
+  'dateOfAddress',
   'primarySsicCode',
   'primarySsicDescription',
   'secondarySsicCode',
   'secondarySsicDescription',
   'financialYearEndDay',
   'financialYearEndMonth',
+  'fyeAsAtLastAr',
+  'homeCurrency',
   'paidUpCapitalAmount',
   'issuedCapitalAmount',
   'isGstRegistered',
@@ -115,16 +121,22 @@ export async function createCompany(
       tenantId,
       uen: data.uen.toUpperCase(),
       name: data.name,
+      formerName: data.formerName,
+      dateOfNameChange: data.dateOfNameChange ? new Date(data.dateOfNameChange) : null,
       entityType: data.entityType,
       status: data.status,
+      statusDate: data.statusDate ? new Date(data.statusDate) : null,
       incorporationDate: data.incorporationDate ? new Date(data.incorporationDate) : null,
       registrationDate: data.registrationDate ? new Date(data.registrationDate) : null,
+      dateOfAddress: data.dateOfAddress ? new Date(data.dateOfAddress) : null,
       primarySsicCode: data.primarySsicCode,
       primarySsicDescription: data.primarySsicDescription,
       secondarySsicCode: data.secondarySsicCode,
       secondarySsicDescription: data.secondarySsicDescription,
       financialYearEndDay: data.financialYearEndDay,
       financialYearEndMonth: data.financialYearEndMonth,
+      fyeAsAtLastAr: data.fyeAsAtLastAr ? new Date(data.fyeAsAtLastAr) : null,
+      homeCurrency: data.homeCurrency,
       paidUpCapitalCurrency: data.paidUpCapitalCurrency,
       paidUpCapitalAmount: data.paidUpCapitalAmount,
       issuedCapitalCurrency: data.issuedCapitalCurrency,
@@ -143,6 +155,8 @@ export async function createCompany(
     action: 'CREATE',
     entityType: 'Company',
     entityId: company.id,
+    entityName: company.name,
+    summary: `Created company "${company.name}" (UEN: ${company.uen})`,
     changeSource: 'MANUAL',
     metadata: { uen: company.uen, name: company.name },
   });
@@ -189,12 +203,19 @@ export async function updateCompany(
 
   if (data.uen !== undefined) updateData.uen = data.uen.toUpperCase();
   if (data.name !== undefined) updateData.name = data.name;
+  if (data.formerName !== undefined) updateData.formerName = data.formerName;
+  if (data.dateOfNameChange !== undefined)
+    updateData.dateOfNameChange = data.dateOfNameChange ? new Date(data.dateOfNameChange) : null;
   if (data.entityType !== undefined) updateData.entityType = data.entityType;
   if (data.status !== undefined) updateData.status = data.status;
+  if (data.statusDate !== undefined)
+    updateData.statusDate = data.statusDate ? new Date(data.statusDate) : null;
   if (data.incorporationDate !== undefined)
     updateData.incorporationDate = data.incorporationDate ? new Date(data.incorporationDate) : null;
   if (data.registrationDate !== undefined)
     updateData.registrationDate = data.registrationDate ? new Date(data.registrationDate) : null;
+  if (data.dateOfAddress !== undefined)
+    updateData.dateOfAddress = data.dateOfAddress ? new Date(data.dateOfAddress) : null;
   if (data.primarySsicCode !== undefined) updateData.primarySsicCode = data.primarySsicCode;
   if (data.primarySsicDescription !== undefined)
     updateData.primarySsicDescription = data.primarySsicDescription;
@@ -205,6 +226,9 @@ export async function updateCompany(
     updateData.financialYearEndDay = data.financialYearEndDay;
   if (data.financialYearEndMonth !== undefined)
     updateData.financialYearEndMonth = data.financialYearEndMonth;
+  if (data.fyeAsAtLastAr !== undefined)
+    updateData.fyeAsAtLastAr = data.fyeAsAtLastAr ? new Date(data.fyeAsAtLastAr) : null;
+  if (data.homeCurrency !== undefined) updateData.homeCurrency = data.homeCurrency;
   if (data.paidUpCapitalCurrency !== undefined)
     updateData.paidUpCapitalCurrency = data.paidUpCapitalCurrency;
   if (data.paidUpCapitalAmount !== undefined)
@@ -230,6 +254,7 @@ export async function updateCompany(
   const changes = computeChanges(existing as Record<string, unknown>, data, TRACKED_FIELDS as string[]);
 
   if (changes) {
+    const changedFields = Object.keys(changes).join(', ');
     await createAuditLog({
       tenantId,
       userId,
@@ -237,6 +262,8 @@ export async function updateCompany(
       action: 'UPDATE',
       entityType: 'Company',
       entityId: company.id,
+      entityName: company.name,
+      summary: `Updated company "${company.name}" (${changedFields})`,
       changeSource: 'MANUAL',
       changes,
       reason,
@@ -284,6 +311,8 @@ export async function deleteCompany(
     action: 'DELETE',
     entityType: 'Company',
     entityId: company.id,
+    entityName: company.name,
+    summary: `Deleted company "${company.name}" (UEN: ${company.uen})`,
     changeSource: 'MANUAL',
     reason,
     metadata: { uen: company.uen, name: company.name },
@@ -329,6 +358,8 @@ export async function restoreCompany(
     action: 'RESTORE',
     entityType: 'Company',
     entityId: company.id,
+    entityName: company.name,
+    summary: `Restored company "${company.name}" (UEN: ${company.uen})`,
     changeSource: 'MANUAL',
     metadata: { uen: company.uen, name: company.name },
   });

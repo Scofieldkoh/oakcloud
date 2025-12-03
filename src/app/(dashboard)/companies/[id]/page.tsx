@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
-  Building2,
   MapPin,
   Users,
   FileText,
@@ -220,7 +219,12 @@ export default function CompanyDetailPage({
                         <span className="badge badge-success text-2xs">Current</span>
                       )}
                     </div>
-                    <p className="text-text-primary">{address.fullAddress}</p>
+                    <p className="text-sm text-text-primary">{address.fullAddress}</p>
+                    {company.dateOfAddress && address.addressType === 'REGISTERED_OFFICE' && address.isCurrent && (
+                      <p className="text-xs text-text-secondary mt-1">
+                        Effective since {formatDate(company.dateOfAddress)}
+                      </p>
+                    )}
                   </div>
                 ))
               ) : (
@@ -322,7 +326,7 @@ export default function CompanyDetailPage({
             <div className="p-4 space-y-3">
               <div>
                 <p className="text-xs text-text-tertiary uppercase mb-1">Paid Up Capital</p>
-                <p className="text-lg font-semibold text-text-primary">
+                <p className="text-sm text-text-primary">
                   {company.paidUpCapitalAmount
                     ? formatCurrency(company.paidUpCapitalAmount, company.paidUpCapitalCurrency || 'SGD')
                     : '-'}
@@ -330,7 +334,7 @@ export default function CompanyDetailPage({
               </div>
               <div>
                 <p className="text-xs text-text-tertiary uppercase mb-1">Issued Capital</p>
-                <p className="text-lg font-semibold text-text-primary">
+                <p className="text-sm text-text-primary">
                   {company.issuedCapitalAmount
                     ? formatCurrency(company.issuedCapitalAmount, company.issuedCapitalCurrency || 'SGD')
                     : '-'}
@@ -350,19 +354,31 @@ export default function CompanyDetailPage({
             <div className="p-4 space-y-3">
               <div>
                 <p className="text-xs text-text-tertiary uppercase mb-1">Financial Year End</p>
-                <p className="text-text-primary">
+                <p className="text-sm text-text-primary">
                   {company.financialYearEndMonth && company.financialYearEndDay
                     ? `${company.financialYearEndDay} ${new Date(2000, company.financialYearEndMonth - 1).toLocaleString('default', { month: 'long' })}`
                     : '-'}
                 </p>
               </div>
+              {company.fyeAsAtLastAr && (
+                <div>
+                  <p className="text-xs text-text-tertiary uppercase mb-1">FYE as at Last AR</p>
+                  <p className="text-sm text-text-primary">{formatDate(company.fyeAsAtLastAr)}</p>
+                </div>
+              )}
+              {company.homeCurrency && company.homeCurrency !== 'SGD' && (
+                <div>
+                  <p className="text-xs text-text-tertiary uppercase mb-1">Home Currency</p>
+                  <p className="text-sm text-text-primary">{company.homeCurrency}</p>
+                </div>
+              )}
               <div>
                 <p className="text-xs text-text-tertiary uppercase mb-1">Last AGM</p>
-                <p className="text-text-primary">{formatDate(company.lastAgmDate)}</p>
+                <p className="text-sm text-text-primary">{formatDate(company.lastAgmDate)}</p>
               </div>
               <div>
                 <p className="text-xs text-text-tertiary uppercase mb-1">Last AR Filed</p>
-                <p className="text-text-primary">{formatDate(company.lastArFiledDate)}</p>
+                <p className="text-sm text-text-primary">{formatDate(company.lastArFiledDate)}</p>
               </div>
               {company.hasCharges && (
                 <div className="pt-2 border-t border-border-primary">

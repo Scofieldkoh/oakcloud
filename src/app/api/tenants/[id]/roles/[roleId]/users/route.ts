@@ -104,10 +104,17 @@ export async function POST(
       }
     }
 
+    // Get role name for audit log
+    const role = await prisma.role.findUnique({
+      where: { id: roleId },
+      select: { name: true },
+    });
+
     // Assign role to user
     await assignRoleToUser(userId, roleId, companyId);
 
     // Log the assignment
+    const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
     await createAuditLog({
       tenantId,
       userId: session.id,
@@ -115,8 +122,9 @@ export async function POST(
       action: 'PERMISSION_GRANTED',
       entityType: 'UserRoleAssignment',
       entityId: userId,
-      summary: `Assigned role to user`,
-      metadata: { roleId, companyId },
+      entityName: userName,
+      summary: `Assigned role "${role?.name}" to user "${userName}"${companyId ? ' (company-scoped)' : ''}`,
+      metadata: { roleId, roleName: role?.name, companyId },
     });
 
     return NextResponse.json({ success: true }, { status: 201 });
@@ -161,10 +169,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    // Get user and role info for audit log
+    const [user, role] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { firstName: true, lastName: true, email: true },
+      }),
+      prisma.role.findUnique({
+        where: { id: roleId },
+        select: { name: true },
+      }),
+    ]);
+
     // Remove role from user
     await removeRoleFromUser(userId, roleId, companyId);
 
     // Log the removal
+    const userName = user ? `${user.firstName} ${user.lastName}`.trim() || user.email : userId;
     await createAuditLog({
       tenantId,
       userId: session.id,
@@ -172,8 +193,9 @@ export async function DELETE(
       action: 'PERMISSION_REVOKED',
       entityType: 'UserRoleAssignment',
       entityId: userId,
-      summary: `Removed role from user`,
-      metadata: { roleId, companyId },
+      entityName: userName,
+      summary: `Removed role "${role?.name}" from user "${userName}"${companyId ? ' (company-scoped)' : ''}`,
+      metadata: { roleId, roleName: role?.name, companyId },
     });
 
     return NextResponse.json({ success: true });

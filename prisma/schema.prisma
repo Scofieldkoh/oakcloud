@@ -329,10 +329,16 @@ model Company {
 
   uen                   String        @unique
   name                  String
+  formerName            String?       // Previous company name (if any)
+  dateOfNameChange      DateTime?     // Date when name was changed
   entityType            EntityType    @default(PRIVATE_LIMITED)
   status                CompanyStatus @default(LIVE)
+  statusDate            DateTime?     // Date when status became effective
   incorporationDate     DateTime?
   registrationDate      DateTime?
+
+  // Registered Office Address Date
+  dateOfAddress         DateTime?     // Date when registered address became effective
 
   // Business Activity
   primarySsicCode       String?
@@ -343,6 +349,8 @@ model Company {
   // Financial Year
   financialYearEndDay   Int?
   financialYearEndMonth Int?
+  fyeAsAtLastAr         DateTime?     // Financial year end as at last annual return
+  homeCurrency          String?       @default("SGD")
 
   // Compliance Dates
   lastAgmDate           DateTime?
@@ -568,6 +576,7 @@ model ShareCapital {
   parValue        Decimal? @db.Decimal(18, 4)
   totalValue      Decimal  @db.Decimal(18, 2)
   isPaidUp        Boolean  @default(true)
+  isTreasury      Boolean  @default(false)  // True for treasury shares
 
   effectiveDate   DateTime?
   sourceDocumentId String?
@@ -592,6 +601,7 @@ model CompanyShareholder {
   identificationType IdentificationType?
   identificationNumber String?
   nationality       String?
+  placeOfOrigin     String?     // For corporate shareholders
   address           String?
 
   // Shareholding
@@ -633,6 +643,7 @@ model CompanyCharge {
   description       String?
   chargeHolderName  String
   amountSecured     Decimal?  @db.Decimal(18, 2)
+  amountSecuredText String?   // For text values like "All Monies"
   currency          String?   @default("SGD")
 
   registrationDate  DateTime?

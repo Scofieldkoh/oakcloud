@@ -59,6 +59,8 @@ export async function createContact(
     action: 'CREATE',
     entityType: 'Contact',
     entityId: contact.id,
+    entityName: contact.fullName,
+    summary: `Created contact "${contact.fullName}"`,
     changeSource: 'MANUAL',
     metadata: { fullName: contact.fullName },
   });
@@ -124,6 +126,8 @@ export async function updateContact(
     action: 'UPDATE',
     entityType: 'Contact',
     entityId: contact.id,
+    entityName: contact.fullName,
+    summary: `Updated contact "${contact.fullName}"`,
     changeSource: 'MANUAL',
   });
 

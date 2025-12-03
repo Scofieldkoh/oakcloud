@@ -21,9 +21,12 @@ export interface ExtractedBizFileData {
   entityDetails: {
     uen: string;
     name: string;
+    formerName?: string;           // Single former name from BizFile
+    dateOfNameChange?: string;     // Date when name was changed
     formerNames?: Array<{ name: string; effectiveFrom: string; effectiveTo?: string }>;
     entityType: string;
     status: string;
+    statusDate?: string;           // Date when status became effective
     incorporationDate?: string;
     registrationDate?: string;
   };
@@ -38,7 +41,7 @@ export interface ExtractedBizFileData {
     unit?: string;
     buildingName?: string;
     postalCode: string;
-    effectiveFrom?: string;
+    effectiveFrom?: string;        // date_of_address from BizFile
   };
   mailingAddress?: {
     block?: string;
@@ -55,17 +58,24 @@ export interface ExtractedBizFileData {
     parValue?: number;
     totalValue: number;
     isPaidUp: boolean;
+    isTreasury?: boolean;          // For treasury shares
   }>;
+  treasuryShares?: {
+    numberOfShares: number;
+    currency?: string;
+  };
   shareholders?: Array<{
     name: string;
     type: 'INDIVIDUAL' | 'CORPORATE';
     identificationType?: string;
     identificationNumber?: string;
     nationality?: string;
+    placeOfOrigin?: string;        // For corporate shareholders
     address?: string;
     shareClass: string;
     numberOfShares: number;
     percentageHeld?: number;
+    currency?: string;
   }>;
   officers?: Array<{
     name: string;
@@ -86,11 +96,14 @@ export interface ExtractedBizFileData {
   financialYear?: {
     endDay: number;
     endMonth: number;
+    fyeAsAtLastAr?: string;        // Financial year end as at last AR
   };
+  homeCurrency?: string;           // Company's home currency
   compliance?: {
     lastAgmDate?: string;
     lastArFiledDate?: string;
     accountsDueDate?: string;
+    fyeAsAtLastAr?: string;        // financial_year_end_as_at_last_ar
   };
   charges?: Array<{
     chargeNumber?: string;
@@ -98,6 +111,7 @@ export interface ExtractedBizFileData {
     description?: string;
     chargeHolderName: string;
     amountSecured?: number;
+    amountSecuredText?: string;    // For text values like "All Monies"
     currency?: string;
     registrationDate?: string;
     dischargeDate?: string;
@@ -112,9 +126,12 @@ Return a JSON object with the following structure (include only fields that have
   "entityDetails": {
     "uen": "string - Unique Entity Number",
     "name": "string - Current company name",
+    "formerName": "string - Previous company name if any (from 'former_name' field)",
+    "dateOfNameChange": "YYYY-MM-DD - Date when name was changed",
     "formerNames": [{ "name": "string", "effectiveFrom": "YYYY-MM-DD", "effectiveTo": "YYYY-MM-DD" }],
     "entityType": "PRIVATE_LIMITED | PUBLIC_LIMITED | SOLE_PROPRIETORSHIP | PARTNERSHIP | LIMITED_PARTNERSHIP | LIMITED_LIABILITY_PARTNERSHIP | FOREIGN_COMPANY | VARIABLE_CAPITAL_COMPANY | OTHER",
     "status": "LIVE | STRUCK_OFF | WINDING_UP | DISSOLVED | IN_LIQUIDATION | IN_RECEIVERSHIP | AMALGAMATED | CONVERTED | OTHER",
+    "statusDate": "YYYY-MM-DD - Date when status became effective (from 'status_date')",
     "incorporationDate": "YYYY-MM-DD",
     "registrationDate": "YYYY-MM-DD"
   },
@@ -129,7 +146,7 @@ Return a JSON object with the following structure (include only fields that have
     "unit": "string",
     "buildingName": "string",
     "postalCode": "string",
-    "effectiveFrom": "YYYY-MM-DD"
+    "effectiveFrom": "YYYY-MM-DD - Date of address (from 'date_of_address')"
   },
   "mailingAddress": { ... same as registeredAddress },
   "shareCapital": [{
@@ -138,18 +155,25 @@ Return a JSON object with the following structure (include only fields that have
     "numberOfShares": number,
     "parValue": number,
     "totalValue": number,
-    "isPaidUp": boolean
+    "isPaidUp": boolean,
+    "isTreasury": boolean
   }],
+  "treasuryShares": {
+    "numberOfShares": number,
+    "currency": "string"
+  },
   "shareholders": [{
     "name": "string",
     "type": "INDIVIDUAL | CORPORATE",
     "identificationType": "NRIC | FIN | PASSPORT | UEN | OTHER",
     "identificationNumber": "string",
     "nationality": "string",
-    "address": "string",
+    "placeOfOrigin": "string - For corporate shareholders",
+    "address": "string - Full address",
     "shareClass": "ORDINARY",
     "numberOfShares": number,
-    "percentageHeld": number
+    "percentageHeld": number,
+    "currency": "SGD"
   }],
   "officers": [{
     "name": "string",
@@ -158,7 +182,7 @@ Return a JSON object with the following structure (include only fields that have
     "identificationType": "NRIC | FIN | PASSPORT",
     "identificationNumber": "string",
     "nationality": "string",
-    "address": "string",
+    "address": "string - Full address",
     "appointmentDate": "YYYY-MM-DD",
     "cessationDate": "YYYY-MM-DD or null if current"
   }],
@@ -171,19 +195,22 @@ Return a JSON object with the following structure (include only fields that have
     "endDay": number (1-31),
     "endMonth": number (1-12)
   },
+  "homeCurrency": "string - Company's home currency (default SGD)",
   "compliance": {
-    "lastAgmDate": "YYYY-MM-DD",
-    "lastArFiledDate": "YYYY-MM-DD",
+    "lastAgmDate": "YYYY-MM-DD (from 'date_of_last_agm')",
+    "lastArFiledDate": "YYYY-MM-DD (from 'date_of_last_annual_return')",
+    "fyeAsAtLastAr": "YYYY-MM-DD (from 'financial_year_end_as_at_last_ar')",
     "accountsDueDate": "YYYY-MM-DD"
   },
   "charges": [{
-    "chargeNumber": "string",
+    "chargeNumber": "string (from 'charge_number')",
     "chargeType": "string",
     "description": "string",
-    "chargeHolderName": "string",
-    "amountSecured": number,
+    "chargeHolderName": "string (from 'chargee')",
+    "amountSecured": number (only if numeric),
+    "amountSecuredText": "string (use for text like 'All Monies')",
     "currency": "SGD",
-    "registrationDate": "YYYY-MM-DD",
+    "registrationDate": "YYYY-MM-DD (from 'date_registered')",
     "dischargeDate": "YYYY-MM-DD or null if not discharged"
   }]
 }
@@ -191,11 +218,13 @@ Return a JSON object with the following structure (include only fields that have
 Important:
 - Parse all dates in YYYY-MM-DD format
 - Include all officers (current and ceased)
-- Include all shareholders
-- Extract share capital structure completely
+- Include all shareholders with their nationality and address
+- Extract share capital structure completely including treasury shares
 - Mark cessation dates as null for current officers
 - Include both primary and secondary SSIC codes if available
 - Extract any charges/encumbrances registered against the company
+- For charges with text amounts like "All Monies", use amountSecuredText field
+- Extract status_date as the date when the company status became effective
 
 Respond ONLY with valid JSON, no markdown or explanation.`;
 
@@ -359,13 +388,23 @@ export async function processBizFileExtraction(
         tenantId,
         uen: entityDetails.uen,
         name: entityDetails.name,
+        formerName: entityDetails.formerName,
+        dateOfNameChange: entityDetails.dateOfNameChange
+          ? new Date(entityDetails.dateOfNameChange)
+          : null,
         entityType: mapEntityType(entityDetails.entityType),
         status: mapCompanyStatus(entityDetails.status),
+        statusDate: entityDetails.statusDate
+          ? new Date(entityDetails.statusDate)
+          : null,
         incorporationDate: entityDetails.incorporationDate
           ? new Date(entityDetails.incorporationDate)
           : null,
         registrationDate: entityDetails.registrationDate
           ? new Date(entityDetails.registrationDate)
+          : null,
+        dateOfAddress: extractedData.registeredAddress?.effectiveFrom
+          ? new Date(extractedData.registeredAddress.effectiveFrom)
           : null,
         primarySsicCode: extractedData.ssicActivities?.primary?.code,
         primarySsicDescription: extractedData.ssicActivities?.primary?.description,
@@ -373,6 +412,10 @@ export async function processBizFileExtraction(
         secondarySsicDescription: extractedData.ssicActivities?.secondary?.description,
         financialYearEndDay: extractedData.financialYear?.endDay,
         financialYearEndMonth: extractedData.financialYear?.endMonth,
+        fyeAsAtLastAr: extractedData.compliance?.fyeAsAtLastAr
+          ? new Date(extractedData.compliance.fyeAsAtLastAr)
+          : null,
+        homeCurrency: extractedData.homeCurrency || 'SGD',
         lastAgmDate: extractedData.compliance?.lastAgmDate
           ? new Date(extractedData.compliance.lastAgmDate)
           : null,
@@ -386,10 +429,20 @@ export async function processBizFileExtraction(
       },
       update: {
         name: entityDetails.name,
+        formerName: entityDetails.formerName,
+        dateOfNameChange: entityDetails.dateOfNameChange
+          ? new Date(entityDetails.dateOfNameChange)
+          : undefined,
         entityType: mapEntityType(entityDetails.entityType),
         status: mapCompanyStatus(entityDetails.status),
+        statusDate: entityDetails.statusDate
+          ? new Date(entityDetails.statusDate)
+          : undefined,
         incorporationDate: entityDetails.incorporationDate
           ? new Date(entityDetails.incorporationDate)
+          : undefined,
+        dateOfAddress: extractedData.registeredAddress?.effectiveFrom
+          ? new Date(extractedData.registeredAddress.effectiveFrom)
           : undefined,
         primarySsicCode: extractedData.ssicActivities?.primary?.code,
         primarySsicDescription: extractedData.ssicActivities?.primary?.description,
@@ -397,6 +450,10 @@ export async function processBizFileExtraction(
         secondarySsicDescription: extractedData.ssicActivities?.secondary?.description,
         financialYearEndDay: extractedData.financialYear?.endDay,
         financialYearEndMonth: extractedData.financialYear?.endMonth,
+        fyeAsAtLastAr: extractedData.compliance?.fyeAsAtLastAr
+          ? new Date(extractedData.compliance.fyeAsAtLastAr)
+          : undefined,
+        homeCurrency: extractedData.homeCurrency || undefined,
         lastAgmDate: extractedData.compliance?.lastAgmDate
           ? new Date(extractedData.compliance.lastAgmDate)
           : undefined,
@@ -507,6 +564,7 @@ export async function processBizFileExtraction(
             parValue: capital.parValue,
             totalValue: capital.totalValue,
             isPaidUp: capital.isPaidUp,
+            isTreasury: capital.isTreasury || false,
             effectiveDate: new Date(),
             sourceDocumentId: documentId,
           },
@@ -515,12 +573,29 @@ export async function processBizFileExtraction(
 
       // Update company paid up capital
       const totalPaidUp = extractedData.shareCapital
-        .filter((c) => c.isPaidUp)
+        .filter((c) => c.isPaidUp && !c.isTreasury)
         .reduce((sum, c) => sum + c.totalValue, 0);
 
       await tx.company.update({
         where: { id: company.id },
         data: { paidUpCapitalAmount: totalPaidUp },
+      });
+    }
+
+    // Process treasury shares if present
+    if (extractedData.treasuryShares && extractedData.treasuryShares.numberOfShares > 0) {
+      await tx.shareCapital.create({
+        data: {
+          companyId: company.id,
+          shareClass: 'TREASURY',
+          currency: extractedData.treasuryShares.currency || 'SGD',
+          numberOfShares: extractedData.treasuryShares.numberOfShares,
+          totalValue: 0, // Treasury shares don't contribute to capital value
+          isPaidUp: false,
+          isTreasury: true,
+          effectiveDate: new Date(),
+          sourceDocumentId: documentId,
+        },
       });
     }
 
@@ -623,10 +698,12 @@ export async function processBizFileExtraction(
           identificationType: mapIdentificationType(shareholder.identificationType),
           identificationNumber: shareholder.identificationNumber,
           nationality: shareholder.nationality,
+          placeOfOrigin: shareholder.placeOfOrigin,
           address: shareholder.address,
           shareClass: shareholder.shareClass,
           numberOfShares: shareholder.numberOfShares,
           percentageHeld: shareholder.percentageHeld,
+          currency: shareholder.currency || 'SGD',
           isCurrent: true,
           sourceDocumentId: documentId,
         },
@@ -658,6 +735,7 @@ export async function processBizFileExtraction(
           description: charge.description,
           chargeHolderName: charge.chargeHolderName,
           amountSecured: charge.amountSecured,
+          amountSecuredText: charge.amountSecuredText,
           currency: charge.currency || 'SGD',
           registrationDate: charge.registrationDate ? new Date(charge.registrationDate) : null,
           dischargeDate: charge.dischargeDate ? new Date(charge.dischargeDate) : null,
@@ -677,6 +755,7 @@ export async function processBizFileExtraction(
   }
 
   // Create audit log - MUST include tenantId for proper scoping
+  const actionVerb = isNewCompany ? 'Created' : 'Updated';
   await createAuditLog({
     tenantId,
     userId,
@@ -684,6 +763,8 @@ export async function processBizFileExtraction(
     action: isNewCompany ? 'CREATE' : 'UPDATE',
     entityType: 'Company',
     entityId: result.id,
+    entityName: entityDetails.name,
+    summary: `${actionVerb} company "${entityDetails.name}" (UEN: ${entityDetails.uen}) from BizFile extraction`,
     changeSource: 'BIZFILE_UPLOAD',
     metadata: {
       documentId,
