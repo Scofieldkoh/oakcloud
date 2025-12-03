@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canManageTenant } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
-import { removeUserFromTenant, updateUserRole } from '@/services/tenant.service';
+import { removeUserFromTenant } from '@/services/tenant.service';
 import { requestPasswordReset } from '@/services/password.service';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import { z } from 'zod';
@@ -20,7 +20,6 @@ const updateUserSchema = z.object({
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
   email: z.string().email().optional(),
-  role: z.enum(['TENANT_ADMIN', 'COMPANY_ADMIN', 'COMPANY_USER']).optional(),
   isActive: z.boolean().optional(),
   companyId: z.string().uuid().nullable().optional(),
   sendPasswordReset: z.boolean().optional(),
@@ -46,7 +45,6 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         email: true,
         firstName: true,
         lastName: true,
-        role: true,
         isActive: true,
         lastLoginAt: true,
         createdAt: true,
@@ -81,6 +79,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
                 id: true,
                 name: true,
                 isSystem: true,
+                systemRoleType: true,
               },
             },
             companyId: true,
@@ -129,11 +128,6 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
     if (!existingUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Prevent self-demotion for the last tenant admin
-    if (data.role && data.role !== existingUser.role) {
-      await updateUserRole(tenantId, userId, data.role, session.id);
     }
 
     // Handle password reset request
@@ -195,7 +189,6 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       email: updatedUser.email,
       firstName: updatedUser.firstName,
       lastName: updatedUser.lastName,
-      role: updatedUser.role,
       isActive: updatedUser.isActive,
       passwordResetSent: data.sendPasswordReset || false,
     });

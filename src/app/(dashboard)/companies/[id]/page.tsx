@@ -19,6 +19,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { useCompany, useDeleteCompany } from '@/hooks/use-companies';
+import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate, formatCurrency, formatPercentage } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
@@ -33,6 +34,7 @@ export default function CompanyDetailPage({
   const { data: company, isLoading, error } = useCompany(id);
   const deleteCompany = useDeleteCompany();
   const { success, error: toastError } = useToast();
+  const { can } = usePermissions();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -137,22 +139,28 @@ export default function CompanyDetailPage({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href={`/companies/${id}/edit`}
-            className="btn-secondary btn-sm flex items-center gap-2"
-          >
-            <Pencil className="w-4 h-4" />
-            Edit
-          </Link>
-          <button
-            onClick={() => setDeleteDialogOpen(true)}
-            className="btn-danger btn-sm flex items-center gap-2"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </button>
-        </div>
+        {(can.updateCompany || can.deleteCompany) && (
+          <div className="flex items-center gap-2 sm:gap-3">
+            {can.updateCompany && (
+              <Link
+                href={`/companies/${id}/edit`}
+                className="btn-secondary btn-sm flex items-center gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit
+              </Link>
+            )}
+            {can.deleteCompany && (
+              <button
+                onClick={() => setDeleteDialogOpen(true)}
+                className="btn-danger btn-sm flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

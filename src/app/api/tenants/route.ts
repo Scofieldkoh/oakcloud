@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 import {
   createTenantSchema,
   tenantSearchSchema,
@@ -15,7 +15,10 @@ import { createTenant, searchTenants } from '@/services/tenant.service';
 
 export async function GET(request: NextRequest) {
   try {
-    await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const { searchParams } = new URL(request.url);
 
@@ -48,7 +51,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const body = await request.json();
     const data = createTenantSchema.parse(body);

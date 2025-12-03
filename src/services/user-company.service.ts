@@ -29,6 +29,7 @@ export interface UserCompanyAssignment {
 export interface AssignCompanyInput {
   userId: string;
   companyId: string;
+  roleId?: string; // Optional role to assign for this company
   isPrimary?: boolean;
 }
 
@@ -76,18 +77,9 @@ export async function assignUserToCompany(
   tenantId: string,
   assignedByUserId: string
 ): Promise<UserCompanyAssignment> {
-  const { userId, companyId, isPrimary = false } = input;
+  const { userId, companyId, roleId, isPrimary = false } = input;
 
-  // Verify user belongs to tenant
-  const user = await prisma.user.findUnique({
-    where: { id: userId, tenantId, deletedAt: null },
-  });
-
-  if (!user) {
-    throw new Error('User not found in this tenant');
-  }
-
-  // Verify company belongs to tenant
+  // First verify company belongs to tenant (this confirms the target tenant)
   const company = await prisma.company.findUnique({
     where: { id: companyId, tenantId, deletedAt: null },
   });
@@ -96,36 +88,29 @@ export async function assignUserToCompany(
     throw new Error('Company not found in this tenant');
   }
 
-  // Check if assignment already exists
-  const existing = await prisma.userCompanyAssignment.findUnique({
-    where: { userId_companyId: { userId, companyId } },
+  // Now verify user - use company's tenantId to ensure we're looking in the right tenant
+  // This fixes the SUPER_ADMIN bug where session.tenantId could be null
+  const user = await prisma.user.findUnique({
+    where: { id: userId, tenantId: company.tenantId, deletedAt: null },
   });
 
-  if (existing) {
-    throw new Error('User is already assigned to this company');
+  if (!user) {
+    throw new Error('User not found in this tenant');
   }
 
-  // If setting as primary, unset other primary assignments
-  if (isPrimary) {
-    await prisma.userCompanyAssignment.updateMany({
-      where: { userId, isPrimary: true },
-      data: { isPrimary: false },
+  // Verify role belongs to tenant if provided
+  if (roleId) {
+    const role = await prisma.role.findUnique({
+      where: { id: roleId, tenantId: company.tenantId },
     });
-
-    // Also update the user's primary companyId
-    await prisma.user.update({
-      where: { id: userId },
-      data: { companyId },
-    });
+    if (!role) {
+      throw new Error('Role not found in this tenant');
+    }
   }
 
-  // Create assignment
-  const assignment = await prisma.userCompanyAssignment.create({
-    data: {
-      userId,
-      companyId,
-      isPrimary,
-    },
+  // Check if company assignment already exists
+  let existing = await prisma.userCompanyAssignment.findUnique({
+    where: { userId_companyId: { userId, companyId } },
     include: {
       company: {
         select: {
@@ -137,9 +122,95 @@ export async function assignUserToCompany(
     },
   });
 
-  // Log the assignment
+  let assignment: UserCompanyAssignment;
+
+  if (existing) {
+    // Company assignment exists - update isPrimary if needed, but don't throw error
+    // This allows adding a new role to a company where user already has access
+    if (isPrimary && !existing.isPrimary) {
+      // Unset other primary assignments
+      await prisma.userCompanyAssignment.updateMany({
+        where: { userId, isPrimary: true, id: { not: existing.id } },
+        data: { isPrimary: false },
+      });
+
+      // Update this assignment to be primary
+      existing = await prisma.userCompanyAssignment.update({
+        where: { id: existing.id },
+        data: { isPrimary: true },
+        include: {
+          company: {
+            select: {
+              id: true,
+              name: true,
+              uen: true,
+            },
+          },
+        },
+      });
+
+      // Also update the user's primary companyId
+      await prisma.user.update({
+        where: { id: userId },
+        data: { companyId },
+      });
+    }
+    assignment = existing;
+  } else {
+    // If setting as primary, unset other primary assignments
+    if (isPrimary) {
+      await prisma.userCompanyAssignment.updateMany({
+        where: { userId, isPrimary: true },
+        data: { isPrimary: false },
+      });
+
+      // Also update the user's primary companyId
+      await prisma.user.update({
+        where: { id: userId },
+        data: { companyId },
+      });
+    }
+
+    // Create company assignment
+    assignment = await prisma.userCompanyAssignment.create({
+      data: {
+        userId,
+        companyId,
+        isPrimary,
+      },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            uen: true,
+          },
+        },
+      },
+    });
+  }
+
+  // Create role assignment if roleId provided
+  if (roleId) {
+    // Check if role assignment already exists for this user/role/company combo
+    const existingRoleAssignment = await prisma.userRoleAssignment.findFirst({
+      where: { userId, roleId, companyId },
+    });
+
+    if (!existingRoleAssignment) {
+      await prisma.userRoleAssignment.create({
+        data: {
+          userId,
+          roleId,
+          companyId,
+        },
+      });
+    }
+  }
+
+  // Log the assignment - use company's tenantId for proper audit trail
   await createAuditLog({
-    tenantId,
+    tenantId: company.tenantId,
     userId: assignedByUserId,
     action: 'USER_COMPANY_ASSIGNED',
     entityType: 'UserCompanyAssignment',
@@ -149,6 +220,7 @@ export async function assignUserToCompany(
       targetUserId: userId,
       companyId,
       companyName: company.name,
+      roleId,
       isPrimary,
     },
   });
@@ -305,14 +377,30 @@ export async function checkUserCompanyAccess(
     return true;
   }
 
-  // Check if user has the legacy single-company assignment
+  // Check if user has system admin role via role assignments
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { companyId: true, role: true },
+    select: {
+      companyId: true,
+      roleAssignments: {
+        select: {
+          role: {
+            select: { systemRoleType: true },
+          },
+        },
+      },
+    },
   });
 
   // SUPER_ADMIN and TENANT_ADMIN have access to all companies in their tenant
-  if (user?.role === 'SUPER_ADMIN' || user?.role === 'TENANT_ADMIN') {
+  const isSuperAdmin = user?.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+  );
+  const isTenantAdmin = user?.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  );
+
+  if (isSuperAdmin || isTenantAdmin) {
     return true;
   }
 
@@ -334,11 +422,26 @@ export async function getUserAccessibleCompanies(
 ): Promise<Array<{ id: string; name: string; uen: string }>> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true },
+    select: {
+      roleAssignments: {
+        select: {
+          role: {
+            select: { systemRoleType: true },
+          },
+        },
+      },
+    },
   });
 
   // SUPER_ADMIN and TENANT_ADMIN can access all companies
-  if (user?.role === 'SUPER_ADMIN' || user?.role === 'TENANT_ADMIN') {
+  const isSuperAdmin = user?.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+  );
+  const isTenantAdmin = user?.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  );
+
+  if (isSuperAdmin || isTenantAdmin) {
     const companies = await prisma.company.findMany({
       where: { tenantId, deletedAt: null },
       select: { id: true, name: true, uen: true },

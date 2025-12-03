@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 import { tenantSetupWizardSchema } from '@/lib/validations/tenant';
 import { completeTenantSetup } from '@/services/tenant.service';
 import { z } from 'zod';
@@ -16,7 +16,10 @@ export async function POST(
 ) {
   try {
     // Only SUPER_ADMIN can complete tenant setup
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { id: tenantId } = await params;
 
     const body = await request.json();

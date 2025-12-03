@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole, canManageTenant } from '@/lib/auth';
+import { requireAuth, canManageTenant } from '@/lib/auth';
 import { updateTenantSchema, updateTenantStatusSchema } from '@/lib/validations/tenant';
 import {
   getTenantById,
@@ -21,7 +21,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { id } = await params;
 
     // Check access
@@ -55,7 +58,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { id } = await params;
 
     // Check access
@@ -102,7 +108,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { id } = await params;
 
     const body = await request.json();

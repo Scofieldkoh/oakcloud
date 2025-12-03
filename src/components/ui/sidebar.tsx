@@ -105,11 +105,11 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
   const pathname = usePathname();
   const { data: user } = useSession();
 
-  // Filter admin navigation based on user role
+  // Filter admin navigation based on user role flags
   const filteredAdminNav = adminNavigation.filter((item) => {
     if (!user) return false;
-    if (item.superAdminOnly) return user.role === 'SUPER_ADMIN';
-    if (item.adminOnly) return user.role === 'SUPER_ADMIN' || user.role === 'TENANT_ADMIN';
+    if (item.superAdminOnly) return user.isSuperAdmin;
+    if (item.adminOnly) return user.isSuperAdmin || user.isTenantAdmin;
     return true;
   });
 

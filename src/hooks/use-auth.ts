@@ -9,9 +9,10 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER';
   tenantId?: string | null;
   companyId?: string | null;
+  isSuperAdmin: boolean;
+  isTenantAdmin: boolean;
 }
 
 interface LoginCredentials {

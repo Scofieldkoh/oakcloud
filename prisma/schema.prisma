@@ -11,13 +11,6 @@ datasource db {
 // ENUMS
 // ============================================================================
 
-enum UserRole {
-  SUPER_ADMIN     // System-wide administrator
-  TENANT_ADMIN    // Tenant administrator (can manage tenant settings and users)
-  COMPANY_ADMIN   // Company administrator within a tenant
-  COMPANY_USER    // Regular user with limited access
-}
-
 enum TenantStatus {
   ACTIVE
   SUSPENDED
@@ -188,12 +181,18 @@ model Tenant {
 
 model Role {
   id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId    String?  // Nullable for global roles (SUPER_ADMIN)
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
 
   name        String
   description String?
   isSystem    Boolean  @default(false) // System roles cannot be deleted
+
+  // System role type for special handling
+  // "SUPER_ADMIN" - Global admin, bypasses all checks
+  // "TENANT_ADMIN" - Tenant admin, full access within tenant
+  // null - Regular custom role, permissions via RolePermission
+  systemRoleType String?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -204,6 +203,7 @@ model Role {
 
   @@unique([tenantId, name])
   @@index([tenantId])
+  @@index([systemRoleType])
   @@map("roles")
 }
 
@@ -266,7 +266,6 @@ model User {
   passwordHash  String
   firstName     String
   lastName      String
-  role          UserRole  @default(COMPANY_USER)
   isActive      Boolean   @default(true)
   lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
@@ -296,7 +295,6 @@ model User {
   @@index([email])
   @@index([tenantId])
   @@index([companyId])
-  @@index([tenantId, role])
   @@index([passwordResetToken])
   @@map("users")
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Building2, AlertCircle, FileUp } from 'lucide-react';
 import { useCompanies, useCompanyStats, useDeleteCompany } from '@/hooks/use-companies';
+import { usePermissions } from '@/hooks/use-permissions';
 import { CompanyTable } from '@/components/companies/company-table';
 import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
 import { Pagination } from '@/components/companies/pagination';
@@ -16,6 +17,7 @@ export default function CompaniesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
+  const { can } = usePermissions();
 
   // Parse URL params
   const getParamsFromUrl = useCallback(() => {
@@ -114,16 +116,20 @@ export default function CompaniesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/companies/upload" className="btn-secondary btn-sm flex items-center gap-2">
-            <FileUp className="w-4 h-4" />
-            <span className="hidden sm:inline">Upload BizFile</span>
-            <span className="sm:hidden">Upload</span>
-          </Link>
-          <Link href="/companies/new" className="btn-primary btn-sm flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Company</span>
-            <span className="sm:hidden">Add</span>
-          </Link>
+          {can.createDocument && (
+            <Link href="/companies/upload" className="btn-secondary btn-sm flex items-center gap-2">
+              <FileUp className="w-4 h-4" />
+              <span className="hidden sm:inline">Upload BizFile</span>
+              <span className="sm:hidden">Upload</span>
+            </Link>
+          )}
+          {can.createCompany && (
+            <Link href="/companies/new" className="btn-primary btn-sm flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Company</span>
+              <span className="sm:hidden">Add</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -214,8 +220,11 @@ export default function CompaniesPage() {
       <div className="mb-6">
         <CompanyTable
           companies={data?.companies || []}
-          onDelete={handleDeleteClick}
+          onDelete={can.deleteCompany ? handleDeleteClick : undefined}
           isLoading={isLoading}
+          canEdit={can.updateCompany}
+          canDelete={can.deleteCompany}
+          canCreate={can.createCompany}
         />
       </div>
 

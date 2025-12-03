@@ -33,8 +33,18 @@ export const createCompanySchema = z.object({
   name: z.string().min(1, 'Company name is required').max(200, 'Company name is too long'),
   entityType: entityTypeEnum.default('PRIVATE_LIMITED'),
   status: companyStatusEnum.default('LIVE'),
-  incorporationDate: z.string().datetime().optional().nullable(),
-  registrationDate: z.string().datetime().optional().nullable(),
+  incorporationDate: z.string().optional().nullable().transform((val) => {
+    if (!val) return null;
+    // If it's already an ISO datetime, return as-is
+    if (val.includes('T')) return val;
+    // Convert YYYY-MM-DD to ISO datetime
+    return new Date(val).toISOString();
+  }),
+  registrationDate: z.string().optional().nullable().transform((val) => {
+    if (!val) return null;
+    if (val.includes('T')) return val;
+    return new Date(val).toISOString();
+  }),
   primarySsicCode: z.string().max(10).optional().nullable(),
   primarySsicDescription: z.string().max(500).optional().nullable(),
   secondarySsicCode: z.string().max(10).optional().nullable(),
@@ -47,7 +57,11 @@ export const createCompanySchema = z.object({
   issuedCapitalAmount: z.number().min(0).optional().nullable(),
   isGstRegistered: z.boolean().default(false),
   gstRegistrationNumber: z.string().max(20).optional().nullable(),
-  gstRegistrationDate: z.string().datetime().optional().nullable(),
+  gstRegistrationDate: z.string().optional().nullable().transform((val) => {
+    if (!val) return null;
+    if (val.includes('T')) return val;
+    return new Date(val).toISOString();
+  }),
   internalNotes: z.string().max(5000).optional().nullable(),
 });
 
@@ -64,8 +78,16 @@ export const companySearchSchema = z.object({
   query: z.string().optional(),
   entityType: entityTypeEnum.optional(),
   status: companyStatusEnum.optional(),
-  incorporationDateFrom: z.string().datetime().optional(),
-  incorporationDateTo: z.string().datetime().optional(),
+  incorporationDateFrom: z.string().optional().transform((val) => {
+    if (!val) return undefined;
+    if (val.includes('T')) return val;
+    return new Date(val).toISOString();
+  }),
+  incorporationDateTo: z.string().optional().transform((val) => {
+    if (!val) return undefined;
+    if (val.includes('T')) return val;
+    return new Date(val).toISOString();
+  }),
   hasCharges: z.boolean().optional(),
   financialYearEndMonth: z.number().min(1).max(12).optional(),
   page: z.number().min(1).default(1),
@@ -85,7 +107,11 @@ export const companyAddressSchema = z.object({
   buildingName: z.string().max(200).optional().nullable(),
   postalCode: z.string().min(5).max(10),
   country: z.string().default('SINGAPORE'),
-  effectiveFrom: z.string().datetime().optional().nullable(),
+  effectiveFrom: z.string().optional().nullable().transform((val) => {
+    if (!val) return null;
+    if (val.includes('T')) return val;
+    return new Date(val).toISOString();
+  }),
   isCurrent: z.boolean().default(true),
 });
 

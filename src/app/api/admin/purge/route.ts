@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 
@@ -27,7 +27,10 @@ interface PurgeStats {
  */
 export async function GET() {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Get counts of soft-deleted records
     const [tenants, users, companies, contacts] = await Promise.all([
@@ -55,7 +58,6 @@ export async function GET() {
           email: true,
           firstName: true,
           lastName: true,
-          role: true,
           deletedAt: true,
           tenant: {
             select: { name: true },
@@ -134,7 +136,10 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const body = await request.json();
     const { entityType, entityIds, reason } = body as {
@@ -468,7 +473,10 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await requireRole(['SUPER_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const body = await request.json();
     const { entityType, entityIds } = body as {

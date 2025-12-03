@@ -3,11 +3,13 @@
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, AlertCircle, Loader2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateCompanySchema, type UpdateCompanyInput } from '@/lib/validations/company';
 import { useCompany, useUpdateCompany } from '@/hooks/use-companies';
+import { usePermissions } from '@/hooks/use-permissions';
+import { DateInput } from '@/components/ui/date-input';
 
 const entityTypes = [
   { value: 'PRIVATE_LIMITED', label: 'Private Limited Company' },
@@ -57,12 +59,14 @@ export default function EditCompanyPage({
   const router = useRouter();
   const { data: company, isLoading, error } = useCompany(id);
   const updateCompany = useUpdateCompany();
+  const { can, isLoading: permissionsLoading } = usePermissions();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<UpdateCompanyInput>({
     resolver: zodResolver(updateCompanySchema),
@@ -111,10 +115,29 @@ export default function EditCompanyPage({
     }
   };
 
-  if (isLoading) {
+  if (isLoading || permissionsLoading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 text-oak-primary animate-spin" />
+      </div>
+    );
+  }
+
+  // Check permission to edit
+  if (!can.updateCompany) {
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="card p-8 text-center">
+          <ShieldAlert className="w-12 h-12 text-status-warning mx-auto mb-4" />
+          <h2 className="text-lg font-medium text-text-primary mb-2">Access Denied</h2>
+          <p className="text-sm text-text-secondary mb-4">
+            You do not have permission to edit companies.
+          </p>
+          <Link href={`/companies/${id}`} className="btn-primary btn-sm inline-flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Company
+          </Link>
+        </div>
       </div>
     );
   }
@@ -223,11 +246,17 @@ export default function EditCompanyPage({
             </div>
 
             <div>
-              <label className="label">Incorporation Date</label>
-              <input
-                type="date"
-                {...register('incorporationDate')}
-                className="input input-sm"
+              <Controller
+                name="incorporationDate"
+                control={control}
+                render={({ field }) => (
+                  <DateInput
+                    label="Incorporation Date"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
             </div>
           </div>

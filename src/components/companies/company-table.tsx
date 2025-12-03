@@ -25,6 +25,9 @@ interface CompanyTableProps {
   companies: CompanyWithRelations[];
   onDelete?: (id: string) => void;
   isLoading?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canCreate?: boolean;
 }
 
 const statusConfig: Record<CompanyStatus, { color: string; label: string }> = {
@@ -51,7 +54,21 @@ const entityTypeLabels: Record<EntityType, string> = {
   OTHER: 'Other',
 };
 
-function CompanyActionsDropdown({ companyId, onDelete }: { companyId: string; onDelete?: (id: string) => void }) {
+interface CompanyActionsDropdownProps {
+  companyId: string;
+  onDelete?: (id: string) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
+}
+
+function CompanyActionsDropdown({ companyId, onDelete, canEdit, canDelete }: CompanyActionsDropdownProps) {
+  // If user can only view, don't show the dropdown at all - just provide the view link
+  const hasAnyAction = canEdit || canDelete;
+
+  if (!hasAnyAction) {
+    return null;
+  }
+
   return (
     <Dropdown>
       <DropdownTrigger asChild>
@@ -65,25 +82,31 @@ function CompanyActionsDropdown({ companyId, onDelete }: { companyId: string; on
             View Details
           </DropdownItem>
         </Link>
-        <Link href={`/companies/${companyId}/edit`}>
-          <DropdownItem icon={<Pencil className="w-4 h-4" />}>
-            Edit
-          </DropdownItem>
-        </Link>
-        <DropdownSeparator />
-        <DropdownItem
-          icon={<Trash2 className="w-4 h-4" />}
-          destructive
-          onClick={() => onDelete?.(companyId)}
-        >
-          Delete
-        </DropdownItem>
+        {canEdit && (
+          <Link href={`/companies/${companyId}/edit`}>
+            <DropdownItem icon={<Pencil className="w-4 h-4" />}>
+              Edit
+            </DropdownItem>
+          </Link>
+        )}
+        {canDelete && (
+          <>
+            <DropdownSeparator />
+            <DropdownItem
+              icon={<Trash2 className="w-4 h-4" />}
+              destructive
+              onClick={() => onDelete?.(companyId)}
+            >
+              Delete
+            </DropdownItem>
+          </>
+        )}
       </DropdownMenu>
     </Dropdown>
   );
 }
 
-export function CompanyTable({ companies, onDelete, isLoading }: CompanyTableProps) {
+export function CompanyTable({ companies, onDelete, isLoading, canEdit = true, canDelete = true, canCreate = true }: CompanyTableProps) {
   if (isLoading) {
     return (
       <div className="table-container">
@@ -123,11 +146,15 @@ export function CompanyTable({ companies, onDelete, isLoading }: CompanyTablePro
         <Building2 className="w-12 h-12 text-text-muted mx-auto mb-4" />
         <h3 className="text-lg font-medium text-text-primary mb-2">No companies found</h3>
         <p className="text-text-secondary mb-4">
-          Get started by creating your first company or adjusting your filters.
+          {canCreate
+            ? 'Get started by creating your first company or adjusting your filters.'
+            : 'No companies available. Try adjusting your filters.'}
         </p>
-        <Link href="/companies/new" className="btn-primary btn-sm inline-flex">
-          Add Company
-        </Link>
+        {canCreate && (
+          <Link href="/companies/new" className="btn-primary btn-sm inline-flex">
+            Add Company
+          </Link>
+        )}
       </div>
     );
   }
@@ -180,7 +207,12 @@ export function CompanyTable({ companies, onDelete, isLoading }: CompanyTablePro
                 {company._count?.officers || 0}
               </td>
               <td>
-                <CompanyActionsDropdown companyId={company.id} onDelete={onDelete} />
+                <CompanyActionsDropdown
+                  companyId={company.id}
+                  onDelete={onDelete}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                />
               </td>
             </tr>
           ))}

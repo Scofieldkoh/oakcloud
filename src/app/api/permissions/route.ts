@@ -13,7 +13,7 @@ export async function GET() {
     const session = await requireAuth();
 
     // Only SUPER_ADMIN and TENANT_ADMIN can view permissions
-    if (session.role !== 'SUPER_ADMIN' && session.role !== 'TENANT_ADMIN') {
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

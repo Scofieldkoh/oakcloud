@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession, requireRole } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 import {
   getUserCompanyAssignments,
   assignUserToCompany,
@@ -18,8 +18,9 @@ import { z } from 'zod';
 
 const assignCompanySchema = z.object({
   companyId: z.string().uuid('Invalid company ID'),
-  accessLevel: z.enum(['VIEW', 'EDIT', 'MANAGE']).optional(),
+  roleId: z.string().uuid('Invalid role ID').optional(), // Role to assign for this company
   isPrimary: z.boolean().optional(),
+  tenantId: z.string().uuid('Invalid tenant ID').optional(), // Required for SUPER_ADMIN
 });
 
 const updateAssignmentSchema = z.object({
@@ -38,10 +39,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { id: userId } = await params;
 
-    if (!session.tenantId && session.role !== 'SUPER_ADMIN') {
+    if (!session.tenantId && !session.isSuperAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -71,19 +75,24 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { id: userId } = await params;
     const body = await request.json();
 
-    if (!session.tenantId && session.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const data = assignCompanySchema.parse(body);
 
+    // Determine tenantId: use session.tenantId for TENANT_ADMIN, or request body for SUPER_ADMIN
+    const tenantId = session.tenantId || data.tenantId;
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant ID is required' }, { status: 400 });
+    }
+
     const assignment = await assignUserToCompany(
-      { userId, ...data },
-      session.tenantId || '',
+      { userId, companyId: data.companyId, roleId: data.roleId, isPrimary: data.isPrimary },
+      tenantId,
       session.id
     );
 
@@ -111,10 +120,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const body = await request.json();
 
-    if (!session.tenantId && session.role !== 'SUPER_ADMIN') {
+    if (!session.tenantId && !session.isSuperAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -151,10 +163,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const body = await request.json();
 
-    if (!session.tenantId && session.role !== 'SUPER_ADMIN') {
+    if (!session.tenantId && !session.isSuperAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

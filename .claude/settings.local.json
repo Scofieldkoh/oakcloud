@@ -32,7 +32,9 @@
       "Bash(ls:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run lint)",
-      "Bash(npm run db:seed:*)"
+      "Bash(npm run db:seed:*)",
+      "Bash(dir:*)",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\prisma\\migrate-user-roles.ts\")"
     ],
     "deny": [],
     "ask": []

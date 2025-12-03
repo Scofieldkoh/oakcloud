@@ -16,7 +16,8 @@ export async function POST() {
       await logAuthEvent('LOGOUT', session.id, {
         email: session.email,
         userName: `${session.firstName} ${session.lastName}`,
-        role: session.role,
+        isSuperAdmin: session.isSuperAdmin,
+        isTenantAdmin: session.isTenantAdmin,
         tenantId: session.tenantId,
       });
     }

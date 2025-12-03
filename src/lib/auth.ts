@@ -8,7 +8,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { prisma } from './prisma';
-import type { UserRole, TenantStatus } from '@prisma/client';
+import type { TenantStatus } from '@prisma/client';
 import { logAuthEvent } from './audit';
 
 // ============================================================================
@@ -44,7 +44,6 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 export interface JWTPayload {
   userId: string;
   email: string;
-  role: UserRole;
   tenantId?: string | null;
   companyId?: string | null;
 }
@@ -54,9 +53,11 @@ export interface SessionUser {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
   tenantId: string | null;
   companyId: string | null;
+  // Computed from role assignments (authoritative source)
+  isSuperAdmin: boolean;
+  isTenantAdmin: boolean;
 }
 
 export interface SessionWithTenant extends SessionUser {
@@ -139,24 +140,41 @@ export async function getSession(): Promise<SessionUser | null> {
       email: true,
       firstName: true,
       lastName: true,
-      role: true,
       tenantId: true,
       companyId: true,
       isActive: true,
       deletedAt: true,
+      roleAssignments: {
+        select: {
+          role: {
+            select: {
+              systemRoleType: true,
+            },
+          },
+        },
+      },
     },
   });
 
   if (!user || !user.isActive || user.deletedAt) return null;
+
+  // Compute flags from role assignments (authoritative source)
+  const isSuperAdmin = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+  );
+  const isTenantAdmin = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  );
 
   return {
     id: user.id,
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    role: user.role,
     tenantId: user.tenantId,
     companyId: user.companyId,
+    isSuperAdmin,
+    isTenantAdmin,
   };
 }
 
@@ -179,7 +197,6 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
       email: true,
       firstName: true,
       lastName: true,
-      role: true,
       tenantId: true,
       companyId: true,
       isActive: true,
@@ -192,13 +209,30 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
           status: true,
         },
       },
+      roleAssignments: {
+        select: {
+          role: {
+            select: {
+              systemRoleType: true,
+            },
+          },
+        },
+      },
     },
   });
 
   if (!user || !user.isActive || user.deletedAt) return null;
 
+  // Compute flags from role assignments (authoritative source)
+  const isSuperAdmin = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+  );
+  const isTenantAdmin = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  );
+
   // Check tenant is active (for non-SUPER_ADMIN)
-  if (user.tenant && user.tenant.status !== 'ACTIVE' && user.role !== 'SUPER_ADMIN') {
+  if (user.tenant && user.tenant.status !== 'ACTIVE' && !isSuperAdmin) {
     return null;
   }
 
@@ -207,10 +241,11 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    role: user.role,
     tenantId: user.tenantId,
     companyId: user.companyId,
     tenant: user.tenant,
+    isSuperAdmin,
+    isTenantAdmin,
   };
 }
 
@@ -241,17 +276,6 @@ export async function requireAuthWithTenant(): Promise<SessionWithTenant> {
 }
 
 /**
- * Require specific role(s) - throws if unauthorized
- */
-export async function requireRole(allowedRoles: UserRole[]): Promise<SessionUser> {
-  const session = await requireAuth();
-  if (!allowedRoles.includes(session.role)) {
-    throw new Error('Forbidden');
-  }
-  return session;
-}
-
-/**
  * Require tenant membership - throws if user doesn't belong to a tenant
  */
 export async function requireTenant(): Promise<SessionWithTenant & { tenantId: string }> {
@@ -259,7 +283,7 @@ export async function requireTenant(): Promise<SessionWithTenant & { tenantId: s
   if (!session) {
     throw new Error('Unauthorized');
   }
-  if (!session.tenantId && session.role !== 'SUPER_ADMIN') {
+  if (!session.tenantId && !session.isSuperAdmin) {
     throw new Error('No tenant association');
   }
   return session as SessionWithTenant & { tenantId: string };
@@ -270,31 +294,24 @@ export async function requireTenant(): Promise<SessionWithTenant & { tenantId: s
 // ============================================================================
 
 /**
- * Check if user is a super admin
+ * Check if user is a super admin (uses computed flag from role assignments)
  */
 export function isSuperAdmin(user: SessionUser): boolean {
-  return user.role === 'SUPER_ADMIN';
+  return user.isSuperAdmin;
 }
 
 /**
- * Check if user is a tenant admin
+ * Check if user is a tenant admin (uses computed flag from role assignments)
  */
 export function isTenantAdmin(user: SessionUser): boolean {
-  return user.role === 'TENANT_ADMIN';
+  return user.isTenantAdmin;
 }
 
 /**
- * Check if user is a company admin
- */
-export function isCompanyAdmin(user: SessionUser): boolean {
-  return user.role === 'COMPANY_ADMIN';
-}
-
-/**
- * Check if user has admin privileges (super, tenant, or company admin)
+ * Check if user has admin privileges (super or tenant admin)
  */
 export function isAdmin(user: SessionUser): boolean {
-  return ['SUPER_ADMIN', 'TENANT_ADMIN', 'COMPANY_ADMIN'].includes(user.role);
+  return user.isSuperAdmin || user.isTenantAdmin;
 }
 
 // ============================================================================
@@ -313,22 +330,21 @@ export function canAccessTenant(user: SessionUser, tenantId: string): boolean {
  * Check if user can access a specific company
  */
 export function canAccessCompany(user: SessionUser, companyId: string): boolean {
-  if (isSuperAdmin(user)) return true;
-  // For tenant admins, check if company belongs to their tenant
+  if (user.isSuperAdmin) return true;
+  if (user.isTenantAdmin) return true; // Tenant admins can access all companies in their tenant
   // For company admins/users, check direct assignment
   if (user.companyId) {
     return user.companyId === companyId;
   }
-  // Tenant admins can access all companies in their tenant
-  return user.role === 'TENANT_ADMIN';
+  return false;
 }
 
 /**
  * Check if user can manage tenant settings
  */
 export function canManageTenant(user: SessionUser, tenantId: string): boolean {
-  if (isSuperAdmin(user)) return true;
-  if (user.role !== 'TENANT_ADMIN') return false;
+  if (user.isSuperAdmin) return true;
+  if (!user.isTenantAdmin) return false;
   return user.tenantId === tenantId;
 }
 
@@ -336,14 +352,16 @@ export function canManageTenant(user: SessionUser, tenantId: string): boolean {
  * Check if user can manage users within a tenant
  */
 export function canManageUsers(user: SessionUser): boolean {
-  return ['SUPER_ADMIN', 'TENANT_ADMIN'].includes(user.role);
+  return user.isSuperAdmin || user.isTenantAdmin;
 }
 
 /**
  * Check if user can manage companies within a tenant
  */
 export function canManageCompanies(user: SessionUser): boolean {
-  return ['SUPER_ADMIN', 'TENANT_ADMIN', 'COMPANY_ADMIN'].includes(user.role);
+  // Super admin and tenant admin can manage all companies
+  // Company admin status now determined by per-company role assignments
+  return user.isSuperAdmin || user.isTenantAdmin;
 }
 
 // ============================================================================
@@ -369,6 +387,15 @@ export async function performLogin(
           status: true,
         },
       },
+      roleAssignments: {
+        select: {
+          role: {
+            select: {
+              systemRoleType: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -377,8 +404,16 @@ export async function performLogin(
     throw new Error('Invalid credentials');
   }
 
+  // Compute flags from role assignments (authoritative source)
+  const isSuperAdmin = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+  );
+  const isTenantAdmin = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  );
+
   // Check tenant status (for non-SUPER_ADMIN)
-  if (user.tenant && user.tenant.status !== 'ACTIVE' && user.role !== 'SUPER_ADMIN') {
+  if (user.tenant && user.tenant.status !== 'ACTIVE' && !isSuperAdmin) {
     await logAuthEvent('LOGIN_FAILED', user.id, { reason: 'Tenant not active', tenantStatus: user.tenant.status });
     throw new Error('Account access restricted');
   }
@@ -399,7 +434,6 @@ export async function performLogin(
   const token = await createToken({
     userId: user.id,
     email: user.email,
-    role: user.role,
     tenantId: user.tenantId,
     companyId: user.companyId,
   });
@@ -422,9 +456,10 @@ export async function performLogin(
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    role: user.role,
     tenantId: user.tenantId,
     companyId: user.companyId,
+    isSuperAdmin,
+    isTenantAdmin,
   };
 }
 

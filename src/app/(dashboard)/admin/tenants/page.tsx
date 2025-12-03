@@ -232,7 +232,7 @@ export default function TenantsPage() {
   };
 
   // Only SUPER_ADMIN can access this page
-  if (session?.role !== 'SUPER_ADMIN') {
+  if (!session?.isSuperAdmin) {
     return (
       <div className="p-4 sm:p-6">
         <Alert variant="error">You do not have permission to access this page.</Alert>

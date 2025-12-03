@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Company-scoped users can only see their own company
-    if (session.role === 'COMPANY_ADMIN' || session.role === 'COMPANY_USER') {
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
       if (session.companyId) {
         // Return only their assigned company
         const { getCompanyById } = await import('@/services/company.service');

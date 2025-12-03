@@ -6,7 +6,7 @@
  */
 
 import { prisma } from './prisma';
-import type { Tenant, TenantStatus, User, UserRole } from '@prisma/client';
+import type { Tenant, TenantStatus, User } from '@prisma/client';
 import type { SessionUser } from './auth';
 
 // ============================================================================
@@ -17,7 +17,8 @@ export interface TenantContext {
   tenantId: string;
   tenant: TenantInfo;
   userId: string;
-  userRole: UserRole;
+  isSuperAdmin: boolean;
+  isTenantAdmin: boolean;
 }
 
 export interface TenantInfo {
@@ -108,7 +109,7 @@ export async function resolveTenantContext(
   session: SessionUser
 ): Promise<TenantContext | null> {
   // SUPER_ADMIN has cross-tenant access
-  if (session.role === 'SUPER_ADMIN') {
+  if (session.isSuperAdmin) {
     return null;
   }
 
@@ -147,7 +148,8 @@ export async function resolveTenantContext(
       settings: user.tenant.settings as Record<string, unknown> | null,
     },
     userId: user.id,
-    userRole: user.role,
+    isSuperAdmin: session.isSuperAdmin,
+    isTenantAdmin: session.isTenantAdmin,
   };
 }
 
@@ -160,7 +162,7 @@ export async function resolveTenantContext(
  */
 export function canAccessTenant(session: SessionUser, tenantId: string): boolean {
   // SUPER_ADMIN can access any tenant
-  if (session.role === 'SUPER_ADMIN') {
+  if (session.isSuperAdmin) {
     return true;
   }
 
@@ -172,15 +174,15 @@ export function canAccessTenant(session: SessionUser, tenantId: string): boolean
  * Check if user has tenant admin privileges
  */
 export function isTenantAdmin(session: SessionUser): boolean {
-  return session.role === 'SUPER_ADMIN' || session.role === 'TENANT_ADMIN';
+  return session.isSuperAdmin || session.isTenantAdmin;
 }
 
 /**
  * Check if user can manage tenant settings
  */
 export function canManageTenant(session: SessionUser, tenantId: string): boolean {
-  if (session.role === 'SUPER_ADMIN') return true;
-  if (session.role !== 'TENANT_ADMIN') return false;
+  if (session.isSuperAdmin) return true;
+  if (!session.isTenantAdmin) return false;
   // User must belong to the tenant they're managing
   return session.tenantId === tenantId;
 }

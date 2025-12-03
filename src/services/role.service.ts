@@ -27,10 +27,11 @@ export interface UpdateRoleData {
 
 export interface RoleWithPermissions {
   id: string;
-  tenantId: string;
+  tenantId: string | null; // Nullable for global roles (e.g., SUPER_ADMIN)
   name: string;
   description: string | null;
   isSystem: boolean;
+  systemRoleType: string | null;
   createdAt: Date;
   updatedAt: Date;
   permissions: Array<{
@@ -197,7 +198,7 @@ export async function updateRole(
   }
 
   // Check for name uniqueness if name is being updated
-  if (data.name && data.name !== role.name) {
+  if (data.name && data.name !== role.name && role.tenantId) {
     const existing = await prisma.role.findUnique({
       where: {
         tenantId_name: { tenantId: role.tenantId, name: data.name },
@@ -333,7 +334,6 @@ export async function getRoleUsers(roleId: string) {
           email: true,
           firstName: true,
           lastName: true,
-          role: true,
           isActive: true,
         },
       },

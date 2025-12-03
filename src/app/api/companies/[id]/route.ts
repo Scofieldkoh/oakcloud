@@ -31,7 +31,7 @@ export async function GET(
     const full = searchParams.get('full') === 'true';
 
     // Pass tenantId for non-SUPER_ADMIN users to enforce tenant scoping
-    const tenantId = session.role === 'SUPER_ADMIN' ? undefined : session.tenantId || undefined;
+    const tenantId = session.isSuperAdmin ? undefined : session.tenantId || undefined;
     const company = full
       ? await getCompanyFullDetails(id, tenantId)
       : await getCompanyById(id, tenantId);
@@ -66,7 +66,7 @@ export async function PATCH(
     await requirePermission(session, 'company', 'update', id);
 
     // Additional check for company-scoped users
-    if (session.role !== 'SUPER_ADMIN' && session.role !== 'TENANT_ADMIN' && !canAccessCompany(session, id)) {
+    if (!session.isSuperAdmin && !session.isTenantAdmin && !canAccessCompany(session, id)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -75,7 +75,7 @@ export async function PATCH(
 
     // Get the company with tenant validation
     const whereClause: { id: string; tenantId?: string } = { id };
-    if (session.role !== 'SUPER_ADMIN' && session.tenantId) {
+    if (!session.isSuperAdmin && session.tenantId) {
       whereClause.tenantId = session.tenantId;
     }
 
@@ -128,7 +128,7 @@ export async function DELETE(
 
     // Get the company with tenant validation
     const whereClause: { id: string; tenantId?: string } = { id };
-    if (session.role !== 'SUPER_ADMIN' && session.tenantId) {
+    if (!session.isSuperAdmin && session.tenantId) {
       whereClause.tenantId = session.tenantId;
     }
 
@@ -182,7 +182,7 @@ export async function PUT(
     if (action === 'restore') {
       // Get the company with tenant validation
       const whereClause: { id: string; tenantId?: string } = { id };
-      if (session.role !== 'SUPER_ADMIN' && session.tenantId) {
+      if (!session.isSuperAdmin && session.tenantId) {
         whereClause.tenantId = session.tenantId;
       }
 

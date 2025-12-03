@@ -23,6 +23,12 @@ import {
   assignRoleToUser,
   type SystemRoleName,
 } from '@/lib/rbac';
+import { sendEmail } from '@/lib/email';
+import {
+  userInvitationEmail,
+  tenantSetupCompleteEmail,
+  userRemovedEmail,
+} from '@/lib/email-templates';
 import type {
   CreateTenantInput,
   UpdateTenantInput,
@@ -485,7 +491,6 @@ export async function inviteUserToTenant(
       firstName: data.firstName,
       lastName: data.lastName,
       passwordHash,
-      role: data.role,
       tenantId,
       companyId: primaryCompanyId,
       isActive: true,
@@ -493,54 +498,48 @@ export async function inviteUserToTenant(
     },
   });
 
-  // Create company assignments if provided (just tracks which companies user can access)
+  // Collect all company IDs that need UserCompanyAssignment
+  const companyIdsToAssign = new Set<string>();
+
+  // From explicit company assignments
   if (data.companyAssignments && data.companyAssignments.length > 0) {
+    data.companyAssignments.forEach((a) => companyIdsToAssign.add(a.companyId));
+  }
+  if (data.companyId) {
+    companyIdsToAssign.add(data.companyId);
+  }
+
+  // From role assignments with company scope
+  if (data.roleAssignments) {
+    data.roleAssignments
+      .filter((a) => a.companyId)
+      .forEach((a) => companyIdsToAssign.add(a.companyId as string));
+  }
+
+  // Create company assignments for all unique companies
+  if (companyIdsToAssign.size > 0) {
+    const companyIds = Array.from(companyIdsToAssign);
+    const primaryCompanyIdForAssignment = data.companyAssignments?.find((a) => a.isPrimary)?.companyId
+      || data.companyId
+      || companyIds[0];
+
     await prisma.userCompanyAssignment.createMany({
-      data: data.companyAssignments.map((assignment, index) => ({
+      data: companyIds.map((companyId) => ({
         userId: user.id,
-        companyId: assignment.companyId,
-        isPrimary: assignment.isPrimary ?? (index === 0),
+        companyId,
+        isPrimary: companyId === primaryCompanyIdForAssignment,
       })),
-    });
-  } else if (data.companyId) {
-    // Create a single assignment for the primary company
-    await prisma.userCompanyAssignment.create({
-      data: {
-        userId: user.id,
-        companyId: data.companyId,
-        isPrimary: true,
-      },
     });
   }
 
-  // Handle role assignments
-  if (data.roleAssignments && data.roleAssignments.length > 0) {
-    // Use custom role assignments provided
-    await prisma.userRoleAssignment.createMany({
-      data: data.roleAssignments.map((assignment) => ({
-        userId: user.id,
-        roleId: assignment.roleId,
-        companyId: assignment.companyId || null, // null = "All Companies"
-      })),
-    });
-  } else {
-    // Default: Assign system role based on user role (tenant-wide)
-    const roleMapping: Record<string, SystemRoleName> = {
-      TENANT_ADMIN: 'TENANT_ADMIN',
-      COMPANY_ADMIN: 'COMPANY_ADMIN',
-      COMPANY_USER: 'COMPANY_USER',
-    };
-
-    const systemRoleName = roleMapping[data.role];
-    if (systemRoleName) {
-      const roleId = await getSystemRoleId(tenantId, systemRoleName);
-      if (roleId) {
-        // TENANT_ADMIN gets tenant-wide role (no company scope)
-        // Others get tenant-wide role too (can be overridden per company later)
-        await assignRoleToUser(user.id, roleId, null);
-      }
-    }
-  }
+  // Handle role assignments (required - at least one must be provided)
+  await prisma.userRoleAssignment.createMany({
+    data: data.roleAssignments.map((assignment) => ({
+      userId: user.id,
+      roleId: assignment.roleId,
+      companyId: assignment.companyId || null, // null = "All Companies"
+    })),
+  });
 
   // Log user invitation
   const auditContext: AuditContext = {
@@ -550,23 +549,56 @@ export async function inviteUserToTenant(
 
   await logUserMembership(auditContext, 'USER_INVITED', user.id, {
     email: user.email,
-    role: user.role,
     companyId: user.companyId,
     companyAssignments: data.companyAssignments?.length || (data.companyId ? 1 : 0),
-    roleAssignments: data.roleAssignments?.length || 1,
+    roleAssignments: data.roleAssignments.length,
   });
 
-  // Return user without exposing temp password in response
-  // In production, you'd send an email with the temp password
+  // Get tenant name for email
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { name: true },
+  });
+
+  // Get inviter name for email
+  const inviter = await prisma.user.findUnique({
+    where: { id: invitedByUserId },
+    select: { firstName: true, lastName: true },
+  });
+
+  const inviterName = inviter
+    ? `${inviter.firstName} ${inviter.lastName}`.trim()
+    : undefined;
+
+  // Send invitation email
+  const emailTemplate = userInvitationEmail({
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    temporaryPassword: tempPassword,
+    tenantName: tenant?.name || 'your organization',
+    invitedByName: inviterName,
+  });
+
+  const emailResult = await sendEmail({
+    to: user.email,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
+  });
+
+  if (!emailResult.success) {
+    console.error('[TenantService] Failed to send invitation email:', emailResult.error);
+  }
+
+  // Return user without exposing temp password in response in production
   return {
     user: {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
     },
-    // Only for development/testing - remove in production
+    // Only for development/testing - in production, password is only sent via email
     temporaryPassword: process.env.NODE_ENV === 'development' ? tempPassword : undefined,
   };
 }
@@ -579,20 +611,33 @@ export async function removeUserFromTenant(
 ) {
   const user = await prisma.user.findUnique({
     where: { id: userId, tenantId, deletedAt: null },
+    include: {
+      roleAssignments: {
+        include: {
+          role: {
+            select: { systemRoleType: true },
+          },
+        },
+      },
+    },
   });
 
   if (!user) {
     throw new Error('User not found in this tenant');
   }
 
+  // Check if user has TENANT_ADMIN role via role assignments
+  const isTenantAdmin = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  );
+
   // Prevent removing the last tenant admin
-  if (user.role === 'TENANT_ADMIN') {
-    const adminCount = await prisma.user.count({
+  if (isTenantAdmin) {
+    // Count users with TENANT_ADMIN role assignment
+    const adminCount = await prisma.userRoleAssignment.count({
       where: {
-        tenantId,
-        role: 'TENANT_ADMIN',
-        deletedAt: null,
-        isActive: true,
+        role: { systemRoleType: 'TENANT_ADMIN', tenantId },
+        user: { tenantId, deletedAt: null, isActive: true },
       },
     });
 
@@ -618,61 +663,43 @@ export async function removeUserFromTenant(
 
   await logUserMembership(auditContext, 'USER_REMOVED', userId, {
     email: user.email,
-    role: user.role,
+    isTenantAdmin,
     reason,
+  });
+
+  // Get tenant name and remover name for email
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { name: true },
+  });
+
+  const remover = await prisma.user.findUnique({
+    where: { id: removedByUserId },
+    select: { firstName: true, lastName: true },
+  });
+
+  const removerName = remover
+    ? `${remover.firstName} ${remover.lastName}`.trim()
+    : undefined;
+
+  // Send removal notification email
+  const emailTemplate = userRemovedEmail({
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    tenantName: tenant?.name || 'the organization',
+    removedByName: removerName,
+  });
+
+  await sendEmail({
+    to: user.email,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
   });
 
   return { success: true };
 }
 
-export async function updateUserRole(
-  tenantId: string,
-  userId: string,
-  newRole: 'TENANT_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER',
-  updatedByUserId: string
-) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId, tenantId, deletedAt: null },
-  });
-
-  if (!user) {
-    throw new Error('User not found in this tenant');
-  }
-
-  const oldRole = user.role;
-
-  // Prevent demoting the last tenant admin
-  if (oldRole === 'TENANT_ADMIN' && newRole !== 'TENANT_ADMIN') {
-    const adminCount = await prisma.user.count({
-      where: {
-        tenantId,
-        role: 'TENANT_ADMIN',
-        deletedAt: null,
-        isActive: true,
-      },
-    });
-
-    if (adminCount <= 1) {
-      throw new Error('Cannot demote the last tenant administrator');
-    }
-  }
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { role: newRole },
-  });
-
-  // Log role change
-  const auditContext: AuditContext = {
-    tenantId,
-    userId: updatedByUserId,
-  };
-  const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
-
-  await logRoleChange(auditContext, userId, userName, oldRole, newRole);
-
-  return { success: true, oldRole, newRole };
-}
 
 // ============================================================================
 // Tenant Settings
@@ -722,17 +749,15 @@ export async function updateTenantSettings(
 
 export async function getTenantStats(tenantId: string) {
   const [
-    userStats,
+    userCount,
     companyStats,
     documentStats,
     storageUsage,
     recentActivity,
   ] = await Promise.all([
-    // User statistics
-    prisma.user.groupBy({
-      by: ['role'],
+    // User statistics - total count (role breakdown via roleAssignments if needed)
+    prisma.user.count({
       where: { tenantId, deletedAt: null, isActive: true },
-      _count: true,
     }),
 
     // Company statistics
@@ -770,7 +795,7 @@ export async function getTenantStats(tenantId: string) {
     users: {
       total: limits.currentUsers,
       max: limits.maxUsers,
-      byRole: userStats.map((s) => ({ role: s.role, count: s._count })),
+      active: userCount,
     },
     companies: {
       total: limits.currentCompanies,
@@ -919,7 +944,6 @@ export async function completeTenantSetup(
         firstName: data.adminUser.firstName,
         lastName: data.adminUser.lastName,
         passwordHash,
-        role: 'TENANT_ADMIN',
         tenantId,
         isActive: true,
         mustChangePassword: true,
@@ -1031,6 +1055,25 @@ export async function completeTenantSetup(
       activated: true,
     },
   });
+
+  // Send welcome email to new admin user
+  const emailTemplate = tenantSetupCompleteEmail({
+    firstName: result.adminUser.firstName,
+    lastName: result.adminUser.lastName,
+    email: result.adminUser.email,
+    temporaryPassword: tempPassword,
+    tenantName: result.tenant.name,
+  });
+
+  const emailResult = await sendEmail({
+    to: result.adminUser.email,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
+  });
+
+  if (!emailResult.success) {
+    console.error('[TenantService] Failed to send tenant setup email:', emailResult.error);
+  }
 
   return {
     tenant: {

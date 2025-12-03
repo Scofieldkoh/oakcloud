@@ -9,12 +9,37 @@ import { useSession } from './use-auth';
 // Types
 // ============================================================================
 
+export interface UserRoleAssignment {
+  id: string;
+  roleId: string;
+  companyId: string | null;
+  role: {
+    id: string;
+    name: string;
+    systemRoleType: string | null;
+  };
+  company: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+export interface UserCompanyAssignment {
+  id: string;
+  companyId: string;
+  isPrimary: boolean;
+  company: {
+    id: string;
+    name: string;
+    uen: string;
+  };
+}
+
 export interface TenantUser {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
   isActive: boolean;
   lastLoginAt: string | null;
   createdAt: string;
@@ -22,8 +47,9 @@ export interface TenantUser {
   company?: {
     id: string;
     name: string;
-    uen: string;
   } | null;
+  roleAssignments?: UserRoleAssignment[];
+  companyAssignments?: UserCompanyAssignment[];
 }
 
 export interface TenantUsersResponse {
@@ -116,10 +142,11 @@ export interface AuditLogsParams {
 
 export interface Role {
   id: string;
-  tenantId: string;
+  tenantId: string | null;
   name: string;
   description: string | null;
   isSystem: boolean;
+  systemRoleType: string | null; // 'SUPER_ADMIN', 'TENANT_ADMIN', or null for custom roles
   createdAt: string;
   permissions: Array<{
     permission: {
@@ -137,13 +164,12 @@ export interface CreateUserData {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
   companyId?: string;
   companyAssignments?: Array<{
     companyId: string;
     isPrimary?: boolean;
   }>;
-  roleAssignments?: Array<{
+  roleAssignments: Array<{
     roleId: string;
     companyId: string | null; // null = "All Companies"
   }>;
@@ -153,7 +179,6 @@ export interface UpdateUserData {
   firstName?: string;
   lastName?: string;
   email?: string;
-  role?: 'TENANT_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER';
   isActive?: boolean;
   companyId?: string | null;
   sendPasswordReset?: boolean;
@@ -610,7 +635,6 @@ export interface RoleUser {
     email: string;
     firstName: string;
     lastName: string;
-    role: string;
     isActive: boolean;
   };
   company: {
@@ -684,6 +708,31 @@ export function useRemoveRoleFromUser(tenantId: string | undefined, roleId: stri
   });
 }
 
+// Hook to remove a role assignment from user (works from user management context)
+export function useRemoveUserRoleAssignment(tenantId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { userId: string; roleId: string; companyId: string | null }) => {
+      if (!tenantId) throw new Error('Tenant ID required');
+      const res = await fetch(`/api/tenants/${tenantId}/roles/${data.roleId}/users`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: data.userId, companyId: data.companyId }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to remove role assignment');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-users', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+    },
+  });
+}
+
 // ============================================================================
 // User Company Assignment Hooks
 // ============================================================================
@@ -723,7 +772,9 @@ export function useAssignUserToCompany(userId: string | undefined) {
   return useMutation({
     mutationFn: async (data: {
       companyId: string;
+      roleId?: string; // Role to assign for this company
       isPrimary?: boolean;
+      tenantId?: string; // Required for SUPER_ADMIN
     }) => {
       if (!userId) throw new Error('User ID required');
       const res = await fetch(`/api/users/${userId}/companies`, {

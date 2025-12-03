@@ -214,8 +214,8 @@ export const DEFAULT_CUSTOM_ROLES = [
  * 3. Company-specific roles OVERRIDE tenant-wide roles (not combined)
  *
  * Special cases:
- * - SUPER_ADMIN: Has all permissions everywhere
- * - TENANT_ADMIN: Has all permissions within their tenant (all companies)
+ * - SUPER_ADMIN (systemRoleType): Has all permissions everywhere
+ * - TENANT_ADMIN (systemRoleType): Has all permissions within their tenant
  */
 export async function hasPermission(
   userId: string,
@@ -247,13 +247,21 @@ export async function hasPermission(
     return false;
   }
 
-  // SUPER_ADMIN has all permissions
-  if (user.role === 'SUPER_ADMIN') {
+  // Check for system role types via role assignments
+  const hasSuperAdminRole = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+  );
+  const hasTenantAdminRole = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  );
+
+  // SUPER_ADMIN has all permissions everywhere
+  if (hasSuperAdminRole) {
     return true;
   }
 
   // TENANT_ADMIN has all permissions within their tenant
-  if (user.role === 'TENANT_ADMIN') {
+  if (hasTenantAdminRole) {
     return true;
   }
 
@@ -279,17 +287,26 @@ export async function hasPermission(
 /**
  * Get effective role assignments based on specificity
  * Company-specific roles override tenant-wide roles
+ *
+ * Resolution logic:
+ * - If no companyId: Return ALL roles (tenant-wide + company-specific)
+ *   This allows checking "does user have this permission anywhere?"
+ * - If specific companyId: Use specificity rules
+ *   1. Company-specific roles for that company override tenant-wide
+ *   2. If no company-specific roles, fall back to tenant-wide
  */
 function getEffectiveRoleAssignments<T extends { companyId: string | null }>(
   assignments: T[],
   companyId?: string
 ): T[] {
   if (!companyId) {
-    // No specific company - use tenant-wide roles only
-    return assignments.filter(a => a.companyId === null);
+    // No specific company - return ALL roles (tenant-wide + company-specific)
+    // This handles cases like "can this user read companies?" where we want
+    // to know if they have the permission via ANY of their role assignments
+    return assignments;
   }
 
-  // Check if there are company-specific roles
+  // Check if there are company-specific roles for the given company
   const companySpecific = assignments.filter(a => a.companyId === companyId);
 
   if (companySpecific.length > 0) {
@@ -364,8 +381,16 @@ export async function getUserPermissions(
     return [];
   }
 
+  // Check for system role types via role assignments
+  const hasSuperAdminRole = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+  );
+  const hasTenantAdminRole = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  );
+
   // SUPER_ADMIN and TENANT_ADMIN have all permissions
-  if (user.role === 'SUPER_ADMIN' || user.role === 'TENANT_ADMIN') {
+  if (hasSuperAdminRole || hasTenantAdminRole) {
     const allPermissions: PermissionString[] = [];
     for (const resource of RESOURCES) {
       for (const action of ACTIONS) {
@@ -395,6 +420,7 @@ export async function getUserPermissions(
 
 /**
  * Require a specific permission - throws if not granted
+ * Uses computed flags from session (derived from role assignments)
  */
 export async function requirePermission(
   session: SessionUser,
@@ -403,7 +429,12 @@ export async function requirePermission(
   companyId?: string
 ): Promise<void> {
   // SUPER_ADMIN bypasses all permission checks
-  if (session.role === 'SUPER_ADMIN') {
+  if (session.isSuperAdmin) {
+    return;
+  }
+
+  // TENANT_ADMIN has full access within their tenant
+  if (session.isTenantAdmin) {
     return;
   }
 
@@ -416,13 +447,15 @@ export async function requirePermission(
 
 /**
  * Require any of the specified permissions - throws if none granted
+ * Uses computed flags from session (derived from role assignments)
  */
 export async function requireAnyPermission(
   session: SessionUser,
   permissions: Array<{ resource: Resource; action: Action }>,
   companyId?: string
 ): Promise<void> {
-  if (session.role === 'SUPER_ADMIN') {
+  // SUPER_ADMIN and TENANT_ADMIN bypass all permission checks
+  if (session.isSuperAdmin || session.isTenantAdmin) {
     return;
   }
 
@@ -694,42 +727,57 @@ export async function getSystemRoleId(
 
 /**
  * Check if user can read companies in tenant
+ * Uses computed flags from session
  */
 export function canReadCompanies(session: SessionUser): boolean {
-  return ['SUPER_ADMIN', 'TENANT_ADMIN', 'COMPANY_ADMIN', 'COMPANY_USER'].includes(session.role);
+  // Super admin and tenant admin can always read
+  if (session.isSuperAdmin || session.isTenantAdmin) return true;
+  // All authenticated users can read companies (via role assignments for specific permissions)
+  return true;
 }
 
 /**
  * Check if user can create companies in tenant
+ * Uses computed flags from session
  */
 export function canCreateCompanies(session: SessionUser): boolean {
-  return ['SUPER_ADMIN', 'TENANT_ADMIN'].includes(session.role);
+  return session.isSuperAdmin || session.isTenantAdmin;
 }
 
 /**
  * Check if user can manage users in tenant
+ * Uses computed flags from session
  */
 export function canManageUsers(session: SessionUser): boolean {
-  return ['SUPER_ADMIN', 'TENANT_ADMIN'].includes(session.role);
+  return session.isSuperAdmin || session.isTenantAdmin;
 }
 
 /**
  * Check if user can manage roles in tenant
+ * Uses computed flags from session
  */
 export function canManageRoles(session: SessionUser): boolean {
-  return ['SUPER_ADMIN', 'TENANT_ADMIN'].includes(session.role);
+  return session.isSuperAdmin || session.isTenantAdmin;
 }
 
 /**
  * Check if user can access audit logs
+ * Uses computed flags from session
  */
 export function canAccessAuditLogs(session: SessionUser): boolean {
-  return ['SUPER_ADMIN', 'TENANT_ADMIN', 'COMPANY_ADMIN', 'COMPANY_USER'].includes(session.role);
+  // Super admin and tenant admin can always access
+  if (session.isSuperAdmin || session.isTenantAdmin) return true;
+  // All authenticated users have basic audit log access
+  return true;
 }
 
 /**
  * Check if user can export data
+ * Uses computed flags from session
  */
 export function canExportData(session: SessionUser): boolean {
-  return ['SUPER_ADMIN', 'TENANT_ADMIN', 'COMPANY_ADMIN'].includes(session.role);
+  // Super admin and tenant admin can always export
+  if (session.isSuperAdmin || session.isTenantAdmin) return true;
+  // Other users need specific permissions (checked via hasPermission)
+  return false;
 }

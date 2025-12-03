@@ -6,6 +6,8 @@
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { sendEmail, isEmailConfigured, getAppBaseUrl } from '@/lib/email';
+import { passwordResetEmail, passwordChangedEmail } from '@/lib/email-templates';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -114,10 +116,27 @@ export async function requestPasswordReset(email: string): Promise<RequestResetR
     metadata: { email: user.email },
   });
 
-  // In production, send email here
-  // await sendPasswordResetEmail(user.email, resetToken);
+  const resetUrl = `${getAppBaseUrl()}/reset-password?token=${resetToken}`;
 
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+  // Send password reset email
+  const emailTemplate = passwordResetEmail({
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    resetUrl,
+    expiryHours: RESET_TOKEN_EXPIRY_HOURS,
+  });
+
+  const emailResult = await sendEmail({
+    to: user.email,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
+  });
+
+  if (!emailResult.success && process.env.NODE_ENV !== 'development') {
+    console.error('[PasswordService] Failed to send password reset email:', emailResult.error);
+    // Don't expose email sending errors to prevent enumeration
+  }
 
   // Return token only in development for testing
   if (process.env.NODE_ENV === 'development') {
@@ -200,6 +219,20 @@ export async function resetPasswordWithToken(
     metadata: { email: user.email },
   });
 
+  // Send password changed confirmation email
+  const emailTemplate = passwordChangedEmail({
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    changedAt: new Date(),
+  });
+
+  await sendEmail({
+    to: user.email,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
+  });
+
   return {
     success: true,
     message: 'Password has been reset successfully. You can now log in with your new password.',
@@ -278,6 +311,20 @@ export async function changePassword(
     summary: `User "${changeUserName}" changed password`,
     changeSource: 'MANUAL',
     metadata: { email: user.email },
+  });
+
+  // Send password changed confirmation email
+  const emailTemplate = passwordChangedEmail({
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    changedAt: new Date(),
+  });
+
+  await sendEmail({
+    to: user.email,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
   });
 
   return {

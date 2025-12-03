@@ -30,7 +30,6 @@ export async function GET(
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const query = searchParams.get('query') || undefined;
-    const role = searchParams.get('role') || undefined;
 
     const where = {
       tenantId,
@@ -42,7 +41,6 @@ export async function GET(
           { lastName: { contains: query, mode: 'insensitive' as const } },
         ],
       }),
-      ...(role && { role: role as 'TENANT_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER' }),
     };
 
     const [users, totalCount] = await Promise.all([
@@ -53,7 +51,6 @@ export async function GET(
           email: true,
           firstName: true,
           lastName: true,
-          role: true,
           isActive: true,
           lastLoginAt: true,
           createdAt: true,
@@ -61,6 +58,40 @@ export async function GET(
             select: {
               id: true,
               name: true,
+            },
+          },
+          roleAssignments: {
+            select: {
+              id: true,
+              roleId: true,
+              companyId: true,
+              role: {
+                select: {
+                  id: true,
+                  name: true,
+                  systemRoleType: true,
+                },
+              },
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          companyAssignments: {
+            select: {
+              id: true,
+              companyId: true,
+              isPrimary: true,
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                  uen: true,
+                },
+              },
             },
           },
         },

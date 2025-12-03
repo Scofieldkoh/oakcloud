@@ -216,9 +216,8 @@ export default function AuditLogsPage() {
   });
 
   const canViewAuditLogs =
-    session?.role === 'SUPER_ADMIN' ||
-    session?.role === 'TENANT_ADMIN' ||
-    session?.role === 'COMPANY_ADMIN';
+    session?.isSuperAdmin ||
+    session?.isTenantAdmin;
 
   if (!canViewAuditLogs) {
     return (

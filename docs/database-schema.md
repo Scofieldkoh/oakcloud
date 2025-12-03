@@ -10,9 +10,9 @@ Oakcloud implements a multi-tenant architecture where data is isolated by tenant
 - **Contacts** - `tenantId` (required)
 - **Documents** - `tenantId` (required)
 - **AuditLogs** - `tenantId` (optional, for system-level events)
-- **Roles** - `tenantId` (required)
+- **Roles** - `tenantId` (optional, null for global SUPER_ADMIN role)
 
-Users are linked to tenants via `tenantId`, except for `SUPER_ADMIN` users who have system-wide access.
+Users are linked to tenants via `tenantId`. SUPER_ADMIN users have `tenantId = null` and are identified by having a role assignment with `systemRoleType = 'SUPER_ADMIN'`.
 
 ## Entity Relationship Diagram
 
@@ -39,8 +39,7 @@ Users are linked to tenants via `tenantId`, except for `SUPER_ADMIN` users who h
 │  ├────────────┤                                                      │       │
 │  │ id         │◄─────────────────────────────────────┐               │       │
 │  │ email      │                                      │               │       │
-│  │ role       │  SUPER_ADMIN | TENANT_ADMIN |        │               │       │
-│  │ tenantId   │  COMPANY_ADMIN | COMPANY_USER        │               │       │
+│  │ tenantId   │  Permissions via UserRoleAssignment  │               │       │
 │  │ companyId  │─────────────────────────────────┐    │               │       │
 │  └────────────┘                                 │    │               │       │
 │                                                 │    │               │       │
@@ -157,7 +156,7 @@ Multi-tenancy support for data isolation.
 
 ### users
 
-User accounts for authentication and authorization.
+User accounts for authentication and authorization. Permissions are managed via `user_role_assignments`.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
@@ -166,7 +165,6 @@ User accounts for authentication and authorization.
 | password_hash | VARCHAR | No | Bcrypt hashed password |
 | first_name | VARCHAR | No | First name |
 | last_name | VARCHAR | No | Last name |
-| role | ENUM | No | SUPER_ADMIN, TENANT_ADMIN, COMPANY_ADMIN, COMPANY_USER |
 | is_active | BOOLEAN | No | Account active status |
 | last_login_at | TIMESTAMP | Yes | Last login timestamp |
 | must_change_password | BOOLEAN | No | Force password change on next login |
@@ -179,12 +177,13 @@ User accounts for authentication and authorization.
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 
+**Note:** User roles are determined by `user_role_assignments`. System roles (SUPER_ADMIN, TENANT_ADMIN) are identified by the role's `system_role_type` field.
+
 **Indexes:**
 - `users_email_key` UNIQUE on email
 - `users_password_reset_token_key` UNIQUE on password_reset_token
 - `users_tenant_id_idx` on tenant_id
 - `users_company_id_idx` on company_id
-- `users_tenant_id_role_idx` on (tenant_id, role)
 
 ---
 
@@ -505,14 +504,6 @@ Complete audit trail. Tenant ID is optional for system-level events.
 
 ## Enums
 
-### UserRole
-```sql
-SUPER_ADMIN      -- System-wide administrator
-TENANT_ADMIN     -- Tenant administrator (can manage tenant settings and users)
-COMPANY_ADMIN    -- Company administrator within a tenant
-COMPANY_USER     -- Regular user with limited access
-```
-
 ### TenantStatus
 ```sql
 ACTIVE
@@ -649,16 +640,23 @@ Role definitions for fine-grained access control.
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
-| tenant_id | UUID | No | FK to tenants |
+| tenant_id | UUID | Yes | FK to tenants (null for global SUPER_ADMIN role) |
 | name | VARCHAR | No | Role name (unique per tenant) |
 | description | TEXT | Yes | Role description |
 | is_system | BOOLEAN | No | System role (cannot be deleted) |
+| system_role_type | VARCHAR | Yes | System role identifier: `SUPER_ADMIN`, `TENANT_ADMIN`, or null |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
+
+**System Role Types:**
+- `SUPER_ADMIN` - Global role with `tenant_id = null`, full system access
+- `TENANT_ADMIN` - Tenant-scoped role, full access within tenant
+- `null` - Custom role with configurable permissions
 
 **Indexes:**
 - `roles_tenant_id_name_key` UNIQUE on (tenant_id, name)
 - `roles_tenant_id_idx` on tenant_id
+- `roles_system_role_type_idx` on system_role_type
 
 ---
 

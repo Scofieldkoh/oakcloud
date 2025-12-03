@@ -12,6 +12,7 @@ import {
   useUserCompanyAssignments,
   useAssignUserToCompany,
   useRemoveCompanyAssignment,
+  useRemoveUserRoleAssignment,
   useCurrentTenantRoles,
   useTenantRoles,
   type TenantUser,
@@ -54,29 +55,6 @@ const SYSTEM_ROLES = [
   { value: 'COMPANY_USER', label: 'Company User', description: 'View-only access to assigned companies', isSystem: true },
 ];
 
-function getRoleBadgeClass(role: string) {
-  switch (role) {
-    case 'SUPER_ADMIN':
-      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
-    case 'TENANT_ADMIN':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
-    case 'COMPANY_ADMIN':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
-    default:
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
-  }
-}
-
-function getRoleLabel(role: string) {
-  return role.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-}
-
-interface CompanyAssignment {
-  companyId: string;
-  isPrimary: boolean;
-  companyName?: string;
-}
-
 interface RoleAssignment {
   roleId: string;
   companyId: string | null; // null = "All Companies"
@@ -96,7 +74,7 @@ export default function UsersPage() {
   // Modal states
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<TenantUser | null>(null);
-  const [managingUser, setManagingUser] = useState<TenantUser | null>(null);
+  const [managingUserId, setManagingUserId] = useState<string | null>(null); // Store ID only, get fresh data from query
   const [deletingUser, setDeletingUser] = useState<TenantUser | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<TenantUser | null>(null);
 
@@ -107,10 +85,11 @@ export default function UsersPage() {
   const [selectedRoleId, setSelectedRoleId] = useState('');
   const [selectedRoleCompanyId, setSelectedRoleCompanyId] = useState<string | null>(null); // null = "All Companies"
   const [inviteRoleAssignments, setInviteRoleAssignments] = useState<RoleAssignment[]>([]);
+  const [isTenantAdminInvite, setIsTenantAdminInvite] = useState(false); // Only for SUPER_ADMIN
 
   // For SUPER_ADMIN: tenant selection
   const [selectedTenantId, setSelectedTenantId] = useState('');
-  const isSuperAdmin = session?.role === 'SUPER_ADMIN';
+  const isSuperAdmin = session?.isSuperAdmin ?? false;
 
   // Get active tenant ID (either from session or selection for SUPER_ADMIN)
   const activeTenantId = isSuperAdmin ? selectedTenantId : session?.tenantId;
@@ -120,9 +99,7 @@ export default function UsersPage() {
     email: '',
     firstName: '',
     lastName: '',
-    role: 'COMPANY_USER',
   });
-  const [inviteCompanyAssignments, setInviteCompanyAssignments] = useState<CompanyAssignment[]>([]);
   const [formError, setFormError] = useState('');
 
   // Edit form state
@@ -130,7 +107,6 @@ export default function UsersPage() {
     firstName: '',
     lastName: '',
     email: '',
-    role: '',
     isActive: true,
   });
 
@@ -175,6 +151,11 @@ export default function UsersPage() {
   const isLoading = isSuperAdmin ? tenantUsersLoading : currentTenantLoading;
   const error = isSuperAdmin ? tenantUsersError : currentTenantError;
 
+  // Get fresh user data from query results (ensures modal shows updated data after mutations)
+  const managingUser = managingUserId
+    ? data?.users.find((u: TenantUser) => u.id === managingUserId) || null
+    : null;
+
   const { data: companiesData } = useCompanies({ limit: 100 });
   const inviteUser = useInviteUser(activeTenantId || undefined);
   const updateUser = useUpdateUser(activeTenantId || undefined, editingUser?.id);
@@ -182,10 +163,11 @@ export default function UsersPage() {
 
   // Company management hooks
   const { data: assignmentsData, isLoading: assignmentsLoading } = useUserCompanyAssignments(
-    managingUser?.id
+    managingUserId || undefined
   );
-  const assignCompany = useAssignUserToCompany(managingUser?.id);
-  const removeAssignment = useRemoveCompanyAssignment(managingUser?.id);
+  const assignCompany = useAssignUserToCompany(managingUserId || undefined);
+  const removeAssignment = useRemoveCompanyAssignment(managingUserId || undefined);
+  const removeUserRole = useRemoveUserRoleAssignment(activeTenantId || undefined);
 
   // Initialize edit form when editing user changes
   useEffect(() => {
@@ -194,7 +176,6 @@ export default function UsersPage() {
         firstName: editingUser.firstName,
         lastName: editingUser.lastName,
         email: editingUser.email,
-        role: editingUser.role,
         isActive: editingUser.isActive,
       });
     }
@@ -228,37 +209,36 @@ export default function UsersPage() {
       return;
     }
 
-    // Company is required for COMPANY_ADMIN and COMPANY_USER unless they have company assignments
-    const requiresCompany = inviteFormData.role === 'COMPANY_ADMIN' || inviteFormData.role === 'COMPANY_USER';
-    if (requiresCompany && inviteCompanyAssignments.length === 0) {
-      setFormError('Please assign at least one company for this role');
+    // Validate role assignments
+    if (!isTenantAdminInvite && inviteRoleAssignments.length === 0) {
+      setFormError('Please assign at least one role');
       return;
     }
 
     try {
-      // Get primary company ID (first in list or the one marked as primary)
-      const primaryAssignment = inviteCompanyAssignments.find((a) => a.isPrimary) || inviteCompanyAssignments[0];
+      let roleAssignments: Array<{ roleId: string; companyId: string | null }>;
 
-      // Convert role assignments for API
-      const roleAssignments = inviteRoleAssignments.length > 0
-        ? inviteRoleAssignments.map((ra) => ({
-            roleId: ra.roleId,
-            companyId: ra.companyId,
-          }))
-        : undefined;
+      if (isTenantAdminInvite) {
+        // Find the TENANT_ADMIN system role
+        const tenantAdminRole = (rolesData as Role[] | undefined)?.find(
+          (r) => r.systemRoleType === 'TENANT_ADMIN'
+        );
+        if (!tenantAdminRole) {
+          setFormError('Tenant Admin role not found');
+          return;
+        }
+        roleAssignments = [{ roleId: tenantAdminRole.id, companyId: null }];
+      } else {
+        roleAssignments = inviteRoleAssignments.map((ra) => ({
+          roleId: ra.roleId,
+          companyId: ra.companyId,
+        }));
+      }
 
       await inviteUser.mutateAsync({
         email: inviteFormData.email,
         firstName: inviteFormData.firstName,
         lastName: inviteFormData.lastName,
-        role: inviteFormData.role,
-        companyId: primaryAssignment?.companyId,
-        companyAssignments: inviteCompanyAssignments.length > 0
-          ? inviteCompanyAssignments.map((ca) => ({
-              companyId: ca.companyId,
-              isPrimary: ca.isPrimary,
-            }))
-          : undefined,
         roleAssignments,
       });
 
@@ -268,10 +248,9 @@ export default function UsersPage() {
         email: '',
         firstName: '',
         lastName: '',
-        role: 'COMPANY_USER',
       });
-      setInviteCompanyAssignments([]);
       setInviteRoleAssignments([]);
+      setIsTenantAdminInvite(false);
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to invite user');
     }
@@ -287,7 +266,6 @@ export default function UsersPage() {
       if (editFormData.firstName !== editingUser.firstName) updates.firstName = editFormData.firstName;
       if (editFormData.lastName !== editingUser.lastName) updates.lastName = editFormData.lastName;
       if (editFormData.email !== editingUser.email) updates.email = editFormData.email;
-      if (editFormData.role !== editingUser.role) updates.role = editFormData.role;
       if (editFormData.isActive !== editingUser.isActive) updates.isActive = editFormData.isActive;
 
       if (Object.keys(updates).length === 0) {
@@ -342,28 +320,6 @@ export default function UsersPage() {
     }
   };
 
-  // Add company assignment to invite form
-  const addCompanyAssignment = () => {
-    if (!selectedCompanyId) return;
-    const company = companiesData?.companies.find((c) => c.id === selectedCompanyId);
-    if (!company) return;
-
-    // Check if already assigned
-    if (inviteCompanyAssignments.some((a) => a.companyId === selectedCompanyId)) {
-      showError('Company already assigned');
-      return;
-    }
-
-    const newAssignment: CompanyAssignment = {
-      companyId: selectedCompanyId,
-      isPrimary: inviteCompanyAssignments.length === 0, // First one is primary by default
-      companyName: company.name,
-    };
-
-    setInviteCompanyAssignments([...inviteCompanyAssignments, newAssignment]);
-    setSelectedCompanyId('');
-  };
-
   // Add role assignment to invite form
   const addRoleAssignment = () => {
     if (!selectedRoleId) return;
@@ -402,28 +358,8 @@ export default function UsersPage() {
     );
   };
 
-  // Remove company assignment from invite form
-  const removeCompanyAssignmentFromInvite = (companyId: string) => {
-    const newAssignments = inviteCompanyAssignments.filter((a) => a.companyId !== companyId);
-    // If we removed the primary, make the first one primary
-    if (newAssignments.length > 0 && !newAssignments.some((a) => a.isPrimary)) {
-      newAssignments[0].isPrimary = true;
-    }
-    setInviteCompanyAssignments(newAssignments);
-  };
-
-  // Toggle primary company in invite form
-  const togglePrimaryCompany = (companyId: string) => {
-    setInviteCompanyAssignments(
-      inviteCompanyAssignments.map((a) => ({
-        ...a,
-        isPrimary: a.companyId === companyId,
-      }))
-    );
-  };
-
-  // Check permissions
-  const canManageUsers = session?.role === 'SUPER_ADMIN' || session?.role === 'TENANT_ADMIN';
+  // Check permissions using computed flags from role assignments
+  const canManageUsers = session?.isSuperAdmin || session?.isTenantAdmin;
 
   if (!canManageUsers) {
     return (
@@ -546,8 +482,7 @@ export default function UsersPage() {
                 <thead>
                   <tr>
                     <th>User</th>
-                    <th>Role</th>
-                    <th>Companies</th>
+                    <th>Roles & Companies</th>
                     <th>Status</th>
                     <th>Last Login</th>
                     <th className="w-10"></th>
@@ -556,7 +491,7 @@ export default function UsersPage() {
                 <tbody>
                   {data.users.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-8 text-text-secondary">
+                      <td colSpan={5} className="text-center py-8 text-text-secondary">
                         No users found
                       </td>
                     </tr>
@@ -582,28 +517,47 @@ export default function UsersPage() {
                           </div>
                         </td>
                         <td>
-                          <span className={cn('badge', getRoleBadgeClass(user.role))}>
-                            <Shield className="w-3 h-3 mr-1" />
-                            {getRoleLabel(user.role)}
-                          </span>
-                        </td>
-                        <td>
-                          {user.company ? (
-                            <button
-                              onClick={() => setManagingUser(user)}
-                              className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors"
-                            >
-                              <Building2 className="w-3.5 h-3.5" />
-                              <span className="text-sm">{user.company.name}</span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => setManagingUser(user)}
-                              className="text-text-muted text-sm hover:text-text-primary transition-colors"
-                            >
-                              + Assign
-                            </button>
-                          )}
+                          <button
+                            onClick={() => setManagingUserId(user.id)}
+                            className="text-left hover:bg-background-tertiary rounded p-1 -m-1 transition-colors"
+                          >
+                            {user.roleAssignments && user.roleAssignments.length > 0 ? (
+                              <div className="space-y-1">
+                                {user.roleAssignments.slice(0, 3).map((ra) => (
+                                  <div key={ra.id} className="flex items-center gap-1.5">
+                                    <span
+                                      className={cn(
+                                        'badge text-xs',
+                                        ra.role.systemRoleType === 'TENANT_ADMIN'
+                                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                          : ra.role.systemRoleType === 'SUPER_ADMIN'
+                                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                            : 'bg-oak-primary/10 text-oak-primary dark:bg-oak-primary/20'
+                                      )}
+                                    >
+                                      <Shield className="w-2.5 h-2.5 mr-0.5" />
+                                      {ra.role.name}
+                                    </span>
+                                    <span className="text-xs text-text-muted">→</span>
+                                    <span className="text-xs text-text-secondary flex items-center gap-0.5">
+                                      <Building2 className="w-3 h-3" />
+                                      {ra.company ? ra.company.name : 'All Companies'}
+                                    </span>
+                                  </div>
+                                ))}
+                                {user.roleAssignments.length > 3 && (
+                                  <span className="text-xs text-text-muted">
+                                    +{user.roleAssignments.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-text-muted text-sm flex items-center gap-1">
+                                <Shield className="w-3.5 h-3.5" />
+                                No roles assigned
+                              </span>
+                            )}
+                          </button>
                         </td>
                         <td>
                           <span
@@ -641,7 +595,7 @@ export default function UsersPage() {
                               </DropdownItem>
                               <DropdownItem
                                 icon={<Building2 className="w-4 h-4" />}
-                                onClick={() => setManagingUser(user)}
+                                onClick={() => setManagingUserId(user.id)}
                               >
                                 Manage Companies
                               </DropdownItem>
@@ -694,12 +648,11 @@ export default function UsersPage() {
             email: '',
             firstName: '',
             lastName: '',
-            role: 'COMPANY_USER',
           });
-          setInviteCompanyAssignments([]);
           setInviteRoleAssignments([]);
           setSelectedRoleId('');
           setSelectedRoleCompanyId(null);
+          setIsTenantAdminInvite(false);
           setFormError('');
         }}
         title="Invite User"
@@ -744,115 +697,38 @@ export default function UsersPage() {
                 leftIcon={<Mail className="w-4 h-4" />}
               />
 
-              <div>
-                <label className="label">Role</label>
-                <select
-                  value={inviteFormData.role}
-                  onChange={(e) => setInviteFormData({ ...inviteFormData, role: e.target.value })}
-                  className="input input-sm w-full"
-                  required
-                >
-                  {availableRoles.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label} {!role.isSystem && '(Custom)'}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-text-secondary mt-1">
-                  {availableRoles.find((r) => r.value === inviteFormData.role)?.description}
-                </p>
-              </div>
-
-              {/* Company Assignments Section */}
-              {(inviteFormData.role === 'COMPANY_ADMIN' || inviteFormData.role === 'COMPANY_USER') && (
+              {/* Tenant Admin Checkbox - Only for SUPER_ADMIN */}
+              {isSuperAdmin && (
                 <div className="border-t border-border-primary pt-4">
-                  <h4 className="text-sm font-medium text-text-primary mb-3">Company Access</h4>
-                  <p className="text-xs text-text-muted mb-3">
-                    Select which companies this user can access.
-                  </p>
-
-                  {/* Current company assignments */}
-                  {inviteCompanyAssignments.length > 0 && (
-                    <div className="space-y-2 mb-4">
-                      {inviteCompanyAssignments.map((assignment) => (
-                        <div
-                          key={assignment.companyId}
-                          className="flex items-center justify-between p-2 bg-background-tertiary rounded-lg"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-text-muted" />
-                            <span className="text-sm text-text-primary">{assignment.companyName}</span>
-                            {assignment.isPrimary && (
-                              <span className="badge bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 text-xs">
-                                <Star className="w-3 h-3 mr-1" />
-                                Primary
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {!assignment.isPrimary && (
-                              <div title="Set as primary">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => togglePrimaryCompany(assignment.companyId)}
-                                >
-                                  <Star className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeCompanyAssignmentFromInvite(assignment.companyId)}
-                              className="text-red-500 hover:text-red-600"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isTenantAdminInvite}
+                      onChange={(e) => {
+                        setIsTenantAdminInvite(e.target.checked);
+                        if (e.target.checked) {
+                          setInviteRoleAssignments([]); // Clear role assignments when becoming tenant admin
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-border-primary text-oak-primary focus:ring-oak-primary"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-text-primary">Make Tenant Admin</span>
+                      <p className="text-xs text-text-muted">
+                        Grant full administrative access to this tenant
+                      </p>
                     </div>
-                  )}
-
-                  {/* Add new company */}
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <select
-                        value={selectedCompanyId}
-                        onChange={(e) => setSelectedCompanyId(e.target.value)}
-                        className="input input-sm w-full"
-                      >
-                        <option value="">Select a company...</option>
-                        {companiesData?.companies
-                          .filter((c) => !inviteCompanyAssignments.some((a) => a.companyId === c.id))
-                          .map((company) => (
-                            <option key={company.id} value={company.id}>
-                              {company.name} ({company.uen})
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={addCompanyAssignment}
-                      disabled={!selectedCompanyId}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  </label>
                 </div>
               )}
 
-              {/* Role Assignments Section (Optional - for granular control) */}
+              {/* Role Assignments Section - Hidden when Tenant Admin is checked */}
+              {!isTenantAdminInvite && (
+              <>
               <div className="border-t border-border-primary pt-4">
-                <h4 className="text-sm font-medium text-text-primary mb-2">Role Assignments</h4>
+                <h4 className="text-sm font-medium text-text-primary mb-2">Role Assignments <span className="text-red-500">*</span></h4>
                 <p className="text-xs text-text-muted mb-3">
-                  Optionally assign specific roles per company. If left empty, the system role above will be used for all companies.
+                  Assign roles to this user. Use &quot;All Companies&quot; for tenant-wide access or select a specific company.
                 </p>
 
                 {/* Current role assignments */}
@@ -897,7 +773,9 @@ export default function UsersPage() {
                       className="input input-sm w-full"
                     >
                       <option value="">Select a role...</option>
-                      {(rolesData as Role[] | undefined)?.map((role) => (
+                      {(rolesData as Role[] | undefined)
+                        ?.filter((role) => !role.systemRoleType) // Exclude system roles (TENANT_ADMIN, SUPER_ADMIN)
+                        .map((role) => (
                         <option key={role.id} value={role.id}>
                           {role.name} {role.isSystem ? '' : '(Custom)'}
                         </option>
@@ -932,6 +810,8 @@ export default function UsersPage() {
                   Company-specific roles override &quot;All Companies&quot; roles.
                 </p>
               </div>
+              </>
+              )}
             </div>
           </ModalBody>
           <ModalFooter>
@@ -945,12 +825,11 @@ export default function UsersPage() {
                   email: '',
                   firstName: '',
                   lastName: '',
-                  role: 'COMPANY_USER',
                 });
-                setInviteCompanyAssignments([]);
                 setInviteRoleAssignments([]);
                 setSelectedRoleId('');
                 setSelectedRoleCompanyId(null);
+                setIsTenantAdminInvite(false);
                 setFormError('');
               }}
             >
@@ -1006,21 +885,9 @@ export default function UsersPage() {
                 leftIcon={<Mail className="w-4 h-4" />}
               />
 
-              <div>
-                <label className="label">Role</label>
-                <select
-                  value={editFormData.role}
-                  onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                  className="input input-sm w-full"
-                  required
-                >
-                  {availableRoles.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label} {!role.isSystem && '(Custom)'}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <p className="text-xs text-text-muted">
+                To manage role assignments, use the &quot;Manage Companies&quot; option from the user menu.
+              </p>
 
               <div className="flex items-center gap-3">
                 <label className="label mb-0">Status</label>
@@ -1067,48 +934,52 @@ export default function UsersPage() {
         </form>
       </Modal>
 
-      {/* Manage Companies Modal */}
+      {/* Manage Roles & Companies Modal */}
       <Modal
-        isOpen={!!managingUser}
+        isOpen={!!managingUserId}
         onClose={() => {
-          setManagingUser(null);
+          setManagingUserId(null);
           setSelectedCompanyId('');
+          setSelectedRoleId('');
         }}
-        title={`Manage Companies - ${managingUser?.firstName} ${managingUser?.lastName}`}
+        title={`Manage Roles & Companies - ${managingUser?.firstName} ${managingUser?.lastName}`}
         size="lg"
       >
         <ModalBody>
           <p className="text-sm text-text-secondary mb-4">
-            Companies this user can access. Permissions are controlled through role assignments in the Roles &amp; Permissions page.
+            Manage which companies this user can access and their role for each company.
           </p>
 
-          {/* Current Assignments */}
+          {/* Current Role Assignments */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium text-text-primary mb-3">Assigned Companies</h4>
-            {assignmentsLoading ? (
-              <p className="text-sm text-text-secondary">Loading...</p>
-            ) : assignmentsData?.assignments && assignmentsData.assignments.length > 0 ? (
+            <h4 className="text-sm font-medium text-text-primary mb-3">Current Role Assignments</h4>
+            {managingUser?.roleAssignments && managingUser.roleAssignments.length > 0 ? (
               <div className="space-y-2">
-                {assignmentsData.assignments.map((assignment: UserCompanyAssignment) => (
+                {managingUser.roleAssignments.map((ra) => (
                   <div
-                    key={assignment.id}
+                    key={ra.id}
                     className="flex items-center justify-between p-3 bg-background-tertiary rounded-lg"
                   >
                     <div className="flex items-center gap-3">
-                      <Building2 className="w-4 h-4 text-text-muted" />
+                      <Shield className="w-4 h-4 text-text-muted" />
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-text-primary">
-                            {assignment.company.name}
+                          <span
+                            className={cn(
+                              'badge text-xs',
+                              ra.role.systemRoleType === 'TENANT_ADMIN'
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                : 'bg-oak-primary/10 text-oak-primary dark:bg-oak-primary/20'
+                            )}
+                          >
+                            {ra.role.name}
                           </span>
-                          {assignment.isPrimary && (
-                            <span className="badge bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                              <Star className="w-3 h-3 mr-1" />
-                              Primary
-                            </span>
-                          )}
+                          <span className="text-xs text-text-muted">→</span>
+                          <span className="text-sm text-text-secondary flex items-center gap-1">
+                            <Building2 className="w-3 h-3" />
+                            {ra.company ? ra.company.name : 'All Companies'}
+                          </span>
                         </div>
-                        <span className="text-xs text-text-muted">{assignment.company.uen}</span>
                       </div>
                     </div>
                     <Button
@@ -1116,13 +987,17 @@ export default function UsersPage() {
                       size="sm"
                       onClick={async () => {
                         try {
-                          await removeAssignment.mutateAsync(assignment.id);
-                          success('Company removed');
+                          await removeUserRole.mutateAsync({
+                            userId: managingUser.id,
+                            roleId: ra.roleId,
+                            companyId: ra.companyId,
+                          });
+                          success('Role assignment removed');
                         } catch (err) {
                           showError(err instanceof Error ? err.message : 'Failed to remove');
                         }
                       }}
-                      isLoading={removeAssignment.isPending}
+                      isLoading={removeUserRole.isPending}
                       className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1131,54 +1006,79 @@ export default function UsersPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-text-muted py-4 text-center">No companies assigned</p>
+              <p className="text-sm text-text-muted py-4 text-center">No roles assigned</p>
             )}
           </div>
 
-          {/* Add New Assignment */}
+          {/* Add New Company with Role */}
           <div className="border-t border-border-primary pt-4">
-            <h4 className="text-sm font-medium text-text-primary mb-3">Add Company</h4>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <select
-                  value={selectedCompanyId}
-                  onChange={(e) => setSelectedCompanyId(e.target.value)}
-                  className="input input-sm w-full"
-                >
-                  <option value="">Select a company...</option>
-                  {companiesData?.companies
-                    .filter(
-                      (c) =>
-                        !assignmentsData?.assignments?.some(
-                          (a: UserCompanyAssignment) => a.companyId === c.id
-                        )
-                    )
-                    .map((company) => (
-                      <option key={company.id} value={company.id}>
-                        {company.name} ({company.uen})
-                      </option>
-                    ))}
-                </select>
+            <h4 className="text-sm font-medium text-text-primary mb-3">Add Company Access</h4>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label text-xs mb-1">Company</label>
+                  <select
+                    value={selectedCompanyId}
+                    onChange={(e) => setSelectedCompanyId(e.target.value)}
+                    className="input input-sm w-full"
+                  >
+                    <option value="">Select company...</option>
+                    {companiesData?.companies
+                      .filter(
+                        (c) =>
+                          !assignmentsData?.assignments?.some(
+                            (a: UserCompanyAssignment) => a.companyId === c.id
+                          )
+                      )
+                      .map((company) => (
+                        <option key={company.id} value={company.id}>
+                          {company.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label text-xs mb-1">Role</label>
+                  <select
+                    value={selectedRoleId}
+                    onChange={(e) => setSelectedRoleId(e.target.value)}
+                    className="input input-sm w-full"
+                  >
+                    <option value="">Select role...</option>
+                    {(rolesData as Role[] | undefined)
+                      ?.filter((role) => !role.systemRoleType) // Exclude system roles
+                      .map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {role.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
               </div>
               <Button
                 variant="primary"
                 size="sm"
-                disabled={!selectedCompanyId}
+                className="w-full"
+                disabled={!selectedCompanyId || !selectedRoleId}
                 isLoading={assignCompany.isPending}
                 onClick={async () => {
                   try {
                     await assignCompany.mutateAsync({
                       companyId: selectedCompanyId,
+                      roleId: selectedRoleId,
                       isPrimary: !assignmentsData?.assignments?.length,
+                      tenantId: activeTenantId || undefined, // Pass tenantId for SUPER_ADMIN
                     });
                     setSelectedCompanyId('');
-                    success('Company assigned');
+                    setSelectedRoleId('');
+                    success('Company and role assigned');
                   } catch (err) {
                     showError(err instanceof Error ? err.message : 'Failed to assign');
                   }
                 }}
               >
-                Add
+                <Plus className="w-4 h-4 mr-1" />
+                Add Company Access
               </Button>
             </div>
           </div>
@@ -1188,8 +1088,9 @@ export default function UsersPage() {
             variant="secondary"
             size="sm"
             onClick={() => {
-              setManagingUser(null);
+              setManagingUserId(null);
               setSelectedCompanyId('');
+              setSelectedRoleId('');
             }}
           >
             Close

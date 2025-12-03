@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole, canManageTenant } from '@/lib/auth';
+import { requireAuth, canManageTenant } from '@/lib/auth';
 import { getTenantStats } from '@/services/tenant.service';
 
 export async function GET(
@@ -13,7 +13,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { id: tenantId } = await params;
 
     // Check access

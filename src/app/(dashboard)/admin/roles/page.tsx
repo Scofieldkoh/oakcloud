@@ -356,7 +356,7 @@ export default function RolesPage() {
   const { success, error: showError } = useToast();
 
   // For SUPER_ADMIN, allow selecting a tenant
-  const isSuperAdmin = session?.role === 'SUPER_ADMIN';
+  const isSuperAdmin = session?.isSuperAdmin;
   const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(undefined);
 
   // Fetch tenants for SUPER_ADMIN
@@ -488,7 +488,7 @@ export default function RolesPage() {
   };
 
   // Permission check
-  const canManageRoles = session?.role === 'SUPER_ADMIN' || session?.role === 'TENANT_ADMIN';
+  const canManageRoles = session?.isSuperAdmin || session?.isTenantAdmin;
 
   if (!canManageRoles) {
     return (

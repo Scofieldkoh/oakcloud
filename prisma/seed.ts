@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, EntityType, CompanyStatus } from '@prisma/client';
+import { PrismaClient, EntityType, CompanyStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -63,7 +63,6 @@ async function main() {
       passwordHash,
       firstName: 'Super',
       lastName: 'Admin',
-      role: UserRole.SUPER_ADMIN,
       isActive: true,
     },
   });
@@ -82,7 +81,6 @@ async function main() {
       passwordHash,
       firstName: 'Tenant',
       lastName: 'Admin',
-      role: UserRole.TENANT_ADMIN,
       tenantId: defaultTenant.id,
       isActive: true,
     },

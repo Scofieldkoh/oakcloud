@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole, canAccessCompany } from '@/lib/auth';
+import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { getCompanyAuditHistory } from '@/lib/audit';
 import type { AuditAction } from '@prisma/client';
 
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole(['SUPER_ADMIN', 'COMPANY_ADMIN']);
+    const session = await requireAuth();
     const { id } = await params;
 
     if (!canAccessCompany(session, id)) {

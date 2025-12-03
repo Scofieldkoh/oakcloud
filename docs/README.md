@@ -34,10 +34,11 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 6. ✅ **User Management** - User accounts, invitations, multi-company assignments
 7. ✅ **Password Management** - Secure reset flow, force change on first login
 8. ✅ **Data Purge** - Permanent deletion of soft-deleted records (SUPER_ADMIN)
-9. 🔜 **Module Marketplace** - Browse and install modules
-10. 🔜 **Connectors Hub** - External service integrations
-11. 🔜 **Module Linking** - Configure module relationships
-12. 🔜 **SuperAdmin Dashboard** - System administration
+9. ✅ **Email Notifications** - SMTP-based transactional emails (invitations, password reset)
+10. 🔜 **Module Marketplace** - Browse and install modules
+11. 🔜 **Connectors Hub** - External service integrations
+12. 🔜 **Module Linking** - Configure module relationships
+13. 🔜 **SuperAdmin Dashboard** - System administration
 
 ---
 
@@ -66,6 +67,7 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 | Prisma | 6.x | ORM & database toolkit |
 | Next.js API Routes | 15.x | Backend API |
 | JWT (jose) | 6.x | Authentication |
+| Nodemailer | 6.x | Email sending (SMTP) |
 | OpenAI | 4.x | AI document extraction (lazy loaded) |
 | pdf-parse | 1.x | PDF text extraction (lazy loaded) |
 
@@ -275,10 +277,11 @@ Role-based access control for fine-grained permissions.
 | Field | Type | Description |
 |-------|------|-------------|
 | id | UUID | Primary key |
-| tenantId | UUID | Owning tenant |
+| tenantId | UUID | Owning tenant (nullable for global roles) |
 | name | String | Role name (unique per tenant) |
 | description | String | Role description |
 | isSystem | Boolean | System role (cannot be deleted) |
+| systemRoleType | String | System role identifier: SUPER_ADMIN, TENANT_ADMIN, or null |
 
 #### Permission
 Permission definitions for RBAC.
@@ -344,12 +347,15 @@ Oakcloud supports full multi-tenancy with tenant-level data isolation, RBAC, and
 
 ### User Roles
 
-| Role | Scope | Permissions |
-|------|-------|-------------|
-| SUPER_ADMIN | System-wide | Full access to all tenants and system settings |
-| TENANT_ADMIN | Tenant | Manage tenant settings, users, roles, and all companies |
-| COMPANY_ADMIN | Company | Manage assigned company and its data |
-| COMPANY_USER | Company | View-only access to assigned company |
+Roles are managed via `UserRoleAssignment` records. System roles have a `systemRoleType` field:
+
+| System Role Type | Scope | Permissions |
+|------------------|-------|-------------|
+| `SUPER_ADMIN` | System-wide | Full access to all tenants and system settings |
+| `TENANT_ADMIN` | Tenant | Manage tenant settings, users, roles, and all companies |
+| Custom roles | Company | Configured via role permissions (Company Admin, Company User, etc.) |
+
+Session includes computed flags `isSuperAdmin` and `isTenantAdmin` derived from role assignments.
 
 ### Tenant Limits
 
@@ -617,8 +623,7 @@ All audit log entries include automatically generated summaries:
 "Created company 'Acme Pte Ltd'"
 "Updated company 'Acme Pte Ltd'"
 "Deleted tenant 'Demo Corp' (cascade: 5 users, 3 companies)"
-"Invited user 'John Doe' as COMPANY_ADMIN"
-"Changed role for 'Jane Smith': COMPANY_USER → COMPANY_ADMIN"
+"Invited user 'John Doe' with role Company Admin"
 "User 'admin@example.com' logged in"
 ```
 
@@ -630,11 +635,8 @@ await logUserMembership(context, 'USER_INVITED', userId, {
   email: 'user@example.com',
   firstName: 'John',
   lastName: 'Doe',
-  role: 'COMPANY_ADMIN'
+  roleAssignments: [{ roleName: 'Company Admin', companyName: 'Acme Pte Ltd' }]
 });
-
-// Role changes
-await logRoleChange(context, userId, 'John Doe', 'COMPANY_USER', 'COMPANY_ADMIN');
 
 // Tenant operations (with cascade info)
 await logTenantOperation('TENANT_DELETED', tenantId, 'Acme Corp', userId, undefined, 'Account closure');
@@ -754,8 +756,9 @@ Response:
     "email": "admin@oakcloud.local",
     "firstName": "Super",
     "lastName": "Admin",
-    "role": "SUPER_ADMIN",
-    "tenantId": "uuid"
+    "isSuperAdmin": true,
+    "isTenantAdmin": false,
+    "tenantId": null
   },
   "mustChangePassword": false,
   "message": "Login successful"
@@ -786,7 +789,9 @@ Response:
     "email": "admin@oakcloud.local",
     "firstName": "Super",
     "lastName": "Admin",
-    "role": "SUPER_ADMIN",
+    "isSuperAdmin": true,
+    "isTenantAdmin": false,
+    "tenantId": null,
     "companyId": null
   }
 }
@@ -1022,7 +1027,6 @@ GET /api/tenants/:id/users
 
 Query Parameters:
 - `query` - Search term (name, email)
-- `role` - Filter by role
 - `page` - Page number (default: 1)
 - `limit` - Items per page (default: 20)
 
@@ -1035,18 +1039,10 @@ Content-Type: application/json
   "email": "user@acme.com",
   "firstName": "John",
   "lastName": "Doe",
-  "role": "COMPANY_ADMIN",
-  "companyId": "uuid",  // Optional - primary company
-  "companyAssignments": [  // Optional - for multi-company assignment
+  "roleAssignments": [  // Required - at least one role assignment
     {
-      "companyId": "uuid1",
-      "accessLevel": "MANAGE",
-      "isPrimary": true
-    },
-    {
-      "companyId": "uuid2",
-      "accessLevel": "VIEW",
-      "isPrimary": false
+      "roleId": "role-uuid",
+      "companyId": "uuid1"  // null for tenant-wide assignment
     }
   ]
 }
@@ -1060,11 +1056,22 @@ Response:
     "email": "user@acme.com",
     "firstName": "John",
     "lastName": "Doe",
-    "role": "COMPANY_ADMIN"
+    "roleAssignments": [
+      {
+        "id": "assignment-uuid",
+        "roleId": "role-uuid",
+        "companyId": "uuid1",
+        "role": { "name": "Company Admin", "systemRoleType": null }
+      }
+    ]
   },
   "temporaryPassword": "abc123XYZ"  // Only in development
 }
 ```
+
+**UI Behavior:**
+- **SUPER_ADMIN**: Can check "Make Tenant Admin" checkbox to grant full tenant access (hides role picker)
+- **TENANT_ADMIN**: Must assign at least one role via the role assignments section
 
 > **Note:** Invited users have `mustChangePassword: true` by default and will be prompted to change their password on first login.
 
@@ -1084,16 +1091,15 @@ Content-Type: application/json
   "firstName": "Jane",
   "lastName": "Smith",
   "email": "jane@acme.com",
-  "role": "TENANT_ADMIN",
   "isActive": true,
   "sendPasswordReset": true  // Optional - sends password reset email
 }
 ```
 
 Notes:
-- Cannot demote the last tenant admin
 - Email must be unique across all users
 - `sendPasswordReset` triggers a password reset email
+- Role changes are managed via role assignment APIs, not this endpoint
 
 #### Remove User from Tenant
 ```
@@ -1146,10 +1152,14 @@ Content-Type: application/json
 
 {
   "companyId": "uuid",
-  "accessLevel": "VIEW",  // VIEW, EDIT, or MANAGE
+  "roleId": "role-uuid",  // Optional: Role to assign for this company
   "isPrimary": false
 }
 ```
+
+This creates:
+- A `UserCompanyAssignment` (grants access to company)
+- A `UserRoleAssignment` if roleId provided (grants permissions for that company)
 
 #### Update Company Assignment
 ```
@@ -1158,7 +1168,6 @@ Content-Type: application/json
 
 {
   "assignmentId": "uuid",
-  "accessLevel": "EDIT",
   "isPrimary": true
 }
 ```
@@ -1312,7 +1321,6 @@ Response:
         "email": "user@example.com",
         "firstName": "John",
         "lastName": "Doe",
-        "role": "COMPANY_USER",
         "isActive": true
       },
       "company": {
@@ -1906,6 +1914,8 @@ src/
 │   ├── prisma.ts                  # Database client
 │   ├── auth.ts                    # JWT & session management
 │   ├── audit.ts                   # Audit logging with request context
+│   ├── email.ts                   # Email sending service (SMTP)
+│   ├── email-templates.ts         # HTML email templates
 │   ├── tenant.ts                  # Multi-tenancy utilities
 │   ├── rbac.ts                    # Role-based access control
 │   ├── request-context.ts         # Request context extraction
@@ -1917,7 +1927,8 @@ src/
 │       └── audit.ts               # Audit log query schemas
 └── services/
     ├── company.service.ts         # Company business logic (tenant-aware)
-    ├── tenant.service.ts          # Tenant management
+    ├── tenant.service.ts          # Tenant management (with email)
+    ├── password.service.ts        # Password reset & change (with email)
     ├── contact.service.ts         # Contact management
     ├── role.service.ts            # Role management & permissions
     └── bizfile.service.ts         # AI extraction
@@ -1992,6 +2003,103 @@ npm run docker:logs      # View container logs
 | OPENAI_API_KEY | OpenAI API key for extraction | Optional |
 | UPLOAD_DIR | Directory for file uploads | ./uploads |
 | MAX_FILE_SIZE | Max upload size in bytes | 10485760 |
+| SMTP_HOST | SMTP server hostname | Optional |
+| SMTP_PORT | SMTP server port | 587 |
+| SMTP_SECURE | Use TLS/SSL | false |
+| SMTP_USER | SMTP authentication username | Optional |
+| SMTP_PASSWORD | SMTP authentication password | Optional |
+| EMAIL_FROM_ADDRESS | Default sender email | SMTP_USER |
+| EMAIL_FROM_NAME | Default sender name | Oakcloud |
+
+---
+
+## Email Configuration
+
+Oakcloud supports sending transactional emails for password resets, user invitations, and notifications via SMTP.
+
+### Supported Email Types
+
+| Email Type | Trigger | Description |
+|------------|---------|-------------|
+| Password Reset | User requests password reset | Contains secure reset link (24h expiry) |
+| Password Changed | User changes their password | Security confirmation notification |
+| User Invitation | Admin invites user to tenant | Contains temporary password and login link |
+| Tenant Setup Complete | Admin completes tenant setup wizard | Welcome email with credentials |
+| User Removed | Admin removes user from tenant | Notification of access removal |
+
+### SMTP Configuration
+
+Configure SMTP in your `.env` file:
+
+```bash
+# Required for email sending
+SMTP_HOST="smtp.example.com"
+SMTP_PORT="587"
+SMTP_USER="your-smtp-username"
+SMTP_PASSWORD="your-smtp-password"
+EMAIL_FROM_ADDRESS="noreply@your-domain.com"
+EMAIL_FROM_NAME="Oakcloud"
+```
+
+### Provider Examples
+
+**Gmail** (requires App Password if 2FA enabled):
+```bash
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASSWORD="your-app-password"
+```
+
+**Amazon SES**:
+```bash
+SMTP_HOST="email-smtp.us-east-1.amazonaws.com"
+SMTP_PORT="587"
+SMTP_USER="your-ses-smtp-user"
+SMTP_PASSWORD="your-ses-smtp-password"
+```
+
+**SendGrid**:
+```bash
+SMTP_HOST="smtp.sendgrid.net"
+SMTP_PORT="587"
+SMTP_USER="apikey"
+SMTP_PASSWORD="your-sendgrid-api-key"
+```
+
+**Mailgun**:
+```bash
+SMTP_HOST="smtp.mailgun.org"
+SMTP_PORT="587"
+SMTP_USER="postmaster@your-domain.mailgun.org"
+SMTP_PASSWORD="your-mailgun-password"
+```
+
+### Development Mode
+
+If SMTP is not configured in development mode:
+- Email sending is simulated (logged to console)
+- Password reset tokens/URLs are returned in API responses for testing
+- User invitation temporary passwords are returned in API responses
+
+### Email Service Utilities
+
+```typescript
+import { sendEmail, isEmailConfigured, verifyEmailConnection } from '@/lib/email';
+
+// Check if email is configured
+if (isEmailConfigured()) {
+  // Verify SMTP connection
+  const isConnected = await verifyEmailConnection();
+}
+
+// Send custom email
+await sendEmail({
+  to: 'user@example.com',
+  subject: 'Your Subject',
+  html: '<p>Email content</p>',
+});
+```
 
 ---
 
@@ -2041,6 +2149,88 @@ docker ps
 ---
 
 ## Version History
+
+### v0.6.1 (2025-12-03)
+- **Email Notifications System**: Complete transactional email support via SMTP
+  - New email service (`src/lib/email.ts`) with Nodemailer integration
+  - Connection pooling for better performance
+  - Automatic fallback to console logging in development mode
+  - SMTP configuration via environment variables
+- **Email Templates** (`src/lib/email-templates.ts`):
+  - Professional, responsive HTML email templates
+  - Consistent Oakcloud branding across all emails
+  - Support for light/dark email client rendering
+- **Supported Email Types**:
+  - **Password Reset**: Secure reset link with 24-hour expiry
+  - **Password Changed**: Security confirmation notification
+  - **User Invitation**: Temporary password and login instructions
+  - **Tenant Setup Complete**: Admin welcome email with credentials
+  - **User Removed**: Access removal notification
+- **Service Integration**:
+  - `password.service.ts`: Sends password reset and change confirmation emails
+  - `tenant.service.ts`: Sends user invitation, tenant setup, and removal emails
+- **Dependencies Added**: `nodemailer@6.x`, `@types/nodemailer`
+- **Environment Variables**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`
+- **Permission-Based Button Visibility**: UI buttons now hide based on user permissions
+  - New API endpoint: `GET /api/auth/permissions` - Returns user's effective permissions
+  - New hook: `usePermissions()` - Client-side permission checking with convenience helpers
+  - Companies page: "Add Company" and "Upload BizFile" buttons hidden if user lacks permission
+  - Company detail page: "Edit" and "Delete" buttons hidden based on `company:update` and `company:delete` permissions
+  - Company table: Edit/Delete dropdown items conditionally shown
+  - Edit company page: Shows "Access Denied" if user lacks `company:update` permission
+  - New company page: Shows "Access Denied" if user lacks `company:create` permission
+  - `CompanyTable` component accepts `canEdit`, `canDelete`, `canCreate` props for permission-based rendering
+
+### v0.6.0 (2025-12-03)
+- **RBAC Refactoring**: Migrated from hybrid role system to **pure role assignments**
+  - **Removed `User.role` field** - All permissions now exclusively via `UserRoleAssignment`
+  - **Removed `UserRole` enum** - No more SUPER_ADMIN, TENANT_ADMIN, COMPANY_ADMIN, COMPANY_USER enum values
+  - Roles identified by `systemRoleType` field: `SUPER_ADMIN`, `TENANT_ADMIN`, or `null` for custom roles
+  - Session computes `isSuperAdmin` and `isTenantAdmin` flags from role assignments (authoritative source)
+  - All permission checks use computed session flags
+- **Schema Changes**:
+  - Removed `role` field from User model
+  - Removed `UserRole` enum
+  - Added `systemRoleType` field to Role model (indexed for performance)
+  - Made `tenantId` nullable on Role model for global roles (SUPER_ADMIN)
+  - Made `roleAssignments` required when inviting users (at least one assignment required)
+- **Auth Layer Updates** (`src/lib/auth.ts`):
+  - `SessionUser` interface: only `isSuperAdmin` and `isTenantAdmin` flags (no `role`)
+  - `getSession()` fetches role assignments and computes flags from `systemRoleType`
+  - Removed `requireRole()` function - use `requireAuth()` + flag checks instead
+- **RBAC Layer Updates** (`src/lib/rbac.ts`):
+  - `hasPermission()` checks `systemRoleType` from role assignments
+  - `requirePermission()` and `requireAnyPermission()` use `session.isSuperAdmin/isTenantAdmin`
+  - `getUserPermissions()` respects role assignment hierarchy
+- **Bug Fixes**:
+  - Fixed SUPER_ADMIN "User not found in tenant" error when assigning company to user
+  - Fixed TENANT_ADMIN unable to see users/roles by using computed session flags
+- **Service Layer Updates**:
+  - `tenant.service.ts`: Removed `updateUserRole()`, user creation no longer sets `role`
+  - `user-company.service.ts`: Fixed tenant context bug for SUPER_ADMIN operations
+  - `role.service.ts`: Updated to allow nullable tenantId for global roles
+- **API Updates**:
+  - `/api/auth/me`: Returns `isSuperAdmin` and `isTenantAdmin` (no `role`)
+  - `/api/tenants/:id/users`: Returns `roleAssignments` and `companyAssignments` (no `role`)
+  - All user responses no longer include deprecated `role` field
+- **UI Updates**:
+  - Combined "Role" and "Companies" columns into single "Roles & Companies" column in users table
+  - Renamed "Manage Companies" modal to "Manage Roles & Companies"
+  - Add company now requires role selection - creates both company access and role assignment
+  - Added ability to remove role assignments from the "Manage Roles & Companies" modal
+  - Simplified invite user modal - removed redundant "Company Access" section
+  - Added "Make Tenant Admin" checkbox for SUPER_ADMIN (hides role picker when checked)
+  - System roles (TENANT_ADMIN, SUPER_ADMIN) filtered out from role dropdowns
+  - Updated `Role` interface with `systemRoleType` field
+  - Removed deprecated `role` field from `TenantUser` and `RoleUser` interfaces
+- **Bug Fixes**:
+  - Fixed: Company Admin assigned to company couldn't see that company after login
+  - Role assignments with company scope now automatically create UserCompanyAssignment
+  - Fixed: SUPER_ADMIN "Company not found in tenant" error when adding company access (now passes tenantId)
+  - Fixed: 403 Forbidden for Company Admin on Companies page - permission check now considers all role assignments (not just tenant-wide)
+  - Fixed: "User already assigned to this company" error when re-adding role - now allows adding new roles to existing company assignments
+- **New Hooks**:
+  - `useRemoveUserRoleAssignment(tenantId)` - Remove role assignment from user management context
 
 ### v0.5.9 (2025-12-02)
 - **Company-Specific Role Assignments**: Granular permission control per company

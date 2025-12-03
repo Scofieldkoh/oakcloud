@@ -17,10 +17,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email with tenant info
+    // Find user by email with tenant info and role assignments
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
-      include: { tenant: true },
+      include: {
+        tenant: true,
+        roleAssignments: {
+          select: {
+            role: {
+              select: {
+                systemRoleType: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user || !user.isActive || user.deletedAt) {
@@ -34,6 +45,14 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Compute role flags from role assignments (authoritative source)
+    const isSuperAdmin = user.roleAssignments.some(
+      (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+    );
+    const isTenantAdmin = user.roleAssignments.some(
+      (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+    );
 
     // Check tenant status (skip for SUPER_ADMIN who may not have a tenant)
     if (user.tenant) {
@@ -102,7 +121,8 @@ export async function POST(request: NextRequest) {
     await logAuthEvent('LOGIN', user.id, {
       email: user.email,
       userName: `${user.firstName} ${user.lastName}`,
-      role: user.role,
+      isSuperAdmin,
+      isTenantAdmin,
       tenantId: user.tenantId,
       tenantName: user.tenant?.name,
     });
@@ -111,7 +131,6 @@ export async function POST(request: NextRequest) {
     const token = await createToken({
       userId: user.id,
       email: user.email,
-      role: user.role,
       tenantId: user.tenantId,
       companyId: user.companyId,
     });
@@ -132,8 +151,9 @@ export async function POST(request: NextRequest) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role,
         tenantId: user.tenantId,
+        isSuperAdmin,
+        isTenantAdmin,
       },
       mustChangePassword: user.mustChangePassword,
       message: 'Login successful',

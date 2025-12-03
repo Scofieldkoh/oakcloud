@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
-import { requireRole } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 import { getCompanyStats } from '@/services/company.service';
 
 export async function GET() {
   try {
     // Allow both SUPER_ADMIN (global stats) and TENANT_ADMIN (tenant-scoped stats)
-    const session = await requireRole(['SUPER_ADMIN', 'TENANT_ADMIN']);
+    const session = await requireAuth();
+    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Pass tenantId for non-SUPER_ADMIN users to get tenant-scoped stats
-    const tenantId = session.role === 'SUPER_ADMIN' ? undefined : session.tenantId || undefined;
+    const tenantId = session.isSuperAdmin ? undefined : session.tenantId || undefined;
     const stats = await getCompanyStats(tenantId);
 
     return NextResponse.json(stats);
