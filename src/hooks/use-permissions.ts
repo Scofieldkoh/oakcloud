@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 interface PermissionsResponse {
   permissions: string[];
@@ -132,5 +133,92 @@ export function usePermissions(companyId?: string) {
     hasAnyPermission,
     hasAllPermissions,
     can,
+  };
+}
+
+/**
+ * Hook to get permissions for multiple companies at once
+ * Returns a map of companyId -> permissions check functions
+ *
+ * @param companyIds - Array of company IDs to check permissions for
+ * @returns Object with permission check functions per company
+ */
+export function useCompanyPermissions(companyIds: string[]) {
+  // First get base permissions (for SUPER_ADMIN/TENANT_ADMIN check)
+  const { isSuperAdmin, isTenantAdmin, isLoading: baseLoading } = usePermissions();
+
+  // Fetch permissions for each company
+  const queries = useQueries({
+    queries: companyIds.map((companyId) => ({
+      queryKey: ['permissions', companyId],
+      queryFn: () => fetchPermissions(companyId),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: false,
+      // Skip fetching if user is admin (they have all permissions)
+      enabled: !isSuperAdmin && !isTenantAdmin,
+    })),
+  });
+
+  const isLoading = baseLoading || queries.some((q) => q.isLoading);
+
+  // Build permission map: companyId -> { canEdit, canDelete, ... }
+  const permissionsByCompany = useMemo(() => {
+    const map: Record<string, {
+      canEdit: boolean;
+      canDelete: boolean;
+      canRead: boolean;
+      canExport: boolean;
+    }> = {};
+
+    companyIds.forEach((companyId, index) => {
+      // Admins have all permissions
+      if (isSuperAdmin || isTenantAdmin) {
+        map[companyId] = {
+          canEdit: true,
+          canDelete: true,
+          canRead: true,
+          canExport: true,
+        };
+        return;
+      }
+
+      const queryResult = queries[index];
+      const permissions = queryResult.data?.permissions || [];
+
+      const hasPermission = (resource: string, action: string): boolean => {
+        return permissions.includes(`${resource}:${action}`) || permissions.includes(`${resource}:manage`);
+      };
+
+      map[companyId] = {
+        canEdit: hasPermission('company', 'update'),
+        canDelete: hasPermission('company', 'delete'),
+        canRead: hasPermission('company', 'read'),
+        canExport: hasPermission('company', 'export'),
+      };
+    });
+
+    return map;
+  }, [companyIds, queries, isSuperAdmin, isTenantAdmin]);
+
+  /**
+   * Check if user can perform an action on a specific company
+   */
+  const canEditCompany = (companyId: string): boolean => {
+    if (isSuperAdmin || isTenantAdmin) return true;
+    return permissionsByCompany[companyId]?.canEdit ?? false;
+  };
+
+  const canDeleteCompany = (companyId: string): boolean => {
+    if (isSuperAdmin || isTenantAdmin) return true;
+    return permissionsByCompany[companyId]?.canDelete ?? false;
+  };
+
+  return {
+    isLoading,
+    isSuperAdmin,
+    isTenantAdmin,
+    permissionsByCompany,
+    canEditCompany,
+    canDeleteCompany,
   };
 }

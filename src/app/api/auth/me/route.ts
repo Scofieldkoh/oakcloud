@@ -18,10 +18,10 @@ export async function GET() {
         email: session.email,
         firstName: session.firstName,
         lastName: session.lastName,
-        companyId: session.companyId,
         tenantId: session.tenantId,
         isSuperAdmin: session.isSuperAdmin,
         isTenantAdmin: session.isTenantAdmin,
+        companyIds: session.companyIds,
       },
     });
   } catch (error) {

@@ -492,11 +492,6 @@ export async function inviteUserToTenant(
   const tempPassword = generateTemporaryPassword();
   const passwordHash = await bcrypt.hash(tempPassword, 10);
 
-  // Determine primary company ID
-  const primaryCompanyId = data.companyAssignments?.find((a) => a.isPrimary)?.companyId
-    || data.companyAssignments?.[0]?.companyId
-    || data.companyId;
-
   const user = await prisma.user.create({
     data: {
       email: data.email.toLowerCase(),
@@ -504,7 +499,6 @@ export async function inviteUserToTenant(
       lastName: data.lastName,
       passwordHash,
       tenantId,
-      companyId: primaryCompanyId,
       isActive: true,
       mustChangePassword: true, // Force password change on first login
     },
@@ -561,8 +555,7 @@ export async function inviteUserToTenant(
 
   await logUserMembership(auditContext, 'USER_INVITED', user.id, {
     email: user.email,
-    companyId: user.companyId,
-    companyAssignments: data.companyAssignments?.length || (data.companyId ? 1 : 0),
+    companyAssignments: data.companyAssignments?.length || 0,
     roleAssignments: data.roleAssignments.length,
   });
 

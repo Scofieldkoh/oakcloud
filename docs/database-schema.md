@@ -39,10 +39,9 @@ Users are linked to tenants via `tenantId`. SUPER_ADMIN users have `tenantId = n
 │  ├────────────┤                                                      │       │
 │  │ id         │◄─────────────────────────────────────┐               │       │
 │  │ email      │                                      │               │       │
-│  │ tenantId   │  Permissions via UserRoleAssignment  │               │       │
-│  │ companyId  │─────────────────────────────────┐    │               │       │
-│  └────────────┘                                 │    │               │       │
-│                                                 │    │               │       │
+│  │ tenantId   │  Company access via UserRoleAssignment               │       │
+│  └────────────┘  (companyId on role assignments)     │               │       │
+│                                                      │               │       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                              CORE ENTITIES                                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -156,7 +155,7 @@ Multi-tenancy support for data isolation.
 
 ### users
 
-User accounts for authentication and authorization. Permissions are managed via `user_role_assignments`.
+User accounts for authentication and authorization. Permissions and company access are managed via `user_role_assignments`.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
@@ -172,18 +171,16 @@ User accounts for authentication and authorization. Permissions are managed via 
 | password_reset_expires | TIMESTAMP | Yes | Token expiration time |
 | password_changed_at | TIMESTAMP | Yes | Last password change time |
 | tenant_id | UUID | Yes | FK to tenants (null for SUPER_ADMIN) |
-| company_id | UUID | Yes | FK to companies (primary company) |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 
-**Note:** User roles are determined by `user_role_assignments`. System roles (SUPER_ADMIN, TENANT_ADMIN) are identified by the role's `system_role_type` field.
+**Note:** User roles and company access are determined by `user_role_assignments`. System roles (SUPER_ADMIN, TENANT_ADMIN) are identified by the role's `system_role_type` field. Company access is derived from role assignments with non-null `company_id`.
 
 **Indexes:**
 - `users_email_key` UNIQUE on email
 - `users_password_reset_token_key` UNIQUE on password_reset_token
 - `users_tenant_id_idx` on tenant_id
-- `users_company_id_idx` on company_id
 
 ---
 
@@ -650,7 +647,9 @@ Role definitions for fine-grained access control.
 
 **System Role Types:**
 - `SUPER_ADMIN` - Global role with `tenant_id = null`, full system access
-- `TENANT_ADMIN` - Tenant-scoped role, full access within tenant
+- `TENANT_ADMIN` - Tenant-scoped role, full access within tenant (Users, Roles, Audit Logs, all Companies)
+- `COMPANY_ADMIN` - Company-scoped role, manage assigned company and its data
+- `COMPANY_USER` - Company-scoped role, view-only access to assigned company
 - `null` - Custom role with configurable permissions
 
 **Indexes:**
@@ -697,7 +696,7 @@ Links roles to permissions.
 
 ### user_role_assignments
 
-Links users to roles with optional company scope.
+Links users to roles with optional company scope. This table is the authoritative source for user permissions and company access.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
@@ -706,6 +705,17 @@ Links users to roles with optional company scope.
 | role_id | UUID | No | FK to roles |
 | company_id | UUID | Yes | Optional company scope (null = tenant-wide) |
 | created_at | TIMESTAMP | No | Record creation time |
+
+**Multi-Company Access:**
+- Users can have multiple role assignments, each scoped to a different company
+- The session's `companyIds` array is computed from all role assignments with non-null `company_id`
+- When checking permissions for a specific company, company-specific roles override tenant-wide roles
+- If no company-specific role exists, the system falls back to tenant-wide roles (company_id = null)
+
+**Permission Resolution Priority:**
+1. Company-specific role assignments (most specific)
+2. Tenant-wide role assignments (company_id = null)
+3. System role types (SUPER_ADMIN, TENANT_ADMIN) bypass individual permissions
 
 **Indexes:**
 - `user_role_assignments_user_id_role_id_company_id_key` UNIQUE on (user_id, role_id, company_id)

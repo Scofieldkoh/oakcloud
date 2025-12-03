@@ -9,7 +9,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createCompanySchema, type CreateCompanyInput } from '@/lib/validations/company';
 import { useCreateCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useSession } from '@/hooks/use-auth';
 import { DateInput } from '@/components/ui/date-input';
+import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
 
 const entityTypes = [
   { value: 'PRIVATE_LIMITED', label: 'Private Limited Company' },
@@ -52,9 +54,15 @@ const months = [
 
 export default function NewCompanyPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const createCompany = useCreateCompany();
   const { can, isLoading: permissionsLoading } = usePermissions();
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // SUPER_ADMIN tenant selection
+  const isSuperAdmin = session?.isSuperAdmin ?? false;
+  const [selectedTenantId, setSelectedTenantId] = useState('');
+  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
 
   const {
     register,
@@ -101,8 +109,19 @@ export default function NewCompanyPage() {
 
   const onSubmit = async (data: CreateCompanyInput) => {
     setSubmitError(null);
+
+    // SUPER_ADMIN must select a tenant
+    if (isSuperAdmin && !activeTenantId) {
+      setSubmitError('Please select a tenant before creating a company');
+      return;
+    }
+
     try {
-      const company = await createCompany.mutateAsync(data);
+      const company = await createCompany.mutateAsync({
+        ...data,
+        // Include tenantId for SUPER_ADMIN
+        ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
+      });
       router.push(`/companies/${company.id}`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create company');
@@ -134,6 +153,15 @@ export default function NewCompanyPage() {
             <p>{submitError}</p>
           </div>
         </div>
+      )}
+
+      {/* Tenant Selector for SUPER_ADMIN */}
+      {isSuperAdmin && (
+        <TenantSelector
+          value={selectedTenantId}
+          onChange={setSelectedTenantId}
+          helpText="As a Super Admin, please select a tenant to create the company under."
+        />
       )}
 
       {/* Form */}

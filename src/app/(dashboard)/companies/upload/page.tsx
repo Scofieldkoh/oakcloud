@@ -14,6 +14,8 @@ import {
   Loader2,
   Building2,
 } from 'lucide-react';
+import { useSession } from '@/hooks/use-auth';
+import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'saving' | 'complete';
 
@@ -48,12 +50,18 @@ interface ExtractedData {
 
 export default function UploadBizFilePage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [file, setFile] = useState<File | null>(null);
   const [step, setStep] = useState<UploadStep>('upload');
   const [error, setError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
+
+  // SUPER_ADMIN tenant selection
+  const isSuperAdmin = session?.isSuperAdmin ?? false;
+  const [selectedTenantId, setSelectedTenantId] = useState('');
+  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -74,6 +82,12 @@ export default function UploadBizFilePage() {
   const handleUploadAndExtract = async () => {
     if (!file) return;
 
+    // SUPER_ADMIN must select a tenant
+    if (isSuperAdmin && !activeTenantId) {
+      setError('Please select a tenant before uploading');
+      return;
+    }
+
     setError(null);
     setStep('extracting');
 
@@ -83,6 +97,10 @@ export default function UploadBizFilePage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('documentType', 'BIZFILE');
+      // Include tenantId for SUPER_ADMIN
+      if (isSuperAdmin && activeTenantId) {
+        formData.append('tenantId', activeTenantId);
+      }
 
       // Upload and get document ID
       const uploadResponse = await fetch('/api/documents/upload', {
@@ -172,6 +190,15 @@ export default function UploadBizFilePage() {
         </p>
       </div>
 
+      {/* Tenant Selector for SUPER_ADMIN */}
+      {isSuperAdmin && (
+        <TenantSelector
+          value={selectedTenantId}
+          onChange={setSelectedTenantId}
+          helpText="As a Super Admin, please select a tenant to upload the BizFile under."
+        />
+      )}
+
       {/* Error */}
       {error && (
         <div className="card p-4 border-status-error bg-status-error/5 mb-6">
@@ -232,7 +259,7 @@ export default function UploadBizFilePage() {
             </Link>
             <button
               onClick={handleUploadAndExtract}
-              disabled={!file}
+              disabled={!file || (isSuperAdmin && !activeTenantId)}
               className="btn-primary btn-sm flex items-center gap-2"
             >
               <FileUp className="w-4 h-4" />

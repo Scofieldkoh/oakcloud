@@ -137,7 +137,6 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       tenantId: user.tenantId,
-      companyId: user.companyId,
     });
 
     // Set cookie

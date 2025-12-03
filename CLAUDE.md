@@ -113,6 +113,8 @@ Note: This doesn't apply to `react-hook-form` with `{ valueAsNumber: true }` whi
 
 - JWT stored in `auth-token` httpOnly cookie (7 days)
 - Session retrieved via `getSession()` from `@/lib/auth`
+- Session includes: `id`, `email`, `firstName`, `lastName`, `tenantId`, `isSuperAdmin`, `isTenantAdmin`, `companyIds`
+- `companyIds` is derived from role assignments (authoritative source for company access)
 - User roles: `SUPER_ADMIN`, `TENANT_ADMIN`, `COMPANY_ADMIN`, `COMPANY_USER`
 - Password requirements: 8+ chars, uppercase, lowercase, number
 - Force password change: New users must change password on first login

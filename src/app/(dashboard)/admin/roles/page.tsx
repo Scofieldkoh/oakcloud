@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useSession } from '@/hooks/use-auth';
 import {
   useTenantRoles,
-  useTenants,
   usePermissions,
   useCreateRole,
   useUpdateRole,
@@ -20,6 +19,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Alert } from '@/components/ui/alert';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
+import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
 import {
   Shield,
   Users,
@@ -33,7 +33,6 @@ import {
   Trash2,
   Copy,
   X,
-  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -356,14 +355,11 @@ export default function RolesPage() {
   const { success, error: showError } = useToast();
 
   // For SUPER_ADMIN, allow selecting a tenant
-  const isSuperAdmin = session?.isSuperAdmin;
-  const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(undefined);
+  const isSuperAdmin = session?.isSuperAdmin ?? false;
+  const [selectedTenantId, setSelectedTenantId] = useState('');
 
-  // Fetch tenants for SUPER_ADMIN
-  const { data: tenantsData } = useTenants({ limit: 100 });
-
-  // Determine which tenant's roles to show
-  const activeTenantId = isSuperAdmin ? selectedTenantId : session?.tenantId || undefined;
+  // Get active tenant ID using the reusable hook
+  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
 
   // Data fetching - use activeTenantId
   const { data: roles, isLoading, error } = useTenantRoles(activeTenantId);
@@ -524,33 +520,11 @@ export default function RolesPage() {
 
       {/* Tenant Selector for SUPER_ADMIN */}
       {isSuperAdmin && (
-        <div className="mb-6">
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <Building2 className="w-5 h-5 text-oak-light" />
-              <div className="flex-1">
-                <label className="label mb-1">Select Tenant</label>
-                <select
-                  value={selectedTenantId || ''}
-                  onChange={(e) => setSelectedTenantId(e.target.value || undefined)}
-                  className="input input-sm w-full max-w-md"
-                >
-                  <option value="">-- Select a tenant --</option>
-                  {tenantsData?.tenants?.map((tenant: { id: string; name: string }) => (
-                    <option key={tenant.id} value={tenant.id}>
-                      {tenant.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            {!selectedTenantId && (
-              <p className="text-sm text-text-muted mt-2 ml-8">
-                Please select a tenant to view and manage its roles.
-              </p>
-            )}
-          </div>
-        </div>
+        <TenantSelector
+          value={selectedTenantId}
+          onChange={setSelectedTenantId}
+          helpText="Please select a tenant to view and manage its roles."
+        />
       )}
 
       {/* Error State */}

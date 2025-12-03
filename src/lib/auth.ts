@@ -45,7 +45,6 @@ export interface JWTPayload {
   userId: string;
   email: string;
   tenantId?: string | null;
-  companyId?: string | null;
 }
 
 export interface SessionUser {
@@ -54,10 +53,11 @@ export interface SessionUser {
   firstName: string;
   lastName: string;
   tenantId: string | null;
-  companyId: string | null;
   // Computed from role assignments (authoritative source)
   isSuperAdmin: boolean;
   isTenantAdmin: boolean;
+  // All company IDs the user has access to via role assignments
+  companyIds: string[];
 }
 
 export interface SessionWithTenant extends SessionUser {
@@ -141,11 +141,11 @@ export async function getSession(): Promise<SessionUser | null> {
       firstName: true,
       lastName: true,
       tenantId: true,
-      companyId: true,
       isActive: true,
       deletedAt: true,
       roleAssignments: {
         select: {
+          companyId: true,
           role: {
             select: {
               systemRoleType: true,
@@ -166,15 +166,24 @@ export async function getSession(): Promise<SessionUser | null> {
     (a) => a.role.systemRoleType === 'TENANT_ADMIN'
   );
 
+  // Get all unique company IDs from role assignments
+  const companyIds = [
+    ...new Set(
+      user.roleAssignments
+        .map((a) => a.companyId)
+        .filter((id): id is string => id !== null)
+    ),
+  ];
+
   return {
     id: user.id,
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
     tenantId: user.tenantId,
-    companyId: user.companyId,
     isSuperAdmin,
     isTenantAdmin,
+    companyIds,
   };
 }
 
@@ -198,7 +207,6 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
       firstName: true,
       lastName: true,
       tenantId: true,
-      companyId: true,
       isActive: true,
       deletedAt: true,
       tenant: {
@@ -211,6 +219,7 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
       },
       roleAssignments: {
         select: {
+          companyId: true,
           role: {
             select: {
               systemRoleType: true,
@@ -236,16 +245,25 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
     return null;
   }
 
+  // Get all unique company IDs from role assignments
+  const companyIds = [
+    ...new Set(
+      user.roleAssignments
+        .map((a) => a.companyId)
+        .filter((id): id is string => id !== null)
+    ),
+  ];
+
   return {
     id: user.id,
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
     tenantId: user.tenantId,
-    companyId: user.companyId,
     tenant: user.tenant,
     isSuperAdmin,
     isTenantAdmin,
+    companyIds,
   };
 }
 
@@ -331,7 +349,7 @@ export function canAccessTenant(user: SessionUser, tenantId: string): boolean {
  * This function verifies:
  * 1. SUPER_ADMIN can access any company
  * 2. TENANT_ADMIN can only access companies within their tenant
- * 3. Regular users can only access their assigned company
+ * 3. Regular users can only access companies they have role assignments for
  */
 export async function canAccessCompany(user: SessionUser, companyId: string): Promise<boolean> {
   if (user.isSuperAdmin) return true;
@@ -346,11 +364,8 @@ export async function canAccessCompany(user: SessionUser, companyId: string): Pr
     return company?.tenantId === user.tenantId;
   }
 
-  // For company admins/users, check direct assignment
-  if (user.companyId) {
-    return user.companyId === companyId;
-  }
-  return false;
+  // For company admins/users, check if company is in their role assignments
+  return user.companyIds.includes(companyId);
 }
 
 /**
@@ -403,6 +418,7 @@ export async function performLogin(
       },
       roleAssignments: {
         select: {
+          companyId: true,
           role: {
             select: {
               systemRoleType: true,
@@ -449,7 +465,6 @@ export async function performLogin(
     userId: user.id,
     email: user.email,
     tenantId: user.tenantId,
-    companyId: user.companyId,
   });
 
   // Set cookie
@@ -465,15 +480,24 @@ export async function performLogin(
   // Log successful login
   await logAuthEvent('LOGIN', user.id, { tenantId: user.tenantId });
 
+  // Get all unique company IDs from role assignments
+  const companyIds = [
+    ...new Set(
+      user.roleAssignments
+        .map((a) => a.companyId)
+        .filter((id): id is string => id !== null)
+    ),
+  ];
+
   return {
     id: user.id,
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
     tenantId: user.tenantId,
-    companyId: user.companyId,
     isSuperAdmin,
     isTenantAdmin,
+    companyIds,
   };
 }
 

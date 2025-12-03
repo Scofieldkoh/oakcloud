@@ -49,14 +49,6 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         lastLoginAt: true,
         createdAt: true,
         mustChangePassword: true,
-        companyId: true,
-        company: {
-          select: {
-            id: true,
-            name: true,
-            uen: true,
-          },
-        },
         companyAssignments: {
           select: {
             id: true,

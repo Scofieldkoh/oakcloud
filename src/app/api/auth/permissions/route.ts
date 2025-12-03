@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const companyId = searchParams.get('companyId') || undefined;
 
     // Get user's effective permissions
-    const permissions = await getUserPermissions(session.id, companyId || session.companyId || undefined);
+    const permissions = await getUserPermissions(session.id, companyId);
 
     // Also include computed role flags for convenience
     return NextResponse.json({

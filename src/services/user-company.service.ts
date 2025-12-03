@@ -150,12 +150,7 @@ export async function assignUserToCompany(
           },
         });
 
-        // Also update the user's primary companyId
-        await tx.user.update({
-          where: { id: userId },
-          data: { companyId },
-        });
-      }
+        }
       return existing;
     } else {
       // If setting as primary, unset other primary assignments
@@ -163,12 +158,6 @@ export async function assignUserToCompany(
         await tx.userCompanyAssignment.updateMany({
           where: { userId, isPrimary: true },
           data: { isPrimary: false },
-        });
-
-        // Also update the user's primary companyId
-        await tx.user.update({
-          where: { id: userId },
-          data: { companyId },
         });
       }
 
@@ -258,12 +247,6 @@ export async function updateCompanyAssignment(
       where: { userId: assignment.userId, isPrimary: true, id: { not: assignmentId } },
       data: { isPrimary: false },
     });
-
-    // Also update the user's primary companyId
-    await prisma.user.update({
-      where: { id: assignment.userId },
-      data: { companyId: assignment.companyId },
-    });
   }
 
   const updated = await prisma.userCompanyAssignment.update({
@@ -317,7 +300,7 @@ export async function removeCompanyAssignment(
     throw new Error('Assignment not found');
   }
 
-  // If removing primary, set another assignment as primary or clear user's companyId
+  // If removing primary, set another assignment as primary
   if (assignment.isPrimary) {
     const nextPrimary = await prisma.userCompanyAssignment.findFirst({
       where: { userId: assignment.userId, id: { not: assignmentId } },
@@ -328,15 +311,6 @@ export async function removeCompanyAssignment(
       await prisma.userCompanyAssignment.update({
         where: { id: nextPrimary.id },
         data: { isPrimary: true },
-      });
-      await prisma.user.update({
-        where: { id: assignment.userId },
-        data: { companyId: nextPrimary.companyId },
-      });
-    } else {
-      await prisma.user.update({
-        where: { id: assignment.userId },
-        data: { companyId: null },
       });
     }
   }
@@ -383,9 +357,9 @@ export async function checkUserCompanyAccess(
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      companyId: true,
       roleAssignments: {
         select: {
+          companyId: true,
           role: {
             select: { systemRoleType: true },
           },
@@ -394,11 +368,15 @@ export async function checkUserCompanyAccess(
     },
   });
 
+  if (!user) {
+    return false;
+  }
+
   // SUPER_ADMIN and TENANT_ADMIN have access to all companies in their tenant
-  const isSuperAdmin = user?.roleAssignments.some(
+  const isSuperAdmin = user.roleAssignments.some(
     (a) => a.role.systemRoleType === 'SUPER_ADMIN'
   );
-  const isTenantAdmin = user?.roleAssignments.some(
+  const isTenantAdmin = user.roleAssignments.some(
     (a) => a.role.systemRoleType === 'TENANT_ADMIN'
   );
 
@@ -406,12 +384,12 @@ export async function checkUserCompanyAccess(
     return true;
   }
 
-  // Legacy single-company assignment
-  if (user?.companyId === companyId) {
-    return true;
-  }
+  // Check if user has role assignment for this specific company
+  const hasRoleForCompany = user.roleAssignments.some(
+    (a) => a.companyId === companyId
+  );
 
-  return false;
+  return hasRoleForCompany;
 }
 
 // ============================================================================

@@ -59,7 +59,8 @@ export default function EditCompanyPage({
   const router = useRouter();
   const { data: company, isLoading, error } = useCompany(id);
   const updateCompany = useUpdateCompany();
-  const { can, isLoading: permissionsLoading } = usePermissions();
+  // Get permissions for this specific company
+  const { can, isLoading: permissionsLoading } = usePermissions(id);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {

@@ -45,6 +45,7 @@ interface CompanySearchParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  tenantId?: string; // For SUPER_ADMIN to filter by tenant
 }
 
 interface CompanySearchResult {
@@ -98,7 +99,7 @@ async function fetchCompanyStats(): Promise<CompanyStats> {
   return response.json();
 }
 
-async function createCompany(data: CreateCompanyInput): Promise<Company> {
+async function createCompany(data: CreateCompanyInput & { tenantId?: string }): Promise<Company> {
   const response = await fetch('/api/companies', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -163,7 +164,7 @@ export function useCreateCompany() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createCompany,
+    mutationFn: (data: CreateCompanyInput & { tenantId?: string }) => createCompany(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['company-stats'] });

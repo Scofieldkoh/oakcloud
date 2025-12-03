@@ -32,6 +32,8 @@ export async function GET(
     // Limit search query length to prevent performance issues
     const rawQuery = searchParams.get('query') || '';
     const query = rawQuery.slice(0, 100) || undefined;
+    const role = searchParams.get('role') || undefined;
+    const company = searchParams.get('company') || undefined;
 
     const where = {
       tenantId,
@@ -42,6 +44,32 @@ export async function GET(
           { firstName: { contains: query, mode: 'insensitive' as const } },
           { lastName: { contains: query, mode: 'insensitive' as const } },
         ],
+      }),
+      // Filter by role name or systemRoleType
+      // Handles both exact matches and normalized names (e.g., "COMPANY_ADMIN" matches "Company Admin")
+      ...(role && {
+        roleAssignments: {
+          some: {
+            role: {
+              OR: [
+                { name: role },
+                { systemRoleType: role },
+                // Convert "COMPANY_ADMIN" to "Company Admin" for matching
+                { name: role.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ') },
+              ],
+            },
+          },
+        },
+      }),
+      // Filter by company name (partial match)
+      ...(company && {
+        roleAssignments: {
+          some: {
+            company: {
+              name: { contains: company, mode: 'insensitive' as const },
+            },
+          },
+        },
       }),
     };
 
@@ -56,12 +84,6 @@ export async function GET(
           isActive: true,
           lastLoginAt: true,
           createdAt: true,
-          company: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
           roleAssignments: {
             select: {
               id: true,

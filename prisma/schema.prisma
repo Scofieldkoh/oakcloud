@@ -282,10 +282,6 @@ model User {
   tenantId      String?
   tenant        Tenant?   @relation(fields: [tenantId], references: [id])
 
-  // Primary company (optional, for backwards compatibility)
-  companyId     String?
-  company       Company?  @relation(fields: [companyId], references: [id])
-
   // Relations
   auditLogs     AuditLog[]
   uploadedDocuments Document[]
@@ -294,7 +290,6 @@ model User {
 
   @@index([email])
   @@index([tenantId])
-  @@index([companyId])
   @@index([passwordResetToken])
   @@map("users")
 }
@@ -378,7 +373,6 @@ model Company {
   deletedReason         String?
 
   // Relations
-  users                 User[]
   formerNames           CompanyFormerName[]
   addresses             CompanyAddress[]
   officers              CompanyOfficer[]

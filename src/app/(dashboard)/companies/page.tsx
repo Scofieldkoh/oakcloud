@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Building2, AlertCircle, FileUp } from 'lucide-react';
 import { useCompanies, useCompanyStats, useDeleteCompany } from '@/hooks/use-companies';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions, useCompanyPermissions } from '@/hooks/use-permissions';
 import { CompanyTable } from '@/components/companies/company-table';
 import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
 import { Pagination } from '@/components/companies/pagination';
@@ -43,6 +43,13 @@ export default function CompaniesPage() {
   const { data, isLoading, error } = useCompanies(params);
   const { data: stats, error: statsError } = useCompanyStats();
   const deleteCompany = useDeleteCompany();
+
+  // Get company IDs for per-company permission checks
+  const companyIds = useMemo(
+    () => data?.companies?.map((c) => c.id) || [],
+    [data?.companies]
+  );
+  const { canEditCompany, canDeleteCompany } = useCompanyPermissions(companyIds);
 
   // Memoize URL construction to avoid rebuilding on every render
   const targetUrl = useMemo(() => {
@@ -223,10 +230,10 @@ export default function CompaniesPage() {
       <div className="mb-6">
         <CompanyTable
           companies={data?.companies || []}
-          onDelete={can.deleteCompany ? handleDeleteClick : undefined}
+          onDelete={handleDeleteClick}
           isLoading={isLoading}
-          canEdit={can.updateCompany}
-          canDelete={can.deleteCompany}
+          canEdit={canEditCompany}
+          canDelete={canDeleteCompany}
           canCreate={can.createCompany}
         />
       </div>

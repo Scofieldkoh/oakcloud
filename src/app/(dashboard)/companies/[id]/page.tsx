@@ -34,7 +34,8 @@ export default function CompanyDetailPage({
   const { data: company, isLoading, error } = useCompany(id);
   const deleteCompany = useDeleteCompany();
   const { success, error: toastError } = useToast();
-  const { can } = usePermissions();
+  // Get permissions for this specific company
+  const { can } = usePermissions(id);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 

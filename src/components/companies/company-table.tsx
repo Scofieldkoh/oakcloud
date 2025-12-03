@@ -26,8 +26,10 @@ interface CompanyTableProps {
   companies: CompanyWithRelations[];
   onDelete?: (id: string) => void;
   isLoading?: boolean;
-  canEdit?: boolean;
-  canDelete?: boolean;
+  /** Function to check if user can edit a specific company, or boolean for all */
+  canEdit?: boolean | ((companyId: string) => boolean);
+  /** Function to check if user can delete a specific company, or boolean for all */
+  canDelete?: boolean | ((companyId: string) => boolean);
   canCreate?: boolean;
 }
 
@@ -108,6 +110,16 @@ const CompanyActionsDropdown = memo(function CompanyActionsDropdown({ companyId,
 });
 
 export function CompanyTable({ companies, onDelete, isLoading, canEdit = true, canDelete = true, canCreate = true }: CompanyTableProps) {
+  // Helper to check permission - supports both boolean and function
+  const checkCanEdit = (companyId: string): boolean => {
+    if (typeof canEdit === 'function') return canEdit(companyId);
+    return canEdit;
+  };
+
+  const checkCanDelete = (companyId: string): boolean => {
+    if (typeof canDelete === 'function') return canDelete(companyId);
+    return canDelete;
+  };
   if (isLoading) {
     return (
       <div className="table-container">
@@ -211,8 +223,8 @@ export function CompanyTable({ companies, onDelete, isLoading, canEdit = true, c
                 <CompanyActionsDropdown
                   companyId={company.id}
                   onDelete={onDelete}
-                  canEdit={canEdit}
-                  canDelete={canDelete}
+                  canEdit={checkCanEdit(company.id)}
+                  canDelete={checkCanDelete(company.id)}
                 />
               </td>
             </tr>

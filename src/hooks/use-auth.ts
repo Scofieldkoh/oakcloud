@@ -10,9 +10,9 @@ interface User {
   firstName: string;
   lastName: string;
   tenantId?: string | null;
-  companyId?: string | null;
   isSuperAdmin: boolean;
   isTenantAdmin: boolean;
+  companyIds: string[];
 }
 
 interface LoginCredentials {

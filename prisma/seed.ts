@@ -264,6 +264,13 @@ async function main() {
     'audit_log:read',
   ];
 
+  // System role type mapping for proper auth checks
+  const SYSTEM_ROLE_TYPE_MAP: Record<string, string> = {
+    'Tenant Admin': 'TENANT_ADMIN',
+    'Company Admin': 'COMPANY_ADMIN',
+    'Company User': 'COMPANY_USER',
+  };
+
   const systemRoles = [
     {
       name: 'Tenant Admin',
@@ -282,8 +289,13 @@ async function main() {
     },
   ];
 
+  // Track created roles for assignment later
+  const createdRoles: Record<string, string> = {};
+
   for (const roleData of systemRoles) {
-    // Upsert the role
+    const systemRoleType = SYSTEM_ROLE_TYPE_MAP[roleData.name];
+
+    // Upsert the role with systemRoleType
     const role = await prisma.role.upsert({
       where: {
         tenantId_name: {
@@ -293,14 +305,18 @@ async function main() {
       },
       update: {
         description: roleData.description,
+        systemRoleType, // Ensure systemRoleType is set on update too
       },
       create: {
         tenantId: defaultTenant.id,
         name: roleData.name,
         description: roleData.description,
         isSystem: true,
+        systemRoleType,
       },
     });
+
+    createdRoles[roleData.name] = role.id;
 
     // Clear existing role permissions and re-add
     await prisma.rolePermission.deleteMany({
@@ -322,6 +338,72 @@ async function main() {
     }
 
     console.log(`  Created/updated role: ${role.name} (${permissionIds.length} permissions)`);
+  }
+
+  // Create global SUPER_ADMIN role (no tenantId - system-wide)
+  // Using a special ID pattern to avoid conflicts with tenant-scoped unique constraint
+  const superAdminRole = await prisma.role.upsert({
+    where: {
+      id: 'super-admin-global-role', // Fixed ID for the global super admin role
+    },
+    update: {
+      name: 'Super Admin',
+      description: 'System-wide administrator with full access',
+      systemRoleType: 'SUPER_ADMIN',
+    },
+    create: {
+      id: 'super-admin-global-role',
+      tenantId: null, // Global role, not tied to any tenant
+      name: 'Super Admin',
+      description: 'System-wide administrator with full access',
+      isSystem: true,
+      systemRoleType: 'SUPER_ADMIN',
+    },
+  });
+  console.log(`  Created/updated global role: Super Admin`);
+
+  // Assign SUPER_ADMIN role to super admin user
+  // Check if assignment already exists (companyId is null for tenant-wide roles)
+  const existingSuperAdminAssignment = await prisma.userRoleAssignment.findFirst({
+    where: {
+      userId: superAdmin.id,
+      roleId: superAdminRole.id,
+      companyId: null,
+    },
+  });
+
+  if (!existingSuperAdminAssignment) {
+    await prisma.userRoleAssignment.create({
+      data: {
+        userId: superAdmin.id,
+        roleId: superAdminRole.id,
+        companyId: null,
+      },
+    });
+  }
+  console.log(`  Assigned Super Admin role to: ${superAdmin.email}`);
+
+  // Assign TENANT_ADMIN role to tenant admin user
+  const tenantAdminRoleId = createdRoles['Tenant Admin'];
+  if (tenantAdminRoleId) {
+    const existingTenantAdminAssignment = await prisma.userRoleAssignment.findFirst({
+      where: {
+        userId: tenantAdmin.id,
+        roleId: tenantAdminRoleId,
+        companyId: null,
+      },
+    });
+
+    if (!existingTenantAdminAssignment) {
+      await prisma.userRoleAssignment.create({
+        data: {
+          userId: tenantAdmin.id,
+          roleId: tenantAdminRoleId,
+          companyId: null,
+        },
+      });
+    }
+    console.log(`  Assigned Tenant Admin role to: ${tenantAdmin.email}`);
   }
 
   // =========================================================================

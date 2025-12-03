@@ -32,18 +32,16 @@ export async function GET(request: NextRequest) {
       sortOrder: searchParams.get('sortOrder') || undefined,
     });
 
-    // Company-scoped users can only see their own company
+    // Company-scoped users can only see companies they have role assignments for
     if (!session.isSuperAdmin && !session.isTenantAdmin) {
-      if (session.companyId && session.tenantId) {
-        // Return only their assigned company
-        const company = await getCompanyById(session.companyId, session.tenantId);
-        return NextResponse.json({
-          companies: company ? [company] : [],
-          total: company ? 1 : 0,
-          page: 1,
-          limit: params.limit,
-          totalPages: 1,
-        });
+      if (session.companyIds && session.companyIds.length > 0 && session.tenantId) {
+        // Return all companies the user has access to via role assignments
+        const result = await searchCompanies(
+          params,
+          session.tenantId,
+          { companyIds: session.companyIds }
+        );
+        return NextResponse.json(result);
       }
       // No company assigned - return empty
       return NextResponse.json({
@@ -55,11 +53,17 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // For SUPER_ADMIN without tenantId, allow cross-tenant access
+    // For SUPER_ADMIN, allow specifying tenantId via query param
+    // This ensures companies dropdown in user management is scoped to selected tenant
+    const tenantIdParam = searchParams.get('tenantId');
+    const effectiveTenantId = session.isSuperAdmin && tenantIdParam
+      ? tenantIdParam
+      : session.tenantId;
+
     const result = await searchCompanies(
       params,
-      session.tenantId,
-      { skipTenantFilter: session.isSuperAdmin && !session.tenantId }
+      effectiveTenantId,
+      { skipTenantFilter: session.isSuperAdmin && !effectiveTenantId }
     );
 
     return NextResponse.json(result);
@@ -85,14 +89,21 @@ export async function POST(request: NextRequest) {
     await requirePermission(session, 'company', 'create');
 
     const body = await request.json();
-    const data = createCompanySchema.parse(body);
+    const { tenantId: bodyTenantId, ...companyData } = body;
+    const data = createCompanySchema.parse(companyData);
 
-    if (!session.tenantId) {
+    // Determine tenant ID: SUPER_ADMIN can specify tenantId, others use session
+    let tenantId = session.tenantId;
+    if (session.isSuperAdmin && bodyTenantId) {
+      tenantId = bodyTenantId;
+    }
+
+    if (!tenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
 
     // Check if UEN already exists within tenant
-    const existing = await getCompanyByUen(data.uen, session.tenantId, {});
+    const existing = await getCompanyByUen(data.uen, tenantId, {});
     if (existing) {
       return NextResponse.json(
         { error: 'A company with this UEN already exists' },
@@ -100,7 +111,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const company = await createCompany(data, { tenantId: session.tenantId, userId: session.id });
+    const company = await createCompany(data, { tenantId, userId: session.id });
 
     return NextResponse.json(company, { status: 201 });
   } catch (error) {

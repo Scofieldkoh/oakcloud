@@ -19,16 +19,6 @@ export async function POST(request: NextRequest) {
 
     const result = await requestPasswordReset(email);
 
-    // In development, include the reset token/URL for testing
-    if (process.env.NODE_ENV === 'development' && result.resetToken) {
-      return NextResponse.json({
-        success: result.success,
-        message: result.message,
-        resetToken: result.resetToken,
-        resetUrl: result.resetUrl,
-      });
-    }
-
     return NextResponse.json({
       success: result.success,
       message: result.message,

@@ -5,7 +5,6 @@ import { useSession } from '@/hooks/use-auth';
 import {
   useCurrentTenantUsers,
   useTenantUsers,
-  useTenants,
   useInviteUser,
   useUpdateUser,
   useDeleteUser,
@@ -27,6 +26,7 @@ import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Pagination } from '@/components/companies/pagination';
 import { useToast } from '@/components/ui/toast';
+import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
 import {
   Plus,
   Search,
@@ -69,6 +69,7 @@ export default function UsersPage() {
   // State for list/filters
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [companyFilter, setCompanyFilter] = useState('');
   const [page, setPage] = useState(1);
 
   // Modal states
@@ -91,8 +92,8 @@ export default function UsersPage() {
   const [selectedTenantId, setSelectedTenantId] = useState('');
   const isSuperAdmin = session?.isSuperAdmin ?? false;
 
-  // Get active tenant ID (either from session or selection for SUPER_ADMIN)
-  const activeTenantId = isSuperAdmin ? selectedTenantId : session?.tenantId;
+  // Get active tenant ID using the reusable hook
+  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
 
   // Invite form state
   const [inviteFormData, setInviteFormData] = useState({
@@ -110,15 +111,17 @@ export default function UsersPage() {
     isActive: true,
   });
 
-  // Fetch tenants for SUPER_ADMIN
-  const { data: tenantsData } = useTenants(
-    isSuperAdmin ? { status: 'ACTIVE', limit: 100 } : undefined
-  );
-
-  // Fetch roles for tenant
+  // Fetch roles for tenant - use activeTenantId to ensure proper tenant scoping
+  // For SUPER_ADMIN: only fetch roles when a tenant is selected
+  // For others: use their session tenant
   const { data: currentTenantRolesData } = useCurrentTenantRoles();
-  const { data: selectedTenantRolesData } = useTenantRoles(isSuperAdmin ? selectedTenantId : undefined);
-  const rolesData = isSuperAdmin ? selectedTenantRolesData : currentTenantRolesData;
+  const { data: selectedTenantRolesData } = useTenantRoles(
+    isSuperAdmin && selectedTenantId ? selectedTenantId : undefined
+  );
+  // SUPER_ADMIN must have a tenant selected to see roles; others use their tenant's roles
+  const rolesData = isSuperAdmin
+    ? (selectedTenantId ? selectedTenantRolesData : undefined)
+    : currentTenantRolesData;
 
   // Use tenant-specific users query for SUPER_ADMIN, otherwise current tenant users
   const {
@@ -130,6 +133,7 @@ export default function UsersPage() {
     {
       query: search || undefined,
       role: roleFilter || undefined,
+      company: companyFilter || undefined,
       page,
       limit: 20,
     }
@@ -142,6 +146,7 @@ export default function UsersPage() {
   } = useCurrentTenantUsers({
     query: search || undefined,
     role: roleFilter || undefined,
+    company: companyFilter || undefined,
     page,
     limit: 20,
   });
@@ -156,7 +161,11 @@ export default function UsersPage() {
     ? data?.users.find((u: TenantUser) => u.id === managingUserId) || null
     : null;
 
-  const { data: companiesData } = useCompanies({ limit: 100 });
+  // Fetch companies scoped to selected tenant for SUPER_ADMIN
+  const { data: companiesData } = useCompanies({
+    limit: 100,
+    tenantId: isSuperAdmin ? selectedTenantId || undefined : undefined,
+  });
   const inviteUser = useInviteUser(activeTenantId || undefined);
   const updateUser = useUpdateUser(activeTenantId || undefined, editingUser?.id);
   const deleteUser = useDeleteUser(activeTenantId || undefined);
@@ -392,29 +401,16 @@ export default function UsersPage() {
 
       {/* Tenant Selector for SUPER_ADMIN */}
       {isSuperAdmin && (
-        <div className="mb-6">
-          <label className="label mb-2">Select Tenant</label>
-          <select
-            value={selectedTenantId}
-            onChange={(e) => {
-              setSelectedTenantId(e.target.value);
-              setPage(1);
-            }}
-            className="input input-sm w-full sm:w-80"
-          >
-            <option value="">Select a tenant to manage users...</option>
-            {tenantsData?.tenants?.map((tenant) => (
-              <option key={tenant.id} value={tenant.id}>
-                {tenant.name} ({tenant.slug})
-              </option>
-            ))}
-          </select>
-          {!selectedTenantId && (
-            <p className="text-xs text-text-muted mt-1">
-              As a Super Admin, you must select a tenant to view and manage its users.
-            </p>
-          )}
-        </div>
+        <TenantSelector
+          value={selectedTenantId}
+          onChange={(value) => {
+            setSelectedTenantId(value);
+            setPage(1);
+          }}
+          placeholder="Select a tenant to manage users..."
+          helpText="As a Super Admin, you must select a tenant to view and manage its users."
+          variant="compact"
+        />
       )}
 
       {/* Filters */}
@@ -448,6 +444,19 @@ export default function UsersPage() {
             </option>
           ))}
         </select>
+        <div className="w-full sm:w-48">
+          <FormInput
+            placeholder="Filter by company..."
+            value={companyFilter}
+            onChange={(e) => {
+              setCompanyFilter(e.target.value);
+              setPage(1);
+            }}
+            leftIcon={<Building2 className="w-4 h-4" />}
+            inputSize="sm"
+            disabled={isSuperAdmin && !selectedTenantId}
+          />
+        </div>
       </div>
 
       {/* Error State */}
@@ -774,7 +783,11 @@ export default function UsersPage() {
                     >
                       <option value="">Select a role...</option>
                       {(rolesData as Role[] | undefined)
-                        ?.filter((role) => !role.systemRoleType) // Exclude system roles (TENANT_ADMIN, SUPER_ADMIN)
+                        ?.filter((role) =>
+                          // Exclude TENANT_ADMIN and SUPER_ADMIN (assigned separately)
+                          // Keep COMPANY_ADMIN, COMPANY_USER, and custom roles
+                          role.systemRoleType !== 'TENANT_ADMIN' && role.systemRoleType !== 'SUPER_ADMIN'
+                        )
                         .map((role) => (
                         <option key={role.id} value={role.id}>
                           {role.name} {role.isSystem ? '' : '(Custom)'}
@@ -1046,7 +1059,11 @@ export default function UsersPage() {
                   >
                     <option value="">Select role...</option>
                     {(rolesData as Role[] | undefined)
-                      ?.filter((role) => !role.systemRoleType) // Exclude system roles
+                      ?.filter((role) =>
+                        // Exclude TENANT_ADMIN and SUPER_ADMIN (not company-scoped)
+                        // Keep COMPANY_ADMIN, COMPANY_USER, and custom roles
+                        role.systemRoleType !== 'TENANT_ADMIN' && role.systemRoleType !== 'SUPER_ADMIN'
+                      )
                       .map((role) => (
                         <option key={role.id} value={role.id}>
                           {role.name}

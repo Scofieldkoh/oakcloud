@@ -627,13 +627,14 @@ export async function createSystemRolesForTenant(tenantId: string): Promise<void
 
     if (existing) continue;
 
-    // Create role
+    // Create role with systemRoleType for proper auth checks
     const role = await prisma.role.create({
       data: {
         tenantId,
         name: roleConfig.name,
         description: roleConfig.description,
         isSystem: true,
+        systemRoleType: roleKey, // e.g., 'TENANT_ADMIN', 'COMPANY_ADMIN', 'COMPANY_USER'
       },
     });
 

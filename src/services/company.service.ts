@@ -451,6 +451,11 @@ export interface SearchCompaniesOptions {
    * cross-tenant access. Regular operations MUST always provide tenantId.
    */
   skipTenantFilter?: boolean;
+  /**
+   * Filter to specific company IDs - used for company-scoped users who have
+   * access to multiple companies via role assignments.
+   */
+  companyIds?: string[];
 }
 
 export async function searchCompanies(
@@ -464,7 +469,7 @@ export async function searchCompanies(
   limit: number;
   totalPages: number;
 }> {
-  const { skipTenantFilter = false } = options;
+  const { skipTenantFilter = false, companyIds } = options;
 
   // Require tenantId unless explicitly skipping for SUPER_ADMIN
   if (!tenantId && !skipTenantFilter) {
@@ -478,6 +483,11 @@ export async function searchCompanies(
   // Tenant scope
   if (tenantId && !skipTenantFilter) {
     where.tenantId = tenantId;
+  }
+
+  // Company IDs filter (for users with specific company role assignments)
+  if (companyIds && companyIds.length > 0) {
+    where.id = { in: companyIds };
   }
 
   // Text search across multiple fields

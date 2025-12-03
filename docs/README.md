@@ -441,10 +441,19 @@ When John accesses Company C (no specific assignment):
 1. System checks: Any role for Company C? → No
 2. Falls back to "All Companies" role → Data Viewer
 
-### Special Roles
+### Special Roles (systemRoleType)
 
-- **SUPER_ADMIN**: Full access to everything (system-wide)
-- **TENANT_ADMIN**: Full access to all companies within their tenant (no company assignment needed)
+System roles are identified by the `systemRoleType` field in the Role model:
+
+| systemRoleType | Scope | UI Access | Description |
+|----------------|-------|-----------|-------------|
+| `SUPER_ADMIN` | System-wide | Tenants, Users, Roles, Audit Logs, Data Purge | Global role (tenantId = null), bypasses all permission checks |
+| `TENANT_ADMIN` | Tenant | Users, Roles, Audit Logs | Full access within tenant, auto-access to all companies |
+| `COMPANY_ADMIN` | Company | Companies, Contacts, Documents | Manage assigned company and its data |
+| `COMPANY_USER` | Company | Companies (read-only) | View-only access to assigned company |
+| `null` | Configurable | Based on permissions | Custom role with fine-grained permissions |
+
+**Important**: The `systemRoleType` field is set when creating system roles via `createSystemRolesForTenant()`. Custom roles have `systemRoleType = null`.
 
 ### System Roles
 
@@ -792,7 +801,7 @@ Response:
     "isSuperAdmin": true,
     "isTenantAdmin": false,
     "tenantId": null,
-    "companyId": null
+    "companyIds": []
   }
 }
 ```
@@ -1656,6 +1665,7 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | `ErrorBoundary` | `fallback`, `onError` | React error boundary with fallback UI |
 | `ThemeProvider` | - | Theme context provider, applies theme class to document |
 | `ThemeToggle` | `variant` | Theme switcher (button or dropdown variant) |
+| `TenantSelector` | `value`, `onChange`, `label`, `placeholder`, `helpText`, `variant` | Tenant dropdown for SUPER_ADMIN operations |
 
 #### Button Examples
 ```tsx
@@ -1760,6 +1770,42 @@ function MyComponent() {
       error('Failed to save data');
     }
   };
+}
+```
+
+#### TenantSelector Examples
+```tsx
+import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+
+function AdminPage() {
+  const { data: session } = useSession();
+  const isSuperAdmin = session?.isSuperAdmin ?? false;
+  const [selectedTenantId, setSelectedTenantId] = useState('');
+
+  // Get active tenant (session tenant for normal users, selected for SUPER_ADMIN)
+  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
+
+  return (
+    <>
+      {/* Default variant with card wrapper */}
+      {isSuperAdmin && (
+        <TenantSelector
+          value={selectedTenantId}
+          onChange={setSelectedTenantId}
+          helpText="Select a tenant to manage."
+        />
+      )}
+
+      {/* Compact variant without card wrapper */}
+      {isSuperAdmin && (
+        <TenantSelector
+          value={selectedTenantId}
+          onChange={setSelectedTenantId}
+          variant="compact"
+        />
+      )}
+    </>
+  );
 }
 ```
 
@@ -2195,8 +2241,10 @@ docker ps
   - Made `tenantId` nullable on Role model for global roles (SUPER_ADMIN)
   - Made `roleAssignments` required when inviting users (at least one assignment required)
 - **Auth Layer Updates** (`src/lib/auth.ts`):
-  - `SessionUser` interface: only `isSuperAdmin` and `isTenantAdmin` flags (no `role`)
+  - `SessionUser` interface: `isSuperAdmin`, `isTenantAdmin` flags, and `companyIds` array (no `role`)
   - `getSession()` fetches role assignments and computes flags from `systemRoleType`
+  - `companyIds` computed from all role assignments with non-null `companyId`
+  - `canAccessCompany()` uses `companyIds` array for multi-company access checks
   - Removed `requireRole()` function - use `requireAuth()` + flag checks instead
 - **RBAC Layer Updates** (`src/lib/rbac.ts`):
   - `hasPermission()` checks `systemRoleType` from role assignments
