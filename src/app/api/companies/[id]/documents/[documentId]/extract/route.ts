@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { extractBizFileData, processBizFileExtraction } from '@/services/bizfile.service';
+import type { AIModel } from '@/lib/ai';
 
 // Lazy load pdf-parse to reduce initial bundle size
 async function parsePdf(buffer: Buffer) {
@@ -18,6 +19,15 @@ export async function POST(
   try {
     const session = await requireAuth();
     const { id: companyId, documentId } = await params;
+
+    // Parse request body for optional model selection
+    let modelId: AIModel | undefined;
+    try {
+      const body = await request.json();
+      modelId = body.modelId as AIModel | undefined;
+    } catch {
+      // No body or invalid JSON - use default model
+    }
 
     // Check permission
     await requirePermission(session, 'document', 'update', companyId);
@@ -60,22 +70,33 @@ export async function POST(
         throw new Error('Could not extract text from PDF');
       }
 
-      // Extract data using AI
-      const extractedData = await extractBizFileData(pdfText);
+      // Extract data using AI with optional model selection
+      const extractionResult = await extractBizFileData(pdfText, { modelId });
 
       // Process and save extracted data
+      // Use tenantId from company if available, otherwise from document directly
+      const tenantId = document.company?.tenantId || document.tenantId;
+      if (!tenantId) {
+        throw new Error('Unable to determine tenant for document');
+      }
+
       const result = await processBizFileExtraction(
         documentId,
-        extractedData,
+        extractionResult.data,
         session.id,
-        document.company.tenantId
+        tenantId
       );
 
       return NextResponse.json({
         success: true,
         companyId: result.companyId,
         created: result.created,
-        extractedData,
+        extractedData: extractionResult.data,
+        aiMetadata: {
+          modelUsed: extractionResult.modelUsed,
+          providerUsed: extractionResult.providerUsed,
+          usage: extractionResult.usage,
+        },
       });
     } catch (extractionError) {
       // Update document with error
@@ -114,6 +135,10 @@ export async function GET(
     const session = await requireAuth();
     const { id: companyId, documentId } = await params;
 
+    // Get optional model selection from query params
+    const { searchParams } = new URL(request.url);
+    const modelId = searchParams.get('modelId') as AIModel | null;
+
     // Check permission
     await requirePermission(session, 'document', 'read', companyId);
 
@@ -129,8 +154,8 @@ export async function GET(
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    // If already extracted, return the stored data
-    if (document.extractedData && document.extractionStatus === 'COMPLETED') {
+    // If already extracted and no specific model requested, return the stored data
+    if (document.extractedData && document.extractionStatus === 'COMPLETED' && !modelId) {
       return NextResponse.json({
         extractedData: document.extractedData,
         fromCache: true,
@@ -149,11 +174,18 @@ export async function GET(
       );
     }
 
-    const extractedData = await extractBizFileData(pdfText);
+    const extractionResult = await extractBizFileData(pdfText, {
+      modelId: modelId || undefined,
+    });
 
     return NextResponse.json({
-      extractedData,
+      extractedData: extractionResult.data,
       fromCache: false,
+      aiMetadata: {
+        modelUsed: extractionResult.modelUsed,
+        providerUsed: extractionResult.providerUsed,
+        usage: extractionResult.usage,
+      },
     });
   } catch (error) {
     console.error('BizFile preview error:', error);

@@ -36,7 +36,10 @@
       "Bash(dir:*)",
       "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\prisma\\migrate-user-roles.ts\")",
       "Bash(npx prisma validate:*)",
-      "Bash(npm run db:generate:*)"
+      "Bash(npm run db:generate:*)",
+      "WebSearch",
+      "WebFetch(domain:ai.google.dev)",
+      "WebFetch(domain:platform.openai.com)"
     ],
     "deny": [],
     "ask": []

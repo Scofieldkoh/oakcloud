@@ -13,9 +13,11 @@ import {
   CheckCircle,
   Loader2,
   Building2,
+  Sparkles,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
 import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'saving' | 'complete';
 
@@ -48,6 +50,20 @@ interface ExtractedData {
   };
 }
 
+// AI metadata from extraction
+interface AIMetadata {
+  modelUsed: string;
+  modelName?: string;
+  providerUsed: string;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+  estimatedCost?: number;
+  formattedCost?: string;
+}
+
 export default function UploadBizFilePage() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -57,11 +73,17 @@ export default function UploadBizFilePage() {
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [aiMetadata, setAiMetadata] = useState<AIMetadata | null>(null);
 
   // SUPER_ADMIN tenant selection
   const isSuperAdmin = session?.isSuperAdmin ?? false;
   const [selectedTenantId, setSelectedTenantId] = useState('');
   const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
+
+  // AI model selection and context
+  const [selectedModelId, setSelectedModelId] = useState('');
+  const [aiContext, setAiContext] = useState('');
+  const [selectedStandardContexts, setSelectedStandardContexts] = useState<string[]>([]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -74,6 +96,9 @@ export default function UploadBizFilePage() {
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/webp': ['.webp'],
     },
     maxSize: 10 * 1024 * 1024, // 10MB
     multiple: false,
@@ -116,9 +141,17 @@ export default function UploadBizFilePage() {
       const { documentId: docId } = await uploadResponse.json();
       setDocumentId(docId);
 
-      // Extract data
+      // Build full context from standard contexts and custom text
+      const fullContext = buildFullContext(selectedStandardContexts, aiContext);
+
+      // Extract data with selected AI model and context
       const extractResponse = await fetch(`/api/documents/${docId}/extract`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modelId: selectedModelId || undefined,
+          additionalContext: fullContext || undefined,
+        }),
       });
 
       if (!extractResponse.ok) {
@@ -126,9 +159,10 @@ export default function UploadBizFilePage() {
         throw new Error(err.error || 'Failed to extract data');
       }
 
-      const { extractedData: data, companyId: cId } = await extractResponse.json();
+      const { extractedData: data, companyId: cId, aiMetadata: metadata } = await extractResponse.json();
       setExtractedData(data);
       setCompanyId(cId);
+      setAiMetadata(metadata);
       setStep('preview');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -171,6 +205,9 @@ export default function UploadBizFilePage() {
     setExtractedData(null);
     setDocumentId(null);
     setCompanyId(null);
+    setAiMetadata(null);
+    setAiContext('');
+    setSelectedStandardContexts([]);
   };
 
   return (
@@ -186,7 +223,7 @@ export default function UploadBizFilePage() {
         </Link>
         <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">Upload BizFile</h1>
         <p className="text-sm text-text-secondary mt-1">
-          Upload an ACRA BizFile PDF to automatically extract company information using AI.
+          Upload an ACRA BizFile document (PDF or image) to automatically extract company information using AI vision.
         </p>
       </div>
 
@@ -223,12 +260,12 @@ export default function UploadBizFilePage() {
             <input {...getInputProps()} />
             <FileUp className="w-12 h-12 text-text-muted mx-auto mb-4" />
             <h3 className="text-lg font-medium text-text-primary mb-2">
-              {isDragActive ? 'Drop the file here' : 'Drag & drop your BizFile PDF'}
+              {isDragActive ? 'Drop the file here' : 'Drag & drop your BizFile document'}
             </h3>
             <p className="text-text-secondary mb-4">
               or click to browse your files
             </p>
-            <p className="text-sm text-text-tertiary">PDF files only, max 10MB</p>
+            <p className="text-sm text-text-tertiary">PDF or image files (PNG, JPG), max 10MB</p>
           </div>
 
           {file && (
@@ -252,6 +289,24 @@ export default function UploadBizFilePage() {
               </div>
             </div>
           )}
+
+          {/* AI Model Selector with Context */}
+          <AIModelSelector
+            value={selectedModelId}
+            onChange={setSelectedModelId}
+            label="AI Model for Extraction"
+            helpText="Select the AI model to use for extracting data from the BizFile."
+            jsonModeOnly
+            showContextInput
+            contextValue={aiContext}
+            onContextChange={setAiContext}
+            contextLabel="Additional Context (Optional)"
+            contextPlaceholder="E.g., 'Focus on shareholder details' or 'This is a newly incorporated company'"
+            contextHelpText="Provide hints to help the AI extract data more accurately."
+            showStandardContexts
+            selectedStandardContexts={selectedStandardContexts}
+            onStandardContextsChange={setSelectedStandardContexts}
+          />
 
           <div className="flex items-center justify-end gap-3">
             <Link href="/companies" className="btn-secondary btn-sm">
@@ -286,9 +341,29 @@ export default function UploadBizFilePage() {
       {step === 'preview' && extractedData && (
         <div className="space-y-6">
           <div className="card p-4 bg-status-success/5 border-status-success">
-            <div className="flex items-center gap-3 text-status-success">
-              <CheckCircle className="w-5 h-5" />
-              <p className="font-medium">Successfully extracted data from BizFile</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 text-status-success">
+                <CheckCircle className="w-5 h-5" />
+                <p className="font-medium">Successfully extracted data from BizFile</p>
+              </div>
+              {aiMetadata && (
+                <div className="flex items-center gap-2 text-xs text-text-secondary">
+                  <Sparkles className="w-3 h-3" />
+                  <span>
+                    {aiMetadata.modelName || aiMetadata.modelUsed} ({aiMetadata.providerUsed})
+                    {aiMetadata.usage && (
+                      <span className="ml-1 text-text-muted">
+                        • {aiMetadata.usage.totalTokens.toLocaleString()} tokens
+                      </span>
+                    )}
+                    {aiMetadata.formattedCost && (
+                      <span className="ml-1 text-text-muted">
+                        • Est. {aiMetadata.formattedCost}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

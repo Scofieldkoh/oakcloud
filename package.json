@@ -17,8 +17,10 @@
     "docker:logs": "docker-compose logs -f"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
     "@azure/identity": "^4.13.0",
     "@chakra-ui/react": "^3.4.0",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^4.1.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@prisma/client": "^6.2.1",

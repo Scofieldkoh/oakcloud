@@ -672,8 +672,9 @@ model Document {
   tenantId        String
   tenant          Tenant    @relation(fields: [tenantId], references: [id])
 
-  companyId       String
-  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // Company is optional for pending documents (e.g., BizFile upload before extraction)
+  companyId       String?
+  company         Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   uploadedById    String
   uploadedBy      User      @relation(fields: [uploadedById], references: [id])
 

@@ -1,20 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { findOrCreateContact, linkContactToCompany } from './contact.service';
+import { callAI, getBestAvailableModel, getModelConfig } from '@/lib/ai';
+import type { AIModel, AIImageInput } from '@/lib/ai';
 import type { EntityType, CompanyStatus, OfficerRole, ContactType, IdentificationType } from '@prisma/client';
-
-// Lazy load OpenAI to reduce initial bundle size
-let openaiInstance: import('openai').default | null = null;
-
-async function getOpenAI() {
-  if (!openaiInstance) {
-    const OpenAI = (await import('openai')).default;
-    openaiInstance = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-  }
-  return openaiInstance;
-}
 
 // Type definitions for extracted BizFile data
 export interface ExtractedBizFileData {
@@ -118,7 +107,11 @@ export interface ExtractedBizFileData {
   }>;
 }
 
-const EXTRACTION_PROMPT = `You are a document extraction specialist. Extract all relevant information from this Singapore ACRA BizFile PDF document.
+const EXTRACTION_SYSTEM_PROMPT = `You are a document extraction specialist with expertise in analyzing Singapore ACRA BizFile documents. You have excellent vision capabilities and can accurately read and extract information from document images.
+
+Your task is to carefully analyze the provided document image and extract all relevant information with high accuracy and confidence.`;
+
+const EXTRACTION_PROMPT = `Extract all relevant information from this Singapore ACRA BizFile document image.
 
 Return a JSON object with the following structure (include only fields that have data):
 
@@ -225,38 +218,93 @@ Important:
 - Extract any charges/encumbrances registered against the company
 - For charges with text amounts like "All Monies", use amountSecuredText field
 - Extract status_date as the date when the company status became effective
+- Read text carefully from the document image, even if it appears small or faded
+- If text is unclear, make reasonable inferences based on document context
 
 Respond ONLY with valid JSON, no markdown or explanation.`;
 
-export async function extractBizFileData(
-  pdfText: string
-): Promise<ExtractedBizFileData> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OpenAI API key not configured');
+/**
+ * Options for BizFile extraction
+ */
+export interface BizFileExtractionOptions {
+  /** AI model to use for extraction (optional, uses best available if not specified) */
+  modelId?: AIModel;
+  /** Additional context to provide to the AI for better extraction */
+  additionalContext?: string;
+}
+
+/**
+ * Input for vision-based BizFile extraction
+ */
+export interface BizFileVisionInput {
+  /** Base64-encoded file data */
+  base64: string;
+  /** MIME type of the file (e.g., 'application/pdf', 'image/png', 'image/jpeg') */
+  mimeType: string;
+}
+
+/**
+ * Result of BizFile extraction including metadata
+ */
+export interface BizFileExtractionResult {
+  data: ExtractedBizFileData;
+  modelUsed: AIModel;
+  providerUsed: string;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+}
+
+/**
+ * Build the user prompt with optional additional context
+ */
+function buildUserPrompt(additionalContext?: string): string {
+  let prompt = EXTRACTION_PROMPT;
+  if (additionalContext?.trim()) {
+    prompt += `\n\nAdditional context from user:\n${additionalContext.trim()}`;
+  }
+  return prompt;
+}
+
+/**
+ * Clean AI response content by removing markdown code blocks
+ * Some models (especially Claude) wrap JSON in ```json ... ``` blocks
+ */
+function cleanJsonResponse(content: string): string {
+  let cleaned = content.trim();
+
+  // Remove markdown code blocks (```json ... ``` or ``` ... ```)
+  const codeBlockMatch = cleaned.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+  if (codeBlockMatch) {
+    cleaned = codeBlockMatch[1].trim();
   }
 
-  const openai = await getOpenAI();
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4-turbo-preview',
-    messages: [
-      { role: 'system', content: EXTRACTION_PROMPT },
-      { role: 'user', content: `Extract data from this BizFile document:\n\n${pdfText}` },
-    ],
-    response_format: { type: 'json_object' },
-    temperature: 0.1,
-  });
-
-  const content = response.choices[0]?.message?.content;
-  if (!content) {
-    throw new Error('No response from AI extraction');
+  // Also handle case where there's text before/after the JSON
+  // Try to extract JSON object from the content
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[0];
   }
 
-  // Parse AI response with error handling
+  return cleaned;
+}
+
+/**
+ * Parse and validate AI response
+ */
+function parseExtractionResponse(content: string): ExtractedBizFileData {
   let parsed: ExtractedBizFileData;
+
+  // Clean the response (remove markdown code blocks, etc.)
+  const cleanedContent = cleanJsonResponse(content);
+
   try {
-    parsed = JSON.parse(content) as ExtractedBizFileData;
-  } catch (parseError) {
+    parsed = JSON.parse(cleanedContent) as ExtractedBizFileData;
+  } catch {
     console.error('[BizFile] Failed to parse AI response:', content.substring(0, 500));
+    console.error('[BizFile] Cleaned content:', cleanedContent.substring(0, 500));
     throw new Error('Failed to parse AI extraction response. The AI returned invalid JSON.');
   }
 
@@ -266,6 +314,118 @@ export async function extractBizFileData(
   }
 
   return parsed;
+}
+
+/**
+ * Extract data from BizFile using AI vision (recommended for higher accuracy)
+ *
+ * This function sends the document directly to the AI model as an image,
+ * allowing the model to visually analyze the document for better extraction accuracy.
+ * Supports PDF, PNG, JPG, and other image formats.
+ *
+ * @param fileInput - The base64-encoded file with MIME type
+ * @param options - Optional extraction options including model selection and additional context
+ * @returns Extracted data with model metadata
+ */
+export async function extractBizFileWithVision(
+  fileInput: BizFileVisionInput,
+  options?: BizFileExtractionOptions
+): Promise<BizFileExtractionResult> {
+  // Determine which model to use
+  const modelId = options?.modelId || getBestAvailableModel();
+
+  if (!modelId) {
+    throw new Error(
+      'No AI provider configured. Please set at least one API key: ' +
+        'OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY'
+    );
+  }
+
+  const modelConfig = getModelConfig(modelId);
+
+  console.log(`[BizFile] Using AI vision model: ${modelConfig.name} (${modelConfig.provider})`);
+  console.log(`[BizFile] File type: ${fileInput.mimeType}, size: ${Math.round(fileInput.base64.length * 0.75 / 1024)}KB`);
+
+  // Prepare the image input for the AI
+  const images: AIImageInput[] = [
+    {
+      base64: fileInput.base64,
+      mimeType: fileInput.mimeType,
+    },
+  ];
+
+  // Build user prompt with optional context
+  const userPrompt = buildUserPrompt(options?.additionalContext);
+
+  // Call the AI service with vision
+  const response = await callAI({
+    model: modelId,
+    systemPrompt: EXTRACTION_SYSTEM_PROMPT,
+    userPrompt,
+    images,
+    jsonMode: true,
+    temperature: 0.1,
+  });
+
+  // Parse and validate the response
+  const parsed = parseExtractionResponse(response.content);
+
+  return {
+    data: parsed,
+    modelUsed: modelId,
+    providerUsed: modelConfig.provider,
+    usage: response.usage,
+  };
+}
+
+/**
+ * Extract data from BizFile PDF text using AI (legacy method)
+ *
+ * @deprecated Use extractBizFileWithVision for better accuracy
+ * @param pdfText - The text content extracted from the BizFile PDF
+ * @param options - Optional extraction options including model selection
+ * @returns Extracted data with model metadata
+ */
+export async function extractBizFileData(
+  pdfText: string,
+  options?: BizFileExtractionOptions
+): Promise<BizFileExtractionResult> {
+  // Determine which model to use
+  const modelId = options?.modelId || getBestAvailableModel();
+
+  if (!modelId) {
+    throw new Error(
+      'No AI provider configured. Please set at least one API key: ' +
+        'OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY'
+    );
+  }
+
+  const modelConfig = getModelConfig(modelId);
+
+  console.log(`[BizFile] Using AI model (text mode): ${modelConfig.name} (${modelConfig.provider})`);
+
+  // Build user prompt with optional context
+  const basePrompt = buildUserPrompt(options?.additionalContext);
+  const userPrompt = `${basePrompt}\n\nDocument text content:\n\n${pdfText}`;
+
+  // Call the AI service
+  const response = await callAI({
+    model: modelId,
+    systemPrompt: EXTRACTION_SYSTEM_PROMPT,
+    userPrompt,
+    jsonMode: true,
+    temperature: 0.1,
+  });
+
+  // Parse and validate the response
+  const parsed = parseExtractionResponse(response.content);
+
+  return {
+    data: parsed,
+    modelUsed: modelId,
+    providerUsed: modelConfig.provider,
+    usage: response.usage,
+  };
 }
 
 function mapEntityType(type: string): EntityType {
