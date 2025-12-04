@@ -90,7 +90,7 @@ export const companySearchSchema = z.object({
   hasCharges: z.boolean().optional(),
   financialYearEndMonth: z.number().min(1).max(12).optional(),
   page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(100).default(20),
+  limit: z.number().min(1).max(200).default(20),
   sortBy: z
     .enum(['name', 'uen', 'incorporationDate', 'status', 'updatedAt', 'createdAt'])
     .default('updatedAt'),

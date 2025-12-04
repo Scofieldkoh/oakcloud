@@ -71,6 +71,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('');
   const [companyFilter, setCompanyFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
   // Modal states
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -135,7 +136,7 @@ export default function UsersPage() {
       role: roleFilter || undefined,
       company: companyFilter || undefined,
       page,
-      limit: 20,
+      limit,
     }
   );
 
@@ -148,7 +149,7 @@ export default function UsersPage() {
     role: roleFilter || undefined,
     company: companyFilter || undefined,
     page,
-    limit: 20,
+    limit,
   });
 
   // Use the appropriate data based on role
@@ -685,7 +686,7 @@ export default function UsersPage() {
           </div>
 
           {/* Pagination */}
-          {data.totalPages > 1 && (
+          {data.totalPages > 0 && (
             <div className="mt-4">
               <Pagination
                 page={data.page}
@@ -693,6 +694,10 @@ export default function UsersPage() {
                 total={data.totalCount}
                 limit={data.limit}
                 onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
               />
             </div>
           )}

@@ -44,7 +44,7 @@ export const auditActionEnum = z.enum([
 export const auditLogQuerySchema = z.object({
   // Pagination
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
 
   // Filters
   action: auditActionEnum.optional(),

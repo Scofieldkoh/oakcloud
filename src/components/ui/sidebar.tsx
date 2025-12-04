@@ -38,7 +38,7 @@ interface NavItem {
 
 const navigation: NavItem[] = [
   { name: 'Companies', href: '/companies', icon: Building2 },
-  { name: 'Contacts', href: '/contacts', icon: Users, badge: 'Soon' },
+  { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Documents', href: '/documents', icon: FileText, badge: 'Soon' },
   { name: 'Settings', href: '/settings', icon: Settings, badge: 'Soon' },
 ];

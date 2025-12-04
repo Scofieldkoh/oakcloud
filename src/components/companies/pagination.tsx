@@ -2,17 +2,34 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
+
 interface PaginationProps {
   page: number;
   totalPages: number;
   total: number;
   limit: number;
   onPageChange: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
+  showPageSize?: boolean;
 }
 
-export function Pagination({ page, totalPages, total, limit, onPageChange }: PaginationProps) {
+export function Pagination({
+  page,
+  totalPages,
+  total,
+  limit,
+  onPageChange,
+  onLimitChange,
+  showPageSize = true,
+}: PaginationProps) {
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
+
+  const handleLimitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLimit = parseInt(e.target.value, 10);
+    onLimitChange?.(newLimit);
+  };
 
   const getPageNumbers = () => {
     const pages: (number | 'ellipsis')[] = [];
@@ -46,7 +63,7 @@ export function Pagination({ page, totalPages, total, limit, onPageChange }: Pag
     return pages;
   };
 
-  if (totalPages <= 1) {
+  if (totalPages <= 1 && !showPageSize) {
     return (
       <div className="text-sm text-text-tertiary">
         Showing {total} {total === 1 ? 'result' : 'results'}
@@ -56,8 +73,29 @@ export function Pagination({ page, totalPages, total, limit, onPageChange }: Pag
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div className="text-sm text-text-tertiary">
-        Showing {start} to {end} of {total} results
+      <div className="flex items-center gap-4">
+        <div className="text-sm text-text-tertiary">
+          Showing {start} to {end} of {total} results
+        </div>
+        {showPageSize && onLimitChange && (
+          <div className="flex items-center gap-2">
+            <label htmlFor="page-size" className="text-sm text-text-tertiary">
+              Per page:
+            </label>
+            <select
+              id="page-size"
+              value={limit}
+              onChange={handleLimitChange}
+              className="input input-xs w-20 text-center"
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-1">

@@ -16,12 +16,28 @@ import {
   Briefcase,
   Landmark,
   Shield,
+  Upload,
+  Building2,
+  CreditCard,
+  StickyNote,
+  Globe,
+  User,
 } from 'lucide-react';
 import { useCompany, useDeleteCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate, formatCurrency, formatPercentage } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
+import { Link as LinkIcon } from 'lucide-react';
+
+// Helper to convert UPPER_CASE or UPPERCASE to Title Case
+function toTitleCase(str: string): string {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export default function CompanyDetailPage({
   params,
@@ -143,6 +159,16 @@ export default function CompanyDetailPage({
           <div className="flex items-center gap-2 sm:gap-3">
             {can.updateCompany && (
               <Link
+                href={`/companies/upload?companyId=${id}`}
+                className="btn-secondary btn-sm flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                <span className="hidden sm:inline">Update via BizFile</span>
+                <span className="sm:hidden">BizFile</span>
+              </Link>
+            )}
+            {can.updateCompany && (
+              <Link
                 href={`/companies/${id}/edit`}
                 className="btn-secondary btn-sm flex items-center gap-2"
               >
@@ -249,18 +275,62 @@ export default function CompanyDetailPage({
             <div className="divide-y divide-border-primary">
               {company.officers && company.officers.length > 0 ? (
                 company.officers.slice(0, 5).map((officer) => (
-                  <div key={officer.id} className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-text-primary font-medium">{officer.name}</p>
-                      <p className="text-sm text-text-tertiary">
-                        {officer.role.replace(/_/g, ' ')}
-                      </p>
+                  <div key={officer.id} className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {officer.contact?.id ? (
+                            <Link
+                              href={`/contacts/${officer.contact.id}`}
+                              className="text-text-primary font-medium hover:text-oak-light transition-colors"
+                            >
+                              {officer.name}
+                            </Link>
+                          ) : (
+                            <span className="text-text-primary font-medium">{officer.name}</span>
+                          )}
+                          <span className="badge badge-info">
+                            {toTitleCase(officer.designation || officer.role)}
+                          </span>
+                          {officer.contact?.id ? (
+                            <Link
+                              href={`/contacts/${officer.contact.id}`}
+                              className="badge badge-success flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
+                            >
+                              <LinkIcon className="w-3 h-3" />
+                              Linked
+                            </Link>
+                          ) : (
+                            <span className="badge badge-neutral">Not Linked</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 ml-2">
+                        {officer.isCurrent ? (
+                          <span className="badge badge-success">Active</span>
+                        ) : (
+                          <span className="badge badge-neutral">Ceased</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      {officer.isCurrent ? (
-                        <span className="badge badge-success">Active</span>
-                      ) : (
-                        <span className="badge badge-neutral">Ceased</span>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {officer.appointmentDate && (
+                        <div className="flex items-center gap-1.5 text-text-secondary">
+                          <Calendar className="w-3.5 h-3.5 text-text-tertiary" />
+                          Appointed {formatDate(officer.appointmentDate)}
+                        </div>
+                      )}
+                      {officer.nationality && (
+                        <div className="flex items-center gap-1.5 text-text-secondary">
+                          <Globe className="w-3.5 h-3.5 text-text-tertiary" />
+                          {officer.nationality}
+                        </div>
+                      )}
+                      {officer.address && (
+                        <div className="col-span-2 flex items-start gap-1.5 text-text-secondary">
+                          <MapPin className="w-3.5 h-3.5 text-text-tertiary shrink-0 mt-0.5" />
+                          <span className="text-xs">{officer.address}</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -287,21 +357,71 @@ export default function CompanyDetailPage({
             <div className="divide-y divide-border-primary">
               {company.shareholders && company.shareholders.length > 0 ? (
                 company.shareholders.map((shareholder) => (
-                  <div key={shareholder.id} className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-text-primary font-medium">{shareholder.name}</p>
-                      <p className="text-sm text-text-tertiary">
-                        {shareholder.numberOfShares.toLocaleString()} shares
-                        {shareholder.percentageHeld && (
-                          <span className="ml-2">
-                            ({formatPercentage(shareholder.percentageHeld)})
-                          </span>
+                  <div key={shareholder.id} className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          {shareholder.contact?.id ? (
+                            <Link
+                              href={`/contacts/${shareholder.contact.id}`}
+                              className="text-text-primary font-medium hover:text-oak-light transition-colors"
+                            >
+                              {shareholder.name}
+                            </Link>
+                          ) : (
+                            <span className="text-text-primary font-medium">{shareholder.name}</span>
+                          )}
+                          {shareholder.shareholderType === 'CORPORATE' && (
+                            <span title="Corporate Shareholder">
+                              <Building2 className="w-3.5 h-3.5 text-text-tertiary" />
+                            </span>
+                          )}
+                          {shareholder.shareholderType === 'INDIVIDUAL' && (
+                            <span title="Individual Shareholder">
+                              <User className="w-3.5 h-3.5 text-text-tertiary" />
+                            </span>
+                          )}
+                          {shareholder.contact?.id ? (
+                            <Link
+                              href={`/contacts/${shareholder.contact.id}`}
+                              className="badge badge-success flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
+                            >
+                              <LinkIcon className="w-3 h-3" />
+                              Linked
+                            </Link>
+                          ) : (
+                            <span className="badge badge-neutral">Not Linked</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-text-secondary">
+                          {shareholder.numberOfShares.toLocaleString()} {toTitleCase(shareholder.shareClass || 'Ordinary')} shares
+                          {shareholder.percentageHeld && (
+                            <span className="ml-2 text-text-tertiary">
+                              ({formatPercentage(shareholder.percentageHeld)})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0 ml-2">
+                        {shareholder.isCurrent && (
+                          <span className="badge badge-success">Active</span>
                         )}
-                      </p>
+                      </div>
                     </div>
-                    {shareholder.isCurrent && (
-                      <span className="badge badge-success">Active</span>
-                    )}
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {(shareholder.nationality || shareholder.placeOfOrigin) && (
+                        <div className="flex items-center gap-1.5 text-text-secondary">
+                          <Globe className="w-3.5 h-3.5 text-text-tertiary" />
+                          {shareholder.nationality || shareholder.placeOfOrigin}
+                        </div>
+                      )}
+                      {shareholder.address && (
+                        <div className="col-span-2 flex items-start gap-1.5 text-text-secondary">
+                          <MapPin className="w-3.5 h-3.5 text-text-tertiary shrink-0 mt-0.5" />
+                          <span className="text-xs">{shareholder.address}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))
               ) : (
@@ -311,6 +431,96 @@ export default function CompanyDetailPage({
               )}
             </div>
           </div>
+
+          {/* Charges */}
+          {(company.charges && company.charges.length > 0) || company.hasCharges ? (
+            <div className="card">
+              <div className="p-4 border-b border-border-primary flex items-center justify-between">
+                <h2 className="font-medium text-text-primary flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-text-tertiary" />
+                  Charges
+                </h2>
+                <span className="text-sm text-text-tertiary">
+                  {company._count?.charges || 0} total
+                </span>
+              </div>
+              <div className="divide-y divide-border-primary">
+                {company.charges && company.charges.length > 0 ? (
+                  company.charges.map((charge) => {
+                    // Determine if chargeType should be hidden (duplicate of amount or amount-related term)
+                    const chargeTypeNormalized = charge.chargeType?.toLowerCase().replace(/\s+/g, '') || '';
+                    const amountTextNormalized = charge.amountSecuredText?.toLowerCase().replace(/\s+/g, '') || '';
+
+                    // Hide chargeType if it matches amountSecuredText or is an amount-related term
+                    const amountRelatedTerms = ['allmonies', 'allmoneys', 'fixedsum', 'fixedamount'];
+                    const isAmountRelatedTerm = amountRelatedTerms.includes(chargeTypeNormalized);
+                    const isDuplicateType = (chargeTypeNormalized && amountTextNormalized &&
+                      chargeTypeNormalized === amountTextNormalized) || isAmountRelatedTerm;
+
+                    // Format amount text with proper casing
+                    const formatAmountText = (text: string) => {
+                      if (text.toUpperCase() === text) {
+                        return toTitleCase(text);
+                      }
+                      return text;
+                    };
+
+                    return (
+                      <div key={charge.id} className="p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-text-primary font-medium">{charge.chargeHolderName}</p>
+                            {charge.chargeType && !isDuplicateType && (
+                              <p className="text-sm text-text-tertiary">{toTitleCase(charge.chargeType)}</p>
+                            )}
+                          </div>
+                          {charge.isFullyDischarged ? (
+                            <span className="badge badge-success">Discharged</span>
+                          ) : (
+                            <span className="badge badge-warning">Active</span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          {charge.chargeNumber && (
+                            <div className="text-text-secondary">
+                              <span className="text-text-tertiary">Charge #:</span> {charge.chargeNumber}
+                            </div>
+                          )}
+                          {(charge.amountSecured || charge.amountSecuredText) && (
+                            <div className="text-text-secondary">
+                              <span className="text-text-tertiary">Amount:</span>{' '}
+                              {charge.amountSecuredText
+                                ? formatAmountText(charge.amountSecuredText)
+                                : formatCurrency(charge.amountSecured, charge.currency || 'SGD')}
+                            </div>
+                          )}
+                          {charge.registrationDate && (
+                            <div className="text-text-secondary">
+                              <span className="text-text-tertiary">Registered:</span> {formatDate(charge.registrationDate)}
+                            </div>
+                          )}
+                          {charge.dischargeDate && (
+                            <div className="text-text-secondary">
+                              <span className="text-text-tertiary">Discharged:</span> {formatDate(charge.dischargeDate)}
+                            </div>
+                          )}
+                          {charge.description && (
+                            <div className="col-span-2 text-text-secondary text-xs mt-1">
+                              {charge.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-4">
+                    <p className="text-text-muted">Charge details not available</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Sidebar */}
@@ -426,6 +636,21 @@ export default function CompanyDetailPage({
               </Link>
             </div>
           </div>
+
+          {/* Internal Notes */}
+          {company.internalNotes && (
+            <div className="card">
+              <div className="p-4 border-b border-border-primary">
+                <h2 className="font-medium text-text-primary flex items-center gap-2">
+                  <StickyNote className="w-4 h-4 text-text-tertiary" />
+                  Internal Notes
+                </h2>
+              </div>
+              <div className="p-4">
+                <p className="text-sm text-text-secondary whitespace-pre-wrap">{company.internalNotes}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

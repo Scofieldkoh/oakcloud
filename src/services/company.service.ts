@@ -26,19 +26,57 @@ export interface CompanyWithRelations extends Company {
     addressType: string;
     fullAddress: string;
     isCurrent: boolean;
+    effectiveFrom?: Date | null;
   }>;
   officers?: Array<{
     id: string;
     name: string;
     role: string;
+    designation?: string | null;
+    nationality?: string | null;
+    address?: string | null;
+    appointmentDate?: Date | null;
+    cessationDate?: Date | null;
     isCurrent: boolean;
+    contactId?: string | null;
+    contact?: {
+      id: string;
+      email?: string | null;
+      phone?: string | null;
+    } | null;
   }>;
   shareholders?: Array<{
     id: string;
     name: string;
+    shareholderType?: string | null;
+    nationality?: string | null;
+    placeOfOrigin?: string | null;
+    address?: string | null;
+    shareClass?: string | null;
     numberOfShares: number;
     percentageHeld: Decimal | null;
+    currency?: string | null;
+    allotmentDate?: Date | null;
     isCurrent: boolean;
+    contactId?: string | null;
+    contact?: {
+      id: string;
+      email?: string | null;
+      phone?: string | null;
+    } | null;
+  }>;
+  charges?: Array<{
+    id: string;
+    chargeNumber?: string | null;
+    chargeType?: string | null;
+    description?: string | null;
+    chargeHolderName: string;
+    amountSecured?: Decimal | null;
+    amountSecuredText?: string | null;
+    currency?: string | null;
+    registrationDate?: Date | null;
+    dischargeDate?: Date | null;
+    isFullyDischarged: boolean;
   }>;
   _count?: {
     documents: number;
@@ -412,6 +450,7 @@ export async function getCompanyById(
           addressType: true,
           fullAddress: true,
           isCurrent: true,
+          effectiveFrom: true,
         },
       },
       officers: {
@@ -420,7 +459,20 @@ export async function getCompanyById(
           id: true,
           name: true,
           role: true,
+          designation: true,
+          nationality: true,
+          address: true,
+          appointmentDate: true,
+          cessationDate: true,
           isCurrent: true,
+          contactId: true,
+          contact: {
+            select: {
+              id: true,
+              email: true,
+              phone: true,
+            },
+          },
         },
         orderBy: { appointmentDate: 'desc' },
       },
@@ -429,11 +481,43 @@ export async function getCompanyById(
         select: {
           id: true,
           name: true,
+          shareholderType: true,
+          nationality: true,
+          placeOfOrigin: true,
+          address: true,
+          shareClass: true,
           numberOfShares: true,
           percentageHeld: true,
+          currency: true,
+          allotmentDate: true,
           isCurrent: true,
+          contactId: true,
+          contact: {
+            select: {
+              id: true,
+              email: true,
+              phone: true,
+            },
+          },
         },
         orderBy: { numberOfShares: 'desc' },
+      },
+      charges: {
+        where: { isFullyDischarged: false },
+        select: {
+          id: true,
+          chargeNumber: true,
+          chargeType: true,
+          description: true,
+          chargeHolderName: true,
+          amountSecured: true,
+          amountSecuredText: true,
+          currency: true,
+          registrationDate: true,
+          dischargeDate: true,
+          isFullyDischarged: true,
+        },
+        orderBy: { registrationDate: 'desc' },
       },
       _count: {
         select: {

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { Company, CompanyStatus, EntityType } from '@prisma/client';
 
 interface CompanyWithRelations extends Company {
@@ -31,6 +32,18 @@ interface CompanyTableProps {
   /** Function to check if user can delete a specific company, or boolean for all */
   canDelete?: boolean | ((companyId: string) => boolean);
   canCreate?: boolean;
+  /** Whether to show selection checkboxes */
+  selectable?: boolean;
+  /** Set of currently selected company IDs */
+  selectedIds?: Set<string>;
+  /** Handler for toggling a single item */
+  onToggleOne?: (id: string) => void;
+  /** Handler for toggling all items */
+  onToggleAll?: () => void;
+  /** Whether all items are selected */
+  isAllSelected?: boolean;
+  /** Whether some but not all items are selected */
+  isIndeterminate?: boolean;
 }
 
 const statusConfig: Record<CompanyStatus, { color: string; label: string }> = {
@@ -109,7 +122,20 @@ const CompanyActionsDropdown = memo(function CompanyActionsDropdown({ companyId,
   );
 });
 
-export function CompanyTable({ companies, onDelete, isLoading, canEdit = true, canDelete = true, canCreate = true }: CompanyTableProps) {
+export function CompanyTable({
+  companies,
+  onDelete,
+  isLoading,
+  canEdit = true,
+  canDelete = true,
+  canCreate = true,
+  selectable = false,
+  selectedIds = new Set(),
+  onToggleOne,
+  onToggleAll,
+  isAllSelected = false,
+  isIndeterminate = false,
+}: CompanyTableProps) {
   // Helper to check permission - supports both boolean and function
   const checkCanEdit = (companyId: string): boolean => {
     if (typeof canEdit === 'function') return canEdit(companyId);
@@ -120,12 +146,14 @@ export function CompanyTable({ companies, onDelete, isLoading, canEdit = true, c
     if (typeof canDelete === 'function') return canDelete(companyId);
     return canDelete;
   };
+
   if (isLoading) {
     return (
       <div className="table-container">
         <table className="table">
           <thead>
             <tr>
+              {selectable && <th className="w-10"></th>}
               <th>Company</th>
               <th>UEN</th>
               <th>Type</th>
@@ -138,6 +166,7 @@ export function CompanyTable({ companies, onDelete, isLoading, canEdit = true, c
           <tbody>
             {[...Array(5)].map((_, i) => (
               <tr key={i}>
+                {selectable && <td><div className="skeleton h-4 w-4" /></td>}
                 <td><div className="skeleton h-4 w-48" /></td>
                 <td><div className="skeleton h-4 w-24" /></td>
                 <td><div className="skeleton h-4 w-20" /></td>
@@ -177,6 +206,17 @@ export function CompanyTable({ companies, onDelete, isLoading, canEdit = true, c
       <table className="table">
         <thead>
           <tr>
+            {selectable && (
+              <th className="w-10">
+                <Checkbox
+                  size="sm"
+                  checked={isAllSelected}
+                  indeterminate={isIndeterminate}
+                  onChange={onToggleAll}
+                  aria-label="Select all companies"
+                />
+              </th>
+            )}
             <th>Company</th>
             <th>UEN</th>
             <th>Type</th>
@@ -188,7 +228,17 @@ export function CompanyTable({ companies, onDelete, isLoading, canEdit = true, c
         </thead>
         <tbody>
           {companies.map((company) => (
-            <tr key={company.id}>
+            <tr key={company.id} className={selectedIds.has(company.id) ? 'bg-oak-primary/5' : ''}>
+              {selectable && (
+                <td>
+                  <Checkbox
+                    size="sm"
+                    checked={selectedIds.has(company.id)}
+                    onChange={() => onToggleOne?.(company.id)}
+                    aria-label={`Select ${company.name}`}
+                  />
+                </td>
+              )}
               <td>
                 <Link
                   href={`/companies/${company.id}`}

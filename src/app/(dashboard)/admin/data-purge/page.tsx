@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
+import { Pagination } from '@/components/companies/pagination';
 import {
   Trash2,
   AlertTriangle,
@@ -47,6 +48,8 @@ export default function DataPurgePage() {
   const [activeTab, setActiveTab] = useState<TabType>('tenants');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
   const { data, isLoading, error, refetch } = usePurgeData();
   const purgeMutation = usePurgeRecords();
@@ -62,7 +65,13 @@ export default function DataPurgePage() {
   }
 
   const currentEntityType = TABS.find((t) => t.id === activeTab)?.entityType || 'tenant';
-  const currentRecords = data?.records?.[activeTab] || [];
+  const allRecords = data?.records?.[activeTab] || [];
+
+  // Client-side pagination
+  const totalRecords = allRecords.length;
+  const totalPages = Math.ceil(totalRecords / limit);
+  const startIndex = (page - 1) * limit;
+  const currentRecords = allRecords.slice(startIndex, startIndex + limit);
 
   const toggleSelection = (id: string) => {
     const newSelection = new Set(selectedIds);
@@ -85,6 +94,7 @@ export default function DataPurgePage() {
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setSelectedIds(new Set());
+    setPage(1); // Reset to first page when changing tabs
   };
 
   const handlePurge = async (reason?: string) => {
@@ -396,6 +406,23 @@ export default function DataPurgePage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {totalRecords > 0 && (
+            <div className="p-4 border-t border-border-primary">
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={totalRecords}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 

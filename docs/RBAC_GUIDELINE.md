@@ -608,6 +608,68 @@ await createAuditLog({
 
 ---
 
+## Bulk Operations
+
+Bulk operations (e.g., bulk delete contacts) require the same permissions as individual operations but apply at the tenant level:
+
+### Bulk Delete Pattern
+
+```typescript
+// API Route: DELETE /api/contacts/bulk
+export async function DELETE(request: NextRequest) {
+  const session = await requireAuth();
+  const { ids, reason } = await request.json();
+
+  // 1. Validate all records belong to user's tenant
+  const contacts = await prisma.contact.findMany({
+    where: { id: { in: ids }, deletedAt: null },
+  });
+
+  if (!session.isSuperAdmin) {
+    const wrongTenant = contacts.filter(c => c.tenantId !== session.tenantId);
+    if (wrongTenant.length > 0) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
+
+  // 2. Check delete permission at tenant level (not per-company)
+  await requirePermission(session, 'contact', 'delete');
+
+  // 3. Perform bulk operation with individual audit logs
+  await prisma.$transaction(async (tx) => {
+    await tx.contact.updateMany({
+      where: { id: { in: ids } },
+      data: { deletedAt: new Date() },
+    });
+
+    // Create audit log for EACH record
+    for (const contact of contacts) {
+      await createAuditLog({
+        tenantId: contact.tenantId,
+        userId: session.id,
+        action: 'DELETE',
+        entityType: 'Contact',
+        entityId: contact.id,
+        entityName: contact.fullName,
+        summary: `Bulk deleted contact "${contact.fullName}"`,
+        changeSource: 'MANUAL',
+        metadata: { bulkOperation: true, reason },
+      });
+    }
+  });
+}
+```
+
+### Key Points for Bulk Operations
+
+1. **Permission Check**: For bulk operations, check permission at tenant level (without companyId) since records may span multiple companies
+2. **Tenant Validation**: Always verify ALL records belong to the user's tenant
+3. **Individual Audit Logs**: Create separate audit log entries for each affected record
+4. **Limits**: Enforce reasonable limits (e.g., max 100 records per request)
+5. **Reason Tracking**: Require a reason for bulk deletes to maintain compliance
+
+---
+
 ## Adding New Features
 
 ### Step 1: Define Permissions
@@ -767,6 +829,7 @@ if (canManageTenant(session, tenantId)) { ... }
 | Auth | LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGED |
 | Access | PERMISSION_GRANTED, PERMISSION_REVOKED, ROLE_CHANGED |
 | Tenant | TENANT_CREATED, TENANT_UPDATED, USER_INVITED, USER_REMOVED |
+| Bulk | BULK_UPDATE, BULK_DELETE (creates individual audit logs per record) |
 
 ---
 

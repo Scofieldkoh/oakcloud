@@ -198,6 +198,7 @@ export default function AuditLogsPage() {
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
   const [showFilters, setShowFilters] = useState(false);
 
   const { data, isLoading, error } = useAuditLogs({
@@ -206,7 +207,7 @@ export default function AuditLogsPage() {
     startDate: startDate ? new Date(startDate).toISOString() : undefined,
     endDate: endDate ? new Date(endDate + 'T23:59:59').toISOString() : undefined,
     page,
-    limit: 50,
+    limit,
     sortOrder: 'desc',
   });
 
@@ -389,7 +390,7 @@ export default function AuditLogsPage() {
           </div>
 
           {/* Pagination */}
-          {data.totalPages > 1 && (
+          {data.totalPages > 0 && (
             <div className="mt-4">
               <Pagination
                 page={data.page}
@@ -397,6 +398,10 @@ export default function AuditLogsPage() {
                 total={data.totalCount}
                 limit={data.limit}
                 onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
               />
             </div>
           )}

@@ -11,21 +11,57 @@ interface CompanyWithRelations extends Company {
     addressType: string;
     fullAddress: string;
     isCurrent: boolean;
+    effectiveFrom?: Date | null;
   }>;
   officers?: Array<{
     id: string;
     name: string;
     role: string;
+    designation?: string | null;
+    nationality?: string | null;
+    address?: string | null;
+    appointmentDate?: Date | null;
+    cessationDate?: Date | null;
     isCurrent: boolean;
-    appointmentDate?: Date;
-    cessationDate?: Date;
+    contactId?: string | null;
+    contact?: {
+      id: string;
+      email?: string | null;
+      phone?: string | null;
+    } | null;
   }>;
   shareholders?: Array<{
     id: string;
     name: string;
+    shareholderType?: string | null;
+    nationality?: string | null;
+    placeOfOrigin?: string | null;
+    address?: string | null;
+    shareClass?: string | null;
     numberOfShares: number;
     percentageHeld: Decimal | null;
+    currency?: string | null;
+    allotmentDate?: Date | null;
     isCurrent: boolean;
+    contactId?: string | null;
+    contact?: {
+      id: string;
+      email?: string | null;
+      phone?: string | null;
+    } | null;
+  }>;
+  charges?: Array<{
+    id: string;
+    chargeNumber?: string | null;
+    chargeType?: string | null;
+    description?: string | null;
+    chargeHolderName: string;
+    amountSecured?: Decimal | null;
+    amountSecuredText?: string | null;
+    currency?: string | null;
+    registrationDate?: Date | null;
+    dischargeDate?: Date | null;
+    isFullyDischarged: boolean;
   }>;
   _count?: {
     documents: number;
@@ -138,6 +174,19 @@ async function deleteCompany(id: string, reason: string): Promise<Company> {
   return response.json();
 }
 
+async function bulkDeleteCompanies(ids: string[], reason: string): Promise<{ deleted: number; message: string }> {
+  const response = await fetch('/api/companies/bulk', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids, reason }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete companies');
+  }
+  return response.json();
+}
+
 export function useCompanies(params: CompanySearchParams = {}) {
   return useQuery({
     queryKey: ['companies', params],
@@ -191,6 +240,19 @@ export function useDeleteCompany() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       deleteCompany(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['company-stats'] });
+    },
+  });
+}
+
+export function useBulkDeleteCompanies() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ ids, reason }: { ids: string[]; reason: string }) =>
+      bulkDeleteCompanies(ids, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['company-stats'] });

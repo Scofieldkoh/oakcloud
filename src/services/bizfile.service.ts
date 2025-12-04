@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { normalizeName, normalizeCompanyName, normalizeAddress } from '@/lib/utils';
 import { findOrCreateContact, linkContactToCompany } from './contact.service';
 import { callAI, getBestAvailableModel, getModelConfig } from '@/lib/ai';
 import type { AIModel, AIImageInput } from '@/lib/ai';
@@ -521,7 +522,475 @@ function buildFullAddress(addr: {
   }
   if (addr.buildingName) parts.push(addr.buildingName);
   parts.push(`Singapore ${addr.postalCode}`);
-  return parts.join(' ');
+  return normalizeAddress(parts.join(' '));
+}
+
+/**
+ * Normalize extracted BizFile data before saving to database
+ * Applies proper casing to names, company names, and addresses
+ */
+function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBizFileData {
+  const normalized = { ...data };
+
+  // Normalize entity details
+  if (normalized.entityDetails) {
+    normalized.entityDetails = {
+      ...normalized.entityDetails,
+      name: normalizeCompanyName(normalized.entityDetails.name) || normalized.entityDetails.name,
+      formerName: normalized.entityDetails.formerName
+        ? normalizeCompanyName(normalized.entityDetails.formerName)
+        : undefined,
+    };
+
+    // Normalize former names array
+    if (normalized.entityDetails.formerNames) {
+      normalized.entityDetails.formerNames = normalized.entityDetails.formerNames.map((fn) => ({
+        ...fn,
+        name: normalizeCompanyName(fn.name) || fn.name,
+      }));
+    }
+  }
+
+  // Normalize SSIC descriptions (but not codes)
+  if (normalized.ssicActivities) {
+    if (normalized.ssicActivities.primary?.description) {
+      normalized.ssicActivities.primary.description = normalizeCompanyName(
+        normalized.ssicActivities.primary.description
+      ) || normalized.ssicActivities.primary.description;
+    }
+    if (normalized.ssicActivities.secondary?.description) {
+      normalized.ssicActivities.secondary.description = normalizeCompanyName(
+        normalized.ssicActivities.secondary.description
+      ) || normalized.ssicActivities.secondary.description;
+    }
+  }
+
+  // Normalize addresses
+  if (normalized.registeredAddress) {
+    normalized.registeredAddress = {
+      ...normalized.registeredAddress,
+      streetName: normalizeAddress(normalized.registeredAddress.streetName) || normalized.registeredAddress.streetName,
+      buildingName: normalized.registeredAddress.buildingName
+        ? normalizeAddress(normalized.registeredAddress.buildingName)
+        : undefined,
+    };
+  }
+
+  if (normalized.mailingAddress) {
+    normalized.mailingAddress = {
+      ...normalized.mailingAddress,
+      streetName: normalizeAddress(normalized.mailingAddress.streetName) || normalized.mailingAddress.streetName,
+      buildingName: normalized.mailingAddress.buildingName
+        ? normalizeAddress(normalized.mailingAddress.buildingName)
+        : undefined,
+    };
+  }
+
+  // Normalize officers
+  if (normalized.officers) {
+    normalized.officers = normalized.officers.map((officer) => ({
+      ...officer,
+      name: normalizeName(officer.name) || officer.name,
+      nationality: officer.nationality ? normalizeCompanyName(officer.nationality) : undefined,
+      address: officer.address ? normalizeAddress(officer.address) : undefined,
+    }));
+  }
+
+  // Normalize shareholders
+  if (normalized.shareholders) {
+    normalized.shareholders = normalized.shareholders.map((shareholder) => ({
+      ...shareholder,
+      name: shareholder.type === 'CORPORATE'
+        ? normalizeCompanyName(shareholder.name) || shareholder.name
+        : normalizeName(shareholder.name) || shareholder.name,
+      nationality: shareholder.nationality ? normalizeCompanyName(shareholder.nationality) : undefined,
+      placeOfOrigin: shareholder.placeOfOrigin ? normalizeCompanyName(shareholder.placeOfOrigin) : undefined,
+      address: shareholder.address ? normalizeAddress(shareholder.address) : undefined,
+    }));
+  }
+
+  // Normalize auditor
+  if (normalized.auditor) {
+    normalized.auditor = {
+      ...normalized.auditor,
+      name: normalizeCompanyName(normalized.auditor.name) || normalized.auditor.name,
+      address: normalized.auditor.address ? normalizeAddress(normalized.auditor.address) : undefined,
+    };
+  }
+
+  // Normalize charges
+  if (normalized.charges) {
+    normalized.charges = normalized.charges.map((charge) => ({
+      ...charge,
+      chargeHolderName: normalizeCompanyName(charge.chargeHolderName) || charge.chargeHolderName,
+      description: charge.description ? normalizeCompanyName(charge.description) : undefined,
+    }));
+  }
+
+  return normalized;
+}
+
+/**
+ * Field difference entry for BizFile update comparison
+ */
+export interface BizFileDiffEntry {
+  field: string;
+  label: string;
+  oldValue: string | number | null | undefined;
+  newValue: string | number | null | undefined;
+  category: 'entity' | 'ssic' | 'address' | 'compliance' | 'capital';
+}
+
+/**
+ * Generate a diff between existing company data and extracted BizFile data
+ * Only returns fields that have actual differences
+ */
+export async function generateBizFileDiff(
+  existingCompanyId: string,
+  extractedData: ExtractedBizFileData,
+  tenantId: string
+): Promise<{ hasDifferences: boolean; differences: BizFileDiffEntry[]; existingCompany: { name: string; uen: string } }> {
+  const company = await prisma.company.findFirst({
+    where: { id: existingCompanyId, tenantId },
+    include: {
+      addresses: { where: { isCurrent: true } },
+    },
+  });
+
+  if (!company) {
+    throw new Error('Company not found');
+  }
+
+  const differences: BizFileDiffEntry[] = [];
+  const { entityDetails, ssicActivities, registeredAddress, compliance, financialYear } = extractedData;
+
+  // Helper to format date for display
+  const formatDate = (date: Date | string | null | undefined): string | null => {
+    if (!date) return null;
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toISOString().split('T')[0];
+  };
+
+  // Compare entity details
+  const entityComparisons: Array<{ field: string; label: string; oldVal: unknown; newVal: unknown }> = [
+    { field: 'name', label: 'Company Name', oldVal: company.name, newVal: entityDetails.name },
+    { field: 'formerName', label: 'Former Name', oldVal: company.formerName, newVal: entityDetails.formerName },
+    { field: 'entityType', label: 'Entity Type', oldVal: company.entityType, newVal: mapEntityType(entityDetails.entityType) },
+    { field: 'status', label: 'Status', oldVal: company.status, newVal: mapCompanyStatus(entityDetails.status) },
+    { field: 'statusDate', label: 'Status Date', oldVal: formatDate(company.statusDate), newVal: entityDetails.statusDate },
+    { field: 'incorporationDate', label: 'Incorporation Date', oldVal: formatDate(company.incorporationDate), newVal: entityDetails.incorporationDate },
+  ];
+
+  for (const { field, label, oldVal, newVal } of entityComparisons) {
+    const oldStr = oldVal?.toString() || null;
+    const newStr = newVal?.toString() || null;
+    if (oldStr !== newStr && (oldStr || newStr)) {
+      differences.push({ field, label, oldValue: oldStr, newValue: newStr, category: 'entity' });
+    }
+  }
+
+  // Compare SSIC activities
+  if (ssicActivities) {
+    const ssicComparisons: Array<{ field: string; label: string; oldVal: unknown; newVal: unknown }> = [
+      { field: 'primarySsicCode', label: 'Primary SSIC Code', oldVal: company.primarySsicCode, newVal: ssicActivities.primary?.code },
+      { field: 'primarySsicDescription', label: 'Primary SSIC Description', oldVal: company.primarySsicDescription, newVal: ssicActivities.primary?.description },
+      { field: 'secondarySsicCode', label: 'Secondary SSIC Code', oldVal: company.secondarySsicCode, newVal: ssicActivities.secondary?.code },
+      { field: 'secondarySsicDescription', label: 'Secondary SSIC Description', oldVal: company.secondarySsicDescription, newVal: ssicActivities.secondary?.description },
+    ];
+
+    for (const { field, label, oldVal, newVal } of ssicComparisons) {
+      const oldStr = oldVal?.toString() || null;
+      const newStr = newVal?.toString() || null;
+      if (oldStr !== newStr && (oldStr || newStr)) {
+        differences.push({ field, label, oldValue: oldStr, newValue: newStr, category: 'ssic' });
+      }
+    }
+  }
+
+  // Compare registered address
+  if (registeredAddress) {
+    const currentAddress = company.addresses.find(a => a.addressType === 'REGISTERED_OFFICE');
+    const newFullAddress = buildFullAddress(registeredAddress);
+    const oldFullAddress = currentAddress?.fullAddress || null;
+
+    if (oldFullAddress !== newFullAddress) {
+      differences.push({
+        field: 'registeredAddress',
+        label: 'Registered Address',
+        oldValue: oldFullAddress,
+        newValue: newFullAddress,
+        category: 'address',
+      });
+    }
+  }
+
+  // Compare compliance fields
+  if (compliance) {
+    const complianceComparisons: Array<{ field: string; label: string; oldVal: unknown; newVal: unknown }> = [
+      { field: 'lastAgmDate', label: 'Last AGM Date', oldVal: formatDate(company.lastAgmDate), newVal: compliance.lastAgmDate },
+      { field: 'lastArFiledDate', label: 'Last AR Filed Date', oldVal: formatDate(company.lastArFiledDate), newVal: compliance.lastArFiledDate },
+      { field: 'accountsDueDate', label: 'Accounts Due Date', oldVal: formatDate(company.accountsDueDate), newVal: compliance.accountsDueDate },
+    ];
+
+    for (const { field, label, oldVal, newVal } of complianceComparisons) {
+      const oldStr = oldVal?.toString() || null;
+      const newStr = newVal?.toString() || null;
+      if (oldStr !== newStr && (oldStr || newStr)) {
+        differences.push({ field, label, oldValue: oldStr, newValue: newStr, category: 'compliance' });
+      }
+    }
+  }
+
+  // Compare financial year
+  if (financialYear) {
+    if (company.financialYearEndDay !== financialYear.endDay || company.financialYearEndMonth !== financialYear.endMonth) {
+      const oldFye = company.financialYearEndDay && company.financialYearEndMonth
+        ? `Day ${company.financialYearEndDay}, Month ${company.financialYearEndMonth}`
+        : null;
+      const newFye = `Day ${financialYear.endDay}, Month ${financialYear.endMonth}`;
+      differences.push({
+        field: 'financialYearEnd',
+        label: 'Financial Year End',
+        oldValue: oldFye,
+        newValue: newFye,
+        category: 'compliance',
+      });
+    }
+  }
+
+  // Compare share capital
+  if (extractedData.shareCapital?.length) {
+    // Calculate new capital values
+    const newPaidUp = extractedData.shareCapital
+      .filter((c) => c.isPaidUp && !c.isTreasury)
+      .reduce((sum, c) => sum + c.totalValue, 0);
+    const newIssued = extractedData.shareCapital
+      .filter((c) => !c.isTreasury)
+      .reduce((sum, c) => sum + c.totalValue, 0);
+    const newCurrency = extractedData.shareCapital[0]?.currency || 'SGD';
+
+    const oldPaidUp = company.paidUpCapitalAmount ? Number(company.paidUpCapitalAmount) : null;
+    const oldIssued = company.issuedCapitalAmount ? Number(company.issuedCapitalAmount) : null;
+
+    if (oldPaidUp !== newPaidUp) {
+      differences.push({
+        field: 'paidUpCapital',
+        label: 'Paid Up Capital',
+        oldValue: oldPaidUp ? `${company.paidUpCapitalCurrency || 'SGD'} ${oldPaidUp.toLocaleString()}` : null,
+        newValue: `${newCurrency} ${newPaidUp.toLocaleString()}`,
+        category: 'capital',
+      });
+    }
+
+    if (oldIssued !== newIssued) {
+      differences.push({
+        field: 'issuedCapital',
+        label: 'Issued Capital',
+        oldValue: oldIssued ? `${company.issuedCapitalCurrency || 'SGD'} ${oldIssued.toLocaleString()}` : null,
+        newValue: `${newCurrency} ${newIssued.toLocaleString()}`,
+        category: 'capital',
+      });
+    }
+  }
+
+  return {
+    hasDifferences: differences.length > 0,
+    differences,
+    existingCompany: { name: company.name, uen: company.uen },
+  };
+}
+
+/**
+ * Process BizFile extraction with selective updates (only changed fields)
+ */
+export async function processBizFileExtractionSelective(
+  documentId: string,
+  extractedData: ExtractedBizFileData,
+  userId: string,
+  tenantId: string,
+  existingCompanyId: string
+): Promise<{ companyId: string; created: boolean; updatedFields: string[] }> {
+  // Normalize all text fields before processing
+  const normalizedData = normalizeExtractedData(extractedData);
+
+  // Generate diff to determine what needs updating
+  const { differences } = await generateBizFileDiff(existingCompanyId, normalizedData, tenantId);
+
+  if (differences.length === 0) {
+    // No changes needed, just update document reference
+    await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        companyId: existingCompanyId,
+        extractionStatus: 'COMPLETED',
+        extractedAt: new Date(),
+        extractedData: normalizedData as object,
+      },
+    });
+
+    return { companyId: existingCompanyId, created: false, updatedFields: [] };
+  }
+
+  // Build update object with only changed fields
+  const updateData: Record<string, unknown> = {};
+  const updatedFields: string[] = [];
+
+  for (const diff of differences) {
+    updatedFields.push(diff.label);
+
+    // Map diff field to database field
+    switch (diff.field) {
+      case 'name':
+        updateData.name = normalizedData.entityDetails.name;
+        break;
+      case 'formerName':
+        updateData.formerName = normalizedData.entityDetails.formerName;
+        break;
+      case 'entityType':
+        updateData.entityType = mapEntityType(normalizedData.entityDetails.entityType);
+        break;
+      case 'status':
+        updateData.status = mapCompanyStatus(normalizedData.entityDetails.status);
+        break;
+      case 'statusDate':
+        updateData.statusDate = normalizedData.entityDetails.statusDate
+          ? new Date(normalizedData.entityDetails.statusDate)
+          : null;
+        break;
+      case 'incorporationDate':
+        updateData.incorporationDate = normalizedData.entityDetails.incorporationDate
+          ? new Date(normalizedData.entityDetails.incorporationDate)
+          : null;
+        break;
+      case 'primarySsicCode':
+        updateData.primarySsicCode = normalizedData.ssicActivities?.primary?.code;
+        break;
+      case 'primarySsicDescription':
+        updateData.primarySsicDescription = normalizedData.ssicActivities?.primary?.description;
+        break;
+      case 'secondarySsicCode':
+        updateData.secondarySsicCode = normalizedData.ssicActivities?.secondary?.code;
+        break;
+      case 'secondarySsicDescription':
+        updateData.secondarySsicDescription = normalizedData.ssicActivities?.secondary?.description;
+        break;
+      case 'lastAgmDate':
+        updateData.lastAgmDate = normalizedData.compliance?.lastAgmDate
+          ? new Date(normalizedData.compliance.lastAgmDate)
+          : null;
+        break;
+      case 'lastArFiledDate':
+        updateData.lastArFiledDate = normalizedData.compliance?.lastArFiledDate
+          ? new Date(normalizedData.compliance.lastArFiledDate)
+          : null;
+        break;
+      case 'accountsDueDate':
+        updateData.accountsDueDate = normalizedData.compliance?.accountsDueDate
+          ? new Date(normalizedData.compliance.accountsDueDate)
+          : null;
+        break;
+      case 'financialYearEnd':
+        updateData.financialYearEndDay = normalizedData.financialYear?.endDay;
+        updateData.financialYearEndMonth = normalizedData.financialYear?.endMonth;
+        break;
+      case 'paidUpCapital':
+      case 'issuedCapital':
+        // Capital updates are handled together below
+        break;
+    }
+  }
+
+  // Handle capital updates if either paid up or issued capital changed
+  const hasCapitalChanges = differences.some(d => d.field === 'paidUpCapital' || d.field === 'issuedCapital');
+  if (hasCapitalChanges && normalizedData.shareCapital?.length) {
+    const totalPaidUp = normalizedData.shareCapital
+      .filter((c) => c.isPaidUp && !c.isTreasury)
+      .reduce((sum, c) => sum + c.totalValue, 0);
+    const totalIssued = normalizedData.shareCapital
+      .filter((c) => !c.isTreasury)
+      .reduce((sum, c) => sum + c.totalValue, 0);
+    const primaryCurrency = normalizedData.shareCapital[0]?.currency || 'SGD';
+
+    updateData.paidUpCapitalAmount = totalPaidUp;
+    updateData.paidUpCapitalCurrency = primaryCurrency;
+    updateData.issuedCapitalAmount = totalIssued;
+    updateData.issuedCapitalCurrency = primaryCurrency;
+  }
+
+  // Perform the update in a transaction
+  await prisma.$transaction(async (tx) => {
+    // Update company with only changed fields
+    if (Object.keys(updateData).length > 0) {
+      await tx.company.update({
+        where: { id: existingCompanyId },
+        data: updateData,
+      });
+    }
+
+    // Handle address update separately if needed
+    if (differences.some(d => d.field === 'registeredAddress') && normalizedData.registeredAddress) {
+      const addr = normalizedData.registeredAddress;
+
+      // Mark previous addresses as not current
+      await tx.companyAddress.updateMany({
+        where: { companyId: existingCompanyId, addressType: 'REGISTERED_OFFICE', isCurrent: true },
+        data: { isCurrent: false, effectiveTo: new Date() },
+      });
+
+      await tx.companyAddress.create({
+        data: {
+          companyId: existingCompanyId,
+          addressType: 'REGISTERED_OFFICE',
+          block: addr.block,
+          streetName: addr.streetName,
+          level: addr.level,
+          unit: addr.unit,
+          buildingName: addr.buildingName,
+          postalCode: addr.postalCode,
+          fullAddress: buildFullAddress(addr),
+          effectiveFrom: addr.effectiveFrom ? new Date(addr.effectiveFrom) : null,
+          isCurrent: true,
+          sourceDocumentId: documentId,
+        },
+      });
+    }
+
+    // Update document with company reference
+    await tx.document.update({
+      where: { id: documentId },
+      data: {
+        companyId: existingCompanyId,
+        extractionStatus: 'COMPLETED',
+        extractedAt: new Date(),
+        extractedData: normalizedData as object,
+      },
+    });
+  });
+
+  // Create audit log with specific changed fields
+  await createAuditLog({
+    tenantId,
+    userId,
+    companyId: existingCompanyId,
+    action: 'UPDATE',
+    entityType: 'Company',
+    entityId: existingCompanyId,
+    entityName: normalizedData.entityDetails.name,
+    summary: `Updated company from BizFile: ${updatedFields.join(', ')}`,
+    changeSource: 'BIZFILE_UPLOAD',
+    metadata: {
+      documentId,
+      uen: normalizedData.entityDetails.uen,
+      updatedFields,
+      changes: differences.map(d => ({
+        field: d.label,
+        from: d.oldValue,
+        to: d.newValue,
+      })),
+    },
+  });
+
+  return { companyId: existingCompanyId, created: false, updatedFields };
 }
 
 export async function processBizFileExtraction(
@@ -530,7 +999,9 @@ export async function processBizFileExtraction(
   userId: string,
   tenantId: string
 ): Promise<{ companyId: string; created: boolean }> {
-  const { entityDetails } = extractedData;
+  // Normalize all text fields before processing
+  const normalizedData = normalizeExtractedData(extractedData);
+  const { entityDetails } = normalizedData;
 
   // Check if company exists within tenant
   let company = await prisma.company.findFirst({
@@ -563,29 +1034,29 @@ export async function processBizFileExtraction(
         registrationDate: entityDetails.registrationDate
           ? new Date(entityDetails.registrationDate)
           : null,
-        dateOfAddress: extractedData.registeredAddress?.effectiveFrom
-          ? new Date(extractedData.registeredAddress.effectiveFrom)
+        dateOfAddress: normalizedData.registeredAddress?.effectiveFrom
+          ? new Date(normalizedData.registeredAddress.effectiveFrom)
           : null,
-        primarySsicCode: extractedData.ssicActivities?.primary?.code,
-        primarySsicDescription: extractedData.ssicActivities?.primary?.description,
-        secondarySsicCode: extractedData.ssicActivities?.secondary?.code,
-        secondarySsicDescription: extractedData.ssicActivities?.secondary?.description,
-        financialYearEndDay: extractedData.financialYear?.endDay,
-        financialYearEndMonth: extractedData.financialYear?.endMonth,
-        fyeAsAtLastAr: extractedData.compliance?.fyeAsAtLastAr
-          ? new Date(extractedData.compliance.fyeAsAtLastAr)
+        primarySsicCode: normalizedData.ssicActivities?.primary?.code,
+        primarySsicDescription: normalizedData.ssicActivities?.primary?.description,
+        secondarySsicCode: normalizedData.ssicActivities?.secondary?.code,
+        secondarySsicDescription: normalizedData.ssicActivities?.secondary?.description,
+        financialYearEndDay: normalizedData.financialYear?.endDay,
+        financialYearEndMonth: normalizedData.financialYear?.endMonth,
+        fyeAsAtLastAr: normalizedData.compliance?.fyeAsAtLastAr
+          ? new Date(normalizedData.compliance.fyeAsAtLastAr)
           : null,
-        homeCurrency: extractedData.homeCurrency || 'SGD',
-        lastAgmDate: extractedData.compliance?.lastAgmDate
-          ? new Date(extractedData.compliance.lastAgmDate)
+        homeCurrency: normalizedData.homeCurrency || 'SGD',
+        lastAgmDate: normalizedData.compliance?.lastAgmDate
+          ? new Date(normalizedData.compliance.lastAgmDate)
           : null,
-        lastArFiledDate: extractedData.compliance?.lastArFiledDate
-          ? new Date(extractedData.compliance.lastArFiledDate)
+        lastArFiledDate: normalizedData.compliance?.lastArFiledDate
+          ? new Date(normalizedData.compliance.lastArFiledDate)
           : null,
-        accountsDueDate: extractedData.compliance?.accountsDueDate
-          ? new Date(extractedData.compliance.accountsDueDate)
+        accountsDueDate: normalizedData.compliance?.accountsDueDate
+          ? new Date(normalizedData.compliance.accountsDueDate)
           : null,
-        hasCharges: (extractedData.charges?.length || 0) > 0,
+        hasCharges: (normalizedData.charges?.length || 0) > 0,
       },
       update: {
         name: entityDetails.name,
@@ -601,29 +1072,29 @@ export async function processBizFileExtraction(
         incorporationDate: entityDetails.incorporationDate
           ? new Date(entityDetails.incorporationDate)
           : undefined,
-        dateOfAddress: extractedData.registeredAddress?.effectiveFrom
-          ? new Date(extractedData.registeredAddress.effectiveFrom)
+        dateOfAddress: normalizedData.registeredAddress?.effectiveFrom
+          ? new Date(normalizedData.registeredAddress.effectiveFrom)
           : undefined,
-        primarySsicCode: extractedData.ssicActivities?.primary?.code,
-        primarySsicDescription: extractedData.ssicActivities?.primary?.description,
-        secondarySsicCode: extractedData.ssicActivities?.secondary?.code,
-        secondarySsicDescription: extractedData.ssicActivities?.secondary?.description,
-        financialYearEndDay: extractedData.financialYear?.endDay,
-        financialYearEndMonth: extractedData.financialYear?.endMonth,
-        fyeAsAtLastAr: extractedData.compliance?.fyeAsAtLastAr
-          ? new Date(extractedData.compliance.fyeAsAtLastAr)
+        primarySsicCode: normalizedData.ssicActivities?.primary?.code,
+        primarySsicDescription: normalizedData.ssicActivities?.primary?.description,
+        secondarySsicCode: normalizedData.ssicActivities?.secondary?.code,
+        secondarySsicDescription: normalizedData.ssicActivities?.secondary?.description,
+        financialYearEndDay: normalizedData.financialYear?.endDay,
+        financialYearEndMonth: normalizedData.financialYear?.endMonth,
+        fyeAsAtLastAr: normalizedData.compliance?.fyeAsAtLastAr
+          ? new Date(normalizedData.compliance.fyeAsAtLastAr)
           : undefined,
-        homeCurrency: extractedData.homeCurrency || undefined,
-        lastAgmDate: extractedData.compliance?.lastAgmDate
-          ? new Date(extractedData.compliance.lastAgmDate)
+        homeCurrency: normalizedData.homeCurrency || undefined,
+        lastAgmDate: normalizedData.compliance?.lastAgmDate
+          ? new Date(normalizedData.compliance.lastAgmDate)
           : undefined,
-        lastArFiledDate: extractedData.compliance?.lastArFiledDate
-          ? new Date(extractedData.compliance.lastArFiledDate)
+        lastArFiledDate: normalizedData.compliance?.lastArFiledDate
+          ? new Date(normalizedData.compliance.lastArFiledDate)
           : undefined,
-        accountsDueDate: extractedData.compliance?.accountsDueDate
-          ? new Date(extractedData.compliance.accountsDueDate)
+        accountsDueDate: normalizedData.compliance?.accountsDueDate
+          ? new Date(normalizedData.compliance.accountsDueDate)
           : undefined,
-        hasCharges: (extractedData.charges?.length || 0) > 0,
+        hasCharges: (normalizedData.charges?.length || 0) > 0,
       },
     });
 
@@ -634,13 +1105,13 @@ export async function processBizFileExtraction(
         companyId: company.id,
         extractionStatus: 'COMPLETED',
         extractedAt: new Date(),
-        extractedData: extractedData as object,
+        extractedData: normalizedData as object,
       },
     });
 
     // Process former names
-    if (extractedData.entityDetails.formerNames?.length) {
-      for (const formerName of extractedData.entityDetails.formerNames) {
+    if (normalizedData.entityDetails.formerNames?.length) {
+      for (const formerName of normalizedData.entityDetails.formerNames) {
         await tx.companyFormerName.upsert({
           where: {
             id: `${company.id}-${formerName.name}-${formerName.effectiveFrom}`,
@@ -661,8 +1132,8 @@ export async function processBizFileExtraction(
     }
 
     // Process registered address
-    if (extractedData.registeredAddress) {
-      const addr = extractedData.registeredAddress;
+    if (normalizedData.registeredAddress) {
+      const addr = normalizedData.registeredAddress;
       // Mark previous addresses as not current
       await tx.companyAddress.updateMany({
         where: { companyId: company.id, addressType: 'REGISTERED_OFFICE', isCurrent: true },
@@ -688,8 +1159,8 @@ export async function processBizFileExtraction(
     }
 
     // Process mailing address
-    if (extractedData.mailingAddress) {
-      const addr = extractedData.mailingAddress;
+    if (normalizedData.mailingAddress) {
+      const addr = normalizedData.mailingAddress;
       await tx.companyAddress.updateMany({
         where: { companyId: company.id, addressType: 'MAILING', isCurrent: true },
         data: { isCurrent: false, effectiveTo: new Date() },
@@ -713,8 +1184,8 @@ export async function processBizFileExtraction(
     }
 
     // Process share capital
-    if (extractedData.shareCapital?.length) {
-      for (const capital of extractedData.shareCapital) {
+    if (normalizedData.shareCapital?.length) {
+      for (const capital of normalizedData.shareCapital) {
         await tx.shareCapital.create({
           data: {
             companyId: company.id,
@@ -731,25 +1202,38 @@ export async function processBizFileExtraction(
         });
       }
 
-      // Update company paid up capital
-      const totalPaidUp = extractedData.shareCapital
+      // Calculate paid up capital (shares marked as paid up, excluding treasury)
+      const totalPaidUp = normalizedData.shareCapital
         .filter((c) => c.isPaidUp && !c.isTreasury)
         .reduce((sum, c) => sum + c.totalValue, 0);
 
+      // Calculate issued capital (all shares excluding treasury)
+      const totalIssued = normalizedData.shareCapital
+        .filter((c) => !c.isTreasury)
+        .reduce((sum, c) => sum + c.totalValue, 0);
+
+      // Get primary currency from share capital (default to SGD)
+      const primaryCurrency = normalizedData.shareCapital[0]?.currency || 'SGD';
+
       await tx.company.update({
         where: { id: company.id },
-        data: { paidUpCapitalAmount: totalPaidUp },
+        data: {
+          paidUpCapitalAmount: totalPaidUp,
+          paidUpCapitalCurrency: primaryCurrency,
+          issuedCapitalAmount: totalIssued,
+          issuedCapitalCurrency: primaryCurrency,
+        },
       });
     }
 
     // Process treasury shares if present
-    if (extractedData.treasuryShares && extractedData.treasuryShares.numberOfShares > 0) {
+    if (normalizedData.treasuryShares && normalizedData.treasuryShares.numberOfShares > 0) {
       await tx.shareCapital.create({
         data: {
           companyId: company.id,
           shareClass: 'TREASURY',
-          currency: extractedData.treasuryShares.currency || 'SGD',
-          numberOfShares: extractedData.treasuryShares.numberOfShares,
+          currency: normalizedData.treasuryShares.currency || 'SGD',
+          numberOfShares: normalizedData.treasuryShares.numberOfShares,
           totalValue: 0, // Treasury shares don't contribute to capital value
           isPaidUp: false,
           isTreasury: true,
@@ -769,8 +1253,8 @@ export async function processBizFileExtraction(
   // TODO: Consider refactoring to use a single transaction for data consistency.
   try {
     // Process officers
-    if (extractedData.officers?.length) {
-      for (const officer of extractedData.officers) {
+    if (normalizedData.officers?.length) {
+      for (const officer of normalizedData.officers) {
       const isCurrent = !officer.cessationDate;
 
       // Parse name for individual
@@ -820,8 +1304,8 @@ export async function processBizFileExtraction(
   }
 
   // Process shareholders
-  if (extractedData.shareholders?.length) {
-    for (const shareholder of extractedData.shareholders) {
+  if (normalizedData.shareholders?.length) {
+    for (const shareholder of normalizedData.shareholders) {
       const contactType = mapContactType(shareholder.type);
 
       let contactData;
@@ -874,8 +1358,8 @@ export async function processBizFileExtraction(
   }
 
   // Process charges
-  if (extractedData.charges?.length) {
-    for (const charge of extractedData.charges) {
+  if (normalizedData.charges?.length) {
+    for (const charge of normalizedData.charges) {
       // Find or create charge holder contact
       const { contact: chargeHolder } = await findOrCreateContact(
         {
@@ -929,7 +1413,7 @@ export async function processBizFileExtraction(
     metadata: {
       documentId,
       uen: entityDetails.uen,
-      extractedFields: Object.keys(extractedData),
+      extractedFields: Object.keys(normalizedData),
     },
   });
 

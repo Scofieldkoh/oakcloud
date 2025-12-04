@@ -3,18 +3,18 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Building2, AlertCircle, FileUp, Trash2, X } from 'lucide-react';
-import { useCompanies, useCompanyStats, useDeleteCompany, useBulkDeleteCompanies } from '@/hooks/use-companies';
-import { usePermissions, useCompanyPermissions } from '@/hooks/use-permissions';
+import { Plus, Users, AlertCircle, Building2, User, Trash2, X } from 'lucide-react';
+import { useContacts, useDeleteContact, useBulkDeleteContacts } from '@/hooks/use-contacts';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useSelection } from '@/hooks/use-selection';
-import { CompanyTable } from '@/components/companies/company-table';
-import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
+import { ContactTable } from '@/components/contacts/contact-table';
+import { ContactFilters, type FilterValues } from '@/components/contacts/contact-filters';
 import { Pagination } from '@/components/companies/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
-import type { EntityType, CompanyStatus } from '@prisma/client';
+import type { ContactType } from '@prisma/client';
 
-export default function CompaniesPage() {
+export default function ContactsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
@@ -26,12 +26,9 @@ export default function CompaniesPage() {
       query: searchParams.get('q') || '',
       page: parseInt(searchParams.get('page') || '1', 10),
       limit: parseInt(searchParams.get('limit') || '20', 10),
-      sortBy: searchParams.get('sortBy') || 'updatedAt',
-      sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc',
-      entityType: (searchParams.get('entityType') || undefined) as EntityType | undefined,
-      status: (searchParams.get('status') || undefined) as CompanyStatus | undefined,
-      hasCharges: searchParams.get('hasCharges') === 'true' ? true :
-                  searchParams.get('hasCharges') === 'false' ? false : undefined,
+      sortBy: (searchParams.get('sortBy') || 'fullName') as 'fullName' | 'createdAt' | 'updatedAt',
+      sortOrder: (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc',
+      contactType: (searchParams.get('contactType') || undefined) as ContactType | undefined,
     };
   }, [searchParams]);
 
@@ -39,13 +36,12 @@ export default function CompaniesPage() {
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [companyToDelete, setCompanyToDelete] = useState<string | null>(null);
+  const [contactToDelete, setContactToDelete] = useState<string | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
-  const { data, isLoading, error } = useCompanies(params);
-  const { data: stats, error: statsError } = useCompanyStats();
-  const deleteCompany = useDeleteCompany();
-  const bulkDeleteCompanies = useBulkDeleteCompanies();
+  const { data, isLoading, error } = useContacts(params);
+  const deleteContact = useDeleteContact();
+  const bulkDeleteContacts = useBulkDeleteContacts();
 
   // Selection state for bulk operations
   const {
@@ -57,35 +53,39 @@ export default function CompaniesPage() {
     toggleOne,
     toggleAll,
     clear: clearSelection,
-  } = useSelection(data?.companies || []);
+  } = useSelection(data?.contacts || []);
 
-  // Get company IDs for per-company permission checks
-  const companyIds = useMemo(
-    () => data?.companies?.map((c) => c.id) || [],
-    [data?.companies]
-  );
-  const { canEditCompany, canDeleteCompany } = useCompanyPermissions(companyIds);
+  // Calculate stats from current data
+  const stats = useMemo(() => {
+    if (!data) return null;
+    const individuals = data.contacts.filter((c) => c.contactType === 'INDIVIDUAL').length;
+    const corporates = data.contacts.filter((c) => c.contactType === 'CORPORATE').length;
+    const withCompanies = data.contacts.filter((c) => (c._count?.companyRelations || 0) > 0).length;
+    return {
+      total: data.total,
+      individuals,
+      corporates,
+      withCompanies,
+    };
+  }, [data]);
 
-  // Memoize URL construction to avoid rebuilding on every render
+  // Memoize URL construction
   const targetUrl = useMemo(() => {
     const urlParams = new URLSearchParams();
 
     if (params.query) urlParams.set('q', params.query);
     if (params.page > 1) urlParams.set('page', params.page.toString());
     if (params.limit !== 20) urlParams.set('limit', params.limit.toString());
-    if (params.sortBy !== 'updatedAt') urlParams.set('sortBy', params.sortBy);
-    if (params.sortOrder !== 'desc') urlParams.set('sortOrder', params.sortOrder);
-    if (params.entityType) urlParams.set('entityType', params.entityType);
-    if (params.status) urlParams.set('status', params.status);
-    if (params.hasCharges !== undefined) urlParams.set('hasCharges', params.hasCharges.toString());
+    if (params.sortBy !== 'fullName') urlParams.set('sortBy', params.sortBy);
+    if (params.sortOrder !== 'asc') urlParams.set('sortOrder', params.sortOrder);
+    if (params.contactType) urlParams.set('contactType', params.contactType);
 
     const queryString = urlParams.toString();
-    return queryString ? `/companies?${queryString}` : '/companies';
+    return queryString ? `/contacts?${queryString}` : '/contacts';
   }, [params]);
 
   // Sync URL when params change
   useEffect(() => {
-    // Only update if different
     if (window.location.pathname + window.location.search !== targetUrl) {
       router.replace(targetUrl, { scroll: false });
     }
@@ -99,7 +99,7 @@ export default function CompaniesPage() {
     setParams((prev) => ({
       ...prev,
       ...newFilters,
-      page: 1
+      page: 1,
     }));
   };
 
@@ -112,26 +112,26 @@ export default function CompaniesPage() {
   };
 
   const handleDeleteClick = (id: string) => {
-    setCompanyToDelete(id);
+    setContactToDelete(id);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async (reason?: string) => {
-    if (!companyToDelete || !reason) return;
+    if (!contactToDelete || !reason) return;
 
     try {
-      await deleteCompany.mutateAsync({ id: companyToDelete, reason });
-      success('Company deleted successfully');
+      await deleteContact.mutateAsync({ id: contactToDelete, reason });
+      success('Contact deleted successfully');
       setDeleteDialogOpen(false);
-      setCompanyToDelete(null);
+      setContactToDelete(null);
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to delete company');
+      toastError(err instanceof Error ? err.message : 'Failed to delete contact');
     }
   };
 
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
-    setCompanyToDelete(null);
+    setContactToDelete(null);
   };
 
   // Bulk delete handlers
@@ -144,7 +144,7 @@ export default function CompaniesPage() {
     if (!reason || selectedCount === 0) return;
 
     try {
-      const result = await bulkDeleteCompanies.mutateAsync({
+      const result = await bulkDeleteContacts.mutateAsync({
         ids: Array.from(selectedIds),
         reason,
       });
@@ -152,7 +152,7 @@ export default function CompaniesPage() {
       setBulkDeleteDialogOpen(false);
       clearSelection();
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to delete companies');
+      toastError(err instanceof Error ? err.message : 'Failed to delete contacts');
     }
   };
 
@@ -165,23 +165,16 @@ export default function CompaniesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">Companies</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">Contacts</h1>
           <p className="text-text-secondary text-sm mt-1">
-            Manage company records, BizFile uploads, and compliance tracking
+            Manage individuals and corporate contacts linked to companies
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {can.createDocument && (
-            <Link href="/companies/upload" className="btn-secondary btn-sm flex items-center gap-2">
-              <FileUp className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload BizFile</span>
-              <span className="sm:hidden">Upload</span>
-            </Link>
-          )}
-          {can.createCompany && (
-            <Link href="/companies/new" className="btn-primary btn-sm flex items-center gap-2">
+          {can.createContact && (
+            <Link href="/contacts/new" className="btn-primary btn-sm flex items-center gap-2">
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Company</span>
+              <span className="hidden sm:inline">Add Contact</span>
               <span className="sm:hidden">Add</span>
             </Link>
           )}
@@ -189,16 +182,30 @@ export default function CompaniesPage() {
       </div>
 
       {/* Stats Cards */}
-      {stats && !statsError && (
+      {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="card p-3 sm:p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded bg-oak-primary/10">
-                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-oak-light" />
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-oak-light" />
               </div>
               <div>
                 <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.total}</p>
                 <p className="text-xs sm:text-sm text-text-tertiary">Total</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-3 sm:p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded bg-status-info/10">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
+              </div>
+              <div>
+                <p className="text-xl sm:text-2xl font-semibold text-text-primary">
+                  {stats.individuals}
+                </p>
+                <p className="text-xs sm:text-sm text-text-tertiary">Individuals</p>
               </div>
             </div>
           </div>
@@ -210,23 +217,9 @@ export default function CompaniesPage() {
               </div>
               <div>
                 <p className="text-xl sm:text-2xl font-semibold text-text-primary">
-                  {stats.byStatus['LIVE'] || 0}
+                  {stats.corporates}
                 </p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Live</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-status-info/10">
-                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">
-                  {stats.recentlyAdded}
-                </p>
-                <p className="text-xs sm:text-sm text-text-tertiary">New (30d)</p>
+                <p className="text-xs sm:text-sm text-text-tertiary">Corporates</p>
               </div>
             </div>
           </div>
@@ -234,13 +227,13 @@ export default function CompaniesPage() {
           <div className="card p-3 sm:p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded bg-status-warning/10">
-                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
+                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
               </div>
               <div>
                 <p className="text-xl sm:text-2xl font-semibold text-text-primary">
-                  {stats.withOverdueFilings}
+                  {stats.withCompanies}
                 </p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Overdue</p>
+                <p className="text-xs sm:text-sm text-text-tertiary">Linked</p>
               </div>
             </div>
           </div>
@@ -249,13 +242,11 @@ export default function CompaniesPage() {
 
       {/* Filters */}
       <div className="mb-6">
-        <CompanyFilters
+        <ContactFilters
           onSearch={handleSearch}
           onFilterChange={handleFilterChange}
           initialFilters={{
-            entityType: params.entityType,
-            status: params.status,
-            hasCharges: params.hasCharges,
+            contactType: params.contactType,
           }}
           initialQuery={params.query}
         />
@@ -266,7 +257,7 @@ export default function CompaniesPage() {
         <div className="card p-4 border-status-error bg-status-error/5 mb-6">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
-            <p>{error instanceof Error ? error.message : 'Failed to load companies'}</p>
+            <p>{error instanceof Error ? error.message : 'Failed to load contacts'}</p>
           </div>
         </div>
       )}
@@ -276,7 +267,7 @@ export default function CompaniesPage() {
         <div className="mb-4 card p-3 bg-oak-primary/5 border-oak-primary/30 flex items-center justify-between animate-fade-in">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-text-primary">
-              {selectedCount} {selectedCount > 1 ? 'companies' : 'company'} selected
+              {selectedCount} contact{selectedCount > 1 ? 's' : ''} selected
             </span>
             <button
               onClick={clearSelection}
@@ -287,7 +278,7 @@ export default function CompaniesPage() {
             </button>
           </div>
           <div className="flex items-center gap-2">
-            {can.deleteCompany && (
+            {can.deleteContact && (
               <button
                 onClick={handleBulkDeleteClick}
                 className="btn-danger btn-sm flex items-center gap-1.5"
@@ -302,14 +293,14 @@ export default function CompaniesPage() {
 
       {/* Table */}
       <div className="mb-6">
-        <CompanyTable
-          companies={data?.companies || []}
+        <ContactTable
+          contacts={data?.contacts || []}
           onDelete={handleDeleteClick}
           isLoading={isLoading}
-          canEdit={canEditCompany}
-          canDelete={canDeleteCompany}
-          canCreate={can.createCompany}
-          selectable={can.deleteCompany}
+          canEdit={can.updateContact}
+          canDelete={can.deleteContact}
+          canCreate={can.createContact}
+          selectable={can.deleteContact}
           selectedIds={selectedIds}
           onToggleOne={toggleOne}
           onToggleAll={toggleAll}
@@ -335,15 +326,15 @@ export default function CompaniesPage() {
         isOpen={deleteDialogOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="Delete Company"
-        description="This action cannot be undone. The company will be soft-deleted and can be restored by an administrator."
+        title="Delete Contact"
+        description="This action cannot be undone. The contact will be soft-deleted and can be restored by an administrator."
         confirmLabel="Delete"
         variant="danger"
         requireReason
         reasonLabel="Reason for deletion"
-        reasonPlaceholder="Please provide a reason for deleting this company..."
+        reasonPlaceholder="Please provide a reason for deleting this contact..."
         reasonMinLength={10}
-        isLoading={deleteCompany.isPending}
+        isLoading={deleteContact.isPending}
       />
 
       {/* Bulk Delete Confirmation Dialog */}
@@ -351,15 +342,15 @@ export default function CompaniesPage() {
         isOpen={bulkDeleteDialogOpen}
         onClose={handleBulkDeleteCancel}
         onConfirm={handleBulkDeleteConfirm}
-        title={`Delete ${selectedCount} ${selectedCount > 1 ? 'Companies' : 'Company'}`}
-        description={`You are about to delete ${selectedCount} ${selectedCount > 1 ? 'companies' : 'company'}. This action cannot be undone. The companies will be soft-deleted and can be restored by an administrator.`}
-        confirmLabel={`Delete ${selectedCount} ${selectedCount > 1 ? 'Companies' : 'Company'}`}
+        title={`Delete ${selectedCount} Contact${selectedCount > 1 ? 's' : ''}`}
+        description={`You are about to delete ${selectedCount} contact${selectedCount > 1 ? 's' : ''}. This action cannot be undone. The contacts will be soft-deleted and can be restored by an administrator.`}
+        confirmLabel={`Delete ${selectedCount} Contact${selectedCount > 1 ? 's' : ''}`}
         variant="danger"
         requireReason
         reasonLabel="Reason for deletion"
-        reasonPlaceholder="Please provide a reason for deleting these companies..."
+        reasonPlaceholder="Please provide a reason for deleting these contacts..."
         reasonMinLength={10}
-        isLoading={bulkDeleteCompanies.isPending}
+        isLoading={bulkDeleteContacts.isPending}
       />
     </div>
   );

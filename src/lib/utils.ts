@@ -19,8 +19,8 @@ export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return '-';
   const d = new Date(date);
   return d.toLocaleDateString('en-SG', {
-    day: '2-digit',
-    month: 'short',
+    day: 'numeric',
+    month: 'long',
     year: 'numeric',
   });
 }
@@ -157,4 +157,204 @@ export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ============================================================================
+// Text Normalization Utilities
+// ============================================================================
+
+/**
+ * Common acronyms and abbreviations to preserve in uppercase
+ */
+const PRESERVED_ACRONYMS = new Set([
+  // Company suffixes
+  'PTE', 'LTD', 'LLC', 'LLP', 'INC', 'CORP', 'CO', 'BHD', 'SDN',
+  // Titles
+  'CEO', 'CFO', 'COO', 'CTO', 'CIO', 'MD', 'GM', 'VP', 'SVP', 'EVP', 'AVP',
+  // Countries/Regions
+  'USA', 'UK', 'UAE', 'HK', 'SG', 'MY', 'ID', 'TH', 'VN', 'PH', 'JP', 'KR', 'CN', 'TW', 'AU', 'NZ',
+  // ID types
+  'NRIC', 'FIN', 'UEN', 'ROC', 'ACRA',
+  // Currency
+  'SGD', 'USD', 'MYR', 'IDR', 'THB', 'VND', 'PHP', 'JPY', 'KRW', 'CNY', 'TWD', 'AUD', 'NZD', 'EUR', 'GBP', 'HKD',
+  // Common business terms
+  'IT', 'HR', 'PR', 'IR', 'AI', 'ML', 'IOT', 'API', 'SaaS', 'B2B', 'B2C',
+  // Address components
+  'BLK', 'APT', 'FL',
+]);
+
+/**
+ * Words that should remain lowercase (unless at start of string)
+ */
+const LOWERCASE_WORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'but', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'as',
+]);
+
+/**
+ * Check if a string is likely already in proper case (mixed case)
+ */
+function isAlreadyProperCase(str: string): boolean {
+  // If string has both upper and lower case letters (not all caps or all lower)
+  const hasUpper = /[A-Z]/.test(str);
+  const hasLower = /[a-z]/.test(str);
+  return hasUpper && hasLower;
+}
+
+/**
+ * Check if a word is all uppercase
+ */
+function isAllCaps(word: string): boolean {
+  return word === word.toUpperCase() && /[A-Z]/.test(word);
+}
+
+/**
+ * Normalize a single word to title case, preserving acronyms
+ */
+function normalizeWord(word: string, isFirstWord: boolean = false): string {
+  // Empty or whitespace
+  if (!word.trim()) return word;
+
+  // Preserve if it's a known acronym
+  const upperWord = word.toUpperCase();
+  if (PRESERVED_ACRONYMS.has(upperWord)) {
+    return upperWord;
+  }
+
+  // Check for mixed acronym patterns like "S/O" or "D/O" (son of, daughter of)
+  if (/^[A-Z]\/[A-Z]$/i.test(word)) {
+    return word.toUpperCase();
+  }
+
+  // Handle words with apostrophes (e.g., O'BRIEN -> O'Brien)
+  if (word.includes("'")) {
+    const parts = word.split("'");
+    return parts.map((part, idx) => normalizeWord(part, idx === 0 && isFirstWord)).join("'");
+  }
+
+  // Handle hyphenated words (e.g., SENG-HUAT -> Seng-Huat)
+  if (word.includes('-')) {
+    const parts = word.split('-');
+    return parts.map((part, idx) => normalizeWord(part, idx === 0 && isFirstWord)).join('-');
+  }
+
+  // Keep lowercase words lowercase (unless first word)
+  const lowerWord = word.toLowerCase();
+  if (!isFirstWord && LOWERCASE_WORDS.has(lowerWord)) {
+    return lowerWord;
+  }
+
+  // Numbers and special characters - return as-is
+  if (!/[a-zA-Z]/.test(word)) {
+    return word;
+  }
+
+  // Title case: first letter uppercase, rest lowercase
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
+/**
+ * Normalize text to proper case (title case with acronym preservation)
+ *
+ * Examples:
+ * - "TAN AH KOW" → "Tan Ah Kow"
+ * - "ACME PTE LTD" → "Acme Pte Ltd"
+ * - "10 ANSON ROAD #20-01" → "10 Anson Road #20-01"
+ * - "JOHN S/O DAVID" → "John S/O David"
+ * - "O'BRIEN" → "O'Brien"
+ * - "SENG-HUAT" → "Seng-Huat"
+ */
+export function normalizeCase(text: string | null | undefined): string {
+  if (!text) return '';
+
+  // If already in proper case (has both upper and lower), return as-is
+  if (isAlreadyProperCase(text)) {
+    return text;
+  }
+
+  // Split by spaces while preserving multiple spaces
+  const words = text.split(/(\s+)/);
+  let isFirst = true;
+
+  return words.map((segment) => {
+    // Preserve whitespace segments
+    if (/^\s+$/.test(segment)) {
+      return segment;
+    }
+
+    const result = normalizeWord(segment, isFirst);
+    if (segment.trim()) {
+      isFirst = false;
+    }
+    return result;
+  }).join('');
+}
+
+/**
+ * Normalize a person's name
+ * Handles common name patterns and preserves cultural naming conventions
+ */
+export function normalizeName(name: string | null | undefined): string {
+  if (!name) return '';
+
+  // If already proper case, return as-is
+  if (isAlreadyProperCase(name)) {
+    return name;
+  }
+
+  return normalizeCase(name);
+}
+
+/**
+ * Normalize a company name, preserving legal suffixes
+ */
+export function normalizeCompanyName(name: string | null | undefined): string {
+  if (!name) return '';
+
+  // If already proper case, return as-is
+  if (isAlreadyProperCase(name)) {
+    return name;
+  }
+
+  return normalizeCase(name);
+}
+
+/**
+ * Normalize an address
+ * Handles unit numbers, building names, and street names
+ */
+export function normalizeAddress(address: string | null | undefined): string {
+  if (!address) return '';
+
+  // If already proper case, return as-is
+  if (isAlreadyProperCase(address)) {
+    return address;
+  }
+
+  // Split address and normalize each part
+  // Preserve patterns like #01-02, unit numbers, postal codes
+  const parts = address.split(/(\s+|(?<=#)\d+-\d+|(?<=\s)\d{6}(?=\s|$))/);
+
+  let isFirst = true;
+  return parts.map((part) => {
+    // Preserve whitespace
+    if (/^\s+$/.test(part)) {
+      return part;
+    }
+
+    // Preserve unit numbers like #01-02
+    if (/^#?\d+-\d+$/.test(part)) {
+      return part;
+    }
+
+    // Preserve postal codes (6 digits)
+    if (/^\d{6}$/.test(part)) {
+      return part;
+    }
+
+    const result = normalizeWord(part, isFirst);
+    if (part.trim()) {
+      isFirst = false;
+    }
+    return result;
+  }).join('');
 }

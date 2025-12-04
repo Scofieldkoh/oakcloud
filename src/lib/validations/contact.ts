@@ -57,7 +57,7 @@ export const contactSearchSchema = z.object({
   contactType: contactTypeEnum.optional(),
   companyId: z.string().uuid().optional(),
   page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(100).default(20),
+  limit: z.number().min(1).max(200).default(20),
   sortBy: z.enum(['fullName', 'createdAt', 'updatedAt']).default('fullName'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });

@@ -4,6 +4,200 @@ All notable changes to Oakcloud are documented in this file.
 
 ---
 
+## v0.9.2 (2025-12-04)
+
+### Bug Fixes & UI Enhancements
+
+#### Bug Fixes
+- **Charges Section**: Fixed chargeType still appearing when it's an amount-related term (e.g., "All Monies", "Fixed Sum")
+- **BizFile Extraction**: Fixed Issued Capital not being extracted - now calculates both `paidUpCapitalAmount` and `issuedCapitalAmount`
+- **BizFile Update**: Added capital (issued/paid up) comparison to diff preview
+
+#### UI Improvements
+- **Linked Badge**: Now clickable - clicking navigates directly to the contact page for officers/shareholders
+
+#### Documentation
+- Added detailed explanation of BizFile contact matching behavior in README.md:
+  - Individuals matched by identification type + number
+  - Corporates matched by UEN
+  - BizFile does NOT update existing contact details
+
+---
+
+## v0.9.1 (2025-12-04)
+
+### Company Detail Page UI Polish & Documentation Restructure
+
+#### UI Improvements
+- **Officer Section**
+  - Role/designation now displayed as badge next to officer name (e.g., "Director", "Secretary")
+  - Added "Linked" / "Not Linked" badge to indicate contact association status
+  - Proper title case formatting for roles
+
+- **Shareholder Section**
+  - Added "Linked" / "Not Linked" badge for contact status
+  - Increased spacing between name row and share details
+  - Proper title case for share class (e.g., "Ordinary" instead of "ORDINARY")
+
+- **Charges Section**
+  - Fixed duplicate display when `chargeType` matches `amountSecuredText`
+  - Applied proper title case to amount text (e.g., "All Monies" instead of "ALL MONIES")
+
+#### Documentation
+- **New File**: `docs/DESIGN_GUIDELINE.md` - Comprehensive design system documentation
+  - Design principles and philosophy
+  - Typography scale and font families
+  - Color palette (light/dark mode)
+  - Component specifications (buttons, inputs, spacing)
+  - CSS class reference
+  - Reusable component documentation with examples
+  - Layout guidelines
+
+- **Updated**: `docs/README.md`
+  - Reduced from ~2830 to ~2436 lines
+  - Design sections moved to dedicated DESIGN_GUIDELINE.md
+  - Added "Related Documentation" section with links
+
+---
+
+## v0.9.0 (2025-12-04)
+
+### Company Detail Page Enhancements
+
+Major improvements to the company detail page with expanded officer/shareholder details, charges section, and text normalization.
+
+#### Features
+- **Expanded Officer Details**
+  - Appointment date display
+  - Nationality information
+  - Address display with icon
+  - Designation/role display
+
+- **Expanded Shareholder Details**
+  - Nationality/Place of origin display
+  - Address display with icon
+  - Shareholder type indicator (Corporate/Individual icons)
+  - Share class display (e.g., "Ordinary shares")
+
+- **Charges Section**
+  - New section displaying company charges after shareholders
+  - Shows charge holder, type, amount, registration/discharge dates
+  - Active/Discharged status badges
+
+- **Internal Notes Section**
+  - Displays internal notes in the sidebar when available
+  - Preserves whitespace formatting
+
+- **Text Normalization**
+  - New utility functions for proper case normalization
+  - Applied during BizFile extraction (both create and update)
+  - Preserves acronyms (PTE, LTD, CEO, SGD, etc.)
+  - Handles special patterns (S/O, D/O, hyphenated names, apostrophes)
+  - Works for names, company names, and addresses
+
+- **Date Formatting**
+  - Updated to "d MMMM yyyy" format (e.g., "15 January 2025")
+
+- **Bulk Delete for Companies**
+  - Selection checkboxes in company table
+  - Bulk action toolbar when items selected
+  - Bulk delete API endpoint (`DELETE /api/companies/bulk`)
+  - Confirmation dialog with reason requirement
+  - Audit log for each deleted company
+
+#### Technical Changes
+- `src/lib/utils.ts`: Added `normalizeCase()`, `normalizeName()`, `normalizeCompanyName()`, `normalizeAddress()`
+- `src/services/bizfile.service.ts`: Applied normalization during extraction
+- `src/services/company.service.ts`: Updated to return full officer/shareholder/charges data
+- `src/hooks/use-companies.ts`: Added `useBulkDeleteCompanies()` hook
+- `src/app/api/companies/bulk/route.ts`: New bulk delete endpoint
+- `src/components/companies/company-table.tsx`: Added selection support
+
+---
+
+## v0.8.0 (2025-12-04)
+
+### Contact Module (Phase 1)
+
+Full Contact CRUD functionality with company relationships, following existing patterns from the Companies module.
+
+#### Features
+- **Contact CRUD Operations**
+  - Create individual or corporate contacts
+  - View paginated list with search and filters
+  - View detailed contact information with company relationships
+  - Edit contact details
+  - Soft-delete with reason tracking
+  - Restore deleted contacts
+
+- **Contact Types**
+  - **Individual**: Personal contacts with name, nationality, date of birth
+  - **Corporate**: Business entities with corporate name and UEN
+
+- **Company Relationships**
+  - Link contacts to multiple companies
+  - Track relationship types (officer, shareholder, etc.)
+  - View all company associations from contact detail
+  - Link/unlink companies via modal interface
+
+- **Officer & Shareholder Tracking**
+  - View officer positions across companies
+  - View shareholding positions across companies
+  - Historical position tracking with effective dates
+
+- **Search & Filtering**
+  - Search by name, email, phone, ID number
+  - Filter by contact type (Individual/Corporate)
+  - Paginated results with sorting
+
+- **Audit Trail**
+  - All changes tracked with timestamps
+  - Old/new value comparison
+  - User and source attribution
+  - Deletion/restoration logging
+
+#### New Files
+```
+src/app/(dashboard)/contacts/
+├── page.tsx               # Contact list
+├── loading.tsx            # List loading skeleton
+├── new/page.tsx           # Create contact
+└── [id]/
+    ├── page.tsx           # Contact detail
+    ├── loading.tsx        # Detail loading skeleton
+    ├── edit/page.tsx      # Edit contact
+    └── audit/page.tsx     # Audit history
+
+src/app/api/contacts/
+├── route.ts               # GET (list), POST (create)
+└── [id]/
+    ├── route.ts           # GET, PATCH, DELETE, PUT (restore/link/unlink)
+    └── audit/route.ts     # GET audit history
+
+src/components/contacts/
+├── contact-table.tsx      # Contact list table
+└── contact-filters.tsx    # Search and filter controls
+
+src/hooks/use-contacts.ts  # Contact data hooks
+```
+
+#### Modified Files
+- `src/services/contact.service.ts` - Added delete, restore, getWithRelationships, searchContactsWithCounts functions
+- `src/components/ui/sidebar.tsx` - Removed "Soon" badge from Contacts navigation item
+
+#### API Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/contacts` | List contacts with pagination and filters |
+| POST | `/api/contacts` | Create new contact |
+| GET | `/api/contacts/:id` | Get contact by ID (optional `?full=true` for relationships) |
+| PATCH | `/api/contacts/:id` | Update contact |
+| DELETE | `/api/contacts/:id` | Soft delete contact (requires reason) |
+| PUT | `/api/contacts/:id` | Restore, link, or unlink contact |
+| GET | `/api/contacts/:id/audit` | Get contact audit history |
+
+---
+
 ## v0.7.0 (2025-12-04)
 
 ### Multi-Provider AI Service with Vision Support

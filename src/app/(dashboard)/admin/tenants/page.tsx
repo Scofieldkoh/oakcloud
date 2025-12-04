@@ -58,6 +58,7 @@ export default function TenantsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [setupWizardTenant, setSetupWizardTenant] = useState<Tenant | null>(null);
@@ -90,7 +91,7 @@ export default function TenantsPage() {
     query: search || undefined,
     status: statusFilter || undefined,
     page,
-    limit: 20,
+    limit,
   });
 
   const createTenant = useCreateTenant();
@@ -492,7 +493,7 @@ export default function TenantsPage() {
           </div>
 
           {/* Pagination */}
-          {data.totalPages > 1 && (
+          {data.totalPages > 0 && (
             <div className="mt-4">
               <Pagination
                 page={data.page}
@@ -500,6 +501,10 @@ export default function TenantsPage() {
                 total={data.totalCount}
                 limit={data.limit}
                 onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
               />
             </div>
           )}

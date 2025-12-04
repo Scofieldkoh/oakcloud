@@ -363,3 +363,279 @@ export async function getContactsByCompany(
     isPrimary: r.isPrimary,
   }));
 }
+
+export async function deleteContact(
+  id: string,
+  reason: string,
+  params: TenantAwareParams
+): Promise<Contact> {
+  const { tenantId, userId } = params;
+
+  const existing = await prisma.contact.findFirst({
+    where: { id, tenantId, deletedAt: null },
+    include: {
+      _count: {
+        select: {
+          companyRelations: true,
+          officerPositions: true,
+          shareholdings: true,
+        },
+      },
+    },
+  });
+
+  if (!existing) {
+    throw new Error('Contact not found');
+  }
+
+  const contact = await prisma.contact.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'DELETE',
+    entityType: 'Contact',
+    entityId: contact.id,
+    entityName: contact.fullName,
+    summary: `Deleted contact "${contact.fullName}"`,
+    reason,
+    changeSource: 'MANUAL',
+    metadata: {
+      companyRelations: existing._count.companyRelations,
+      officerPositions: existing._count.officerPositions,
+      shareholdings: existing._count.shareholdings,
+    },
+  });
+
+  return contact;
+}
+
+export async function restoreContact(
+  id: string,
+  params: TenantAwareParams
+): Promise<Contact> {
+  const { tenantId, userId } = params;
+
+  const existing = await prisma.contact.findFirst({
+    where: { id, tenantId, deletedAt: { not: null } },
+  });
+
+  if (!existing) {
+    throw new Error('Contact not found or not deleted');
+  }
+
+  const contact = await prisma.contact.update({
+    where: { id },
+    data: { deletedAt: null },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'RESTORE',
+    entityType: 'Contact',
+    entityId: contact.id,
+    entityName: contact.fullName,
+    summary: `Restored contact "${contact.fullName}"`,
+    changeSource: 'MANUAL',
+  });
+
+  return contact;
+}
+
+export interface ContactWithRelationships extends Contact {
+  companyRelations: Array<{
+    id: string;
+    relationship: string;
+    isPrimary: boolean;
+    company: {
+      id: string;
+      name: string;
+      uen: string;
+      status: string;
+      deletedAt: Date | null;
+    };
+  }>;
+  officerPositions: Array<{
+    id: string;
+    role: string;
+    designation: string | null;
+    appointmentDate: Date | null;
+    cessationDate: Date | null;
+    isCurrent: boolean;
+    company: {
+      id: string;
+      name: string;
+      uen: string;
+    };
+  }>;
+  shareholdings: Array<{
+    id: string;
+    shareClass: string;
+    numberOfShares: number;
+    percentageHeld: number | null;
+    isCurrent: boolean;
+    company: {
+      id: string;
+      name: string;
+      uen: string;
+    };
+  }>;
+}
+
+export async function getContactWithRelationships(
+  id: string,
+  tenantId?: string
+): Promise<ContactWithRelationships | null> {
+  const where: Prisma.ContactWhereInput = { id, deletedAt: null };
+  if (tenantId) {
+    where.tenantId = tenantId;
+  }
+
+  const contact = await prisma.contact.findFirst({
+    where,
+    include: {
+      companyRelations: {
+        include: {
+          company: {
+            select: {
+              id: true,
+              name: true,
+              uen: true,
+              status: true,
+              deletedAt: true,
+            },
+          },
+        },
+      },
+      officerPositions: {
+        include: {
+          company: {
+            select: {
+              id: true,
+              name: true,
+              uen: true,
+            },
+          },
+        },
+      },
+      shareholdings: {
+        include: {
+          company: {
+            select: {
+              id: true,
+              name: true,
+              uen: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!contact) {
+    return null;
+  }
+
+  return {
+    ...contact,
+    companyRelations: contact.companyRelations.map((r) => ({
+      id: r.id,
+      relationship: r.relationship,
+      isPrimary: r.isPrimary,
+      company: r.company,
+    })),
+    officerPositions: contact.officerPositions.map((o) => ({
+      id: o.id,
+      role: o.role,
+      designation: o.designation,
+      appointmentDate: o.appointmentDate,
+      cessationDate: o.cessationDate,
+      isCurrent: o.isCurrent,
+      company: o.company,
+    })),
+    shareholdings: contact.shareholdings.map((s) => ({
+      id: s.id,
+      shareClass: s.shareClass,
+      numberOfShares: s.numberOfShares,
+      percentageHeld: s.percentageHeld ? Number(s.percentageHeld) : null,
+      isCurrent: s.isCurrent,
+      company: s.company,
+    })),
+  };
+}
+
+export async function searchContactsWithCounts(
+  params: ContactSearchInput,
+  tenantId?: string
+): Promise<{
+  contacts: Array<Contact & { _count: { companyRelations: number } }>;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}> {
+  const where: Prisma.ContactWhereInput = {
+    deletedAt: null,
+  };
+
+  if (tenantId) {
+    where.tenantId = tenantId;
+  }
+
+  if (params.query) {
+    const searchTerm = params.query.trim();
+    where.OR = [
+      { fullName: { contains: searchTerm, mode: 'insensitive' } },
+      { email: { contains: searchTerm, mode: 'insensitive' } },
+      { identificationNumber: { contains: searchTerm, mode: 'insensitive' } },
+      { corporateUen: { contains: searchTerm, mode: 'insensitive' } },
+      { phone: { contains: searchTerm, mode: 'insensitive' } },
+    ];
+  }
+
+  if (params.contactType) {
+    where.contactType = params.contactType;
+  }
+
+  if (params.companyId) {
+    where.companyRelations = {
+      some: {
+        companyId: params.companyId,
+      },
+    };
+  }
+
+  const orderBy: Prisma.ContactOrderByWithRelationInput = {};
+  orderBy[params.sortBy] = params.sortOrder;
+
+  const skip = (params.page - 1) * params.limit;
+
+  const [contacts, total] = await Promise.all([
+    prisma.contact.findMany({
+      where,
+      orderBy,
+      skip,
+      take: params.limit,
+      include: {
+        _count: {
+          select: {
+            companyRelations: true,
+          },
+        },
+      },
+    }),
+    prisma.contact.count({ where }),
+  ]);
+
+  return {
+    contacts,
+    total,
+    page: params.page,
+    limit: params.limit,
+    totalPages: Math.ceil(total / params.limit),
+  };
+}

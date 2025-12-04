@@ -9,9 +9,14 @@ A modular internal management system designed for accounting practices. Clean, e
 - [Getting Started](#getting-started)
 - [Database Schema](#database-schema)
 - [API Reference](#api-reference)
-- [Design Guidelines](#design-guidelines)
 - [Module: Company Management](#module-company-management)
+- [Module: Contact Management](#module-contact-management)
 - [Version History](#version-history) | [Full Changelog](./CHANGELOG.md)
+
+**Related Documentation:**
+- [Design Guidelines](./DESIGN_GUIDELINE.md) - UI components, styling, and design system
+- [RBAC Guidelines](./RBAC_GUIDELINE.md) - Role-based access control implementation
+- [Changelog](./CHANGELOG.md) - Version history and release notes
 
 ---
 
@@ -27,18 +32,19 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 ### Core Modules (Planned)
 
 1. ✅ **Company Management** - Manage companies, BizFile uploads, compliance tracking
-2. ✅ **Authentication** - JWT-based authentication with role-based access
-3. ✅ **Multi-Tenancy** - Full tenant isolation with configurable limits
-4. ✅ **Audit Logging** - Comprehensive activity tracking with request context
-5. ✅ **RBAC & Permissions** - Fine-grained role-based access control
-6. ✅ **User Management** - User accounts, invitations, multi-company assignments
-7. ✅ **Password Management** - Secure reset flow, force change on first login
-8. ✅ **Data Purge** - Permanent deletion of soft-deleted records (SUPER_ADMIN)
-9. ✅ **Email Notifications** - SMTP-based transactional emails (invitations, password reset)
-10. 🔜 **Module Marketplace** - Browse and install modules
-11. 🔜 **Connectors Hub** - External service integrations
-12. 🔜 **Module Linking** - Configure module relationships
-13. 🔜 **SuperAdmin Dashboard** - System administration
+2. ✅ **Contact Management** - Individual and corporate contacts with company linking
+3. ✅ **Authentication** - JWT-based authentication with role-based access
+4. ✅ **Multi-Tenancy** - Full tenant isolation with configurable limits
+5. ✅ **Audit Logging** - Comprehensive activity tracking with request context
+6. ✅ **RBAC & Permissions** - Fine-grained role-based access control
+7. ✅ **User Management** - User accounts, invitations, multi-company assignments
+8. ✅ **Password Management** - Secure reset flow, force change on first login
+9. ✅ **Data Purge** - Permanent deletion of soft-deleted records (SUPER_ADMIN)
+10. ✅ **Email Notifications** - SMTP-based transactional emails (invitations, password reset)
+11. 🔜 **Module Marketplace** - Browse and install modules
+12. 🔜 **Connectors Hub** - External service integrations
+13. 🔜 **Module Linking** - Configure module relationships
+14. 🔜 **SuperAdmin Dashboard** - System administration
 
 ---
 
@@ -721,6 +727,32 @@ Content-Type: application/json
 }
 ```
 
+#### Bulk Delete Companies
+```
+DELETE /api/companies/bulk
+Content-Type: application/json
+
+{
+  "ids": ["uuid1", "uuid2", "uuid3"],
+  "reason": "Companies no longer active clients - annual cleanup"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "deleted": 3,
+  "message": "Successfully deleted 3 companies"
+}
+```
+
+Notes:
+- Maximum 100 companies per request
+- All companies must belong to user's tenant
+- Reason must be at least 10 characters
+- Performs soft delete with audit logging for each company
+
 ### Documents
 
 #### Upload Document
@@ -741,6 +773,67 @@ POST /api/companies/:id/documents/:documentId/extract
 ```
 GET /api/companies/:id/documents/:documentId/extract
 ```
+
+#### Preview BizFile Diff (Update Mode)
+```
+POST /api/documents/:documentId/preview-diff
+```
+
+Extracts data from a BizFile document and compares it against the existing company data without saving changes.
+
+Response:
+```json
+{
+  "extractedData": { ... },
+  "diff": {
+    "hasDifferences": true,
+    "differences": [
+      {
+        "field": "status",
+        "label": "Company Status",
+        "oldValue": "LIVE",
+        "newValue": "STRUCK_OFF",
+        "category": "entity"
+      }
+    ],
+    "existingCompany": {
+      "name": "Acme Pte Ltd",
+      "uen": "202012345A"
+    }
+  },
+  "aiMetadata": {
+    "model": "gpt-4.1",
+    "promptTokens": 1500,
+    "completionTokens": 800
+  }
+}
+```
+
+#### Apply Selective BizFile Update
+```
+POST /api/documents/:documentId/apply-update
+Content-Type: application/json
+
+{
+  "extractedData": { ... }
+}
+```
+
+Applies only changed fields from BizFile extraction to the existing company. This creates cleaner audit logs by only logging actual changes.
+
+Response:
+```json
+{
+  "success": true,
+  "companyId": "uuid",
+  "updatedFields": ["status", "primarySsicDescription", "lastArFiledDate"]
+}
+```
+
+Notes:
+- Only updates fields that have actually changed
+- Creates audit log with specific field changes
+- UEN must match an existing company owned by the tenant
 
 ### Audit
 
@@ -1470,373 +1563,13 @@ Response:
 
 ## Design Guidelines
 
-Oakcloud follows a **sleek, modern, and compact** design philosophy inspired by Linear.app. The UI prioritizes information density while maintaining readability.
-
-### Design Principles
-
-1. **Compact & Dense** - Minimize whitespace, use smaller font sizes for data-heavy interfaces
-2. **Subtle Interactions** - Muted hover states, smooth transitions (150ms)
-3. **Light/Dark Mode** - Full theme support with light mode as default, carefully tuned contrast for both modes
-4. **Consistent Spacing** - Use the 4px grid system (4, 8, 12, 16, 20, 24, 32px)
-5. **Minimal Borders** - Prefer subtle borders over shadows for separation (shadows enabled in light mode for depth)
-
-### Typography Scale
-
-Balanced font sizes for modern, readable interfaces:
-
-| Token | Size | Line Height | Usage |
-|-------|------|-------------|-------|
-| `text-2xs` | 11px | 16px | Timestamps, metadata |
-| `text-xs` | 12px | 18px | Labels, badges, captions |
-| `text-sm` | 13px | 20px | Body text, inputs, buttons |
-| `text-base` | 14px | 24px | Primary content |
-| `text-lg` | 16px | 26px | Section headers |
-| `text-xl` | 18px | 28px | Page subtitles |
-| `text-2xl` | 20px | 30px | Page titles |
-| `text-3xl` | 24px | 34px | Hero text |
-
-**Font Families:**
-- **Sans**: Inter (UI text)
-- **Mono**: JetBrains Mono (code blocks, technical IDs)
-
-### Color Palette
-
-The application supports both light and dark modes with CSS variables. Light mode is the default.
-
-#### Light Mode (Default)
-```css
-/* Primary Brand (Teal-Green) */
---oak-primary: #294d44;    /* Buttons, active states */
---oak-hover: #23423a;      /* Button hover */
---oak-light: #3a6b5f;      /* Accent text, links */
---oak-dark: #1f3a33;       /* Button active/pressed */
-
-/* Backgrounds (Soft off-white tones) */
---bg-primary: #f8f9fb;     /* Page background (soft gray) */
---bg-secondary: #ffffff;   /* Cards, sidebar (white) */
---bg-tertiary: #f1f3f5;    /* Hover states, table headers */
---bg-elevated: #ffffff;    /* Dropdowns, elevated cards */
-
-/* Borders */
---border-primary: #e2e4e9; /* Default borders */
---border-secondary: #d0d3d9; /* Emphasized borders */
---border-focus: #294d44;   /* Focus rings */
-
-/* Text */
---text-primary: #1a1d23;   /* Primary content */
---text-secondary: #5c6370; /* Secondary text */
---text-tertiary: #7d838f;  /* Placeholder, disabled */
---text-muted: #a0a5b0;     /* Muted, decorative */
-```
-
-#### Dark Mode
-```css
-/* Primary Brand (Teal-Green) */
---oak-primary: #294d44;    /* Buttons, active states */
---oak-hover: #3a6b5f;      /* Button hover */
---oak-light: #4a8b7f;      /* Accent text, links */
---oak-dark: #1f3a33;       /* Button active/pressed */
-
-/* Backgrounds (Darkest to Lightest) */
---bg-primary: #0d0d0d;     /* Page background */
---bg-secondary: #141414;   /* Cards, sidebar */
---bg-tertiary: #1a1a1a;    /* Hover states, table headers */
---bg-elevated: #212121;    /* Dropdowns, elevated cards */
-
-/* Borders */
---border-primary: #2a2a2a; /* Default borders */
---border-secondary: #333;  /* Emphasized borders */
---border-focus: #294d44;   /* Focus rings */
-
-/* Text */
---text-primary: #ffffff;   /* Primary content */
---text-secondary: #a1a1a1; /* Secondary text */
---text-tertiary: #6b6b6b;  /* Placeholder, disabled */
---text-muted: #525252;     /* Muted, decorative */
-```
-
-#### Status Colors (Both Modes)
-```css
---status-success: #22c55e; /* Success states */
---status-warning: #eab308; /* Warning states */
---status-error: #ef4444;   /* Error states */
---status-info: #3b82f6;    /* Info states */
-```
-
-#### Theme Toggle
-Users can switch themes via the toggle in the sidebar. The preference is persisted to localStorage.
-
-### Component Size Reference
-
-#### Buttons
-| Size | Height | Padding | Font | Border Radius | Use Case |
-|------|--------|---------|------|---------------|----------|
-| `xs` | 28px | 12px | 12px | 4px | Inline actions, table rows |
-| `sm` | 32px | 16px | 13px | 4px | Default, most actions |
-| `md` | 36px | 20px | 13px | 4px | Primary actions, forms |
-| `lg` | 40px | 24px | 14px | 6px | Hero CTAs |
-
-#### Inputs
-| Size | Height | Padding | Font | Border Radius | Use Case |
-|------|--------|---------|------|---------------|----------|
-| `xs` | 28px | 12px | 12px | 4px | Compact filters |
-| `sm` | 32px | 12px | 13px | 4px | Table inline edit |
-| `md` | 36px | 14px | 13px | 4px | Default forms |
-| `lg` | 40px | 16px | 14px | 4px | Login, prominent inputs |
-
-#### Spacing
-| Token | Value | Usage |
-|-------|-------|-------|
-| `p-1` | 4px | Icon padding |
-| `p-2` | 8px | Compact elements |
-| `p-3` | 12px | Card padding, nav items |
-| `p-4` | 16px | Section padding |
-| `p-6` | 24px | Page padding |
-| `gap-1` | 4px | Icon + text |
-| `gap-2` | 8px | Related elements |
-| `gap-4` | 16px | Sections |
-
-### CSS Component Classes
-
-```css
-/* Buttons (combine variant + size) */
-.btn-primary    /* Oak green, white text */
-.btn-secondary  /* Dark bg, border, white text */
-.btn-ghost      /* Transparent, text only */
-.btn-danger     /* Red tint for destructive */
-
-.btn-xs / .btn-sm / .btn-md / .btn-lg  /* Sizes */
-.btn-icon       /* Square icon-only button */
-
-/* Inputs */
-.input          /* Base input styles */
-.input-xs / .input-sm / .input-md / .input-lg
-.input-error    /* Red border for errors */
-
-/* Labels */
-.label          /* Form labels (12px, medium) */
-.label-sm       /* Small labels (10px) */
-
-/* Cards */
-.card           /* bg-secondary, subtle border */
-.card-elevated  /* bg-elevated, shadow */
-
-/* Badges */
-.badge          /* Base (10px, pill-shaped) */
-.badge-success / .badge-warning / .badge-error / .badge-info / .badge-neutral
-
-/* Tables */
-.table-container  /* Scrollable wrapper */
-.table            /* Full table styles */
-.table th         /* Uppercase, 10px, tertiary */
-.table td         /* 13px, primary text */
-
-/* Navigation */
-.nav-item         /* Sidebar item (12px) */
-.nav-item-active  /* Active state with oak tint */
-
-/* Utilities */
-.divider          /* Horizontal rule */
-.section-title    /* Uppercase label (10px) */
-.skeleton         /* Loading placeholder */
-```
-
-### UI Consistency Standards
-
-All pages follow these consistency standards for a unified look and feel:
-
-| Element | Standard Class |
-|---------|---------------|
-| Buttons | `btn-{variant} btn-sm` (use `btn-sm` by default) |
-| Inputs | `input input-sm` |
-| Page Padding | `p-4 sm:p-6` (responsive) |
-| Page Headers | `text-xl sm:text-2xl font-semibold text-text-primary` |
-| Description Text | `text-sm text-text-secondary mt-1` |
-| Back Links | `text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors` |
-| Error Messages | `text-xs text-status-error mt-1.5` |
-| Card Headers | `p-4 border-b border-border-primary` |
-| Form Labels | `label` class (12px, medium weight) |
-
-### Reusable UI Components
-
-Located in `src/components/ui/`. These components use **Chakra UI** primitives with custom styling to match the Oakcloud design system.
-
-| Component | Props | Description |
-|-----------|-------|-------------|
-| `Button` | `variant`, `size`, `isLoading`, `iconOnly`, `leftIcon`, `rightIcon` | Chakra-based button with oak theme |
-| `FormInput` | `label`, `error`, `hint`, `inputSize`, `leftIcon`, `rightIcon` | Chakra Input with validation |
-| `Alert` | `variant`, `title`, `compact`, `onClose` | Chakra Box-based notifications |
-| `Modal` | `isOpen`, `onClose`, `title`, `size`, `closeOnEscape` | Accessible modal dialog |
-| `ConfirmDialog` | `title`, `description`, `variant`, `requireReason` | Confirmation dialog with optional reason input |
-| `Dropdown` | Composable: `Trigger`, `Menu`, `Item`, `align` | Portal-rendered dropdown (prevents clipping in tables) |
-| `Toast` | Via `useToast()` hook | Toast notifications (success, error, warning, info) |
-| `Sidebar` | - | Responsive navigation with mobile drawer and theme toggle |
-| `AuthGuard` | - | Route protection wrapper |
-| `ErrorBoundary` | `fallback`, `onError` | React error boundary with fallback UI |
-| `ThemeProvider` | - | Theme context provider, applies theme class to document |
-| `ThemeToggle` | `variant` | Theme switcher (button or dropdown variant) |
-| `TenantSelector` | `value`, `onChange`, `label`, `placeholder`, `helpText`, `variant` | Tenant dropdown for SUPER_ADMIN operations |
-| `AIModelSelector` | `value`, `onChange`, `showContextInput`, `showStandardContexts`, etc. | AI model selection with optional context input |
-
-#### Button Examples
-```tsx
-import { Button } from '@/components/ui/button';
-
-// Standard button
-<Button variant="primary" size="sm">Save</Button>
-
-// With loading state
-<Button isLoading>Saving...</Button>
-
-// Icon button
-<Button variant="ghost" size="sm" iconOnly leftIcon={<Plus />} />
-
-// Danger action
-<Button variant="danger" size="xs" leftIcon={<Trash />}>Delete</Button>
-```
-
-#### FormInput Examples
-```tsx
-import { FormInput } from '@/components/ui/form-input';
-
-// Basic input
-<FormInput label="Email" type="email" placeholder="you@example.com" />
-
-// With icon and error
-<FormInput
-  label="Password"
-  type="password"
-  inputSize="md"
-  leftIcon={<Lock />}
-  error="Password is required"
-/>
-```
-
-#### Alert Examples
-```tsx
-import { Alert } from '@/components/ui/alert';
-
-// Error alert
-<Alert variant="error">Invalid credentials</Alert>
-
-// Success with title
-<Alert variant="success" title="Saved">Company updated successfully</Alert>
-
-// Compact variant
-<Alert variant="info" compact>Processing...</Alert>
-```
-
-#### Modal & ConfirmDialog Examples
-```tsx
-import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-
-// Basic modal
-<Modal isOpen={isOpen} onClose={onClose} title="Edit Company">
-  <ModalBody>Content here</ModalBody>
-  <ModalFooter>
-    <Button variant="secondary" onClick={onClose}>Cancel</Button>
-    <Button variant="primary" onClick={onSave}>Save</Button>
-  </ModalFooter>
-</Modal>
-
-// Delete confirmation with reason
-<ConfirmDialog
-  isOpen={isOpen}
-  onClose={onClose}
-  onConfirm={(reason) => handleDelete(reason)}
-  title="Delete Company"
-  description="This action cannot be undone."
-  variant="danger"
-  requireReason
-  reasonMinLength={10}
-/>
-```
-
-#### Dropdown Examples
-```tsx
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
-
-<Dropdown>
-  <DropdownTrigger>Options</DropdownTrigger>
-  <DropdownMenu>
-    <DropdownItem icon={<Edit />} onClick={onEdit}>Edit</DropdownItem>
-    <DropdownItem icon={<Trash />} destructive onClick={onDelete}>Delete</DropdownItem>
-  </DropdownMenu>
-</Dropdown>
-```
-
-#### Toast Examples
-```tsx
-import { useToast } from '@/components/ui/toast';
-
-function MyComponent() {
-  const { success, error, warning, info } = useToast();
-
-  const handleSave = async () => {
-    try {
-      await saveData();
-      success('Data saved successfully');
-    } catch (err) {
-      error('Failed to save data');
-    }
-  };
-}
-```
-
-#### TenantSelector Examples
-```tsx
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
-
-function AdminPage() {
-  const { data: session } = useSession();
-  const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const [selectedTenantId, setSelectedTenantId] = useState('');
-
-  // Get active tenant (session tenant for normal users, selected for SUPER_ADMIN)
-  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
-
-  return (
-    <>
-      {/* Default variant with card wrapper */}
-      {isSuperAdmin && (
-        <TenantSelector
-          value={selectedTenantId}
-          onChange={setSelectedTenantId}
-          helpText="Select a tenant to manage."
-        />
-      )}
-
-      {/* Compact variant without card wrapper */}
-      {isSuperAdmin && (
-        <TenantSelector
-          value={selectedTenantId}
-          onChange={setSelectedTenantId}
-          variant="compact"
-        />
-      )}
-    </>
-  );
-}
-```
-
-### Layout Guidelines
-
-#### Sidebar
-- Width: `224px` (expanded), `56px` (collapsed)
-- Nav items: `13px` font, `8px` vertical padding
-- Logo: `28px` icon, `14px` text
-- Icons: `18px`
-
-#### Page Content
-- Main content: `ml-56` (224px left margin)
-- Page padding: `p-4` to `p-6`
-- Max content width: None (fluid)
-
-#### Cards & Sections
-- Card padding: `p-3` (compact) to `p-4` (standard)
-- Section gaps: `space-y-4` to `space-y-6`
-- Border radius: `4px` (default), `6px` (cards, large buttons)
+For complete design system documentation including typography, color palette, component specifications, and usage examples, see **[DESIGN_GUIDELINE.md](./DESIGN_GUIDELINE.md)**.
+
+Key highlights:
+- **Design Philosophy**: Sleek, modern, compact UI inspired by Linear.app
+- **Theme Support**: Light mode (default) and dark mode with CSS variables
+- **Component Library**: Reusable UI components in `src/components/ui/`
+- **Spacing System**: 4px grid (4, 8, 12, 16, 20, 24, 32px)
 
 ---
 
@@ -1847,9 +1580,10 @@ function AdminPage() {
 1. **Company CRUD Operations**
    - Create companies manually or via BizFile
    - View paginated list with search and filters
-   - View detailed company information
+   - View detailed company information with expanded officer/shareholder details
    - Edit company details
    - Soft-delete with reason tracking
+   - **Bulk delete** - Select multiple companies for batch deletion
 
 2. **BizFile Integration**
    - Upload BizFile documents (PDF or images: PNG, JPG, WebP)
@@ -1859,6 +1593,10 @@ function AdminPage() {
    - Standard context injection (current date/time, timezone)
    - Preview extracted data before saving
    - Automatic contact creation and linking
+   - **Update via BizFile** - Update existing companies with diff preview
+   - Selective updates - only changed fields are modified
+   - Clean audit logs showing actual field changes
+   - **Text normalization** - Automatic case normalization during extraction
 
 3. **Data Extracted from BizFile**
    - Entity details (UEN, name, type, status)
@@ -1872,10 +1610,16 @@ function AdminPage() {
    - Auditor information
    - Compliance dates
 
-4. **Contact Management**
-   - Automatic contact creation from BizFile
-   - Duplicate detection by ID number
-   - Company-contact relationship linking
+4. **Contact Management from BizFile**
+   - Automatic contact creation from officers, shareholders, and charge holders
+   - **Duplicate Detection**:
+     - For individuals: Matches by `identificationType` + `identificationNumber` (NRIC, FIN, Passport)
+     - For corporates: Matches by `corporateUen`
+     - If match found, links existing contact instead of creating duplicate
+   - **Update Behavior**: BizFile extraction does NOT update existing contact details
+     - Only creates new contacts or reuses existing ones
+     - Contact updates must be done manually through the Contact management module
+   - Company-contact relationship linking with role attribution
 
 5. **Search & Filtering**
    - Full-text search across multiple fields
@@ -1888,7 +1632,220 @@ function AdminPage() {
    - User and source attribution
    - Deletion reasons
 
+---
+
+## Module: Contact Management
+
+### Features
+
+1. **Contact CRUD Operations**
+   - Create individual or corporate contacts
+   - View paginated list with search and filters
+   - View detailed contact information with company relationships
+   - Edit contact details
+   - Soft-delete with reason tracking
+   - Restore deleted contacts
+
+2. **Contact Types**
+   - **Individual**: Personal contacts with name, nationality, date of birth
+   - **Corporate**: Business entities with corporate name and UEN
+
+3. **Identification**
+   - NRIC (Singapore National Registration Identity Card)
+   - FIN (Foreign Identification Number)
+   - Passport
+   - UEN (Unique Entity Number)
+   - Other custom identification types
+
+4. **Company Relationships**
+   - Link contacts to multiple companies
+   - Track relationship types (officer, shareholder, etc.)
+   - View all company associations from contact detail
+   - Link/unlink companies via modal interface
+
+5. **Officer & Shareholder Tracking**
+   - View officer positions across companies
+   - View shareholding positions across companies
+   - Historical position tracking with effective dates
+
+6. **Search & Filtering**
+   - Search by name, email, phone, ID number
+   - Filter by contact type (Individual/Corporate)
+   - Paginated results with sorting
+
+7. **Bulk Operations**
+   - Checkbox selection for multiple contacts
+   - Bulk delete with confirmation dialog
+   - Reason tracking for compliance
+   - Maximum 100 contacts per bulk operation
+
+8. **Audit Trail**
+   - All changes tracked with timestamps
+   - Old/new value comparison
+   - User and source attribution
+   - Deletion/restoration logging
+
+### API Endpoints
+
+#### List Contacts
+```
+GET /api/contacts
+```
+
+Query Parameters:
+- `query` - Search term (name, email, phone, ID number)
+- `contactType` - Filter by type (INDIVIDUAL, CORPORATE)
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20)
+- `sortBy` - Sort field (default: updatedAt)
+- `sortOrder` - asc or desc (default: desc)
+
+#### Get Contact
+```
+GET /api/contacts/:id
+GET /api/contacts/:id?full=true  # Include all relations
+```
+
+#### Create Contact
+```
+POST /api/contacts
+Content-Type: application/json
+
+{
+  "contactType": "INDIVIDUAL",
+  "firstName": "John",
+  "lastName": "Doe",
+  "identificationType": "NRIC",
+  "identificationNumber": "S1234567A",
+  "email": "john@example.com",
+  "phone": "+65 9123 4567"
+}
+```
+
+#### Update Contact
+```
+PATCH /api/contacts/:id
+Content-Type: application/json
+
+{
+  "email": "newemail@example.com",
+  "phone": "+65 9987 6543"
+}
+```
+
+#### Delete Contact (Soft Delete)
+```
+DELETE /api/contacts/:id
+Content-Type: application/json
+
+{
+  "reason": "Duplicate contact entry"
+}
+```
+
+#### Restore Contact
+```
+PUT /api/contacts/:id
+Content-Type: application/json
+
+{
+  "action": "restore"
+}
+```
+
+#### Bulk Delete Contacts
+```
+DELETE /api/contacts/bulk
+Content-Type: application/json
+
+{
+  "ids": ["uuid1", "uuid2", "uuid3"],
+  "reason": "Duplicate contact entries - data cleanup"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "deleted": 3,
+  "message": "Successfully deleted 3 contacts"
+}
+```
+
+Notes:
+- Maximum 100 contacts per request
+- All contacts must belong to user's tenant
+- Reason must be at least 10 characters
+- Performs soft delete with audit logging for each contact
+
+#### Link Contact to Company
+```
+PUT /api/contacts/:id
+Content-Type: application/json
+
+{
+  "action": "link",
+  "companyId": "company-uuid",
+  "relationshipType": "OTHER"
+}
+```
+
+#### Unlink Contact from Company
+```
+PUT /api/contacts/:id
+Content-Type: application/json
+
+{
+  "action": "unlink",
+  "companyId": "company-uuid"
+}
+```
+
+#### Get Contact Audit History
+```
+GET /api/contacts/:id/audit
+```
+
+Query Parameters:
+- `limit` - Number of records (default: 50)
+- `offset` - Skip records (default: 0)
+- `actions` - Filter by actions (comma-separated)
+
 ### File Structure
+
+```
+src/
+├── app/
+│   ├── (dashboard)/
+│   │   └── contacts/
+│   │       ├── page.tsx           # Contact list
+│   │       ├── loading.tsx        # List loading skeleton
+│   │       ├── new/page.tsx       # Create contact
+│   │       └── [id]/
+│   │           ├── page.tsx       # Contact detail
+│   │           ├── loading.tsx    # Detail loading skeleton
+│   │           ├── edit/page.tsx  # Edit contact
+│   │           └── audit/page.tsx # Audit history
+│   └── api/
+│       └── contacts/
+│           ├── route.ts           # List/Create
+│           └── [id]/
+│               ├── route.ts       # Get/Update/Delete/Restore/Link/Unlink
+│               └── audit/route.ts # Audit history
+├── components/
+│   └── contacts/
+│       ├── contact-table.tsx      # Contact list table
+│       └── contact-filters.tsx    # Search and filter controls
+├── hooks/
+│   └── use-contacts.ts            # Contact data hooks
+└── services/
+    └── contact.service.ts         # Contact business logic
+```
+
+---
+
+### File Structure (Full Application)
 
 ```
 src/
@@ -1902,6 +1859,15 @@ src/
 │   │   │   └── [id]/
 │   │   │       ├── page.tsx       # Company detail
 │   │   │       ├── edit/page.tsx  # Edit company
+│   │   │       └── audit/page.tsx # Audit history
+│   │   ├── contacts/
+│   │   │   ├── page.tsx           # Contact list
+│   │   │   ├── loading.tsx        # List loading skeleton
+│   │   │   ├── new/page.tsx       # Create contact
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx       # Contact detail
+│   │   │       ├── loading.tsx    # Detail loading skeleton
+│   │   │       ├── edit/page.tsx  # Edit contact
 │   │   │       └── audit/page.tsx # Audit history
 │   │   └── admin/
 │   │       ├── users/page.tsx     # User management (TENANT_ADMIN+)
@@ -1918,11 +1884,22 @@ src/
 │       │   └── me/route.ts        # GET - Current session
 │       ├── companies/
 │       │   ├── route.ts           # List/Create
+│       │   ├── bulk/route.ts      # Bulk delete
 │       │   ├── stats/route.ts     # Statistics
 │       │   └── [id]/
 │       │       ├── route.ts       # Get/Update/Delete
 │       │       ├── audit/route.ts # Audit history
 │       │       └── documents/     # Document management
+│       ├── contacts/
+│       │   ├── route.ts           # List/Create contacts
+│       │   ├── bulk/route.ts      # Bulk delete contacts
+│       │   └── [id]/
+│       │       ├── route.ts       # Get/Update/Delete/Restore/Link/Unlink
+│       │       └── audit/route.ts # Contact audit history
+│       ├── documents/
+│       │   └── [documentId]/
+│       │       ├── preview-diff/route.ts  # Preview BizFile diff
+│       │       └── apply-update/route.ts  # Apply selective update
 │       ├── tenants/
 │       │   ├── route.ts           # List/Create tenants
 │       │   └── [id]/
@@ -1956,16 +1933,22 @@ src/
 │   │   ├── dropdown.tsx           # Click-outside aware dropdown
 │   │   ├── toast.tsx              # Toast notification system
 │   │   ├── theme-toggle.tsx       # Theme switcher component
-│   │   └── ai-model-selector.tsx  # AI model selection with context
+│   │   ├── ai-model-selector.tsx  # AI model selection with context
+│   │   └── checkbox.tsx           # Checkbox with indeterminate state
 │   ├── theme-provider.tsx         # Theme context provider
-│   └── companies/
-│       ├── company-table.tsx
-│       ├── company-filters.tsx
-│       └── pagination.tsx
+│   ├── companies/
+│   │   ├── company-table.tsx
+│   │   ├── company-filters.tsx
+│   │   └── pagination.tsx
+│   └── contacts/
+│       ├── contact-table.tsx      # Contact list table
+│       └── contact-filters.tsx    # Search and filter controls
 ├── hooks/
 │   ├── use-auth.ts                # Auth hooks (useSession, useLogin, useLogout)
 │   ├── use-companies.ts           # Company data hooks
+│   ├── use-contacts.ts            # Contact data hooks (includes bulk delete)
 │   ├── use-admin.ts               # Admin hooks (users, tenants, roles, audit logs)
+│   ├── use-selection.ts           # Multi-select state management
 │   ├── use-click-outside.ts       # Click outside detection
 │   ├── use-local-storage.ts       # localStorage persistence
 │   └── use-media-query.ts         # Responsive breakpoints
@@ -1980,7 +1963,7 @@ src/
 │   ├── tenant.ts                  # Multi-tenancy utilities
 │   ├── rbac.ts                    # Role-based access control
 │   ├── request-context.ts         # Request context extraction
-│   ├── utils.ts                   # Utility functions
+│   ├── utils.ts                   # Utility functions (date formatting, text normalization)
 │   ├── ai/                        # AI service (multi-provider)
 │   │   ├── index.ts               # Main AI service entry point
 │   │   ├── types.ts               # TypeScript types
@@ -2411,7 +2394,7 @@ docker ps
 
 For detailed version history and changelog, see [CHANGELOG.md](./CHANGELOG.md).
 
-**Current Version:** v0.7.0 (2025-12-04)
+**Current Version:** v0.9.2 (2025-12-04)
 
 ---
 
