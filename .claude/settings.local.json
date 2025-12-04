@@ -39,7 +39,8 @@
       "Bash(npm run db:generate:*)",
       "WebSearch",
       "WebFetch(domain:ai.google.dev)",
-      "WebFetch(domain:platform.openai.com)"
+      "WebFetch(domain:platform.openai.com)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []

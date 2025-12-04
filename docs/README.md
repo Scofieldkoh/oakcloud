@@ -753,6 +753,84 @@ Notes:
 - Reason must be at least 10 characters
 - Performs soft delete with audit logging for each company
 
+#### Link/Unlink Officer to Contact
+```
+PATCH /api/companies/:id/officers/:officerId
+Content-Type: application/json
+
+// Link officer to a contact
+{
+  "contactId": "contact-uuid"
+}
+
+// Unlink officer from contact
+{
+  "contactId": null
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "action": "linked"  // or "unlinked"
+}
+```
+
+#### Link/Unlink Shareholder to Contact
+```
+PATCH /api/companies/:id/shareholders/:shareholderId
+Content-Type: application/json
+
+// Link shareholder to a contact
+{
+  "contactId": "contact-uuid"
+}
+
+// Unlink shareholder from contact
+{
+  "contactId": null
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "action": "linked"  // or "unlinked"
+}
+```
+
+#### Remove Officer (Mark as Ceased)
+```
+DELETE /api/companies/:id/officers/:officerId
+```
+
+Response:
+```json
+{
+  "success": true
+}
+```
+
+Marks the officer as ceased (`isCurrent: false`) with cessation date set to today if not already set. Recalculates are not needed for officers.
+
+#### Remove Shareholder (Mark as Former)
+```
+DELETE /api/companies/:id/shareholders/:shareholderId
+```
+
+Response:
+```json
+{
+  "success": true
+}
+```
+
+Marks the shareholder as former (`isCurrent: false`) and recalculates percentage held for all remaining current shareholders.
+
+**Note:** Officer/shareholder address and nationality displayed on the Company detail page are sourced from the linked Contact record when available, falling back to the officer/shareholder's own stored data if no contact is linked.
+
 ### Documents
 
 #### Upload Document
@@ -1662,11 +1740,19 @@ Key highlights:
    - Track relationship types (officer, shareholder, etc.)
    - View all company associations from contact detail
    - Link/unlink companies via modal interface
+   - **Consolidated view**: Unified display of all relationships per company
+   - **RBAC filtering**: Company relationships filtered by user's company access
+   - **Hidden count indicator**: Shows count of hidden companies due to access restrictions
+   - **Filter by company name**: Text search by company name or UEN
+   - **Filter by position**: Dropdown to filter by officer role, shareholder, or general relationship
 
 5. **Officer & Shareholder Tracking**
    - View officer positions across companies
    - View shareholding positions across companies
    - Historical position tracking with effective dates
+   - **Edit officer positions**: Adjust appointment and cessation dates
+   - **Edit shareholdings**: Modify number of shares and share class
+   - **Remove positions**: Delete officer/shareholder records with automatic cleanup
 
 6. **Search & Filtering**
    - Search by name, email, phone, ID number
@@ -1793,12 +1879,52 @@ Content-Type: application/json
 
 #### Unlink Contact from Company
 ```
-PUT /api/contacts/:id
+PUT /api/contacts/:id?action=unlink-company
 Content-Type: application/json
 
 {
-  "action": "unlink",
-  "companyId": "company-uuid"
+  "companyId": "company-uuid",
+  "relationship": "Nominee"
+}
+```
+
+#### Remove Officer Position
+```
+DELETE /api/companies/:companyId/officers/:officerId
+```
+
+Marks the officer as ceased (`isCurrent: false`) with cessation date set to today if not already set.
+
+#### Remove Shareholding
+```
+DELETE /api/companies/:companyId/shareholders/:shareholderId
+```
+
+Marks the shareholder as former (`isCurrent: false`) and recalculates percentage held for all remaining current shareholders.
+
+#### Update Officer Position
+```
+PUT /api/contacts/:id?action=update-officer
+Content-Type: application/json
+
+{
+  "officerId": "officer-uuid",
+  "appointmentDate": "2024-01-15",
+  "cessationDate": "2024-12-31"  // null to clear
+}
+```
+
+Updates officer appointment/cessation dates. Setting cessationDate marks the position as ceased (`isCurrent: false`).
+
+#### Update Shareholding
+```
+PUT /api/contacts/:id?action=update-shareholder
+Content-Type: application/json
+
+{
+  "shareholderId": "shareholder-uuid",
+  "numberOfShares": 5000,
+  "shareClass": "Preference"
 }
 ```
 
@@ -1835,8 +1961,9 @@ src/
 │               └── audit/route.ts # Audit history
 ├── components/
 │   └── contacts/
-│       ├── contact-table.tsx      # Contact list table
-│       └── contact-filters.tsx    # Search and filter controls
+│       ├── contact-table.tsx         # Contact list table
+│       ├── contact-filters.tsx       # Search and filter controls
+│       └── company-relationships.tsx # Consolidated company relationships view
 ├── hooks/
 │   └── use-contacts.ts            # Contact data hooks
 └── services/
@@ -2394,7 +2521,7 @@ docker ps
 
 For detailed version history and changelog, see [CHANGELOG.md](./CHANGELOG.md).
 
-**Current Version:** v0.9.2 (2025-12-04)
+**Current Version:** v0.9.10 (2025-12-04)
 
 ---
 

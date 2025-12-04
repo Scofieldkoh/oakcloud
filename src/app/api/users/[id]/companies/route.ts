@@ -17,7 +17,7 @@ import {
 import { z } from 'zod';
 
 const assignCompanySchema = z.object({
-  companyId: z.string().uuid('Invalid company ID'),
+  companyId: z.string().uuid('Invalid company ID').nullable(), // null = "All Companies"
   roleId: z.string().uuid('Invalid role ID').optional(), // Role to assign for this company
   isPrimary: z.boolean().optional(),
   tenantId: z.string().uuid('Invalid tenant ID').optional(), // Required for SUPER_ADMIN

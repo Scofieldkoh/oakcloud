@@ -28,6 +28,8 @@ interface CompanyWithRelations extends Company {
       id: string;
       email?: string | null;
       phone?: string | null;
+      nationality?: string | null;
+      fullAddress?: string | null;
     } | null;
   }>;
   shareholders?: Array<{
@@ -48,6 +50,8 @@ interface CompanyWithRelations extends Company {
       id: string;
       email?: string | null;
       phone?: string | null;
+      nationality?: string | null;
+      fullAddress?: string | null;
     } | null;
   }>;
   charges?: Array<{
@@ -256,6 +260,248 @@ export function useBulkDeleteCompanies() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['company-stats'] });
+    },
+  });
+}
+
+// ============================================================================
+// Company Link Info (for delete confirmation)
+// ============================================================================
+
+export interface CompanyLinkInfo {
+  hasLinks: boolean;
+  officerCount: number;
+  shareholderCount: number;
+  chargeCount: number;
+  documentCount: number;
+  totalLinks: number;
+}
+
+async function fetchCompanyLinkInfo(id: string): Promise<CompanyLinkInfo> {
+  const res = await fetch(`/api/companies/${id}/links`);
+  if (!res.ok) {
+    throw new Error('Failed to fetch company link info');
+  }
+  return res.json();
+}
+
+export function useCompanyLinkInfo(id: string | null) {
+  return useQuery({
+    queryKey: ['company-links', id],
+    queryFn: () => fetchCompanyLinkInfo(id!),
+    enabled: !!id,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+}
+
+// ============================================================================
+// Officer Link Management
+// ============================================================================
+
+async function linkOfficer(companyId: string, officerId: string, contactId: string): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/officers/${officerId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contactId }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to link officer');
+  }
+}
+
+async function unlinkOfficer(companyId: string, officerId: string): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/officers/${officerId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contactId: null }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to unlink officer');
+  }
+}
+
+export function useLinkOfficer(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ officerId, contactId }: { officerId: string; contactId: string }) =>
+      linkOfficer(companyId, officerId, contactId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+export function useUnlinkOfficer(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (officerId: string) => unlinkOfficer(companyId, officerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+async function updateOfficer(
+  companyId: string,
+  officerId: string,
+  data: { appointmentDate?: string | null; cessationDate?: string | null }
+): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/officers/${officerId}?action=update`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to update officer');
+  }
+}
+
+export function useUpdateOfficer(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      officerId,
+      data,
+    }: {
+      officerId: string;
+      data: { appointmentDate?: string | null; cessationDate?: string | null };
+    }) => updateOfficer(companyId, officerId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+async function removeOfficerFn(companyId: string, officerId: string): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/officers/${officerId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to remove officer');
+  }
+}
+
+export function useRemoveOfficer(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (officerId: string) => removeOfficerFn(companyId, officerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+  });
+}
+
+// ============================================================================
+// Shareholder Link Management
+// ============================================================================
+
+async function linkShareholder(companyId: string, shareholderId: string, contactId: string): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contactId }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to link shareholder');
+  }
+}
+
+async function unlinkShareholder(companyId: string, shareholderId: string): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contactId: null }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to unlink shareholder');
+  }
+}
+
+export function useLinkShareholder(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ shareholderId, contactId }: { shareholderId: string; contactId: string }) =>
+      linkShareholder(companyId, shareholderId, contactId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+export function useUnlinkShareholder(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (shareholderId: string) => unlinkShareholder(companyId, shareholderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+async function updateShareholderFn(
+  companyId: string,
+  shareholderId: string,
+  data: { numberOfShares?: number; shareClass?: string }
+): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}?action=update`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to update shareholder');
+  }
+}
+
+export function useUpdateShareholder(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      shareholderId,
+      data,
+    }: {
+      shareholderId: string;
+      data: { numberOfShares?: number; shareClass?: string };
+    }) => updateShareholderFn(companyId, shareholderId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+async function removeShareholderFn(companyId: string, shareholderId: string): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to remove shareholder');
+  }
+}
+
+export function useRemoveShareholder(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (shareholderId: string) => removeShareholderFn(companyId, shareholderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
     },
   });
 }

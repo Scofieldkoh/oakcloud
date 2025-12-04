@@ -48,6 +48,7 @@ interface ContactWithRelationships extends Contact {
       uen: string;
     };
   }>;
+  hiddenCompanyCount?: number;  // Number of companies hidden due to RBAC
 }
 
 interface ContactSearchParams {
@@ -146,16 +147,26 @@ async function restoreContact(id: string): Promise<{ message: string; contact: C
   return response.json();
 }
 
+interface LinkContactToCompanyParams {
+  contactId: string;
+  companyId: string;
+  relationship: string;
+  isPrimary?: boolean;
+  // Officer-specific fields
+  appointmentDate?: string;
+  // Shareholder-specific fields
+  numberOfShares?: number;
+  shareClass?: string;
+}
+
 async function linkContactToCompany(
-  contactId: string,
-  companyId: string,
-  relationship: string,
-  isPrimary = false
+  params: LinkContactToCompanyParams
 ): Promise<{ message: string }> {
+  const { contactId, ...body } = params;
   const response = await fetch(`/api/contacts/${contactId}?action=link-company`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ companyId, relationship, isPrimary }),
+    body: JSON.stringify(body),
   });
   if (!response.ok) {
     const error = await response.json();
@@ -278,20 +289,11 @@ export function useLinkContactToCompany() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      contactId,
-      companyId,
-      relationship,
-      isPrimary,
-    }: {
-      contactId: string;
-      companyId: string;
-      relationship: string;
-      isPrimary?: boolean;
-    }) => linkContactToCompany(contactId, companyId, relationship, isPrimary),
-    onSuccess: (_, { contactId }) => {
+    mutationFn: (params: LinkContactToCompanyParams) => linkContactToCompany(params),
+    onSuccess: (_, { contactId, companyId }) => {
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
     },
   });
 }
@@ -313,6 +315,176 @@ export function useUnlinkContactFromCompany() {
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
     },
+  });
+}
+
+// Remove officer position (mark as ceased)
+async function removeOfficerPosition(
+  companyId: string,
+  officerId: string
+): Promise<{ success: boolean }> {
+  const response = await fetch(`/api/companies/${companyId}/officers/${officerId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to remove officer');
+  }
+  return response.json();
+}
+
+export function useRemoveOfficerPosition() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ contactId, officerId, companyId }: { contactId: string; officerId: string; companyId: string }) =>
+      removeOfficerPosition(companyId, officerId),
+    onSuccess: (_, { contactId, companyId }) => {
+      queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+// Remove shareholding (mark as former)
+async function removeShareholding(
+  companyId: string,
+  shareholderId: string
+): Promise<{ success: boolean }> {
+  const response = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to remove shareholder');
+  }
+  return response.json();
+}
+
+export function useRemoveShareholding() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ contactId, shareholderId, companyId }: { contactId: string; shareholderId: string; companyId: string }) =>
+      removeShareholding(companyId, shareholderId),
+    onSuccess: (_, { contactId, companyId }) => {
+      queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+// Update officer position
+async function updateOfficerPosition(
+  contactId: string,
+  officerId: string,
+  data: { appointmentDate?: string | null; cessationDate?: string | null }
+): Promise<{ message: string }> {
+  const response = await fetch(`/api/contacts/${contactId}?action=update-officer`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ officerId, ...data }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update officer position');
+  }
+  return response.json();
+}
+
+export function useUpdateOfficerPosition() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      contactId,
+      officerId,
+      companyId,
+      data,
+    }: {
+      contactId: string;
+      officerId: string;
+      companyId: string;
+      data: { appointmentDate?: string | null; cessationDate?: string | null };
+    }) => updateOfficerPosition(contactId, officerId, data),
+    onSuccess: (_, { contactId, companyId }) => {
+      queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+// Update shareholding
+async function updateShareholding(
+  contactId: string,
+  shareholderId: string,
+  data: { numberOfShares?: number; shareClass?: string }
+): Promise<{ message: string }> {
+  const response = await fetch(`/api/contacts/${contactId}?action=update-shareholder`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ shareholderId, ...data }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update shareholding');
+  }
+  return response.json();
+}
+
+export function useUpdateShareholding() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      contactId,
+      shareholderId,
+      companyId,
+      data,
+    }: {
+      contactId: string;
+      shareholderId: string;
+      companyId: string;
+      data: { numberOfShares?: number; shareClass?: string };
+    }) => updateShareholding(contactId, shareholderId, data),
+    onSuccess: (_, { contactId, companyId }) => {
+      queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+    },
+  });
+}
+
+// ============================================================================
+// Contact Link Info (for delete confirmation)
+// ============================================================================
+
+export interface ContactLinkInfo {
+  hasLinks: boolean;
+  companyRelationCount: number;
+  officerPositionCount: number;
+  shareholdingCount: number;
+  chargeHolderCount: number;
+  totalLinks: number;
+}
+
+async function fetchContactLinkInfo(id: string): Promise<ContactLinkInfo> {
+  const res = await fetch(`/api/contacts/${id}/links`);
+  if (!res.ok) {
+    throw new Error('Failed to fetch contact link info');
+  }
+  return res.json();
+}
+
+export function useContactLinkInfo(id: string | null) {
+  return useQuery({
+    queryKey: ['contact-links', id],
+    queryFn: () => fetchContactLinkInfo(id!),
+    enabled: !!id,
+    staleTime: 30000, // Cache for 30 seconds
   });
 }
 

@@ -75,12 +75,7 @@ export default function EditContactPage({
         corporateUen: contact.corporateUen || undefined,
         email: contact.email || undefined,
         phone: contact.phone || undefined,
-        alternatePhone: contact.alternatePhone || undefined,
-        addressLine1: contact.addressLine1 || undefined,
-        addressLine2: contact.addressLine2 || undefined,
-        postalCode: contact.postalCode || undefined,
-        city: contact.city || undefined,
-        country: contact.country || undefined,
+        fullAddress: contact.fullAddress || undefined,
         internalNotes: contact.internalNotes || undefined,
       });
     }
@@ -372,15 +367,6 @@ export default function EditContactPage({
                 />
               </div>
             </div>
-            <div>
-              <label className="label">Alternate Phone</label>
-              <input
-                type="tel"
-                {...register('alternatePhone')}
-                placeholder="+65 6123 4567"
-                className="input input-sm"
-              />
-            </div>
           </div>
         </div>
 
@@ -389,53 +375,15 @@ export default function EditContactPage({
           <div className="p-4 border-b border-border-primary">
             <h2 className="font-medium text-text-primary">Address</h2>
           </div>
-          <div className="p-4 space-y-4">
+          <div className="p-4">
             <div>
-              <label className="label">Address Line 1</label>
+              <label className="label">Full Address</label>
               <input
                 type="text"
-                {...register('addressLine1')}
-                placeholder="123 Main Street"
+                {...register('fullAddress')}
+                placeholder="123 Main Street, #01-02, Singapore 123456"
                 className="input input-sm"
               />
-            </div>
-            <div>
-              <label className="label">Address Line 2</label>
-              <input
-                type="text"
-                {...register('addressLine2')}
-                placeholder="Unit 01-02"
-                className="input input-sm"
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="label">Postal Code</label>
-                <input
-                  type="text"
-                  {...register('postalCode')}
-                  placeholder="123456"
-                  className="input input-sm"
-                />
-              </div>
-              <div>
-                <label className="label">City</label>
-                <input
-                  type="text"
-                  {...register('city')}
-                  placeholder="Singapore"
-                  className="input input-sm"
-                />
-              </div>
-              <div>
-                <label className="label">Country</label>
-                <input
-                  type="text"
-                  {...register('country')}
-                  placeholder="SINGAPORE"
-                  className="input input-sm"
-                />
-              </div>
             </div>
           </div>
         </div>

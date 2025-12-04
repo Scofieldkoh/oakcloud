@@ -475,14 +475,9 @@ model Contact {
   // Contact Info
   email               String?
   phone               String?
-  alternatePhone      String?
 
   // Address
-  addressLine1        String?
-  addressLine2        String?
-  postalCode          String?
-  city                String?
-  country             String?           @default("SINGAPORE")
+  fullAddress         String?
 
   // Meta
   isActive            Boolean           @default(true)

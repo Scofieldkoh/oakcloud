@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { normalizeName, normalizeCompanyName, normalizeAddress } from '@/lib/utils';
-import { findOrCreateContact, linkContactToCompany } from './contact.service';
+import { findOrCreateContact, createCompanyContactRelation } from './contact.service';
 import { callAI, getBestAvailableModel, getModelConfig } from '@/lib/ai';
 import type { AIModel, AIImageInput } from '@/lib/ai';
 import type { EntityType, CompanyStatus, OfficerRole, ContactType, IdentificationType } from '@prisma/client';
@@ -1271,8 +1271,7 @@ export async function processBizFileExtraction(
           identificationType: mapIdentificationType(officer.identificationType) || undefined,
           identificationNumber: officer.identificationNumber,
           nationality: officer.nationality,
-          addressLine1: officer.address,
-          country: 'SINGAPORE',
+          fullAddress: officer.address,
         },
         { tenantId, userId }
       );
@@ -1296,9 +1295,9 @@ export async function processBizFileExtraction(
         },
       });
 
-      // Link contact to company
+      // Link contact to company via general relationship
       if (isCurrent) {
-        await linkContactToCompany(contact.id, result.id, officer.role);
+        await createCompanyContactRelation(contact.id, result.id, officer.role);
       }
     }
   }
@@ -1314,8 +1313,7 @@ export async function processBizFileExtraction(
           contactType: 'CORPORATE' as const,
           corporateName: shareholder.name,
           corporateUen: shareholder.identificationNumber,
-          addressLine1: shareholder.address,
-          country: 'SINGAPORE',
+          fullAddress: shareholder.address,
         };
       } else {
         const nameParts = shareholder.name.split(' ');
@@ -1326,8 +1324,7 @@ export async function processBizFileExtraction(
           identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
           identificationNumber: shareholder.identificationNumber,
           nationality: shareholder.nationality,
-          addressLine1: shareholder.address,
-          country: 'SINGAPORE',
+          fullAddress: shareholder.address,
         };
       }
 
@@ -1353,27 +1350,17 @@ export async function processBizFileExtraction(
         },
       });
 
-      await linkContactToCompany(contact.id, result.id, 'Shareholder');
+      await createCompanyContactRelation(contact.id, result.id, 'Shareholder');
     }
   }
 
-  // Process charges
+  // Process charges (without creating contacts - charges are typically banks/financial institutions)
   if (normalizedData.charges?.length) {
     for (const charge of normalizedData.charges) {
-      // Find or create charge holder contact
-      const { contact: chargeHolder } = await findOrCreateContact(
-        {
-          contactType: 'CORPORATE',
-          corporateName: charge.chargeHolderName,
-          country: 'SINGAPORE',
-        },
-        { tenantId, userId }
-      );
-
       await prisma.companyCharge.create({
         data: {
           companyId: result.id,
-          chargeHolderId: chargeHolder.id,
+          // Don't link to contact - chargeHolderId intentionally left null
           chargeNumber: charge.chargeNumber,
           chargeType: charge.chargeType,
           description: charge.description,
@@ -1387,10 +1374,8 @@ export async function processBizFileExtraction(
           sourceDocumentId: documentId,
         },
       });
-
-        await linkContactToCompany(chargeHolder.id, result.id, 'Charge Holder');
-      }
     }
+  }
   } catch (error) {
     // Log error but don't fail the entire extraction
     // The company is already created, so we can't rollback

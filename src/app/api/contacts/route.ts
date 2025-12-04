@@ -29,7 +29,13 @@ export async function GET(request: NextRequest) {
       ? tenantIdParam
       : session.tenantId;
 
-    const result = await searchContactsWithCounts(params, effectiveTenantId || undefined);
+    // For company-scoped users, filter by their assigned companies
+    // SUPER_ADMIN, TENANT_ADMIN, and users with "All Companies" access see all contacts in their tenant
+    const companyIds = (!session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess)
+      ? session.companyIds
+      : undefined;
+
+    const result = await searchContactsWithCounts(params, effectiveTenantId || undefined, companyIds);
 
     return NextResponse.json(result);
   } catch (error) {

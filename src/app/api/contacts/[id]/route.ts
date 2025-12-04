@@ -31,8 +31,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       ? tenantIdParam
       : session.tenantId;
 
+    // For company-scoped users, filter company relationships by accessible companies
+    const isCompanyScoped = !session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess;
+    const companyIds = isCompanyScoped ? session.companyIds : undefined;
+
     const contact = full
-      ? await getContactWithRelationships(id, effectiveTenantId || undefined)
+      ? await getContactWithRelationships(id, { tenantId: effectiveTenantId || undefined, companyIds })
       : await getContactById(id, effectiveTenantId || undefined);
 
     if (!contact) {
@@ -185,13 +189,34 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       await requirePermission(session, 'contact', 'update');
 
       const body = await request.json();
-      const { companyId, relationship, isPrimary } = body;
+      const { companyId, relationship, isPrimary, appointmentDate, numberOfShares, shareClass } = body;
 
       if (!companyId || !relationship) {
         return NextResponse.json({ error: 'companyId and relationship are required' }, { status: 400 });
       }
 
-      await linkContactToCompany(id, companyId, relationship, isPrimary ?? false);
+      // For SUPER_ADMIN without tenant context, get tenant from the contact
+      let tenantId = session.tenantId;
+      if (!tenantId && session.isSuperAdmin) {
+        const existingContact = await getContactById(id);
+        if (!existingContact) {
+          return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+        }
+        tenantId = existingContact.tenantId;
+      }
+
+      if (!tenantId) {
+        return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+      }
+
+      await linkContactToCompany(id, companyId, relationship, {
+        isPrimary: isPrimary ?? false,
+        appointmentDate,
+        numberOfShares,
+        shareClass,
+        tenantId,
+        userId: session.id,
+      });
 
       return NextResponse.json({ message: 'Contact linked to company successfully' });
     }
@@ -206,13 +231,238 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: 'companyId and relationship are required' }, { status: 400 });
       }
 
-      if (!session.tenantId) {
+      // For SUPER_ADMIN without tenant context, get tenant from the contact
+      let tenantId = session.tenantId;
+      if (!tenantId && session.isSuperAdmin) {
+        const existingContact = await getContactById(id);
+        if (!existingContact) {
+          return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+        }
+        tenantId = existingContact.tenantId;
+      }
+
+      if (!tenantId) {
         return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
       }
 
-      await unlinkContactFromCompany(id, companyId, relationship, session.tenantId);
+      await unlinkContactFromCompany(id, companyId, relationship, tenantId);
 
       return NextResponse.json({ message: 'Contact unlinked from company successfully' });
+    }
+
+    if (action === 'remove-officer') {
+      await requirePermission(session, 'contact', 'update');
+
+      const body = await request.json();
+      const { officerId } = body;
+
+      if (!officerId) {
+        return NextResponse.json({ error: 'officerId is required' }, { status: 400 });
+      }
+
+      // For SUPER_ADMIN without tenant context, get tenant from the contact
+      let tenantId = session.tenantId;
+      if (!tenantId && session.isSuperAdmin) {
+        const existingContact = await getContactById(id);
+        if (!existingContact) {
+          return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+        }
+        tenantId = existingContact.tenantId;
+      }
+
+      if (!tenantId) {
+        return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+      }
+
+      const { prisma } = await import('@/lib/prisma');
+
+      // Verify the officer belongs to this contact and tenant
+      const officer = await prisma.companyOfficer.findFirst({
+        where: { id: officerId, contactId: id },
+        include: { company: { select: { id: true, tenantId: true } } },
+      });
+
+      if (!officer || officer.company.tenantId !== tenantId) {
+        return NextResponse.json({ error: 'Officer position not found' }, { status: 404 });
+      }
+
+      const companyId = officer.company.id;
+
+      // Delete the officer record
+      await prisma.companyOfficer.delete({ where: { id: officerId } });
+
+      // Clean up: Remove corresponding CompanyContact relationship if no other positions remain for this company
+      const remainingOfficers = await prisma.companyOfficer.count({
+        where: { companyId, contactId: id },
+      });
+      const remainingShareholders = await prisma.companyShareholder.count({
+        where: { companyId, contactId: id },
+      });
+
+      // If no officer or shareholder positions remain, remove the general relationship too
+      if (remainingOfficers === 0 && remainingShareholders === 0) {
+        await prisma.companyContact.deleteMany({
+          where: { companyId, contactId: id },
+        });
+      }
+
+      return NextResponse.json({ message: 'Officer position removed successfully' });
+    }
+
+    if (action === 'remove-shareholder') {
+      await requirePermission(session, 'contact', 'update');
+
+      const body = await request.json();
+      const { shareholderId } = body;
+
+      if (!shareholderId) {
+        return NextResponse.json({ error: 'shareholderId is required' }, { status: 400 });
+      }
+
+      // For SUPER_ADMIN without tenant context, get tenant from the contact
+      let tenantId = session.tenantId;
+      if (!tenantId && session.isSuperAdmin) {
+        const existingContact = await getContactById(id);
+        if (!existingContact) {
+          return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+        }
+        tenantId = existingContact.tenantId;
+      }
+
+      if (!tenantId) {
+        return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+      }
+
+      const { prisma } = await import('@/lib/prisma');
+
+      // Verify the shareholder belongs to this contact and tenant
+      const shareholder = await prisma.companyShareholder.findFirst({
+        where: { id: shareholderId, contactId: id },
+        include: { company: { select: { id: true, tenantId: true } } },
+      });
+
+      if (!shareholder || shareholder.company.tenantId !== tenantId) {
+        return NextResponse.json({ error: 'Shareholding not found' }, { status: 404 });
+      }
+
+      const companyId = shareholder.company.id;
+
+      // Delete the shareholder record
+      await prisma.companyShareholder.delete({ where: { id: shareholderId } });
+
+      // Clean up: Remove corresponding CompanyContact relationship if no other positions remain for this company
+      const remainingOfficers = await prisma.companyOfficer.count({
+        where: { companyId, contactId: id },
+      });
+      const remainingShareholders = await prisma.companyShareholder.count({
+        where: { companyId, contactId: id },
+      });
+
+      // If no officer or shareholder positions remain, remove the general relationship too
+      if (remainingOfficers === 0 && remainingShareholders === 0) {
+        await prisma.companyContact.deleteMany({
+          where: { companyId, contactId: id },
+        });
+      }
+
+      return NextResponse.json({ message: 'Shareholding removed successfully' });
+    }
+
+    if (action === 'update-officer') {
+      await requirePermission(session, 'contact', 'update');
+
+      const body = await request.json();
+      const { officerId, appointmentDate, cessationDate } = body;
+
+      if (!officerId) {
+        return NextResponse.json({ error: 'officerId is required' }, { status: 400 });
+      }
+
+      // For SUPER_ADMIN without tenant context, get tenant from the contact
+      let tenantId = session.tenantId;
+      if (!tenantId && session.isSuperAdmin) {
+        const existingContact = await getContactById(id);
+        if (!existingContact) {
+          return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+        }
+        tenantId = existingContact.tenantId;
+      }
+
+      if (!tenantId) {
+        return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+      }
+
+      const { prisma } = await import('@/lib/prisma');
+
+      // Verify the officer belongs to this contact and tenant
+      const officer = await prisma.companyOfficer.findFirst({
+        where: { id: officerId, contactId: id },
+        include: { company: { select: { tenantId: true } } },
+      });
+
+      if (!officer || officer.company.tenantId !== tenantId) {
+        return NextResponse.json({ error: 'Officer position not found' }, { status: 404 });
+      }
+
+      // Update the officer record
+      await prisma.companyOfficer.update({
+        where: { id: officerId },
+        data: {
+          appointmentDate: appointmentDate ? new Date(appointmentDate) : null,
+          cessationDate: cessationDate ? new Date(cessationDate) : null,
+          isCurrent: !cessationDate,
+        },
+      });
+
+      return NextResponse.json({ message: 'Officer position updated successfully' });
+    }
+
+    if (action === 'update-shareholder') {
+      await requirePermission(session, 'contact', 'update');
+
+      const body = await request.json();
+      const { shareholderId, numberOfShares, shareClass } = body;
+
+      if (!shareholderId) {
+        return NextResponse.json({ error: 'shareholderId is required' }, { status: 400 });
+      }
+
+      // For SUPER_ADMIN without tenant context, get tenant from the contact
+      let tenantId = session.tenantId;
+      if (!tenantId && session.isSuperAdmin) {
+        const existingContact = await getContactById(id);
+        if (!existingContact) {
+          return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+        }
+        tenantId = existingContact.tenantId;
+      }
+
+      if (!tenantId) {
+        return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+      }
+
+      const { prisma } = await import('@/lib/prisma');
+
+      // Verify the shareholder belongs to this contact and tenant
+      const shareholder = await prisma.companyShareholder.findFirst({
+        where: { id: shareholderId, contactId: id },
+        include: { company: { select: { tenantId: true } } },
+      });
+
+      if (!shareholder || shareholder.company.tenantId !== tenantId) {
+        return NextResponse.json({ error: 'Shareholding not found' }, { status: 404 });
+      }
+
+      // Update the shareholder record
+      await prisma.companyShareholder.update({
+        where: { id: shareholderId },
+        data: {
+          numberOfShares: numberOfShares ?? shareholder.numberOfShares,
+          shareClass: shareClass ?? shareholder.shareClass,
+        },
+      });
+
+      return NextResponse.json({ message: 'Shareholding updated successfully' });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

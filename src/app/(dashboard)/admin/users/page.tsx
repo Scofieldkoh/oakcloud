@@ -1079,9 +1079,9 @@ export default function UsersPage() {
             )}
           </div>
 
-          {/* Add New Company with Role */}
+          {/* Add New Role Assignment */}
           <div className="border-t border-border-primary pt-4">
-            <h4 className="text-sm font-medium text-text-primary mb-3">Add Company Access</h4>
+            <h4 className="text-sm font-medium text-text-primary mb-3">Add Role Assignment</h4>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1092,13 +1092,8 @@ export default function UsersPage() {
                     className="input input-sm w-full"
                   >
                     <option value="">Select company...</option>
+                    <option value="__all__">All Companies</option>
                     {companiesData?.companies
-                      .filter(
-                        (c) =>
-                          !assignmentsData?.assignments?.some(
-                            (a: UserCompanyAssignment) => a.companyId === c.id
-                          )
-                      )
                       .map((company) => (
                         <option key={company.id} value={company.id}>
                           {company.name}
@@ -1136,22 +1131,25 @@ export default function UsersPage() {
                 isLoading={assignCompany.isPending}
                 onClick={async () => {
                   try {
+                    // Handle "All Companies" selection (value = "__all__" means null companyId)
+                    const companyIdToAssign = selectedCompanyId === '__all__' ? null : selectedCompanyId;
+
                     await assignCompany.mutateAsync({
-                      companyId: selectedCompanyId,
+                      companyId: companyIdToAssign,
                       roleId: selectedRoleId,
                       isPrimary: !assignmentsData?.assignments?.length,
                       tenantId: activeTenantId || undefined, // Pass tenantId for SUPER_ADMIN
                     });
                     setSelectedCompanyId('');
                     setSelectedRoleId('');
-                    success('Company and role assigned');
+                    success('Role assigned successfully');
                   } catch (err) {
                     showError(err instanceof Error ? err.message : 'Failed to assign');
                   }
                 }}
               >
                 <Plus className="w-4 h-4 mr-1" />
-                Add Company Access
+                Add Role Assignment
               </Button>
             </div>
           </div>

@@ -772,7 +772,7 @@ export function useAssignUserToCompany(userId: string | undefined) {
 
   return useMutation({
     mutationFn: async (data: {
-      companyId: string;
+      companyId: string | null; // null = "All Companies"
       roleId?: string; // Role to assign for this company
       isPrimary?: boolean;
       tenantId?: string; // Required for SUPER_ADMIN

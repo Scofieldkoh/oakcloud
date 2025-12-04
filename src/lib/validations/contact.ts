@@ -23,14 +23,9 @@ const contactBaseSchema = z.object({
   // Contact info
   email: z.string().email().max(200).optional().nullable(),
   phone: z.string().max(20).optional().nullable(),
-  alternatePhone: z.string().max(20).optional().nullable(),
 
   // Address
-  addressLine1: z.string().max(200).optional().nullable(),
-  addressLine2: z.string().max(200).optional().nullable(),
-  postalCode: z.string().max(10).optional().nullable(),
-  city: z.string().max(100).optional().nullable(),
-  country: z.string().max(100).default('SINGAPORE'),
+  fullAddress: z.string().max(500).optional().nullable(),
 
   // Meta
   internalNotes: z.string().max(5000).optional().nullable(),

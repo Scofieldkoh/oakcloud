@@ -34,6 +34,13 @@ export async function GET(request: NextRequest) {
 
     // Company-scoped users can only see companies they have role assignments for
     if (!session.isSuperAdmin && !session.isTenantAdmin) {
+      // Check if user has "All Companies" access (role with null companyId)
+      if (session.hasAllCompaniesAccess && session.tenantId) {
+        // User has a role for "All Companies" - return all companies in tenant
+        const result = await searchCompanies(params, session.tenantId);
+        return NextResponse.json(result);
+      }
+
       if (session.companyIds && session.companyIds.length > 0 && session.tenantId) {
         // Return all companies the user has access to via role assignments
         const result = await searchCompanies(

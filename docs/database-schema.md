@@ -301,14 +301,9 @@ Unified contact management for individuals and corporates. Each contact belongs 
 | date_of_birth | DATE | Yes | Date of birth |
 | corporate_name | VARCHAR(200) | Yes | Corporate name |
 | corporate_uen | VARCHAR(10) | Yes | Corporate UEN |
-| email | VARCHAR(200) | Yes | Email address |
+| email | VARCHAR(200) | Yes | Email address (optional) |
 | phone | VARCHAR(20) | Yes | Phone number |
-| alternate_phone | VARCHAR(20) | Yes | Alternate phone |
-| address_line_1 | VARCHAR(200) | Yes | Address line 1 |
-| address_line_2 | VARCHAR(200) | Yes | Address line 2 |
-| postal_code | VARCHAR(10) | Yes | Postal code |
-| city | VARCHAR(100) | Yes | City |
-| country | VARCHAR(100) | Yes | Country (default: SINGAPORE) |
+| full_address | VARCHAR(500) | Yes | Complete address |
 | is_active | BOOLEAN | No | Active status |
 | internal_notes | TEXT | Yes | Internal notes |
 | created_at | TIMESTAMP | No | Record creation time |

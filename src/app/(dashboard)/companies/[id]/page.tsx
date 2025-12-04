@@ -23,12 +23,23 @@ import {
   Globe,
   User,
 } from 'lucide-react';
-import { useCompany, useDeleteCompany } from '@/hooks/use-companies';
+import {
+  useCompany,
+  useDeleteCompany,
+  useCompanyLinkInfo,
+  useUpdateOfficer,
+  useUpdateShareholder,
+  useRemoveOfficer,
+  useRemoveShareholder,
+} from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate, formatCurrency, formatPercentage } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { Link as LinkIcon } from 'lucide-react';
+import { X, Filter, Pencil as PencilIcon } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Helper to convert UPPER_CASE or UPPERCASE to Title Case
 function toTitleCase(str: string): string {
@@ -37,6 +48,14 @@ function toTitleCase(str: string): string {
     .toLowerCase()
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Helper to get contact address
+function getContactAddress(contact: {
+  fullAddress?: string | null;
+} | null | undefined): string | null {
+  if (!contact) return null;
+  return contact.fullAddress || null;
 }
 
 export default function CompanyDetailPage({
@@ -53,6 +72,187 @@ export default function CompanyDetailPage({
   const { can } = usePermissions(id);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Filter state for officers
+  const [officerNameFilter, setOfficerNameFilter] = useState('');
+  const [officerRoleFilter, setOfficerRoleFilter] = useState('');
+  const [showCeasedOfficers, setShowCeasedOfficers] = useState(false);
+  const [showOfficerFilters, setShowOfficerFilters] = useState(false);
+
+  // Filter state for shareholders
+  const [shareholderNameFilter, setShareholderNameFilter] = useState('');
+  const [showFormerShareholders, setShowFormerShareholders] = useState(false);
+  const [showShareholderFilters, setShowShareholderFilters] = useState(false);
+
+  // Update and remove hooks
+  const updateOfficerMutation = useUpdateOfficer(id);
+  const updateShareholderMutation = useUpdateShareholder(id);
+  const removeOfficerMutation = useRemoveOfficer(id);
+  const removeShareholderMutation = useRemoveShareholder(id);
+
+  // Edit modals state
+  const [editOfficerModalOpen, setEditOfficerModalOpen] = useState(false);
+  const [editShareholderModalOpen, setEditShareholderModalOpen] = useState(false);
+  const [selectedOfficer, setSelectedOfficer] = useState<{
+    id: string;
+    name: string;
+    role: string;
+    designation: string | null;
+    appointmentDate: string | null;
+    cessationDate: string | null;
+  } | null>(null);
+  const [selectedShareholder, setSelectedShareholder] = useState<{
+    id: string;
+    name: string;
+    numberOfShares: number;
+    shareClass: string | null;
+  } | null>(null);
+  const [editOfficerForm, setEditOfficerForm] = useState({
+    appointmentDate: '',
+    cessationDate: '',
+  });
+  const [editShareholderForm, setEditShareholderForm] = useState({
+    numberOfShares: '',
+    shareClass: '',
+  });
+
+  // Handle remove action (mark as ceased/former)
+  const handleRemove = async (type: 'officer' | 'shareholder', targetId: string) => {
+    try {
+      if (type === 'officer') {
+        await removeOfficerMutation.mutateAsync(targetId);
+      } else {
+        await removeShareholderMutation.mutateAsync(targetId);
+      }
+      success(`${type === 'officer' ? 'Officer' : 'Shareholder'} removed successfully`);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to remove');
+    }
+  };
+
+  // Open edit officer modal
+  const openEditOfficerModal = (officer: {
+    id: string;
+    name: string;
+    role: string;
+    designation?: string | null;
+    appointmentDate?: Date | string | null;
+    cessationDate?: Date | string | null;
+  }) => {
+    const appointmentDateStr = officer.appointmentDate
+      ? (typeof officer.appointmentDate === 'string' ? officer.appointmentDate : officer.appointmentDate.toISOString()).split('T')[0]
+      : '';
+    const cessationDateStr = officer.cessationDate
+      ? (typeof officer.cessationDate === 'string' ? officer.cessationDate : officer.cessationDate.toISOString()).split('T')[0]
+      : '';
+    setSelectedOfficer({
+      id: officer.id,
+      name: officer.name,
+      role: officer.role,
+      designation: officer.designation || null,
+      appointmentDate: appointmentDateStr || null,
+      cessationDate: cessationDateStr || null,
+    });
+    setEditOfficerForm({
+      appointmentDate: appointmentDateStr,
+      cessationDate: cessationDateStr,
+    });
+    setEditOfficerModalOpen(true);
+  };
+
+  // Handle edit officer
+  const handleEditOfficer = async () => {
+    if (!selectedOfficer) return;
+
+    // Validate cessation date is not before appointment date
+    if (editOfficerForm.appointmentDate && editOfficerForm.cessationDate) {
+      const appointmentDate = new Date(editOfficerForm.appointmentDate);
+      const cessationDate = new Date(editOfficerForm.cessationDate);
+      if (cessationDate < appointmentDate) {
+        toastError('Cessation date cannot be earlier than appointment date');
+        return;
+      }
+    }
+
+    try {
+      await updateOfficerMutation.mutateAsync({
+        officerId: selectedOfficer.id,
+        data: {
+          appointmentDate: editOfficerForm.appointmentDate || null,
+          cessationDate: editOfficerForm.cessationDate || null,
+        },
+      });
+      success('Officer updated successfully');
+      setEditOfficerModalOpen(false);
+      setSelectedOfficer(null);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to update officer');
+    }
+  };
+
+  // Open edit shareholder modal
+  const openEditShareholderModal = (shareholder: {
+    id: string;
+    name: string;
+    numberOfShares: number;
+    shareClass?: string | null;
+  }) => {
+    setSelectedShareholder({
+      id: shareholder.id,
+      name: shareholder.name,
+      numberOfShares: shareholder.numberOfShares,
+      shareClass: shareholder.shareClass || null,
+    });
+    setEditShareholderForm({
+      numberOfShares: shareholder.numberOfShares.toString(),
+      shareClass: shareholder.shareClass || 'Ordinary',
+    });
+    setEditShareholderModalOpen(true);
+  };
+
+  // Handle edit shareholder
+  const handleEditShareholder = async () => {
+    if (!selectedShareholder) return;
+
+    const numberOfShares = parseInt(editShareholderForm.numberOfShares);
+    if (isNaN(numberOfShares) || numberOfShares <= 0) {
+      toastError('Please enter a valid number of shares');
+      return;
+    }
+
+    try {
+      await updateShareholderMutation.mutateAsync({
+        shareholderId: selectedShareholder.id,
+        data: {
+          numberOfShares,
+          shareClass: editShareholderForm.shareClass,
+        },
+      });
+      success('Shareholder updated successfully');
+      setEditShareholderModalOpen(false);
+      setSelectedShareholder(null);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to update shareholder');
+    }
+  };
+
+  // Fetch link info when delete dialog opens
+  const { data: linkInfo } = useCompanyLinkInfo(deleteDialogOpen ? id : null);
+
+  // Build warning message based on links
+  const getDeleteWarning = () => {
+    if (!linkInfo?.hasLinks) {
+      return 'This action cannot be undone. The company will be soft-deleted and can be restored later.';
+    }
+
+    const parts: string[] = [];
+    if (linkInfo.officerCount > 0) parts.push(`${linkInfo.officerCount} officer(s)`);
+    if (linkInfo.shareholderCount > 0) parts.push(`${linkInfo.shareholderCount} shareholder(s)`);
+    if (linkInfo.chargeCount > 0) parts.push(`${linkInfo.chargeCount} charge(s)`);
+    if (linkInfo.documentCount > 0) parts.push(`${linkInfo.documentCount} document(s)`);
+
+    return `Warning: This company has ${parts.join(', ')} linked. Deleting will remove these links, but the underlying data (contacts, documents) will remain. This action cannot be undone.`;
+  };
 
   const handleDeleteConfirm = async (reason?: string) => {
     if (!reason) return;
@@ -263,18 +463,102 @@ export default function CompanyDetailPage({
 
           {/* Officers */}
           <div className="card">
-            <div className="p-4 border-b border-border-primary flex items-center justify-between">
-              <h2 className="font-medium text-text-primary flex items-center gap-2">
-                <Users className="w-4 h-4 text-text-tertiary" />
-                Officers
-              </h2>
-              <span className="text-sm text-text-tertiary">
-                {company._count?.officers || 0} total
-              </span>
+            <div className="p-4 border-b border-border-primary">
+              <div className="flex items-center justify-between">
+                <h2 className="font-medium text-text-primary flex items-center gap-2">
+                  <Users className="w-4 h-4 text-text-tertiary" />
+                  Officers
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-text-tertiary">
+                    {company._count?.officers || 0} total
+                  </span>
+                  {company.officers && company.officers.length > 0 && (
+                    <button
+                      onClick={() => setShowOfficerFilters(!showOfficerFilters)}
+                      className={`btn-ghost btn-xs flex items-center gap-1 ${
+                        officerNameFilter || officerRoleFilter || showCeasedOfficers ? 'text-oak-light' : ''
+                      }`}
+                      title="Filter officers"
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {/* Filter Panel */}
+              {showOfficerFilters && (
+                <div className="mt-3 pt-3 border-t border-border-secondary animate-fade-in">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="flex-1 min-w-[120px] max-w-[180px]">
+                      <label className="text-xs text-text-tertiary mb-1 block">Name</label>
+                      <input
+                        type="text"
+                        value={officerNameFilter}
+                        onChange={(e) => setOfficerNameFilter(e.target.value)}
+                        placeholder="Search..."
+                        className="input input-xs w-full"
+                      />
+                    </div>
+                    <div className="min-w-[120px]">
+                      <label className="text-xs text-text-tertiary mb-1 block">Role</label>
+                      <select
+                        value={officerRoleFilter}
+                        onChange={(e) => setOfficerRoleFilter(e.target.value)}
+                        className="input input-xs w-full"
+                      >
+                        <option value="">All Roles</option>
+                        {Array.from(new Set(company.officers?.map(o => o.designation || o.role) || [])).sort().map(role => (
+                          <option key={role} value={role}>{toTitleCase(role)}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2 h-[26px]">
+                      <Checkbox
+                        id="show-ceased-officers"
+                        checked={showCeasedOfficers}
+                        onChange={(e) => setShowCeasedOfficers(e.target.checked)}
+                        size="sm"
+                      />
+                      <label htmlFor="show-ceased-officers" className="text-xs text-text-secondary cursor-pointer">
+                        Show ceased
+                      </label>
+                    </div>
+                    {(officerNameFilter || officerRoleFilter || showCeasedOfficers) && (
+                      <button
+                        onClick={() => {
+                          setOfficerNameFilter('');
+                          setOfficerRoleFilter('');
+                          setShowCeasedOfficers(false);
+                        }}
+                        className="btn-ghost btn-xs text-text-muted hover:text-text-primary"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="divide-y divide-border-primary">
               {company.officers && company.officers.length > 0 ? (
-                company.officers.slice(0, 5).map((officer) => (
+                company.officers
+                  .filter((officer) => {
+                    // Name filter
+                    if (officerNameFilter) {
+                      const searchTerm = officerNameFilter.toLowerCase();
+                      if (!officer.name.toLowerCase().includes(searchTerm)) return false;
+                    }
+                    // Role filter
+                    if (officerRoleFilter) {
+                      const officerRole = officer.designation || officer.role;
+                      if (officerRole !== officerRoleFilter) return false;
+                    }
+                    // Show ceased filter
+                    if (!showCeasedOfficers && !officer.isCurrent) return false;
+                    return true;
+                  })
+                  .map((officer) => (
                   <div key={officer.id} className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -292,20 +576,28 @@ export default function CompanyDetailPage({
                           <span className="badge badge-info">
                             {toTitleCase(officer.designation || officer.role)}
                           </span>
-                          {officer.contact?.id ? (
-                            <Link
-                              href={`/contacts/${officer.contact.id}`}
-                              className="badge badge-success flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
-                            >
-                              <LinkIcon className="w-3 h-3" />
-                              Linked
-                            </Link>
-                          ) : (
-                            <span className="badge badge-neutral">Not Linked</span>
-                          )}
                         </div>
                       </div>
-                      <div className="text-right shrink-0 ml-2">
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        {can.updateCompany && (
+                          <button
+                            onClick={() => openEditOfficerModal(officer)}
+                            className="text-text-muted hover:text-oak-light transition-colors"
+                            title="Edit officer"
+                          >
+                            <PencilIcon className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {can.updateCompany && officer.isCurrent && (
+                          <button
+                            onClick={() => handleRemove('officer', officer.id)}
+                            className="text-text-muted hover:text-status-error transition-colors"
+                            title="Remove officer"
+                            disabled={removeOfficerMutation.isPending}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         {officer.isCurrent ? (
                           <span className="badge badge-success">Active</span>
                         ) : (
@@ -320,16 +612,16 @@ export default function CompanyDetailPage({
                           Appointed {formatDate(officer.appointmentDate)}
                         </div>
                       )}
-                      {officer.nationality && (
+                      {(officer.contact?.nationality || officer.nationality) && (
                         <div className="flex items-center gap-1.5 text-text-secondary">
                           <Globe className="w-3.5 h-3.5 text-text-tertiary" />
-                          {officer.nationality}
+                          {officer.contact?.nationality || officer.nationality}
                         </div>
                       )}
-                      {officer.address && (
+                      {(getContactAddress(officer.contact) || officer.address) && (
                         <div className="col-span-2 flex items-start gap-1.5 text-text-secondary">
                           <MapPin className="w-3.5 h-3.5 text-text-tertiary shrink-0 mt-0.5" />
-                          <span className="text-xs">{officer.address}</span>
+                          <span className="text-xs">{getContactAddress(officer.contact) || officer.address}</span>
                         </div>
                       )}
                     </div>
@@ -340,23 +632,99 @@ export default function CompanyDetailPage({
                   <p className="text-text-muted">No officers recorded</p>
                 </div>
               )}
+              {company.officers && company.officers.length > 0 &&
+                company.officers.filter((officer) => {
+                  if (officerNameFilter && !officer.name.toLowerCase().includes(officerNameFilter.toLowerCase())) return false;
+                  if (officerRoleFilter && (officer.designation || officer.role) !== officerRoleFilter) return false;
+                  if (!showCeasedOfficers && !officer.isCurrent) return false;
+                  return true;
+                }).length === 0 && (
+                <div className="p-4 text-center">
+                  <p className="text-text-muted text-sm">No officers match your filters</p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Shareholders */}
           <div className="card">
-            <div className="p-4 border-b border-border-primary flex items-center justify-between">
-              <h2 className="font-medium text-text-primary flex items-center gap-2">
-                <Shield className="w-4 h-4 text-text-tertiary" />
-                Shareholders
-              </h2>
-              <span className="text-sm text-text-tertiary">
-                {company._count?.shareholders || 0} total
-              </span>
+            <div className="p-4 border-b border-border-primary">
+              <div className="flex items-center justify-between">
+                <h2 className="font-medium text-text-primary flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-text-tertiary" />
+                  Shareholders
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-text-tertiary">
+                    {company._count?.shareholders || 0} total
+                  </span>
+                  {company.shareholders && company.shareholders.length > 0 && (
+                    <button
+                      onClick={() => setShowShareholderFilters(!showShareholderFilters)}
+                      className={`btn-ghost btn-xs flex items-center gap-1 ${
+                        shareholderNameFilter || showFormerShareholders ? 'text-oak-light' : ''
+                      }`}
+                      title="Filter shareholders"
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {/* Filter Panel */}
+              {showShareholderFilters && (
+                <div className="mt-3 pt-3 border-t border-border-secondary animate-fade-in">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="flex-1 min-w-[120px] max-w-[180px]">
+                      <label className="text-xs text-text-tertiary mb-1 block">Name</label>
+                      <input
+                        type="text"
+                        value={shareholderNameFilter}
+                        onChange={(e) => setShareholderNameFilter(e.target.value)}
+                        placeholder="Search..."
+                        className="input input-xs w-full"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 h-[26px]">
+                      <Checkbox
+                        id="show-former-shareholders"
+                        checked={showFormerShareholders}
+                        onChange={(e) => setShowFormerShareholders(e.target.checked)}
+                        size="sm"
+                      />
+                      <label htmlFor="show-former-shareholders" className="text-xs text-text-secondary cursor-pointer">
+                        Show former
+                      </label>
+                    </div>
+                    {(shareholderNameFilter || showFormerShareholders) && (
+                      <button
+                        onClick={() => {
+                          setShareholderNameFilter('');
+                          setShowFormerShareholders(false);
+                        }}
+                        className="btn-ghost btn-xs text-text-muted hover:text-text-primary"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="divide-y divide-border-primary">
               {company.shareholders && company.shareholders.length > 0 ? (
-                company.shareholders.map((shareholder) => (
+                company.shareholders
+                  .filter((shareholder) => {
+                    // Name filter
+                    if (shareholderNameFilter) {
+                      const searchTerm = shareholderNameFilter.toLowerCase();
+                      if (!shareholder.name.toLowerCase().includes(searchTerm)) return false;
+                    }
+                    // Show former filter
+                    if (!showFormerShareholders && !shareholder.isCurrent) return false;
+                    return true;
+                  })
+                  .map((shareholder) => (
                   <div key={shareholder.id} className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -381,17 +749,6 @@ export default function CompanyDetailPage({
                               <User className="w-3.5 h-3.5 text-text-tertiary" />
                             </span>
                           )}
-                          {shareholder.contact?.id ? (
-                            <Link
-                              href={`/contacts/${shareholder.contact.id}`}
-                              className="badge badge-success flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
-                            >
-                              <LinkIcon className="w-3 h-3" />
-                              Linked
-                            </Link>
-                          ) : (
-                            <span className="badge badge-neutral">Not Linked</span>
-                          )}
                         </div>
                         <p className="text-sm text-text-secondary">
                           {shareholder.numberOfShares.toLocaleString()} {toTitleCase(shareholder.shareClass || 'Ordinary')} shares
@@ -402,23 +759,42 @@ export default function CompanyDetailPage({
                           )}
                         </p>
                       </div>
-                      <div className="text-right shrink-0 ml-2">
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        {can.updateCompany && (
+                          <button
+                            onClick={() => openEditShareholderModal(shareholder)}
+                            className="text-text-muted hover:text-oak-light transition-colors"
+                            title="Edit shareholder"
+                          >
+                            <PencilIcon className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {can.updateCompany && shareholder.isCurrent && (
+                          <button
+                            onClick={() => handleRemove('shareholder', shareholder.id)}
+                            className="text-text-muted hover:text-status-error transition-colors"
+                            title="Remove shareholder"
+                            disabled={removeShareholderMutation.isPending}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         {shareholder.isCurrent && (
                           <span className="badge badge-success">Active</span>
                         )}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                      {(shareholder.nationality || shareholder.placeOfOrigin) && (
+                      {(shareholder.contact?.nationality || shareholder.nationality || shareholder.placeOfOrigin) && (
                         <div className="flex items-center gap-1.5 text-text-secondary">
                           <Globe className="w-3.5 h-3.5 text-text-tertiary" />
-                          {shareholder.nationality || shareholder.placeOfOrigin}
+                          {shareholder.contact?.nationality || shareholder.nationality || shareholder.placeOfOrigin}
                         </div>
                       )}
-                      {shareholder.address && (
+                      {(getContactAddress(shareholder.contact) || shareholder.address) && (
                         <div className="col-span-2 flex items-start gap-1.5 text-text-secondary">
                           <MapPin className="w-3.5 h-3.5 text-text-tertiary shrink-0 mt-0.5" />
-                          <span className="text-xs">{shareholder.address}</span>
+                          <span className="text-xs">{getContactAddress(shareholder.contact) || shareholder.address}</span>
                         </div>
                       )}
                     </div>
@@ -427,6 +803,16 @@ export default function CompanyDetailPage({
               ) : (
                 <div className="p-4">
                   <p className="text-text-muted">No shareholders recorded</p>
+                </div>
+              )}
+              {company.shareholders && company.shareholders.length > 0 &&
+                company.shareholders.filter((shareholder) => {
+                  if (shareholderNameFilter && !shareholder.name.toLowerCase().includes(shareholderNameFilter.toLowerCase())) return false;
+                  if (!showFormerShareholders && !shareholder.isCurrent) return false;
+                  return true;
+                }).length === 0 && (
+                <div className="p-4 text-center">
+                  <p className="text-text-muted text-sm">No shareholders match your filters</p>
                 </div>
               )}
             </div>
@@ -660,7 +1046,7 @@ export default function CompanyDetailPage({
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDeleteConfirm}
         title="Delete Company"
-        description={`Are you sure you want to delete "${company?.name}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete "${company?.name}"? ${getDeleteWarning()}`}
         confirmLabel="Delete"
         variant="danger"
         requireReason
@@ -669,6 +1055,128 @@ export default function CompanyDetailPage({
         reasonMinLength={10}
         isLoading={deleteCompany.isPending}
       />
+
+      {/* Edit Officer Modal */}
+      <Modal
+        isOpen={editOfficerModalOpen}
+        onClose={() => {
+          setEditOfficerModalOpen(false);
+          setSelectedOfficer(null);
+        }}
+        title="Edit Officer"
+      >
+        <ModalBody>
+          {selectedOfficer && (
+            <div className="space-y-4">
+              <div className="text-sm text-text-secondary mb-4">
+                <span className="font-medium text-text-primary">{selectedOfficer.name}</span>
+                <span className="mx-2">-</span>
+                <span>{toTitleCase(selectedOfficer.designation || selectedOfficer.role)}</span>
+              </div>
+              <div>
+                <label className="label">Date of Appointment</label>
+                <input
+                  type="date"
+                  value={editOfficerForm.appointmentDate}
+                  onChange={(e) => setEditOfficerForm((prev) => ({ ...prev, appointmentDate: e.target.value }))}
+                  className="input input-sm w-full"
+                />
+              </div>
+              <div>
+                <label className="label">Date of Cessation</label>
+                <input
+                  type="date"
+                  value={editOfficerForm.cessationDate}
+                  onChange={(e) => setEditOfficerForm((prev) => ({ ...prev, cessationDate: e.target.value }))}
+                  className="input input-sm w-full"
+                />
+                <p className="text-xs text-text-muted mt-1">
+                  Leave empty if the position is still active
+                </p>
+              </div>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setEditOfficerModalOpen(false);
+              setSelectedOfficer(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleEditOfficer}
+            disabled={updateOfficerMutation.isPending}
+          >
+            {updateOfficerMutation.isPending ? 'Saving...' : 'Save'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Edit Shareholder Modal */}
+      <Modal
+        isOpen={editShareholderModalOpen}
+        onClose={() => {
+          setEditShareholderModalOpen(false);
+          setSelectedShareholder(null);
+        }}
+        title="Edit Shareholder"
+      >
+        <ModalBody>
+          {selectedShareholder && (
+            <div className="space-y-4">
+              <div className="text-sm text-text-secondary mb-4">
+                <span className="font-medium text-text-primary">{selectedShareholder.name}</span>
+              </div>
+              <div>
+                <label className="label">Number of Shares</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editShareholderForm.numberOfShares}
+                  onChange={(e) => setEditShareholderForm((prev) => ({ ...prev, numberOfShares: e.target.value }))}
+                  className="input input-sm w-full"
+                  placeholder="Enter number of shares"
+                />
+              </div>
+              <div>
+                <label className="label">Share Class</label>
+                <select
+                  value={editShareholderForm.shareClass}
+                  onChange={(e) => setEditShareholderForm((prev) => ({ ...prev, shareClass: e.target.value }))}
+                  className="input input-sm w-full"
+                >
+                  <option value="Ordinary">Ordinary</option>
+                  <option value="Preference">Preference</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setEditShareholderModalOpen(false);
+              setSelectedShareholder(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleEditShareholder}
+            disabled={updateShareholderMutation.isPending}
+          >
+            {updateShareholderMutation.isPending ? 'Saving...' : 'Save'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

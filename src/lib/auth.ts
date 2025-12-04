@@ -56,7 +56,9 @@ export interface SessionUser {
   // Computed from role assignments (authoritative source)
   isSuperAdmin: boolean;
   isTenantAdmin: boolean;
-  // All company IDs the user has access to via role assignments
+  // True if user has any role with "All Companies" scope (companyId = null)
+  hasAllCompaniesAccess: boolean;
+  // All company IDs the user has access to via role assignments (excludes "All Companies" assignments)
   companyIds: string[];
 }
 
@@ -166,7 +168,12 @@ export async function getSession(): Promise<SessionUser | null> {
     (a) => a.role.systemRoleType === 'TENANT_ADMIN'
   );
 
-  // Get all unique company IDs from role assignments
+  // Check if user has any "All Companies" role assignment (companyId = null)
+  const hasAllCompaniesAccess = user.roleAssignments.some(
+    (a) => a.companyId === null && a.role.systemRoleType !== 'SUPER_ADMIN' && a.role.systemRoleType !== 'TENANT_ADMIN'
+  );
+
+  // Get all unique company IDs from role assignments (excludes null/"All Companies")
   const companyIds = [
     ...new Set(
       user.roleAssignments
@@ -183,6 +190,7 @@ export async function getSession(): Promise<SessionUser | null> {
     tenantId: user.tenantId,
     isSuperAdmin,
     isTenantAdmin,
+    hasAllCompaniesAccess,
     companyIds,
   };
 }
@@ -245,7 +253,12 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
     return null;
   }
 
-  // Get all unique company IDs from role assignments
+  // Check if user has any "All Companies" role assignment (companyId = null)
+  const hasAllCompaniesAccess = user.roleAssignments.some(
+    (a) => a.companyId === null && a.role.systemRoleType !== 'SUPER_ADMIN' && a.role.systemRoleType !== 'TENANT_ADMIN'
+  );
+
+  // Get all unique company IDs from role assignments (excludes null/"All Companies")
   const companyIds = [
     ...new Set(
       user.roleAssignments
@@ -263,6 +276,7 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
     tenant: user.tenant,
     isSuperAdmin,
     isTenantAdmin,
+    hasAllCompaniesAccess,
     companyIds,
   };
 }
@@ -349,13 +363,24 @@ export function canAccessTenant(user: SessionUser, tenantId: string): boolean {
  * This function verifies:
  * 1. SUPER_ADMIN can access any company
  * 2. TENANT_ADMIN can only access companies within their tenant
- * 3. Regular users can only access companies they have role assignments for
+ * 3. Users with "All Companies" role can access any company in their tenant
+ * 4. Regular users can only access companies they have role assignments for
  */
 export async function canAccessCompany(user: SessionUser, companyId: string): Promise<boolean> {
   if (user.isSuperAdmin) return true;
 
   // For TENANT_ADMIN, verify company belongs to their tenant
   if (user.isTenantAdmin) {
+    if (!user.tenantId) return false;
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { tenantId: true },
+    });
+    return company?.tenantId === user.tenantId;
+  }
+
+  // For users with "All Companies" access, verify company belongs to their tenant
+  if (user.hasAllCompaniesAccess) {
     if (!user.tenantId) return false;
     const company = await prisma.company.findUnique({
       where: { id: companyId },
@@ -480,7 +505,12 @@ export async function performLogin(
   // Log successful login
   await logAuthEvent('LOGIN', user.id, { tenantId: user.tenantId });
 
-  // Get all unique company IDs from role assignments
+  // Check if user has any "All Companies" role assignment (companyId = null)
+  const hasAllCompaniesAccess = user.roleAssignments.some(
+    (a) => a.companyId === null && a.role.systemRoleType !== 'SUPER_ADMIN' && a.role.systemRoleType !== 'TENANT_ADMIN'
+  );
+
+  // Get all unique company IDs from role assignments (excludes null/"All Companies")
   const companyIds = [
     ...new Set(
       user.roleAssignments
@@ -497,6 +527,7 @@ export async function performLogin(
     tenantId: user.tenantId,
     isSuperAdmin,
     isTenantAdmin,
+    hasAllCompaniesAccess,
     companyIds,
   };
 }

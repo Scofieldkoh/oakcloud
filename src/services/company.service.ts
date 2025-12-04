@@ -471,6 +471,8 @@ export async function getCompanyById(
               id: true,
               email: true,
               phone: true,
+              nationality: true,
+              fullAddress: true,
             },
           },
         },
@@ -497,6 +499,8 @@ export async function getCompanyById(
               id: true,
               email: true,
               phone: true,
+              nationality: true,
+              fullAddress: true,
             },
           },
         },
@@ -752,6 +756,8 @@ export async function getCompanyFullDetails(
               id: true,
               email: true,
               phone: true,
+              nationality: true,
+              fullAddress: true,
             },
           },
         },
@@ -764,6 +770,8 @@ export async function getCompanyFullDetails(
               id: true,
               email: true,
               phone: true,
+              nationality: true,
+              fullAddress: true,
             },
           },
         },
@@ -878,4 +886,570 @@ export async function getCompanyStats(
     recentlyAdded,
     withOverdueFilings,
   };
+}
+
+// ============================================================================
+// Company Link Information (for delete confirmation)
+// ============================================================================
+
+export interface CompanyLinkInfo {
+  hasLinks: boolean;
+  officerCount: number;
+  shareholderCount: number;
+  chargeCount: number;
+  documentCount: number;
+  totalLinks: number;
+}
+
+/**
+ * Get information about a company's linked data
+ * Used to warn users before deletion
+ */
+export async function getCompanyLinkInfo(
+  companyId: string,
+  tenantId: string
+): Promise<CompanyLinkInfo> {
+  const company = await prisma.company.findFirst({
+    where: { id: companyId, tenantId, deletedAt: null },
+    select: {
+      _count: {
+        select: {
+          officers: true,
+          shareholders: true,
+          charges: true,
+          documents: true,
+        },
+      },
+    },
+  });
+
+  if (!company) {
+    return {
+      hasLinks: false,
+      officerCount: 0,
+      shareholderCount: 0,
+      chargeCount: 0,
+      documentCount: 0,
+      totalLinks: 0,
+    };
+  }
+
+  const { officers, shareholders, charges, documents } = company._count;
+  const totalLinks = officers + shareholders + charges + documents;
+
+  return {
+    hasLinks: totalLinks > 0,
+    officerCount: officers,
+    shareholderCount: shareholders,
+    chargeCount: charges,
+    documentCount: documents,
+    totalLinks,
+  };
+}
+
+// ============================================================================
+// Officer Management
+// ============================================================================
+
+/**
+ * Update an officer's details (appointment date, cessation date)
+ */
+export async function updateOfficer(
+  officerId: string,
+  companyId: string,
+  tenantId: string,
+  userId: string,
+  data: { appointmentDate?: string | null; cessationDate?: string | null }
+): Promise<{ id: string; appointmentDate: Date | null; cessationDate: Date | null; isCurrent: boolean }> {
+  // Verify officer exists and belongs to this company in this tenant
+  const officer = await prisma.companyOfficer.findFirst({
+    where: { id: officerId, companyId },
+    include: { company: { select: { id: true, tenantId: true, name: true } } },
+  });
+
+  if (!officer || officer.company.tenantId !== tenantId) {
+    throw new Error('Officer not found');
+  }
+
+  const oldValues = {
+    appointmentDate: officer.appointmentDate,
+    cessationDate: officer.cessationDate,
+    isCurrent: officer.isCurrent,
+  };
+
+  // Determine if officer is current based on cessation date
+  const cessationDate = data.cessationDate !== undefined
+    ? (data.cessationDate ? new Date(data.cessationDate) : null)
+    : officer.cessationDate;
+  const isCurrent = cessationDate === null;
+
+  // Update officer
+  const updated = await prisma.companyOfficer.update({
+    where: { id: officerId },
+    data: {
+      appointmentDate: data.appointmentDate !== undefined
+        ? (data.appointmentDate ? new Date(data.appointmentDate) : null)
+        : undefined,
+      cessationDate: cessationDate,
+      isCurrent,
+    },
+    select: {
+      id: true,
+      appointmentDate: true,
+      cessationDate: true,
+      isCurrent: true,
+    },
+  });
+
+  // Log the action
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'CompanyOfficer',
+    entityId: officerId,
+    summary: `Updated officer "${officer.name}" details`,
+    changeSource: 'MANUAL',
+    changes: {
+      appointmentDate: { old: oldValues.appointmentDate, new: updated.appointmentDate },
+      cessationDate: { old: oldValues.cessationDate, new: updated.cessationDate },
+      isCurrent: { old: oldValues.isCurrent, new: updated.isCurrent },
+    },
+    metadata: {
+      companyId: officer.company.id,
+      companyName: officer.company.name,
+      officerName: officer.name,
+    },
+  });
+
+  return updated;
+}
+
+/**
+ * Link an officer to a contact
+ */
+export async function linkOfficerToContact(
+  officerId: string,
+  contactId: string,
+  tenantId: string,
+  userId: string
+): Promise<void> {
+  // Verify officer exists and belongs to a company in this tenant
+  const officer = await prisma.companyOfficer.findFirst({
+    where: { id: officerId },
+    include: { company: { select: { id: true, tenantId: true, name: true } } },
+  });
+
+  if (!officer || officer.company.tenantId !== tenantId) {
+    throw new Error('Officer not found');
+  }
+
+  // Verify contact exists and belongs to the same tenant
+  const contact = await prisma.contact.findFirst({
+    where: { id: contactId, tenantId, deletedAt: null },
+    select: { id: true, fullName: true },
+  });
+
+  if (!contact) {
+    throw new Error('Contact not found');
+  }
+
+  // Update officer with contact link
+  await prisma.companyOfficer.update({
+    where: { id: officerId },
+    data: { contactId },
+  });
+
+  // Log the action
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'CompanyOfficer',
+    entityId: officerId,
+    summary: `Linked officer "${officer.name}" to contact "${contact.fullName}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      companyId: officer.company.id,
+      companyName: officer.company.name,
+      contactId,
+      contactName: contact.fullName,
+    },
+  });
+}
+
+/**
+ * Unlink an officer from a contact
+ */
+export async function unlinkOfficerFromContact(
+  officerId: string,
+  tenantId: string,
+  userId: string
+): Promise<void> {
+  // Verify officer exists and belongs to a company in this tenant
+  const officer = await prisma.companyOfficer.findFirst({
+    where: { id: officerId },
+    include: {
+      company: { select: { id: true, tenantId: true, name: true } },
+      contact: { select: { id: true, fullName: true } },
+    },
+  });
+
+  if (!officer || officer.company.tenantId !== tenantId) {
+    throw new Error('Officer not found');
+  }
+
+  if (!officer.contactId) {
+    throw new Error('Officer is not linked to any contact');
+  }
+
+  const previousContactName = officer.contact?.fullName || 'Unknown';
+
+  // Remove contact link
+  await prisma.companyOfficer.update({
+    where: { id: officerId },
+    data: { contactId: null },
+  });
+
+  // Log the action
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'CompanyOfficer',
+    entityId: officerId,
+    summary: `Unlinked officer "${officer.name}" from contact "${previousContactName}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      companyId: officer.company.id,
+      companyName: officer.company.name,
+      previousContactId: officer.contactId,
+      previousContactName,
+    },
+  });
+}
+
+/**
+ * Remove an officer (mark as ceased)
+ */
+export async function removeOfficer(
+  officerId: string,
+  companyId: string,
+  tenantId: string,
+  userId: string
+): Promise<void> {
+  // Verify officer exists and belongs to this company in this tenant
+  const officer = await prisma.companyOfficer.findFirst({
+    where: { id: officerId, companyId },
+    include: { company: { select: { id: true, tenantId: true, name: true } } },
+  });
+
+  if (!officer || officer.company.tenantId !== tenantId) {
+    throw new Error('Officer not found');
+  }
+
+  // Mark as ceased
+  await prisma.companyOfficer.update({
+    where: { id: officerId },
+    data: {
+      isCurrent: false,
+      cessationDate: officer.cessationDate || new Date(),
+    },
+  });
+
+  // Log the action
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'CompanyOfficer',
+    entityId: officerId,
+    summary: `Removed officer "${officer.name}" from company "${officer.company.name}"`,
+    changeSource: 'MANUAL',
+    changes: {
+      isCurrent: { old: true, new: false },
+    },
+    metadata: {
+      companyId: officer.company.id,
+      companyName: officer.company.name,
+      officerName: officer.name,
+      role: officer.role,
+    },
+  });
+}
+
+// ============================================================================
+// Shareholder Management
+// ============================================================================
+
+/**
+ * Update a shareholder's details (number of shares, share class)
+ */
+export async function updateShareholder(
+  shareholderId: string,
+  companyId: string,
+  tenantId: string,
+  userId: string,
+  data: { numberOfShares?: number; shareClass?: string }
+): Promise<{ id: string; numberOfShares: number; shareClass: string | null; percentageHeld: number | null }> {
+  // Verify shareholder exists and belongs to this company in this tenant
+  const shareholder = await prisma.companyShareholder.findFirst({
+    where: { id: shareholderId, companyId },
+    include: { company: { select: { id: true, tenantId: true, name: true } } },
+  });
+
+  if (!shareholder || shareholder.company.tenantId !== tenantId) {
+    throw new Error('Shareholder not found');
+  }
+
+  const oldValues = {
+    numberOfShares: shareholder.numberOfShares,
+    shareClass: shareholder.shareClass,
+  };
+
+  // Update shareholder
+  const updated = await prisma.companyShareholder.update({
+    where: { id: shareholderId },
+    data: {
+      numberOfShares: data.numberOfShares !== undefined ? data.numberOfShares : undefined,
+      shareClass: data.shareClass !== undefined ? data.shareClass : undefined,
+    },
+    select: {
+      id: true,
+      numberOfShares: true,
+      shareClass: true,
+      percentageHeld: true,
+    },
+  });
+
+  // If numberOfShares changed, recalculate percentages for all current shareholders
+  if (data.numberOfShares !== undefined && data.numberOfShares !== oldValues.numberOfShares) {
+    // Get all current shareholders
+    const allShareholders = await prisma.companyShareholder.findMany({
+      where: { companyId, isCurrent: true },
+      select: { id: true, numberOfShares: true },
+    });
+
+    // Calculate total shares
+    const totalShares = allShareholders.reduce((sum, sh) => sum + sh.numberOfShares, 0);
+
+    // Update percentages for all shareholders
+    if (totalShares > 0) {
+      for (const sh of allShareholders) {
+        const percentage = (sh.numberOfShares / totalShares) * 100;
+        await prisma.companyShareholder.update({
+          where: { id: sh.id },
+          data: { percentageHeld: percentage },
+        });
+      }
+    }
+  }
+
+  // Re-fetch the updated shareholder with new percentage
+  const finalUpdated = await prisma.companyShareholder.findUnique({
+    where: { id: shareholderId },
+    select: {
+      id: true,
+      numberOfShares: true,
+      shareClass: true,
+      percentageHeld: true,
+    },
+  });
+
+  // Log the action
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'CompanyShareholder',
+    entityId: shareholderId,
+    summary: `Updated shareholder "${shareholder.name}" details`,
+    changeSource: 'MANUAL',
+    changes: {
+      numberOfShares: { old: oldValues.numberOfShares, new: updated.numberOfShares },
+      shareClass: { old: oldValues.shareClass, new: updated.shareClass },
+    },
+    metadata: {
+      companyId: shareholder.company.id,
+      companyName: shareholder.company.name,
+      shareholderName: shareholder.name,
+    },
+  });
+
+  return {
+    id: finalUpdated!.id,
+    numberOfShares: finalUpdated!.numberOfShares,
+    shareClass: finalUpdated!.shareClass,
+    percentageHeld: finalUpdated!.percentageHeld ? Number(finalUpdated!.percentageHeld) : null,
+  };
+}
+
+/**
+ * Link a shareholder to a contact
+ */
+export async function linkShareholderToContact(
+  shareholderId: string,
+  contactId: string,
+  tenantId: string,
+  userId: string
+): Promise<void> {
+  // Verify shareholder exists and belongs to a company in this tenant
+  const shareholder = await prisma.companyShareholder.findFirst({
+    where: { id: shareholderId },
+    include: { company: { select: { id: true, tenantId: true, name: true } } },
+  });
+
+  if (!shareholder || shareholder.company.tenantId !== tenantId) {
+    throw new Error('Shareholder not found');
+  }
+
+  // Verify contact exists and belongs to the same tenant
+  const contact = await prisma.contact.findFirst({
+    where: { id: contactId, tenantId, deletedAt: null },
+    select: { id: true, fullName: true },
+  });
+
+  if (!contact) {
+    throw new Error('Contact not found');
+  }
+
+  // Update shareholder with contact link
+  await prisma.companyShareholder.update({
+    where: { id: shareholderId },
+    data: { contactId },
+  });
+
+  // Log the action
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'CompanyShareholder',
+    entityId: shareholderId,
+    summary: `Linked shareholder "${shareholder.name}" to contact "${contact.fullName}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      companyId: shareholder.company.id,
+      companyName: shareholder.company.name,
+      contactId,
+      contactName: contact.fullName,
+    },
+  });
+}
+
+/**
+ * Unlink a shareholder from a contact
+ */
+export async function unlinkShareholderFromContact(
+  shareholderId: string,
+  tenantId: string,
+  userId: string
+): Promise<void> {
+  // Verify shareholder exists and belongs to a company in this tenant
+  const shareholder = await prisma.companyShareholder.findFirst({
+    where: { id: shareholderId },
+    include: {
+      company: { select: { id: true, tenantId: true, name: true } },
+      contact: { select: { id: true, fullName: true } },
+    },
+  });
+
+  if (!shareholder || shareholder.company.tenantId !== tenantId) {
+    throw new Error('Shareholder not found');
+  }
+
+  if (!shareholder.contactId) {
+    throw new Error('Shareholder is not linked to any contact');
+  }
+
+  const previousContactName = shareholder.contact?.fullName || 'Unknown';
+
+  // Remove contact link
+  await prisma.companyShareholder.update({
+    where: { id: shareholderId },
+    data: { contactId: null },
+  });
+
+  // Log the action
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'CompanyShareholder',
+    entityId: shareholderId,
+    summary: `Unlinked shareholder "${shareholder.name}" from contact "${previousContactName}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      companyId: shareholder.company.id,
+      companyName: shareholder.company.name,
+      previousContactId: shareholder.contactId,
+      previousContactName,
+    },
+  });
+}
+
+/**
+ * Remove a shareholder (mark as former)
+ */
+export async function removeShareholder(
+  shareholderId: string,
+  companyId: string,
+  tenantId: string,
+  userId: string
+): Promise<void> {
+  // Verify shareholder exists and belongs to this company in this tenant
+  const shareholder = await prisma.companyShareholder.findFirst({
+    where: { id: shareholderId, companyId },
+    include: { company: { select: { id: true, tenantId: true, name: true } } },
+  });
+
+  if (!shareholder || shareholder.company.tenantId !== tenantId) {
+    throw new Error('Shareholder not found');
+  }
+
+  // Mark as former (not current)
+  await prisma.companyShareholder.update({
+    where: { id: shareholderId },
+    data: {
+      isCurrent: false,
+    },
+  });
+
+  // Recalculate percentages for remaining current shareholders
+  const remainingShareholders = await prisma.companyShareholder.findMany({
+    where: { companyId, isCurrent: true },
+    select: { id: true, numberOfShares: true },
+  });
+
+  const totalShares = remainingShareholders.reduce((sum, sh) => sum + sh.numberOfShares, 0);
+
+  if (totalShares > 0) {
+    for (const sh of remainingShareholders) {
+      const percentage = (sh.numberOfShares / totalShares) * 100;
+      await prisma.companyShareholder.update({
+        where: { id: sh.id },
+        data: { percentageHeld: percentage },
+      });
+    }
+  }
+
+  // Log the action
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'CompanyShareholder',
+    entityId: shareholderId,
+    summary: `Removed shareholder "${shareholder.name}" from company "${shareholder.company.name}"`,
+    changeSource: 'MANUAL',
+    changes: {
+      isCurrent: { old: true, new: false },
+    },
+    metadata: {
+      companyId: shareholder.company.id,
+      companyName: shareholder.company.name,
+      shareholderName: shareholder.name,
+      numberOfShares: shareholder.numberOfShares,
+    },
+  });
 }

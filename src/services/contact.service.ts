@@ -43,12 +43,7 @@ export async function createContact(
       corporateUen: data.corporateUen,
       email: data.email,
       phone: data.phone,
-      alternatePhone: data.alternatePhone,
-      addressLine1: data.addressLine1,
-      addressLine2: data.addressLine2,
-      postalCode: data.postalCode,
-      city: data.city,
-      country: data.country,
+      fullAddress: data.fullAddress,
       internalNotes: data.internalNotes,
     },
   });
@@ -97,12 +92,7 @@ export async function updateContact(
   if (data.corporateUen !== undefined) updateData.corporateUen = data.corporateUen;
   if (data.email !== undefined) updateData.email = data.email;
   if (data.phone !== undefined) updateData.phone = data.phone;
-  if (data.alternatePhone !== undefined) updateData.alternatePhone = data.alternatePhone;
-  if (data.addressLine1 !== undefined) updateData.addressLine1 = data.addressLine1;
-  if (data.addressLine2 !== undefined) updateData.addressLine2 = data.addressLine2;
-  if (data.postalCode !== undefined) updateData.postalCode = data.postalCode;
-  if (data.city !== undefined) updateData.city = data.city;
-  if (data.country !== undefined) updateData.country = data.country;
+  if (data.fullAddress !== undefined) updateData.fullAddress = data.fullAddress;
   if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
 
   // Rebuild full name if relevant fields changed
@@ -253,26 +243,88 @@ export async function getContactById(
   return prisma.contact.findFirst({ where });
 }
 
-export async function linkContactToCompany(
+// ============================================================================
+// Contact Link Information (for delete confirmation)
+// ============================================================================
+
+export interface ContactLinkInfo {
+  hasLinks: boolean;
+  companyRelationCount: number;
+  officerPositionCount: number;
+  shareholdingCount: number;
+  chargeHolderCount: number;
+  totalLinks: number;
+}
+
+/**
+ * Get information about a contact's linked data
+ * Used to warn users before deletion
+ */
+export async function getContactLinkInfo(
+  contactId: string,
+  tenantId: string
+): Promise<ContactLinkInfo> {
+  const contact = await prisma.contact.findFirst({
+    where: { id: contactId, tenantId, deletedAt: null },
+    select: {
+      _count: {
+        select: {
+          companyRelations: true,
+          officerPositions: true,
+          shareholdings: true,
+          chargeHoldings: true,
+        },
+      },
+    },
+  });
+
+  if (!contact) {
+    return {
+      hasLinks: false,
+      companyRelationCount: 0,
+      officerPositionCount: 0,
+      shareholdingCount: 0,
+      chargeHolderCount: 0,
+      totalLinks: 0,
+    };
+  }
+
+  const { companyRelations, officerPositions, shareholdings, chargeHoldings } = contact._count;
+  const totalLinks = companyRelations + officerPositions + shareholdings + chargeHoldings;
+
+  return {
+    hasLinks: totalLinks > 0,
+    companyRelationCount: companyRelations,
+    officerPositionCount: officerPositions,
+    shareholdingCount: shareholdings,
+    chargeHolderCount: chargeHoldings,
+    totalLinks,
+  };
+}
+
+import type { OfficerRole } from '@prisma/client';
+
+// Officer roles that create Officer records
+const OFFICER_ROLES = ['Director', 'Secretary', 'Auditor', 'Authorized Representative'];
+
+// Map display name to OfficerRole enum
+const OFFICER_ROLE_MAP: Record<string, OfficerRole> = {
+  'Director': 'DIRECTOR',
+  'Secretary': 'SECRETARY',
+  'Auditor': 'AUDITOR',
+  'Authorized Representative': 'DIRECTOR', // Map to DIRECTOR as closest match
+};
+
+/**
+ * Simple link that just creates a CompanyContact relationship
+ * Used by bizfile service when Officer/Shareholder records are created separately
+ */
+export async function createCompanyContactRelation(
   contactId: string,
   companyId: string,
   relationship: string,
   isPrimary: boolean = false
 ): Promise<void> {
-  // Validate both contact and company belong to the same tenant
-  const [contact, company] = await Promise.all([
-    prisma.contact.findUnique({ where: { id: contactId }, select: { tenantId: true } }),
-    prisma.company.findUnique({ where: { id: companyId }, select: { tenantId: true } }),
-  ]);
-
-  if (!contact || !company) {
-    throw new Error('Contact or company not found');
-  }
-
-  if (contact.tenantId !== company.tenantId) {
-    throw new Error('Contact and company must belong to the same tenant');
-  }
-
   await prisma.companyContact.upsert({
     where: {
       companyId_contactId_relationship: {
@@ -291,6 +343,135 @@ export async function linkContactToCompany(
       isPrimary,
     },
   });
+}
+
+interface LinkContactOptions {
+  isPrimary?: boolean;
+  appointmentDate?: string;
+  numberOfShares?: number;
+  shareClass?: string;
+  tenantId: string;
+  userId: string;
+}
+
+export async function linkContactToCompany(
+  contactId: string,
+  companyId: string,
+  relationship: string,
+  options: LinkContactOptions
+): Promise<void> {
+  const { isPrimary = false, appointmentDate, numberOfShares, shareClass, tenantId, userId } = options;
+
+  // Validate both contact and company belong to the same tenant
+  const [contact, company] = await Promise.all([
+    prisma.contact.findUnique({ where: { id: contactId }, select: { tenantId: true, fullName: true } }),
+    prisma.company.findUnique({ where: { id: companyId }, select: { tenantId: true, name: true } }),
+  ]);
+
+  if (!contact || !company) {
+    throw new Error('Contact or company not found');
+  }
+
+  if (contact.tenantId !== company.tenantId) {
+    throw new Error('Contact and company must belong to the same tenant');
+  }
+
+  if (contact.tenantId !== tenantId) {
+    throw new Error('Access denied');
+  }
+
+  // Determine the type of link to create
+  const isOfficerRole = OFFICER_ROLES.includes(relationship);
+  const isShareholder = relationship === 'Shareholder';
+
+  if (isOfficerRole) {
+    // Create CompanyOfficer record
+    const officerRole = OFFICER_ROLE_MAP[relationship] || 'DIRECTOR';
+    await prisma.companyOfficer.create({
+      data: {
+        companyId,
+        contactId,
+        name: contact.fullName,
+        role: officerRole,
+        designation: relationship,
+        appointmentDate: appointmentDate ? new Date(appointmentDate) : null,
+        isCurrent: true,
+      },
+    });
+
+    await createAuditLog({
+      tenantId,
+      userId,
+      companyId,
+      action: 'UPDATE',
+      entityType: 'CompanyOfficer',
+      entityId: companyId,
+      entityName: contact.fullName,
+      summary: `Linked "${contact.fullName}" as ${relationship} to "${company.name}"`,
+      changeSource: 'MANUAL',
+    });
+  } else if (isShareholder) {
+    // Create CompanyShareholder record
+    if (!numberOfShares || numberOfShares <= 0) {
+      throw new Error('Number of shares is required for shareholders');
+    }
+
+    await prisma.companyShareholder.create({
+      data: {
+        companyId,
+        contactId,
+        name: contact.fullName,
+        shareholderType: 'INDIVIDUAL',
+        shareClass: shareClass || 'Ordinary',
+        numberOfShares,
+        isCurrent: true,
+      },
+    });
+
+    await createAuditLog({
+      tenantId,
+      userId,
+      companyId,
+      action: 'UPDATE',
+      entityType: 'CompanyShareholder',
+      entityId: companyId,
+      entityName: contact.fullName,
+      summary: `Linked "${contact.fullName}" as shareholder with ${numberOfShares} ${shareClass || 'Ordinary'} shares to "${company.name}"`,
+      changeSource: 'MANUAL',
+    });
+  } else {
+    // Create general CompanyContact relationship
+    await prisma.companyContact.upsert({
+      where: {
+        companyId_contactId_relationship: {
+          companyId,
+          contactId,
+          relationship,
+        },
+      },
+      create: {
+        companyId,
+        contactId,
+        relationship,
+        isPrimary,
+      },
+      update: {
+        isPrimary,
+      },
+    });
+
+    await createAuditLog({
+      tenantId,
+      userId,
+      companyId,
+      action: 'UPDATE',
+      entityType: 'CompanyContact',
+      entityId: companyId,
+      entityName: contact.fullName,
+      summary: `Linked "${contact.fullName}" as ${relationship} to "${company.name}"`,
+      changeSource: 'MANUAL',
+    });
+  }
 }
 
 export async function unlinkContactFromCompany(
@@ -486,10 +667,17 @@ export interface ContactWithRelationships extends Contact {
   }>;
 }
 
+interface ContactWithRelationshipsOptions {
+  tenantId?: string;
+  companyIds?: string[];  // If provided, filter relationships to only these companies
+}
+
 export async function getContactWithRelationships(
   id: string,
-  tenantId?: string
-): Promise<ContactWithRelationships | null> {
+  options: ContactWithRelationshipsOptions = {}
+): Promise<(ContactWithRelationships & { hiddenCompanyCount?: number }) | null> {
+  const { tenantId, companyIds } = options;
+
   const where: Prisma.ContactWhereInput = { id, deletedAt: null };
   if (tenantId) {
     where.tenantId = tenantId;
@@ -540,15 +728,44 @@ export async function getContactWithRelationships(
     return null;
   }
 
+  // If companyIds filter is provided (for company-scoped users), filter relationships
+  let filteredCompanyRelations = contact.companyRelations;
+  let filteredOfficerPositions = contact.officerPositions;
+  let filteredShareholdings = contact.shareholdings;
+  let hiddenCompanyCount = 0;
+
+  if (companyIds && companyIds.length >= 0) {
+    const companyIdSet = new Set(companyIds);
+
+    // Count unique companies that will be hidden
+    const allCompanyIds = new Set<string>();
+    contact.companyRelations.forEach(r => allCompanyIds.add(r.company.id));
+    contact.officerPositions.forEach(o => allCompanyIds.add(o.company.id));
+    contact.shareholdings.forEach(s => allCompanyIds.add(s.company.id));
+
+    const hiddenCompanyIds = new Set<string>();
+    allCompanyIds.forEach(cid => {
+      if (!companyIdSet.has(cid)) {
+        hiddenCompanyIds.add(cid);
+      }
+    });
+    hiddenCompanyCount = hiddenCompanyIds.size;
+
+    // Filter to only show relationships for accessible companies
+    filteredCompanyRelations = contact.companyRelations.filter(r => companyIdSet.has(r.company.id));
+    filteredOfficerPositions = contact.officerPositions.filter(o => companyIdSet.has(o.company.id));
+    filteredShareholdings = contact.shareholdings.filter(s => companyIdSet.has(s.company.id));
+  }
+
   return {
     ...contact,
-    companyRelations: contact.companyRelations.map((r) => ({
+    companyRelations: filteredCompanyRelations.map((r) => ({
       id: r.id,
       relationship: r.relationship,
       isPrimary: r.isPrimary,
       company: r.company,
     })),
-    officerPositions: contact.officerPositions.map((o) => ({
+    officerPositions: filteredOfficerPositions.map((o) => ({
       id: o.id,
       role: o.role,
       designation: o.designation,
@@ -557,7 +774,7 @@ export async function getContactWithRelationships(
       isCurrent: o.isCurrent,
       company: o.company,
     })),
-    shareholdings: contact.shareholdings.map((s) => ({
+    shareholdings: filteredShareholdings.map((s) => ({
       id: s.id,
       shareClass: s.shareClass,
       numberOfShares: s.numberOfShares,
@@ -565,12 +782,14 @@ export async function getContactWithRelationships(
       isCurrent: s.isCurrent,
       company: s.company,
     })),
+    hiddenCompanyCount,
   };
 }
 
 export async function searchContactsWithCounts(
   params: ContactSearchInput,
-  tenantId?: string
+  tenantId?: string,
+  companyIds?: string[]
 ): Promise<{
   contacts: Array<Contact & { _count: { companyRelations: number } }>;
   total: number;
@@ -578,36 +797,68 @@ export async function searchContactsWithCounts(
   limit: number;
   totalPages: number;
 }> {
-  const where: Prisma.ContactWhereInput = {
-    deletedAt: null,
-  };
+  // For company-scoped users with no assignments, return empty result early
+  if (companyIds && companyIds.length === 0) {
+    return {
+      contacts: [],
+      total: 0,
+      page: params.page,
+      limit: params.limit,
+      totalPages: 0,
+    };
+  }
+
+  const andConditions: Prisma.ContactWhereInput[] = [{ deletedAt: null }];
 
   if (tenantId) {
-    where.tenantId = tenantId;
+    andConditions.push({ tenantId });
   }
 
   if (params.query) {
     const searchTerm = params.query.trim();
-    where.OR = [
-      { fullName: { contains: searchTerm, mode: 'insensitive' } },
-      { email: { contains: searchTerm, mode: 'insensitive' } },
-      { identificationNumber: { contains: searchTerm, mode: 'insensitive' } },
-      { corporateUen: { contains: searchTerm, mode: 'insensitive' } },
-      { phone: { contains: searchTerm, mode: 'insensitive' } },
-    ];
+    andConditions.push({
+      OR: [
+        { fullName: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+        { identificationNumber: { contains: searchTerm, mode: 'insensitive' } },
+        { corporateUen: { contains: searchTerm, mode: 'insensitive' } },
+        { phone: { contains: searchTerm, mode: 'insensitive' } },
+      ],
+    });
   }
 
   if (params.contactType) {
-    where.contactType = params.contactType;
+    andConditions.push({ contactType: params.contactType });
+  }
+
+  // Filter by specific company IDs (for company-scoped users)
+  // This filters contacts linked to any of the user's assigned companies
+  if (companyIds && companyIds.length > 0) {
+    andConditions.push({
+      OR: [
+        // Contacts linked via company relations
+        { companyRelations: { some: { companyId: { in: companyIds } } } },
+        // Contacts linked as officers
+        { officerPositions: { some: { companyId: { in: companyIds } } } },
+        // Contacts linked as shareholders
+        { shareholdings: { some: { companyId: { in: companyIds } } } },
+      ],
+    });
   }
 
   if (params.companyId) {
-    where.companyRelations = {
-      some: {
-        companyId: params.companyId,
+    andConditions.push({
+      companyRelations: {
+        some: {
+          companyId: params.companyId,
+        },
       },
-    };
+    });
   }
+
+  const where: Prisma.ContactWhereInput = {
+    AND: andConditions,
+  };
 
   const orderBy: Prisma.ContactOrderByWithRelationInput = {};
   orderBy[params.sortBy] = params.sortOrder;

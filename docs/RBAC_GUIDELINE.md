@@ -96,15 +96,22 @@ interface SessionUser {
   tenantId: string | null;  // Tenant ID (null for SUPER_ADMIN)
 
   // Computed from role assignments (authoritative source)
-  isSuperAdmin: boolean;    // Has SUPER_ADMIN role
-  isTenantAdmin: boolean;   // Has TENANT_ADMIN role
+  isSuperAdmin: boolean;        // Has SUPER_ADMIN role
+  isTenantAdmin: boolean;       // Has TENANT_ADMIN role
+  hasAllCompaniesAccess: boolean; // Has any role with "All Companies" scope (null companyId)
 
   // Company IDs from role assignments
-  companyIds: string[];     // All companies user has access to
+  companyIds: string[];     // Specific companies user has access to
 }
 ```
 
-**Important:** The `isSuperAdmin`, `isTenantAdmin`, and `companyIds` fields are computed from the user's role assignments at session load time. Never store these values in the database on the User model.
+**Important:** The `isSuperAdmin`, `isTenantAdmin`, `hasAllCompaniesAccess`, and `companyIds` fields are computed from the user's role assignments at session load time. Never store these values in the database on the User model.
+
+**Access Level Hierarchy:**
+1. `isSuperAdmin` - Full system access across all tenants
+2. `isTenantAdmin` - Full access within their tenant
+3. `hasAllCompaniesAccess` - Access to all companies within their tenant (via "All Companies" role)
+4. `companyIds` - Access to specific assigned companies only
 
 ### Authentication Functions
 
@@ -253,6 +260,40 @@ if (!contact) {
   throw new Error('Contact not found');  // Don't reveal if it exists in another tenant
 }
 ```
+
+**Pattern 4: Company-Scoped Contact Filtering**
+
+For company-scoped users (COMPANY_ADMIN, COMPANY_USER), contacts are filtered to only show those linked to their assigned companies:
+
+```typescript
+// In API route
+const companyIds = (!session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess)
+  ? session.companyIds
+  : undefined;
+
+// In service function
+if (companyIds && companyIds.length > 0) {
+  where.OR = [
+    // Contacts linked via company relations
+    { companyRelations: { some: { companyId: { in: companyIds } } } },
+    // Contacts linked as officers
+    { officerPositions: { some: { companyId: { in: companyIds } } } },
+    // Contacts linked as shareholders
+    { shareholdings: { some: { companyId: { in: companyIds } } } },
+  ];
+} else if (companyIds && companyIds.length === 0) {
+  // User has no company assignments - return empty result
+  return { contacts: [], total: 0, ... };
+}
+```
+
+**Access Levels for Contacts:**
+| User Type | Sees |
+|-----------|------|
+| SUPER_ADMIN | All contacts across all tenants |
+| TENANT_ADMIN | All contacts in their tenant |
+| User with "All Companies" role | All contacts in their tenant |
+| COMPANY_ADMIN/USER | Only contacts linked to their assigned companies |
 
 ---
 
@@ -816,8 +857,14 @@ if (session.isSuperAdmin) { ... }
 // Is user a tenant admin?
 if (session.isTenantAdmin) { ... }
 
+// Does user have "All Companies" access?
+if (session.hasAllCompaniesAccess) { ... }
+
 // Can user manage this tenant?
 if (canManageTenant(session, tenantId)) { ... }
+
+// Is user company-scoped (needs filtering by companyIds)?
+const isCompanyScoped = !session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess;
 ```
 
 ### Audit Log Actions

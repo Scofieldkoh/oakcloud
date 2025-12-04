@@ -18,7 +18,7 @@ import {
   AlertCircle,
   Link2,
 } from 'lucide-react';
-import { useContact, useDeleteContact, useLinkContactToCompany, useUnlinkContactFromCompany } from '@/hooks/use-contacts';
+import { useContact, useDeleteContact, useLinkContactToCompany, useUnlinkContactFromCompany, useRemoveOfficerPosition, useRemoveShareholding, useUpdateOfficerPosition, useUpdateShareholding, useContactLinkInfo } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate } from '@/lib/utils';
@@ -41,16 +41,14 @@ const idTypeLabels: Record<IdentificationType, string> = {
   OTHER: 'Other',
 };
 
-const relationshipOptions = [
-  'Director',
-  'Shareholder',
-  'Secretary',
-  'Auditor',
-  'Nominee',
-  'Beneficial Owner',
-  'Authorized Representative',
-  'Other',
-];
+// Officer roles that create Officer records
+const officerRoles = ['Director', 'Secretary', 'Auditor', 'Authorized Representative'];
+
+// General relationships that create CompanyContact records
+const generalRelationships = ['Nominee', 'Beneficial Owner', 'Other'];
+
+// All relationship options
+const relationshipOptions = [...officerRoles, 'Shareholder', ...generalRelationships];
 
 export default function ContactDetailPage({
   params,
@@ -63,14 +61,63 @@ export default function ContactDetailPage({
   const deleteContact = useDeleteContact();
   const linkContact = useLinkContactToCompany();
   const unlinkContact = useUnlinkContactFromCompany();
+  const removeOfficer = useRemoveOfficerPosition();
+  const removeShareholder = useRemoveShareholding();
+  const updateOfficer = useUpdateOfficerPosition();
+  const updateShareholder = useUpdateShareholding();
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
 
-  // Fetch companies for linking modal
-  const { data: companiesData } = useCompanies({ limit: 100 });
+  // Fetch companies for linking modal - filter by contact's tenant to prevent cross-tenant linking
+  const { data: companiesData } = useCompanies({
+    limit: 100,
+    tenantId: contact?.tenantId,
+  });
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [editOfficerModalOpen, setEditOfficerModalOpen] = useState(false);
+  const [editShareholderModalOpen, setEditShareholderModalOpen] = useState(false);
+  const [selectedOfficer, setSelectedOfficer] = useState<{
+    id: string;
+    companyId: string;
+    role: string;
+    designation: string | null;
+    appointmentDate: string | null;
+    cessationDate: string | null;
+  } | null>(null);
+  const [selectedShareholderEdit, setSelectedShareholderEdit] = useState<{
+    id: string;
+    companyId: string;
+    shareClass: string;
+    numberOfShares: number;
+  } | null>(null);
+  const [editOfficerForm, setEditOfficerForm] = useState({
+    appointmentDate: '',
+    cessationDate: '',
+  });
+  const [editShareholderForm, setEditShareholderForm] = useState({
+    numberOfShares: '',
+    shareClass: '',
+  });
+
+  // Fetch link info when delete dialog opens
+  const { data: linkInfo } = useContactLinkInfo(deleteDialogOpen ? id : null);
+
+  // Build warning message based on links
+  const getDeleteWarning = () => {
+    if (!linkInfo?.hasLinks) {
+      return 'This action cannot be undone.';
+    }
+
+    const parts: string[] = [];
+    if (linkInfo.companyRelationCount > 0) parts.push(`${linkInfo.companyRelationCount} company relation(s)`);
+    if (linkInfo.officerPositionCount > 0) parts.push(`${linkInfo.officerPositionCount} officer position(s)`);
+    if (linkInfo.shareholdingCount > 0) parts.push(`${linkInfo.shareholdingCount} shareholding(s)`);
+    if (linkInfo.chargeHolderCount > 0) parts.push(`${linkInfo.chargeHolderCount} charge holder record(s)`);
+
+    return `Warning: This contact has ${parts.join(', ')} linked. Deleting will remove these links, but the underlying company data will remain. This action cannot be undone.`;
+  };
   const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
   const [selectedLink, setSelectedLink] = useState<{
     companyId: string;
@@ -80,6 +127,9 @@ export default function ContactDetailPage({
     companyId: '',
     relationship: '',
     isPrimary: false,
+    appointmentDate: '',
+    numberOfShares: '',
+    shareClass: 'Ordinary',
   });
 
   const handleDeleteConfirm = async (reason?: string) => {
@@ -100,16 +150,30 @@ export default function ContactDetailPage({
       return;
     }
 
+    // Validate based on relationship type
+    const isOfficerRole = officerRoles.includes(linkForm.relationship);
+    const isShareholder = linkForm.relationship === 'Shareholder';
+
+    if (isShareholder && !linkForm.numberOfShares) {
+      toastError('Please enter number of shares');
+      return;
+    }
+
     try {
       await linkContact.mutateAsync({
         contactId: id,
         companyId: linkForm.companyId,
         relationship: linkForm.relationship,
         isPrimary: linkForm.isPrimary,
+        // Officer-specific fields
+        appointmentDate: isOfficerRole && linkForm.appointmentDate ? linkForm.appointmentDate : undefined,
+        // Shareholder-specific fields
+        numberOfShares: isShareholder ? parseInt(linkForm.numberOfShares) || 0 : undefined,
+        shareClass: isShareholder ? linkForm.shareClass : undefined,
       });
       success('Contact linked to company successfully');
       setLinkModalOpen(false);
-      setLinkForm({ companyId: '', relationship: '', isPrimary: false });
+      setLinkForm({ companyId: '', relationship: '', isPrimary: false, appointmentDate: '', numberOfShares: '', shareClass: 'Ordinary' });
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to link contact');
     }
@@ -129,6 +193,60 @@ export default function ContactDetailPage({
       setSelectedLink(null);
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to unlink contact');
+    }
+  };
+
+  const handleEditOfficer = async () => {
+    if (!selectedOfficer) return;
+
+    // Validate cessation date is not earlier than appointment date
+    if (editOfficerForm.appointmentDate && editOfficerForm.cessationDate) {
+      const appointmentDate = new Date(editOfficerForm.appointmentDate);
+      const cessationDate = new Date(editOfficerForm.cessationDate);
+      if (cessationDate < appointmentDate) {
+        toastError('Cessation date cannot be earlier than appointment date');
+        return;
+      }
+    }
+
+    try {
+      await updateOfficer.mutateAsync({
+        contactId: id,
+        officerId: selectedOfficer.id,
+        companyId: selectedOfficer.companyId,
+        data: {
+          appointmentDate: editOfficerForm.appointmentDate || null,
+          cessationDate: editOfficerForm.cessationDate || null,
+        },
+      });
+      success('Officer position updated successfully');
+      setEditOfficerModalOpen(false);
+      setSelectedOfficer(null);
+      setEditOfficerForm({ appointmentDate: '', cessationDate: '' });
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to update officer position');
+    }
+  };
+
+  const handleEditShareholder = async () => {
+    if (!selectedShareholderEdit) return;
+
+    try {
+      await updateShareholder.mutateAsync({
+        contactId: id,
+        shareholderId: selectedShareholderEdit.id,
+        companyId: selectedShareholderEdit.companyId,
+        data: {
+          numberOfShares: parseInt(editShareholderForm.numberOfShares) || undefined,
+          shareClass: editShareholderForm.shareClass || undefined,
+        },
+      });
+      success('Shareholding updated successfully');
+      setEditShareholderModalOpen(false);
+      setSelectedShareholderEdit(null);
+      setEditShareholderForm({ numberOfShares: '', shareClass: '' });
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to update shareholding');
     }
   };
 
@@ -322,24 +440,11 @@ export default function ContactDetailPage({
                   )}
                 </p>
               </div>
-              {contact.alternatePhone && (
-                <div>
-                  <p className="text-xs text-text-tertiary uppercase mb-1">Alternate Phone</p>
-                  <p className="text-text-primary">
-                    <a
-                      href={`tel:${contact.alternatePhone}`}
-                      className="text-oak-light hover:underline"
-                    >
-                      {contact.alternatePhone}
-                    </a>
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Address */}
-          {(contact.addressLine1 || contact.city || contact.country) && (
+          {contact.fullAddress && (
             <div className="card">
               <div className="p-4 border-b border-border-primary">
                 <h2 className="font-medium text-text-primary flex items-center gap-2">
@@ -348,17 +453,7 @@ export default function ContactDetailPage({
                 </h2>
               </div>
               <div className="p-4">
-                <p className="text-text-primary">
-                  {[
-                    contact.addressLine1,
-                    contact.addressLine2,
-                    contact.postalCode,
-                    contact.city,
-                    contact.country,
-                  ]
-                    .filter(Boolean)
-                    .join(', ')}
-                </p>
+                <p className="text-text-primary">{contact.fullAddress}</p>
               </div>
             </div>
           )}
@@ -368,11 +463,58 @@ export default function ContactDetailPage({
             companyRelations={contact.companyRelations}
             officerPositions={contact.officerPositions}
             shareholdings={contact.shareholdings}
+            hiddenCompanyCount={contact.hiddenCompanyCount}
             canUpdate={can.updateContact}
             onLinkCompany={() => setLinkModalOpen(true)}
             onUnlinkCompany={(companyId, relationship) => {
               setSelectedLink({ companyId, relationship });
               setUnlinkDialogOpen(true);
+            }}
+            onUnlinkOfficer={async (officerId, companyId) => {
+              try {
+                await removeOfficer.mutateAsync({ contactId: id, officerId, companyId });
+                success('Officer position removed successfully');
+              } catch (err) {
+                toastError(err instanceof Error ? err.message : 'Failed to remove officer position');
+              }
+            }}
+            onUnlinkShareholder={async (shareholderId, companyId) => {
+              try {
+                await removeShareholder.mutateAsync({ contactId: id, shareholderId, companyId });
+                success('Shareholding removed successfully');
+              } catch (err) {
+                toastError(err instanceof Error ? err.message : 'Failed to remove shareholding');
+              }
+            }}
+            onEditOfficer={(officer, companyId) => {
+              setSelectedOfficer({
+                id: officer.id,
+                companyId,
+                role: officer.role,
+                designation: officer.designation,
+                appointmentDate: officer.appointmentDate,
+                cessationDate: officer.cessationDate,
+              });
+              // Pre-fill form with existing values (convert date strings to YYYY-MM-DD format)
+              setEditOfficerForm({
+                appointmentDate: officer.appointmentDate ? officer.appointmentDate.split('T')[0] : '',
+                cessationDate: officer.cessationDate ? officer.cessationDate.split('T')[0] : '',
+              });
+              setEditOfficerModalOpen(true);
+            }}
+            onEditShareholder={(shareholder, companyId) => {
+              setSelectedShareholderEdit({
+                id: shareholder.id,
+                companyId,
+                shareClass: shareholder.shareClass,
+                numberOfShares: shareholder.numberOfShares,
+              });
+              // Pre-fill form with existing values
+              setEditShareholderForm({
+                numberOfShares: shareholder.numberOfShares.toString(),
+                shareClass: shareholder.shareClass,
+              });
+              setEditShareholderModalOpen(true);
             }}
           />
         </div>
@@ -388,19 +530,26 @@ export default function ContactDetailPage({
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-secondary">Linked Companies</span>
                 <span className="font-medium text-text-primary">
-                  {contact.companyRelations?.length || 0}
+                  {(() => {
+                    // Count unique companies across all current (non-ceased) relationship types
+                    const companyIds = new Set<string>();
+                    contact.companyRelations?.forEach((r) => companyIds.add(r.company.id));
+                    contact.officerPositions?.filter((p) => p.isCurrent).forEach((p) => companyIds.add(p.company.id));
+                    contact.shareholdings?.filter((s) => s.isCurrent).forEach((s) => companyIds.add(s.company.id));
+                    return companyIds.size;
+                  })()}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-secondary">Officer Positions</span>
                 <span className="font-medium text-text-primary">
-                  {contact.officerPositions?.length || 0}
+                  {contact.officerPositions?.filter((p) => p.isCurrent).length || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-secondary">Shareholdings</span>
                 <span className="font-medium text-text-primary">
-                  {contact.shareholdings?.length || 0}
+                  {contact.shareholdings?.filter((s) => s.isCurrent).length || 0}
                 </span>
               </div>
             </div>
@@ -472,7 +621,7 @@ export default function ContactDetailPage({
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDeleteConfirm}
         title="Delete Contact"
-        description={`Are you sure you want to delete "${contact?.fullName}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete "${contact?.fullName}"? ${getDeleteWarning()}`}
         confirmLabel="Delete"
         variant="danger"
         requireReason
@@ -487,7 +636,7 @@ export default function ContactDetailPage({
         isOpen={linkModalOpen}
         onClose={() => {
           setLinkModalOpen(false);
-          setLinkForm({ companyId: '', relationship: '', isPrimary: false });
+          setLinkForm({ companyId: '', relationship: '', isPrimary: false, appointmentDate: '', numberOfShares: '', shareClass: 'Ordinary' });
         }}
         title="Link Contact to Company"
       >
@@ -509,20 +658,71 @@ export default function ContactDetailPage({
               </select>
             </div>
             <div>
-              <label className="label">Relationship</label>
+              <label className="label">Role / Relationship</label>
               <select
                 value={linkForm.relationship}
                 onChange={(e) => setLinkForm((prev) => ({ ...prev, relationship: e.target.value }))}
                 className="input input-sm w-full"
               >
-                <option value="">Select relationship</option>
-                {relationshipOptions.map((rel) => (
-                  <option key={rel} value={rel}>
-                    {rel}
-                  </option>
-                ))}
+                <option value="">Select role</option>
+                <optgroup label="Officer Roles">
+                  {officerRoles.map((rel) => (
+                    <option key={rel} value={rel}>{rel}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Shareholder">
+                  <option value="Shareholder">Shareholder</option>
+                </optgroup>
+                <optgroup label="Other Relationships">
+                  {generalRelationships.map((rel) => (
+                    <option key={rel} value={rel}>{rel}</option>
+                  ))}
+                </optgroup>
               </select>
             </div>
+
+            {/* Officer-specific fields */}
+            {officerRoles.includes(linkForm.relationship) && (
+              <div>
+                <label className="label">Date of Appointment</label>
+                <input
+                  type="date"
+                  value={linkForm.appointmentDate}
+                  onChange={(e) => setLinkForm((prev) => ({ ...prev, appointmentDate: e.target.value }))}
+                  className="input input-sm w-full"
+                />
+              </div>
+            )}
+
+            {/* Shareholder-specific fields */}
+            {linkForm.relationship === 'Shareholder' && (
+              <>
+                <div>
+                  <label className="label">Number of Shares *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={linkForm.numberOfShares}
+                    onChange={(e) => setLinkForm((prev) => ({ ...prev, numberOfShares: e.target.value }))}
+                    className="input input-sm w-full"
+                    placeholder="Enter number of shares"
+                  />
+                </div>
+                <div>
+                  <label className="label">Share Class</label>
+                  <select
+                    value={linkForm.shareClass}
+                    onChange={(e) => setLinkForm((prev) => ({ ...prev, shareClass: e.target.value }))}
+                    className="input input-sm w-full"
+                  >
+                    <option value="Ordinary">Ordinary</option>
+                    <option value="Preference">Preference</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </>
+            )}
+
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -541,7 +741,7 @@ export default function ContactDetailPage({
           <button
             onClick={() => {
               setLinkModalOpen(false);
-              setLinkForm({ companyId: '', relationship: '', isPrimary: false });
+              setLinkForm({ companyId: '', relationship: '', isPrimary: false, appointmentDate: '', numberOfShares: '', shareClass: 'Ordinary' });
             }}
             className="btn-secondary btn-sm"
           >
@@ -552,7 +752,7 @@ export default function ContactDetailPage({
             disabled={linkContact.isPending}
             className="btn-primary btn-sm"
           >
-            {linkContact.isPending ? 'Linking...' : 'Link Company'}
+            {linkContact.isPending ? 'Linking...' : 'Link'}
           </button>
         </ModalFooter>
       </Modal>
@@ -571,6 +771,130 @@ export default function ContactDetailPage({
         variant="danger"
         isLoading={unlinkContact.isPending}
       />
+
+      {/* Edit Officer Modal */}
+      <Modal
+        isOpen={editOfficerModalOpen}
+        onClose={() => {
+          setEditOfficerModalOpen(false);
+          setSelectedOfficer(null);
+          setEditOfficerForm({ appointmentDate: '', cessationDate: '' });
+        }}
+        title="Edit Officer Position"
+      >
+        <ModalBody>
+          <div className="space-y-4">
+            {selectedOfficer && (
+              <div className="text-sm text-text-secondary mb-4">
+                <span className="font-medium text-text-primary">
+                  {selectedOfficer.role.replace(/_/g, ' ')}
+                </span>
+                {selectedOfficer.designation && (
+                  <span> - {selectedOfficer.designation.replace(/_/g, ' ')}</span>
+                )}
+              </div>
+            )}
+            <div>
+              <label className="label">Date of Appointment</label>
+              <input
+                type="date"
+                value={editOfficerForm.appointmentDate}
+                onChange={(e) => setEditOfficerForm((prev) => ({ ...prev, appointmentDate: e.target.value }))}
+                className="input input-sm w-full"
+              />
+            </div>
+            <div>
+              <label className="label">Date of Cessation</label>
+              <input
+                type="date"
+                value={editOfficerForm.cessationDate}
+                onChange={(e) => setEditOfficerForm((prev) => ({ ...prev, cessationDate: e.target.value }))}
+                className="input input-sm w-full"
+              />
+              <p className="text-xs text-text-muted mt-1">
+                Leave empty if the position is still active
+              </p>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <button
+            onClick={() => {
+              setEditOfficerModalOpen(false);
+              setSelectedOfficer(null);
+              setEditOfficerForm({ appointmentDate: '', cessationDate: '' });
+            }}
+            className="btn-secondary btn-sm"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleEditOfficer}
+            disabled={updateOfficer.isPending}
+            className="btn-primary btn-sm"
+          >
+            {updateOfficer.isPending ? 'Saving...' : 'Save'}
+          </button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Edit Shareholder Modal */}
+      <Modal
+        isOpen={editShareholderModalOpen}
+        onClose={() => {
+          setEditShareholderModalOpen(false);
+          setSelectedShareholderEdit(null);
+          setEditShareholderForm({ numberOfShares: '', shareClass: '' });
+        }}
+        title="Edit Shareholding"
+      >
+        <ModalBody>
+          <div className="space-y-4">
+            <div>
+              <label className="label">Number of Shares</label>
+              <input
+                type="number"
+                min="1"
+                value={editShareholderForm.numberOfShares}
+                onChange={(e) => setEditShareholderForm((prev) => ({ ...prev, numberOfShares: e.target.value }))}
+                className="input input-sm w-full"
+                placeholder="Enter number of shares"
+              />
+            </div>
+            <div>
+              <label className="label">Share Class</label>
+              <select
+                value={editShareholderForm.shareClass}
+                onChange={(e) => setEditShareholderForm((prev) => ({ ...prev, shareClass: e.target.value }))}
+                className="input input-sm w-full"
+              >
+                <option value="Ordinary">Ordinary</option>
+                <option value="Preference">Preference</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <button
+            onClick={() => {
+              setEditShareholderModalOpen(false);
+              setSelectedShareholderEdit(null);
+              setEditShareholderForm({ numberOfShares: '', shareClass: '' });
+            }}
+            className="btn-secondary btn-sm"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleEditShareholder}
+            disabled={updateShareholder.isPending}
+            className="btn-primary btn-sm"
+          >
+            {updateShareholder.isPending ? 'Saving...' : 'Save'}
+          </button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

@@ -28,7 +28,7 @@ export interface UserCompanyAssignment {
 
 export interface AssignCompanyInput {
   userId: string;
-  companyId: string;
+  companyId: string | null; // null = "All Companies" (creates role assignment only)
   roleId?: string; // Optional role to assign for this company
   isPrimary?: boolean;
 }
@@ -76,9 +76,72 @@ export async function assignUserToCompany(
   input: AssignCompanyInput,
   tenantId: string,
   assignedByUserId: string
-): Promise<UserCompanyAssignment> {
+): Promise<UserCompanyAssignment | { id: string; allCompanies: true }> {
   const { userId, companyId, roleId, isPrimary = false } = input;
 
+  // Handle "All Companies" assignment (companyId is null)
+  if (companyId === null) {
+    if (!roleId) {
+      throw new Error('Role is required for All Companies assignment');
+    }
+
+    // Verify user belongs to tenant
+    const user = await prisma.user.findUnique({
+      where: { id: userId, tenantId, deletedAt: null },
+    });
+
+    if (!user) {
+      throw new Error('User not found in this tenant');
+    }
+
+    // Verify role belongs to tenant
+    const role = await prisma.role.findUnique({
+      where: { id: roleId, tenantId },
+    });
+    if (!role) {
+      throw new Error('Role not found in this tenant');
+    }
+
+    // Check if role assignment already exists for "All Companies"
+    const existingRoleAssignment = await prisma.userRoleAssignment.findFirst({
+      where: { userId, roleId, companyId: null },
+    });
+
+    if (existingRoleAssignment) {
+      throw new Error('This role assignment already exists for All Companies');
+    }
+
+    // Create role assignment with null companyId
+    const roleAssignment = await prisma.userRoleAssignment.create({
+      data: {
+        userId,
+        roleId,
+        companyId: null,
+      },
+    });
+
+    // Log the assignment
+    await createAuditLog({
+      tenantId,
+      userId: assignedByUserId,
+      action: 'ROLE_CHANGED',
+      entityType: 'UserRoleAssignment',
+      entityId: roleAssignment.id,
+      changeSource: 'MANUAL',
+      metadata: {
+        targetUserId: userId,
+        roleId,
+        roleName: role.name,
+        companyId: null,
+        companyName: 'All Companies',
+        operation: 'assigned',
+      },
+    });
+
+    return { id: roleAssignment.id, allCompanies: true };
+  }
+
+  // Standard company-specific assignment
   // First verify company belongs to tenant (this confirms the target tenant)
   const company = await prisma.company.findUnique({
     where: { id: companyId, tenantId, deletedAt: null },

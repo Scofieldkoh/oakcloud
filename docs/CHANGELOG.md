@@ -4,6 +4,236 @@ All notable changes to Oakcloud are documented in this file.
 
 ---
 
+## v0.9.11 (2025-12-04)
+
+### Contact Schema Simplification
+
+#### Changes
+- **Simplified Contact Address Fields**: Consolidated multiple address fields into a single `fullAddress` field
+  - Removed: `alternatePhone`, `addressLine2`, `postalCode`, `city`, `country`
+  - Renamed: `addressLine1` → `fullAddress`
+  - Single text field now holds the complete address (e.g., "123 Main Street, #01-02, Singapore 123456")
+
+- **Email Made Optional**: Email is no longer a mandatory field when creating or editing contacts
+
+- **Contact Detail Page Summary**: Now excludes ceased appointments from the summary counts
+  - Officer positions filtered by `isCurrent`
+  - Shareholdings filtered by `isCurrent`
+
+#### Technical Changes
+- Updated Prisma schema for Contact model
+- Updated `createContactSchema` and `updateContactSchema` validations
+- Updated `contact.service.ts` create/update functions
+- Updated `bizfile.service.ts` to use `fullAddress` when creating contacts from BizFile extraction
+- Updated company service contact queries to select `fullAddress`
+- Updated contact detail, edit, and new pages to use simplified address form
+- Database migration applied with `prisma db push --accept-data-loss`
+
+---
+
+## v0.9.10 (2025-12-04)
+
+### Officer & Shareholder Filters, Edit, and Validation
+
+#### Features
+- **Company Detail Page Filters**: Added filtering to Officers and Shareholders sections:
+  - **Officers**: Name search, role dropdown, "Show ceased" checkbox (default: false - hides ceased)
+  - **Shareholders**: Name search, "Show former" checkbox (default: false - hides former)
+  - Filter button with active indicator
+  - "No matches" message when filters return no results
+  - Fixed checkbox vertical alignment
+
+- **Edit Officers from Company Page**: Added pencil icon edit button for each officer
+  - Opens modal to edit appointment date and cessation date
+  - Validates cessation date is not earlier than appointment date
+  - Setting cessation date marks the officer as ceased
+
+- **Edit Shareholders from Company Page**: Added pencil icon edit button for each shareholder
+  - Opens modal to edit number of shares and share class
+
+- **Contact Detail Page**: Added "Show ceased" checkbox to Company Relationships filter panel (default: false)
+  - Filters out companies where all positions have ceased
+  - Works in combination with name and position filters
+
+#### Technical Changes
+- Added `updateOfficer` and `updateShareholder` functions to company.service.ts
+- Extended `/api/companies/[id]/officers/[officerId]?action=update` endpoint
+- Extended `/api/companies/[id]/shareholders/[shareholderId]?action=update` endpoint
+- Added `useUpdateOfficer` and `useUpdateShareholder` hooks
+- Added edit modals to company detail page
+- Added filter state variables to company detail page for officers and shareholders
+- Added `showCeased` state to `CompanyRelationships` component
+- Updated filter logic to respect showCeased when filtering by position
+- Added Checkbox component integration for filter controls
+
+---
+
+## v0.9.9 (2025-12-04)
+
+### Contact Relationship Management Enhancements
+
+#### Features
+- **Edit Officer Positions**: Added edit button for officer positions in contact detail page:
+  - Edit appointment date
+  - Edit cessation date (marks position as ceased when set)
+  - Modal with current role/designation display
+
+- **Edit Shareholdings**: Added edit button for shareholdings in contact detail page:
+  - Edit number of shares
+  - Edit share class (Ordinary, Preference, Other)
+
+- **Company Relationship Filters**: Added filtering to the Company Relationships section:
+  - Text filter for company name or UEN search
+  - Dropdown filter by position (Director, Secretary, Auditor, Shareholder, etc.)
+  - Filter icon with active indicator
+  - "No companies match your filters" message with clear button
+  - Count shows "X of Y" when filters are active
+
+- **Auto-cleanup on Remove**: When removing an officer position or shareholding, the system now automatically cleans up the `CompanyContact` relationship if no other positions remain for that company
+
+#### Technical Changes
+- Added `update-officer` action to `/api/contacts/[id]` - updates appointment/cessation dates
+- Added `update-shareholder` action to `/api/contacts/[id]` - updates shares/share class
+- Added `useUpdateOfficerPosition` and `useUpdateShareholding` hooks
+- Added `onEditOfficer` and `onEditShareholder` props to `CompanyRelationships` component
+- Added edit modals to contact detail page
+- Updated remove-officer/remove-shareholder endpoints to clean up CompanyContact when no positions remain
+- Updated Unlink button to only show for pure general relationships (no officers/shareholders)
+- Added filter state and UI to `CompanyRelationships` component
+- Added `availablePositions` derived from officer roles, shareholdings, and general relationships
+
+---
+
+## v0.9.8 (2025-12-04)
+
+### Contact-to-Company Linking & RBAC Improvements
+
+#### Features
+- **Enhanced Link Contact Form**: When linking a contact to a company from the contact detail page:
+  - Officer roles (Director, Secretary, Auditor, Authorized Representative) now show appointment date field
+  - Shareholder selection now requires number of shares and allows share class selection
+  - Role options are now grouped by category (Officer Roles, Shareholder, Other Relationships)
+  - Creates proper `CompanyOfficer` or `CompanyShareholder` records instead of just general relationships
+
+- **Contact Detail RBAC Filtering**: Company-scoped users now only see company relationships they have access to:
+  - Company relationships, officer positions, and shareholdings are filtered by accessible companies
+  - Hidden companies are indicated with "(X hidden)" in the Company Relationships header
+  - Tooltip explains hidden relationships are due to access permissions
+
+#### Bug Fixes
+- **SUPER_ADMIN Link/Unlink**: Fixed "Tenant context required" error when SUPER_ADMIN tries to link or unlink a contact to a company. Now retrieves tenant from the contact record itself.
+- **Remove Button for Officers/Shareholders**: Added "Remove" button in the expanded details section for officer positions and shareholdings. Previously only general relationships could be unlinked.
+- **Hidden Count Display**: Fixed "(0 hidden)" showing when no companies are hidden. Now properly hidden when zero.
+
+#### Technical Changes
+- Updated `linkContactToCompany` service to create `CompanyOfficer` or `CompanyShareholder` records based on relationship type
+- Added `createCompanyContactRelation` function for creating simple CompanyContact records (used by BizFile service)
+- Updated `getContactWithRelationships` to accept `companyIds` filter and return `hiddenCompanyCount`
+- Updated `/api/contacts/[id]` GET to filter relationships for company-scoped users
+- Updated `/api/contacts/[id]` PUT (link-company, unlink-company actions) to get tenant from contact for SUPER_ADMIN
+- Added `/api/contacts/[id]?action=remove-officer` and `action=remove-shareholder` endpoints
+- Added `useRemoveOfficerPosition` and `useRemoveShareholding` hooks
+- Updated `LinkContactToCompanyParams` interface to include officer/shareholder fields
+- Updated `CompanyRelationships` component to display hidden company count and remove buttons
+
+---
+
+## v0.9.7 (2025-12-04)
+
+### Officer/Shareholder Link Management & Contact RBAC
+
+#### Features
+- **Link Contacts Mode**: Added "Link Contacts" toggle button on company detail page. When enabled:
+  - Officers with linked contacts show "Unlink?" action badge
+  - Officers without linked contacts show "Link Contact?" action badge
+  - Same behavior for shareholders
+  - Clicking "Link Contact?" opens a modal to select a contact to link
+  - Clicking "Unlink?" immediately unlinks the contact
+
+#### Bug Fixes
+- **Contact RBAC Filtering**: Company-scoped users (COMPANY_ADMIN, COMPANY_USER) now only see contacts linked to their assigned companies. Contacts are filtered by:
+  - Company relations (direct links)
+  - Officer positions (contact is an officer of assigned company)
+  - Shareholdings (contact is a shareholder of assigned company)
+  - SUPER_ADMIN, TENANT_ADMIN, and users with "All Companies" access see all contacts in their tenant
+
+#### Technical Changes
+- Added API endpoints: `PATCH /api/companies/[id]/officers/[officerId]` and `PATCH /api/companies/[id]/shareholders/[shareholderId]`
+- Added service functions: `linkOfficerToContact`, `unlinkOfficerFromContact`, `linkShareholderToContact`, `unlinkShareholderFromContact`
+- Added hooks: `useLinkOfficer`, `useUnlinkOfficer`, `useLinkShareholder`, `useUnlinkShareholder`
+- Updated `searchContactsWithCounts` to accept optional `companyIds` parameter for filtering
+- Updated `/api/contacts` to pass company IDs for company-scoped users
+
+---
+
+## v0.9.6 (2025-12-04)
+
+### All Companies Role Access Fix
+
+#### Bug Fixes
+- **All Companies Access**: Fixed users with "All Companies" role assignments not being able to see companies. Added `hasAllCompaniesAccess` flag to session to properly detect and grant access.
+
+#### Technical Changes
+- Added `hasAllCompaniesAccess: boolean` to `SessionUser` interface
+- Updated all session-building functions (`getSession`, `getSessionWithTenant`, `performLogin`) to compute this flag
+- Updated `/api/companies` endpoint to check `hasAllCompaniesAccess` before filtering by company IDs
+- Updated `canAccessCompany` function to allow access when user has "All Companies" role
+
+---
+
+## v0.9.5 (2025-12-04)
+
+### User Role Management Fix
+
+#### Bug Fixes
+- **All Companies Option**: Fixed missing "All Companies" option in the "Manage Roles & Companies" modal. Users can now assign roles with tenant-wide scope (null companyId) directly from user management.
+
+#### Technical Changes
+- Updated `useAssignUserToCompany` hook to accept `companyId: string | null`
+- Updated `/api/users/[id]/companies` endpoint to accept nullable `companyId`
+- Updated `assignUserToCompany` service to handle "All Companies" assignments by creating `UserRoleAssignment` with null `companyId`
+
+---
+
+## v0.9.4 (2025-12-04)
+
+### Contact Page Bug Fixes
+
+#### Bug Fixes
+- **Tenant Filtering**: Fixed companies dropdown in "Link Contact to Company" modal showing companies from other tenants. Now filters by the contact's tenant.
+- **Duplicate Role Display**: Fixed officer positions showing duplicate role/designation (e.g., "Director (Director)"). Now only shows designation when it differs from the role.
+- **Linked Companies Count**: Fixed Summary section counting same company multiple times when contact is both officer and shareholder. Now counts unique companies.
+- **Charges Contact Creation**: Removed automatic contact creation for charge holders. Charges (typically banks/financial institutions) are now stored with `chargeHolderName` only, without creating contacts or links.
+
+---
+
+## v0.9.3 (2025-12-04)
+
+### Delete Confirmation with Link Warning
+
+#### Features
+- **Company Delete**: When deleting a company with linked data, the confirmation dialog now displays a warning message showing:
+  - Number of linked officers
+  - Number of linked shareholders
+  - Number of linked charges
+  - Number of linked documents
+
+- **Contact Delete**: When deleting a contact with linked data, the confirmation dialog now displays a warning message showing:
+  - Number of company relations
+  - Number of officer positions
+  - Number of shareholdings
+  - Number of charge holder records
+
+#### API Endpoints
+- Added `GET /api/companies/[id]/links` - Returns link info for a company
+- Added `GET /api/contacts/[id]/links` - Returns link info for a contact
+
+#### Hooks
+- Added `useCompanyLinkInfo(id)` - Fetches company link information
+- Added `useContactLinkInfo(id)` - Fetches contact link information
+
+---
+
 ## v0.9.2 (2025-12-04)
 
 ### Bug Fixes & UI Enhancements
