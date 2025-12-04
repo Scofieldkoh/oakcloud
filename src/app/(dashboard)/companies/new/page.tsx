@@ -10,6 +10,7 @@ import { createCompanySchema, type CreateCompanyInput } from '@/lib/validations/
 import { useCreateCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { DateInput } from '@/components/ui/date-input';
 import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
 
@@ -68,7 +69,7 @@ export default function NewCompanyPage() {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<CreateCompanyInput>({
     resolver: zodResolver(createCompanySchema),
     defaultValues: {
@@ -79,6 +80,9 @@ export default function NewCompanyPage() {
       isGstRegistered: false,
     },
   });
+
+  // Warn about unsaved changes when leaving the page
+  useUnsavedChangesWarning(isDirty, !isSubmitting);
 
   // Check permission to create
   if (permissionsLoading) {

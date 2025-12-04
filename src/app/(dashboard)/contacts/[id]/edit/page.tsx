@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { updateContactSchema, type UpdateContactInput } from '@/lib/validations/contact';
 import { useContact, useUpdateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { DateInput } from '@/components/ui/date-input';
 import { useToast } from '@/components/ui/toast';
 
@@ -80,6 +81,9 @@ export default function EditContactPage({
       });
     }
   }, [contact, reset]);
+
+  // Warn about unsaved changes when leaving the page
+  useUnsavedChangesWarning(isDirty, !isSubmitting);
 
   const contactType = watch('contactType');
 

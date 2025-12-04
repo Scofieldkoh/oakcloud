@@ -81,6 +81,11 @@ export async function POST(
     // Check permission
     await requirePermission(session, 'document', 'create', companyId);
 
+    // Check company access
+    if (!(await canAccessCompany(session, companyId))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Verify company exists
     const company = await prisma.company.findUnique({
       where: { id: companyId },

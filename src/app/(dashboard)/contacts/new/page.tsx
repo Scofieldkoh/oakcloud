@@ -10,6 +10,7 @@ import { createContactSchema, type CreateContactInput } from '@/lib/validations/
 import { useCreateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { DateInput } from '@/components/ui/date-input';
 import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
@@ -50,13 +51,16 @@ export default function NewContactPage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<CreateContactInput>({
     resolver: zodResolver(createContactSchema),
     defaultValues: {
       contactType: 'INDIVIDUAL',
     },
   });
+
+  // Warn about unsaved changes when leaving the page
+  useUnsavedChangesWarning(isDirty, !isSubmitting);
 
   const contactType = watch('contactType');
 

@@ -245,7 +245,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
       }
 
-      await unlinkContactFromCompany(id, companyId, relationship, tenantId);
+      await unlinkContactFromCompany(id, companyId, relationship, tenantId, session.id);
 
       return NextResponse.json({ message: 'Contact unlinked from company successfully' });
     }
@@ -288,18 +288,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
       const companyId = officer.company.id;
 
-      // Delete the officer record
-      await prisma.companyOfficer.delete({ where: { id: officerId } });
+      // Soft delete: Mark officer as ceased instead of hard delete
+      await prisma.companyOfficer.update({
+        where: { id: officerId },
+        data: {
+          cessationDate: new Date(),
+          isCurrent: false,
+        },
+      });
 
-      // Clean up: Remove corresponding CompanyContact relationship if no other positions remain for this company
+      // Clean up: Remove corresponding CompanyContact relationship if no other ACTIVE positions remain for this company
       const remainingOfficers = await prisma.companyOfficer.count({
-        where: { companyId, contactId: id },
+        where: { companyId, contactId: id, isCurrent: true },
       });
       const remainingShareholders = await prisma.companyShareholder.count({
-        where: { companyId, contactId: id },
+        where: { companyId, contactId: id, isCurrent: true },
       });
 
-      // If no officer or shareholder positions remain, remove the general relationship too
+      // If no active officer or shareholder positions remain, remove the general relationship too
       if (remainingOfficers === 0 && remainingShareholders === 0) {
         await prisma.companyContact.deleteMany({
           where: { companyId, contactId: id },
@@ -347,18 +353,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
       const companyId = shareholder.company.id;
 
-      // Delete the shareholder record
-      await prisma.companyShareholder.delete({ where: { id: shareholderId } });
+      // Soft delete: Mark shareholder as no longer current instead of hard delete
+      await prisma.companyShareholder.update({
+        where: { id: shareholderId },
+        data: {
+          isCurrent: false,
+        },
+      });
 
-      // Clean up: Remove corresponding CompanyContact relationship if no other positions remain for this company
+      // Clean up: Remove corresponding CompanyContact relationship if no other ACTIVE positions remain for this company
       const remainingOfficers = await prisma.companyOfficer.count({
-        where: { companyId, contactId: id },
+        where: { companyId, contactId: id, isCurrent: true },
       });
       const remainingShareholders = await prisma.companyShareholder.count({
-        where: { companyId, contactId: id },
+        where: { companyId, contactId: id, isCurrent: true },
       });
 
-      // If no officer or shareholder positions remain, remove the general relationship too
+      // If no active officer or shareholder positions remain, remove the general relationship too
       if (remainingOfficers === 0 && remainingShareholders === 0) {
         await prisma.companyContact.deleteMany({
           where: { companyId, contactId: id },

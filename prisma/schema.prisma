@@ -327,7 +327,7 @@ model Company {
   tenantId              String
   tenant                Tenant        @relation(fields: [tenantId], references: [id])
 
-  uen                   String        @unique
+  uen                   String        // Unique within tenant (see compound constraint)
   name                  String
   formerName            String?       // Previous company name (if any)
   dateOfNameChange      DateTime?     // Date when name was changed
@@ -502,18 +502,20 @@ model Contact {
 }
 
 model CompanyContact {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   companyId   String
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   contactId   String
-  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  relationship String  // E.g., "Director", "Shareholder", "Auditor"
-  isPrimary   Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  relationship String   // E.g., "Director", "Shareholder", "Auditor"
+  isPrimary   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime? // For soft delete support
 
   @@unique([companyId, contactId, relationship])
   @@index([companyId])
   @@index([contactId])
+  @@index([deletedAt])
   @@map("company_contacts")
 }
 
@@ -526,7 +528,7 @@ model CompanyOfficer {
   companyId         String
   company           Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   contactId         String?
-  contact           Contact?    @relation(fields: [contactId], references: [id])
+  contact           Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   role              OfficerRole
   designation       String?     // Custom designation if needed
@@ -588,7 +590,7 @@ model CompanyShareholder {
   companyId         String
   company           Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   contactId         String?
-  contact           Contact?    @relation(fields: [contactId], references: [id])
+  contact           Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   // Shareholder Details (denormalized for historical record)
   name              String

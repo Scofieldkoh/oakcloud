@@ -59,7 +59,7 @@ export function ContactFilters({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
-            placeholder="Search by name, email, ID number, phone..."
+            placeholder="Search by name, email, ID number, UEN, phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input input-sm pl-10"
@@ -67,6 +67,8 @@ export function ContactFilters({
         </form>
         <button
           onClick={() => setShowFilters(!showFilters)}
+          aria-expanded={showFilters}
+          aria-controls="contact-filter-panel"
           className={`btn-secondary btn-sm flex items-center gap-2 ${
             activeFilterCount > 0 ? 'border-oak-primary' : ''
           }`}
@@ -86,7 +88,7 @@ export function ContactFilters({
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="card p-4 animate-fade-in">
+        <div id="contact-filter-panel" className="card p-4 animate-fade-in">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Filters</h3>
             {activeFilterCount > 0 && (

@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { updateCompanySchema, type UpdateCompanyInput } from '@/lib/validations/company';
 import { useCompany, useUpdateCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { DateInput } from '@/components/ui/date-input';
 
 const entityTypes = [
@@ -119,6 +120,9 @@ export default function EditCompanyPage({
       });
     }
   }, [company, reset]);
+
+  // Warn about unsaved changes when leaving the page
+  useUnsavedChangesWarning(isDirty, !isSubmitting);
 
   const onSubmit = async (data: UpdateCompanyInput) => {
     setSubmitError(null);

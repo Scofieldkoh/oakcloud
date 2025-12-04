@@ -192,7 +192,7 @@ Main company records with ACRA information. Each company belongs to a tenant.
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
 | tenant_id | UUID | No | FK to tenants (required) |
-| uen | VARCHAR(10) | No | Unique Entity Number |
+| uen | VARCHAR(10) | No | Unique Entity Number (unique per tenant) |
 | name | VARCHAR(200) | No | Current company name |
 | former_name | VARCHAR(200) | Yes | Previous company name (if changed) |
 | date_of_name_change | DATE | Yes | Date when name was changed |
@@ -229,8 +229,10 @@ Main company records with ACRA information. Each company belongs to a tenant.
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 | deleted_reason | TEXT | Yes | Reason for deletion |
 
+**Notes:**
+- UEN is unique within a tenant, not globally. Companies in different tenants may share the same UEN.
+
 **Indexes:**
-- `companies_uen_key` UNIQUE on uen
 - `companies_tenant_id_uen_key` UNIQUE on (tenant_id, uen)
 - `companies_tenant_id_idx` on tenant_id
 - `companies_name_idx` on name
@@ -327,14 +329,16 @@ Many-to-many relationship between companies and contacts.
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
-| company_id | UUID | No | FK to companies |
-| contact_id | UUID | No | FK to contacts |
+| company_id | UUID | No | FK to companies (CASCADE on delete) |
+| contact_id | UUID | No | FK to contacts (CASCADE on delete) |
 | relationship | VARCHAR(50) | No | Role (Director, Shareholder, etc.) |
 | is_primary | BOOLEAN | No | Primary contact flag |
 | created_at | TIMESTAMP | No | Record creation time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 
 **Indexes:**
 - `company_contacts_unique` UNIQUE on (company_id, contact_id, relationship)
+- `company_contacts_deleted_at_idx` on deleted_at
 
 ---
 
@@ -345,8 +349,8 @@ Officer records with appointment history.
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
-| company_id | UUID | No | FK to companies |
-| contact_id | UUID | Yes | FK to contacts |
+| company_id | UUID | No | FK to companies (CASCADE on delete) |
+| contact_id | UUID | Yes | FK to contacts (SET NULL on delete) |
 | role | ENUM | No | DIRECTOR, SECRETARY, CEO, etc. |
 | designation | VARCHAR(100) | Yes | Custom designation |
 | name | VARCHAR(200) | No | Officer name (denormalized) |
@@ -370,8 +374,8 @@ Shareholder records with shareholding details.
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
-| company_id | UUID | No | FK to companies |
-| contact_id | UUID | Yes | FK to contacts |
+| company_id | UUID | No | FK to companies (CASCADE on delete) |
+| contact_id | UUID | Yes | FK to contacts (SET NULL on delete) |
 | name | VARCHAR(200) | No | Shareholder name (denormalized) |
 | shareholder_type | ENUM | No | INDIVIDUAL or CORPORATE |
 | identification_type | ENUM | Yes | ID type |

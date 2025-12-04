@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
@@ -81,6 +81,16 @@ export async function DELETE(request: NextRequest) {
           { error: 'You do not have permission to delete some of these companies' },
           { status: 403 }
         );
+      }
+
+      // Check company-level access for company-scoped users
+      for (const company of companies) {
+        if (!(await canAccessCompany(session, company.id))) {
+          return NextResponse.json(
+            { error: `You do not have access to company "${company.name}"` },
+            { status: 403 }
+          );
+        }
       }
     }
 

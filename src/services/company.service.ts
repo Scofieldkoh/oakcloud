@@ -143,14 +143,30 @@ export async function createCompany(
   }
 
   // Validate financial year fields if provided
-  if (data.financialYearEndDay !== undefined && data.financialYearEndDay !== null) {
-    if (data.financialYearEndDay < 1 || data.financialYearEndDay > 31) {
-      throw new Error('Financial year end day must be between 1 and 31');
-    }
-  }
   if (data.financialYearEndMonth !== undefined && data.financialYearEndMonth !== null) {
     if (data.financialYearEndMonth < 1 || data.financialYearEndMonth > 12) {
       throw new Error('Financial year end month must be between 1 and 12');
+    }
+  }
+  if (data.financialYearEndDay !== undefined && data.financialYearEndDay !== null) {
+    const month = data.financialYearEndMonth;
+    const day = data.financialYearEndDay;
+
+    // Get max days for the month (if month is provided)
+    let maxDays = 31;
+    if (month !== undefined && month !== null) {
+      // Months with 30 days: April (4), June (6), September (9), November (11)
+      if ([4, 6, 9, 11].includes(month)) {
+        maxDays = 30;
+      }
+      // February: allow up to 29 (for leap years)
+      else if (month === 2) {
+        maxDays = 29;
+      }
+    }
+
+    if (day < 1 || day > maxDays) {
+      throw new Error(`Financial year end day must be between 1 and ${maxDays} for the selected month`);
     }
   }
 
@@ -234,6 +250,29 @@ export async function updateCompany(
 
     if (existingUen) {
       throw new Error('A company with this UEN already exists');
+    }
+  }
+
+  // Validate financial year fields if provided
+  const fyMonth = data.financialYearEndMonth !== undefined ? data.financialYearEndMonth : existing.financialYearEndMonth;
+  const fyDay = data.financialYearEndDay !== undefined ? data.financialYearEndDay : existing.financialYearEndDay;
+
+  if (fyMonth !== undefined && fyMonth !== null) {
+    if (fyMonth < 1 || fyMonth > 12) {
+      throw new Error('Financial year end month must be between 1 and 12');
+    }
+  }
+  if (fyDay !== undefined && fyDay !== null) {
+    let maxDays = 31;
+    if (fyMonth !== undefined && fyMonth !== null) {
+      if ([4, 6, 9, 11].includes(fyMonth)) {
+        maxDays = 30;
+      } else if (fyMonth === 2) {
+        maxDays = 29;
+      }
+    }
+    if (fyDay < 1 || fyDay > maxDays) {
+      throw new Error(`Financial year end day must be between 1 and ${maxDays} for the selected month`);
     }
   }
 
@@ -977,19 +1016,25 @@ export async function updateOfficer(
     isCurrent: officer.isCurrent,
   };
 
-  // Determine if officer is current based on cessation date
+  // Determine final dates (considering both new and existing values)
+  const appointmentDate = data.appointmentDate !== undefined
+    ? (data.appointmentDate ? new Date(data.appointmentDate) : null)
+    : officer.appointmentDate;
   const cessationDate = data.cessationDate !== undefined
     ? (data.cessationDate ? new Date(data.cessationDate) : null)
     : officer.cessationDate;
   const isCurrent = cessationDate === null;
 
+  // Validate: cessation date must be after appointment date
+  if (appointmentDate && cessationDate && cessationDate < appointmentDate) {
+    throw new Error('Cessation date must be after appointment date');
+  }
+
   // Update officer
   const updated = await prisma.companyOfficer.update({
     where: { id: officerId },
     data: {
-      appointmentDate: data.appointmentDate !== undefined
-        ? (data.appointmentDate ? new Date(data.appointmentDate) : null)
-        : undefined,
+      appointmentDate: data.appointmentDate !== undefined ? appointmentDate : undefined,
       cessationDate: cessationDate,
       isCurrent,
     },
@@ -1207,53 +1252,62 @@ export async function updateShareholder(
     shareClass: shareholder.shareClass,
   };
 
-  // Update shareholder
-  const updated = await prisma.companyShareholder.update({
-    where: { id: shareholderId },
-    data: {
-      numberOfShares: data.numberOfShares !== undefined ? data.numberOfShares : undefined,
-      shareClass: data.shareClass !== undefined ? data.shareClass : undefined,
-    },
-    select: {
-      id: true,
-      numberOfShares: true,
-      shareClass: true,
-      percentageHeld: true,
-    },
-  });
-
-  // If numberOfShares changed, recalculate percentages for all current shareholders
-  if (data.numberOfShares !== undefined && data.numberOfShares !== oldValues.numberOfShares) {
-    // Get all current shareholders
-    const allShareholders = await prisma.companyShareholder.findMany({
-      where: { companyId, isCurrent: true },
-      select: { id: true, numberOfShares: true },
+  // Wrap update and percentage recalculation in transaction to prevent race conditions
+  const finalUpdated = await prisma.$transaction(async (tx) => {
+    // Update shareholder
+    const updated = await tx.companyShareholder.update({
+      where: { id: shareholderId },
+      data: {
+        numberOfShares: data.numberOfShares !== undefined ? data.numberOfShares : undefined,
+        shareClass: data.shareClass !== undefined ? data.shareClass : undefined,
+      },
+      select: {
+        id: true,
+        numberOfShares: true,
+        shareClass: true,
+        percentageHeld: true,
+      },
     });
 
-    // Calculate total shares
-    const totalShares = allShareholders.reduce((sum, sh) => sum + sh.numberOfShares, 0);
+    // If numberOfShares changed, recalculate percentages for all current shareholders
+    if (data.numberOfShares !== undefined && data.numberOfShares !== oldValues.numberOfShares) {
+      // Get all current shareholders
+      const allShareholders = await tx.companyShareholder.findMany({
+        where: { companyId, isCurrent: true },
+        select: { id: true, numberOfShares: true },
+      });
 
-    // Update percentages for all shareholders
-    if (totalShares > 0) {
-      for (const sh of allShareholders) {
-        const percentage = (sh.numberOfShares / totalShares) * 100;
-        await prisma.companyShareholder.update({
-          where: { id: sh.id },
-          data: { percentageHeld: percentage },
+      // Calculate total shares
+      const totalShares = allShareholders.reduce((sum, sh) => sum + sh.numberOfShares, 0);
+
+      // Update percentages for all shareholders
+      if (totalShares > 0) {
+        for (const sh of allShareholders) {
+          const percentage = (sh.numberOfShares / totalShares) * 100;
+          await tx.companyShareholder.update({
+            where: { id: sh.id },
+            data: { percentageHeld: percentage },
+          });
+        }
+      } else {
+        // If no shares remain, set all percentages to null
+        await tx.companyShareholder.updateMany({
+          where: { companyId, isCurrent: true },
+          data: { percentageHeld: null },
         });
       }
     }
-  }
 
-  // Re-fetch the updated shareholder with new percentage
-  const finalUpdated = await prisma.companyShareholder.findUnique({
-    where: { id: shareholderId },
-    select: {
-      id: true,
-      numberOfShares: true,
-      shareClass: true,
-      percentageHeld: true,
-    },
+    // Re-fetch the updated shareholder with new percentage
+    return tx.companyShareholder.findUnique({
+      where: { id: shareholderId },
+      select: {
+        id: true,
+        numberOfShares: true,
+        shareClass: true,
+        percentageHeld: true,
+      },
+    });
   });
 
   // Log the action
@@ -1266,8 +1320,8 @@ export async function updateShareholder(
     summary: `Updated shareholder "${shareholder.name}" details`,
     changeSource: 'MANUAL',
     changes: {
-      numberOfShares: { old: oldValues.numberOfShares, new: updated.numberOfShares },
-      shareClass: { old: oldValues.shareClass, new: updated.shareClass },
+      numberOfShares: { old: oldValues.numberOfShares, new: finalUpdated!.numberOfShares },
+      shareClass: { old: oldValues.shareClass, new: finalUpdated!.shareClass },
     },
     metadata: {
       companyId: shareholder.company.id,

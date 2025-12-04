@@ -84,7 +84,7 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
-            placeholder="Search by name, UEN, officer, address..."
+            placeholder="Search by name, UEN, SSIC, officer, shareholder, address..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input input-sm pl-10"
@@ -92,6 +92,8 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
         </form>
         <button
           onClick={() => setShowFilters(!showFilters)}
+          aria-expanded={showFilters}
+          aria-controls="company-filter-panel"
           className={`btn-secondary btn-sm flex items-center gap-2 ${
             activeFilterCount > 0 ? 'border-oak-primary' : ''
           }`}
@@ -111,7 +113,7 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="card p-4 animate-fade-in">
+        <div id="company-filter-panel" className="card p-4 animate-fade-in">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Filters</h3>
             {activeFilterCount > 0 && (

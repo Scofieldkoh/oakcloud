@@ -230,6 +230,57 @@ Based on a 4px grid system:
 .table td         /* 13px, primary text */
 ```
 
+#### Table Selection Pattern
+
+For tables with bulk selection, place the "select all" checkbox in the **table header (`<th>`)**, not above the table.
+
+```tsx
+import { Checkbox } from '@/components/ui/checkbox';
+
+// Compute selection states
+const isAllSelected = items.length > 0 && selectedIds.size === items.length;
+const isIndeterminate = selectedIds.size > 0 && selectedIds.size < items.length;
+
+<table className="table">
+  <thead>
+    <tr>
+      <th className="w-10">
+        <Checkbox
+          size="sm"
+          checked={isAllSelected}
+          indeterminate={isIndeterminate}
+          onChange={toggleSelectAll}
+          aria-label="Select all"
+        />
+      </th>
+      <th>Name</th>
+      {/* ... */}
+    </tr>
+  </thead>
+  <tbody>
+    {items.map((item) => (
+      <tr key={item.id} className={selectedIds.has(item.id) ? 'bg-oak-primary/5' : ''}>
+        <td>
+          <Checkbox
+            size="sm"
+            checked={selectedIds.has(item.id)}
+            onChange={() => toggleSelection(item.id)}
+            aria-label={`Select ${item.name}`}
+          />
+        </td>
+        {/* ... */}
+      </tr>
+    ))}
+  </tbody>
+</table>
+```
+
+**Key points:**
+- Use `size="sm"` for table checkboxes
+- Support `indeterminate` state for partial selection
+- Highlight selected rows with `bg-oak-primary/5`
+- Show bulk action buttons conditionally when items are selected
+
 ### Navigation
 
 ```css
@@ -281,6 +332,26 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | `Dropdown` | Composable: `Trigger`, `Menu`, `Item`, `align` | Portal-rendered dropdown (prevents clipping in tables) |
 | `Pagination` | `page`, `totalPages`, `total`, `limit`, `onPageChange`, `onLimitChange` | Table pagination with page size selector |
 | `Checkbox` | `indeterminate`, `label`, `description`, `size` | Checkbox with indeterminate state for bulk selection |
+
+### Form Utilities
+
+| Hook | Props | Description |
+|------|-------|-------------|
+| `useUnsavedChangesWarning` | `isDirty`, `enabled` | Browser warning when leaving page with unsaved form changes |
+
+**Usage:**
+```tsx
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+
+function EditForm() {
+  const { formState: { isDirty, isSubmitting } } = useForm();
+
+  // Warn when form has unsaved changes (disabled during submit)
+  useUnsavedChangesWarning(isDirty, !isSubmitting);
+
+  return <form>...</form>;
+}
+```
 
 ### Utility Components
 
@@ -584,4 +655,8 @@ src/components/ui/
 ├── tenant-selector.tsx    # Tenant dropdown for admins
 ├── theme-toggle.tsx       # Theme switcher component
 └── toast.tsx              # Toast notification system
+
+src/hooks/
+├── use-unsaved-changes.ts # Browser warning for unsaved form changes
+└── ...                    # Other application hooks
 ```

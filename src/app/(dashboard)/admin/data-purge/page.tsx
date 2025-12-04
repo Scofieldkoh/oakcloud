@@ -17,6 +17,7 @@ import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { Pagination } from '@/components/companies/pagination';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Trash2,
   AlertTriangle,
@@ -25,8 +26,6 @@ import {
   Building2,
   Contact,
   RefreshCw,
-  CheckSquare,
-  Square,
   RotateCcw,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -90,6 +89,10 @@ export default function DataPurgePage() {
       setSelectedIds(new Set(currentRecords.map((r) => r.id)));
     }
   };
+
+  // Compute selection states
+  const isAllSelected = currentRecords.length > 0 && selectedIds.size === currentRecords.length;
+  const isIndeterminate = selectedIds.size > 0 && selectedIds.size < currentRecords.length;
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -217,21 +220,11 @@ export default function DataPurgePage() {
       {data && (
         <div className="card overflow-hidden">
           {/* Table Header with Actions */}
-          <div className="flex items-center justify-between p-4 border-b border-border-primary bg-background-secondary">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleSelectAll}
-                className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary"
-              >
-                {selectedIds.size === currentRecords.length && currentRecords.length > 0 ? (
-                  <CheckSquare className="w-4 h-4 text-oak-primary" />
-                ) : (
-                  <Square className="w-4 h-4" />
-                )}
-                {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
-              </button>
-            </div>
-            {selectedIds.size > 0 && (
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between p-4 border-b border-border-primary bg-background-secondary">
+              <span className="text-sm text-text-secondary">
+                {selectedIds.size} selected
+              </span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="secondary"
@@ -251,14 +244,22 @@ export default function DataPurgePage() {
                   Purge ({selectedIds.size})
                 </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
                 <tr>
-                  <th className="w-10"></th>
+                  <th className="w-10">
+                    <Checkbox
+                      size="sm"
+                      checked={isAllSelected}
+                      indeterminate={isIndeterminate}
+                      onChange={toggleSelectAll}
+                      aria-label="Select all records"
+                    />
+                  </th>
                   {activeTab === 'tenants' && (
                     <>
                       <th>Tenant</th>
@@ -310,13 +311,12 @@ export default function DataPurgePage() {
                       className={cn(selectedIds.has(record.id) && 'bg-oak-primary/5')}
                     >
                       <td>
-                        <button onClick={() => toggleSelection(record.id)} className="p-1">
-                          {selectedIds.has(record.id) ? (
-                            <CheckSquare className="w-4 h-4 text-oak-primary" />
-                          ) : (
-                            <Square className="w-4 h-4 text-text-muted" />
-                          )}
-                        </button>
+                        <Checkbox
+                          size="sm"
+                          checked={selectedIds.has(record.id)}
+                          onChange={() => toggleSelection(record.id)}
+                          aria-label={`Select record`}
+                        />
                       </td>
 
                       {activeTab === 'tenants' && (

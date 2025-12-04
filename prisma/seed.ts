@@ -553,12 +553,15 @@ async function main() {
     const companyData = companiesData[companyIndex];
     const addressTemplate = addressTemplates[companyIndex];
 
-    // Create company with tenant ID
+    // Create company with tenant ID (using compound unique constraint)
     const company = await prisma.company.upsert({
-      where: { uen: companyData.uen },
-      update: {
-        tenantId: defaultTenant.id,
+      where: {
+        tenantId_uen: {
+          tenantId: defaultTenant.id,
+          uen: companyData.uen,
+        },
       },
+      update: {},
       create: {
         ...companyData,
         tenantId: defaultTenant.id,

@@ -130,6 +130,11 @@ export async function findOrCreateContact(
 ): Promise<{ contact: Contact; isNew: boolean }> {
   const { tenantId } = params;
 
+  // Enforce tenant context - this function must always be called with a valid tenantId
+  if (!tenantId) {
+    throw new Error('Tenant context required for findOrCreateContact');
+  }
+
   // Try to find existing contact by identification number within tenant
   if (data.identificationNumber && data.identificationType) {
     const existing = await prisma.contact.findFirst({
@@ -385,8 +390,22 @@ export async function linkContactToCompany(
   const isShareholder = relationship === 'Shareholder';
 
   if (isOfficerRole) {
-    // Create CompanyOfficer record
+    // Check for existing active officer with same role at this company
     const officerRole = OFFICER_ROLE_MAP[relationship] || 'DIRECTOR';
+    const existingOfficer = await prisma.companyOfficer.findFirst({
+      where: {
+        companyId,
+        contactId,
+        role: officerRole,
+        isCurrent: true,
+      },
+    });
+
+    if (existingOfficer) {
+      throw new Error(`Contact is already an active ${relationship} at this company`);
+    }
+
+    // Create CompanyOfficer record
     await prisma.companyOfficer.create({
       data: {
         companyId,
@@ -414,6 +433,19 @@ export async function linkContactToCompany(
     // Create CompanyShareholder record
     if (!numberOfShares || numberOfShares <= 0) {
       throw new Error('Number of shares is required for shareholders');
+    }
+
+    // Check for existing active shareholding at this company
+    const existingShareholder = await prisma.companyShareholder.findFirst({
+      where: {
+        companyId,
+        contactId,
+        isCurrent: true,
+      },
+    });
+
+    if (existingShareholder) {
+      throw new Error('Contact already has an active shareholding at this company');
     }
 
     await prisma.companyShareholder.create({
@@ -478,12 +510,13 @@ export async function unlinkContactFromCompany(
   contactId: string,
   companyId: string,
   relationship: string,
-  tenantId: string
+  tenantId: string,
+  userId?: string
 ): Promise<void> {
   // REQUIRED: Validate the company belongs to the tenant
   const company = await prisma.company.findUnique({
     where: { id: companyId },
-    select: { tenantId: true },
+    select: { tenantId: true, name: true },
   });
 
   if (!company || company.tenantId !== tenantId) {
@@ -493,7 +526,7 @@ export async function unlinkContactFromCompany(
   // Also validate that the contact belongs to the same tenant
   const contact = await prisma.contact.findUnique({
     where: { id: contactId },
-    select: { tenantId: true },
+    select: { tenantId: true, fullName: true },
   });
 
   if (!contact || contact.tenantId !== tenantId) {
@@ -509,6 +542,27 @@ export async function unlinkContactFromCompany(
       },
     },
   });
+
+  // Create audit log for the unlink operation
+  if (userId) {
+    await createAuditLog({
+      tenantId,
+      userId,
+      companyId,
+      action: 'UPDATE',
+      entityType: 'CompanyContact',
+      entityId: `${companyId}-${contactId}`,
+      entityName: contact.fullName,
+      summary: `Unlinked contact "${contact.fullName}" from company "${company.name}" (${relationship})`,
+      changeSource: 'MANUAL',
+      metadata: {
+        contactId,
+        contactName: contact.fullName,
+        companyName: company.name,
+        relationship,
+      },
+    });
+  }
 }
 
 export async function getContactsByCompany(
@@ -706,6 +760,7 @@ export async function getContactWithRelationships(
               id: true,
               name: true,
               uen: true,
+              deletedAt: true,
             },
           },
         },
@@ -717,6 +772,7 @@ export async function getContactWithRelationships(
               id: true,
               name: true,
               uen: true,
+              deletedAt: true,
             },
           },
         },
@@ -728,20 +784,21 @@ export async function getContactWithRelationships(
     return null;
   }
 
-  // If companyIds filter is provided (for company-scoped users), filter relationships
-  let filteredCompanyRelations = contact.companyRelations;
-  let filteredOfficerPositions = contact.officerPositions;
-  let filteredShareholdings = contact.shareholdings;
+  // First, filter out relationships to deleted companies
+  let filteredCompanyRelations = contact.companyRelations.filter(r => !r.company.deletedAt);
+  let filteredOfficerPositions = contact.officerPositions.filter(o => !o.company.deletedAt);
+  let filteredShareholdings = contact.shareholdings.filter(s => !s.company.deletedAt);
   let hiddenCompanyCount = 0;
 
+  // If companyIds filter is provided (for company-scoped users), further filter relationships
   if (companyIds && companyIds.length >= 0) {
     const companyIdSet = new Set(companyIds);
 
-    // Count unique companies that will be hidden
+    // Count unique companies that will be hidden (from non-deleted companies only)
     const allCompanyIds = new Set<string>();
-    contact.companyRelations.forEach(r => allCompanyIds.add(r.company.id));
-    contact.officerPositions.forEach(o => allCompanyIds.add(o.company.id));
-    contact.shareholdings.forEach(s => allCompanyIds.add(s.company.id));
+    filteredCompanyRelations.forEach(r => allCompanyIds.add(r.company.id));
+    filteredOfficerPositions.forEach(o => allCompanyIds.add(o.company.id));
+    filteredShareholdings.forEach(s => allCompanyIds.add(s.company.id));
 
     const hiddenCompanyIds = new Set<string>();
     allCompanyIds.forEach(cid => {
@@ -752,9 +809,9 @@ export async function getContactWithRelationships(
     hiddenCompanyCount = hiddenCompanyIds.size;
 
     // Filter to only show relationships for accessible companies
-    filteredCompanyRelations = contact.companyRelations.filter(r => companyIdSet.has(r.company.id));
-    filteredOfficerPositions = contact.officerPositions.filter(o => companyIdSet.has(o.company.id));
-    filteredShareholdings = contact.shareholdings.filter(s => companyIdSet.has(s.company.id));
+    filteredCompanyRelations = filteredCompanyRelations.filter(r => companyIdSet.has(r.company.id));
+    filteredOfficerPositions = filteredOfficerPositions.filter(o => companyIdSet.has(o.company.id));
+    filteredShareholdings = filteredShareholdings.filter(s => companyIdSet.has(s.company.id));
   }
 
   return {
