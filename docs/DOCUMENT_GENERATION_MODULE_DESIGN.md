@@ -200,6 +200,7 @@ Shareable document links with access control.
 | view_count | INT | No | Number of views (default: 0) |
 | last_viewed_at | TIMESTAMP | Yes | Last view timestamp |
 | allowed_actions | VARCHAR[] | No | Actions allowed: ['view', 'download', 'print'] |
+| allow_comments | BOOLEAN | No | Allow external viewers to leave comments (default: false) |
 | created_by_id | UUID | No | FK to users |
 | created_at | TIMESTAMP | No | Record creation time |
 | revoked_at | TIMESTAMP | Yes | When link was revoked |
@@ -278,13 +279,16 @@ AI conversation threads for template/document editing assistance (optional persi
 
 #### document_comments
 
-Comments and annotations on documents for review workflows.
+Comments and annotations on documents for review workflows. Supports both internal users and external/anonymous commenters via shared links.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
 | document_id | UUID | No | FK to generated_documents |
-| user_id | UUID | No | FK to users (commenter) |
+| share_id | UUID | Yes | FK to document_shares (if comment from shared link) |
+| user_id | UUID | Yes | FK to users (internal commenter, null for external) |
+| guest_name | VARCHAR(100) | Yes | External commenter's name |
+| guest_email | VARCHAR(255) | Yes | External commenter's email (optional) |
 | content | TEXT | No | Comment content |
 | selection_start | INT | Yes | Start position of selected text |
 | selection_end | INT | Yes | End position of selected text |
@@ -297,8 +301,14 @@ Comments and annotations on documents for review workflows.
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 
+**Notes:**
+- For internal users: `user_id` is set, `guest_name`/`guest_email` are null
+- For external commenters: `user_id` is null, `guest_name` is required, `guest_email` optional
+- `share_id` tracks which share link was used for external comments
+
 **Indexes:**
 - `document_comments_document_id_idx` on document_id
+- `document_comments_share_id_idx` on share_id
 - `document_comments_user_id_idx` on user_id
 - `document_comments_parent_id_idx` on parent_id
 - `document_comments_status_idx` on status
@@ -435,12 +445,14 @@ model DocumentShare {
   viewCount       Int       @default(0) @map("view_count")
   lastViewedAt    DateTime? @map("last_viewed_at")
   allowedActions  String[]  @default(["view"]) @map("allowed_actions")
+  allowComments   Boolean   @default(false) @map("allow_comments")
   createdById     String    @map("created_by_id")
   createdAt       DateTime  @default(now()) @map("created_at")
   revokedAt       DateTime? @map("revoked_at")
 
   document        GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
   createdBy       User      @relation(fields: [createdById], references: [id])
+  comments        DocumentComment[] // Comments made via this share link
 
   @@index([documentId])
   @@index([expiresAt])
@@ -484,11 +496,14 @@ model DocumentSection {
   @@map("document_sections")
 }
 
-// Document Comments (for review)
+// Document Comments (for review - supports internal users and external guests)
 model DocumentComment {
   id              String    @id @default(uuid())
   documentId      String    @map("document_id")
-  userId          String    @map("user_id")
+  shareId         String?   @map("share_id")  // Which share link was used (for external comments)
+  userId          String?   @map("user_id")   // Nullable for external commenters
+  guestName       String?   @map("guest_name") @db.VarChar(100)  // External commenter name
+  guestEmail      String?   @map("guest_email") @db.VarChar(255) // External commenter email (optional)
   content         String    @db.Text
   selectionStart  Int?      @map("selection_start")
   selectionEnd    Int?      @map("selection_end")
@@ -502,12 +517,14 @@ model DocumentComment {
   deletedAt       DateTime? @map("deleted_at")
 
   document        GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  user            User      @relation("CommentAuthor", fields: [userId], references: [id])
+  share           DocumentShare?    @relation(fields: [shareId], references: [id])
+  user            User?     @relation("CommentAuthor", fields: [userId], references: [id])
   resolvedBy      User?     @relation("CommentResolver", fields: [resolvedById], references: [id])
   parent          DocumentComment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies         DocumentComment[] @relation("CommentReplies")
 
   @@index([documentId])
+  @@index([shareId])
   @@index([userId])
   @@index([parentId])
   @@index([status])
@@ -901,12 +918,15 @@ interface PublishParams {
   expiresIn?: number; // hours, null = never
   password?: string;
   allowedActions?: ('view' | 'download' | 'print')[];
+  allowComments?: boolean; // Allow external viewers to comment (default: false)
 }
 
 interface ShareAccessResult {
   document: GeneratedDocument;
   sections: DocumentSection[];
   allowedActions: string[];
+  allowComments: boolean;
+  comments?: DocumentComment[]; // Included if allowComments is true
 }
 
 // ============================================================================
@@ -1006,8 +1026,21 @@ export async function deleteLetterhead(
 // Types
 // ============================================================================
 
-interface CreateCommentInput {
+// For internal authenticated users
+interface CreateInternalCommentInput {
   documentId: string;
+  content: string;
+  selectionStart?: number;
+  selectionEnd?: number;
+  selectedText?: string;
+  parentId?: string;
+}
+
+// For external users via shared link (no login required)
+interface CreateExternalCommentInput {
+  shareToken: string;      // Share link token for validation
+  guestName: string;       // Required for external commenters
+  guestEmail?: string;     // Optional email
   content: string;
   selectionStart?: number;
   selectionEnd?: number;
@@ -1020,13 +1053,13 @@ interface UpdateCommentInput {
 }
 
 // ============================================================================
-// Public Functions
+// Public Functions (Internal - Authenticated)
 // ============================================================================
 
 export async function createComment(
   tenantId: string,
   userId: string,
-  input: CreateCommentInput
+  input: CreateInternalCommentInput
 ): Promise<DocumentComment>;
 
 export async function updateComment(
@@ -1059,6 +1092,29 @@ export async function getDocumentComments(
   documentId: string,
   includeResolved?: boolean
 ): Promise<DocumentComment[]>;
+
+// ============================================================================
+// Public Functions (External - No Auth Required)
+// ============================================================================
+
+// Create comment via shared link (external viewer)
+export async function createExternalComment(
+  input: CreateExternalCommentInput
+): Promise<DocumentComment>;
+
+// Get comments for shared document (validates share token)
+export async function getSharedDocumentComments(
+  shareToken: string
+): Promise<DocumentComment[]>;
+
+// Reply to a comment via shared link
+export async function replyToComment(
+  shareToken: string,
+  parentId: string,
+  guestName: string,
+  content: string,
+  guestEmail?: string
+): Promise<DocumentComment>;
 ```
 
 ---
@@ -1124,6 +1180,9 @@ export async function getDocumentComments(
 | GET | `/api/public/documents/:token` | View shared document |
 | POST | `/api/public/documents/:token/verify` | Verify password |
 | GET | `/api/public/documents/:token/pdf` | Download PDF (if allowed) |
+| GET | `/api/public/documents/:token/comments` | Get comments (if allowed) |
+| POST | `/api/public/documents/:token/comments` | Add comment (if allowed) |
+| POST | `/api/public/documents/:token/comments/:commentId/reply` | Reply to comment |
 
 ### Letterhead Management
 
@@ -1182,10 +1241,12 @@ src/components/documents/
 ├── document-preview.tsx            # Document preview with sections
 ├── section-navigator.tsx           # Section navigation sidebar
 ├── page-break-indicator.tsx        # Visual page break marker
-├── share-dialog.tsx                # Create share link dialog
+├── share-dialog.tsx                # Create share link dialog (with allow comments option)
 ├── share-list.tsx                  # List of share links
 ├── pdf-options-dialog.tsx          # PDF export options
-└── letterhead-preview.tsx          # Preview letterhead on document
+├── letterhead-preview.tsx          # Preview letterhead on document
+├── comment-panel.tsx               # Internal comment panel for authenticated users
+└── external-comment-panel.tsx      # Comment panel for shared links (no auth required)
 ```
 
 ### Key UI Features
@@ -1211,6 +1272,9 @@ Step 5: Finalize            →  Save, generate share link, export
 - Responsive design
 - Print-friendly styles
 - Optional password protection
+- External comment panel (if `allowComments` enabled on share link)
+- Simple name input for commenters (no login/signup required)
+- Comment threading with replies
 
 ---
 
@@ -1554,28 +1618,32 @@ https://app.oakcloud.com/share/{shareToken}
 
 ### Public Page Layout
 
-Clean, unbranded design for optimal document viewing experience:
+Clean, unbranded design for optimal document viewing experience. External viewers can leave comments if enabled.
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  Document Title                              [Download] [Print] │
-├─────────┬────────────────────────────────────────────────────┤
-│         │                                                     │
-│ Section │  Document Content                                   │
-│ Nav     │                                                     │
-│         │  ┌─────────────────────────────────────────────┐   │
-│ ┌─────┐ │  │ Resolution 1: Appointment of Director        │   │
-│ │ 1   │ │  │                                              │   │
-│ │ 2   │ │  │ RESOLVED THAT...                             │   │
-│ │ 3   │ │  └─────────────────────────────────────────────┘   │
-│ └─────┘ │                                                     │
-│         │  ┌─────────────────────────────────────────────┐   │
-│         │  │ Resolution 2: Change of Address              │   │
-│         │  │                                              │   │
-│         │  │ RESOLVED THAT...                             │   │
-│         │  └─────────────────────────────────────────────┘   │
-│         │                                                     │
-└─────────┴────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  Document Title                              [Download] [Print] [Comments 💬] │
+├─────────┬─────────────────────────────────────────────────┬──────────────────┤
+│         │                                                 │ Comments         │
+│ Section │  Document Content                               │ ┌──────────────┐ │
+│ Nav     │                                                 │ │ John Doe     │ │
+│         │  ┌─────────────────────────────────────────┐   │ │ "Please      │ │
+│ ┌─────┐ │  │ Resolution 1: Appointment of Director    │   │ │ clarify..."  │ │
+│ │ 1   │ │  │                                          │   │ │ [Reply]      │ │
+│ │ 2   │ │  │ RESOLVED THAT...                         │   │ └──────────────┘ │
+│ │ 3   │ │  └─────────────────────────────────────────┘   │                  │
+│ └─────┘ │                                                 │ ┌──────────────┐ │
+│         │  ┌─────────────────────────────────────────┐   │ │ + Add Comment│ │
+│         │  │ Resolution 2: Change of Address          │   │ │              │ │
+│         │  │                                          │   │ │ Your Name:   │ │
+│         │  │ RESOLVED THAT...                         │   │ │ [__________] │ │
+│         │  └─────────────────────────────────────────┘   │ │              │ │
+│         │                                                 │ │ Comment:     │ │
+│         │                                                 │ │ [__________] │ │
+│         │                                                 │ │              │ │
+│         │                                                 │ │ [Submit]     │ │
+│         │                                                 │ └──────────────┘ │
+└─────────┴─────────────────────────────────────────────────┴──────────────────┘
 ```
 
 **Design Principles:**
@@ -1584,6 +1652,8 @@ Clean, unbranded design for optimal document viewing experience:
 - Clean typography for professional appearance
 - Mobile-responsive layout
 - Print-friendly styles
+- Comment panel collapsible/expandable
+- Simple name input for external commenters (no login required)
 
 ### Access Control
 
@@ -1592,8 +1662,47 @@ Clean, unbranded design for optimal document viewing experience:
 | Expiration | Check `expires_at` on access |
 | Password | Bcrypt hash comparison |
 | Actions | Check `allowed_actions` array |
+| Comments | Check `allow_comments` flag - if true, external viewers can comment |
 | Revocation | Check `is_active` and `revoked_at` |
 | Rate limiting | Implement at API level |
+
+### External Comment Flow
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ External Viewer Opens Shared Link                             │
+└───────────────────────────┬──────────────────────────────────┘
+                            │
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│ Check: share.allowComments === true?                          │
+└───────────────────────────┬──────────────────────────────────┘
+                    ┌───────┴───────┐
+                    │               │
+                    ▼               ▼
+              ┌──────────┐   ┌──────────────────┐
+              │   No     │   │      Yes         │
+              │ Comments │   │ Show Comment     │
+              │ Hidden   │   │ Panel            │
+              └──────────┘   └────────┬─────────┘
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────┐
+                    │ User enters:                     │
+                    │ • Name (required)                │
+                    │ • Email (optional)               │
+                    │ • Comment text                   │
+                    └─────────────────┬───────────────┘
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────┐
+                    │ Comment saved with:              │
+                    │ • shareId = share.id            │
+                    │ • userId = null                 │
+                    │ • guestName = input name        │
+                    │ • guestEmail = input email      │
+                    └─────────────────────────────────┘
+```
 
 ---
 
@@ -2423,7 +2532,7 @@ model TemplatePartial {
 
 ### 7. Document Comments & Annotations
 
-Add comments and annotations to documents for review workflows.
+Add comments and annotations to documents for review workflows. Supports both internal users (authenticated) and external viewers (via shared links without login).
 
 #### UI Layout
 
@@ -2460,11 +2569,13 @@ Add comments and annotations to documents for review workflows.
 | **Text Selection** | Comment on specific highlighted text |
 | **General Comments** | Comments without text selection |
 | **Replies** | Thread replies to comments |
-| **Resolve/Reopen** | Mark comments as resolved |
+| **Resolve/Reopen** | Mark comments as resolved (internal users only) |
+| **External Commenting** | External viewers can comment via shared links (no login required) |
+| **Guest Identity** | External commenters provide name (required) and email (optional) |
 | **Mentions** | @mention users in comments (future) |
 | **Notifications** | Email notification on new comments (future) |
 
-#### Comment Component
+#### Comment Component (Internal - Authenticated Users)
 
 ```tsx
 interface CommentPanelProps {
@@ -2490,6 +2601,50 @@ function highlightCommentedText(
       });
     }
   });
+}
+```
+
+#### External Comment Panel (Public - No Auth Required)
+
+```tsx
+interface ExternalCommentPanelProps {
+  shareToken: string;
+  comments: DocumentComment[];
+  allowComments: boolean;
+  onAddComment: (guestName: string, content: string, guestEmail?: string) => void;
+  onReply: (parentId: string, guestName: string, content: string, guestEmail?: string) => void;
+}
+
+// External comment form (simple name + comment)
+function ExternalCommentForm({ onSubmit }: { onSubmit: (name: string, content: string, email?: string) => void }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [content, setContent] = useState('');
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="Your Name *"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
+      <input
+        type="email"
+        placeholder="Email (optional)"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <textarea
+        placeholder="Your comment..."
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        required
+      />
+      <button type="submit">Submit Comment</button>
+    </form>
+  );
 }
 ```
 
@@ -2745,6 +2900,9 @@ The following decisions were made during the design phase:
 | **Resolution Numbering** | Manual entry | User enters via custom data fields |
 | **Template Access** | Permission-based | Anyone with `document_template:create` can create templates |
 | **Batch Generation** | Not supported | Generate documents one at a time |
+| **External Comments** | Optional per share link | External viewers can comment without login when `allowComments` is enabled on share link |
+| **External Commenter Identity** | Name required, email optional | Simple identification for external commenters without requiring registration |
+| **Comment Resolution** | Internal users only | Only authenticated users can resolve/reopen comments; external viewers can only add comments |
 
 ---
 
@@ -2756,7 +2914,8 @@ The Document Generation Module provides a comprehensive solution for:
 2. **Smart Placeholders** - Auto-populate company/contact data with flexible syntax
 3. **Document Generation** - Generate, edit, and finalize documents
 4. **PDF Export** - Professional PDFs with optional tenant letterhead
-5. **Sharing** - Secure, shareable URLs with section navigation
-6. **Modularity** - Clean interfaces for future workflow integration
+5. **Sharing** - Secure, shareable URLs with section navigation and external commenting
+6. **External Collaboration** - External viewers can leave comments without signup/login
+7. **Modularity** - Clean interfaces for future workflow integration
 
 The design follows existing Oakcloud patterns for multi-tenancy, RBAC, audit logging, and service architecture, ensuring consistency and maintainability.
