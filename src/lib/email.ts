@@ -28,6 +28,9 @@ import { Client } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('email');
 
 // ============================================================================
 // Types
@@ -161,7 +164,7 @@ async function sendViaGraph(options: EmailOptions): Promise<SendEmailResult> {
       messageId: `graph-${Date.now()}`,
     };
   } catch (error) {
-    console.error('[Email] Microsoft Graph send failed:', error);
+    log.error('Microsoft Graph send failed:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown Graph API error',
@@ -241,7 +244,7 @@ async function sendViaSmtp(options: EmailOptions): Promise<SendEmailResult> {
       messageId: result.messageId,
     };
   } catch (error) {
-    console.error('[Email] SMTP send failed:', error);
+    log.error('SMTP send failed:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown SMTP error',
@@ -259,7 +262,7 @@ async function verifySmtpConnection(): Promise<boolean> {
     await transport.verify();
     return true;
   } catch (error) {
-    console.error('[Email] SMTP verification failed:', error);
+    log.error('SMTP verification failed:', error);
     return false;
   }
 }
@@ -291,8 +294,8 @@ export async function sendEmail(options: EmailOptions): Promise<SendEmailResult>
   if (provider === 'none') {
     // Log warning in development, but don't fail
     if (process.env.NODE_ENV === 'development') {
-      console.warn('[Email] No email provider configured. Email would be sent to:', options.to);
-      console.warn('[Email] Subject:', options.subject);
+      log.warn('No email provider configured. Email would be sent to:', options.to);
+      log.warn('Subject:', options.subject);
       return {
         success: true,
         messageId: 'dev-mode-no-email',

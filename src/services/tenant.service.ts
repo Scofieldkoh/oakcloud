@@ -24,6 +24,7 @@ import {
   type SystemRoleName,
 } from '@/lib/rbac';
 import { sendEmail } from '@/lib/email';
+import { createLogger } from '@/lib/logger';
 import {
   userInvitationEmail,
   tenantSetupCompleteEmail,
@@ -37,6 +38,8 @@ import type {
   TenantSettingsInput,
 } from '@/lib/validations/tenant';
 import bcrypt from 'bcryptjs';
+
+const log = createLogger('tenant');
 
 // ============================================================================
 // Types
@@ -578,7 +581,7 @@ export async function inviteUserToTenant(
   });
 
   if (!emailResult.success) {
-    console.error('[TenantService] Failed to send invitation email:', emailResult.error);
+    log.error('Failed to send invitation email:', emailResult.error);
   }
 
   // Return user without exposing temp password in response in production
@@ -1076,7 +1079,7 @@ export async function completeTenantSetup(
   });
 
   if (!emailResult.success) {
-    console.error('[TenantService] Failed to send tenant setup email:', emailResult.error);
+    log.error('Failed to send tenant setup email:', emailResult.error);
   }
 
   return {

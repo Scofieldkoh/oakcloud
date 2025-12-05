@@ -44,8 +44,14 @@ const idTypeLabels: Record<IdentificationType, string> = {
   OTHER: 'Other',
 };
 
-// Officer roles that create Officer records
-const officerRoles = ['Director', 'Secretary', 'Auditor', 'Authorized Representative'];
+// Officer roles derived from centralized constants (creates Officer records)
+const officerRoleLabels = OFFICER_ROLES.map((r) => r.label);
+
+// Additional roles not in Prisma enum but used for UI linking
+const additionalOfficerRoles = ['Authorized Representative'];
+
+// Combined officer roles for UI
+const officerRoles = [...officerRoleLabels, ...additionalOfficerRoles];
 
 // General relationships that create CompanyContact records
 const generalRelationships = ['Nominee', 'Beneficial Owner', 'Other'];

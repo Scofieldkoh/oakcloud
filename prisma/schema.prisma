@@ -44,6 +44,7 @@ enum CompanyStatus {
 
 enum OfficerRole {
   DIRECTOR
+  MANAGING_DIRECTOR
   ALTERNATE_DIRECTOR
   SECRETARY
   CEO

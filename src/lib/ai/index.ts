@@ -25,6 +25,9 @@ import { AI_MODELS, getModelConfig, getDefaultModel } from './models';
 import { callOpenAI, isOpenAIConfigured } from './providers/openai';
 import { callAnthropic, isAnthropicConfigured } from './providers/anthropic';
 import { callGoogle, isGoogleConfigured } from './providers/google';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('ai');
 
 /**
  * Check provider configuration status
@@ -289,7 +292,7 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
         errorMessage: error?.message,
         metadata: options.usageMetadata,
       }).catch((err) => {
-        console.error('Failed to log connector usage:', err);
+        log.error('Failed to log connector usage:', err);
       });
     }
 
@@ -342,7 +345,7 @@ export async function getAvailableProvidersForTenant(
       }
     }
   } catch (error) {
-    console.error('[getAvailableProvidersForTenant] Error getting connectors:', error);
+    log.error('Error getting connectors for tenant:', error);
   }
 
   // Check environment-based providers as fallback

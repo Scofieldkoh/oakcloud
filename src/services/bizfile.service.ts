@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { createLogger } from '@/lib/logger';
 import { normalizeName, normalizeCompanyName, normalizeAddress } from '@/lib/utils';
-import { findOrCreateContact, createCompanyContactRelation } from './contact.service';
+import { findOrCreateContact, createCompanyContactRelation, type PrismaTransactionClient } from './contact.service';
 import {
   callAI,
   callAIWithConnector,
@@ -11,6 +12,8 @@ import {
 } from '@/lib/ai';
 import type { AIModel, AIImageInput } from '@/lib/ai';
 import type { EntityType, CompanyStatus, OfficerRole, ContactType, IdentificationType } from '@prisma/client';
+
+const log = createLogger('bizfile');
 
 // Type definitions for extracted BizFile data
 export interface ExtractedBizFileData {
@@ -316,8 +319,8 @@ function parseExtractionResponse(content: string): ExtractedBizFileData {
   try {
     parsed = JSON.parse(cleanedContent) as ExtractedBizFileData;
   } catch {
-    console.error('[BizFile] Failed to parse AI response:', content.substring(0, 500));
-    console.error('[BizFile] Cleaned content:', cleanedContent.substring(0, 500));
+    log.error('Failed to parse AI response:', content.substring(0, 500));
+    log.error('Cleaned content:', cleanedContent.substring(0, 500));
     throw new Error('Failed to parse AI extraction response. The AI returned invalid JSON.');
   }
 
@@ -369,10 +372,10 @@ export async function extractBizFileWithVision(
 
   const modelConfig = getModelConfig(modelId);
 
-  console.log(`[BizFile] Using AI vision model: ${modelConfig.name} (${modelConfig.provider})`);
-  console.log(`[BizFile] File type: ${fileInput.mimeType}, size: ${Math.round(fileInput.base64.length * 0.75 / 1024)}KB`);
+  log.info(`Using AI vision model: ${modelConfig.name} (${modelConfig.provider})`);
+  log.info(`File type: ${fileInput.mimeType}, size: ${Math.round(fileInput.base64.length * 0.75 / 1024)}KB`);
   if (options?.tenantId !== undefined) {
-    console.log(`[BizFile] Using connector-aware AI for tenant: ${options.tenantId || 'system'}`);
+    log.info(`Using connector-aware AI for tenant: ${options.tenantId || 'system'}`);
   }
 
   // Prepare the image input for the AI
@@ -461,7 +464,7 @@ export async function extractBizFileData(
 
   const modelConfig = getModelConfig(modelId);
 
-  console.log(`[BizFile] Using AI model (text mode): ${modelConfig.name} (${modelConfig.provider})`);
+  log.info(`Using AI model (text mode): ${modelConfig.name} (${modelConfig.provider})`);
 
   // Build user prompt with optional context
   const basePrompt = buildUserPrompt(options?.additionalContext);
@@ -551,6 +554,8 @@ function mapCompanyStatus(status: string): CompanyStatus {
 function mapOfficerRole(role: string): OfficerRole {
   const mapping: Record<string, OfficerRole> = {
     DIRECTOR: 'DIRECTOR',
+    MANAGING_DIRECTOR: 'MANAGING_DIRECTOR',
+    'MANAGING DIRECTOR': 'MANAGING_DIRECTOR',
     ALTERNATE_DIRECTOR: 'ALTERNATE_DIRECTOR',
     'ALTERNATE DIRECTOR': 'ALTERNATE_DIRECTOR',
     SECRETARY: 'SECRETARY',
@@ -1875,144 +1880,135 @@ export async function processBizFileExtraction(
       });
     }
 
-    return company;
-  });
+    // Process officers, shareholders, and charges within the same transaction
+    // for data consistency - if any fail, the entire operation is rolled back
 
-  // Process officers, shareholders, and charges
-  // Note: These are processed outside the main transaction because contact
-  // creation uses upsert with unique constraints. If any of these fail,
-  // the company is already created but related data may be incomplete.
-  // TODO: Consider refactoring to use a single transaction for data consistency.
-  try {
     // Process officers
     if (normalizedData.officers?.length) {
       for (const officer of normalizedData.officers) {
-      const isCurrent = !officer.cessationDate;
+        const isCurrent = !officer.cessationDate;
 
-      // Parse name for individual
-      const nameParts = officer.name.split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
+        // Parse name for individual
+        const nameParts = officer.name.split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ');
 
-      // Find or create contact
-      const { contact } = await findOrCreateContact(
-        {
-          contactType: 'INDIVIDUAL',
-          firstName,
-          lastName,
-          identificationType: mapIdentificationType(officer.identificationType) || undefined,
-          identificationNumber: officer.identificationNumber,
-          nationality: officer.nationality,
-          fullAddress: officer.address,
-        },
-        { tenantId, userId }
-      );
+        // Find or create contact (using transaction)
+        const { contact } = await findOrCreateContact(
+          {
+            contactType: 'INDIVIDUAL',
+            firstName,
+            lastName,
+            identificationType: mapIdentificationType(officer.identificationType) || undefined,
+            identificationNumber: officer.identificationNumber,
+            nationality: officer.nationality,
+            fullAddress: officer.address,
+          },
+          { tenantId, userId, tx: tx as PrismaTransactionClient }
+        );
 
-      // Create officer record
-      await prisma.companyOfficer.create({
-        data: {
-          companyId: result.id,
-          contactId: contact.id,
-          role: mapOfficerRole(officer.role),
-          name: officer.name,
-          identificationType: mapIdentificationType(officer.identificationType),
-          identificationNumber: officer.identificationNumber,
-          nationality: officer.nationality,
-          address: officer.address,
-          appointmentDate: officer.appointmentDate ? new Date(officer.appointmentDate) : null,
-          cessationDate: officer.cessationDate ? new Date(officer.cessationDate) : null,
-          isCurrent,
-          sourceDocumentId: documentId,
-        },
-      });
+        // Create officer record
+        await tx.companyOfficer.create({
+          data: {
+            companyId: company.id,
+            contactId: contact.id,
+            role: mapOfficerRole(officer.role),
+            name: officer.name,
+            identificationType: mapIdentificationType(officer.identificationType),
+            identificationNumber: officer.identificationNumber,
+            nationality: officer.nationality,
+            address: officer.address,
+            appointmentDate: officer.appointmentDate ? new Date(officer.appointmentDate) : null,
+            cessationDate: officer.cessationDate ? new Date(officer.cessationDate) : null,
+            isCurrent,
+            sourceDocumentId: documentId,
+          },
+        });
 
-      // Link contact to company via general relationship
-      if (isCurrent) {
-        await createCompanyContactRelation(contact.id, result.id, officer.role);
+        // Link contact to company via general relationship
+        if (isCurrent) {
+          await createCompanyContactRelation(contact.id, company.id, officer.role, false, tx as PrismaTransactionClient);
+        }
       }
     }
-  }
 
-  // Process shareholders
-  if (normalizedData.shareholders?.length) {
-    for (const shareholder of normalizedData.shareholders) {
-      const contactType = mapContactType(shareholder.type);
+    // Process shareholders
+    if (normalizedData.shareholders?.length) {
+      for (const shareholder of normalizedData.shareholders) {
+        const contactType = mapContactType(shareholder.type);
 
-      let contactData;
-      if (contactType === 'CORPORATE') {
-        contactData = {
-          contactType: 'CORPORATE' as const,
-          corporateName: shareholder.name,
-          corporateUen: shareholder.identificationNumber,
-          fullAddress: shareholder.address,
-        };
-      } else {
-        const nameParts = shareholder.name.split(' ');
-        contactData = {
-          contactType: 'INDIVIDUAL' as const,
-          firstName: nameParts[0],
-          lastName: nameParts.slice(1).join(' ') || undefined,
-          identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
-          identificationNumber: shareholder.identificationNumber,
-          nationality: shareholder.nationality,
-          fullAddress: shareholder.address,
-        };
+        let contactData;
+        if (contactType === 'CORPORATE') {
+          contactData = {
+            contactType: 'CORPORATE' as const,
+            corporateName: shareholder.name,
+            corporateUen: shareholder.identificationNumber,
+            fullAddress: shareholder.address,
+          };
+        } else {
+          const nameParts = shareholder.name.split(' ');
+          contactData = {
+            contactType: 'INDIVIDUAL' as const,
+            firstName: nameParts[0],
+            lastName: nameParts.slice(1).join(' ') || undefined,
+            identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
+            identificationNumber: shareholder.identificationNumber,
+            nationality: shareholder.nationality,
+            fullAddress: shareholder.address,
+          };
+        }
+
+        const { contact } = await findOrCreateContact(contactData, { tenantId, userId, tx: tx as PrismaTransactionClient });
+
+        await tx.companyShareholder.create({
+          data: {
+            companyId: company.id,
+            contactId: contact.id,
+            name: shareholder.name,
+            shareholderType: contactType,
+            identificationType: mapIdentificationType(shareholder.identificationType),
+            identificationNumber: shareholder.identificationNumber,
+            nationality: shareholder.nationality,
+            placeOfOrigin: shareholder.placeOfOrigin,
+            address: shareholder.address,
+            shareClass: shareholder.shareClass,
+            numberOfShares: shareholder.numberOfShares,
+            percentageHeld: shareholder.percentageHeld,
+            currency: shareholder.currency || 'SGD',
+            isCurrent: true,
+            sourceDocumentId: documentId,
+          },
+        });
+
+        await createCompanyContactRelation(contact.id, company.id, 'Shareholder', false, tx as PrismaTransactionClient);
       }
-
-      const { contact } = await findOrCreateContact(contactData, { tenantId, userId });
-
-      await prisma.companyShareholder.create({
-        data: {
-          companyId: result.id,
-          contactId: contact.id,
-          name: shareholder.name,
-          shareholderType: contactType,
-          identificationType: mapIdentificationType(shareholder.identificationType),
-          identificationNumber: shareholder.identificationNumber,
-          nationality: shareholder.nationality,
-          placeOfOrigin: shareholder.placeOfOrigin,
-          address: shareholder.address,
-          shareClass: shareholder.shareClass,
-          numberOfShares: shareholder.numberOfShares,
-          percentageHeld: shareholder.percentageHeld,
-          currency: shareholder.currency || 'SGD',
-          isCurrent: true,
-          sourceDocumentId: documentId,
-        },
-      });
-
-      await createCompanyContactRelation(contact.id, result.id, 'Shareholder');
     }
-  }
 
-  // Process charges (without creating contacts - charges are typically banks/financial institutions)
-  if (normalizedData.charges?.length) {
-    for (const charge of normalizedData.charges) {
-      await prisma.companyCharge.create({
-        data: {
-          companyId: result.id,
-          // Don't link to contact - chargeHolderId intentionally left null
-          chargeNumber: charge.chargeNumber,
-          chargeType: charge.chargeType,
-          description: charge.description,
-          chargeHolderName: charge.chargeHolderName,
-          amountSecured: charge.amountSecured,
-          amountSecuredText: charge.amountSecuredText,
-          currency: charge.currency || 'SGD',
-          registrationDate: charge.registrationDate ? new Date(charge.registrationDate) : null,
-          dischargeDate: charge.dischargeDate ? new Date(charge.dischargeDate) : null,
-          isFullyDischarged: !!charge.dischargeDate,
-          sourceDocumentId: documentId,
-        },
-      });
+    // Process charges (without creating contacts - charges are typically banks/financial institutions)
+    if (normalizedData.charges?.length) {
+      for (const charge of normalizedData.charges) {
+        await tx.companyCharge.create({
+          data: {
+            companyId: company.id,
+            // Don't link to contact - chargeHolderId intentionally left null
+            chargeNumber: charge.chargeNumber,
+            chargeType: charge.chargeType,
+            description: charge.description,
+            chargeHolderName: charge.chargeHolderName,
+            amountSecured: charge.amountSecured,
+            amountSecuredText: charge.amountSecuredText,
+            currency: charge.currency || 'SGD',
+            registrationDate: charge.registrationDate ? new Date(charge.registrationDate) : null,
+            dischargeDate: charge.dischargeDate ? new Date(charge.dischargeDate) : null,
+            isFullyDischarged: !!charge.dischargeDate,
+            sourceDocumentId: documentId,
+          },
+        });
+      }
     }
-  }
-  } catch (error) {
-    // Log error but don't fail the entire extraction
-    // The company is already created, so we can't rollback
-    console.error('[BizFile] Error processing officers/shareholders/charges:', error);
-    // Continue to create audit log even if some data failed
-  }
+
+    return company;
+  });
 
   // Create audit log - MUST include tenantId for proper scoping
   const actionVerb = isNewCompany ? 'Created' : 'Updated';

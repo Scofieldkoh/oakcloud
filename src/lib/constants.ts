@@ -20,6 +20,7 @@
 
 export const OFFICER_ROLES = [
   { value: 'DIRECTOR', label: 'Director' },
+  { value: 'MANAGING_DIRECTOR', label: 'Managing Director' },
   { value: 'ALTERNATE_DIRECTOR', label: 'Alternate Director' },
   { value: 'SECRETARY', label: 'Secretary' },
   { value: 'CEO', label: 'CEO' },

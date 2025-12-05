@@ -6,10 +6,13 @@
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { createLogger } from '@/lib/logger';
 import { sendEmail, isEmailConfigured, getAppBaseUrl } from '@/lib/email';
 import { passwordResetEmail, passwordChangedEmail } from '@/lib/email-templates';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+
+const log = createLogger('password');
 
 // ============================================================================
 // Types
@@ -138,7 +141,7 @@ export async function requestPasswordReset(email: string): Promise<RequestResetR
   });
 
   if (!emailResult.success && process.env.NODE_ENV !== 'development') {
-    console.error('[PasswordService] Failed to send password reset email:', emailResult.error);
+    log.error('Failed to send password reset email:', emailResult.error);
     // Don't expose email sending errors to prevent enumeration
   }
 

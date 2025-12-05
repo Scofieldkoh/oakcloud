@@ -6,7 +6,8 @@ import { Link as TiptapLink } from '@tiptap/extension-link';
 import { Underline } from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import DOMPurify from 'dompurify';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   Bold,
   Italic,
@@ -514,6 +515,21 @@ export function RichTextEditor({
 // Read-only Display Component
 // ============================================================================
 
+/**
+ * Sanitize HTML content to prevent XSS attacks
+ * Allows safe formatting tags while stripping potentially dangerous content
+ */
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',
+      'ul', 'ol', 'li', 'a', 'span', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    ],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+  });
+}
+
 export function RichTextDisplay({
   content,
   className = '',
@@ -521,10 +537,13 @@ export function RichTextDisplay({
   content: string;
   className?: string;
 }) {
+  // Memoize sanitized content to avoid re-sanitizing on every render
+  const sanitizedContent = useMemo(() => sanitizeHtml(content), [content]);
+
   return (
     <div
       className={`rich-text-content text-text-primary text-sm ${className}`}
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
     />
   );
 }

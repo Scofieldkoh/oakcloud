@@ -1,11 +1,22 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import type { CreateContactInput, UpdateContactInput, ContactSearchInput } from '@/lib/validations/contact';
-import type { Prisma, Contact, ContactType } from '@prisma/client';
+import type { Prisma, Contact, ContactType, PrismaClient } from '@prisma/client';
+
+/**
+ * Type for Prisma transaction client (interactive transaction)
+ * Used to pass transaction context to service functions for data consistency
+ */
+export type PrismaTransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 
 export interface TenantAwareParams {
   tenantId: string;
   userId: string;
+  /** Optional transaction client for atomic operations */
+  tx?: PrismaTransactionClient;
 }
 
 function buildFullName(data: {
@@ -25,10 +36,11 @@ export async function createContact(
   data: CreateContactInput,
   params: TenantAwareParams
 ): Promise<Contact> {
-  const { tenantId, userId } = params;
+  const { tenantId, userId, tx } = params;
+  const db = tx || prisma;
   const fullName = buildFullName(data);
 
-  const contact = await prisma.contact.create({
+  const contact = await db.contact.create({
     data: {
       tenantId,
       contactType: data.contactType,
@@ -126,7 +138,8 @@ export async function findOrCreateContact(
   data: CreateContactInput,
   params: TenantAwareParams
 ): Promise<{ contact: Contact; isNew: boolean }> {
-  const { tenantId } = params;
+  const { tenantId, tx } = params;
+  const db = tx || prisma;
 
   // Enforce tenant context - this function must always be called with a valid tenantId
   if (!tenantId) {
@@ -135,7 +148,7 @@ export async function findOrCreateContact(
 
   // Try to find existing contact by identification number within tenant
   if (data.identificationNumber && data.identificationType) {
-    const existing = await prisma.contact.findFirst({
+    const existing = await db.contact.findFirst({
       where: {
         tenantId,
         identificationType: data.identificationType,
@@ -151,7 +164,7 @@ export async function findOrCreateContact(
 
   // Try to find by corporate UEN within tenant
   if (data.corporateUen) {
-    const existing = await prisma.contact.findFirst({
+    const existing = await db.contact.findFirst({
       where: {
         tenantId,
         corporateUen: data.corporateUen,
@@ -326,9 +339,11 @@ export async function createCompanyContactRelation(
   contactId: string,
   companyId: string,
   relationship: string,
-  isPrimary: boolean = false
+  isPrimary: boolean = false,
+  tx?: PrismaTransactionClient
 ): Promise<void> {
-  await prisma.companyContact.upsert({
+  const db = tx || prisma;
+  await db.companyContact.upsert({
     where: {
       companyId_contactId_relationship: {
         companyId,
