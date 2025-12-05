@@ -47,7 +47,7 @@ The Document Generation Module enables corporate secretaries to draft resolution
 | FR-5 | Generate shareable webpage with section navigation | Must |
 | FR-6 | Export to PDF format | Must |
 | FR-7 | Support tenant letterhead in PDF exports | Should |
-| FR-8 | Template versioning and history | Should |
+| FR-8 | Template default settings (e.g., share expiration) | Should |
 | FR-9 | Document audit trail | Must |
 | FR-10 | Modular interfaces for workflow integration | Must |
 
@@ -132,7 +132,7 @@ Document template definitions with versioning support.
 | content | TEXT | No | Template content with placeholders (HTML/Markdown) |
 | placeholders | JSONB | No | Extracted placeholder definitions |
 | is_active | BOOLEAN | No | Template availability (default: true) |
-| is_system | BOOLEAN | No | System template (non-deletable) |
+| default_share_expiry_hours | INT | Yes | Default share link expiration in hours (null = never) |
 | version | INT | No | Version number (default: 1) |
 | created_by_id | UUID | No | FK to users |
 | updated_by_id | UUID | Yes | FK to users |
@@ -164,6 +164,10 @@ Generated document instances from templates.
 | status | VARCHAR(20) | No | DRAFT, FINALIZED, ARCHIVED |
 | finalized_at | TIMESTAMP | Yes | When document was finalized |
 | finalized_by_id | UUID | Yes | FK to users who finalized |
+| unfinalized_at | TIMESTAMP | Yes | When document was un-finalized (audit trail) |
+| unfinalized_by_id | UUID | Yes | FK to users who un-finalized |
+| use_letterhead | BOOLEAN | No | Include tenant letterhead in PDF (default: true) |
+| share_expiry_hours | INT | Yes | Override share expiration (from template default) |
 | metadata | JSONB | Yes | Additional context (e.g., resolution number) |
 | created_by_id | UUID | No | FK to users |
 | updated_by_id | UUID | Yes | FK to users |
@@ -287,7 +291,7 @@ model DocumentTemplate {
   content       String   @db.Text
   placeholders  Json     @default("[]")
   isActive      Boolean  @default(true) @map("is_active")
-  isSystem      Boolean  @default(false) @map("is_system")
+  defaultShareExpiryHours Int? @map("default_share_expiry_hours")
   version       Int      @default(1)
   createdById   String   @map("created_by_id")
   updatedById   String?  @map("updated_by_id")
@@ -319,6 +323,10 @@ model GeneratedDocument {
   status          String    @default("DRAFT") @db.VarChar(20)
   finalizedAt     DateTime? @map("finalized_at")
   finalizedById   String?   @map("finalized_by_id")
+  unfinalizedAt   DateTime? @map("unfinalized_at")
+  unfinalizedById String?   @map("unfinalized_by_id")
+  useLetterhead   Boolean   @default(true) @map("use_letterhead")
+  shareExpiryHours Int?     @map("share_expiry_hours")
   metadata        Json?
   createdById     String    @map("created_by_id")
   updatedById     String?   @map("updated_by_id")
@@ -332,6 +340,7 @@ model GeneratedDocument {
   createdBy       User      @relation("DocumentCreatedBy", fields: [createdById], references: [id])
   updatedBy       User?     @relation("DocumentUpdatedBy", fields: [updatedById], references: [id])
   finalizedBy     User?     @relation("DocumentFinalizedBy", fields: [finalizedById], references: [id])
+  unfinalizedBy   User?     @relation("DocumentUnfinalizedBy", fields: [unfinalizedById], references: [id])
   shares          DocumentShare[]
   sections        DocumentSection[]
 
@@ -479,6 +488,14 @@ export async function duplicateTemplate(
   newName: string
 ): Promise<DocumentTemplate>;
 
+// SUPER_ADMIN only: Copy template to another tenant
+export async function copyTemplateToTenant(
+  userId: string,
+  sourceTemplateId: string,
+  targetTenantId: string,
+  newName?: string
+): Promise<DocumentTemplate>;
+
 // Extract and validate placeholders from template content
 export function extractPlaceholders(content: string): PlaceholderDefinition[];
 ```
@@ -586,6 +603,14 @@ export async function finalizeDocument(
   tenantId: string,
   userId: string,
   documentId: string
+): Promise<GeneratedDocument>;
+
+// Un-finalize to allow further editing (audit logged)
+export async function unfinalizeDocument(
+  tenantId: string,
+  userId: string,
+  documentId: string,
+  reason: string
 ): Promise<GeneratedDocument>;
 
 export async function archiveDocument(
@@ -835,6 +860,7 @@ export async function deleteLetterhead(
 | PATCH | `/api/document-templates/:id` | Update template | `document_template:update` |
 | DELETE | `/api/document-templates/:id` | Delete template | `document_template:delete` |
 | POST | `/api/document-templates/:id/duplicate` | Duplicate template | `document_template:create` |
+| POST | `/api/document-templates/:id/copy-to-tenant` | Copy to another tenant | SUPER_ADMIN |
 
 ### Document Generation
 
@@ -846,6 +872,7 @@ export async function deleteLetterhead(
 | GET | `/api/documents/:id` | Get document | `document:read` |
 | PATCH | `/api/documents/:id` | Update document content | `document:update` |
 | POST | `/api/documents/:id/finalize` | Finalize document | `document:update` |
+| POST | `/api/documents/:id/unfinalize` | Un-finalize for editing | `document:update` |
 | POST | `/api/documents/:id/archive` | Archive document | `document:delete` |
 | DELETE | `/api/documents/:id` | Soft delete document | `document:delete` |
 
@@ -1099,9 +1126,11 @@ https://app.oakcloud.com/share/{shareToken}
 
 ### Public Page Layout
 
+Clean, unbranded design for optimal document viewing experience:
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  [Logo]  Document Title                    [Download] [Print] │
+│  Document Title                              [Download] [Print] │
 ├─────────┬────────────────────────────────────────────────────┤
 │         │                                                     │
 │ Section │  Document Content                                   │
@@ -1120,6 +1149,13 @@ https://app.oakcloud.com/share/{shareToken}
 │         │                                                     │
 └─────────┴────────────────────────────────────────────────────┘
 ```
+
+**Design Principles:**
+- No branding (no logos, company names in header)
+- Focus on document content and readability
+- Clean typography for professional appearance
+- Mobile-responsive layout
+- Print-friendly styles
 
 ### Access Control
 
@@ -1363,10 +1399,12 @@ TEMPLATE_CREATED
 TEMPLATE_UPDATED
 TEMPLATE_DELETED
 TEMPLATE_DUPLICATED
+TEMPLATE_COPIED_TO_TENANT   // SUPER_ADMIN copies template between tenants
 
 DOCUMENT_GENERATED
 DOCUMENT_UPDATED
 DOCUMENT_FINALIZED
+DOCUMENT_UNFINALIZED        // Document returned to draft status
 DOCUMENT_ARCHIVED
 DOCUMENT_EXPORTED
 
@@ -1403,13 +1441,21 @@ async function getPuppeteer() {
 
 ---
 
-## Open Questions
+## Design Decisions
 
-1. **Template Marketplace**: Should tenants be able to share templates across tenants (system templates)?
-2. **Version Control**: Should we track full version history of templates or just current version?
-3. **Collaborative Editing**: Is real-time collaboration needed for document editing?
-4. **Offline Support**: Should generated documents work offline?
-5. **Batch Generation**: Generate multiple documents at once (e.g., same resolution for multiple companies)?
+The following decisions were made during the design phase:
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **System Templates** | No system-wide templates | SUPER_ADMIN can copy templates between tenants instead |
+| **Version History** | Current version only | Simplifies implementation; duplicate template for variations |
+| **Letterhead Scope** | Tenant-level only | User selects letterhead or none at generation time |
+| **Document Finalization** | Reversible (un-finalize) | Allows corrections with full audit trail |
+| **Share Page Branding** | No branding | Clean, professional viewing experience for recipients |
+| **Share Expiration** | Template default + override | Defined at template level, user can override at generation |
+| **Resolution Numbering** | Manual entry | User enters via custom data fields |
+| **Template Access** | Permission-based | Anyone with `document_template:create` can create templates |
+| **Batch Generation** | Not supported | Generate documents one at a time |
 
 ---
 
