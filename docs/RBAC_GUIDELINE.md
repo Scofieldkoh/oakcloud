@@ -878,12 +878,62 @@ const isCompanyScoped = !session.isSuperAdmin && !session.isTenantAdmin && !sess
 | Access | PERMISSION_GRANTED, PERMISSION_REVOKED, ROLE_CHANGED |
 | Tenant | TENANT_CREATED, TENANT_UPDATED, USER_INVITED, USER_REMOVED |
 | Connectors | CONNECTOR_CREATED, CONNECTOR_UPDATED, CONNECTOR_DELETED, CONNECTOR_TESTED, CONNECTOR_ENABLED, CONNECTOR_DISABLED, CONNECTOR_ACCESS_UPDATED |
+| Doc Generation | DOCUMENT_TEMPLATE_CREATED, DOCUMENT_TEMPLATE_UPDATED, DOCUMENT_TEMPLATE_DELETED, DOCUMENT_TEMPLATE_DUPLICATED, DOCUMENT_GENERATED, DOCUMENT_FINALIZED, DOCUMENT_UNFINALIZED, DOCUMENT_ARCHIVED, DOCUMENT_CLONED, SHARE_LINK_CREATED, SHARE_LINK_REVOKED, LETTERHEAD_UPDATED, COMMENT_CREATED, COMMENT_RESOLVED, COMMENT_HIDDEN |
 | Bulk | BULK_UPDATE, BULK_DELETE (creates individual audit logs per record) |
+
+---
+
+## Document Generation Module Permissions
+
+The Document Generation Module (templates, generated documents, shares, comments) uses the existing `document` resource permissions:
+
+| Permission | Allows |
+|------------|--------|
+| `document:read` | View templates, generated documents, shares, comments |
+| `document:create` | Create templates, generate documents, create share links |
+| `document:update` | Edit templates/documents, finalize/unfinalize, create comments, manage comments (resolve/hide) |
+| `document:delete` | Delete templates, delete/archive generated documents, revoke shares |
+
+### External (Anonymous) Access
+
+External users can access shared documents without authentication:
+
+- **Public Share Links**: Access via `/share/{token}` with optional password protection
+- **Commenting**: External commenters can add comments if `allowComments` is enabled on the share
+- **Rate Limiting**: External comments are limited to 20/hour per IP address (configurable per share)
+- **No Login Required**: External access doesn't require authentication
+
+### Access Resolution for Document Generation
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   Document Generation Access                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  SUPER_ADMIN                                                     │
+│  └── Full access to all tenants' templates and documents        │
+│                                                                  │
+│  TENANT_ADMIN                                                    │
+│  └── Full access to all templates/documents in tenant           │
+│                                                                  │
+│  Users with document:* permissions                               │
+│  └── Access based on assigned permissions                       │
+│  └── Templates: tenant-wide access                              │
+│  └── Documents: can be scoped to companies (optional)           │
+│                                                                  │
+│  External (via share link)                                       │
+│  └── View-only access to specific shared document               │
+│  └── Comment access if enabled on share                         │
+│  └── Rate limited (20 comments/hour/IP)                         │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Related Documentation
 
-- [Database Schema](./database-schema.md) - Entity relationships
+- [Database Schema](./database-schema.md) - Entity relationships and Document Generation tables
+- [Document Generation Design](./DOCUMENT_GENERATION_MODULE_DESIGN.md) - Module design and implementation details
 - [README](./README.md) - System overview and API reference
 - [CLAUDE.md](../CLAUDE.md) - Development guidelines

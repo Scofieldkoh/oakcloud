@@ -128,6 +128,23 @@ enum AuditAction {
   CONNECTOR_TESTED
   CONNECTOR_ENABLED
   CONNECTOR_DISABLED
+
+  // Document Generation Module
+  DOCUMENT_TEMPLATE_CREATED
+  DOCUMENT_TEMPLATE_UPDATED
+  DOCUMENT_TEMPLATE_DELETED
+  DOCUMENT_TEMPLATE_DUPLICATED
+  DOCUMENT_GENERATED
+  DOCUMENT_FINALIZED
+  DOCUMENT_UNFINALIZED
+  DOCUMENT_ARCHIVED
+  DOCUMENT_CLONED
+  SHARE_LINK_CREATED
+  SHARE_LINK_REVOKED
+  LETTERHEAD_UPDATED
+  COMMENT_CREATED
+  COMMENT_RESOLVED
+  COMMENT_HIDDEN
 }
 
 enum ChangeSource {
@@ -198,6 +215,13 @@ model Tenant {
   connectors        Connector[]
   connectorAccess   TenantConnectorAccess[]
   connectorUsageLogs ConnectorUsageLog[]
+
+  // Document Generation Module
+  documentTemplates    DocumentTemplate[]
+  generatedDocuments   GeneratedDocument[]
+  letterhead           TenantLetterhead?
+  templatePartials     TemplatePartial[]
+  aiConversations      AiConversation[]
 
   @@index([slug])
   @@index([status])
@@ -319,6 +343,18 @@ model User {
   companyAssignments UserCompanyAssignment[]
   connectorUsageLogs ConnectorUsageLog[]
 
+  // Document Generation Module
+  createdTemplates      DocumentTemplate[]    @relation("TemplateCreator")
+  createdDocuments      GeneratedDocument[]   @relation("DocumentCreator")
+  finalizedDocuments    GeneratedDocument[]   @relation("DocumentFinalizer")
+  createdShares         DocumentShare[]       @relation("ShareCreator")
+  authoredComments      DocumentComment[]     @relation("CommentAuthor")
+  resolvedComments      DocumentComment[]     @relation("CommentResolver")
+  hiddenComments        DocumentComment[]     @relation("CommentHider")
+  documentDrafts        DocumentDraft[]       @relation("DraftAuthor")
+  createdPartials       TemplatePartial[]     @relation("PartialCreator")
+  aiConversations       AiConversation[]      @relation("ConversationOwner")
+
   @@index([email])
   @@index([tenantId])
   @@index([passwordResetToken])
@@ -421,6 +457,9 @@ model Company {
   roleAssignments       UserRoleAssignment[]
   userAssignments       UserCompanyAssignment[]
   noteTabs              NoteTab[]
+
+  // Document Generation Module
+  generatedDocuments    GeneratedDocument[]
 
   @@unique([tenantId, uen]) // UEN unique within tenant
   @@index([tenantId])
@@ -924,4 +963,316 @@ model NoteTab {
   @@index([contactId])
   @@index([order])
   @@map("note_tabs")
+}
+
+// ============================================================================
+// DOCUMENT GENERATION MODULE
+// ============================================================================
+
+enum DocumentTemplateCategory {
+  RESOLUTION
+  CONTRACT
+  LETTER
+  MINUTES
+  NOTICE
+  CERTIFICATE
+  OTHER
+}
+
+enum GeneratedDocumentStatus {
+  DRAFT
+  FINALIZED
+  ARCHIVED
+}
+
+enum DocumentCommentStatus {
+  OPEN
+  RESOLVED
+}
+
+// Document Templates - Reusable templates with placeholders
+model DocumentTemplate {
+  id                    String                   @id @default(uuid())
+  tenantId              String                   @map("tenant_id")
+  tenant                Tenant                   @relation(fields: [tenantId], references: [id])
+
+  name                  String                   @db.VarChar(200)
+  description           String?                  @db.Text
+  category              DocumentTemplateCategory @default(OTHER)
+  content               String                   @db.Text // HTML content with placeholders
+  contentJson           Json?                    @map("content_json") // TipTap JSON format
+  placeholders          Json                     @default("[]") // Array of placeholder definitions
+  isActive              Boolean                  @default(true) @map("is_active")
+  defaultShareExpiryHours Int?                   @map("default_share_expiry_hours")
+  version               Int                      @default(1)
+
+  // Audit
+  createdById           String                   @map("created_by_id")
+  createdBy             User                     @relation("TemplateCreator", fields: [createdById], references: [id])
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
+  deletedAt             DateTime?                @map("deleted_at")
+
+  // Relations
+  generatedDocuments    GeneratedDocument[]
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([isActive])
+  @@index([tenantId, deletedAt])
+  @@map("document_templates")
+}
+
+// Generated Documents - Documents created from templates
+model GeneratedDocument {
+  id                    String                   @id @default(uuid())
+  tenantId              String                   @map("tenant_id")
+  tenant                Tenant                   @relation(fields: [tenantId], references: [id])
+
+  // Source template (nullable for documents without template)
+  templateId            String?                  @map("template_id")
+  template              DocumentTemplate?        @relation(fields: [templateId], references: [id])
+  templateVersion       Int?                     @map("template_version") // Snapshot of template version used
+
+  // Associated company (optional)
+  companyId             String?                  @map("company_id")
+  company               Company?                 @relation(fields: [companyId], references: [id])
+
+  // Document content
+  title                 String                   @db.VarChar(300)
+  content               String                   @db.Text // Resolved HTML content
+  contentJson           Json?                    @map("content_json") // TipTap JSON format
+  status                GeneratedDocumentStatus  @default(DRAFT)
+
+  // Finalization tracking
+  finalizedAt           DateTime?                @map("finalized_at")
+  finalizedById         String?                  @map("finalized_by_id")
+  finalizedBy           User?                    @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
+  unfinalizedAt         DateTime?                @map("unfinalized_at") // Last time un-finalized
+
+  // PDF options
+  useLetterhead         Boolean                  @default(true) @map("use_letterhead")
+  shareExpiryHours      Int?                     @map("share_expiry_hours") // Override template default
+
+  // Metadata
+  placeholderData       Json?                    @map("placeholder_data") // Snapshot of data used
+  metadata              Json?                    // Additional metadata
+
+  // Audit
+  createdById           String                   @map("created_by_id")
+  createdBy             User                     @relation("DocumentCreator", fields: [createdById], references: [id])
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
+  deletedAt             DateTime?                @map("deleted_at")
+
+  // Relations
+  sections              DocumentSection[]
+  shares                DocumentShare[]
+  comments              DocumentComment[]
+  drafts                DocumentDraft[]
+
+  @@index([tenantId])
+  @@index([templateId])
+  @@index([companyId])
+  @@index([status])
+  @@index([createdById])
+  @@index([tenantId, deletedAt])
+  @@map("generated_documents")
+}
+
+// Document Sections - For navigation sidebar
+model DocumentSection {
+  id                    String            @id @default(uuid())
+  documentId            String            @map("document_id")
+  document              GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  title                 String            @db.VarChar(200)
+  anchor                String            @db.VarChar(100) // HTML anchor ID
+  order                 Int
+  level                 Int               @default(1) // Heading level (1, 2, 3)
+  pageBreakBefore       Boolean           @default(false) @map("page_break_before")
+
+  createdAt             DateTime          @default(now()) @map("created_at")
+
+  @@index([documentId])
+  @@index([documentId, order])
+  @@map("document_sections")
+}
+
+// Document Shares - Shareable links with access control
+model DocumentShare {
+  id                    String            @id @default(uuid())
+  documentId            String            @map("document_id")
+  document              GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  shareToken            String            @unique @map("share_token") @db.VarChar(64)
+  expiresAt             DateTime?         @map("expires_at")
+  passwordHash          String?           @map("password_hash") @db.VarChar(255)
+  isActive              Boolean           @default(true) @map("is_active")
+
+  // Access tracking
+  viewCount             Int               @default(0) @map("view_count")
+  lastViewedAt          DateTime?         @map("last_viewed_at")
+
+  // Permissions
+  allowedActions        String[]          @default(["view"]) @map("allowed_actions") // view, download, print
+  allowComments         Boolean           @default(false) @map("allow_comments")
+  commentRateLimit      Int               @default(20) @map("comment_rate_limit") // Max comments/hour/IP
+  notifyOnComment       Boolean           @default(false) @map("notify_on_comment")
+  notifyOnView          Boolean           @default(false) @map("notify_on_view")
+
+  // Audit
+  createdById           String            @map("created_by_id")
+  createdBy             User              @relation("ShareCreator", fields: [createdById], references: [id])
+  createdAt             DateTime          @default(now()) @map("created_at")
+  revokedAt             DateTime?         @map("revoked_at")
+
+  // Relations
+  comments              DocumentComment[]
+
+  @@index([documentId])
+  @@index([expiresAt])
+  @@index([shareToken])
+  @@map("document_shares")
+}
+
+// Tenant Letterheads - PDF letterhead configuration
+model TenantLetterhead {
+  id                    String   @id @default(uuid())
+  tenantId              String   @unique @map("tenant_id")
+  tenant                Tenant   @relation(fields: [tenantId], references: [id])
+
+  headerHtml            String?  @map("header_html") @db.Text
+  footerHtml            String?  @map("footer_html") @db.Text
+  headerImageUrl        String?  @map("header_image_url") @db.VarChar(500)
+  footerImageUrl        String?  @map("footer_image_url") @db.VarChar(500)
+  logoUrl               String?  @map("logo_url") @db.VarChar(500)
+  pageMargins           Json     @default("{\"top\": 25, \"right\": 20, \"bottom\": 25, \"left\": 20}") @map("page_margins")
+  isEnabled             Boolean  @default(true) @map("is_enabled")
+
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("tenant_letterheads")
+}
+
+// Document Comments - Internal & external comments with text selection
+model DocumentComment {
+  id                    String               @id @default(uuid())
+  documentId            String               @map("document_id")
+  document              GeneratedDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  // For external comments via share link
+  shareId               String?              @map("share_id")
+  share                 DocumentShare?       @relation(fields: [shareId], references: [id])
+
+  // Internal user (null for external commenters)
+  userId                String?              @map("user_id")
+  user                  User?                @relation("CommentAuthor", fields: [userId], references: [id])
+
+  // External commenter info
+  guestName             String?              @map("guest_name") @db.VarChar(100)
+  guestEmail            String?              @map("guest_email") @db.VarChar(255)
+
+  // Comment content (max 1000 chars)
+  content               String               @db.VarChar(1000)
+
+  // Text selection (for linked comments)
+  selectionStart        Int?                 @map("selection_start")
+  selectionEnd          Int?                 @map("selection_end")
+  selectedText          String?              @map("selected_text") @db.Text
+
+  // Threading
+  parentId              String?              @map("parent_id")
+  parent                DocumentComment?     @relation("CommentReplies", fields: [parentId], references: [id])
+  replies               DocumentComment[]    @relation("CommentReplies")
+
+  // Status
+  status                DocumentCommentStatus @default(OPEN)
+  resolvedById          String?              @map("resolved_by_id")
+  resolvedBy            User?                @relation("CommentResolver", fields: [resolvedById], references: [id])
+  resolvedAt            DateTime?            @map("resolved_at")
+
+  // Moderation
+  hiddenAt              DateTime?            @map("hidden_at")
+  hiddenById            String?              @map("hidden_by_id")
+  hiddenBy              User?                @relation("CommentHider", fields: [hiddenById], references: [id])
+  hiddenReason          String?              @map("hidden_reason") @db.VarChar(255)
+
+  // Rate limiting
+  ipAddress             String?              @map("ip_address") @db.VarChar(45)
+
+  // Timestamps
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  deletedAt             DateTime?            @map("deleted_at")
+
+  @@index([documentId])
+  @@index([shareId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([status])
+  @@index([ipAddress, createdAt])
+  @@map("document_comments")
+}
+
+// Document Drafts - Auto-save storage
+model DocumentDraft {
+  id                    String            @id @default(uuid())
+  documentId            String            @map("document_id")
+  document              GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId                String            @map("user_id")
+  user                  User              @relation("DraftAuthor", fields: [userId], references: [id])
+
+  content               String            @db.Text
+  contentJson           Json?             @map("content_json")
+  metadata              Json?
+
+  createdAt             DateTime          @default(now()) @map("created_at")
+
+  @@index([documentId])
+  @@index([userId, createdAt])
+  @@map("document_drafts")
+}
+
+// Template Partials - Reusable template blocks (Phase 7)
+model TemplatePartial {
+  id                    String    @id @default(uuid())
+  tenantId              String    @map("tenant_id")
+  tenant                Tenant    @relation(fields: [tenantId], references: [id])
+
+  name                  String    @db.VarChar(100)
+  description           String?   @db.Text
+  content               String    @db.Text
+  placeholders          Json      @default("[]")
+
+  createdById           String    @map("created_by_id")
+  createdBy             User      @relation("PartialCreator", fields: [createdById], references: [id])
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("template_partials")
+}
+
+// AI Conversations - Chat history for AI assistant
+model AiConversation {
+  id                    String   @id @default(uuid())
+  tenantId              String   @map("tenant_id")
+  tenant                Tenant   @relation(fields: [tenantId], references: [id])
+  userId                String   @map("user_id")
+  user                  User     @relation("ConversationOwner", fields: [userId], references: [id])
+
+  contextType           String   @db.VarChar(20) // 'template' or 'document'
+  contextId             String?  @map("context_id") // Template or Document ID
+  messages              Json     @default("[]") // Array of {role, content, timestamp}
+
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, userId])
+  @@index([contextType, contextId])
+  @@map("ai_conversations")
 }
