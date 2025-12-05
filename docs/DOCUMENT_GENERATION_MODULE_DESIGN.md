@@ -254,6 +254,27 @@ Section definitions for navigation in shareable pages.
 
 ---
 
+#### ai_conversations
+
+AI conversation threads for template/document editing assistance (optional persistence).
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants |
+| user_id | UUID | No | FK to users |
+| context_type | VARCHAR(20) | No | Context type: 'template' or 'document' |
+| context_id | UUID | Yes | FK to template or document (null for general) |
+| messages | JSONB | No | Array of {role, content, timestamp} |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Indexes:**
+- `ai_conversations_tenant_id_user_id_idx` on (tenant_id, user_id)
+- `ai_conversations_context_type_context_id_idx` on (context_type, context_id)
+
+---
+
 ### Enums
 
 ```sql
@@ -987,18 +1008,15 @@ Step 5: Finalize            →  Save, generate share link, export
 
 ### Placeholder Syntax
 
-Placeholders use double-brace syntax with dot notation:
+Placeholders use double-brace syntax with dot notation. The system supports both simple placeholders and block helpers for dynamic content.
 
-```
+#### Simple Placeholders
+
+```handlebars
 {{company.name}}
 {{company.uen}}
 {{company.registeredAddress}}
 {{company.incorporationDate|date:DD MMMM YYYY}}
-
-{{directors[0].name}}
-{{directors|list:name|separator:', '}}
-
-{{shareholders|list:name ({{percentage}}%)|separator:'\n'}}
 
 {{contact.fullName}}
 {{contact.identificationNumber}}
@@ -1010,14 +1028,80 @@ Placeholders use double-brace syntax with dot notation:
 {{system.generatedBy}}
 ```
 
+#### Block Helpers (for Dynamic Arrays)
+
+**Iteration Block** - Loop through arrays:
+
+```handlebars
+{{#each directors}}
+Name: {{name}}
+NRIC: {{identificationNumber}}
+Nationality: {{nationality}}
+
+{{/each}}
+```
+
+**Conditional Block** - Show/hide content based on conditions:
+
+```handlebars
+{{#if directors.length > 2}}
+Note: This resolution requires approval from more than 2 directors.
+{{/if}}
+
+{{#if company.hasCharges}}
+Warning: This company has outstanding charges.
+{{else}}
+The company has no outstanding charges.
+{{/if}}
+```
+
+**Signing Block** - Generate signature sections dynamically:
+
+```handlebars
+{{#signing_block directors}}
+_________________________
+Name: {{name}}
+Designation: {{role}}
+Date: ___________________
+{{/signing_block}}
+```
+
+This generates one signature block per director, with page breaks automatically inserted if needed.
+
+**Table Block** - Generate tables from arrays:
+
+```handlebars
+{{#table shareholders columns="Name,Share Class,No. of Shares,Percentage"}}
+{{name}}, {{shareClass}}, {{numberOfShares}}, {{percentageHeld}}%
+{{/table}}
+```
+
+Renders as:
+
+| Name | Share Class | No. of Shares | Percentage |
+|------|-------------|---------------|------------|
+| John Tan | Ordinary | 50,000 | 50% |
+| Mary Lee | Ordinary | 50,000 | 50% |
+
+#### Index and Position Helpers
+
+```handlebars
+{{#each directors}}
+{{@index}}. {{name}}  <!-- 0-based index: 0, 1, 2... -->
+{{@number}}. {{name}} <!-- 1-based number: 1, 2, 3... -->
+{{#if @first}}(First Director){{/if}}
+{{#if @last}}(Last Director){{/if}}
+{{/each}}
+```
+
 ### Placeholder Categories
 
 | Category | Prefix | Description |
 |----------|--------|-------------|
 | Company | `company.*` | Company fields |
-| Directors | `directors[n].*` or `directors\|list:*` | Company officers with DIRECTOR role |
-| Shareholders | `shareholders[n].*` or `shareholders\|list:*` | Company shareholders |
-| Officers | `officers[n].*` | All officers |
+| Directors | `directors[n].*` or `{{#each directors}}` | Company officers with DIRECTOR role |
+| Shareholders | `shareholders[n].*` or `{{#each shareholders}}` | Company shareholders |
+| Officers | `officers[n].*` or `{{#each officers}}` | All officers |
 | Contact | `contact.*` | Selected contact |
 | Custom | `custom.*` | User-provided values |
 | System | `system.*` | System values (date, user) |
@@ -1029,10 +1113,12 @@ interface PlaceholderDefinition {
   key: string;           // e.g., "company.name"
   label: string;         // e.g., "Company Name"
   category: string;      // e.g., "company"
-  type: 'text' | 'date' | 'number' | 'currency' | 'list';
+  type: 'text' | 'date' | 'number' | 'currency' | 'list' | 'block';
   format?: string;       // e.g., "DD MMMM YYYY"
   required: boolean;
   defaultValue?: string;
+  minItems?: number;     // For arrays: minimum required items
+  maxItems?: number;     // For arrays: maximum allowed items
 }
 ```
 
@@ -1060,6 +1146,138 @@ Sections are auto-detected from heading tags or explicit markers:
 <!-- Or explicit section marker -->
 <!-- SECTION: Resolution 1: Appointment of Director -->
 ```
+
+---
+
+## Pre-Generation Validation
+
+### Validation Flow
+
+Before generating a document, the system validates that all required data is available:
+
+```
+┌─────────────────────────┐
+│ User Selects Template   │
+└───────────┬─────────────┘
+            │
+            ▼
+┌─────────────────────────┐
+│ User Selects Company    │
+│ (and optional contacts) │
+└───────────┬─────────────┘
+            │
+            ▼
+┌─────────────────────────┐
+│ System Scans Template   │
+│ Extracts Required Fields│
+└───────────┬─────────────┘
+            │
+            ▼
+┌─────────────────────────┐
+│ Validate Company Data   │
+│ Against Requirements    │
+└───────────┬─────────────┘
+            │
+     ┌──────┴──────┐
+     │             │
+     ▼             ▼
+┌─────────┐  ┌──────────────────────────┐
+│ All OK  │  │ Missing/Insufficient Data │
+└────┬────┘  └──────────┬───────────────┘
+     │                  │
+     ▼                  ▼
+┌─────────┐  ┌──────────────────────────┐
+│Generate │  │ Show Validation Panel:   │
+│Document │  │ • List missing fields    │
+└─────────┘  │ • Link to edit company   │
+             │ • "Save as Draft" option │
+             │ • "Continue Anyway" btn  │
+             └──────────────────────────┘
+```
+
+### Validation Service
+
+```typescript
+interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+}
+
+interface ValidationError {
+  field: string;           // e.g., "company.registeredAddress"
+  message: string;         // e.g., "Registered address is required"
+  category: 'company' | 'directors' | 'shareholders' | 'contacts';
+  fixUrl?: string;         // e.g., "/companies/123/edit"
+}
+
+interface ValidationWarning {
+  field: string;
+  message: string;
+  suggestion?: string;     // e.g., "Consider adding more directors"
+}
+
+// Validate before generation
+export async function validateForGeneration(
+  tenantId: string,
+  templateId: string,
+  companyId: string,
+  contactIds?: string[]
+): Promise<ValidationResult>;
+```
+
+### Validation Rules
+
+| Rule | Example | Severity |
+|------|---------|----------|
+| Required field missing | `company.uen` is null | Error |
+| Array minimum not met | Template needs 2+ directors, company has 1 | Error |
+| Array maximum exceeded | Template supports max 4 shareholders, company has 6 | Warning |
+| Date in past | `custom.effectiveDate` is before today | Warning |
+| Recommended field empty | `company.financialYearEndMonth` not set | Warning |
+
+### UI Component
+
+```tsx
+// Pre-generation validation panel
+<ValidationPanel
+  template={selectedTemplate}
+  company={selectedCompany}
+  contacts={selectedContacts}
+  onValidationComplete={(result) => {
+    if (result.isValid) {
+      proceedToGeneration();
+    }
+  }}
+/>
+```
+
+**Display Example:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ ⚠️ Missing Required Information                         │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ ✓ Company Name: ABC Pte Ltd                            │
+│ ✓ UEN: 202312345A                                      │
+│ ✗ Registered Address: Missing          [Edit Company]  │
+│ ✗ Directors: 1 found, minimum 2 required [Add Director]│
+│ ⚠ Financial Year End: Not set (optional)               │
+│                                                         │
+├─────────────────────────────────────────────────────────┤
+│ [Save as Draft]              [Continue Anyway] [Cancel] │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Draft Documents with Missing Data
+
+When user chooses "Save as Draft" with missing data:
+
+- Document is saved with `status: 'DRAFT'`
+- `metadata.validationErrors` stores the list of missing fields
+- User can return later to complete the document
+- Finalization is blocked until all required fields are resolved
 
 ---
 
@@ -1227,6 +1445,64 @@ async function executeDocumentStep(
 }
 ```
 
+### Workflow Step Result Interface
+
+All document generation operations return a standardized result for workflow orchestration:
+
+```typescript
+/**
+ * Result returned by document generation workflow step
+ * Used by workflow designer to pass data to subsequent steps
+ */
+interface DocumentStepResult {
+  // Status
+  success: boolean;
+  error?: string;
+
+  // Document info
+  documentId: string;
+  documentTitle: string;
+  status: 'DRAFT' | 'FINALIZED';
+
+  // For next steps (e.g., e-signature)
+  shareUrl?: string;           // If share was created
+  shareToken?: string;         // Raw token for URL shortener
+  pdfUrl?: string;             // Temporary URL to PDF
+  pdfBuffer?: Buffer;          // Raw PDF for e-sign module
+
+  // Context for downstream steps
+  companyId?: string;
+  companyName?: string;
+  companyUen?: string;
+
+  // Signatories extracted from document (for e-sign step)
+  signatories?: {
+    name: string;
+    email?: string;
+    role: string;              // e.g., "Director"
+    identificationNumber?: string;
+  }[];
+
+  // Validation info (if draft due to missing data)
+  validationErrors?: string[];
+
+  // Metadata for logging/tracking
+  templateId?: string;
+  templateName?: string;
+  generatedAt: Date;
+  generatedBy: string;
+}
+
+/**
+ * Example workflow usage:
+ *
+ * Step 1: Document Generation → returns DocumentStepResult
+ * Step 2: E-Signature → uses result.pdfBuffer, result.signatories
+ * Step 3: URL Shortener → uses result.shareUrl
+ * Step 4: Email/SMS → uses shortened URL, result.documentTitle
+ */
+```
+
 ### E-Signature Module Hook
 
 ```typescript
@@ -1313,13 +1589,206 @@ function generateShareToken(): string {
 
 ---
 
+## AI Integration
+
+The Document Generation Module includes AI assistance for template creation and document editing, leveraging the existing Connectors Hub infrastructure.
+
+### AI Sidebar Component
+
+A collapsible AI assistant sidebar integrated into the template editor and document editor:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Template Editor                          │ AI Assistant [x] │
+├─────────────────────────────────────────┬───────────────────┤
+│                                         │ ┌───────────────┐ │
+│  DIRECTORS' RESOLUTION                  │ │ Model: GPT-4  │ │
+│                                         │ │ [▼ Select]    │ │
+│  {{#each directors}}                    │ └───────────────┘ │
+│  ...                                    │                   │
+│                                         │ ┌───────────────┐ │
+│                                         │ │ User:         │ │
+│                                         │ │ Draft a       │ │
+│                                         │ │ resolution    │ │
+│                                         │ │ for appointing│ │
+│                                         │ │ a new director│ │
+│                                         │ └───────────────┘ │
+│                                         │ ┌───────────────┐ │
+│                                         │ │ AI:           │ │
+│                                         │ │ Here's a draft│ │
+│                                         │ │ resolution... │ │
+│                                         │ │               │ │
+│                                         │ │ [Insert ↓]    │ │
+│                                         │ └───────────────┘ │
+│                                         │                   │
+│                                         │ ┌───────────────┐ │
+│                                         │ │ Type message..│ │
+│                                         │ │         [Send]│ │
+│                                         │ └───────────────┘ │
+└─────────────────────────────────────────┴───────────────────┘
+```
+
+### AI Features
+
+| Feature | Description | Use Case |
+|---------|-------------|----------|
+| **Draft Content** | Generate template/document content | "Write a resolution for changing registered address" |
+| **Rephrase** | Rewrite selected text | "Make this clause more formal" |
+| **Explain** | Explain legal/technical terms | "What does 'ordinary resolution' mean?" |
+| **Suggest Placeholders** | Recommend placeholders for text | "What placeholders should I add here?" |
+| **Review** | Check document for errors | "Review this resolution for completeness" |
+| **Insert** | Insert AI response into editor | One-click insertion at cursor position |
+
+### AI Context Awareness
+
+The AI assistant receives context about the current editing session:
+
+```typescript
+interface AIContext {
+  mode: 'template_editor' | 'document_editor';
+  templateCategory?: DocumentCategory;  // RESOLUTION, CONTRACT, etc.
+  templateName?: string;
+
+  // Company context (when editing document)
+  companyContext?: {
+    name: string;
+    uen: string;
+    entityType: string;
+    directors: { name: string; role: string }[];
+    shareholders: { name: string; percentage: number }[];
+  };
+
+  // Editor context
+  selectedText?: string;         // User's text selection
+  cursorPosition?: number;       // Where to insert
+  surroundingContent?: string;   // Text around cursor for context
+}
+```
+
+### AI Model Selection
+
+Reuses the existing `AIModelSelector` component from the Connectors Hub:
+
+```tsx
+import { AIModelSelector } from '@/components/ui/ai-model-selector';
+
+<AIModelSelector
+  value={selectedModel}
+  onChange={setSelectedModel}
+  showContextInput={false}
+/>
+```
+
+### Conversation Persistence (Optional)
+
+AI conversations can be persisted for continuity:
+
+```prisma
+model AIConversation {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  userId        String   @map("user_id")
+  contextType   String   @map("context_type")  // 'template' | 'document'
+  contextId     String?  @map("context_id")    // templateId or documentId
+  messages      Json     // Array of {role, content, timestamp}
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, userId])
+  @@index([contextType, contextId])
+  @@map("ai_conversations")
+}
+```
+
+### AI API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/ai/chat` | Send message to AI |
+| GET | `/api/ai/conversations/:contextType/:contextId` | Get conversation history |
+| DELETE | `/api/ai/conversations/:id` | Clear conversation |
+
+### AI Chat Service
+
+```typescript
+interface AIChatParams {
+  tenantId: string;
+  userId: string;
+  message: string;
+  context: AIContext;
+  model?: string;           // e.g., "gpt-4", "claude-3"
+  conversationId?: string;  // For continuing conversation
+}
+
+interface AIChatResponse {
+  message: string;
+  conversationId: string;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+  };
+}
+
+export async function sendAIChatMessage(
+  params: AIChatParams
+): Promise<AIChatResponse>;
+```
+
+### UI Component
+
+```tsx
+// AI Sidebar component
+<AISidebar
+  isOpen={showAI}
+  onClose={() => setShowAI(false)}
+  context={{
+    mode: 'template_editor',
+    templateCategory: 'RESOLUTION',
+    selectedText: editorSelection,
+  }}
+  onInsert={(text) => {
+    editor.insertContent(text);
+  }}
+/>
+```
+
+### System Prompt Template
+
+```typescript
+const DOCUMENT_AI_SYSTEM_PROMPT = `
+You are an AI assistant helping with corporate document drafting.
+You specialize in Singapore corporate secretarial documents including:
+- Directors' resolutions
+- Shareholders' resolutions
+- Board meeting minutes
+- Corporate letters and notices
+
+Context:
+- Template Category: {{category}}
+- Company: {{companyName}} ({{entityType}})
+- Directors: {{directorsList}}
+
+Guidelines:
+1. Use formal legal language appropriate for corporate documents
+2. Reference Singapore Companies Act where relevant
+3. Include appropriate placeholder syntax: {{placeholder.name}}
+4. Suggest page breaks for multi-page documents
+5. Be concise and professional
+`;
+```
+
+---
+
 ## Implementation Phases
 
 ### Phase 1: Core Infrastructure (Foundation)
 
 - [ ] Database schema (Prisma models)
 - [ ] Template service (CRUD)
-- [ ] Placeholder resolver
+- [ ] Placeholder resolver (simple + block helpers)
 - [ ] Basic document generator
 
 ### Phase 2: Document Generation
@@ -1328,24 +1797,36 @@ function generateShareToken(): string {
 - [ ] Preview functionality
 - [ ] Document editor (TipTap)
 - [ ] Section detection
+- [ ] Pre-generation validation service
+- [ ] Validation UI panel
 
 ### Phase 3: Export & Sharing
 
 - [ ] PDF export (Puppeteer)
 - [ ] Letterhead management
 - [ ] Share link creation
-- [ ] Public share page
+- [ ] Public share page (unbranded)
 
 ### Phase 4: UI Polish
 
 - [ ] Template selection wizard
 - [ ] Document generation wizard
-- [ ] Section navigation
+- [ ] Section navigation sidebar
 - [ ] Page break indicators
+- [ ] Signing block rendering
 
-### Phase 5: Integration Readiness
+### Phase 5: AI Integration
 
-- [ ] Clean interface exports
+- [ ] AI sidebar component
+- [ ] AI chat service (using Connectors Hub)
+- [ ] Context-aware prompts
+- [ ] Insert AI content to editor
+- [ ] Conversation persistence (optional)
+
+### Phase 6: Integration Readiness
+
+- [ ] Clean interface exports (IDocumentGenerator, etc.)
+- [ ] DocumentStepResult for workflow
 - [ ] Documentation for workflow integration
 - [ ] API versioning consideration
 
