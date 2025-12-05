@@ -904,6 +904,334 @@ Detailed usage logging for connectors with cost tracking.
 
 ---
 
+## Document Generation Module Tables
+
+### document_templates
+
+Reusable document templates with placeholder support.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
+| name | VARCHAR(200) | No | Template name (unique per tenant) |
+| description | TEXT | Yes | Template description |
+| category | ENUM | No | Template category (see DocumentTemplateCategory) |
+| content | TEXT | No | HTML content with placeholders |
+| content_json | JSONB | Yes | TipTap JSON format (for editor state) |
+| placeholders | JSONB | No | Array of placeholder definitions (default: []) |
+| is_active | BOOLEAN | No | Active status (default: true) |
+| default_share_expiry_hours | INT | Yes | Default expiry for share links |
+| version | INT | No | Template version (increments on update) |
+| created_by_id | UUID | No | FK to users |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Placeholder Definition Schema:**
+```json
+{
+  "key": "company.name",
+  "label": "Company Name",
+  "type": "text|date|number|currency|list|conditional",
+  "source": "company|contact|officer|shareholder|custom|system",
+  "path": "name",
+  "defaultValue": "",
+  "format": "dd MMMM yyyy",
+  "required": true
+}
+```
+
+**Indexes:**
+- `document_templates_tenant_id_idx` on tenant_id
+- `document_templates_category_idx` on category
+- `document_templates_is_active_idx` on is_active
+- `document_templates_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+
+---
+
+### generated_documents
+
+Documents created from templates or blank.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
+| template_id | UUID | Yes | FK to document_templates (null for blank docs) |
+| template_version | INT | Yes | Snapshot of template version used |
+| company_id | UUID | Yes | FK to companies (optional) |
+| title | VARCHAR(300) | No | Document title |
+| content | TEXT | No | Resolved HTML content |
+| content_json | JSONB | Yes | TipTap JSON format |
+| status | ENUM | No | Document status (see GeneratedDocumentStatus) |
+| finalized_at | TIMESTAMP | Yes | When document was finalized |
+| finalized_by_id | UUID | Yes | FK to users who finalized |
+| unfinalized_at | TIMESTAMP | Yes | Last time un-finalized |
+| use_letterhead | BOOLEAN | No | Include letterhead in PDF (default: true) |
+| share_expiry_hours | INT | Yes | Override default share expiry |
+| placeholder_data | JSONB | Yes | Snapshot of data used for placeholders |
+| metadata | JSONB | Yes | Additional metadata |
+| created_by_id | UUID | No | FK to users |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Indexes:**
+- `generated_documents_tenant_id_idx` on tenant_id
+- `generated_documents_template_id_idx` on template_id
+- `generated_documents_company_id_idx` on company_id
+- `generated_documents_status_idx` on status
+- `generated_documents_created_by_id_idx` on created_by_id
+- `generated_documents_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+
+---
+
+### document_sections
+
+Navigation sections for generated documents.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| document_id | UUID | No | FK to generated_documents (CASCADE) |
+| title | VARCHAR(200) | No | Section title |
+| anchor | VARCHAR(100) | No | HTML anchor ID for navigation |
+| order | INT | No | Display order |
+| level | INT | No | Heading level 1-3 (default: 1) |
+| page_break_before | BOOLEAN | No | Insert page break (default: false) |
+| created_at | TIMESTAMP | No | Record creation time |
+
+**Indexes:**
+- `document_sections_document_id_idx` on document_id
+- `document_sections_document_id_order_idx` on (document_id, order)
+
+---
+
+### document_shares
+
+Shareable links for documents with access control.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| document_id | UUID | No | FK to generated_documents (CASCADE) |
+| share_token | VARCHAR(64) | No | Unique share token (UNIQUE) |
+| expires_at | TIMESTAMP | Yes | Link expiration time |
+| password_hash | VARCHAR(255) | Yes | Bcrypt password hash |
+| is_active | BOOLEAN | No | Active status (default: true) |
+| view_count | INT | No | Number of views (default: 0) |
+| last_viewed_at | TIMESTAMP | Yes | Last view timestamp |
+| allowed_actions | TEXT[] | No | Allowed actions (default: ["view"]) |
+| allow_comments | BOOLEAN | No | Allow external comments (default: false) |
+| comment_rate_limit | INT | No | Max comments/hour/IP (default: 20) |
+| notify_on_comment | BOOLEAN | No | Notify on new comment (default: false) |
+| notify_on_view | BOOLEAN | No | Notify on view (default: false) |
+| created_by_id | UUID | No | FK to users |
+| created_at | TIMESTAMP | No | Record creation time |
+| revoked_at | TIMESTAMP | Yes | When link was revoked |
+
+**Indexes:**
+- `document_shares_document_id_idx` on document_id
+- `document_shares_share_token_key` UNIQUE on share_token
+- `document_shares_expires_at_idx` on expires_at
+
+---
+
+### tenant_letterheads
+
+Tenant letterhead configuration for PDF export.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (UNIQUE, one per tenant) |
+| header_html | TEXT | Yes | HTML header content |
+| footer_html | TEXT | Yes | HTML footer content |
+| header_image_url | VARCHAR(500) | Yes | Header image URL |
+| footer_image_url | VARCHAR(500) | Yes | Footer image URL |
+| logo_url | VARCHAR(500) | Yes | Logo URL |
+| page_margins | JSONB | No | Margins in mm (default: top:25, right:20, bottom:25, left:20) |
+| is_enabled | BOOLEAN | No | Letterhead enabled (default: true) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Indexes:**
+- `tenant_letterheads_tenant_id_key` UNIQUE on tenant_id
+
+---
+
+### document_comments
+
+Comments on documents (internal and external).
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| document_id | UUID | No | FK to generated_documents (CASCADE) |
+| share_id | UUID | Yes | FK to document_shares (for external) |
+| user_id | UUID | Yes | FK to users (null for external) |
+| guest_name | VARCHAR(100) | Yes | External commenter name |
+| guest_email | VARCHAR(255) | Yes | External commenter email |
+| content | VARCHAR(1000) | No | Comment content (max 1000 chars) |
+| selection_start | INT | Yes | Text selection start position |
+| selection_end | INT | Yes | Text selection end position |
+| selected_text | TEXT | Yes | Selected text snippet |
+| parent_id | UUID | Yes | FK to document_comments (for replies) |
+| status | ENUM | No | Comment status (OPEN/RESOLVED) |
+| resolved_by_id | UUID | Yes | FK to users who resolved |
+| resolved_at | TIMESTAMP | Yes | Resolution timestamp |
+| hidden_at | TIMESTAMP | Yes | When comment was hidden (moderation) |
+| hidden_by_id | UUID | Yes | FK to users who hid |
+| hidden_reason | VARCHAR(255) | Yes | Reason for hiding |
+| ip_address | VARCHAR(45) | Yes | Commenter IP (for rate limiting) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Rate Limiting:**
+- External comments limited to 20/hour per IP address by default
+- Configurable per share link via `comment_rate_limit`
+
+**Indexes:**
+- `document_comments_document_id_idx` on document_id
+- `document_comments_share_id_idx` on share_id
+- `document_comments_user_id_idx` on user_id
+- `document_comments_parent_id_idx` on parent_id
+- `document_comments_status_idx` on status
+- `document_comments_ip_address_created_at_idx` on (ip_address, created_at)
+
+---
+
+### document_drafts
+
+Auto-save storage for document editing.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| document_id | UUID | No | FK to generated_documents (CASCADE) |
+| user_id | UUID | No | FK to users |
+| content | TEXT | No | Draft content |
+| content_json | JSONB | Yes | TipTap JSON format |
+| metadata | JSONB | Yes | Additional metadata |
+| created_at | TIMESTAMP | No | Record creation time |
+
+**Notes:**
+- Only latest draft per user per document is kept
+- Old drafts are deleted when new one is saved
+
+**Indexes:**
+- `document_drafts_document_id_idx` on document_id
+- `document_drafts_user_id_created_at_idx` on (user_id, created_at)
+
+---
+
+### template_partials
+
+Reusable template blocks (Phase 7 feature).
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
+| name | VARCHAR(100) | No | Partial name (unique per tenant) |
+| description | TEXT | Yes | Partial description |
+| content | TEXT | No | HTML content |
+| placeholders | JSONB | No | Placeholder definitions (default: []) |
+| created_by_id | UUID | No | FK to users |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Indexes:**
+- `template_partials_tenant_id_name_key` UNIQUE on (tenant_id, name)
+- `template_partials_tenant_id_idx` on tenant_id
+
+---
+
+### ai_conversations
+
+Chat history for AI assistant (Phase 7 feature).
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
+| user_id | UUID | No | FK to users |
+| context_type | VARCHAR(20) | No | 'template' or 'document' |
+| context_id | UUID | Yes | Template or Document ID |
+| messages | JSONB | No | Array of {role, content, timestamp} |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Indexes:**
+- `ai_conversations_tenant_id_user_id_idx` on (tenant_id, user_id)
+- `ai_conversations_context_type_context_id_idx` on (context_type, context_id)
+
+---
+
+## Document Generation Module Enums
+
+### DocumentTemplateCategory
+```sql
+RESOLUTION      -- Board/shareholder resolutions
+CONTRACT        -- Contracts and agreements
+LETTER          -- Official letters
+MINUTES         -- Meeting minutes
+NOTICE          -- Notices (AGM, EGM, etc.)
+CERTIFICATE     -- Certificates
+OTHER           -- Other documents
+```
+
+### GeneratedDocumentStatus
+```sql
+DRAFT           -- Work in progress, editable
+FINALIZED       -- Locked, ready for sharing/export
+ARCHIVED        -- Historical, no longer active
+```
+
+### DocumentCommentStatus
+```sql
+OPEN            -- Active comment
+RESOLVED        -- Comment addressed
+```
+
+---
+
+## Document Generation Audit Actions
+
+The following audit actions are specific to the Document Generation Module:
+
+```sql
+-- Template Operations
+DOCUMENT_TEMPLATE_CREATED
+DOCUMENT_TEMPLATE_UPDATED
+DOCUMENT_TEMPLATE_DELETED
+DOCUMENT_TEMPLATE_DUPLICATED
+
+-- Document Operations
+DOCUMENT_GENERATED
+DOCUMENT_FINALIZED
+DOCUMENT_UNFINALIZED
+DOCUMENT_ARCHIVED
+DOCUMENT_CLONED
+
+-- Sharing Operations
+SHARE_LINK_CREATED
+SHARE_LINK_REVOKED
+
+-- Letterhead Operations
+LETTERHEAD_UPDATED
+
+-- Comment Operations
+COMMENT_CREATED
+COMMENT_RESOLVED
+COMMENT_HIDDEN
+```
+
+---
+
 ## Migration Notes
 
 ### Multi-Tenancy
