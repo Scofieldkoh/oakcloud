@@ -366,6 +366,9 @@ function EditForm() {
 | `ThemeToggle` | `variant` | Theme switcher (button or dropdown variant) |
 | `TenantSelector` | `value`, `onChange`, `label`, `placeholder`, `helpText`, `variant` | Tenant dropdown for SUPER_ADMIN operations |
 | `AIModelSelector` | `value`, `onChange`, `showContextInput`, `showStandardContexts`, etc. | AI model selection with optional context input |
+| `RichTextEditor` | `value`, `onChange`, `placeholder`, `minHeight`, `autofocus` | TipTap-based rich text editor |
+| `RichTextDisplay` | `content`, `className` | XSS-safe HTML renderer (DOMPurify sanitization) |
+| `PrefetchLink` | `href`, `prefetchType`, `prefetchId`, ...LinkProps | Link with data prefetching on hover |
 
 ### Table Pagination Guidelines
 

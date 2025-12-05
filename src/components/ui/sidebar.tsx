@@ -53,7 +53,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Data Purge', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
 ];
 
-// Navigation link component
+// Navigation link component with route prefetching
 function NavLink({
   item,
   collapsed,
@@ -72,6 +72,7 @@ function NavLink({
     <Link
       key={item.name}
       href={isDisabled ? '#' : item.href}
+      prefetch={!isDisabled} // Enable Next.js route prefetching
       onClick={(e) => {
         if (isDisabled) {
           e.preventDefault();

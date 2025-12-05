@@ -212,6 +212,36 @@ export function useCompanyStats() {
   });
 }
 
+/**
+ * Prefetch a single company's data on hover for faster navigation
+ */
+export function usePrefetchCompany() {
+  const queryClient = useQueryClient();
+
+  return (id: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ['company', id],
+      queryFn: () => fetchCompany(id),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+  };
+}
+
+/**
+ * Prefetch companies list data
+ */
+export function usePrefetchCompanies() {
+  const queryClient = useQueryClient();
+
+  return (params: CompanySearchParams = {}) => {
+    queryClient.prefetchQuery({
+      queryKey: ['companies', params],
+      queryFn: () => fetchCompanies(params),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+  };
+}
+
 export function useCreateCompany() {
   const queryClient = useQueryClient();
 

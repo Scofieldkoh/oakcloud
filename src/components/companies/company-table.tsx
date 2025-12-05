@@ -6,6 +6,7 @@ import { formatDate } from '@/lib/utils';
 import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PrefetchLink } from '@/components/ui/prefetch-link';
 import type { Company, CompanyStatus, EntityType } from '@prisma/client';
 
 interface CompanyWithRelations extends Company {
@@ -240,12 +241,14 @@ export function CompanyTable({
                 </td>
               )}
               <td>
-                <Link
+                <PrefetchLink
                   href={`/companies/${company.id}`}
+                  prefetchType="company"
+                  prefetchId={company.id}
                   className="font-medium text-text-primary hover:text-oak-light transition-colors"
                 >
                   {company.name}
-                </Link>
+                </PrefetchLink>
                 {company.addresses?.[0] && (
                   <p className="text-xs text-text-tertiary mt-0.5 truncate max-w-xs">
                     {company.addresses[0].fullAddress}

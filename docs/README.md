@@ -2363,7 +2363,8 @@ src/
 │   │   ├── ai-model-selector.tsx  # AI model selection with context
 │   │   ├── stepper.tsx            # Multi-step wizard component
 │   │   ├── checkbox.tsx           # Checkbox with indeterminate state
-│   │   └── rich-text-editor.tsx   # TipTap rich text editor
+│   │   ├── rich-text-editor.tsx   # TipTap rich text editor (with DOMPurify sanitization)
+│   │   └── prefetch-link.tsx      # Link with data prefetching on hover
 │   ├── theme-provider.tsx         # Theme context provider
 │   ├── notes/
 │   │   └── internal-notes.tsx     # Multi-tab notes component
@@ -2441,6 +2442,69 @@ The application includes several optimizations for faster development and produc
 3. **Chakra UI Components** - Using Chakra primitives (Box, Input, Button) with tree-shakeable imports
 
 4. **Code Splitting** - Automatic route-based code splitting via Next.js App Router
+
+### Data Caching & Prefetching
+
+The application uses TanStack Query with optimized caching for faster navigation:
+
+1. **QueryClient Configuration** (`src/app/providers.tsx`)
+   ```typescript
+   staleTime: 5 * 60 * 1000,    // Data stays fresh for 5 minutes
+   gcTime: 30 * 60 * 1000,      // Cache retained for 30 minutes
+   refetchOnMount: false,       // Don't refetch if data is fresh
+   refetchOnWindowFocus: false, // No automatic refetch on focus
+   ```
+
+2. **Data Prefetch Hooks**
+   - `usePrefetchCompany(id)` - Prefetch single company data
+   - `usePrefetchCompanies(params)` - Prefetch company list
+   - `usePrefetchContact(id)` - Prefetch single contact data
+   - `usePrefetchContacts(params)` - Prefetch contact list
+
+3. **PrefetchLink Component** (`src/components/ui/prefetch-link.tsx`)
+
+   A drop-in replacement for Next.js `Link` that prefetches both route and data on hover:
+
+   ```tsx
+   import { PrefetchLink } from '@/components/ui/prefetch-link';
+
+   // Automatic detection from URL
+   <PrefetchLink href={`/companies/${id}`}>
+     {company.name}
+   </PrefetchLink>
+
+   // Explicit type for better performance
+   <PrefetchLink
+     href={`/companies/${id}`}
+     prefetchType="company"
+     prefetchId={id}
+   >
+     {company.name}
+   </PrefetchLink>
+   ```
+
+   **Props:**
+   | Prop | Type | Description |
+   |------|------|-------------|
+   | `href` | string | Link destination (required) |
+   | `prefetchType` | `'company' \| 'contact'` | Entity type to prefetch (auto-detected if omitted) |
+   | `prefetchId` | string | Entity ID to prefetch (extracted from href if omitted) |
+   | ...rest | LinkProps | All standard Next.js Link props |
+
+4. **Sidebar Route Prefetching** - Navigation links prefetch routes on hover
+
+### Security: HTML Sanitization
+
+User-generated HTML content (e.g., rich text notes) is sanitized using DOMPurify before rendering:
+
+```typescript
+// RichTextDisplay component automatically sanitizes content
+import { RichTextDisplay } from '@/components/ui/rich-text-editor';
+
+<RichTextDisplay content={userHtml} />
+```
+
+Allowed HTML tags: `p`, `br`, `strong`, `b`, `em`, `i`, `u`, `s`, `ul`, `ol`, `li`, `a`, `span`, `hr`, `h1-h6`
 
 ### Bundle Analysis
 

@@ -206,6 +206,36 @@ export function useContact(id: string, full = true) {
   });
 }
 
+/**
+ * Prefetch a single contact's data on hover for faster navigation
+ */
+export function usePrefetchContact() {
+  const queryClient = useQueryClient();
+
+  return (id: string, full = true) => {
+    queryClient.prefetchQuery({
+      queryKey: ['contact', id, full],
+      queryFn: () => fetchContact(id, full),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+  };
+}
+
+/**
+ * Prefetch contacts list data
+ */
+export function usePrefetchContacts() {
+  const queryClient = useQueryClient();
+
+  return (params: ContactSearchParams = {}) => {
+    queryClient.prefetchQuery({
+      queryKey: ['contacts', params],
+      queryFn: () => fetchContacts(params),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+  };
+}
+
 export function useCreateContact() {
   const queryClient = useQueryClient();
 

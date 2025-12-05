@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2 } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PrefetchLink } from '@/components/ui/prefetch-link';
 import type { Contact, ContactType, IdentificationType } from '@prisma/client';
 
 interface ContactWithCount extends Contact {
@@ -239,12 +240,14 @@ export function ContactTable({
                 </td>
               )}
               <td>
-                <Link
+                <PrefetchLink
                   href={`/contacts/${contact.id}`}
+                  prefetchType="contact"
+                  prefetchId={contact.id}
                   className="font-medium text-text-primary hover:text-oak-light transition-colors"
                 >
                   {contact.fullName}
-                </Link>
+                </PrefetchLink>
                 {contact.nationality && (
                   <p className="text-xs text-text-tertiary mt-0.5">{contact.nationality}</p>
                 )}
