@@ -14,6 +14,7 @@
 - [Shareable Documents](#shareable-documents)
 - [Integration Points](#integration-points)
 - [Security Considerations](#security-considerations)
+- [Additional Features](#additional-features)
 - [Implementation Phases](#implementation-phases)
 
 ---
@@ -275,6 +276,56 @@ AI conversation threads for template/document editing assistance (optional persi
 
 ---
 
+#### document_comments
+
+Comments and annotations on documents for review workflows.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| document_id | UUID | No | FK to generated_documents |
+| user_id | UUID | No | FK to users (commenter) |
+| content | TEXT | No | Comment content |
+| selection_start | INT | Yes | Start position of selected text |
+| selection_end | INT | Yes | End position of selected text |
+| selected_text | TEXT | Yes | Snapshot of selected text |
+| parent_id | UUID | Yes | FK to document_comments (for replies) |
+| status | VARCHAR(20) | No | OPEN, RESOLVED (default: OPEN) |
+| resolved_by_id | UUID | Yes | FK to users who resolved |
+| resolved_at | TIMESTAMP | Yes | When comment was resolved |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Indexes:**
+- `document_comments_document_id_idx` on document_id
+- `document_comments_user_id_idx` on user_id
+- `document_comments_parent_id_idx` on parent_id
+- `document_comments_status_idx` on status
+
+---
+
+#### document_drafts
+
+Auto-save storage for document drafts.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| document_id | UUID | No | FK to generated_documents |
+| user_id | UUID | No | FK to users |
+| content | TEXT | No | Draft content snapshot |
+| metadata | JSONB | Yes | Additional draft metadata |
+| created_at | TIMESTAMP | No | Auto-save timestamp |
+
+**Indexes:**
+- `document_drafts_document_id_idx` on document_id
+- `document_drafts_user_id_created_at_idx` on (user_id, created_at)
+
+**Note:** Old drafts are automatically cleaned up after the document is saved.
+
+---
+
 ### Enums
 
 ```sql
@@ -431,6 +482,53 @@ model DocumentSection {
   @@index([documentId])
   @@index([documentId, order])
   @@map("document_sections")
+}
+
+// Document Comments (for review)
+model DocumentComment {
+  id              String    @id @default(uuid())
+  documentId      String    @map("document_id")
+  userId          String    @map("user_id")
+  content         String    @db.Text
+  selectionStart  Int?      @map("selection_start")
+  selectionEnd    Int?      @map("selection_end")
+  selectedText    String?   @map("selected_text") @db.Text
+  parentId        String?   @map("parent_id")
+  status          String    @default("OPEN") @db.VarChar(20)
+  resolvedById    String?   @map("resolved_by_id")
+  resolvedAt      DateTime? @map("resolved_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  document        GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User      @relation("CommentAuthor", fields: [userId], references: [id])
+  resolvedBy      User?     @relation("CommentResolver", fields: [resolvedById], references: [id])
+  parent          DocumentComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies         DocumentComment[] @relation("CommentReplies")
+
+  @@index([documentId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([status])
+  @@map("document_comments")
+}
+
+// Document Drafts (auto-save)
+model DocumentDraft {
+  id              String   @id @default(uuid())
+  documentId      String   @map("document_id")
+  userId          String   @map("user_id")
+  content         String   @db.Text
+  metadata        Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  document        GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([documentId])
+  @@index([userId, createdAt])
+  @@map("document_drafts")
 }
 ```
 
@@ -664,6 +762,38 @@ export function buildPlaceholderContext(
   contactIds?: string[],
   customData?: Record<string, unknown>
 ): Promise<PlaceholderContext>;
+
+// Clone an existing document
+export async function cloneDocument(
+  tenantId: string,
+  userId: string,
+  documentId: string,
+  newTitle?: string
+): Promise<GeneratedDocument>;
+
+// ============================================================================
+// Auto-Save Functions
+// ============================================================================
+
+// Save draft automatically (debounced, called from UI)
+export async function saveDocumentDraft(
+  tenantId: string,
+  documentId: string,
+  userId: string,
+  content: string
+): Promise<void>;
+
+// Get latest auto-saved draft
+export async function getLatestDraft(
+  tenantId: string,
+  documentId: string,
+  userId: string
+): Promise<DocumentDraft | null>;
+
+// Clean up old drafts after document save
+export async function cleanupDrafts(
+  documentId: string
+): Promise<void>;
 ```
 
 ---
@@ -869,6 +999,70 @@ export async function deleteLetterhead(
 
 ---
 
+### Comment Service (`src/services/document-comment.service.ts`)
+
+```typescript
+// ============================================================================
+// Types
+// ============================================================================
+
+interface CreateCommentInput {
+  documentId: string;
+  content: string;
+  selectionStart?: number;
+  selectionEnd?: number;
+  selectedText?: string;
+  parentId?: string;
+}
+
+interface UpdateCommentInput {
+  content: string;
+}
+
+// ============================================================================
+// Public Functions
+// ============================================================================
+
+export async function createComment(
+  tenantId: string,
+  userId: string,
+  input: CreateCommentInput
+): Promise<DocumentComment>;
+
+export async function updateComment(
+  tenantId: string,
+  userId: string,
+  commentId: string,
+  input: UpdateCommentInput
+): Promise<DocumentComment>;
+
+export async function deleteComment(
+  tenantId: string,
+  userId: string,
+  commentId: string
+): Promise<void>;
+
+export async function resolveComment(
+  tenantId: string,
+  userId: string,
+  commentId: string
+): Promise<DocumentComment>;
+
+export async function reopenComment(
+  tenantId: string,
+  userId: string,
+  commentId: string
+): Promise<DocumentComment>;
+
+export async function getDocumentComments(
+  tenantId: string,
+  documentId: string,
+  includeResolved?: boolean
+): Promise<DocumentComment[]>;
+```
+
+---
+
 ## API Endpoints
 
 ### Template Management
@@ -882,6 +1076,7 @@ export async function deleteLetterhead(
 | DELETE | `/api/document-templates/:id` | Delete template | `document_template:delete` |
 | POST | `/api/document-templates/:id/duplicate` | Duplicate template | `document_template:create` |
 | POST | `/api/document-templates/:id/copy-to-tenant` | Copy to another tenant | SUPER_ADMIN |
+| POST | `/api/document-templates/:id/test` | Test template with sample data | `document_template:read` |
 
 ### Document Generation
 
@@ -896,6 +1091,10 @@ export async function deleteLetterhead(
 | POST | `/api/documents/:id/unfinalize` | Un-finalize for editing | `document:update` |
 | POST | `/api/documents/:id/archive` | Archive document | `document:delete` |
 | DELETE | `/api/documents/:id` | Soft delete document | `document:delete` |
+| POST | `/api/documents/:id/clone` | Clone document | `document:create` |
+| POST | `/api/documents/:id/draft` | Auto-save draft | `document:update` |
+| GET | `/api/documents/:id/draft` | Get latest draft | `document:read` |
+| GET | `/api/documents/:id/preview-pdf` | Real-time PDF preview | `document:read` |
 
 ### Export & Sharing
 
@@ -906,6 +1105,17 @@ export async function deleteLetterhead(
 | POST | `/api/documents/:id/share` | Create share link | `document:update` |
 | GET | `/api/documents/:id/shares` | List share links | `document:read` |
 | DELETE | `/api/documents/shares/:shareId` | Revoke share link | `document:update` |
+
+### Document Comments
+
+| Method | Endpoint | Description | Permission |
+|--------|----------|-------------|------------|
+| GET | `/api/documents/:id/comments` | List document comments | `document:read` |
+| POST | `/api/documents/:id/comments` | Create comment | `document:comment` |
+| PATCH | `/api/documents/comments/:commentId` | Update comment | `document:comment` |
+| DELETE | `/api/documents/comments/:commentId` | Delete comment | `document:comment` |
+| POST | `/api/documents/comments/:commentId/resolve` | Resolve comment | `document:update` |
+| POST | `/api/documents/comments/:commentId/reopen` | Reopen comment | `document:update` |
 
 ### Public Share Access (No Auth)
 
@@ -1782,6 +1992,576 @@ Guidelines:
 
 ---
 
+## Additional Features
+
+This section covers additional features that enhance the document generation experience.
+
+### 1. Real-Time PDF Preview
+
+Preview how the document will look as a PDF while editing, without needing to download.
+
+#### UI Layout
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Document Editor                                              [PDF Preview ↔] │
+├────────────────────────────────────────┬────────────────────────────────────┤
+│                                        │                                     │
+│  DIRECTORS' RESOLUTION                 │  ┌─────────────────────────────┐   │
+│                                        │  │     PDF Preview              │   │
+│  [Edit document content here]          │  │                              │   │
+│                                        │  │  ┌───────────────────────┐   │   │
+│  {{company.name}}                      │  │  │ [Letterhead]          │   │   │
+│  RESOLVED THAT...                      │  │  │                       │   │   │
+│                                        │  │  │ DIRECTORS' RESOLUTION │   │   │
+│                                        │  │  │                       │   │   │
+│                                        │  │  │ ABC Pte Ltd           │   │   │
+│                                        │  │  │ RESOLVED THAT...      │   │   │
+│                                        │  │  │                       │   │   │
+│                                        │  │  └───────────────────────┘   │   │
+│                                        │  │                              │   │
+│                                        │  │  Page 1 of 2     [◀][▶]     │   │
+│                                        │  └─────────────────────────────┘   │
+│                                        │                                     │
+│                                        │  ☑ Include Letterhead              │
+│                                        │  ☑ Show Draft Watermark            │
+└────────────────────────────────────────┴────────────────────────────────────┘
+```
+
+#### Implementation
+
+```typescript
+// Debounced PDF preview generation
+const PREVIEW_DEBOUNCE_MS = 1000;
+
+interface PDFPreviewState {
+  isLoading: boolean;
+  pdfUrl: string | null;
+  pageCount: number;
+  currentPage: number;
+  error?: string;
+}
+
+// API endpoint returns base64 PDF or URL
+// GET /api/documents/:id/preview-pdf?includeLetterhead=true&includeDraftWatermark=true
+// Returns: { pdfBase64: string, pageCount: number }
+
+// UI hook
+function usePDFPreview(documentId: string, content: string, options: PreviewOptions) {
+  // Debounced content changes trigger preview regeneration
+  // Uses react-pdf or PDF.js for rendering
+}
+```
+
+#### Features
+
+- Debounced preview generation (1 second after last edit)
+- Page navigation (previous/next)
+- Toggle letterhead on/off
+- Toggle draft watermark
+- Zoom controls
+- Loading indicator during generation
+
+---
+
+### 2. Auto-Save for Draft Documents
+
+Automatically save document changes to prevent data loss.
+
+#### Behavior
+
+- Auto-save triggers 5 seconds after user stops typing
+- Only applies to documents with `status: 'DRAFT'`
+- Visual indicator shows save status: "Saving...", "Saved ✓", "Changes not saved"
+- User can manually save with Ctrl+S / Cmd+S
+
+#### UI Indicator
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Document: Board Resolution                  ● Saving... │
+│ Document: Board Resolution                  ✓ Saved     │
+│ Document: Board Resolution                  ○ Unsaved   │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Implementation
+
+```typescript
+// Auto-save hook
+function useAutoSave(documentId: string, content: string) {
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+
+  useEffect(() => {
+    setSaveStatus('unsaved');
+    const timer = setTimeout(async () => {
+      setSaveStatus('saving');
+      await saveDraft(documentId, content);
+      setSaveStatus('saved');
+    }, 5000); // 5 second debounce
+
+    return () => clearTimeout(timer);
+  }, [content]);
+
+  return saveStatus;
+}
+```
+
+#### Draft Recovery
+
+- On page load, check for unsaved drafts
+- Prompt user: "You have unsaved changes from [timestamp]. Restore?"
+- Show diff between saved version and draft
+
+---
+
+### 3. Template Testing with Sample Data
+
+Test templates with realistic sample data before publishing.
+
+#### UI Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Template Editor                                              [Test Template] │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Template: Director Appointment Resolution                                   │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │ Test with Sample Data                                                  │ │
+│  ├────────────────────────────────────────────────────────────────────────┤ │
+│  │                                                                        │ │
+│  │  Sample Company: ○ Use default sample  ○ Select existing company       │ │
+│  │                                                                        │ │
+│  │  [Generate Sample Data]                                                │ │
+│  │                                                                        │ │
+│  │  Sample Values:                                                        │ │
+│  │  ┌────────────────────────────────────────────────────────────────┐   │ │
+│  │  │ company.name: "Sample Company Pte Ltd"               [Edit]    │   │ │
+│  │  │ company.uen: "202312345A"                            [Edit]    │   │ │
+│  │  │ directors[0].name: "John Tan"                        [Edit]    │   │ │
+│  │  │ directors[1].name: "Mary Lee"                        [Edit]    │   │ │
+│  │  └────────────────────────────────────────────────────────────────┘   │ │
+│  │                                                                        │ │
+│  │  [Preview with Sample Data]                                            │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Sample Data Generation
+
+```typescript
+// Default sample data for testing
+const DEFAULT_SAMPLE_DATA: PlaceholderContext = {
+  company: {
+    name: 'Sample Company Pte Ltd',
+    uen: '202312345A',
+    registeredAddress: '123 Sample Street, #01-01, Singapore 123456',
+    incorporationDate: new Date('2023-01-15'),
+    entityType: 'Private Limited Company',
+  },
+  directors: [
+    { name: 'John Tan Wei Ming', identificationNumber: 'S1234567A', nationality: 'Singaporean' },
+    { name: 'Mary Lee Mei Ling', identificationNumber: 'S7654321B', nationality: 'Singaporean' },
+  ],
+  shareholders: [
+    { name: 'John Tan Wei Ming', shareClass: 'Ordinary', numberOfShares: 50000, percentageHeld: 50 },
+    { name: 'Mary Lee Mei Ling', shareClass: 'Ordinary', numberOfShares: 50000, percentageHeld: 50 },
+  ],
+  customData: {
+    resolutionNumber: 'DR-2024-001',
+    effectiveDate: new Date(),
+  },
+  currentDate: new Date(),
+};
+
+// API: POST /api/document-templates/:id/test
+// Body: { sampleData?: Partial<PlaceholderContext>, companyId?: string }
+// Returns: { html: string, unresolvedPlaceholders: string[] }
+```
+
+---
+
+### 4. Draft Watermark on Non-Finalized PDFs
+
+Add a diagonal "DRAFT" watermark to PDFs of non-finalized documents.
+
+#### Visual
+
+```
+┌───────────────────────────────────────┐
+│                                       │
+│     D  R  A  F  T                    │
+│        R  A  F  T                    │
+│           A  F  T                    │
+│   ┌─────────────────────────────┐    │
+│   │                             │    │
+│   │  Document Content           │    │
+│   │                             │    │
+│   │  This is a draft...         │    │
+│   │                             │    │
+│   └─────────────────────────────┘    │
+│              F  T                    │
+│                 T                    │
+│                                       │
+└───────────────────────────────────────┘
+```
+
+#### Implementation
+
+```typescript
+interface WatermarkOptions {
+  text: string;           // Default: "DRAFT"
+  color: string;          // Default: "rgba(128, 128, 128, 0.2)"
+  fontSize: number;       // Default: 72
+  rotation: number;       // Default: -45 degrees
+  opacity: number;        // Default: 0.2
+}
+
+// Applied during PDF generation
+async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
+  const document = await getDocument(params.documentId);
+
+  // Add watermark for non-finalized documents
+  const includeWatermark = document.status !== 'FINALIZED';
+
+  // ... generate PDF with watermark overlay
+}
+```
+
+#### Behavior
+
+- Watermark appears on ALL pages
+- Diagonal text: "DRAFT"
+- Semi-transparent (20% opacity)
+- Automatically removed when document is finalized
+- Can be toggled in preview mode
+
+---
+
+### 5. Document Cloning
+
+Duplicate an existing document to create a new version or similar document.
+
+#### UI
+
+```
+┌─────────────────────────────────────────┐
+│ Document Actions                    [⋮] │
+├─────────────────────────────────────────┤
+│ ▸ Edit                                  │
+│ ▸ Export PDF                            │
+│ ▸ Share                                 │
+│ ▸ Clone Document ←                      │
+│ ▸ Archive                               │
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│ Clone Document                          │
+├─────────────────────────────────────────┤
+│                                         │
+│ Source: Board Resolution - 2024-001     │
+│                                         │
+│ New Title: [Board Resolution - Copy   ] │
+│                                         │
+│ ☑ Copy content                          │
+│ ☑ Reset to DRAFT status                 │
+│ ☐ Copy comments (if any)                │
+│                                         │
+│ [Cancel]                    [Clone]     │
+└─────────────────────────────────────────┘
+```
+
+#### API
+
+```typescript
+// POST /api/documents/:id/clone
+// Body: { newTitle?: string, copyComments?: boolean }
+// Returns: GeneratedDocument (the cloned document)
+
+async function cloneDocument(
+  tenantId: string,
+  userId: string,
+  documentId: string,
+  newTitle?: string,
+  copyComments?: boolean
+): Promise<GeneratedDocument> {
+  const source = await getDocument(tenantId, documentId);
+
+  return prisma.generatedDocument.create({
+    data: {
+      tenantId,
+      templateId: source.templateId,
+      templateVersion: source.templateVersion,
+      companyId: source.companyId,
+      title: newTitle || `${source.title} (Copy)`,
+      content: source.content,
+      contentJson: source.contentJson,
+      status: 'DRAFT',
+      useLetterhead: source.useLetterhead,
+      shareExpiryHours: source.shareExpiryHours,
+      metadata: source.metadata,
+      createdById: userId,
+    },
+  });
+}
+```
+
+---
+
+### 6. Template Partials (Reusable Blocks)
+
+Create reusable template fragments that can be included in multiple templates.
+
+#### Partial Definition
+
+```handlebars
+{{!-- Partial: signing-block-directors --}}
+{{#partial "signing-block-directors"}}
+<div class="signing-section">
+  <h3>SIGNED BY THE DIRECTORS:</h3>
+  {{#each directors}}
+  <div class="signature-block">
+    <div class="signature-line">_________________________</div>
+    <div class="signatory-name">{{name}}</div>
+    <div class="signatory-role">Director</div>
+    <div class="signature-date">Date: _______________</div>
+  </div>
+  {{/each}}
+</div>
+{{/partial}}
+```
+
+#### Using Partials
+
+```handlebars
+{{!-- In template content --}}
+<h1>DIRECTORS' RESOLUTION IN WRITING</h1>
+
+<p>The undersigned, being all the directors of {{company.name}}...</p>
+
+{{#each resolutions}}
+<section>
+  <h2>Resolution {{@number}}: {{title}}</h2>
+  <p>{{content}}</p>
+</section>
+{{/each}}
+
+{{!-- Include the signing block partial --}}
+{{> signing-block-directors}}
+```
+
+#### Database Schema Addition
+
+```sql
+-- Template partials table
+CREATE TABLE template_partials (
+  id UUID PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  content TEXT NOT NULL,
+  placeholders JSONB DEFAULT '[]',
+  created_by_id UUID NOT NULL REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  deleted_at TIMESTAMP,
+
+  UNIQUE(tenant_id, name)
+);
+```
+
+#### Prisma Model
+
+```prisma
+model TemplatePartial {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String   @db.VarChar(100)
+  description   String?  @db.Text
+  content       String   @db.Text
+  placeholders  Json     @default("[]")
+  createdById   String   @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  createdBy     User     @relation(fields: [createdById], references: [id])
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("template_partials")
+}
+```
+
+#### UI for Managing Partials
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Template Partials                                          [+ New Partial]  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│ ┌───────────────────────────────────────────────────────────────────────┐   │
+│ │ signing-block-directors                                               │   │
+│ │ Standard director signing section with signature lines                │   │
+│ │ Used in: 5 templates                                      [Edit] [⋮]  │   │
+│ └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│ ┌───────────────────────────────────────────────────────────────────────┐   │
+│ │ company-header                                                         │   │
+│ │ Company name, UEN, and registered address header                       │   │
+│ │ Used in: 12 templates                                     [Edit] [⋮]  │   │
+│ └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 7. Document Comments & Annotations
+
+Add comments and annotations to documents for review workflows.
+
+#### UI Layout
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Document: Board Resolution                              [Comments (3)] [≡]  │
+├──────────────────────────────────────────────────┬──────────────────────────┤
+│                                                  │ Comments                 │
+│  DIRECTORS' RESOLUTION IN WRITING                │ ┌────────────────────┐  │
+│                                                  │ │ John Tan (2 hrs)   │  │
+│  The undersigned, being all the directors of     │ │ "Should this be    │  │
+│  [ABC Pte Ltd]← highlighted text with comment    │ │ the full legal     │  │
+│                                                  │ │ name?"             │  │
+│  RESOLVED THAT:                                  │ │                    │  │
+│                                                  │ │ [Reply] [Resolve]  │  │
+│  1. The appointment of [Mary Lee] as a director  │ └────────────────────┘  │
+│     of the Company be and is hereby approved...  │                         │
+│                                                  │ ┌────────────────────┐  │
+│                                                  │ │ Jane Wong (1 hr)   │  │
+│                                                  │ │ "Please check      │  │
+│                                                  │ │ NRIC number"       │  │
+│                                                  │ │ ✓ Resolved         │  │
+│                                                  │ └────────────────────┘  │
+│                                                  │                         │
+│                                                  │ + Add Comment           │
+│                                                  │                         │
+└──────────────────────────────────────────────────┴──────────────────────────┘
+```
+
+#### Comment Features
+
+| Feature | Description |
+|---------|-------------|
+| **Text Selection** | Comment on specific highlighted text |
+| **General Comments** | Comments without text selection |
+| **Replies** | Thread replies to comments |
+| **Resolve/Reopen** | Mark comments as resolved |
+| **Mentions** | @mention users in comments (future) |
+| **Notifications** | Email notification on new comments (future) |
+
+#### Comment Component
+
+```tsx
+interface CommentPanelProps {
+  documentId: string;
+  comments: DocumentComment[];
+  selectedText?: string;
+  onAddComment: (content: string, selection?: TextSelection) => void;
+  onResolve: (commentId: string) => void;
+  onReply: (parentId: string, content: string) => void;
+}
+
+// Highlight annotations in editor
+function highlightCommentedText(
+  editor: TipTapEditor,
+  comments: DocumentComment[]
+) {
+  comments.forEach(comment => {
+    if (comment.selectionStart && comment.selectionEnd) {
+      editor.addMark('comment', {
+        commentId: comment.id,
+        from: comment.selectionStart,
+        to: comment.selectionEnd,
+      });
+    }
+  });
+}
+```
+
+---
+
+### 8. Undo/Redo in Editor
+
+Full undo/redo support in the document editor.
+
+#### Features
+
+- **Unlimited History**: Store all changes during editing session
+- **Keyboard Shortcuts**: Ctrl+Z (Undo), Ctrl+Shift+Z (Redo)
+- **Toolbar Buttons**: Visual undo/redo buttons with state indication
+- **History Panel** (optional): View recent changes
+
+#### TipTap Configuration
+
+```typescript
+import { useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { History } from '@tiptap/extension-history';
+
+const editor = useEditor({
+  extensions: [
+    StarterKit.configure({
+      history: {
+        depth: 100,         // Max undo steps
+        newGroupDelay: 500, // Group rapid changes
+      },
+    }),
+  ],
+  content: documentContent,
+});
+
+// Undo/Redo controls
+function EditorToolbar({ editor }) {
+  return (
+    <div className="toolbar">
+      <button
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!editor.can().undo()}
+        title="Undo (Ctrl+Z)"
+      >
+        ↶ Undo
+      </button>
+      <button
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!editor.can().redo()}
+        title="Redo (Ctrl+Shift+Z)"
+      >
+        ↷ Redo
+      </button>
+    </div>
+  );
+}
+```
+
+#### UI
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ [↶ Undo] [↷ Redo] │ B I U │ H1 H2 H3 │ • • │ ⊞ ⊟ │ {{}} │ --- │ AI     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Document content...                                                         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Implementation Phases
 
 ### Phase 1: Core Infrastructure (Foundation)
@@ -1790,20 +2570,26 @@ Guidelines:
 - [ ] Template service (CRUD)
 - [ ] Placeholder resolver (simple + block helpers)
 - [ ] Basic document generator
+- [ ] Template testing with sample data
+- [ ] Default sample data generation
 
 ### Phase 2: Document Generation
 
 - [ ] Generate document from template
 - [ ] Preview functionality
-- [ ] Document editor (TipTap)
+- [ ] Document editor (TipTap) with undo/redo
 - [ ] Section detection
 - [ ] Pre-generation validation service
 - [ ] Validation UI panel
+- [ ] Auto-save for draft documents
+- [ ] Draft recovery prompt
+- [ ] Document cloning feature
 
 ### Phase 3: Export & Sharing
 
 - [ ] PDF export (Puppeteer)
 - [ ] Letterhead management
+- [ ] Draft watermark for non-finalized documents
 - [ ] Share link creation
 - [ ] Public share page (unbranded)
 
@@ -1814,6 +2600,9 @@ Guidelines:
 - [ ] Section navigation sidebar
 - [ ] Page break indicators
 - [ ] Signing block rendering
+- [ ] Real-time PDF preview panel
+- [ ] PDF preview page navigation
+- [ ] Letterhead toggle in preview
 
 ### Phase 5: AI Integration
 
@@ -1823,7 +2612,24 @@ Guidelines:
 - [ ] Insert AI content to editor
 - [ ] Conversation persistence (optional)
 
-### Phase 6: Integration Readiness
+### Phase 6: Comments & Review
+
+- [ ] Document comments database schema
+- [ ] Comment service (CRUD, resolve, reply)
+- [ ] Comment panel UI
+- [ ] Text selection highlighting
+- [ ] Comment thread display
+- [ ] Resolve/reopen workflow
+
+### Phase 7: Template Partials (Future Enhancement)
+
+- [ ] Template partials database schema
+- [ ] Partial service (CRUD)
+- [ ] Partial inclusion syntax (`{{> partial-name}}`)
+- [ ] Partial management UI
+- [ ] Usage tracking (which templates use which partials)
+
+### Phase 8: Integration Readiness
 
 - [ ] Clean interface exports (IDocumentGenerator, etc.)
 - [ ] DocumentStepResult for workflow
@@ -1859,12 +2665,14 @@ const COMPANY_ADMIN_PERMISSIONS = [
   'generated_document:update',
   'generated_document:delete',
   'generated_document:export',
+  'generated_document:comment',
 ];
 
 const COMPANY_USER_PERMISSIONS = [
   // ...existing
   'document_template:read',
   'generated_document:read',
+  'generated_document:comment',
 ];
 ```
 
