@@ -418,6 +418,7 @@ export default function UploadBizFilePage() {
             showStandardContexts
             selectedStandardContexts={selectedStandardContexts}
             onStandardContextsChange={setSelectedStandardContexts}
+            tenantId={activeTenantId || undefined}
           />
 
           <div className="flex items-center justify-end gap-3">

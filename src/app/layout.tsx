@@ -8,6 +8,10 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Oakcloud - Practice Management System',
   description: 'Internal management system for accounting practices',
+  icons: {
+    icon: '/falcon.svg',
+    apple: '/falcon.svg',
+  },
 };
 
 export default function RootLayout({

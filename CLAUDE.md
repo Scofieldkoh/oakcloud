@@ -143,7 +143,21 @@ All API routes under `src/app/api/`:
 ### Environment Variables
 
 Required: `DATABASE_URL`, `JWT_SECRET`
-Optional: `OPENAI_API_KEY` (for BizFile extraction)
+Optional: `OPENAI_API_KEY` (for BizFile extraction), `LOG_LEVEL` (silent|error|warn|info|debug|trace)
+
+### Logging
+
+Configurable via `LOG_LEVEL` environment variable:
+- `debug` (default in development) - standard logging, no SQL queries
+- `trace` - includes all SQL queries (verbose)
+- `info` (default in production) - minimal logging
+- `error` / `warn` / `silent` - progressively quieter
+
+```typescript
+import { createLogger } from '@/lib/logger';
+const log = createLogger('module-name');
+log.error('message'); log.warn('message'); log.info('message'); log.debug('message'); log.trace('message');
+```
 
 ### Default Test Credentials
 

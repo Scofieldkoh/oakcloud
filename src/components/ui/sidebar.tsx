@@ -19,6 +19,7 @@ import {
   Building,
   UserCog,
   Trash2,
+  Plug,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -47,6 +48,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Tenants', href: '/admin/tenants', icon: Building, superAdminOnly: true },
   { name: 'Users', href: '/admin/users', icon: UserCog, adminOnly: true },
   { name: 'Roles', href: '/admin/roles', icon: Shield, adminOnly: true },
+  { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: Activity, adminOnly: true },
   { name: 'Data Purge', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
 ];
@@ -270,17 +272,15 @@ function DesktopSidebar() {
         {sidebarCollapsed ? (
           <button
             onClick={toggleSidebar}
-            className="w-7 h-7 rounded-md bg-oak-primary flex items-center justify-center hover:bg-oak-hover transition-colors"
+            className="w-7 h-7 rounded-md flex items-center justify-center hover:opacity-80 transition-opacity"
             aria-label="Expand sidebar"
           >
-            <ChevronRight className="w-4 h-4 text-white" />
+            <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem]" />
           </button>
         ) : (
           <>
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-md bg-oak-primary flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-semibold text-sm">O</span>
-              </div>
+              <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem] flex-shrink-0" />
               <span className="text-sm font-semibold text-text-primary">Oakcloud</span>
             </Link>
             <button
@@ -315,9 +315,7 @@ function MobileHeader() {
           <Menu className="w-5 h-5" />
         </button>
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-oak-primary flex items-center justify-center">
-            <span className="text-white font-semibold text-sm">O</span>
-          </div>
+          <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem]" />
           <span className="text-sm font-semibold text-text-primary">Oakcloud</span>
         </Link>
         <button
@@ -374,9 +372,7 @@ function MobileDrawer() {
         {/* Header */}
         <div className="h-12 flex items-center justify-between px-3 border-b border-border-primary">
           <Link href="/" className="flex items-center gap-2.5" onClick={() => setMobileSidebarOpen(false)}>
-            <div className="w-7 h-7 rounded-md bg-oak-primary flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">O</span>
-            </div>
+            <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem]" />
             <span className="text-sm font-semibold text-text-primary">Oakcloud</span>
           </Link>
           <button

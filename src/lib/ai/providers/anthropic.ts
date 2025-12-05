@@ -4,13 +4,22 @@
  * Implementation for Anthropic Claude models.
  */
 
-import type { AIRequestOptions, AIResponse } from '../types';
+import type { AIRequestOptions, AIResponse, AICredentials } from '../types';
 import { getModelConfig } from '../models';
 
 // Lazy load Anthropic SDK to reduce initial bundle size
 let anthropicInstance: import('@anthropic-ai/sdk').default | null = null;
 
-async function getAnthropic() {
+async function getAnthropic(credentials?: AICredentials['anthropic']) {
+  // If custom credentials provided, create a new instance
+  if (credentials?.apiKey) {
+    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    return new Anthropic({
+      apiKey: credentials.apiKey,
+    });
+  }
+
+  // Fall back to singleton with env var
   if (!anthropicInstance) {
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
     anthropicInstance = new Anthropic({
@@ -21,7 +30,7 @@ async function getAnthropic() {
 }
 
 /**
- * Check if Anthropic is configured
+ * Check if Anthropic is configured (via env var)
  */
 export function isAnthropicConfigured(): boolean {
   return !!process.env.ANTHROPIC_API_KEY;
@@ -32,9 +41,15 @@ type AnthropicImageMediaType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image
 
 /**
  * Call Anthropic API (supports vision)
+ * @param options - Request options
+ * @param credentials - Optional custom credentials (from connector)
  */
-export async function callAnthropic(options: AIRequestOptions): Promise<AIResponse> {
-  if (!isAnthropicConfigured()) {
+export async function callAnthropic(
+  options: AIRequestOptions,
+  credentials?: AICredentials['anthropic']
+): Promise<AIResponse> {
+  // Allow either env var or provided credentials
+  if (!isAnthropicConfigured() && !credentials?.apiKey) {
     throw new Error('Anthropic API key not configured');
   }
 
@@ -43,7 +58,7 @@ export async function callAnthropic(options: AIRequestOptions): Promise<AIRespon
     throw new Error(`Model ${options.model} is not an Anthropic model`);
   }
 
-  const anthropic = await getAnthropic();
+  const anthropic = await getAnthropic(credentials);
 
   // Build system prompt with JSON mode instruction if needed
   let systemPrompt = options.systemPrompt || '';

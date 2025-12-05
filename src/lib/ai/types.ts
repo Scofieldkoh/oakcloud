@@ -80,3 +80,17 @@ export interface ModelAvailability extends AIModelConfig {
   available: boolean;
   providerConfigured: boolean;
 }
+
+// Credentials for AI providers (from connectors)
+export interface AICredentials {
+  openai: {
+    apiKey: string;
+    organization?: string;
+  };
+  anthropic: {
+    apiKey: string;
+  };
+  google: {
+    apiKey: string;
+  };
+}

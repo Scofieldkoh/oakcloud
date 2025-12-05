@@ -40,7 +40,15 @@
       "WebSearch",
       "WebFetch(domain:ai.google.dev)",
       "WebFetch(domain:platform.openai.com)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(node -e:*)",
+      "Bash(npx prisma studio)",
+      "Bash(node check-connectors.js:*)",
+      "Bash(node test-resolve.js:*)",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\check-connectors.js\")",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\test-resolve.js\")",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\check-connector.js\")",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\fix-connector.js\")"
     ],
     "deny": [],
     "ask": []

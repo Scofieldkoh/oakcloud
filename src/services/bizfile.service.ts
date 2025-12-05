@@ -2,7 +2,13 @@ import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { normalizeName, normalizeCompanyName, normalizeAddress } from '@/lib/utils';
 import { findOrCreateContact, createCompanyContactRelation } from './contact.service';
-import { callAI, getBestAvailableModel, getModelConfig } from '@/lib/ai';
+import {
+  callAI,
+  callAIWithConnector,
+  getBestAvailableModel,
+  getBestAvailableModelForTenant,
+  getModelConfig,
+} from '@/lib/ai';
 import type { AIModel, AIImageInput } from '@/lib/ai';
 import type { EntityType, CompanyStatus, OfficerRole, ContactType, IdentificationType } from '@prisma/client';
 
@@ -232,6 +238,14 @@ export interface BizFileExtractionOptions {
   modelId?: AIModel;
   /** Additional context to provide to the AI for better extraction */
   additionalContext?: string;
+  /** Tenant ID for connector-aware AI resolution (uses tenant's configured AI provider) */
+  tenantId?: string | null;
+  /** User ID who triggered the extraction (for usage tracking) */
+  userId?: string;
+  /** Company ID being extracted (for usage tracking) */
+  companyId?: string;
+  /** Document ID being processed (for usage tracking) */
+  documentId?: string;
 }
 
 /**
@@ -324,21 +338,34 @@ function parseExtractionResponse(content: string): ExtractedBizFileData {
  * allowing the model to visually analyze the document for better extraction accuracy.
  * Supports PDF, PNG, JPG, and other image formats.
  *
+ * When a tenantId is provided, uses connector-aware AI resolution:
+ * 1. First looks for tenant-specific AI connector
+ * 2. Falls back to system connector (if tenant has access)
+ * 3. Falls back to environment variables
+ *
  * @param fileInput - The base64-encoded file with MIME type
- * @param options - Optional extraction options including model selection and additional context
+ * @param options - Optional extraction options including model selection, context, and tenant ID
  * @returns Extracted data with model metadata
  */
 export async function extractBizFileWithVision(
   fileInput: BizFileVisionInput,
   options?: BizFileExtractionOptions
 ): Promise<BizFileExtractionResult> {
-  // Determine which model to use
-  const modelId = options?.modelId || getBestAvailableModel();
+  // Determine which model to use based on tenant context
+  let modelId: AIModel | null;
+
+  if (options?.tenantId !== undefined) {
+    // Use connector-aware model resolution
+    modelId = options.modelId || (await getBestAvailableModelForTenant(options.tenantId));
+  } else {
+    // Use environment-based model resolution
+    modelId = options?.modelId || getBestAvailableModel();
+  }
 
   if (!modelId) {
     throw new Error(
-      'No AI provider configured. Please set at least one API key: ' +
-        'OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY'
+      'No AI provider configured. Please configure an AI connector for this tenant ' +
+        'or set one of: OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY'
     );
   }
 
@@ -346,6 +373,9 @@ export async function extractBizFileWithVision(
 
   console.log(`[BizFile] Using AI vision model: ${modelConfig.name} (${modelConfig.provider})`);
   console.log(`[BizFile] File type: ${fileInput.mimeType}, size: ${Math.round(fileInput.base64.length * 0.75 / 1024)}KB`);
+  if (options?.tenantId !== undefined) {
+    console.log(`[BizFile] Using connector-aware AI for tenant: ${options.tenantId || 'system'}`);
+  }
 
   // Prepare the image input for the AI
   const images: AIImageInput[] = [
@@ -358,15 +388,37 @@ export async function extractBizFileWithVision(
   // Build user prompt with optional context
   const userPrompt = buildUserPrompt(options?.additionalContext);
 
-  // Call the AI service with vision
-  const response = await callAI({
-    model: modelId,
-    systemPrompt: EXTRACTION_SYSTEM_PROMPT,
-    userPrompt,
-    images,
-    jsonMode: true,
-    temperature: 0.1,
-  });
+  // Call the appropriate AI service (connector-aware or direct)
+  let response;
+  if (options?.tenantId !== undefined) {
+    // Use connector-aware AI call
+    response = await callAIWithConnector({
+      model: modelId,
+      systemPrompt: EXTRACTION_SYSTEM_PROMPT,
+      userPrompt,
+      images,
+      jsonMode: true,
+      temperature: 0.1,
+      tenantId: options.tenantId,
+      userId: options.userId,
+      operation: 'bizfile_extraction',
+      usageMetadata: {
+        companyId: options.companyId,
+        documentId: options.documentId,
+        extractionType: 'vision',
+      },
+    });
+  } else {
+    // Use direct AI call (environment variables)
+    response = await callAI({
+      model: modelId,
+      systemPrompt: EXTRACTION_SYSTEM_PROMPT,
+      userPrompt,
+      images,
+      jsonMode: true,
+      temperature: 0.1,
+    });
+  }
 
   // Parse and validate the response
   const parsed = parseExtractionResponse(response.content);
@@ -384,20 +436,28 @@ export async function extractBizFileWithVision(
  *
  * @deprecated Use extractBizFileWithVision for better accuracy
  * @param pdfText - The text content extracted from the BizFile PDF
- * @param options - Optional extraction options including model selection
+ * @param options - Optional extraction options including model selection and tenant ID
  * @returns Extracted data with model metadata
  */
 export async function extractBizFileData(
   pdfText: string,
   options?: BizFileExtractionOptions
 ): Promise<BizFileExtractionResult> {
-  // Determine which model to use
-  const modelId = options?.modelId || getBestAvailableModel();
+  // Determine which model to use based on tenant context
+  let modelId: AIModel | null;
+
+  if (options?.tenantId !== undefined) {
+    // Use connector-aware model resolution
+    modelId = options.modelId || (await getBestAvailableModelForTenant(options.tenantId));
+  } else {
+    // Use environment-based model resolution
+    modelId = options?.modelId || getBestAvailableModel();
+  }
 
   if (!modelId) {
     throw new Error(
-      'No AI provider configured. Please set at least one API key: ' +
-        'OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY'
+      'No AI provider configured. Please configure an AI connector for this tenant ' +
+        'or set one of: OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY'
     );
   }
 
@@ -409,14 +469,35 @@ export async function extractBizFileData(
   const basePrompt = buildUserPrompt(options?.additionalContext);
   const userPrompt = `${basePrompt}\n\nDocument text content:\n\n${pdfText}`;
 
-  // Call the AI service
-  const response = await callAI({
-    model: modelId,
-    systemPrompt: EXTRACTION_SYSTEM_PROMPT,
-    userPrompt,
-    jsonMode: true,
-    temperature: 0.1,
-  });
+  // Call the appropriate AI service (connector-aware or direct)
+  let response;
+  if (options?.tenantId !== undefined) {
+    // Use connector-aware AI call
+    response = await callAIWithConnector({
+      model: modelId,
+      systemPrompt: EXTRACTION_SYSTEM_PROMPT,
+      userPrompt,
+      jsonMode: true,
+      temperature: 0.1,
+      tenantId: options.tenantId,
+      userId: options.userId,
+      operation: 'bizfile_extraction',
+      usageMetadata: {
+        companyId: options.companyId,
+        documentId: options.documentId,
+        extractionType: 'text',
+      },
+    });
+  } else {
+    // Use direct AI call (environment variables)
+    response = await callAI({
+      model: modelId,
+      systemPrompt: EXTRACTION_SYSTEM_PROMPT,
+      userPrompt,
+      jsonMode: true,
+      temperature: 0.1,
+    });
+  }
 
   // Parse and validate the response
   const parsed = parseExtractionResponse(response.content);

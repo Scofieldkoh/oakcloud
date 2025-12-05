@@ -69,8 +69,8 @@ function ChangePasswordContent() {
     return (
       <div className="min-h-screen bg-background-primary flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-oak-primary/20 flex items-center justify-center animate-pulse">
-            <span className="text-lg font-semibold text-oak-light">O</span>
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center animate-pulse">
+            <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
           </div>
           <p className="text-text-tertiary text-sm">Loading...</p>
         </div>
@@ -84,9 +84,7 @@ function ChangePasswordContent() {
         {/* Logo */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-lg bg-oak-primary/20 flex items-center justify-center">
-              <span className="text-lg font-semibold text-oak-light">O</span>
-            </div>
+            <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
           </Link>
         </div>
 
@@ -202,8 +200,8 @@ function LoadingFallback() {
   return (
     <div className="min-h-screen bg-background-primary flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-oak-primary/20 flex items-center justify-center animate-pulse">
-          <span className="text-lg font-semibold text-oak-light">O</span>
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center animate-pulse">
+          <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
         </div>
         <p className="text-text-tertiary text-sm">Loading...</p>
       </div>

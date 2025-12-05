@@ -75,6 +75,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   );
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // During SSR, render without Chakra to prevent hydration mismatch
+  // Chakra's global styles cause server/client mismatch in Next.js App Router
+  if (!mounted) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

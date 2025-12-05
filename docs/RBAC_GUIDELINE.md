@@ -314,6 +314,7 @@ if (companyIds && companyIds.length > 0) {
 | `officer` | Company officers |
 | `shareholder` | Shareholders |
 | `audit_log` | Audit logs |
+| `connector` | External service connectors (AI providers, storage) |
 
 **Actions:**
 
@@ -876,6 +877,7 @@ const isCompanyScoped = !session.isSuperAdmin && !session.isTenantAdmin && !sess
 | Auth | LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGED |
 | Access | PERMISSION_GRANTED, PERMISSION_REVOKED, ROLE_CHANGED |
 | Tenant | TENANT_CREATED, TENANT_UPDATED, USER_INVITED, USER_REMOVED |
+| Connectors | CONNECTOR_CREATED, CONNECTOR_UPDATED, CONNECTOR_DELETED, CONNECTOR_TESTED, CONNECTOR_ENABLED, CONNECTOR_DISABLED, CONNECTOR_ACCESS_UPDATED |
 | Bulk | BULK_UPDATE, BULK_DELETE (creates individual audit logs per record) |
 
 ---

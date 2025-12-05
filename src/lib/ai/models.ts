@@ -72,7 +72,6 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
     outputPricePerMillion: 10.0,
     supportsJson: true,
     supportsVision: true,
-    isDefault: true,
   },
   'gemini-2.5-flash': {
     id: 'gemini-2.5-flash',

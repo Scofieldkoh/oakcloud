@@ -34,8 +34,8 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen bg-background-primary flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-oak-primary/20 flex items-center justify-center animate-pulse">
-            <span className="text-lg font-semibold text-oak-light">O</span>
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center animate-pulse">
+            <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
           </div>
           <p className="text-text-tertiary text-sm">Loading...</p>
         </div>
@@ -56,9 +56,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center">
-              <span className="text-base font-semibold text-white">O</span>
-            </div>
+            <img src="/falcon.svg" alt="Oakcloud" className="w-[4.5rem] h-[4.5rem]" />
             <span className="text-base font-semibold text-white">Oakcloud</span>
           </Link>
         </div>
@@ -98,9 +96,7 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center">
             <Link href="/" className="inline-flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-lg bg-oak-primary/20 flex items-center justify-center">
-                <span className="text-lg font-semibold text-oak-light">O</span>
-              </div>
+              <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
             </Link>
           </div>
 

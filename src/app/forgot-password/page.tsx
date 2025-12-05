@@ -51,9 +51,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-lg bg-oak-primary/20 flex items-center justify-center">
-              <span className="text-lg font-semibold text-oak-light">O</span>
-            </div>
+            <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
           </Link>
         </div>
 

@@ -4,13 +4,24 @@
  * Implementation for OpenAI GPT models.
  */
 
-import type { AIRequestOptions, AIResponse } from '../types';
+import type { AIRequestOptions, AIResponse, AICredentials } from '../types';
 import { getModelConfig } from '../models';
 
 // Lazy load OpenAI SDK to reduce initial bundle size
 let openaiInstance: import('openai').default | null = null;
 
-async function getOpenAI() {
+async function getOpenAI(credentials?: AICredentials['openai']) {
+  // If custom credentials provided, create a new instance
+  if (credentials?.apiKey) {
+    const OpenAI = (await import('openai')).default;
+    return new OpenAI({
+      apiKey: credentials.apiKey,
+      // Only pass organization if it has a non-empty value
+      ...(credentials.organization ? { organization: credentials.organization } : {}),
+    });
+  }
+
+  // Fall back to singleton with env var
   if (!openaiInstance) {
     const OpenAI = (await import('openai')).default;
     openaiInstance = new OpenAI({
@@ -21,7 +32,7 @@ async function getOpenAI() {
 }
 
 /**
- * Check if OpenAI is configured
+ * Check if OpenAI is configured (via env var)
  */
 export function isOpenAIConfigured(): boolean {
   return !!process.env.OPENAI_API_KEY;
@@ -30,9 +41,15 @@ export function isOpenAIConfigured(): boolean {
 
 /**
  * Call OpenAI API (supports vision)
+ * @param options - Request options
+ * @param credentials - Optional custom credentials (from connector)
  */
-export async function callOpenAI(options: AIRequestOptions): Promise<AIResponse> {
-  if (!isOpenAIConfigured()) {
+export async function callOpenAI(
+  options: AIRequestOptions,
+  credentials?: AICredentials['openai']
+): Promise<AIResponse> {
+  // Allow either env var or provided credentials
+  if (!isOpenAIConfigured() && !credentials?.apiKey) {
     throw new Error('OpenAI API key not configured');
   }
 
@@ -41,7 +58,7 @@ export async function callOpenAI(options: AIRequestOptions): Promise<AIResponse>
     throw new Error(`Model ${options.model} is not an OpenAI model`);
   }
 
-  const openai = await getOpenAI();
+  const openai = await getOpenAI(credentials);
 
   // We use 'any' for messages to avoid complex SDK type gymnastics while ensuring runtime correctness
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -85,7 +85,7 @@ export async function POST(
       const fileBuffer = await readFile(document.filePath);
       const base64Data = fileBuffer.toString('base64');
 
-      // Extract data using AI vision
+      // Extract data using AI vision (connector-aware for tenant)
       const extractionResult = await extractBizFileWithVision(
         {
           base64: base64Data,
@@ -94,6 +94,7 @@ export async function POST(
         {
           modelId,
           additionalContext,
+          tenantId: document.tenantId, // Use tenant's configured AI connector
         }
       );
 

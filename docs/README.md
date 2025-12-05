@@ -41,8 +41,8 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 8. ✅ **Password Management** - Secure reset flow, force change on first login
 9. ✅ **Data Purge** - Permanent deletion of soft-deleted records (SUPER_ADMIN)
 10. ✅ **Email Notifications** - SMTP-based transactional emails (invitations, password reset)
-11. 🔜 **Module Marketplace** - Browse and install modules
-12. 🔜 **Connectors Hub** - External service integrations
+11. ✅ **Connectors Hub** - External service integrations (AI providers, storage)
+12. 🔜 **Module Marketplace** - Browse and install modules
 13. 🔜 **Module Linking** - Configure module relationships
 14. 🔜 **SuperAdmin Dashboard** - System administration
 
@@ -1637,6 +1637,168 @@ Response:
 }
 ```
 
+### Connectors (SUPER_ADMIN & TENANT_ADMIN)
+
+The Connectors Hub manages external service integrations with a two-level hierarchy:
+- **System connectors** (`tenantId = null`) - SUPER_ADMIN only, available as fallback for all tenants
+- **Tenant connectors** - TENANT_ADMIN manages their own, overrides system connectors
+
+#### List Connectors
+```
+GET /api/connectors
+```
+
+Query Parameters:
+- `tenantId` - Filter by tenant (SUPER_ADMIN can view any)
+- `type` - Filter by type (AI_PROVIDER, STORAGE)
+- `provider` - Filter by provider (OPENAI, ANTHROPIC, GOOGLE, ONEDRIVE)
+- `isEnabled` - Filter by enabled status
+- `includeSystem` - Include system connectors (default: true)
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20)
+
+#### Create Connector
+```
+POST /api/connectors
+Content-Type: application/json
+
+{
+  "tenantId": null,  // null = system connector (SUPER_ADMIN only)
+  "name": "OpenAI Production",
+  "type": "AI_PROVIDER",
+  "provider": "OPENAI",
+  "credentials": {
+    "apiKey": "sk-...",
+    "organization": "org-..."  // Optional
+  },
+  "isEnabled": true,
+  "isDefault": true
+}
+```
+
+#### Get Connector
+```
+GET /api/connectors/:id
+```
+
+Returns connector details with masked credentials.
+
+#### Update Connector
+```
+PATCH /api/connectors/:id
+Content-Type: application/json
+
+{
+  "name": "Updated Name",
+  "credentials": { "apiKey": "sk-new-key" },
+  "isEnabled": false
+}
+```
+
+#### Delete Connector (Soft Delete)
+```
+DELETE /api/connectors/:id
+Content-Type: application/json
+
+{
+  "reason": "Migrating to new provider"
+}
+```
+
+#### Test Connector
+```
+POST /api/connectors/:id/test
+```
+
+Tests the connector connection and returns success/failure with latency.
+
+Response:
+```json
+{
+  "success": true,
+  "latencyMs": 245
+}
+```
+
+#### Get Tenant Access (SUPER_ADMIN Only)
+```
+GET /api/connectors/:id/access
+```
+
+Returns list of tenants and their access status for a system connector.
+
+#### Update Tenant Access (SUPER_ADMIN Only)
+```
+PATCH /api/connectors/:id/access
+Content-Type: application/json
+
+{
+  "tenantAccess": [
+    { "tenantId": "uuid1", "isEnabled": true },
+    { "tenantId": "uuid2", "isEnabled": false }
+  ]
+}
+```
+
+Allows SUPER_ADMIN to enable/disable system connectors per tenant.
+
+#### Get Connector Usage
+```
+GET /api/connectors/:id/usage
+```
+
+Query Parameters:
+- `startDate` - Filter from date (ISO format)
+- `endDate` - Filter to date (ISO format)
+- `model` - Filter by AI model
+- `operation` - Filter by operation type
+- `success` - Filter by success status (true/false)
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 50, max: 100)
+- `sortBy` - Sort field (createdAt, costCents, totalTokens, latencyMs)
+- `sortOrder` - Sort order (asc, desc)
+
+Response includes usage logs with stats summary:
+```json
+{
+  "logs": [
+    {
+      "id": "uuid",
+      "model": "gpt-4.1",
+      "provider": "openai",
+      "operation": "bizfile_extraction",
+      "inputTokens": 1500,
+      "outputTokens": 500,
+      "totalTokens": 2000,
+      "costCents": 12,
+      "costUsd": 0.12,
+      "latencyMs": 2500,
+      "success": true,
+      "createdAt": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "total": 150,
+  "page": 1,
+  "limit": 50,
+  "totalPages": 3,
+  "stats": {
+    "totalCalls": 150,
+    "successfulCalls": 148,
+    "failedCalls": 2,
+    "totalTokens": 300000,
+    "totalCostUsd": 15.50,
+    "avgLatencyMs": 2100
+  }
+}
+```
+
+#### Export Connector Usage (CSV)
+```
+GET /api/connectors/:id/usage?export=csv
+```
+
+Exports usage logs as CSV file with same filtering parameters.
+
 ---
 
 ## Design Guidelines
@@ -2179,6 +2341,8 @@ npm run docker:logs      # View container logs
 | DATABASE_URL | PostgreSQL connection string | Required |
 | JWT_SECRET | Secret for JWT signing | Required |
 | JWT_EXPIRES_IN | Token expiration | 7d |
+| ENCRYPTION_KEY | AES encryption key for connector credentials (32+ chars) | Required for Connectors |
+| LOG_LEVEL | Logging verbosity (silent, error, warn, info, debug, trace) | debug (dev), info (prod) |
 | OPENAI_API_KEY | OpenAI API key (GPT models) | Optional* |
 | ANTHROPIC_API_KEY | Anthropic API key (Claude models) | Optional* |
 | GOOGLE_AI_API_KEY | Google AI API key (Gemini models) | Optional* |
@@ -2193,7 +2357,7 @@ npm run docker:logs      # View container logs
 | EMAIL_FROM_ADDRESS | Default sender email | SMTP_USER |
 | EMAIL_FROM_NAME | Default sender name | Oakcloud |
 
-> **Note:** *At least one AI provider API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY) is required for AI-powered features like BizFile extraction.
+> **Note:** *At least one AI provider API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY) is required for AI-powered features like BizFile extraction. Alternatively, configure AI connectors via the Connectors Hub for tenant-aware credential management.
 
 ---
 
@@ -2472,6 +2636,89 @@ src/lib/ai/
 
 ---
 
+## Logging
+
+Oakcloud includes a configurable logging system with multiple log levels for different environments and debugging needs.
+
+### Log Levels
+
+| Level | Description | Prisma Logs |
+|-------|-------------|-------------|
+| `silent` | No logging | None |
+| `error` | Only errors | error |
+| `warn` | Errors + warnings | error, warn |
+| `info` | Errors + warnings + info (production default) | error, warn, info |
+| `debug` | All above + debug messages (development default) | error, warn, info |
+| `trace` | All above + SQL queries (most verbose) | query, error, warn, info |
+
+### Configuration
+
+Set the `LOG_LEVEL` environment variable in `.env`:
+
+```bash
+# Quiet mode - only errors
+LOG_LEVEL=error
+
+# Standard development (default)
+LOG_LEVEL=debug
+
+# See all SQL queries (verbose)
+LOG_LEVEL=trace
+```
+
+### Usage in Code
+
+```typescript
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('my-module');
+
+log.error('Something went wrong', { details: 'error context' });
+log.warn('Warning message');
+log.info('Informational message');
+log.debug('Debug information');
+log.trace('Detailed trace (includes SQL at this level)');
+
+// Create child logger for sub-modules
+const childLog = log.child('sub-feature');
+childLog.info('Message from sub-feature'); // [my-module:sub-feature]
+```
+
+### Utilities
+
+```typescript
+import { getCurrentLogLevel, isLogLevelEnabled, getPrismaLogConfig } from '@/lib/logger';
+
+// Check current level
+const level = getCurrentLogLevel(); // 'debug'
+
+// Check if a level is enabled
+if (isLogLevelEnabled('trace')) {
+  // expensive logging operation
+}
+
+// Get Prisma log config (used internally)
+const prismaLogs = getPrismaLogConfig(); // ['error', 'warn', 'info']
+```
+
+### Quick Reference
+
+```bash
+# Production - minimal logging
+LOG_LEVEL=info npm run start
+
+# Development - default (no SQL queries)
+LOG_LEVEL=debug npm run dev
+
+# Debugging database issues - see all queries
+LOG_LEVEL=trace npm run dev
+
+# Disable all logging
+LOG_LEVEL=silent npm run dev
+```
+
+---
+
 ## Troubleshooting
 
 ### Database Connection Issues
@@ -2521,7 +2768,7 @@ docker ps
 
 For detailed version history and changelog, see [CHANGELOG.md](./CHANGELOG.md).
 
-**Current Version:** v0.9.10 (2025-12-04)
+**Current Version:** v0.9.11 (2025-12-04)
 
 ---
 

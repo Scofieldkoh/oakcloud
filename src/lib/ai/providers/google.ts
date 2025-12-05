@@ -4,13 +4,20 @@
  * Implementation for Google Gemini models.
  */
 
-import type { AIRequestOptions, AIResponse } from '../types';
+import type { AIRequestOptions, AIResponse, AICredentials } from '../types';
 import { getModelConfig } from '../models';
 
 // Lazy load Google Generative AI SDK to reduce initial bundle size
 let googleInstance: import('@google/generative-ai').GoogleGenerativeAI | null = null;
 
-async function getGoogleAI() {
+async function getGoogleAI(credentials?: AICredentials['google']) {
+  // If custom credentials provided, create a new instance
+  if (credentials?.apiKey) {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    return new GoogleGenerativeAI(credentials.apiKey);
+  }
+
+  // Fall back to singleton with env var
   if (!googleInstance) {
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     googleInstance = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
@@ -19,7 +26,7 @@ async function getGoogleAI() {
 }
 
 /**
- * Check if Google AI is configured
+ * Check if Google AI is configured (via env var)
  */
 export function isGoogleConfigured(): boolean {
   return !!process.env.GOOGLE_AI_API_KEY;
@@ -32,9 +39,15 @@ type GoogleContentPart =
 
 /**
  * Call Google Gemini API (supports vision)
+ * @param options - Request options
+ * @param credentials - Optional custom credentials (from connector)
  */
-export async function callGoogle(options: AIRequestOptions): Promise<AIResponse> {
-  if (!isGoogleConfigured()) {
+export async function callGoogle(
+  options: AIRequestOptions,
+  credentials?: AICredentials['google']
+): Promise<AIResponse> {
+  // Allow either env var or provided credentials
+  if (!isGoogleConfigured() && !credentials?.apiKey) {
     throw new Error('Google AI API key not configured');
   }
 
@@ -43,7 +56,7 @@ export async function callGoogle(options: AIRequestOptions): Promise<AIResponse>
     throw new Error(`Model ${options.model} is not a Google model`);
   }
 
-  const googleAI = await getGoogleAI();
+  const googleAI = await getGoogleAI(credentials);
   const model = googleAI.getGenerativeModel({
     model: modelConfig.providerModelId,
     generationConfig: {

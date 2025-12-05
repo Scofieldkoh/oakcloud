@@ -3,6 +3,10 @@
  *
  * Unified interface for calling multiple AI providers (OpenAI, Anthropic, Google).
  * Provides a consistent API regardless of the underlying model.
+ *
+ * Supports two modes:
+ * 1. Environment-based: Uses API keys from environment variables
+ * 2. Connector-based: Uses credentials from database connectors (tenant-aware)
  */
 
 export * from './types';
@@ -13,6 +17,7 @@ import type {
   AIProvider,
   AIRequestOptions,
   AIResponse,
+  AICredentials,
   ModelAvailability,
   ProviderStatus,
 } from './types';
@@ -175,4 +180,217 @@ export function createAICaller(defaultOptions: Partial<AIRequestOptions>) {
     };
     return callAI(mergedOptions);
   };
+}
+
+// ============================================================================
+// Connector-aware AI calls (tenant-aware using database connectors)
+// ============================================================================
+
+/**
+ * Map AI provider name to connector provider enum value
+ */
+function mapProviderToConnectorProvider(provider: AIProvider): 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' {
+  switch (provider) {
+    case 'openai':
+      return 'OPENAI';
+    case 'anthropic':
+      return 'ANTHROPIC';
+    case 'google':
+      return 'GOOGLE';
+    default:
+      throw new Error(`Unknown provider: ${provider}`);
+  }
+}
+
+/**
+ * Options for connector-aware AI calls
+ */
+export interface ConnectorAIOptions extends AIRequestOptions {
+  /** Tenant ID for connector resolution (null for system-level calls) */
+  tenantId: string | null;
+  /** User ID who triggered the call (for usage tracking) */
+  userId?: string | null;
+  /** Preferred provider (if not specified, uses model's default provider) */
+  preferredProvider?: AIProvider;
+  /** Operation type for usage tracking (e.g., 'bizfile_extraction') */
+  operation?: string;
+  /** Additional metadata for usage tracking */
+  usageMetadata?: Record<string, unknown>;
+}
+
+/**
+ * Call AI using connector credentials (tenant-aware)
+ *
+ * Resolution order:
+ * 1. Tenant connector for the provider → use if exists & enabled
+ * 2. System connector for the provider → use if exists & enabled & tenant has access
+ * 3. Fall back to environment variables
+ * 4. Throw error if no provider available
+ */
+export async function callAIWithConnector(options: ConnectorAIOptions): Promise<AIResponse> {
+  // Lazy import to avoid circular dependencies
+  const { resolveConnector } = await import('@/services/connector.service');
+  const { logConnectorUsage } = await import('@/services/connector-usage.service');
+
+  const modelConfig = getModelConfig(options.model);
+  const provider = options.preferredProvider || modelConfig.provider;
+  const connectorProvider = mapProviderToConnectorProvider(provider);
+
+  // Try to resolve a connector for this tenant/provider
+  const resolved = await resolveConnector(options.tenantId, 'AI_PROVIDER', connectorProvider);
+
+  if (resolved) {
+    // Credentials are already decrypted by resolveConnector
+    const credentials = resolved.connector.credentials as Record<string, unknown>;
+    const startTime = Date.now();
+    let response: AIResponse;
+    let error: Error | null = null;
+
+    try {
+      switch (provider) {
+        case 'openai':
+          response = await callOpenAI(options, {
+            apiKey: credentials.apiKey as string,
+            organization: credentials.organization as string | undefined,
+          });
+          break;
+        case 'anthropic':
+          response = await callAnthropic(options, {
+            apiKey: credentials.apiKey as string,
+          });
+          break;
+        case 'google':
+          response = await callGoogle(options, {
+            apiKey: credentials.apiKey as string,
+          });
+          break;
+        default:
+          throw new Error(`Unknown provider: ${provider}`);
+      }
+    } catch (err) {
+      error = err instanceof Error ? err : new Error(String(err));
+      throw error;
+    } finally {
+      const latencyMs = Date.now() - startTime;
+
+      // Log usage (non-blocking)
+      logConnectorUsage({
+        connectorId: resolved.connector.id,
+        tenantId: options.tenantId,
+        userId: options.userId,
+        model: options.model,
+        provider,
+        inputTokens: response?.usage?.inputTokens ?? 0,
+        outputTokens: response?.usage?.outputTokens ?? 0,
+        totalTokens: response?.usage?.totalTokens ?? 0,
+        latencyMs,
+        operation: options.operation,
+        success: !error,
+        errorMessage: error?.message,
+        metadata: options.usageMetadata,
+      }).catch((err) => {
+        console.error('Failed to log connector usage:', err);
+      });
+    }
+
+    return response!;
+  }
+
+  // No connector found, fall back to environment variables
+  const providerStatus = getProviderStatus(provider);
+  if (!providerStatus.configured) {
+    throw new Error(
+      `No AI provider available. ` +
+        `No ${connectorProvider} connector configured for this tenant, ` +
+        `and no environment variable fallback is set.`
+    );
+  }
+
+  // Use environment-based call (no usage tracking for env-based calls)
+  return callAI(options);
+}
+
+/**
+ * Get available AI providers for a tenant
+ * Returns providers that have either:
+ * 1. A tenant-specific connector
+ * 2. A system connector with tenant access
+ * 3. Environment variable configuration
+ */
+export async function getAvailableProvidersForTenant(
+  tenantId: string | null
+): Promise<AIProvider[]> {
+  const { getAvailableConnectors } = await import('@/services/connector.service');
+
+  const availableProviders = new Set<AIProvider>();
+
+  // Check connector-based providers
+  try {
+    const resolvedConnectors = await getAvailableConnectors(tenantId, 'AI_PROVIDER');
+
+    for (const resolved of resolvedConnectors) {
+      switch (resolved.connector.provider) {
+        case 'OPENAI':
+          availableProviders.add('openai');
+          break;
+        case 'ANTHROPIC':
+          availableProviders.add('anthropic');
+          break;
+        case 'GOOGLE':
+          availableProviders.add('google');
+          break;
+      }
+    }
+  } catch (error) {
+    console.error('[getAvailableProvidersForTenant] Error getting connectors:', error);
+  }
+
+  // Check environment-based providers as fallback
+  if (isOpenAIConfigured()) availableProviders.add('openai');
+  if (isAnthropicConfigured()) availableProviders.add('anthropic');
+  if (isGoogleConfigured()) availableProviders.add('google');
+
+  return Array.from(availableProviders);
+}
+
+/**
+ * Check if a specific provider is available for a tenant
+ */
+export async function isProviderAvailableForTenant(
+  tenantId: string | null,
+  provider: AIProvider
+): Promise<boolean> {
+  const availableProviders = await getAvailableProvidersForTenant(tenantId);
+  return availableProviders.includes(provider);
+}
+
+/**
+ * Get the best available model for a tenant
+ * Checks both connector and environment configurations
+ */
+export async function getBestAvailableModelForTenant(
+  tenantId: string | null
+): Promise<AIModel | null> {
+  const availableProviders = await getAvailableProvidersForTenant(tenantId);
+
+  if (availableProviders.length === 0) {
+    return null;
+  }
+
+  // First, try the default model if its provider is available
+  const defaultModel = getDefaultModel();
+  if (availableProviders.includes(defaultModel.provider)) {
+    return defaultModel.id;
+  }
+
+  // Otherwise, return the first model from an available provider
+  const usableModels = Object.values(AI_MODELS).filter((model) =>
+    availableProviders.includes(model.provider)
+  );
+
+  if (usableModels.length > 0) {
+    return usableModels[0].id;
+  }
+
+  return null;
 }

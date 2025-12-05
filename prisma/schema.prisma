@@ -119,6 +119,14 @@ enum AuditAction {
   EXPORT
   IMPORT
   BULK_UPDATE
+
+  // Connector Operations
+  CONNECTOR_CREATED
+  CONNECTOR_UPDATED
+  CONNECTOR_DELETED
+  CONNECTOR_TESTED
+  CONNECTOR_ENABLED
+  CONNECTOR_DISABLED
 }
 
 enum ChangeSource {
@@ -126,6 +134,24 @@ enum ChangeSource {
   BIZFILE_UPLOAD
   API
   SYSTEM
+}
+
+// ============================================================================
+// CONNECTORS HUB
+// ============================================================================
+
+enum ConnectorType {
+  AI_PROVIDER
+  STORAGE
+}
+
+enum ConnectorProvider {
+  // AI Providers
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  // Storage Providers
+  ONEDRIVE
 }
 
 // ============================================================================
@@ -168,6 +194,9 @@ model Tenant {
   documents         Document[]
   auditLogs         AuditLog[]
   roles             Role[]
+  connectors        Connector[]
+  connectorAccess   TenantConnectorAccess[]
+  connectorUsageLogs ConnectorUsageLog[]
 
   @@index([slug])
   @@index([status])
@@ -287,6 +316,7 @@ model User {
   uploadedDocuments Document[]
   roleAssignments UserRoleAssignment[]
   companyAssignments UserCompanyAssignment[]
+  connectorUsageLogs ConnectorUsageLog[]
 
   @@index([email])
   @@index([tenantId])
@@ -758,4 +788,117 @@ model AuditLog {
   @@index([tenantId, entityType])
   @@index([requestId])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// CONNECTORS HUB
+// ============================================================================
+
+model Connector {
+  id                String            @id @default(uuid())
+
+  // Tenant scope: null = system connector, otherwise tenant-specific
+  tenantId          String?
+  tenant            Tenant?           @relation(fields: [tenantId], references: [id])
+
+  // Connector identification
+  name              String            // Display name (e.g., "Production OpenAI")
+  type              ConnectorType     // AI_PROVIDER, STORAGE
+  provider          ConnectorProvider // OPENAI, ANTHROPIC, GOOGLE, ONEDRIVE
+
+  // Configuration
+  credentials       String            // Encrypted JSON: { apiKey, clientId, etc. }
+  settings          Json?             // Provider-specific settings (model preferences, etc.)
+
+  // Status
+  isEnabled         Boolean           @default(true)
+  isDefault         Boolean           @default(false) // Default for this type within scope
+
+  // Usage tracking
+  callCount         Int               @default(0)
+  lastUsedAt        DateTime?
+  lastTestedAt      DateTime?
+  lastTestResult    String?           // "success" | "error:message"
+
+  // Soft delete & timestamps
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
+
+  // Relations
+  tenantAccess      TenantConnectorAccess[]
+  usageLogs         ConnectorUsageLog[]
+
+  @@unique([tenantId, provider, deletedAt])
+  @@index([tenantId])
+  @@index([type])
+  @@index([provider])
+  @@index([isEnabled])
+  @@index([deletedAt])
+  @@map("connectors")
+}
+
+// Per-tenant access control for system connectors
+model TenantConnectorAccess {
+  id            String    @id @default(uuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectorId   String
+  connector     Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  isEnabled     Boolean   @default(true)  // false = blocked for this tenant
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([tenantId, connectorId])
+  @@index([tenantId])
+  @@index([connectorId])
+  @@map("tenant_connector_access")
+}
+
+// Detailed usage logging for connectors
+model ConnectorUsageLog {
+  id            String    @id @default(uuid())
+
+  // References
+  connectorId   String
+  connector     Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  tenantId      String?   // Tenant that made the call (for billing attribution)
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  userId        String?   // User who triggered the call
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // AI Model details
+  model         String    // Model ID used (e.g., "gpt-4.1", "claude-sonnet-4.5")
+  provider      String    // Provider name (openai, anthropic, google)
+
+  // Token usage
+  inputTokens   Int       @default(0)
+  outputTokens  Int       @default(0)
+  totalTokens   Int       @default(0)
+
+  // Cost calculation (in USD cents for precision)
+  costCents     Int       @default(0) // Total cost in cents (e.g., 150 = $1.50)
+
+  // Performance
+  latencyMs     Int?      // Response time in milliseconds
+
+  // Request details
+  operation     String?   // e.g., "bizfile_extraction", "document_analysis"
+  success       Boolean   @default(true)
+  errorMessage  String?   // Error details if failed
+
+  // Metadata
+  metadata      Json?     // Additional context (document ID, company ID, etc.)
+
+  createdAt     DateTime  @default(now())
+
+  @@index([connectorId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([connectorId, createdAt])
+  @@index([tenantId, createdAt])
+  @@map("connector_usage_logs")
 }

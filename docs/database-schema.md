@@ -624,6 +624,15 @@ USER_COMPANY_REMOVED
 EXPORT
 IMPORT
 BULK_UPDATE
+
+-- Connector Operations
+CONNECTOR_CREATED
+CONNECTOR_UPDATED
+CONNECTOR_DELETED
+CONNECTOR_TESTED
+CONNECTOR_ENABLED
+CONNECTOR_DISABLED
+CONNECTOR_ACCESS_UPDATED
 ```
 
 ### ChangeSource
@@ -632,6 +641,20 @@ MANUAL
 BIZFILE_UPLOAD
 API
 SYSTEM
+```
+
+### ConnectorType
+```sql
+AI_PROVIDER
+STORAGE
+```
+
+### ConnectorProvider
+```sql
+OPENAI
+ANTHROPIC
+GOOGLE
+ONEDRIVE
 ```
 
 ---
@@ -752,6 +775,106 @@ Multi-company user assignments. Tracks which companies a user can access. Permis
 - `user_company_assignments_user_id_company_id_key` UNIQUE on (user_id, company_id)
 - `user_company_assignments_user_id_idx` on user_id
 - `user_company_assignments_company_id_idx` on company_id
+
+---
+
+## Connectors Tables
+
+### connectors
+
+External service connector configuration with encrypted credentials.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | Yes | FK to tenants (null = system connector) |
+| name | VARCHAR | No | Display name |
+| type | ENUM | No | ConnectorType (AI_PROVIDER, STORAGE) |
+| provider | ENUM | No | ConnectorProvider (OPENAI, ANTHROPIC, GOOGLE, ONEDRIVE) |
+| credentials | TEXT | No | AES-256-GCM encrypted JSON credentials |
+| settings | JSONB | Yes | Provider-specific configuration |
+| is_enabled | BOOLEAN | No | Connector enabled status (default: true) |
+| is_default | BOOLEAN | No | Default connector for type (default: false) |
+| call_count | INT | No | Usage counter (default: 0) |
+| last_used_at | TIMESTAMP | Yes | Last successful call |
+| last_tested_at | TIMESTAMP | Yes | Last connection test time |
+| last_test_result | VARCHAR | Yes | "success" or "error:message" |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**System vs Tenant Connectors:**
+- `tenant_id = NULL` - System connector, managed by SUPER_ADMIN only
+- `tenant_id = <id>` - Tenant connector, managed by TENANT_ADMIN
+
+**Resolution Logic:**
+1. Check tenant-specific connector → use if exists & enabled
+2. Check TenantConnectorAccess for system connector → skip if disabled
+3. Check system connector → use if exists & enabled
+4. Feature unavailable
+
+**Indexes:**
+- `connectors_tenant_id_provider_deleted_at_key` UNIQUE on (tenant_id, provider, deleted_at)
+- `connectors_tenant_id_idx` on tenant_id
+- `connectors_type_provider_idx` on (type, provider)
+- `connectors_deleted_at_idx` on deleted_at
+
+---
+
+### tenant_connector_access
+
+Per-tenant access control for system connectors (SUPER_ADMIN only).
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants |
+| connector_id | UUID | No | FK to connectors |
+| is_enabled | BOOLEAN | No | Access enabled (default: true, false = blocked) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Use Case:** Allows SUPER_ADMIN to enable/disable system connectors per tenant. For example, enable AI features for Tenant A but not Tenant B.
+
+**Indexes:**
+- `tenant_connector_access_tenant_id_connector_id_key` UNIQUE on (tenant_id, connector_id)
+- `tenant_connector_access_tenant_id_idx` on tenant_id
+- `tenant_connector_access_connector_id_idx` on connector_id
+
+---
+
+### connector_usage_logs
+
+Detailed usage logging for connectors with cost tracking.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| connector_id | UUID | No | FK to connectors (CASCADE on delete) |
+| tenant_id | UUID | Yes | FK to tenants - tenant that made the call |
+| user_id | UUID | Yes | FK to users - user who triggered the call |
+| model | VARCHAR | No | AI model ID (e.g., "gpt-4.1") |
+| provider | VARCHAR | No | Provider name (openai, anthropic, google) |
+| input_tokens | INT | No | Number of input tokens (default: 0) |
+| output_tokens | INT | No | Number of output tokens (default: 0) |
+| total_tokens | INT | No | Total tokens (default: 0) |
+| cost_cents | INT | No | Cost in USD cents (default: 0) |
+| latency_ms | INT | Yes | Response time in milliseconds |
+| operation | VARCHAR | Yes | Operation type (e.g., "bizfile_extraction") |
+| success | BOOLEAN | No | Whether call succeeded (default: true) |
+| error_message | TEXT | Yes | Error details if failed |
+| metadata | JSONB | Yes | Additional context (document ID, etc.) |
+| created_at | TIMESTAMP | No | Record creation time |
+
+**Use Case:** Provides detailed usage tracking for billing, analytics, and auditing. Includes token usage, cost calculation, latency metrics, and operation context.
+
+**Indexes:**
+- `connector_usage_logs_connector_id_idx` on connector_id
+- `connector_usage_logs_tenant_id_idx` on tenant_id
+- `connector_usage_logs_user_id_idx` on user_id
+- `connector_usage_logs_created_at_idx` on created_at
+- `connector_usage_logs_connector_id_created_at_idx` on (connector_id, created_at)
+- `connector_usage_logs_tenant_id_created_at_idx` on (tenant_id, created_at)
 
 ---
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sparkles, AlertCircle, ChevronDown, MessageSquare, Check } from 'lucide-react';
 
 // Types matching the API response
@@ -103,6 +103,8 @@ interface AIModelSelectorProps {
   selectedStandardContexts?: string[];
   /** Callback when standard context selection changes */
   onStandardContextsChange?: (selectedIds: string[]) => void;
+  /** Tenant ID for connector-aware model availability (SUPER_ADMIN use) */
+  tenantId?: string;
 }
 
 /**
@@ -132,36 +134,73 @@ export function AIModelSelector({
   standardContextOptions = DEFAULT_STANDARD_CONTEXTS,
   selectedStandardContexts = [],
   onStandardContextsChange,
+  tenantId,
 }: AIModelSelectorProps) {
   const [data, setData] = useState<AIModelsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch available models
+  // Track the previous default model from API to detect when it changes
+  const previousDefaultRef = useRef<string | null>(null);
+
+  // Fetch available models (re-fetch when tenantId changes)
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchModels() {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/ai/models');
+        // Pass tenantId for connector-aware model availability
+        const url = tenantId ? `/api/ai/models?tenantId=${tenantId}` : '/api/ai/models';
+        const response = await fetch(url);
+
+        // Don't update state if this request was cancelled (newer request in flight)
+        if (cancelled) return;
+
         if (!response.ok) {
           throw new Error('Failed to fetch AI models');
         }
         const result = await response.json();
+
+        // Don't update state if this request was cancelled
+        if (cancelled) return;
+
         setData(result);
 
-        // Auto-select default model if no value provided
-        if (!value && result.defaultModel) {
+        // Auto-select default model in these cases:
+        // 1. No value currently selected
+        // 2. Current value is not available for this tenant (e.g., tenant changed)
+        // 3. The API default changed (e.g., configured default became available after tenant selection)
+        const currentModelAvailable = result.models?.some(
+          (m: { id: string; available: boolean }) => m.id === value && m.available
+        );
+
+        const defaultChanged = previousDefaultRef.current !== null &&
+                               previousDefaultRef.current !== result.defaultModel;
+
+        // Update the ref for next comparison
+        previousDefaultRef.current = result.defaultModel;
+
+        if (result.defaultModel && (!value || !currentModelAvailable || defaultChanged)) {
           onChange(result.defaultModel);
         }
       } catch (err) {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : 'Failed to load models');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
     fetchModels();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Cleanup: cancel this request if tenantId changes before it completes
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter models based on requirements
   const filteredModels = data?.models?.filter((m) => {
@@ -236,8 +275,8 @@ export function AIModelSelector({
       <div className="flex items-center gap-2">
         <AlertCircle className="w-4 h-4 flex-shrink-0" />
         <span>
-          No AI providers are configured. Please set up at least one API key (OPENAI_API_KEY,
-          ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY) in your environment variables.
+          No AI providers are configured. Please configure an AI connector in Admin &rarr; Connectors,
+          or set up environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY).
         </span>
       </div>
     </div>
@@ -373,31 +412,48 @@ export function AIModelSelector({
 
 /**
  * Hook to fetch and manage AI models state
+ * @param tenantId - Optional tenant ID for connector-aware model availability
  */
-export function useAIModels() {
+export function useAIModels(tenantId?: string) {
   const [data, setData] = useState<AIModelsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchModels() {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/ai/models');
+        const url = tenantId ? `/api/ai/models?tenantId=${tenantId}` : '/api/ai/models';
+        const response = await fetch(url);
+
+        if (cancelled) return;
+
         if (!response.ok) {
           throw new Error('Failed to fetch AI models');
         }
         const result = await response.json();
+
+        if (cancelled) return;
+
         setData(result);
       } catch (err) {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : 'Failed to load models');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
     fetchModels();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId]);
 
   return {
     models: data?.models || [],

@@ -74,9 +74,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-oak-primary flex items-center justify-center">
-                <span className="text-white font-bold text-sm">O</span>
-              </div>
+              <img src="/falcon.svg" alt="Oakcloud" className="w-[4.5rem] h-[4.5rem]" />
               <span className="text-xl font-semibold text-text-primary">Oakcloud</span>
             </div>
             <nav className="flex items-center gap-4">

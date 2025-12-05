@@ -70,16 +70,19 @@ export async function POST(
         throw new Error('Could not extract text from PDF');
       }
 
-      // Extract data using AI with optional model selection
-      const extractionResult = await extractBizFileData(pdfText, { modelId });
-
-      // Process and save extracted data
       // Use tenantId from company if available, otherwise from document directly
       const tenantId = document.company?.tenantId || document.tenantId;
       if (!tenantId) {
         throw new Error('Unable to determine tenant for document');
       }
 
+      // Extract data using AI with optional model selection (connector-aware)
+      const extractionResult = await extractBizFileData(pdfText, {
+        modelId,
+        tenantId, // Use tenant's configured AI connector
+      });
+
+      // Process and save extracted data
       const result = await processBizFileExtraction(
         documentId,
         extractionResult.data,
@@ -142,11 +145,14 @@ export async function GET(
     // Check permission
     await requirePermission(session, 'document', 'read', companyId);
 
-    // Get document
+    // Get document with company info for tenantId
     const document = await prisma.document.findFirst({
       where: {
         id: documentId,
         companyId,
+      },
+      include: {
+        company: { select: { tenantId: true } },
       },
     });
 
@@ -174,8 +180,11 @@ export async function GET(
       );
     }
 
+    // Use tenant's configured AI connector
+    const tenantId = document.company?.tenantId || document.tenantId;
     const extractionResult = await extractBizFileData(pdfText, {
       modelId: modelId || undefined,
+      tenantId,
     });
 
     return NextResponse.json({
