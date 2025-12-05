@@ -2351,6 +2351,7 @@ src/
 │   │   ├── sidebar.tsx            # Responsive navigation sidebar
 │   │   ├── button.tsx             # Reusable button
 │   │   ├── form-input.tsx         # Form input with validation
+│   │   ├── date-input.tsx         # Segmented date input with calendar
 │   │   ├── alert.tsx              # Alert/notification
 │   │   ├── modal.tsx              # Accessible modal dialog
 │   │   ├── confirm-dialog.tsx     # Confirmation with reason input
@@ -2358,6 +2359,7 @@ src/
 │   │   ├── toast.tsx              # Toast notification system
 │   │   ├── theme-toggle.tsx       # Theme switcher component
 │   │   ├── ai-model-selector.tsx  # AI model selection with context
+│   │   ├── stepper.tsx            # Multi-step wizard component
 │   │   └── checkbox.tsx           # Checkbox with indeterminate state
 │   ├── theme-provider.tsx         # Theme context provider
 │   ├── companies/

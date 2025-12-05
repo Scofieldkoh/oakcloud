@@ -340,6 +340,11 @@ export default function CompanyDetailPage({
             <span className={`badge ${currentStatus.color}`}>
               {currentStatus.label}
             </span>
+            {company.statusDate && (
+              <span className="text-xs text-text-muted">
+                As at {formatDate(company.statusDate)}
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2 text-sm text-text-secondary">
             <span>{company.uen}</span>

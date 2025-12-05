@@ -9,4 +9,5 @@ COMPLETED:
 1. 
 
 TO DO:
-1. Roles permission granity still hjave issue
+1. Roles permission granity still have issue
+2. Internal note to improve

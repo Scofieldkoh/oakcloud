@@ -26,6 +26,7 @@ import { OFFICER_ROLES } from '@/lib/constants';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
+import { DateInput } from '@/components/ui/date-input';
 import { CompanyRelationships } from '@/components/contacts/company-relationships';
 import type { ContactType, IdentificationType } from '@prisma/client';
 
@@ -686,12 +687,11 @@ export default function ContactDetailPage({
             {/* Officer-specific fields */}
             {officerRoles.includes(linkForm.relationship) && (
               <div>
-                <label className="label">Date of Appointment</label>
-                <input
-                  type="date"
+                <DateInput
+                  label="Date of Appointment"
                   value={linkForm.appointmentDate}
-                  onChange={(e) => setLinkForm((prev) => ({ ...prev, appointmentDate: e.target.value }))}
-                  className="input input-sm w-full"
+                  onChange={(val) => setLinkForm((prev) => ({ ...prev, appointmentDate: val }))}
+                  size="sm"
                 />
               </div>
             )}
@@ -801,25 +801,21 @@ export default function ContactDetailPage({
               </select>
             </div>
             <div>
-              <label className="label">Date of Appointment</label>
-              <input
-                type="date"
+              <DateInput
+                label="Date of Appointment"
                 value={editOfficerForm.appointmentDate}
-                onChange={(e) => setEditOfficerForm((prev) => ({ ...prev, appointmentDate: e.target.value }))}
-                className="input input-sm w-full"
+                onChange={(val) => setEditOfficerForm((prev) => ({ ...prev, appointmentDate: val }))}
+                size="sm"
               />
             </div>
             <div>
-              <label className="label">Date of Cessation</label>
-              <input
-                type="date"
+              <DateInput
+                label="Date of Cessation"
                 value={editOfficerForm.cessationDate}
-                onChange={(e) => setEditOfficerForm((prev) => ({ ...prev, cessationDate: e.target.value }))}
-                className="input input-sm w-full"
+                onChange={(val) => setEditOfficerForm((prev) => ({ ...prev, cessationDate: val }))}
+                size="sm"
+                hint="Leave empty if the position is still active"
               />
-              <p className="text-xs text-text-muted mt-1">
-                Leave empty if the position is still active
-              </p>
             </div>
           </div>
         </ModalBody>

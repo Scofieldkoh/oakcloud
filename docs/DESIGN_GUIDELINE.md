@@ -326,6 +326,7 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 |-----------|-------|-------------|
 | `Button` | `variant`, `size`, `isLoading`, `iconOnly`, `leftIcon`, `rightIcon` | Chakra-based button with oak theme |
 | `FormInput` | `label`, `error`, `hint`, `inputSize`, `leftIcon`, `rightIcon` | Chakra Input with validation |
+| `DateInput` | `label`, `value`, `onChange`, `error`, `hint`, `size`, `disabled` | Segmented date input (DD/MM/YYYY) with calendar picker |
 | `Alert` | `variant`, `title`, `compact`, `onClose` | Chakra Box-based notifications |
 | `Modal` | `isOpen`, `onClose`, `title`, `size`, `closeOnEscape` | Accessible modal dialog |
 | `ConfirmDialog` | `title`, `description`, `variant`, `requireReason` | Confirmation dialog with optional reason input |
@@ -485,6 +486,44 @@ import { FormInput } from '@/components/ui/form-input';
   error="Password is required"
 />
 ```
+
+### DateInput
+
+```tsx
+import { DateInput } from '@/components/ui/date-input';
+
+// Basic date input
+<DateInput
+  label="Date of Birth"
+  value={dateValue}  // YYYY-MM-DD format
+  onChange={(val) => setDateValue(val)}
+/>
+
+// Compact size with hint
+<DateInput
+  label="Appointment Date"
+  value={appointmentDate}
+  onChange={setAppointmentDate}
+  size="sm"
+  hint="Leave empty if not applicable"
+/>
+
+// With error
+<DateInput
+  label="Start Date"
+  value={startDate}
+  onChange={setStartDate}
+  error="Start date is required"
+  required
+/>
+```
+
+**Features:**
+- Segmented DD/MM/YYYY input with auto-advance between fields
+- Calendar picker popup (click calendar icon)
+- Month/year quick selection in calendar
+- Keyboard navigation (Tab, /, -, Backspace)
+- Sizes: `sm` (compact) and `md` (default)
 
 ### Alert
 
@@ -647,11 +686,13 @@ src/components/ui/
 ├── button.tsx             # Button component with variants
 ├── checkbox.tsx           # Checkbox with indeterminate state
 ├── confirm-dialog.tsx     # Confirmation dialog with reason
+├── date-input.tsx         # Segmented date input with calendar picker
 ├── dropdown.tsx           # Portal-rendered dropdown menu
 ├── form-input.tsx         # Form input with validation
 ├── modal.tsx              # Accessible modal dialog
 ├── pagination.tsx         # Table pagination component
 ├── sidebar.tsx            # Responsive navigation sidebar
+├── stepper.tsx            # Multi-step wizard component
 ├── tenant-selector.tsx    # Tenant dropdown for admins
 ├── theme-toggle.tsx       # Theme switcher component
 └── toast.tsx              # Toast notification system

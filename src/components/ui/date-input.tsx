@@ -2,7 +2,8 @@
 
 import { forwardRef, useRef, useEffect, useState, useCallback } from 'react';
 import { Box } from '@chakra-ui/react';
-import { Calendar, AlertCircle } from 'lucide-react';
+import { Calendar, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, setYear, setMonth, getYear, getMonth } from 'date-fns';
 
 export interface DateInputProps {
   label?: string;
@@ -16,11 +17,174 @@ export interface DateInputProps {
   id?: string;
   name?: string;
   placeholder?: string;
+  size?: 'sm' | 'md';
+}
+
+// Calendar Picker Component
+function CalendarPicker({
+  selectedDate,
+  onSelect,
+  onClose,
+}: {
+  selectedDate: Date | null;
+  onSelect: (date: Date) => void;
+  onClose: () => void;
+}) {
+  const [viewDate, setViewDate] = useState(selectedDate || new Date());
+  const [showYearMonth, setShowYearMonth] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
+  const monthStart = startOfMonth(viewDate);
+  const monthEnd = endOfMonth(viewDate);
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  // Pad start of month to align with day of week
+  const startDay = monthStart.getDay();
+  const paddedDays: (Date | null)[] = [
+    ...Array(startDay).fill(null),
+    ...days,
+  ];
+
+  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Generate year options (100 years back, 10 years forward)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 111 }, (_, i) => currentYear - 100 + i);
+
+  return (
+    <div
+      ref={calendarRef}
+      className="absolute top-full left-0 mt-1 z-50 bg-background-primary dark:bg-background-secondary border border-border-primary rounded-lg shadow-lg p-3 min-w-[260px]"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <button
+          type="button"
+          onClick={() => setViewDate(subMonths(viewDate, 1))}
+          className="p-1 hover:bg-background-tertiary rounded transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4 text-text-secondary" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowYearMonth(!showYearMonth)}
+          className="text-sm font-medium text-text-primary hover:text-oak-light transition-colors px-2 py-1 rounded hover:bg-background-tertiary"
+        >
+          {format(viewDate, 'MMMM yyyy')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewDate(addMonths(viewDate, 1))}
+          className="p-1 hover:bg-background-tertiary rounded transition-colors"
+        >
+          <ChevronRight className="w-4 h-4 text-text-secondary" />
+        </button>
+      </div>
+
+      {/* Year/Month Selector */}
+      {showYearMonth && (
+        <div className="mb-3 flex gap-2">
+          <select
+            value={getMonth(viewDate)}
+            onChange={(e) => setViewDate(setMonth(viewDate, parseInt(e.target.value)))}
+            className="flex-1 text-xs bg-background-tertiary border border-border-primary rounded px-2 py-1 text-text-primary"
+          >
+            {months.map((m, i) => (
+              <option key={m} value={i}>{m}</option>
+            ))}
+          </select>
+          <select
+            value={getYear(viewDate)}
+            onChange={(e) => setViewDate(setYear(viewDate, parseInt(e.target.value)))}
+            className="flex-1 text-xs bg-background-tertiary border border-border-primary rounded px-2 py-1 text-text-primary"
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Weekday Headers */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {weekDays.map((day) => (
+          <div key={day} className="text-center text-xs text-text-muted font-medium py-1">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Days Grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {paddedDays.map((day, i) => {
+          if (!day) {
+            return <div key={`empty-${i}`} className="w-8 h-8" />;
+          }
+
+          const isSelected = selectedDate && isSameDay(day, selectedDate);
+          const isToday = isSameDay(day, new Date());
+          const isCurrentMonth = isSameMonth(day, viewDate);
+
+          return (
+            <button
+              key={day.toISOString()}
+              type="button"
+              onClick={() => {
+                onSelect(day);
+                onClose();
+              }}
+              className={`
+                w-8 h-8 text-xs rounded transition-colors
+                ${isSelected
+                  ? 'bg-oak-primary text-white'
+                  : isToday
+                    ? 'bg-oak-primary/20 text-oak-light'
+                    : isCurrentMonth
+                      ? 'text-text-primary hover:bg-background-tertiary'
+                      : 'text-text-muted hover:bg-background-tertiary'
+                }
+              `}
+            >
+              {format(day, 'd')}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Today Button */}
+      <div className="mt-2 pt-2 border-t border-border-secondary">
+        <button
+          type="button"
+          onClick={() => {
+            onSelect(new Date());
+            onClose();
+          }}
+          className="w-full text-xs text-oak-light hover:text-oak-primary transition-colors py-1"
+        >
+          Today
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
-  ({ label, error, hint, value, onChange, onBlur, disabled, required, id, name, placeholder }, ref) => {
+  ({ label, error, hint, value, onChange, onBlur, disabled, required, id, name, placeholder, size = 'md' }, ref) => {
     const inputId = id || name || label?.toLowerCase().replace(/\s+/g, '-');
+    const [showCalendar, setShowCalendar] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Parse initial value
     const parseDate = useCallback((dateStr: string | undefined) => {
@@ -37,17 +201,44 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
     }, []);
 
     const [dateState, setDateState] = useState(() => parseDate(value));
+    const [isFocused, setIsFocused] = useState(false);
 
     const dayRef = useRef<HTMLInputElement>(null);
     const monthRef = useRef<HTMLInputElement>(null);
     const yearRef = useRef<HTMLInputElement>(null);
     const hiddenRef = useRef<HTMLInputElement>(null);
 
-    // Sync external value changes
+    // Sync external value changes (only when not focused and values differ)
     useEffect(() => {
+      // Don't sync while user is actively editing
+      if (isFocused) return;
+
       const parsed = parseDate(value);
-      setDateState(parsed);
-    }, [value, parseDate]);
+      // Check if current state would produce the same date string
+      // This prevents overwriting user's unpadded input (e.g., "1" becoming "01")
+      const currentDateStr = dateState.day && dateState.month && dateState.year.length === 4
+        ? `${dateState.year}-${dateState.month.padStart(2, '0')}-${dateState.day.padStart(2, '0')}`
+        : '';
+      const incomingDateStr = parsed.day && parsed.month && parsed.year.length === 4
+        ? `${parsed.year}-${parsed.month.padStart(2, '0')}-${parsed.day.padStart(2, '0')}`
+        : '';
+
+      // Only sync if the dates are actually different
+      if (currentDateStr !== incomingDateStr) {
+        setDateState(parsed);
+      }
+    }, [value, parseDate, dateState.day, dateState.month, dateState.year, isFocused]);
+
+    // Handle focus tracking for the entire input group
+    const handleFocus = () => setIsFocused(true);
+    const handleBlur = (e: React.FocusEvent) => {
+      // Check if focus is moving to another element within the same container
+      const container = containerRef.current;
+      if (container && !container.contains(e.relatedTarget as Node)) {
+        setIsFocused(false);
+        onBlur?.();
+      }
+    };
 
     // Combine and emit value
     const emitChange = useCallback((newState: { day: string; month: string; year: string }) => {
@@ -132,14 +323,44 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       }
     };
 
+    // Handle calendar date selection
+    const handleCalendarSelect = (date: Date) => {
+      const newState = {
+        day: format(date, 'd'),
+        month: format(date, 'M'),
+        year: format(date, 'yyyy'),
+      };
+      setDateState(newState);
+      emitChange(newState);
+    };
+
+    // Get selected date for calendar
+    const getSelectedDate = (): Date | null => {
+      if (dateState.day && dateState.month && dateState.year.length === 4) {
+        const date = new Date(
+          parseInt(dateState.year),
+          parseInt(dateState.month) - 1,
+          parseInt(dateState.day)
+        );
+        return isNaN(date.getTime()) ? null : date;
+      }
+      return null;
+    };
+
     const inputBaseClass = `
       w-full text-center bg-transparent border-none outline-none
       text-text-primary placeholder:text-text-muted
       focus:outline-none
     `;
 
+    const heightClass = size === 'sm' ? 'h-[26px]' : 'h-8';
+    const textClass = size === 'sm' ? 'text-xs' : 'text-sm';
+    const inputWidthDay = size === 'sm' ? 'w-6' : 'w-8';
+    const inputWidthYear = size === 'sm' ? 'w-10' : 'w-12';
+    const paddingClass = size === 'sm' ? 'px-2' : 'px-3';
+
     const containerClass = `
-      flex items-center gap-1 h-8 px-3 rounded-lg
+      flex items-center gap-1 ${heightClass} ${paddingClass} rounded-lg
       bg-background-primary dark:bg-background-secondary
       border border-border-primary
       hover:border-border-secondary
@@ -180,60 +401,83 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
           }
         />
 
-        <div className={containerClass}>
-          <Calendar className="w-4 h-4 text-text-muted flex-shrink-0" />
+        <div ref={containerRef} className="relative">
+          <div className={containerClass}>
+            {/* Calendar Icon - Clickable */}
+            <button
+              type="button"
+              onClick={() => !disabled && setShowCalendar(!showCalendar)}
+              disabled={disabled}
+              className="flex-shrink-0 hover:text-oak-light transition-colors disabled:cursor-not-allowed"
+              aria-label="Open calendar"
+            >
+              <Calendar className={`${size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-text-muted`} />
+            </button>
 
-          {/* Day */}
-          <input
-            ref={dayRef}
-            id={`${inputId}-day`}
-            type="text"
-            inputMode="numeric"
-            placeholder="DD"
-            value={dateState.day}
-            onChange={handleDayChange}
-            onKeyDown={(e) => handleKeyDown(e, 'day')}
-            onBlur={onBlur}
-            disabled={disabled}
-            className={`${inputBaseClass} w-8 text-sm`}
-            aria-label="Day"
-          />
+            {/* Day */}
+            <input
+              ref={dayRef}
+              id={`${inputId}-day`}
+              type="text"
+              inputMode="numeric"
+              placeholder="DD"
+              value={dateState.day}
+              onChange={handleDayChange}
+              onKeyDown={(e) => handleKeyDown(e, 'day')}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              disabled={disabled}
+              className={`${inputBaseClass} ${inputWidthDay} ${textClass}`}
+              aria-label="Day"
+            />
 
-          <span className="text-text-muted">/</span>
+            <span className={`text-text-muted ${textClass}`}>/</span>
 
-          {/* Month */}
-          <input
-            ref={monthRef}
-            id={`${inputId}-month`}
-            type="text"
-            inputMode="numeric"
-            placeholder="MM"
-            value={dateState.month}
-            onChange={handleMonthChange}
-            onKeyDown={(e) => handleKeyDown(e, 'month')}
-            onBlur={onBlur}
-            disabled={disabled}
-            className={`${inputBaseClass} w-8 text-sm`}
-            aria-label="Month"
-          />
+            {/* Month */}
+            <input
+              ref={monthRef}
+              id={`${inputId}-month`}
+              type="text"
+              inputMode="numeric"
+              placeholder="MM"
+              value={dateState.month}
+              onChange={handleMonthChange}
+              onKeyDown={(e) => handleKeyDown(e, 'month')}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              disabled={disabled}
+              className={`${inputBaseClass} ${inputWidthDay} ${textClass}`}
+              aria-label="Month"
+            />
 
-          <span className="text-text-muted">/</span>
+            <span className={`text-text-muted ${textClass}`}>/</span>
 
-          {/* Year */}
-          <input
-            ref={yearRef}
-            id={`${inputId}-year`}
-            type="text"
-            inputMode="numeric"
-            placeholder="YYYY"
-            value={dateState.year}
-            onChange={handleYearChange}
-            onKeyDown={(e) => handleKeyDown(e, 'year')}
-            onBlur={onBlur}
-            disabled={disabled}
-            className={`${inputBaseClass} w-12 text-sm`}
-            aria-label="Year"
-          />
+            {/* Year */}
+            <input
+              ref={yearRef}
+              id={`${inputId}-year`}
+              type="text"
+              inputMode="numeric"
+              placeholder="YYYY"
+              value={dateState.year}
+              onChange={handleYearChange}
+              onKeyDown={(e) => handleKeyDown(e, 'year')}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              disabled={disabled}
+              className={`${inputBaseClass} ${inputWidthYear} ${textClass}`}
+              aria-label="Year"
+            />
+          </div>
+
+          {/* Calendar Popup */}
+          {showCalendar && !disabled && (
+            <CalendarPicker
+              selectedDate={getSelectedDate()}
+              onSelect={handleCalendarSelect}
+              onClose={() => setShowCalendar(false)}
+            />
+          )}
         </div>
 
         {error && (
