@@ -22,6 +22,7 @@ import { useContact, useDeleteContact, useLinkContactToCompany, useUnlinkContact
 import { useCompanies } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate } from '@/lib/utils';
+import { OFFICER_ROLES } from '@/lib/constants';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
@@ -82,7 +83,6 @@ export default function ContactDetailPage({
     id: string;
     companyId: string;
     role: string;
-    designation: string | null;
     appointmentDate: string | null;
     cessationDate: string | null;
   } | null>(null);
@@ -93,6 +93,7 @@ export default function ContactDetailPage({
     numberOfShares: number;
   } | null>(null);
   const [editOfficerForm, setEditOfficerForm] = useState({
+    role: '',
     appointmentDate: '',
     cessationDate: '',
   });
@@ -215,6 +216,7 @@ export default function ContactDetailPage({
         officerId: selectedOfficer.id,
         companyId: selectedOfficer.companyId,
         data: {
+          role: editOfficerForm.role || null,
           appointmentDate: editOfficerForm.appointmentDate || null,
           cessationDate: editOfficerForm.cessationDate || null,
         },
@@ -222,7 +224,7 @@ export default function ContactDetailPage({
       success('Officer position updated successfully');
       setEditOfficerModalOpen(false);
       setSelectedOfficer(null);
-      setEditOfficerForm({ appointmentDate: '', cessationDate: '' });
+      setEditOfficerForm({ role: '', appointmentDate: '', cessationDate: '' });
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to update officer position');
     }
@@ -491,12 +493,12 @@ export default function ContactDetailPage({
                 id: officer.id,
                 companyId,
                 role: officer.role,
-                designation: officer.designation,
                 appointmentDate: officer.appointmentDate,
                 cessationDate: officer.cessationDate,
               });
               // Pre-fill form with existing values (convert date strings to YYYY-MM-DD format)
               setEditOfficerForm({
+                role: officer.role,
                 appointmentDate: officer.appointmentDate ? officer.appointmentDate.split('T')[0] : '',
                 cessationDate: officer.cessationDate ? officer.cessationDate.split('T')[0] : '',
               });
@@ -778,22 +780,26 @@ export default function ContactDetailPage({
         onClose={() => {
           setEditOfficerModalOpen(false);
           setSelectedOfficer(null);
-          setEditOfficerForm({ appointmentDate: '', cessationDate: '' });
+          setEditOfficerForm({ role: '', appointmentDate: '', cessationDate: '' });
         }}
         title="Edit Officer Position"
       >
         <ModalBody>
           <div className="space-y-4">
-            {selectedOfficer && (
-              <div className="text-sm text-text-secondary mb-4">
-                <span className="font-medium text-text-primary">
-                  {selectedOfficer.role.replace(/_/g, ' ')}
-                </span>
-                {selectedOfficer.designation && (
-                  <span> - {selectedOfficer.designation.replace(/_/g, ' ')}</span>
-                )}
-              </div>
-            )}
+            <div>
+              <label className="label">Role</label>
+              <select
+                value={editOfficerForm.role}
+                onChange={(e) => setEditOfficerForm((prev) => ({ ...prev, role: e.target.value }))}
+                className="input input-sm w-full"
+              >
+                {OFFICER_ROLES.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="label">Date of Appointment</label>
               <input
@@ -822,7 +828,7 @@ export default function ContactDetailPage({
             onClick={() => {
               setEditOfficerModalOpen(false);
               setSelectedOfficer(null);
-              setEditOfficerForm({ appointmentDate: '', cessationDate: '' });
+              setEditOfficerForm({ role: '', appointmentDate: '', cessationDate: '' });
             }}
             className="btn-secondary btn-sm"
           >

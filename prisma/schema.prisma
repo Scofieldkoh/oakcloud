@@ -561,7 +561,6 @@ model CompanyOfficer {
   contact           Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   role              OfficerRole
-  designation       String?     // Custom designation if needed
 
   // Officer Details (denormalized for historical record)
   name              String

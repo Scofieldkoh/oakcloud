@@ -76,7 +76,6 @@ export interface ExtractedBizFileData {
   officers?: Array<{
     name: string;
     role: string;
-    designation?: string;
     identificationType?: string;
     identificationNumber?: string;
     nationality?: string;
@@ -178,7 +177,6 @@ Return a JSON object with the following structure (include only fields that have
   "officers": [{
     "name": "string",
     "role": "DIRECTOR | ALTERNATE_DIRECTOR | SECRETARY | CEO | CFO | AUDITOR | LIQUIDATOR | RECEIVER | JUDICIAL_MANAGER",
-    "designation": "string",
     "identificationType": "NRIC | FIN | PASSPORT",
     "identificationNumber": "string",
     "nationality": "string",
@@ -610,7 +608,7 @@ function buildFullAddress(addr: {
  * Normalize extracted BizFile data before saving to database
  * Applies proper casing to names, company names, and addresses
  */
-function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBizFileData {
+export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBizFileData {
   const normalized = { ...data };
 
   // Normalize entity details
@@ -723,6 +721,158 @@ export interface BizFileDiffEntry {
 }
 
 /**
+ * Extracted officer from BizFile
+ */
+export interface ExtractedOfficerData {
+  name: string;
+  role: string;
+  identificationType?: string;
+  identificationNumber?: string;
+  nationality?: string;
+  address?: string;
+  appointmentDate?: string;
+  cessationDate?: string;
+}
+
+/**
+ * Extracted shareholder from BizFile
+ */
+export interface ExtractedShareholderData {
+  name: string;
+  type: 'INDIVIDUAL' | 'CORPORATE';
+  identificationType?: string;
+  identificationNumber?: string;
+  nationality?: string;
+  placeOfOrigin?: string;
+  address?: string;
+  shareClass: string;
+  numberOfShares: number;
+  percentageHeld?: number;
+  currency?: string;
+}
+
+/**
+ * Officer diff entry for BizFile update comparison
+ */
+export interface OfficerDiffEntry {
+  type: 'added' | 'updated' | 'potentially_ceased';
+  officerId?: string;
+  name: string;
+  role: OfficerRole;
+  changes?: Array<{ field: string; label: string; oldValue: string | null; newValue: string | null }>;
+  extractedData?: ExtractedOfficerData;
+  matchConfidence?: 'high' | 'medium' | 'low';
+}
+
+/**
+ * Shareholder diff entry for BizFile update comparison
+ */
+export interface ShareholderDiffEntry {
+  type: 'added' | 'removed' | 'updated';
+  shareholderId?: string;
+  name: string;
+  shareholderType: 'INDIVIDUAL' | 'CORPORATE';
+  changes?: Array<{ field: string; label: string; oldValue: string | number | null; newValue: string | number | null }>;
+  shareholdingChanges?: {
+    shareClass?: { old: string; new: string };
+    numberOfShares?: { old: number; new: number };
+  };
+  extractedData?: ExtractedShareholderData;
+  matchConfidence?: 'high' | 'medium' | 'low';
+}
+
+/**
+ * Officer action from UI for processing updates
+ */
+export interface OfficerAction {
+  officerId: string;
+  action: 'cease' | 'follow_up';
+  cessationDate?: string;
+}
+
+/**
+ * Extended diff result including officers and shareholders
+ */
+export interface ExtendedBizFileDiffResult {
+  hasDifferences: boolean;
+  differences: BizFileDiffEntry[];
+  existingCompany: { name: string; uen: string };
+  officerDiffs: OfficerDiffEntry[];
+  shareholderDiffs: ShareholderDiffEntry[];
+  summary: {
+    officersAdded: number;
+    officersUpdated: number;
+    officersPotentiallyCeased: number;
+    shareholdersAdded: number;
+    shareholdersUpdated: number;
+    shareholdersRemoved: number;
+  };
+}
+
+/**
+ * Match extracted officer to existing officers
+ */
+function matchOfficer(
+  extracted: ExtractedOfficerData,
+  existingOfficers: Array<{ id: string; name: string; role: OfficerRole; identificationType: IdentificationType | null; identificationNumber: string | null; isCurrent: boolean }>
+): { officer: typeof existingOfficers[number] | null; confidence: 'high' | 'medium' | 'low' } {
+  // Priority 1: Match by identification (NRIC/FIN/Passport)
+  if (extracted.identificationNumber && extracted.identificationType) {
+    const idMatch = existingOfficers.find(o =>
+      o.identificationNumber?.toUpperCase() === extracted.identificationNumber?.toUpperCase() &&
+      o.identificationType === mapIdentificationType(extracted.identificationType)
+    );
+    if (idMatch) return { officer: idMatch, confidence: 'high' };
+  }
+
+  // Priority 2: Match by name + role
+  const extractedRole = mapOfficerRole(extracted.role);
+  const nameMatch = existingOfficers.find(o =>
+    normalizeName(o.name)?.toLowerCase() === normalizeName(extracted.name)?.toLowerCase() &&
+    o.role === extractedRole &&
+    o.isCurrent
+  );
+  if (nameMatch) return { officer: nameMatch, confidence: 'medium' };
+
+  return { officer: null, confidence: 'low' };
+}
+
+/**
+ * Match extracted shareholder to existing shareholders
+ */
+function matchShareholder(
+  extracted: ExtractedShareholderData,
+  existingShareholders: Array<{ id: string; name: string; shareholderType: ContactType; identificationType: IdentificationType | null; identificationNumber: string | null; isCurrent: boolean; shareClass: string; numberOfShares: number }>
+): { shareholder: typeof existingShareholders[number] | null; confidence: 'high' | 'medium' | 'low' } {
+  const extractedType = extracted.type === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL';
+
+  // Priority 1: Match by identification
+  if (extracted.identificationNumber) {
+    const idMatch = existingShareholders.find(s =>
+      s.identificationNumber?.toUpperCase() === extracted.identificationNumber?.toUpperCase() &&
+      s.shareholderType === extractedType &&
+      s.isCurrent
+    );
+    if (idMatch) return { shareholder: idMatch, confidence: 'high' };
+  }
+
+  // Priority 2: Match by name
+  const normalizedName = extractedType === 'CORPORATE'
+    ? normalizeCompanyName(extracted.name)?.toLowerCase()
+    : normalizeName(extracted.name)?.toLowerCase();
+
+  const nameMatch = existingShareholders.find(s => {
+    const existingNormalized = s.shareholderType === 'CORPORATE'
+      ? normalizeCompanyName(s.name)?.toLowerCase()
+      : normalizeName(s.name)?.toLowerCase();
+    return existingNormalized === normalizedName && s.shareholderType === extractedType && s.isCurrent;
+  });
+  if (nameMatch) return { shareholder: nameMatch, confidence: 'medium' };
+
+  return { shareholder: null, confidence: 'low' };
+}
+
+/**
  * Generate a diff between existing company data and extracted BizFile data
  * Only returns fields that have actual differences
  */
@@ -730,11 +880,13 @@ export async function generateBizFileDiff(
   existingCompanyId: string,
   extractedData: ExtractedBizFileData,
   tenantId: string
-): Promise<{ hasDifferences: boolean; differences: BizFileDiffEntry[]; existingCompany: { name: string; uen: string } }> {
+): Promise<ExtendedBizFileDiffResult> {
   const company = await prisma.company.findFirst({
     where: { id: existingCompanyId, tenantId },
     include: {
       addresses: { where: { isCurrent: true } },
+      officers: { where: { isCurrent: true } },
+      shareholders: { where: { isCurrent: true } },
     },
   });
 
@@ -874,10 +1026,168 @@ export async function generateBizFileDiff(
     }
   }
 
+  // Generate officer diffs
+  const officerDiffs: OfficerDiffEntry[] = [];
+  const existingOfficers = company.officers;
+  const extractedOfficers = extractedData.officers || [];
+  const matchedExistingOfficerIds = new Set<string>();
+
+  for (const extractedOfficer of extractedOfficers) {
+    // Skip officers with cessation dates (they are already ceased)
+    if (extractedOfficer.cessationDate) continue;
+
+    const matchResult = matchOfficer(extractedOfficer, existingOfficers);
+
+    if (matchResult.officer) {
+      matchedExistingOfficerIds.add(matchResult.officer.id);
+
+      // Check for updates (role changes, dates)
+      const changes: Array<{ field: string; label: string; oldValue: string | null; newValue: string | null }> = [];
+      const extractedRole = mapOfficerRole(extractedOfficer.role);
+
+      if (matchResult.officer.role !== extractedRole) {
+        changes.push({
+          field: 'role',
+          label: 'Role',
+          oldValue: matchResult.officer.role,
+          newValue: extractedRole,
+        });
+      }
+
+      if (changes.length > 0) {
+        officerDiffs.push({
+          type: 'updated',
+          officerId: matchResult.officer.id,
+          name: extractedOfficer.name,
+          role: extractedRole,
+          changes,
+          extractedData: extractedOfficer,
+          matchConfidence: matchResult.confidence,
+        });
+      }
+    } else {
+      // New officer
+      officerDiffs.push({
+        type: 'added',
+        name: extractedOfficer.name,
+        role: mapOfficerRole(extractedOfficer.role),
+        extractedData: extractedOfficer,
+        matchConfidence: 'low',
+      });
+    }
+  }
+
+  // Find potentially ceased officers (in DB but not in extracted data)
+  for (const existingOfficer of existingOfficers) {
+    if (!matchedExistingOfficerIds.has(existingOfficer.id)) {
+      officerDiffs.push({
+        type: 'potentially_ceased',
+        officerId: existingOfficer.id,
+        name: existingOfficer.name,
+        role: existingOfficer.role,
+        matchConfidence: 'high',
+      });
+    }
+  }
+
+  // Generate shareholder diffs
+  const shareholderDiffs: ShareholderDiffEntry[] = [];
+  const existingShareholders = company.shareholders;
+  const extractedShareholders = extractedData.shareholders || [];
+  const matchedExistingShareholderIds = new Set<string>();
+
+  for (const extractedShareholder of extractedShareholders) {
+    const matchResult = matchShareholder(extractedShareholder, existingShareholders);
+
+    if (matchResult.shareholder) {
+      matchedExistingShareholderIds.add(matchResult.shareholder.id);
+
+      // Check for shareholding changes
+      const changes: Array<{ field: string; label: string; oldValue: string | number | null; newValue: string | number | null }> = [];
+      const shareholdingChanges: ShareholderDiffEntry['shareholdingChanges'] = {};
+
+      if (matchResult.shareholder.shareClass !== (extractedShareholder.shareClass || 'ORDINARY')) {
+        shareholdingChanges.shareClass = {
+          old: matchResult.shareholder.shareClass,
+          new: extractedShareholder.shareClass || 'ORDINARY',
+        };
+        changes.push({
+          field: 'shareClass',
+          label: 'Share Class',
+          oldValue: matchResult.shareholder.shareClass,
+          newValue: extractedShareholder.shareClass || 'ORDINARY',
+        });
+      }
+
+      if (matchResult.shareholder.numberOfShares !== extractedShareholder.numberOfShares) {
+        shareholdingChanges.numberOfShares = {
+          old: matchResult.shareholder.numberOfShares,
+          new: extractedShareholder.numberOfShares,
+        };
+        changes.push({
+          field: 'numberOfShares',
+          label: 'Number of Shares',
+          oldValue: matchResult.shareholder.numberOfShares,
+          newValue: extractedShareholder.numberOfShares,
+        });
+      }
+
+      if (changes.length > 0) {
+        shareholderDiffs.push({
+          type: 'updated',
+          shareholderId: matchResult.shareholder.id,
+          name: extractedShareholder.name,
+          shareholderType: extractedShareholder.type === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL',
+          changes,
+          shareholdingChanges: Object.keys(shareholdingChanges).length > 0 ? shareholdingChanges : undefined,
+          extractedData: extractedShareholder,
+          matchConfidence: matchResult.confidence,
+        });
+      }
+    } else {
+      // New shareholder
+      shareholderDiffs.push({
+        type: 'added',
+        name: extractedShareholder.name,
+        shareholderType: extractedShareholder.type === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL',
+        extractedData: extractedShareholder,
+        matchConfidence: 'low',
+      });
+    }
+  }
+
+  // Find removed shareholders (in DB but not in extracted data)
+  for (const existingShareholder of existingShareholders) {
+    if (!matchedExistingShareholderIds.has(existingShareholder.id)) {
+      shareholderDiffs.push({
+        type: 'removed',
+        shareholderId: existingShareholder.id,
+        name: existingShareholder.name,
+        shareholderType: existingShareholder.shareholderType === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL',
+        matchConfidence: 'high',
+      });
+    }
+  }
+
+  // Build summary
+  const summary = {
+    officersAdded: officerDiffs.filter(d => d.type === 'added').length,
+    officersUpdated: officerDiffs.filter(d => d.type === 'updated').length,
+    officersPotentiallyCeased: officerDiffs.filter(d => d.type === 'potentially_ceased').length,
+    shareholdersAdded: shareholderDiffs.filter(d => d.type === 'added').length,
+    shareholdersUpdated: shareholderDiffs.filter(d => d.type === 'updated').length,
+    shareholdersRemoved: shareholderDiffs.filter(d => d.type === 'removed').length,
+  };
+
+  const hasDifferences = differences.length > 0 || officerDiffs.length > 0 || shareholderDiffs.length > 0;
+
   return {
-    hasDifferences: differences.length > 0,
+    hasDifferences,
     differences,
     existingCompany: { name: company.name, uen: company.uen },
+    officerDiffs,
+    shareholderDiffs,
+    summary,
   };
 }
 
@@ -889,15 +1199,27 @@ export async function processBizFileExtractionSelective(
   extractedData: ExtractedBizFileData,
   userId: string,
   tenantId: string,
-  existingCompanyId: string
-): Promise<{ companyId: string; created: boolean; updatedFields: string[] }> {
+  existingCompanyId: string,
+  officerActions?: OfficerAction[]
+): Promise<{
+  companyId: string;
+  created: boolean;
+  updatedFields: string[];
+  officerChanges: { added: number; updated: number; ceased: number; followUp: number };
+  shareholderChanges: { added: number; updated: number; removed: number };
+}> {
   // Normalize all text fields before processing
   const normalizedData = normalizeExtractedData(extractedData);
 
   // Generate diff to determine what needs updating
-  const { differences } = await generateBizFileDiff(existingCompanyId, normalizedData, tenantId);
+  const diffResult = await generateBizFileDiff(existingCompanyId, normalizedData, tenantId);
+  const { differences, officerDiffs, shareholderDiffs } = diffResult;
 
-  if (differences.length === 0) {
+  // Initialize change counters
+  const officerChanges = { added: 0, updated: 0, ceased: 0, followUp: 0 };
+  const shareholderChanges = { added: 0, updated: 0, removed: 0 };
+
+  if (!diffResult.hasDifferences) {
     // No changes needed, just update document reference
     await prisma.document.update({
       where: { id: documentId },
@@ -909,7 +1231,7 @@ export async function processBizFileExtractionSelective(
       },
     });
 
-    return { companyId: existingCompanyId, created: false, updatedFields: [] };
+    return { companyId: existingCompanyId, created: false, updatedFields: [], officerChanges, shareholderChanges };
   }
 
   // Build update object with only changed fields
@@ -1036,6 +1358,185 @@ export async function processBizFileExtractionSelective(
       });
     }
 
+    // Process officer updates
+    for (const officerDiff of officerDiffs) {
+      if (officerDiff.type === 'added' && officerDiff.extractedData) {
+        // Add new officer
+        const extracted = officerDiff.extractedData;
+        const nameParts = extracted.name.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        // Find or create contact
+        const { contact } = await findOrCreateContact(
+          {
+            contactType: 'INDIVIDUAL',
+            firstName: normalizeName(firstName) || firstName,
+            lastName: normalizeName(lastName) || lastName,
+            identificationType: mapIdentificationType(extracted.identificationType) || undefined,
+            identificationNumber: extracted.identificationNumber,
+            nationality: extracted.nationality,
+            fullAddress: extracted.address,
+          },
+          { tenantId, userId }
+        );
+
+        // Create officer record
+        await tx.companyOfficer.create({
+          data: {
+            companyId: existingCompanyId,
+            contactId: contact.id,
+            role: mapOfficerRole(extracted.role),
+            name: normalizeName(extracted.name) || extracted.name,
+            identificationType: mapIdentificationType(extracted.identificationType),
+            identificationNumber: extracted.identificationNumber,
+            nationality: extracted.nationality,
+            address: extracted.address,
+            appointmentDate: extracted.appointmentDate ? new Date(extracted.appointmentDate) : null,
+            isCurrent: true,
+            sourceDocumentId: documentId,
+          },
+        });
+
+        // Create company-contact relationship
+        await createCompanyContactRelation(contact.id, existingCompanyId, extracted.role);
+        officerChanges.added++;
+      } else if (officerDiff.type === 'updated' && officerDiff.officerId && officerDiff.extractedData) {
+        // Update existing officer
+        const extracted = officerDiff.extractedData;
+        await tx.companyOfficer.update({
+          where: { id: officerDiff.officerId },
+          data: {
+            role: mapOfficerRole(extracted.role),
+            nationality: extracted.nationality,
+            address: extracted.address,
+            sourceDocumentId: documentId,
+          },
+        });
+        officerChanges.updated++;
+      } else if (officerDiff.type === 'potentially_ceased' && officerDiff.officerId) {
+        // Handle potentially ceased officers based on user actions
+        const action = officerActions?.find(a => a.officerId === officerDiff.officerId);
+        if (action) {
+          if (action.action === 'cease') {
+            await tx.companyOfficer.update({
+              where: { id: officerDiff.officerId },
+              data: {
+                cessationDate: action.cessationDate ? new Date(action.cessationDate) : new Date(),
+                isCurrent: false,
+              },
+            });
+            officerChanges.ceased++;
+          } else if (action.action === 'follow_up') {
+            // Mark for follow-up - no changes to database, just tracking
+            officerChanges.followUp++;
+          }
+        }
+        // If no action provided, leave the officer unchanged
+      }
+    }
+
+    // Process shareholder updates
+    for (const shareholderDiff of shareholderDiffs) {
+      if (shareholderDiff.type === 'added' && shareholderDiff.extractedData) {
+        // Add new shareholder
+        const extracted = shareholderDiff.extractedData;
+        const contactType = extracted.type === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL';
+
+        let contactData;
+        if (contactType === 'CORPORATE') {
+          contactData = {
+            contactType: 'CORPORATE' as const,
+            corporateName: normalizeCompanyName(extracted.name) || extracted.name,
+            corporateUen: extracted.identificationNumber,
+            fullAddress: extracted.address,
+          };
+        } else {
+          const nameParts = extracted.name.split(' ');
+          contactData = {
+            contactType: 'INDIVIDUAL' as const,
+            firstName: normalizeName(nameParts[0]) || nameParts[0],
+            lastName: normalizeName(nameParts.slice(1).join(' ')) || undefined,
+            identificationType: mapIdentificationType(extracted.identificationType) || undefined,
+            identificationNumber: extracted.identificationNumber,
+            nationality: extracted.nationality,
+            fullAddress: extracted.address,
+          };
+        }
+
+        const { contact } = await findOrCreateContact(contactData, { tenantId, userId });
+
+        await tx.companyShareholder.create({
+          data: {
+            companyId: existingCompanyId,
+            contactId: contact.id,
+            name: contactType === 'CORPORATE'
+              ? normalizeCompanyName(extracted.name) || extracted.name
+              : normalizeName(extracted.name) || extracted.name,
+            shareholderType: contactType,
+            identificationType: mapIdentificationType(extracted.identificationType),
+            identificationNumber: extracted.identificationNumber,
+            nationality: extracted.nationality,
+            placeOfOrigin: extracted.placeOfOrigin,
+            address: extracted.address,
+            shareClass: extracted.shareClass || 'ORDINARY',
+            numberOfShares: extracted.numberOfShares,
+            percentageHeld: extracted.percentageHeld,
+            currency: extracted.currency || 'SGD',
+            isCurrent: true,
+            sourceDocumentId: documentId,
+          },
+        });
+
+        await createCompanyContactRelation(contact.id, existingCompanyId, 'Shareholder');
+        shareholderChanges.added++;
+      } else if (shareholderDiff.type === 'updated' && shareholderDiff.shareholderId && shareholderDiff.extractedData) {
+        // Update existing shareholder
+        const extracted = shareholderDiff.extractedData;
+        await tx.companyShareholder.update({
+          where: { id: shareholderDiff.shareholderId },
+          data: {
+            shareClass: extracted.shareClass || 'ORDINARY',
+            numberOfShares: extracted.numberOfShares,
+            percentageHeld: extracted.percentageHeld,
+            currency: extracted.currency,
+            nationality: extracted.nationality,
+            address: extracted.address,
+            sourceDocumentId: documentId,
+          },
+        });
+        shareholderChanges.updated++;
+      } else if (shareholderDiff.type === 'removed' && shareholderDiff.shareholderId) {
+        // Mark shareholder as not current
+        await tx.companyShareholder.update({
+          where: { id: shareholderDiff.shareholderId },
+          data: {
+            isCurrent: false,
+          },
+        });
+        shareholderChanges.removed++;
+      }
+    }
+
+    // Recalculate shareholder percentages if any changes were made
+    if (shareholderChanges.added > 0 || shareholderChanges.updated > 0 || shareholderChanges.removed > 0) {
+      const currentShareholders = await tx.companyShareholder.findMany({
+        where: { companyId: existingCompanyId, isCurrent: true },
+      });
+
+      const totalShares = currentShareholders.reduce((sum, s) => sum + s.numberOfShares, 0);
+
+      if (totalShares > 0) {
+        for (const shareholder of currentShareholders) {
+          const percentage = (shareholder.numberOfShares / totalShares) * 100;
+          await tx.companyShareholder.update({
+            where: { id: shareholder.id },
+            data: { percentageHeld: Math.round(percentage * 100) / 100 },
+          });
+        }
+      }
+    }
+
     // Update document with company reference
     await tx.document.update({
       where: { id: documentId },
@@ -1049,29 +1550,79 @@ export async function processBizFileExtractionSelective(
   });
 
   // Create audit log with specific changed fields
-  await createAuditLog({
-    tenantId,
-    userId,
-    companyId: existingCompanyId,
-    action: 'UPDATE',
-    entityType: 'Company',
-    entityId: existingCompanyId,
-    entityName: normalizedData.entityDetails.name,
-    summary: `Updated company from BizFile: ${updatedFields.join(', ')}`,
-    changeSource: 'BIZFILE_UPLOAD',
-    metadata: {
-      documentId,
-      uen: normalizedData.entityDetails.uen,
-      updatedFields,
-      changes: differences.map(d => ({
-        field: d.label,
-        from: d.oldValue,
-        to: d.newValue,
-      })),
-    },
-  });
+  if (updatedFields.length > 0) {
+    await createAuditLog({
+      tenantId,
+      userId,
+      companyId: existingCompanyId,
+      action: 'UPDATE',
+      entityType: 'Company',
+      entityId: existingCompanyId,
+      entityName: normalizedData.entityDetails.name,
+      summary: `Updated company from BizFile: ${updatedFields.join(', ')}`,
+      changeSource: 'BIZFILE_UPLOAD',
+      metadata: {
+        documentId,
+        uen: normalizedData.entityDetails.uen,
+        updatedFields,
+        changes: differences.map(d => ({
+          field: d.label,
+          from: d.oldValue,
+          to: d.newValue,
+        })),
+      },
+    });
+  }
 
-  return { companyId: existingCompanyId, created: false, updatedFields };
+  // Create audit logs for officer changes
+  if (officerChanges.added > 0 || officerChanges.updated > 0 || officerChanges.ceased > 0) {
+    const officerSummaryParts = [];
+    if (officerChanges.added > 0) officerSummaryParts.push(`${officerChanges.added} added`);
+    if (officerChanges.updated > 0) officerSummaryParts.push(`${officerChanges.updated} updated`);
+    if (officerChanges.ceased > 0) officerSummaryParts.push(`${officerChanges.ceased} ceased`);
+
+    await createAuditLog({
+      tenantId,
+      userId,
+      companyId: existingCompanyId,
+      action: 'UPDATE',
+      entityType: 'CompanyOfficer',
+      entityId: existingCompanyId,
+      entityName: normalizedData.entityDetails.name,
+      summary: `Updated officers from BizFile: ${officerSummaryParts.join(', ')}`,
+      changeSource: 'BIZFILE_UPLOAD',
+      metadata: {
+        documentId,
+        ...officerChanges,
+      },
+    });
+  }
+
+  // Create audit logs for shareholder changes
+  if (shareholderChanges.added > 0 || shareholderChanges.updated > 0 || shareholderChanges.removed > 0) {
+    const shareholderSummaryParts = [];
+    if (shareholderChanges.added > 0) shareholderSummaryParts.push(`${shareholderChanges.added} added`);
+    if (shareholderChanges.updated > 0) shareholderSummaryParts.push(`${shareholderChanges.updated} updated`);
+    if (shareholderChanges.removed > 0) shareholderSummaryParts.push(`${shareholderChanges.removed} removed`);
+
+    await createAuditLog({
+      tenantId,
+      userId,
+      companyId: existingCompanyId,
+      action: 'UPDATE',
+      entityType: 'CompanyShareholder',
+      entityId: existingCompanyId,
+      entityName: normalizedData.entityDetails.name,
+      summary: `Updated shareholders from BizFile: ${shareholderSummaryParts.join(', ')}`,
+      changeSource: 'BIZFILE_UPLOAD',
+      metadata: {
+        documentId,
+        ...shareholderChanges,
+      },
+    });
+  }
+
+  return { companyId: existingCompanyId, created: false, updatedFields, officerChanges, shareholderChanges };
 }
 
 export async function processBizFileExtraction(
@@ -1363,7 +1914,6 @@ export async function processBizFileExtraction(
           companyId: result.id,
           contactId: contact.id,
           role: mapOfficerRole(officer.role),
-          designation: officer.designation,
           name: officer.name,
           identificationType: mapIdentificationType(officer.identificationType),
           identificationNumber: officer.identificationNumber,

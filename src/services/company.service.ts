@@ -32,7 +32,6 @@ export interface CompanyWithRelations extends Company {
     id: string;
     name: string;
     role: string;
-    designation?: string | null;
     nationality?: string | null;
     address?: string | null;
     appointmentDate?: Date | null;
@@ -498,7 +497,6 @@ export async function getCompanyById(
           id: true,
           name: true,
           role: true,
-          designation: true,
           nationality: true,
           address: true,
           appointmentDate: true,

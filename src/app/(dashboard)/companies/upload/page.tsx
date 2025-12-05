@@ -15,6 +15,13 @@ import {
   Building2,
   Sparkles,
   RefreshCw,
+  Users,
+  UserPlus,
+  UserMinus,
+  UserCheck,
+  Calendar,
+  Briefcase,
+  PieChart,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
 import { useCompany } from '@/hooks/use-companies';
@@ -31,10 +38,60 @@ interface DiffEntry {
   category: 'entity' | 'ssic' | 'address' | 'compliance' | 'capital';
 }
 
+interface OfficerDiffEntry {
+  type: 'added' | 'updated' | 'potentially_ceased';
+  officerId?: string;
+  name: string;
+  role: string;
+  changes?: Array<{ field: string; label: string; oldValue: string | null; newValue: string | null }>;
+  extractedData?: {
+    name: string;
+    role: string;
+    appointmentDate?: string;
+  };
+  matchConfidence?: 'high' | 'medium' | 'low';
+}
+
+interface ShareholderDiffEntry {
+  type: 'added' | 'removed' | 'updated';
+  shareholderId?: string;
+  name: string;
+  shareholderType: 'INDIVIDUAL' | 'CORPORATE';
+  changes?: Array<{ field: string; label: string; oldValue: string | number | null; newValue: string | number | null }>;
+  shareholdingChanges?: {
+    shareClass?: { old: string; new: string };
+    numberOfShares?: { old: number; new: number };
+  };
+  extractedData?: {
+    name: string;
+    type: 'INDIVIDUAL' | 'CORPORATE';
+    shareClass: string;
+    numberOfShares: number;
+    percentageHeld?: number;
+  };
+  matchConfidence?: 'high' | 'medium' | 'low';
+}
+
+interface OfficerAction {
+  officerId: string;
+  action: 'cease' | 'follow_up';
+  cessationDate?: string;
+}
+
 interface DiffResult {
   hasDifferences: boolean;
   differences: DiffEntry[];
   existingCompany: { name: string; uen: string };
+  officerDiffs?: OfficerDiffEntry[];
+  shareholderDiffs?: ShareholderDiffEntry[];
+  summary?: {
+    officersAdded: number;
+    officersUpdated: number;
+    officersPotentiallyCeased: number;
+    shareholdersAdded: number;
+    shareholdersUpdated: number;
+    shareholdersRemoved: number;
+  };
 }
 
 interface ExtractedData {
@@ -93,6 +150,11 @@ export default function UploadBizFilePage() {
   const [aiMetadata, setAiMetadata] = useState<AIMetadata | null>(null);
   const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
   const [updatedFields, setUpdatedFields] = useState<string[]>([]);
+  const [officerActions, setOfficerActions] = useState<OfficerAction[]>([]);
+  const [officerChanges, setOfficerChanges] = useState<{ added: number; updated: number; ceased: number; followUp: number } | null>(null);
+  const [shareholderChanges, setShareholderChanges] = useState<{ added: number; updated: number; removed: number } | null>(null);
+  const [companyUpdatedAt, setCompanyUpdatedAt] = useState<string | null>(null); // For concurrent update detection
+  const [concurrentUpdateWarning, setConcurrentUpdateWarning] = useState<string | null>(null);
 
   // Check if updating an existing company
   const existingCompanyId = searchParams.get('companyId');
@@ -185,11 +247,12 @@ export default function UploadBizFilePage() {
           throw new Error(err.error || 'Failed to extract and compare data');
         }
 
-        const { extractedData: data, diff, aiMetadata: metadata } = await diffResponse.json();
+        const { extractedData: data, diff, aiMetadata: metadata, companyUpdatedAt: updatedAt } = await diffResponse.json();
         setExtractedData(data);
         setDiffResult(diff);
         setCompanyId(existingCompanyId);
         setAiMetadata(metadata);
+        setCompanyUpdatedAt(updatedAt); // Store for concurrent update detection
         setStep('diff-preview');
       } else {
         // Normal create mode - extract and save
@@ -261,6 +324,8 @@ export default function UploadBizFilePage() {
         body: JSON.stringify({
           companyId,
           extractedData,
+          officerActions: officerActions.length > 0 ? officerActions : undefined,
+          expectedUpdatedAt: companyUpdatedAt || undefined, // For concurrent update detection
         }),
       });
 
@@ -269,8 +334,11 @@ export default function UploadBizFilePage() {
         throw new Error(err.error || 'Failed to apply update');
       }
 
-      const { updatedFields: fields } = await response.json();
-      setUpdatedFields(fields || []);
+      const result = await response.json();
+      setUpdatedFields(result.updatedFields || []);
+      setOfficerChanges(result.officerChanges || null);
+      setShareholderChanges(result.shareholderChanges || null);
+      setConcurrentUpdateWarning(result.concurrentUpdateWarning || null);
       setStep('complete');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -290,6 +358,24 @@ export default function UploadBizFilePage() {
     setSelectedStandardContexts([]);
     setDiffResult(null);
     setUpdatedFields([]);
+    setOfficerActions([]);
+    setOfficerChanges(null);
+    setShareholderChanges(null);
+    setCompanyUpdatedAt(null);
+    setConcurrentUpdateWarning(null);
+  };
+
+  // Handle officer action change (for potentially ceased officers)
+  const handleOfficerActionChange = (officerId: string, action: 'cease' | 'follow_up', cessationDate?: string) => {
+    setOfficerActions((prev) => {
+      const existing = prev.find((a) => a.officerId === officerId);
+      if (existing) {
+        return prev.map((a) =>
+          a.officerId === officerId ? { ...a, action, cessationDate } : a
+        );
+      }
+      return [...prev, { officerId, action, cessationDate }];
+    });
   };
 
   return (
@@ -696,28 +782,265 @@ export default function UploadBizFilePage() {
                 })}
               </div>
             ) : (
-              <div className="p-8 text-center">
-                <CheckCircle className="w-10 h-10 text-status-success mx-auto mb-3" />
-                <p className="text-text-primary font-medium">No changes detected</p>
-                <p className="text-sm text-text-secondary mt-1">
-                  The company data is already up to date with this BizFile.
-                </p>
-              </div>
+              // Only show "no changes" if there are also no officer/shareholder diffs
+              (!diffResult.officerDiffs?.length && !diffResult.shareholderDiffs?.length) && (
+                <div className="p-8 text-center">
+                  <CheckCircle className="w-10 h-10 text-status-success mx-auto mb-3" />
+                  <p className="text-text-primary font-medium">No changes detected</p>
+                  <p className="text-sm text-text-secondary mt-1">
+                    The company data is already up to date with this BizFile.
+                  </p>
+                </div>
+              )
             )}
           </div>
 
-          {/* Officers and Shareholders info */}
-          {(extractedData.officers?.length || extractedData.shareholders?.length) && (
-            <div className="card p-4 bg-status-info/5 border-status-info/30">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-status-info flex-shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium text-text-primary">Note about Officers and Shareholders</p>
-                  <p className="text-text-secondary mt-1">
-                    This update focuses on company-level data. Officer and shareholder changes are handled separately
-                    and will not be modified by this update. Use the company detail page to manage officers and shareholders.
-                  </p>
-                </div>
+          {/* Officer Diffs */}
+          {diffResult.officerDiffs && diffResult.officerDiffs.length > 0 && (
+            <div className="card">
+              <div className="p-4 border-b border-border-primary">
+                <h2 className="font-medium text-text-primary flex items-center gap-2">
+                  <Users className="w-4 h-4 text-oak-primary" />
+                  Officer Changes
+                </h2>
+                <p className="text-sm text-text-tertiary mt-1">
+                  {diffResult.summary?.officersAdded || 0} new, {diffResult.summary?.officersUpdated || 0} updated, {diffResult.summary?.officersPotentiallyCeased || 0} potentially ceased
+                </p>
+              </div>
+              <div className="divide-y divide-border-primary">
+                {diffResult.officerDiffs.map((officer, idx) => (
+                  <div key={idx} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        {officer.type === 'added' && (
+                          <div className="w-8 h-8 rounded-full bg-status-success/10 flex items-center justify-center">
+                            <UserPlus className="w-4 h-4 text-status-success" />
+                          </div>
+                        )}
+                        {officer.type === 'updated' && (
+                          <div className="w-8 h-8 rounded-full bg-status-info/10 flex items-center justify-center">
+                            <UserCheck className="w-4 h-4 text-status-info" />
+                          </div>
+                        )}
+                        {officer.type === 'potentially_ceased' && (
+                          <div className="w-8 h-8 rounded-full bg-status-warning/10 flex items-center justify-center">
+                            <UserMinus className="w-4 h-4 text-status-warning" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-text-primary">{officer.name}</p>
+                          <div className="flex items-center gap-2 text-sm text-text-secondary">
+                            <Briefcase className="w-3 h-3" />
+                            <span>{officer.role?.replace(/_/g, ' ')}</span>
+                            {officer.matchConfidence && (
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                officer.matchConfidence === 'high' ? 'bg-status-success/10 text-status-success' :
+                                officer.matchConfidence === 'medium' ? 'bg-status-warning/10 text-status-warning' :
+                                'bg-status-error/10 text-status-error'
+                              }`}>
+                                {officer.matchConfidence} match
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-1 rounded ${
+                        officer.type === 'added' ? 'bg-status-success/10 text-status-success' :
+                        officer.type === 'updated' ? 'bg-status-info/10 text-status-info' :
+                        'bg-status-warning/10 text-status-warning'
+                      }`}>
+                        {officer.type === 'added' ? 'New' : officer.type === 'updated' ? 'Updated' : 'Not in BizFile'}
+                      </span>
+                    </div>
+
+                    {/* Show changes for updated officers */}
+                    {officer.type === 'updated' && officer.changes && officer.changes.length > 0 && (
+                      <div className="mt-3 ml-11 space-y-2">
+                        {officer.changes.map((change, cIdx) => (
+                          <div key={cIdx} className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="text-text-secondary">{change.label}</div>
+                            <div className="text-status-error bg-status-error/5 px-2 py-1 rounded line-through">
+                              {change.oldValue || <span className="text-text-muted italic">Not set</span>}
+                            </div>
+                            <div className="text-status-success bg-status-success/5 px-2 py-1 rounded">
+                              {change.newValue || <span className="text-text-muted italic">Not set</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Action controls for potentially ceased officers */}
+                    {officer.type === 'potentially_ceased' && officer.officerId && (
+                      <div className="mt-3 ml-11 p-3 bg-background-elevated rounded-lg">
+                        <p className="text-sm text-text-secondary mb-2">
+                          This officer exists in the database but was not found in the BizFile. What would you like to do?
+                        </p>
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`officer-action-${officer.officerId}`}
+                              checked={officerActions.find(a => a.officerId === officer.officerId)?.action === 'cease'}
+                              onChange={() => handleOfficerActionChange(officer.officerId!, 'cease')}
+                              className="w-4 h-4 text-oak-primary"
+                            />
+                            <span className="text-sm text-text-primary">Mark as ceased</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`officer-action-${officer.officerId}`}
+                              checked={officerActions.find(a => a.officerId === officer.officerId)?.action === 'follow_up'}
+                              onChange={() => handleOfficerActionChange(officer.officerId!, 'follow_up')}
+                              className="w-4 h-4 text-oak-primary"
+                            />
+                            <span className="text-sm text-text-primary">Follow up later</span>
+                          </label>
+                        </div>
+                        {officerActions.find(a => a.officerId === officer.officerId)?.action === 'cease' && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-text-muted" />
+                            <input
+                              type="date"
+                              value={officerActions.find(a => a.officerId === officer.officerId)?.cessationDate || ''}
+                              onChange={(e) => handleOfficerActionChange(officer.officerId!, 'cease', e.target.value)}
+                              className="text-sm px-2 py-1 border border-border-primary rounded bg-background-primary text-text-primary"
+                              placeholder="Cessation date"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shareholder Diffs */}
+          {diffResult.shareholderDiffs && diffResult.shareholderDiffs.length > 0 && (
+            <div className="card">
+              <div className="p-4 border-b border-border-primary">
+                <h2 className="font-medium text-text-primary flex items-center gap-2">
+                  <PieChart className="w-4 h-4 text-oak-primary" />
+                  Shareholder Changes
+                </h2>
+                <p className="text-sm text-text-tertiary mt-1">
+                  {diffResult.summary?.shareholdersAdded || 0} new, {diffResult.summary?.shareholdersUpdated || 0} updated, {diffResult.summary?.shareholdersRemoved || 0} removed
+                </p>
+              </div>
+              <div className="divide-y divide-border-primary">
+                {diffResult.shareholderDiffs.map((shareholder, idx) => (
+                  <div key={idx} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        {shareholder.type === 'added' && (
+                          <div className="w-8 h-8 rounded-full bg-status-success/10 flex items-center justify-center">
+                            <UserPlus className="w-4 h-4 text-status-success" />
+                          </div>
+                        )}
+                        {shareholder.type === 'updated' && (
+                          <div className="w-8 h-8 rounded-full bg-status-info/10 flex items-center justify-center">
+                            <UserCheck className="w-4 h-4 text-status-info" />
+                          </div>
+                        )}
+                        {shareholder.type === 'removed' && (
+                          <div className="w-8 h-8 rounded-full bg-status-error/10 flex items-center justify-center">
+                            <UserMinus className="w-4 h-4 text-status-error" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-text-primary">{shareholder.name}</p>
+                          <div className="flex items-center gap-2 text-sm text-text-secondary">
+                            <span className="capitalize">{shareholder.shareholderType?.toLowerCase()}</span>
+                            {shareholder.matchConfidence && (
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                shareholder.matchConfidence === 'high' ? 'bg-status-success/10 text-status-success' :
+                                shareholder.matchConfidence === 'medium' ? 'bg-status-warning/10 text-status-warning' :
+                                'bg-status-error/10 text-status-error'
+                              }`}>
+                                {shareholder.matchConfidence} match
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-1 rounded ${
+                        shareholder.type === 'added' ? 'bg-status-success/10 text-status-success' :
+                        shareholder.type === 'updated' ? 'bg-status-info/10 text-status-info' :
+                        'bg-status-error/10 text-status-error'
+                      }`}>
+                        {shareholder.type === 'added' ? 'New' : shareholder.type === 'updated' ? 'Updated' : 'Removed'}
+                      </span>
+                    </div>
+
+                    {/* Show shareholding changes */}
+                    {shareholder.shareholdingChanges && (
+                      <div className="mt-3 ml-11 space-y-2">
+                        {shareholder.shareholdingChanges.shareClass && (
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="text-text-secondary">Share Class</div>
+                            <div className="text-status-error bg-status-error/5 px-2 py-1 rounded line-through">
+                              {shareholder.shareholdingChanges.shareClass.old}
+                            </div>
+                            <div className="text-status-success bg-status-success/5 px-2 py-1 rounded">
+                              {shareholder.shareholdingChanges.shareClass.new}
+                            </div>
+                          </div>
+                        )}
+                        {shareholder.shareholdingChanges.numberOfShares && (
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="text-text-secondary">Number of Shares</div>
+                            <div className="text-status-error bg-status-error/5 px-2 py-1 rounded line-through">
+                              {shareholder.shareholdingChanges.numberOfShares.old.toLocaleString()}
+                            </div>
+                            <div className="text-status-success bg-status-success/5 px-2 py-1 rounded">
+                              {shareholder.shareholdingChanges.numberOfShares.new.toLocaleString()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Show general changes for updated shareholders */}
+                    {shareholder.type === 'updated' && shareholder.changes && shareholder.changes.length > 0 && (
+                      <div className="mt-3 ml-11 space-y-2">
+                        {shareholder.changes.map((change, cIdx) => (
+                          <div key={cIdx} className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="text-text-secondary">{change.label}</div>
+                            <div className="text-status-error bg-status-error/5 px-2 py-1 rounded line-through">
+                              {change.oldValue ?? <span className="text-text-muted italic">Not set</span>}
+                            </div>
+                            <div className="text-status-success bg-status-success/5 px-2 py-1 rounded">
+                              {change.newValue ?? <span className="text-text-muted italic">Not set</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Show extracted data for new shareholders */}
+                    {shareholder.type === 'added' && shareholder.extractedData && (
+                      <div className="mt-3 ml-11 grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-text-muted">Shares:</span>{' '}
+                          <span className="text-text-primary">{shareholder.extractedData.numberOfShares?.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-text-muted">Class:</span>{' '}
+                          <span className="text-text-primary">{shareholder.extractedData.shareClass}</span>
+                        </div>
+                        {shareholder.extractedData.percentageHeld && (
+                          <div>
+                            <span className="text-text-muted">Percentage:</span>{' '}
+                            <span className="text-text-primary">{shareholder.extractedData.percentageHeld}%</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -730,16 +1053,26 @@ export default function UploadBizFilePage() {
               <Link href={`/companies/${companyId}`} className="btn-secondary btn-sm">
                 Cancel
               </Link>
-              <button
-                onClick={handleApplyUpdate}
-                disabled={!diffResult.hasDifferences}
-                className="btn-primary btn-sm flex items-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {diffResult.hasDifferences
-                  ? `Apply ${diffResult.differences.length} Change${diffResult.differences.length > 1 ? 's' : ''}`
-                  : 'No Changes to Apply'}
-              </button>
+              {(() => {
+                const companyChanges = diffResult.differences.length;
+                const officerDiffCount = diffResult.officerDiffs?.length || 0;
+                const shareholderDiffCount = diffResult.shareholderDiffs?.length || 0;
+                const totalChanges = companyChanges + officerDiffCount + shareholderDiffCount;
+                const hasAnyChanges = totalChanges > 0;
+
+                return (
+                  <button
+                    onClick={handleApplyUpdate}
+                    disabled={!hasAnyChanges}
+                    className="btn-primary btn-sm flex items-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    {hasAnyChanges
+                      ? `Apply ${totalChanges} Change${totalChanges > 1 ? 's' : ''}`
+                      : 'No Changes to Apply'}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -763,21 +1096,53 @@ export default function UploadBizFilePage() {
       {/* Step: Complete */}
       {step === 'complete' && (
         <div className="card p-12 text-center">
+          {/* Concurrent update warning */}
+          {concurrentUpdateWarning && (
+            <div className="mb-6 p-4 bg-status-warning/10 border border-status-warning/30 rounded-lg text-left">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-status-warning flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-status-warning">Concurrent Update Detected</p>
+                  <p className="text-sm text-text-secondary mt-1">{concurrentUpdateWarning}</p>
+                </div>
+              </div>
+            </div>
+          )}
           <CheckCircle className="w-12 h-12 text-status-success mx-auto mb-4" />
           <h3 className="text-lg font-medium text-text-primary mb-2">
             {isUpdateMode ? 'Company Updated Successfully!' : 'Company Created Successfully!'}
           </h3>
-          <p className="text-text-secondary mb-6">
+          <div className="text-text-secondary mb-6 space-y-2">
             {isUpdateMode ? (
-              updatedFields.length > 0 ? (
-                <>Updated {updatedFields.length} field{updatedFields.length > 1 ? 's' : ''}: {updatedFields.join(', ')}</>
-              ) : (
-                <>No changes were needed - company data was already up to date.</>
-              )
+              <>
+                {updatedFields.length > 0 && (
+                  <p>Updated {updatedFields.length} field{updatedFields.length > 1 ? 's' : ''}: {updatedFields.join(', ')}</p>
+                )}
+                {officerChanges && (officerChanges.added > 0 || officerChanges.updated > 0 || officerChanges.ceased > 0 || officerChanges.followUp > 0) && (
+                  <p className="flex items-center justify-center gap-2">
+                    <Users className="w-4 h-4 text-oak-primary" />
+                    Officers: {officerChanges.added > 0 && `${officerChanges.added} added`}
+                    {officerChanges.updated > 0 && `${officerChanges.added > 0 ? ', ' : ''}${officerChanges.updated} updated`}
+                    {officerChanges.ceased > 0 && `${(officerChanges.added > 0 || officerChanges.updated > 0) ? ', ' : ''}${officerChanges.ceased} ceased`}
+                    {officerChanges.followUp > 0 && `${(officerChanges.added > 0 || officerChanges.updated > 0 || officerChanges.ceased > 0) ? ', ' : ''}${officerChanges.followUp} to follow up`}
+                  </p>
+                )}
+                {shareholderChanges && (shareholderChanges.added > 0 || shareholderChanges.updated > 0 || shareholderChanges.removed > 0) && (
+                  <p className="flex items-center justify-center gap-2">
+                    <PieChart className="w-4 h-4 text-oak-primary" />
+                    Shareholders: {shareholderChanges.added > 0 && `${shareholderChanges.added} added`}
+                    {shareholderChanges.updated > 0 && `${shareholderChanges.added > 0 ? ', ' : ''}${shareholderChanges.updated} updated`}
+                    {shareholderChanges.removed > 0 && `${(shareholderChanges.added > 0 || shareholderChanges.updated > 0) ? ', ' : ''}${shareholderChanges.removed} removed`}
+                  </p>
+                )}
+                {updatedFields.length === 0 && !officerChanges && !shareholderChanges && (
+                  <p>No changes were needed - company data was already up to date.</p>
+                )}
+              </>
             ) : (
-              <>The company and all related data have been saved.</>
+              <p>The company and all related data have been saved.</p>
             )}
-          </p>
+          </div>
           <div className="flex items-center justify-center gap-3">
             <button onClick={handleReset} className="btn-secondary btn-sm">
               Upload Another

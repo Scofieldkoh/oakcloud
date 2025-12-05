@@ -290,18 +290,53 @@ export function normalizeCase(text: string | null | undefined): string {
 }
 
 /**
+ * Normalize text inside parentheses to title case
+ * Handles: "(cayman)" -> "(Cayman)", "(ye Jiajin)" -> "(Ye Jiajin)"
+ */
+function normalizeParentheticalText(text: string): string {
+  // Match text inside parentheses and normalize each word
+  return text.replace(/\(([^)]+)\)/g, (match, content) => {
+    // Normalize each word inside parentheses
+    const normalizedContent = content
+      .split(/(\s+)/)
+      .map((word: string) => {
+        if (/^\s+$/.test(word)) return word; // Preserve whitespace
+        if (!word) return word;
+        // Title case: first letter upper, rest lower
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join('');
+    return `(${normalizedContent})`;
+  });
+}
+
+/**
  * Normalize a person's name
  * Handles common name patterns and preserves cultural naming conventions
  */
 export function normalizeName(name: string | null | undefined): string {
   if (!name) return '';
 
-  // If already proper case, return as-is
+  let result = name;
+
+  // If already proper case, still check for parenthetical text that may need normalization
   if (isAlreadyProperCase(name)) {
-    return name;
+    // Check for lowercase words inside parentheses like "(ye Jiajin)"
+    if (/\([^)]*[a-z]{2,}/.test(name)) {
+      result = normalizeParentheticalText(name);
+    }
+    return result;
   }
 
-  return normalizeCase(name);
+  // Normalize the whole string, then fix parenthetical text
+  result = normalizeCase(name);
+
+  // Also normalize parenthetical text which may have become lowercase
+  if (/\([^)]+\)/.test(result)) {
+    result = normalizeParentheticalText(result);
+  }
+
+  return result;
 }
 
 /**
@@ -310,12 +345,26 @@ export function normalizeName(name: string | null | undefined): string {
 export function normalizeCompanyName(name: string | null | undefined): string {
   if (!name) return '';
 
-  // If already proper case, return as-is
+  let result = name;
+
+  // If already proper case, still check for parenthetical text that may need normalization
   if (isAlreadyProperCase(name)) {
-    return name;
+    // Check for lowercase words inside parentheses like "(cayman)"
+    if (/\([^)]*[a-z]{2,}/.test(name)) {
+      result = normalizeParentheticalText(name);
+    }
+    return result;
   }
 
-  return normalizeCase(name);
+  // Normalize the whole string, then fix parenthetical text
+  result = normalizeCase(name);
+
+  // Also normalize parenthetical text which may have become lowercase
+  if (/\([^)]+\)/.test(result)) {
+    result = normalizeParentheticalText(result);
+  }
+
+  return result;
 }
 
 /**

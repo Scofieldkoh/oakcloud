@@ -580,6 +580,46 @@ await requirePermission(session, 'company', 'update', companyId);
 
 ---
 
+## Centralized Constants (`src/lib/constants.ts`)
+
+Application enums and constants are centralized for maintainability. **Keep these in sync with Prisma schema enums.**
+
+### Available Constants
+
+| Constant | Description |
+|----------|-------------|
+| `OFFICER_ROLES` | Officer role options (Director, Secretary, CEO, etc.) |
+| `SHAREHOLDER_TYPES` | Shareholder types (Individual, Corporate) |
+| `IDENTIFICATION_TYPES` | ID types (NRIC, FIN, Passport, UEN, Other) |
+| `CONTACT_TYPES` | Contact types (Individual, Corporate) |
+| `COMPANY_STATUSES` | Company status options |
+| `ENTITY_TYPES` | Entity types (Local Company, LLP, etc.) |
+| `SHARE_CLASSES` | Common share classes (Ordinary, Preference, etc.) |
+
+### Usage
+
+```typescript
+import { OFFICER_ROLES, getOfficerRoleLabel } from '@/lib/constants';
+
+// Use in dropdowns
+<select>
+  {OFFICER_ROLES.map((role) => (
+    <option key={role.value} value={role.value}>{role.label}</option>
+  ))}
+</select>
+
+// Get display label
+getOfficerRoleLabel('ALTERNATE_DIRECTOR'); // "Alternate Director"
+```
+
+### Adding New Values
+
+1. Update the Prisma schema enum in `prisma/schema.prisma`
+2. Run `npm run db:generate` to regenerate Prisma client
+3. Add the new value to the corresponding constant in `src/lib/constants.ts`
+
+---
+
 ## Audit Logging
 
 Comprehensive audit logging tracks all changes, user actions, and system events.
@@ -857,7 +897,7 @@ GET /api/companies/:id/documents/:documentId/extract
 POST /api/documents/:documentId/preview-diff
 ```
 
-Extracts data from a BizFile document and compares it against the existing company data without saving changes.
+Extracts data from a BizFile document and compares it against the existing company data without saving changes. Includes officer and shareholder differences.
 
 Response:
 ```json
@@ -877,8 +917,51 @@ Response:
     "existingCompany": {
       "name": "Acme Pte Ltd",
       "uen": "202012345A"
+    },
+    "officerDiffs": [
+      {
+        "type": "added",
+        "name": "John Smith",
+        "role": "DIRECTOR",
+        "matchConfidence": "low",
+        "extractedData": { ... }
+      },
+      {
+        "type": "potentially_ceased",
+        "officerId": "uuid",
+        "name": "Jane Doe",
+        "role": "DIRECTOR",
+        "matchConfidence": "high"
+      }
+    ],
+    "shareholderDiffs": [
+      {
+        "type": "updated",
+        "shareholderId": "uuid",
+        "name": "Investor Pte Ltd",
+        "shareholderType": "CORPORATE",
+        "shareholdingChanges": {
+          "numberOfShares": { "old": 1000, "new": 2000 }
+        },
+        "matchConfidence": "high"
+      },
+      {
+        "type": "removed",
+        "shareholderId": "uuid",
+        "name": "Old Shareholder",
+        "shareholderType": "INDIVIDUAL"
+      }
+    ],
+    "summary": {
+      "officersAdded": 1,
+      "officersUpdated": 0,
+      "officersPotentiallyCeased": 1,
+      "shareholdersAdded": 0,
+      "shareholdersUpdated": 1,
+      "shareholdersRemoved": 1
     }
   },
+  "companyUpdatedAt": "2024-01-15T10:30:00.000Z",
   "aiMetadata": {
     "model": "gpt-4.1",
     "promptTokens": 1500,
@@ -887,31 +970,81 @@ Response:
 }
 ```
 
+The `companyUpdatedAt` field is used for concurrent update detection (optimistic locking). Pass it back as `expectedUpdatedAt` when calling apply-update.
+
+Officer Diff Types:
+- `added` - New officer from BizFile
+- `updated` - Existing officer with changed details (role)
+- `potentially_ceased` - Officer exists in DB but not in BizFile (user should provide cessation date or mark as "To-follow-up")
+
+Shareholder Diff Types:
+- `added` - New shareholder from BizFile
+- `updated` - Existing shareholder with changed shareholding (shares, class)
+- `removed` - Shareholder exists in DB but not in BizFile (will be marked as historical)
+
 #### Apply Selective BizFile Update
 ```
 POST /api/documents/:documentId/apply-update
 Content-Type: application/json
 
 {
-  "extractedData": { ... }
+  "companyId": "uuid",
+  "extractedData": { ... },
+  "officerActions": [
+    {
+      "officerId": "uuid",
+      "action": "cease",
+      "cessationDate": "2024-01-15"
+    },
+    {
+      "officerId": "uuid2",
+      "action": "follow_up"
+    }
+  ],
+  "expectedUpdatedAt": "2024-01-15T10:30:00.000Z"
 }
 ```
 
-Applies only changed fields from BizFile extraction to the existing company. This creates cleaner audit logs by only logging actual changes.
+Applies only changed fields from BizFile extraction to the existing company, including officers and shareholders. Creates cleaner audit logs by only logging actual changes.
+
+Request Body:
+- `companyId` - The company ID to update
+- `extractedData` - The extracted BizFile data from preview
+- `officerActions` - Optional actions for potentially ceased officers:
+  - `action: "cease"` - Mark officer as ceased with cessation date
+  - `action: "follow_up"` - Skip this officer (mark for manual follow-up)
+- `expectedUpdatedAt` - Optional ISO timestamp from preview-diff for concurrent update detection
 
 Response:
 ```json
 {
   "success": true,
   "companyId": "uuid",
-  "updatedFields": ["status", "primarySsicDescription", "lastArFiledDate"]
+  "updatedFields": ["status", "primarySsicDescription", "lastArFiledDate"],
+  "officerChanges": {
+    "added": 1,
+    "updated": 0,
+    "ceased": 1,
+    "followUp": 0
+  },
+  "shareholderChanges": {
+    "added": 0,
+    "updated": 1,
+    "removed": 1
+  },
+  "message": "Updated: 3 company field(s); Officers: 1 added, 1 ceased; Shareholders: 1 updated, 1 removed",
+  "concurrentUpdateWarning": "This company was modified by another user at 2024-01-15T10:35:00.000Z. Your changes may overwrite their updates."
 }
 ```
 
 Notes:
 - Only updates fields that have actually changed
-- Creates audit log with specific field changes
+- Officers are matched by identification (NRIC/FIN) or name + role
+- Shareholders are matched by identification or name
+- Shareholder percentages are automatically recalculated
+- Creates separate audit logs for company, officer, and shareholder changes
 - UEN must match an existing company owned by the tenant
+- If `expectedUpdatedAt` is provided and the company was modified since preview, `concurrentUpdateWarning` is returned but the update still proceeds
 
 ### Audit
 
@@ -1770,8 +1903,8 @@ Response includes usage logs with stats summary:
       "inputTokens": 1500,
       "outputTokens": 500,
       "totalTokens": 2000,
-      "costCents": 12,
-      "costUsd": 0.12,
+      "costCents": 1200,
+      "costUsd": 0.1200,
       "latencyMs": 2500,
       "success": true,
       "createdAt": "2024-01-15T10:30:00Z"
@@ -1786,11 +1919,13 @@ Response includes usage logs with stats summary:
     "successfulCalls": 148,
     "failedCalls": 2,
     "totalTokens": 300000,
-    "totalCostUsd": 15.50,
+    "totalCostUsd": 15.5000,
     "avgLatencyMs": 2100
   }
 }
 ```
+
+> **Note:** `costCents` stores cost in micro-dollars (1/10000 USD) for 4 decimal precision. To convert: `costUsd = costCents / 10000`.
 
 #### Export Connector Usage (CSV)
 ```

@@ -52,8 +52,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const startDate = searchParams.get('startDate')
       ? new Date(searchParams.get('startDate')!)
       : undefined;
+    // Set end date to end of day (23:59:59.999) to include all records from that day
     const endDate = searchParams.get('endDate')
-      ? new Date(searchParams.get('endDate')!)
+      ? (() => {
+          const d = new Date(searchParams.get('endDate')!);
+          d.setUTCHours(23, 59, 59, 999);
+          return d;
+        })()
       : undefined;
     const model = searchParams.get('model') || undefined;
     const operation = searchParams.get('operation') || undefined;

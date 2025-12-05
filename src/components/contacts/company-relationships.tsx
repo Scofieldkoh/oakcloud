@@ -34,7 +34,6 @@ interface OfficerPosition {
   id: string;
   company: Company;
   role: string;
-  designation: string | null;
   appointmentDate: string | null;
   cessationDate: string | null;
   isCurrent: boolean;
@@ -426,24 +425,15 @@ export function CompanyRelationships({
                   {/* Role Badges Summary */}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     {/* Officer badges */}
-                    {currentOfficerPositions.map((pos) => {
-                      // Avoid duplicate display when role and designation are the same
-                      const roleDisplay = pos.role.replace(/_/g, ' ');
-                      const designationDisplay = pos.designation?.replace(/_/g, ' ');
-                      const showDesignation = designationDisplay &&
-                        designationDisplay.toLowerCase() !== roleDisplay.toLowerCase();
-
-                      return (
-                        <span
-                          key={pos.id}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-oak-primary/10 text-oak-light text-xs"
-                        >
-                          <Briefcase className="w-3 h-3" />
-                          {roleDisplay}
-                          {showDesignation && ` (${designationDisplay})`}
-                        </span>
-                      );
-                    })}
+                    {currentOfficerPositions.map((pos) => (
+                      <span
+                        key={pos.id}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-oak-primary/10 text-oak-light text-xs"
+                      >
+                        <Briefcase className="w-3 h-3" />
+                        {pos.role.replace(/_/g, ' ')}
+                      </span>
+                    ))}
 
                     {/* Shareholding badges */}
                     {currentShareholdings.map((sh) => (
@@ -506,22 +496,14 @@ export function CompanyRelationships({
                         Officer Positions
                       </h4>
                       <div className="space-y-2">
-                        {rel.officerPositions.map((pos) => {
-                          // Avoid duplicate display when role and designation are the same
-                          const roleDisplay = pos.role.replace(/_/g, ' ');
-                          const designationDisplay = pos.designation?.replace(/_/g, ' ');
-                          const showDesignation = designationDisplay &&
-                            designationDisplay.toLowerCase() !== roleDisplay.toLowerCase();
-
-                          return (
+                        {rel.officerPositions.map((pos) => (
                           <div
                             key={pos.id}
                             className="flex items-center justify-between text-sm"
                           >
                             <div>
                               <span className="text-text-primary">
-                                {roleDisplay}
-                                {showDesignation && ` - ${designationDisplay}`}
+                                {pos.role.replace(/_/g, ' ')}
                               </span>
                               {pos.appointmentDate && (
                                 <p className="text-xs text-text-muted">
@@ -563,8 +545,7 @@ export function CompanyRelationships({
                               )}
                             </div>
                           </div>
-                          );
-                        })}
+                        ))}
                       </div>
                     </div>
                   )}

@@ -48,7 +48,8 @@
       "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\check-connectors.js\")",
       "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\test-resolve.js\")",
       "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\check-connector.js\")",
-      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\fix-connector.js\")"
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\fix-connector.js\")",
+      "Bash(node check-usage-logs.js:*)"
     ],
     "deny": [],
     "ask": []

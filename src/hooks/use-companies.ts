@@ -17,7 +17,6 @@ interface CompanyWithRelations extends Company {
     id: string;
     name: string;
     role: string;
-    designation?: string | null;
     nationality?: string | null;
     address?: string | null;
     appointmentDate?: Date | null;

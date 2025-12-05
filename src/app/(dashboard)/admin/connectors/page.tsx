@@ -253,15 +253,15 @@ export default function ConnectorsPage() {
   }
 
   // Group connectors by type
-  const connectorsByType = connectorsData?.connectors.reduce(
+  const connectorsByType: Partial<Record<ConnectorType, Connector[]>> = connectorsData?.connectors.reduce(
     (acc, connector) => {
       if (!acc[connector.type]) {
         acc[connector.type] = [];
       }
-      acc[connector.type].push(connector);
+      acc[connector.type]!.push(connector);
       return acc;
     },
-    {} as Record<ConnectorType, Connector[]>
+    {} as Partial<Record<ConnectorType, Connector[]>>
   ) || {};
 
   // Handlers
@@ -333,11 +333,11 @@ export default function ConnectorsPage() {
     }
   };
 
-  const handleDelete = async (reason: string) => {
+  const handleDelete = async (reason?: string) => {
     if (!deletingConnector) return;
 
     try {
-      await deleteMutation.mutateAsync({ id: deletingConnector.id, reason });
+      await deleteMutation.mutateAsync({ id: deletingConnector.id, reason: reason || 'No reason provided' });
       success('Connector deleted successfully');
       setDeletingConnector(null);
     } catch (err) {
@@ -571,7 +571,7 @@ export default function ConnectorsPage() {
       ) : (
         <div className="space-y-6">
           {/* AI Providers */}
-          {connectorsByType['AI_PROVIDER']?.length > 0 && (
+          {(connectorsByType['AI_PROVIDER']?.length ?? 0) > 0 && (
             <div className="card">
               <div className="p-4 border-b border-border-primary">
                 <h2 className="font-medium text-text-primary flex items-center gap-2">
@@ -607,7 +607,7 @@ export default function ConnectorsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-primary">
-                    {connectorsByType['AI_PROVIDER'].map(renderConnectorRow)}
+                    {connectorsByType['AI_PROVIDER']?.map(renderConnectorRow)}
                   </tbody>
                 </table>
               </div>
@@ -615,7 +615,7 @@ export default function ConnectorsPage() {
           )}
 
           {/* Storage */}
-          {connectorsByType['STORAGE']?.length > 0 && (
+          {(connectorsByType['STORAGE']?.length ?? 0) > 0 && (
             <div className="card">
               <div className="p-4 border-b border-border-primary">
                 <h2 className="font-medium text-text-primary flex items-center gap-2">
@@ -651,7 +651,7 @@ export default function ConnectorsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-primary">
-                    {connectorsByType['STORAGE'].map(renderConnectorRow)}
+                    {connectorsByType['STORAGE']?.map(renderConnectorRow)}
                   </tbody>
                 </table>
               </div>

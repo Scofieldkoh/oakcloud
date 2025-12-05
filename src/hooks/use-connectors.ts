@@ -536,10 +536,7 @@ export function useExportUsage() {
  * Format cost for display
  */
 export function formatCost(costUsd: number): string {
-  if (costUsd < 0.01) {
-    return `$${costUsd.toFixed(4)}`;
-  }
-  return `$${costUsd.toFixed(2)}`;
+  return `$${costUsd.toFixed(4)}`;
 }
 
 /**

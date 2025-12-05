@@ -97,7 +97,6 @@ export default function CompanyDetailPage({
     id: string;
     name: string;
     role: string;
-    designation: string | null;
     appointmentDate: string | null;
     cessationDate: string | null;
   } | null>(null);
@@ -135,7 +134,6 @@ export default function CompanyDetailPage({
     id: string;
     name: string;
     role: string;
-    designation?: string | null;
     appointmentDate?: Date | string | null;
     cessationDate?: Date | string | null;
   }) => {
@@ -149,7 +147,6 @@ export default function CompanyDetailPage({
       id: officer.id,
       name: officer.name,
       role: officer.role,
-      designation: officer.designation || null,
       appointmentDate: appointmentDateStr || null,
       cessationDate: cessationDateStr || null,
     });
@@ -508,7 +505,7 @@ export default function CompanyDetailPage({
                         className="input input-xs w-full"
                       >
                         <option value="">All Roles</option>
-                        {Array.from(new Set(company.officers?.map(o => o.designation || o.role) || [])).sort().map(role => (
+                        {Array.from(new Set(company.officers?.map(o => o.role) || [])).sort().map(role => (
                           <option key={role} value={role}>{toTitleCase(role)}</option>
                         ))}
                       </select>
@@ -551,8 +548,7 @@ export default function CompanyDetailPage({
                     }
                     // Role filter
                     if (officerRoleFilter) {
-                      const officerRole = officer.designation || officer.role;
-                      if (officerRole !== officerRoleFilter) return false;
+                      if (officer.role !== officerRoleFilter) return false;
                     }
                     // Show ceased filter
                     if (!showCeasedOfficers && !officer.isCurrent) return false;
@@ -574,7 +570,7 @@ export default function CompanyDetailPage({
                             <span className="text-text-primary font-medium">{officer.name}</span>
                           )}
                           <span className="badge badge-info">
-                            {toTitleCase(officer.designation || officer.role)}
+                            {toTitleCase(officer.role)}
                           </span>
                         </div>
                       </div>
@@ -635,7 +631,7 @@ export default function CompanyDetailPage({
               {company.officers && company.officers.length > 0 &&
                 company.officers.filter((officer) => {
                   if (officerNameFilter && !officer.name.toLowerCase().includes(officerNameFilter.toLowerCase())) return false;
-                  if (officerRoleFilter && (officer.designation || officer.role) !== officerRoleFilter) return false;
+                  if (officerRoleFilter && officer.role !== officerRoleFilter) return false;
                   if (!showCeasedOfficers && !officer.isCurrent) return false;
                   return true;
                 }).length === 0 && (
@@ -1071,7 +1067,7 @@ export default function CompanyDetailPage({
               <div className="text-sm text-text-secondary mb-4">
                 <span className="font-medium text-text-primary">{selectedOfficer.name}</span>
                 <span className="mx-2">-</span>
-                <span>{toTitleCase(selectedOfficer.designation || selectedOfficer.role)}</span>
+                <span>{toTitleCase(selectedOfficer.role)}</span>
               </div>
               <div>
                 <label className="label">Date of Appointment</label>

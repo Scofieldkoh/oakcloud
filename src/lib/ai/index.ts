@@ -243,7 +243,7 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
     // Credentials are already decrypted by resolveConnector
     const credentials = resolved.connector.credentials as Record<string, unknown>;
     const startTime = Date.now();
-    let response: AIResponse;
+    let response: AIResponse | undefined;
     let error: Error | null = null;
 
     try {

@@ -54,7 +54,10 @@ const contactBaseSchema = z.object({
     ),
 
   // Contact info
-  email: z.string().email().max(200).optional().nullable(),
+  email: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().email().max(200).nullable()
+  ).optional(),
   phone: z
     .string()
     .max(20)

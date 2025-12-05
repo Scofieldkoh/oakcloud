@@ -9,8 +9,11 @@ export const metadata: Metadata = {
   title: 'Oakcloud - Practice Management System',
   description: 'Internal management system for accounting practices',
   icons: {
-    icon: '/falcon.svg',
-    apple: '/falcon.svg',
+    icon: [
+      { url: '/falcon.svg', sizes: '32x32', type: 'image/svg+xml' },
+      { url: '/falcon.svg', sizes: '64x64', type: 'image/svg+xml' },
+    ],
+    apple: { url: '/falcon.svg', sizes: '180x180' },
   },
 };
 

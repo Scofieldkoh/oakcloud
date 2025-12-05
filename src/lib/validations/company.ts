@@ -50,14 +50,26 @@ export const createCompanySchema = z.object({
   primarySsicDescription: z.string().max(500).optional().nullable(),
   secondarySsicCode: z.string().max(10).optional().nullable(),
   secondarySsicDescription: z.string().max(500).optional().nullable(),
-  financialYearEndDay: z.number().min(1).max(31).optional().nullable(),
-  financialYearEndMonth: z.number().min(1).max(12).optional().nullable(),
+  financialYearEndDay: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined || Number.isNaN(val) ? null : val),
+    z.number().min(1).max(31).optional().nullable()
+  ),
+  financialYearEndMonth: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined || Number.isNaN(val) ? null : val),
+    z.number().min(1).max(12).optional().nullable()
+  ),
   fyeAsAtLastAr: dateStringTransform,
   homeCurrency: z.string().max(3).default('SGD'),
   paidUpCapitalCurrency: z.string().default('SGD'),
-  paidUpCapitalAmount: z.number().min(0).optional().nullable(),
+  paidUpCapitalAmount: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined || Number.isNaN(val) ? null : val),
+    z.number().min(0).optional().nullable()
+  ),
   issuedCapitalCurrency: z.string().default('SGD'),
-  issuedCapitalAmount: z.number().min(0).optional().nullable(),
+  issuedCapitalAmount: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined || Number.isNaN(val) ? null : val),
+    z.number().min(0).optional().nullable()
+  ),
   isGstRegistered: z.boolean().default(false),
   gstRegistrationNumber: z.string().max(20).optional().nullable(),
   gstRegistrationDate: dateStringTransform,

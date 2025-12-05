@@ -26,7 +26,6 @@ interface ContactWithRelationships extends Contact {
   officerPositions: Array<{
     id: string;
     role: string;
-    designation: string | null;
     appointmentDate: string | null;
     cessationDate: string | null;
     isCurrent: boolean;
@@ -380,7 +379,7 @@ export function useRemoveShareholding() {
 async function updateOfficerPosition(
   contactId: string,
   officerId: string,
-  data: { appointmentDate?: string | null; cessationDate?: string | null }
+  data: { role?: string | null; appointmentDate?: string | null; cessationDate?: string | null }
 ): Promise<{ message: string }> {
   const response = await fetch(`/api/contacts/${contactId}?action=update-officer`, {
     method: 'PUT',
@@ -407,7 +406,7 @@ export function useUpdateOfficerPosition() {
       contactId: string;
       officerId: string;
       companyId: string;
-      data: { appointmentDate?: string | null; cessationDate?: string | null };
+      data: { role?: string | null; appointmentDate?: string | null; cessationDate?: string | null };
     }) => updateOfficerPosition(contactId, officerId, data),
     onSuccess: (_, { contactId, companyId }) => {
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });

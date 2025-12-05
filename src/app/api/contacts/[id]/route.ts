@@ -383,7 +383,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       await requirePermission(session, 'contact', 'update');
 
       const body = await request.json();
-      const { officerId, appointmentDate, cessationDate } = body;
+      const { officerId, appointmentDate, cessationDate, role } = body;
 
       if (!officerId) {
         return NextResponse.json({ error: 'officerId is required' }, { status: 400 });
@@ -419,6 +419,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       await prisma.companyOfficer.update({
         where: { id: officerId },
         data: {
+          ...(role && { role }),
           appointmentDate: appointmentDate ? new Date(appointmentDate) : null,
           cessationDate: cessationDate ? new Date(cessationDate) : null,
           isCurrent: !cessationDate,

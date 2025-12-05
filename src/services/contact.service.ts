@@ -412,7 +412,6 @@ export async function linkContactToCompany(
         contactId,
         name: contact.fullName,
         role: officerRole,
-        designation: relationship,
         appointmentDate: appointmentDate ? new Date(appointmentDate) : null,
         isCurrent: true,
       },
@@ -697,7 +696,6 @@ export interface ContactWithRelationships extends Contact {
   officerPositions: Array<{
     id: string;
     role: string;
-    designation: string | null;
     appointmentDate: Date | null;
     cessationDate: Date | null;
     isCurrent: boolean;
@@ -825,7 +823,6 @@ export async function getContactWithRelationships(
     officerPositions: filteredOfficerPositions.map((o) => ({
       id: o.id,
       role: o.role,
-      designation: o.designation,
       appointmentDate: o.appointmentDate,
       cessationDate: o.cessationDate,
       isCurrent: o.isCurrent,

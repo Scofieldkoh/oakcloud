@@ -115,9 +115,9 @@ export async function logConnectorUsage(params: LogUsageParams): Promise<void> {
     metadata,
   } = params;
 
-  // Calculate cost in cents (USD cents for precision)
+  // Calculate cost in micro-dollars (1/10000 of USD for 4 decimal precision)
   const costUsd = calculateCost(model as AIModel, inputTokens, outputTokens);
-  const costCents = Math.round(costUsd * 100);
+  const costCents = Math.round(costUsd * 10000);
 
   try {
     await prisma.$transaction([
@@ -225,7 +225,7 @@ export async function searchUsageLogs(
       outputTokens: log.outputTokens,
       totalTokens: log.totalTokens,
       costCents: log.costCents,
-      costUsd: log.costCents / 100,
+      costUsd: log.costCents / 10000,
       latencyMs: log.latencyMs,
       operation: log.operation,
       success: log.success,
@@ -312,7 +312,7 @@ export async function getUsageStats(
     totalInputTokens: aggregates._sum.inputTokens ?? 0,
     totalOutputTokens: aggregates._sum.outputTokens ?? 0,
     totalCostCents: aggregates._sum.costCents ?? 0,
-    totalCostUsd: (aggregates._sum.costCents ?? 0) / 100,
+    totalCostUsd: (aggregates._sum.costCents ?? 0) / 10000,
     avgLatencyMs: aggregates._avg.latencyMs,
     byModel: byModel.map((m) => ({
       model: m.model,

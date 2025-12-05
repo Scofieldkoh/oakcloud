@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { extractBizFileWithVision, generateBizFileDiff } from '@/services/bizfile.service';
+import { extractBizFileWithVision, generateBizFileDiff, normalizeExtractedData } from '@/services/bizfile.service';
 import { calculateCost, formatCost, getModelConfig } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
 
@@ -66,7 +66,7 @@ export async function POST(
     // Get company for permission check
     const company = await prisma.company.findUnique({
       where: { id: companyId },
-      select: { id: true, tenantId: true, name: true, uen: true },
+      select: { id: true, tenantId: true, name: true, uen: true, updatedAt: true },
     });
 
     if (!company) {
@@ -117,10 +117,13 @@ export async function POST(
         }
       );
 
+      // Normalize extracted data before comparing
+      const normalizedData = normalizeExtractedData(extractionResult.data);
+
       // Generate diff against existing company
       const diffResult = await generateBizFileDiff(
         companyId,
-        extractionResult.data,
+        normalizedData,
         company.tenantId
       );
 
@@ -140,12 +143,17 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        extractedData: extractionResult.data,
+        extractedData: normalizedData,
         diff: {
           hasDifferences: diffResult.hasDifferences,
           differences: diffResult.differences,
           existingCompany: diffResult.existingCompany,
+          officerDiffs: diffResult.officerDiffs,
+          shareholderDiffs: diffResult.shareholderDiffs,
+          summary: diffResult.summary,
         },
+        // Include company updatedAt for optimistic locking (concurrent update detection)
+        companyUpdatedAt: company.updatedAt.toISOString(),
         aiMetadata: {
           modelUsed: extractionResult.modelUsed,
           modelName: modelConfig.name,

@@ -352,7 +352,6 @@ Officer records with appointment history.
 | company_id | UUID | No | FK to companies (CASCADE on delete) |
 | contact_id | UUID | Yes | FK to contacts (SET NULL on delete) |
 | role | ENUM | No | DIRECTOR, SECRETARY, CEO, etc. |
-| designation | VARCHAR(100) | Yes | Custom designation |
 | name | VARCHAR(200) | No | Officer name (denormalized) |
 | identification_type | ENUM | Yes | ID type |
 | identification_number | VARCHAR(50) | Yes | ID number |
@@ -858,7 +857,7 @@ Detailed usage logging for connectors with cost tracking.
 | input_tokens | INT | No | Number of input tokens (default: 0) |
 | output_tokens | INT | No | Number of output tokens (default: 0) |
 | total_tokens | INT | No | Total tokens (default: 0) |
-| cost_cents | INT | No | Cost in USD cents (default: 0) |
+| cost_cents | INT | No | Cost in micro-dollars (1/10000 USD) for 4 decimal precision (default: 0) |
 | latency_ms | INT | Yes | Response time in milliseconds |
 | operation | VARCHAR | Yes | Operation type (e.g., "bizfile_extraction") |
 | success | BOOLEAN | No | Whether call succeeded (default: true) |
