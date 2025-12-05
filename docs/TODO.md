@@ -10,4 +10,4 @@ COMPLETED:
 
 TO DO:
 1. Roles permission granity still have issue
-2. Internal note to improve
+2. backup of database

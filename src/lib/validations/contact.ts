@@ -73,9 +73,6 @@ const contactBaseSchema = z.object({
 
   // Address
   fullAddress: z.string().max(500).optional().nullable(),
-
-  // Meta
-  internalNotes: z.string().max(5000).optional().nullable(),
 });
 
 export const createContactSchema = contactBaseSchema.refine(

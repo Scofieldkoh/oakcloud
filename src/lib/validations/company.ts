@@ -73,7 +73,6 @@ export const createCompanySchema = z.object({
   isGstRegistered: z.boolean().default(false),
   gstRegistrationNumber: z.string().max(20).optional().nullable(),
   gstRegistrationDate: dateStringTransform,
-  internalNotes: z.string().max(5000).optional().nullable(),
 });
 
 export const updateCompanySchema = createCompanySchema.partial().extend({

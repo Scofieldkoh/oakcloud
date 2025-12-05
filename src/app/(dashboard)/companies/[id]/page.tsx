@@ -19,7 +19,6 @@ import {
   Upload,
   Building2,
   CreditCard,
-  StickyNote,
   Globe,
   User,
 } from 'lucide-react';
@@ -40,6 +39,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { X, Filter, Pencil as PencilIcon } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { InternalNotes } from '@/components/notes/internal-notes';
 
 // Helper to convert UPPER_CASE or UPPERCASE to Title Case
 function toTitleCase(str: string): string {
@@ -1024,22 +1024,15 @@ export default function CompanyDetailPage({
             </div>
           </div>
 
-          {/* Internal Notes */}
-          {company.internalNotes && (
-            <div className="card">
-              <div className="p-4 border-b border-border-primary">
-                <h2 className="font-medium text-text-primary flex items-center gap-2">
-                  <StickyNote className="w-4 h-4 text-text-tertiary" />
-                  Internal Notes
-                </h2>
-              </div>
-              <div className="p-4">
-                <p className="text-sm text-text-secondary whitespace-pre-wrap">{company.internalNotes}</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Internal Notes - Full Width */}
+      <InternalNotes
+        entityType="company"
+        entityId={id}
+        canEdit={can.updateCompany}
+      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

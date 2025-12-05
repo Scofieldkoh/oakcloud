@@ -2313,13 +2313,15 @@ src/
 │       │   └── [id]/
 │       │       ├── route.ts       # Get/Update/Delete
 │       │       ├── audit/route.ts # Audit history
-│       │       └── documents/     # Document management
+│       │       ├── documents/     # Document management
+│       │       └── notes/         # Internal notes (CRUD for tabs)
 │       ├── contacts/
 │       │   ├── route.ts           # List/Create contacts
 │       │   ├── bulk/route.ts      # Bulk delete contacts
 │       │   └── [id]/
 │       │       ├── route.ts       # Get/Update/Delete/Restore/Link/Unlink
-│       │       └── audit/route.ts # Contact audit history
+│       │       ├── audit/route.ts # Contact audit history
+│       │       └── notes/         # Internal notes (CRUD for tabs)
 │       ├── documents/
 │       │   └── [documentId]/
 │       │       ├── preview-diff/route.ts  # Preview BizFile diff
@@ -2360,8 +2362,11 @@ src/
 │   │   ├── theme-toggle.tsx       # Theme switcher component
 │   │   ├── ai-model-selector.tsx  # AI model selection with context
 │   │   ├── stepper.tsx            # Multi-step wizard component
-│   │   └── checkbox.tsx           # Checkbox with indeterminate state
+│   │   ├── checkbox.tsx           # Checkbox with indeterminate state
+│   │   └── rich-text-editor.tsx   # TipTap rich text editor
 │   ├── theme-provider.tsx         # Theme context provider
+│   ├── notes/
+│   │   └── internal-notes.tsx     # Multi-tab notes component
 │   ├── companies/
 │   │   ├── company-table.tsx
 │   │   ├── company-filters.tsx
@@ -2374,6 +2379,7 @@ src/
 │   ├── use-companies.ts           # Company data hooks
 │   ├── use-contacts.ts            # Contact data hooks (includes bulk delete)
 │   ├── use-admin.ts               # Admin hooks (users, tenants, roles, audit logs)
+│   ├── use-notes.ts               # Internal notes CRUD hooks
 │   ├── use-selection.ts           # Multi-select state management
 │   ├── use-click-outside.ts       # Click outside detection
 │   ├── use-local-storage.ts       # localStorage persistence
@@ -2409,6 +2415,7 @@ src/
     ├── password.service.ts        # Password reset & change (with email)
     ├── contact.service.ts         # Contact management
     ├── role.service.ts            # Role management & permissions
+    ├── notes.service.ts           # Internal notes management
     └── bizfile.service.ts         # AI extraction
 ```
 

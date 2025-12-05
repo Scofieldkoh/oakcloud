@@ -223,7 +223,6 @@ Main company records with ACRA information. Each company belongs to a tenant.
 | is_gst_registered | BOOLEAN | No | GST registration status |
 | gst_registration_number | VARCHAR(20) | Yes | GST number |
 | gst_registration_date | DATE | Yes | GST registration date |
-| internal_notes | TEXT | Yes | Internal notes |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
@@ -307,7 +306,6 @@ Unified contact management for individuals and corporates. Each contact belongs 
 | phone | VARCHAR(20) | Yes | Phone number |
 | full_address | VARCHAR(500) | Yes | Complete address |
 | is_active | BOOLEAN | No | Active status |
-| internal_notes | TEXT | Yes | Internal notes |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
@@ -319,6 +317,34 @@ Unified contact management for individuals and corporates. Each contact belongs 
 - `contacts_identification_number_idx` on identification_number
 - `contacts_corporate_uen_idx` on corporate_uen
 - `contacts_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+
+---
+
+### note_tabs
+
+Multi-tab internal notes with rich text support for companies and contacts.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| title | VARCHAR | No | Tab title (default: "General") |
+| content | TEXT | Yes | Rich text HTML content |
+| order | INT | No | Tab display order (default: 0) |
+| company_id | UUID | Yes | FK to companies (one of company_id/contact_id set) |
+| contact_id | UUID | Yes | FK to contacts (one of company_id/contact_id set) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Notes:**
+- Each tab belongs to either a company OR a contact (never both)
+- Supports rich text with TipTap editor (bold, italic, underline, lists, links)
+- Cascade delete when parent company/contact is deleted
+- User can create multiple tabs, rename, reorder, and delete any tab
+
+**Indexes:**
+- `note_tabs_company_id_idx` on company_id
+- `note_tabs_contact_id_idx` on contact_id
+- `note_tabs_order_idx` on order
 
 ---
 

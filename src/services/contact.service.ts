@@ -44,7 +44,6 @@ export async function createContact(
       email: data.email,
       phone: data.phone,
       fullAddress: data.fullAddress,
-      internalNotes: data.internalNotes,
     },
   });
 
@@ -93,7 +92,6 @@ export async function updateContact(
   if (data.email !== undefined) updateData.email = data.email;
   if (data.phone !== undefined) updateData.phone = data.phone;
   if (data.fullAddress !== undefined) updateData.fullAddress = data.fullAddress;
-  if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
 
   // Rebuild full name if relevant fields changed
   const newFullName = buildFullName({

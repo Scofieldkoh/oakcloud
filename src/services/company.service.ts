@@ -113,7 +113,6 @@ const TRACKED_FIELDS: (keyof Company)[] = [
   'issuedCapitalAmount',
   'isGstRegistered',
   'gstRegistrationNumber',
-  'internalNotes',
 ];
 
 // ============================================================================
@@ -197,7 +196,6 @@ export async function createCompany(
       isGstRegistered: data.isGstRegistered,
       gstRegistrationNumber: data.gstRegistrationNumber,
       gstRegistrationDate: data.gstRegistrationDate ? new Date(data.gstRegistrationDate) : null,
-      internalNotes: data.internalNotes,
     },
   });
 
@@ -320,7 +318,6 @@ export async function updateCompany(
     updateData.gstRegistrationDate = data.gstRegistrationDate
       ? new Date(data.gstRegistrationDate)
       : null;
-  if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
 
   const company = await prisma.company.update({
     where: { id: data.id },

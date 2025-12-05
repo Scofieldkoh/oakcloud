@@ -365,21 +365,6 @@ export default function NewCompanyPage() {
           </div>
         </div>
 
-        {/* Notes */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Internal Notes</h2>
-          </div>
-          <div className="p-4">
-            <textarea
-              {...register('internalNotes')}
-              rows={4}
-              placeholder="Add any internal notes about this company..."
-              className="input input-sm resize-none"
-            />
-          </div>
-        </div>
-
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link href="/companies" className="btn-secondary btn-sm">

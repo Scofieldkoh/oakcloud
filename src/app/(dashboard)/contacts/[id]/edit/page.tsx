@@ -77,7 +77,6 @@ export default function EditContactPage({
         email: contact.email || undefined,
         phone: contact.phone || undefined,
         fullAddress: contact.fullAddress || undefined,
-        internalNotes: contact.internalNotes || undefined,
       });
     }
   }, [contact, reset]);
@@ -389,21 +388,6 @@ export default function EditContactPage({
                 className="input input-sm"
               />
             </div>
-          </div>
-        </div>
-
-        {/* Notes */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Internal Notes</h2>
-          </div>
-          <div className="p-4">
-            <textarea
-              {...register('internalNotes')}
-              rows={4}
-              placeholder="Add any internal notes about this contact..."
-              className="input input-sm resize-none"
-            />
           </div>
         </div>
 

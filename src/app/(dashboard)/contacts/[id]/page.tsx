@@ -28,6 +28,7 @@ import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
 import { DateInput } from '@/components/ui/date-input';
 import { CompanyRelationships } from '@/components/contacts/company-relationships';
+import { InternalNotes } from '@/components/notes/internal-notes';
 import type { ContactType, IdentificationType } from '@prisma/client';
 
 const contactTypeConfig: Record<ContactType, { color: string; label: string }> = {
@@ -558,20 +559,6 @@ export default function ContactDetailPage({
             </div>
           </div>
 
-          {/* Internal Notes */}
-          {contact.internalNotes && (
-            <div className="card">
-              <div className="p-4 border-b border-border-primary">
-                <h2 className="font-medium text-text-primary">Internal Notes</h2>
-              </div>
-              <div className="p-4">
-                <p className="text-sm text-text-secondary whitespace-pre-wrap">
-                  {contact.internalNotes}
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Metadata */}
           <div className="card">
             <div className="p-4 border-b border-border-primary">
@@ -617,6 +604,13 @@ export default function ContactDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Internal Notes - Full Width */}
+      <InternalNotes
+        entityType="contact"
+        entityId={id}
+        canEdit={can.updateContact}
+      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

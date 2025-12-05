@@ -401,9 +401,6 @@ model Company {
   gstRegistrationNumber String?
   gstRegistrationDate   DateTime?
 
-  // Notes
-  internalNotes         String?
-
   // Audit & Soft Delete
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
@@ -422,6 +419,7 @@ model Company {
   contacts              CompanyContact[]
   roleAssignments       UserRoleAssignment[]
   userAssignments       UserCompanyAssignment[]
+  noteTabs              NoteTab[]
 
   @@unique([tenantId, uen]) // UEN unique within tenant
   @@index([tenantId])
@@ -511,7 +509,6 @@ model Contact {
 
   // Meta
   isActive            Boolean           @default(true)
-  internalNotes       String?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   deletedAt           DateTime?
@@ -521,6 +518,7 @@ model Contact {
   officerPositions    CompanyOfficer[]
   shareholdings       CompanyShareholder[]
   chargeHoldings      CompanyCharge[]
+  noteTabs            NoteTab[]
 
   @@unique([tenantId, identificationType, identificationNumber])
   @@index([tenantId])
@@ -900,4 +898,29 @@ model ConnectorUsageLog {
   @@index([connectorId, createdAt])
   @@index([tenantId, createdAt])
   @@map("connector_usage_logs")
+}
+
+// ============================================================================
+// INTERNAL NOTES (Multi-Tab Rich Text Notes)
+// ============================================================================
+
+model NoteTab {
+  id        String   @id @default(uuid())
+  title     String   @default("General")
+  content   String?  @db.Text  // Rich text HTML content
+  order     Int      @default(0)
+
+  // Relations (one of these will be set)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([contactId])
+  @@index([order])
+  @@map("note_tabs")
 }

@@ -116,7 +116,6 @@ export default function EditCompanyPage({
           : undefined,
         isGstRegistered: company.isGstRegistered,
         gstRegistrationNumber: company.gstRegistrationNumber || undefined,
-        internalNotes: company.internalNotes || undefined,
       });
     }
   }, [company, reset]);
@@ -485,20 +484,6 @@ export default function EditCompanyPage({
                 className="input input-sm"
               />
             </div>
-          </div>
-        </div>
-
-        {/* Notes */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Internal Notes</h2>
-          </div>
-          <div className="p-4">
-            <textarea
-              {...register('internalNotes')}
-              rows={4}
-              className="input input-sm resize-none"
-            />
           </div>
         </div>
 
