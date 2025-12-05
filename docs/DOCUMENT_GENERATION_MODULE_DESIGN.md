@@ -14,6 +14,9 @@
 - [Shareable Documents](#shareable-documents)
 - [Integration Points](#integration-points)
 - [Security Considerations](#security-considerations)
+- [Accessibility (WCAG 2.1)](#accessibility-wcag-21)
+- [SEO & Meta Tags](#seo--meta-tags)
+- [Performance Considerations](#performance-considerations)
 - [Additional Features](#additional-features)
 - [Implementation Phases](#implementation-phases)
 
@@ -201,6 +204,9 @@ Shareable document links with access control.
 | last_viewed_at | TIMESTAMP | Yes | Last view timestamp |
 | allowed_actions | VARCHAR[] | No | Actions allowed: ['view', 'download', 'print'] |
 | allow_comments | BOOLEAN | No | Allow external viewers to leave comments (default: false) |
+| comment_rate_limit | INT | No | Max comments per hour per IP (default: 20) |
+| notify_on_comment | BOOLEAN | No | Notify owner on new comments (default: false) |
+| notify_on_view | BOOLEAN | No | Notify owner on views (default: false) |
 | created_by_id | UUID | No | FK to users |
 | created_at | TIMESTAMP | No | Record creation time |
 | revoked_at | TIMESTAMP | Yes | When link was revoked |
@@ -297,6 +303,10 @@ Comments and annotations on documents for review workflows. Supports both intern
 | status | VARCHAR(20) | No | OPEN, RESOLVED (default: OPEN) |
 | resolved_by_id | UUID | Yes | FK to users who resolved |
 | resolved_at | TIMESTAMP | Yes | When comment was resolved |
+| hidden_at | TIMESTAMP | Yes | When comment was hidden (moderation) |
+| hidden_by_id | UUID | Yes | FK to users who hid the comment |
+| hidden_reason | VARCHAR(255) | Yes | Reason for hiding |
+| ip_address | VARCHAR(45) | Yes | IP address of commenter (for rate limiting) |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
@@ -305,6 +315,8 @@ Comments and annotations on documents for review workflows. Supports both intern
 - For internal users: `user_id` is set, `guest_name`/`guest_email` are null
 - For external commenters: `user_id` is null, `guest_name` is required, `guest_email` optional
 - `share_id` tracks which share link was used for external comments
+- `content` has a maximum length of 1,000 characters
+- `ip_address` is used for rate limiting external comments (max 20/hour per IP)
 
 **Indexes:**
 - `document_comments_document_id_idx` on document_id
@@ -446,6 +458,9 @@ model DocumentShare {
   lastViewedAt    DateTime? @map("last_viewed_at")
   allowedActions  String[]  @default(["view"]) @map("allowed_actions")
   allowComments   Boolean   @default(false) @map("allow_comments")
+  commentRateLimit Int      @default(20) @map("comment_rate_limit")
+  notifyOnComment Boolean   @default(false) @map("notify_on_comment")
+  notifyOnView    Boolean   @default(false) @map("notify_on_view")
   createdById     String    @map("created_by_id")
   createdAt       DateTime  @default(now()) @map("created_at")
   revokedAt       DateTime? @map("revoked_at")
@@ -504,7 +519,7 @@ model DocumentComment {
   userId          String?   @map("user_id")   // Nullable for external commenters
   guestName       String?   @map("guest_name") @db.VarChar(100)  // External commenter name
   guestEmail      String?   @map("guest_email") @db.VarChar(255) // External commenter email (optional)
-  content         String    @db.Text
+  content         String    @db.VarChar(1000) // Max 1000 characters
   selectionStart  Int?      @map("selection_start")
   selectionEnd    Int?      @map("selection_end")
   selectedText    String?   @map("selected_text") @db.Text
@@ -512,6 +527,10 @@ model DocumentComment {
   status          String    @default("OPEN") @db.VarChar(20)
   resolvedById    String?   @map("resolved_by_id")
   resolvedAt      DateTime? @map("resolved_at")
+  hiddenAt        DateTime? @map("hidden_at")    // Moderation: when hidden
+  hiddenById      String?   @map("hidden_by_id") // Moderation: who hid it
+  hiddenReason    String?   @map("hidden_reason") @db.VarChar(255)
+  ipAddress       String?   @map("ip_address") @db.VarChar(45) // For rate limiting
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
@@ -520,6 +539,7 @@ model DocumentComment {
   share           DocumentShare?    @relation(fields: [shareId], references: [id])
   user            User?     @relation("CommentAuthor", fields: [userId], references: [id])
   resolvedBy      User?     @relation("CommentResolver", fields: [resolvedById], references: [id])
+  hiddenBy        User?     @relation("CommentHider", fields: [hiddenById], references: [id])
   parent          DocumentComment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies         DocumentComment[] @relation("CommentReplies")
 
@@ -528,6 +548,7 @@ model DocumentComment {
   @@index([userId])
   @@index([parentId])
   @@index([status])
+  @@index([ipAddress, createdAt]) // For rate limiting queries
   @@map("document_comments")
 }
 
@@ -919,6 +940,9 @@ interface PublishParams {
   password?: string;
   allowedActions?: ('view' | 'download' | 'print')[];
   allowComments?: boolean; // Allow external viewers to comment (default: false)
+  commentRateLimit?: number; // Max comments per hour per IP (default: 20)
+  notifyOnComment?: boolean; // Notify owner on new comments (default: false)
+  notifyOnView?: boolean; // Notify owner on views (default: false)
 }
 
 interface ShareAccessResult {
@@ -1115,6 +1139,31 @@ export async function replyToComment(
   content: string,
   guestEmail?: string
 ): Promise<DocumentComment>;
+
+// ============================================================================
+// Moderation Functions (Internal - Authenticated)
+// ============================================================================
+
+// Hide a comment (moderation)
+export async function hideComment(
+  tenantId: string,
+  userId: string,
+  commentId: string,
+  reason?: string
+): Promise<DocumentComment>;
+
+// Unhide a previously hidden comment
+export async function unhideComment(
+  tenantId: string,
+  userId: string,
+  commentId: string
+): Promise<DocumentComment>;
+
+// Check rate limit for external comments
+export async function checkCommentRateLimit(
+  shareToken: string,
+  ipAddress: string
+): Promise<{ allowed: boolean; remainingCount: number; resetAt: Date }>;
 ```
 
 ---
@@ -1172,6 +1221,8 @@ export async function replyToComment(
 | DELETE | `/api/documents/comments/:commentId` | Delete comment | `document:comment` |
 | POST | `/api/documents/comments/:commentId/resolve` | Resolve comment | `document:update` |
 | POST | `/api/documents/comments/:commentId/reopen` | Reopen comment | `document:update` |
+| POST | `/api/documents/comments/:commentId/hide` | Hide comment (moderation) | `document:update` |
+| POST | `/api/documents/comments/:commentId/unhide` | Unhide comment | `document:update` |
 
 ### Public Share Access (No Auth)
 
@@ -1618,42 +1669,115 @@ https://app.oakcloud.com/share/{shareToken}
 
 ### Public Page Layout
 
-Clean, unbranded design for optimal document viewing experience. External viewers can leave comments if enabled.
+Clean, unbranded design for optimal document viewing experience. External viewers can leave comments if enabled. Comments are designed to be **non-obstructive** - they don't block or overlay the document content.
+
+#### Default View (Comments Collapsed)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  Document Title                              [Download] [Print] [Comments 💬] │
-├─────────┬─────────────────────────────────────────────────┬──────────────────┤
-│         │                                                 │ Comments         │
-│ Section │  Document Content                               │ ┌──────────────┐ │
-│ Nav     │                                                 │ │ John Doe     │ │
-│         │  ┌─────────────────────────────────────────┐   │ │ "Please      │ │
-│ ┌─────┐ │  │ Resolution 1: Appointment of Director    │   │ │ clarify..."  │ │
-│ │ 1   │ │  │                                          │   │ │ [Reply]      │ │
-│ │ 2   │ │  │ RESOLVED THAT...                         │   │ └──────────────┘ │
-│ │ 3   │ │  └─────────────────────────────────────────┘   │                  │
-│ └─────┘ │                                                 │ ┌──────────────┐ │
-│         │  ┌─────────────────────────────────────────┐   │ │ + Add Comment│ │
-│         │  │ Resolution 2: Change of Address          │   │ │              │ │
-│         │  │                                          │   │ │ Your Name:   │ │
-│         │  │ RESOLVED THAT...                         │   │ │ [__________] │ │
-│         │  └─────────────────────────────────────────┘   │ │              │ │
-│         │                                                 │ │ Comment:     │ │
-│         │                                                 │ │ [__________] │ │
-│         │                                                 │ │              │ │
-│         │                                                 │ │ [Submit]     │ │
-│         │                                                 │ └──────────────┘ │
-└─────────┴─────────────────────────────────────────────────┴──────────────────┘
+│  Document Title                              [Download] [Print] [💬 3]       │
+├─────────┬────────────────────────────────────────────────────────────────────┤
+│         │                                                                     │
+│ Section │  Document Content                                                   │
+│ Nav     │                                                                     │
+│         │  ┌─────────────────────────────────────────────────────────────┐   │
+│ ┌─────┐ │  │ Resolution 1: Appointment of Director                        │   │
+│ │ 1   │ │  │                                                              │   │
+│ │ 2   │ │  │ RESOLVED THAT the appointment of [highlighted text¹]        │   │
+│ │ 3   │ │  │ as a Director of the Company be approved...                  │   │
+│ └─────┘ │  └─────────────────────────────────────────────────────────────┘   │
+│         │                                                                     │
+│         │  ┌─────────────────────────────────────────────────────────────┐   │
+│         │  │ Resolution 2: Change of Address                              │   │
+│         │  │                                                              │   │
+│         │  │ RESOLVED THAT the [highlighted text²] be changed...          │   │
+│         │  └─────────────────────────────────────────────────────────────┘   │
+│         │                                                                     │
+└─────────┴────────────────────────────────────────────────────────────────────┘
+```
+
+#### Expanded View (Comments Panel Open)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  Document Title                              [Download] [Print] [💬 3 ✕]     │
+├─────────┬─────────────────────────────────────────┬──────────────────────────┤
+│         │                                         │ Comments            [−]  │
+│ Section │  Document Content                       ├──────────────────────────┤
+│ Nav     │                                         │ ┌────────────────────┐   │
+│         │  ┌─────────────────────────────────┐   │ │ ¹ John Doe · 2h     │   │
+│ ┌─────┐ │  │ Resolution 1: Appointment...    │   │ │ Re: "Mary Lee"      │   │
+│ │ 1   │ │  │                                  │   │ │ ─────────────────   │   │
+│ │ 2   │ │  │ RESOLVED THAT [Mary Lee¹]...    │   │ │ Should this be the  │   │
+│ │ 3   │ │  └─────────────────────────────────┘   │ │ full legal name?    │   │
+│ └─────┘ │                                         │ │ [Reply]             │   │
+│         │  ┌─────────────────────────────────┐   │ └────────────────────┘   │
+│         │  │ Resolution 2: Change of Address  │   │                          │
+│         │  │                                  │   │ ┌────────────────────┐   │
+│         │  │ RESOLVED THAT [registered²]...  │   │ │ ² Jane Wong · 1h    │   │
+│         │  └─────────────────────────────────┘   │ │ Re: "registered"    │   │
+│         │                                         │ │ ─────────────────   │   │
+│         │                                         │ │ Please verify the   │   │
+│         │                                         │ │ address format.     │   │
+│         │                                         │ │ [Reply] ✓ Resolved  │   │
+│         │                                         │ └────────────────────┘   │
+│         │                                         │                          │
+│         │                                         │ ┌────────────────────┐   │
+│         │                                         │ │ + Add Comment       │   │
+│         │                                         │ │ Name: [__________]  │   │
+│         │                                         │ │ Comment:            │   │
+│         │                                         │ │ [________________]  │   │
+│         │                                         │ │ 0/1000  [Submit]    │   │
+│         │                                         │ └────────────────────┘   │
+└─────────┴─────────────────────────────────────────┴──────────────────────────┘
+```
+
+#### Comment Tagging System
+
+Comments are linked to specific text in the document:
+
+| Element | Appearance | Interaction |
+|---------|------------|-------------|
+| **Highlighted text** | Light yellow background with superscript number (e.g., `[text¹]`) | Click to jump to comment |
+| **Comment marker** | Superscript number matches highlight | Hover shows preview |
+| **Comment card** | Shows "Re: {selected text}" to identify context | Click scrolls to text |
+| **General comment** | No highlight, appears at bottom of list | Document-wide feedback |
+
+```css
+/* Non-obstructive highlight styles */
+.comment-highlight {
+  background-color: rgba(255, 235, 59, 0.3); /* Light yellow, semi-transparent */
+  border-bottom: 2px solid #ffc107;
+  cursor: pointer;
+  position: relative;
+}
+
+.comment-highlight::after {
+  content: attr(data-comment-number);
+  font-size: 0.65em;
+  vertical-align: super;
+  color: #f57c00;
+  margin-left: 2px;
+}
+
+/* Comment panel - slides in from right, doesn't overlay content */
+.comment-panel {
+  width: 320px;
+  border-left: 1px solid #e0e0e0;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
 ```
 
 **Design Principles:**
+- **Non-obstructive**: Comments panel is a sidebar, not an overlay - document always readable
+- **Clear tagging**: Superscript numbers link highlights to comments
+- **Collapsible**: Panel can be hidden to focus on document
+- **Context preserved**: Comments show the exact text being referenced
 - No branding (no logos, company names in header)
-- Focus on document content and readability
 - Clean typography for professional appearance
-- Mobile-responsive layout
-- Print-friendly styles
-- Comment panel collapsible/expandable
-- Simple name input for external commenters (no login required)
+- Mobile-responsive (panel becomes bottom sheet on mobile)
+- Print-friendly styles (comments hidden in print view)
 
 ### Access Control
 
@@ -1905,6 +2029,160 @@ function generateShareToken(): string {
 - Sanitize all HTML content (DOMPurify)
 - Use CSP headers on public pages
 - Escape user-provided content in templates
+
+### External Comment Protection
+
+- **Rate Limiting**: Max 20 comments per hour per IP address (configurable per share link)
+- **Honeypot Field**: Hidden field to detect bots
+- **Content Validation**: Max 1,000 characters, no HTML allowed
+- **IP Tracking**: Store IP for rate limiting and abuse tracking
+- **Moderation**: Document owner can hide inappropriate comments
+
+```typescript
+// Rate limit check before allowing external comment
+async function checkRateLimit(shareToken: string, ipAddress: string): Promise<boolean> {
+  const share = await getShareByToken(shareToken);
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+  const recentComments = await prisma.documentComment.count({
+    where: {
+      shareId: share.id,
+      ipAddress,
+      createdAt: { gte: oneHourAgo },
+    },
+  });
+
+  return recentComments < share.commentRateLimit;
+}
+```
+
+---
+
+## Accessibility (WCAG 2.1)
+
+The shared document pages must be accessible to all users:
+
+### Requirements
+
+| Category | Requirement |
+|----------|-------------|
+| **Semantic HTML** | Proper heading hierarchy (h1 → h2 → h3), landmark regions |
+| **Keyboard Navigation** | All interactive elements focusable, visible focus indicators |
+| **Screen Readers** | ARIA labels for buttons, live regions for comment updates |
+| **Color Contrast** | Minimum 4.5:1 for normal text, 3:1 for large text |
+| **Focus Management** | Focus trapped in modals, returned after close |
+| **Text Sizing** | Content readable at 200% zoom |
+| **Motion** | Respect `prefers-reduced-motion` setting |
+
+### Implementation Notes
+
+```tsx
+// Comment panel with proper ARIA
+<aside
+  aria-label="Document comments"
+  role="complementary"
+>
+  <h2 id="comments-heading">Comments</h2>
+  <div
+    role="log"
+    aria-live="polite"
+    aria-labelledby="comments-heading"
+  >
+    {comments.map(comment => (
+      <article key={comment.id} aria-label={`Comment by ${comment.guestName || comment.user.name}`}>
+        ...
+      </article>
+    ))}
+  </div>
+</aside>
+
+// Skip link for keyboard users
+<a href="#main-content" className="skip-link">
+  Skip to document content
+</a>
+```
+
+---
+
+## SEO & Meta Tags
+
+### Share Page Meta Tags
+
+```html
+<!-- Prevent indexing of shared documents -->
+<meta name="robots" content="noindex, nofollow">
+
+<!-- Basic meta tags (no sensitive content) -->
+<meta property="og:title" content="Shared Document">
+<meta property="og:description" content="View this shared document">
+<meta property="og:type" content="article">
+
+<!-- Disable caching for password-protected pages -->
+<meta http-equiv="Cache-Control" content="no-store">
+```
+
+### URL Structure
+
+```
+/share/{token}              - Clean URL, no document info exposed
+/share/{token}?password=... - Never include password in URL (use POST)
+```
+
+---
+
+## Performance Considerations
+
+### Optimization Strategies
+
+| Area | Strategy |
+|------|----------|
+| **Large Documents** | Lazy load sections, virtual scrolling for 100+ pages |
+| **PDF Generation** | Queue system (Bull/Redis) for documents > 20 pages |
+| **Real-time Preview** | Debounce (1s) + cache recent renders |
+| **Comments** | Paginate if > 50 comments, lazy load older |
+| **Images in Templates** | Compress, lazy load, use CDN |
+
+### Caching Strategy
+
+```typescript
+// PDF preview caching
+const PDF_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Share page caching (for public, non-password pages)
+Cache-Control: public, max-age=300  // 5 minutes
+
+// Comment list caching
+Cache-Control: private, max-age=60  // 1 minute, private due to user context
+```
+
+### Database Query Optimization
+
+```typescript
+// Efficient comment loading with pagination
+async function getDocumentComments(
+  documentId: string,
+  page: number = 1,
+  limit: number = 50
+) {
+  return prisma.documentComment.findMany({
+    where: {
+      documentId,
+      hiddenAt: null,  // Exclude hidden comments
+      deletedAt: null,
+    },
+    include: {
+      user: { select: { id: true, firstName: true, lastName: true } },
+      replies: {
+        where: { hiddenAt: null, deletedAt: null },
+        take: 3,  // Show first 3 replies, load more on demand
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    skip: (page - 1) * limit,
+    take: limit,
+  });
+}
+```
 
 ---
 
@@ -2900,9 +3178,15 @@ The following decisions were made during the design phase:
 | **Resolution Numbering** | Manual entry | User enters via custom data fields |
 | **Template Access** | Permission-based | Anyone with `document_template:create` can create templates |
 | **Batch Generation** | Not supported | Generate documents one at a time |
-| **External Comments** | Optional per share link | External viewers can comment without login when `allowComments` is enabled on share link |
-| **External Commenter Identity** | Name required, email optional | Simple identification for external commenters without requiring registration |
-| **Comment Resolution** | Internal users only | Only authenticated users can resolve/reopen comments; external viewers can only add comments |
+| **External Comments** | Optional per share link | External viewers can comment without login when `allowComments` is enabled |
+| **External Commenter Identity** | Name required, email optional | Simple identification without requiring registration |
+| **Comment Resolution** | Internal users only | Only authenticated users can resolve/reopen comments |
+| **Comment Character Limit** | 1,000 characters | Prevents abuse while allowing detailed feedback |
+| **Comment Rate Limit** | 20 per hour per IP | Configurable per share link, prevents spam |
+| **Comment Moderation** | Hide/unhide by document owner | Owner can hide inappropriate comments without deleting |
+| **Comment Notifications** | Optional per share link | Owner chooses whether to be notified of new comments/views |
+| **Comment Display** | Non-obstructive sidebar | Doesn't overlay document; collapsible panel with clear text tagging |
+| **Comment Tagging** | Superscript numbers on highlighted text | Clear visual link between document text and comments |
 
 ---
 
