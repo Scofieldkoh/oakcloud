@@ -2422,6 +2422,150 @@ src/
 
 ---
 
+## Module: Document Generation
+
+### Overview
+
+The Document Generation module enables users to create, edit, and share professional documents from templates. It supports placeholder-based templates, rich text editing, PDF export with letterhead, and secure document sharing.
+
+### Features
+
+1. **Document Templates**
+   - Create templates with Handlebars placeholders
+   - Rich text content with formatting
+   - Section-based organization
+   - Placeholder categories (company, contacts, directors, shareholders, custom)
+   - Version tracking and change history
+
+2. **Document Generation**
+   - Generate documents from templates
+   - Automatic placeholder replacement from company/contact data
+   - Pre-generation validation with error/warning indicators
+   - Custom data support for manual placeholders
+
+3. **Document Editor**
+   - Rich text editing with TipTap
+   - Undo/redo support
+   - Font size and color controls
+   - Lists, links, and formatting
+   - Page break indicators
+
+4. **Export Options**
+   - PDF export with Puppeteer
+   - HTML export with optional styling
+   - Draft watermark for non-finalized documents
+   - Tenant letterhead (header, footer, logo, margins)
+   - Download and inline viewing modes
+
+5. **Document Sharing**
+   - Generate shareable links with tokens
+   - Password protection (optional)
+   - Expiration dates
+   - Configurable permissions (view, download, print, comment)
+   - Anonymous/guest commenting
+   - Rate limiting for external comments
+   - Comment notifications
+
+6. **Auto-Save & Recovery**
+   - Automatic draft saving
+   - Draft recovery prompts
+   - Conflict detection
+
+### API Endpoints
+
+#### Templates
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/document-templates` | List templates |
+| POST | `/api/document-templates` | Create template |
+| GET | `/api/document-templates/:id` | Get template |
+| PUT | `/api/document-templates/:id` | Update template |
+| DELETE | `/api/document-templates/:id` | Delete template |
+| POST | `/api/document-templates/:id/versions` | Create new version |
+
+#### Generated Documents
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/generated-documents` | List documents |
+| POST | `/api/generated-documents` | Generate document |
+| GET | `/api/generated-documents/:id` | Get document |
+| PUT | `/api/generated-documents/:id` | Update document |
+| DELETE | `/api/generated-documents/:id` | Delete document |
+| POST | `/api/generated-documents/:id/clone` | Clone document |
+| POST | `/api/generated-documents/:id/draft` | Save draft |
+| GET | `/api/generated-documents/:id/draft` | Get latest draft |
+| POST | `/api/generated-documents/validate` | Pre-generation validation |
+
+#### Export
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/generated-documents/:id/export/pdf` | Export to PDF |
+| GET | `/api/generated-documents/:id/export/html` | Export to HTML |
+
+#### Sharing
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/generated-documents/:id/share` | List shares |
+| POST | `/api/generated-documents/:id/share` | Create share link |
+| DELETE | `/api/generated-documents/:id/share?shareId=:shareId` | Revoke share |
+
+#### Public Access (No Auth)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/share/:token` | View shared document |
+| POST | `/api/share/:token` | Add comment |
+| GET | `/api/share/:token/pdf` | Download PDF |
+
+#### Letterhead
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/letterhead` | Get letterhead config |
+| PUT | `/api/letterhead` | Update letterhead |
+| PATCH | `/api/letterhead` | Toggle letterhead enabled |
+| DELETE | `/api/letterhead` | Delete letterhead |
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CHROME_PATH` | Path to Chrome/Chromium for PDF generation | Auto-detect |
+
+### Services
+
+```
+src/services/
+├── document-template.service.ts    # Template CRUD & versioning
+├── document-generator.service.ts   # Document generation & sharing
+├── document-validation.service.ts  # Pre-generation validation
+├── document-export.service.ts      # PDF/HTML export
+└── letterhead.service.ts           # Tenant letterhead management
+```
+
+### UI Components
+
+```
+src/components/documents/
+├── document-editor.tsx          # Rich text editor
+├── validation-panel.tsx         # Pre-generation validation UI
+├── draft-recovery-prompt.tsx    # Draft recovery modal/banner
+└── index.ts                     # Barrel exports
+```
+
+### Public Pages
+
+```
+src/app/share/[token]/
+└── page.tsx    # Public shared document view (unbranded)
+```
+
+---
+
 ## Performance Optimizations
 
 The application includes several optimizations for faster development and production builds:
