@@ -66,6 +66,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const result = await exportToPDF({
       documentId: share.document.id,
       tenantId: share.document.tenantId,
+      userId: share.createdById, // Use share creator for audit
       includeLetterhead: false, // Shared documents are unbranded
       format: (searchParams.get('format') as 'A4' | 'Letter') || 'A4',
       orientation: (searchParams.get('orientation') as 'portrait' | 'landscape') || 'portrait',
@@ -78,12 +79,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .replace(/^-|-$/g, '')
       .slice(0, 50);
 
-    return new NextResponse(result.pdf, {
+    return new NextResponse(new Uint8Array(result.buffer), {
       status: 200,
       headers: {
-        'Content-Type': 'application/pdf',
+        'Content-Type': result.mimeType,
         'Content-Disposition': `attachment; filename="${filename}.pdf"`,
-        'Content-Length': String(result.pdf.length),
+        'Content-Length': String(result.buffer.length),
       },
     });
   } catch (error) {

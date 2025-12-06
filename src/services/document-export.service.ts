@@ -245,9 +245,8 @@ export async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
     action: 'EXPORT',
     entityType: 'GeneratedDocument',
     entityId: documentId,
-    changes: {
-      after: { format: 'PDF', includeLetterhead, orientation },
-    },
+    summary: `Exported document to PDF (${format}, ${orientation})`,
+    metadata: { format: 'PDF', includeLetterhead, orientation, pageFormat: format },
     userId,
     tenantId,
     companyId: document.companyId || undefined,

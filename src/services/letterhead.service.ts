@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { createAuditLog } from '@/lib/audit';
+import { createAuditLog, computeChanges } from '@/lib/audit';
 import type { TenantLetterhead, Prisma } from '@prisma/client';
 
 // ============================================================================
@@ -42,6 +42,17 @@ const DEFAULT_MARGINS: PageMargins = {
   bottom: 25,
   left: 20,
 };
+
+// Fields to track for audit logs
+const LETTERHEAD_FIELDS = [
+  'headerHtml',
+  'footerHtml',
+  'headerImageUrl',
+  'footerImageUrl',
+  'logoUrl',
+  'pageMargins',
+  'isEnabled',
+] as const;
 
 // ============================================================================
 // Read Operations
@@ -101,7 +112,7 @@ export async function upsertLetterhead(
   };
 
   if (input.pageMargins) {
-    data.pageMargins = input.pageMargins as Prisma.InputJsonValue;
+    data.pageMargins = input.pageMargins as unknown as Prisma.InputJsonValue;
   }
 
   let letterhead: TenantLetterhead;
@@ -112,17 +123,24 @@ export async function upsertLetterhead(
       data,
     });
 
-    await createAuditLog({
-      action: 'UPDATE',
-      entityType: 'TenantLetterhead',
-      entityId: letterhead.id,
-      changes: {
-        before: existing,
-        after: letterhead,
-      },
-      userId,
-      tenantId,
-    });
+    // Compute changes for audit log
+    const changes = computeChanges(
+      existing as unknown as Record<string, unknown>,
+      letterhead as unknown as Record<string, unknown>,
+      LETTERHEAD_FIELDS as unknown as string[]
+    );
+
+    if (changes) {
+      await createAuditLog({
+        action: 'UPDATE',
+        entityType: 'TenantLetterhead',
+        entityId: letterhead.id,
+        changes,
+        userId,
+        tenantId,
+        summary: 'Updated letterhead configuration',
+      });
+    }
   } else {
     letterhead = await prisma.tenantLetterhead.create({
       data: {
@@ -132,7 +150,7 @@ export async function upsertLetterhead(
         headerImageUrl: input.headerImageUrl,
         footerImageUrl: input.footerImageUrl,
         logoUrl: input.logoUrl,
-        pageMargins: (input.pageMargins || DEFAULT_MARGINS) as Prisma.InputJsonValue,
+        pageMargins: (input.pageMargins || DEFAULT_MARGINS) as unknown as Prisma.InputJsonValue,
         isEnabled: input.isEnabled ?? true,
       },
     });
@@ -141,9 +159,9 @@ export async function upsertLetterhead(
       action: 'CREATE',
       entityType: 'TenantLetterhead',
       entityId: letterhead.id,
-      changes: { after: letterhead },
       userId,
       tenantId,
+      summary: 'Created letterhead configuration',
     });
   }
 
@@ -178,11 +196,11 @@ export async function updateHeaderImage(
     entityType: 'TenantLetterhead',
     entityId: letterhead.id,
     changes: {
-      before: { headerImageUrl: existing.headerImageUrl },
-      after: { headerImageUrl: imageUrl },
+      headerImageUrl: { old: existing.headerImageUrl, new: imageUrl },
     },
     userId,
     tenantId,
+    summary: 'Updated header image',
   });
 
   return letterhead;
@@ -215,11 +233,11 @@ export async function updateFooterImage(
     entityType: 'TenantLetterhead',
     entityId: letterhead.id,
     changes: {
-      before: { footerImageUrl: existing.footerImageUrl },
-      after: { footerImageUrl: imageUrl },
+      footerImageUrl: { old: existing.footerImageUrl, new: imageUrl },
     },
     userId,
     tenantId,
+    summary: 'Updated footer image',
   });
 
   return letterhead;
@@ -252,11 +270,11 @@ export async function updateLogoImage(
     entityType: 'TenantLetterhead',
     entityId: letterhead.id,
     changes: {
-      before: { logoUrl: existing.logoUrl },
-      after: { logoUrl: imageUrl },
+      logoUrl: { old: existing.logoUrl, new: imageUrl },
     },
     userId,
     tenantId,
+    summary: 'Updated logo image',
   });
 
   return letterhead;
@@ -289,11 +307,11 @@ export async function toggleLetterhead(
     entityType: 'TenantLetterhead',
     entityId: letterhead.id,
     changes: {
-      before: { isEnabled: existing.isEnabled },
-      after: { isEnabled },
+      isEnabled: { old: existing.isEnabled, new: isEnabled },
     },
     userId,
     tenantId,
+    summary: `${isEnabled ? 'Enabled' : 'Disabled'} letterhead`,
   });
 
   return letterhead;
@@ -321,9 +339,9 @@ export async function deleteLetterhead(params: TenantAwareParams): Promise<void>
     action: 'DELETE',
     entityType: 'TenantLetterhead',
     entityId: existing.id,
-    changes: { before: existing },
     userId,
     tenantId,
+    summary: 'Deleted letterhead configuration',
   });
 }
 
@@ -428,7 +446,7 @@ export function buildFooterHtml(letterhead: TenantLetterhead | null): string {
 export async function getOrCreateLetterhead(
   params: TenantAwareParams
 ): Promise<TenantLetterhead> {
-  const { tenantId, userId } = params;
+  const { tenantId } = params;
 
   const existing = await prisma.tenantLetterhead.findUnique({
     where: { tenantId },
@@ -441,7 +459,7 @@ export async function getOrCreateLetterhead(
   return prisma.tenantLetterhead.create({
     data: {
       tenantId,
-      pageMargins: DEFAULT_MARGINS as Prisma.InputJsonValue,
+      pageMargins: DEFAULT_MARGINS as unknown as Prisma.InputJsonValue,
       isEnabled: false,
     },
   });

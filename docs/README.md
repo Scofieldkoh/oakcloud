@@ -2551,10 +2551,16 @@ src/services/
 
 ```
 src/components/documents/
-├── document-editor.tsx          # Rich text editor
-├── validation-panel.tsx         # Pre-generation validation UI
-├── draft-recovery-prompt.tsx    # Draft recovery modal/banner
-└── index.ts                     # Barrel exports
+├── document-editor.tsx            # Rich text editor with TipTap
+├── validation-panel.tsx           # Pre-generation validation UI
+├── draft-recovery-prompt.tsx      # Draft recovery modal/banner
+├── template-selection-wizard.tsx  # Template category browser & selection
+├── document-generation-wizard.tsx # Multi-step document generation flow
+├── section-navigation.tsx         # Document section sidebar navigation
+├── page-break-indicator.tsx       # Page break visual indicators
+├── signing-block.tsx              # Signature block rendering
+├── pdf-preview-panel.tsx          # Real-time PDF preview with controls
+└── index.ts                       # Barrel exports
 ```
 
 ### Public Pages
