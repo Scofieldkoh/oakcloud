@@ -1284,20 +1284,29 @@ src/app/(dashboard)/admin/
 
 ```
 src/components/documents/
-├── template-selector.tsx           # Template selection grid/list
-├── template-editor.tsx             # Template content editor with placeholder insertion
-├── placeholder-inserter.tsx        # UI for inserting placeholders
-├── placeholder-preview.tsx         # Preview resolved placeholders
-├── document-editor.tsx             # Edit generated document content
-├── document-preview.tsx            # Document preview with sections
-├── section-navigator.tsx           # Section navigation sidebar
-├── page-break-indicator.tsx        # Visual page break marker
-├── share-dialog.tsx                # Create share link dialog (with allow comments option)
-├── share-list.tsx                  # List of share links
-├── pdf-options-dialog.tsx          # PDF export options
-├── letterhead-preview.tsx          # Preview letterhead on document
-├── comment-panel.tsx               # Internal comment panel for authenticated users
-└── external-comment-panel.tsx      # Comment panel for shared links (no auth required)
+├── template-selector.tsx              # [Phase 4] Template selection grid/list with search & filter
+├── document-generation-wizard.tsx     # [Phase 4] Multi-step wizard for generating documents
+├── document-editor.tsx                # [Phase 2] Edit generated document content (TipTap)
+├── document-editor-with-ai.tsx        # [Phase 5] Document editor with integrated AI sidebar
+├── ai-sidebar.tsx                     # [Phase 5] AI assistant sidebar for document drafting
+├── section-navigator.tsx              # [Phase 4] Section navigation sidebar (sticky/floating)
+├── page-break-indicator.tsx           # [Phase 4] Visual page break marker with edit controls
+├── signing-block-renderer.tsx         # [Phase 4] Signature block rendering (directors/shareholders)
+├── pdf-preview-panel.tsx              # [Phase 4] Real-time PDF preview with zoom/navigation
+├── validation-panel.tsx               # [Phase 2] Pre-generation validation warnings
+├── draft-recovery-prompt.tsx          # [Phase 2] Auto-save draft recovery prompt
+├── share-dialog.tsx                   # [Phase 3] Create share link dialog
+├── share-list.tsx                     # [Phase 3] List of share links
+├── comment-panel.tsx                  # [Phase 6] Internal comment panel
+└── external-comment-panel.tsx         # [Phase 6] Comment panel for shared links
+
+src/services/
+├── document-ai.service.ts             # [Phase 5] AI chat service for document generation
+└── ...existing services...
+
+src/app/api/ai/
+├── document-chat/route.ts             # [Phase 5] AI document chat API endpoint
+└── conversations/route.ts             # [Phase 5] AI conversation management API
 ```
 
 ### Key UI Features
@@ -3028,22 +3037,22 @@ function EditorToolbar({ editor }) {
 
 ### Phase 4: UI Polish
 
-- [ ] Template selection wizard
-- [ ] Document generation wizard
-- [ ] Section navigation sidebar
-- [ ] Page break indicators
-- [ ] Signing block rendering
-- [ ] Real-time PDF preview panel
-- [ ] PDF preview page navigation
-- [ ] Letterhead toggle in preview
+- [x] Template selection wizard
+- [x] Document generation wizard
+- [x] Section navigation sidebar
+- [x] Page break indicators
+- [x] Signing block rendering
+- [x] Real-time PDF preview panel
+- [x] PDF preview page navigation
+- [x] Letterhead toggle in preview
 
-### Phase 5: AI Integration
+### Phase 5: AI Integration ✅ COMPLETED
 
-- [ ] AI sidebar component
-- [ ] AI chat service (using Connectors Hub)
-- [ ] Context-aware prompts
-- [ ] Insert AI content to editor
-- [ ] Conversation persistence (optional)
+- [x] AI sidebar component
+- [x] AI chat service (using Connectors Hub)
+- [x] Context-aware prompts
+- [x] Insert AI content to editor
+- [x] Conversation persistence (optional)
 
 ### Phase 6: Comments & Review
 

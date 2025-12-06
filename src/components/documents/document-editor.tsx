@@ -54,6 +54,10 @@ export interface DocumentEditorRef {
   setContent: (html: string) => void;
   insertPlaceholder: (placeholder: string) => void;
   insertPageBreak: () => void;
+  insertContent: (content: string) => void;
+  replaceSelection: (content: string) => void;
+  getSelectedText: () => string | undefined;
+  getSurroundingContent: () => string | undefined;
   undo: () => void;
   redo: () => void;
   canUndo: () => boolean;
@@ -647,6 +651,30 @@ export const DocumentEditor = forwardRef<DocumentEditorRef, DocumentEditorProps>
           .focus()
           .insertContent('<div class="page-break" style="page-break-after: always; border-top: 2px dashed #ccc; margin: 20px 0; padding-top: 10px; text-align: center; color: #999; font-size: 12px;">Page Break</div>')
           .run();
+      },
+      insertContent: (content: string) => {
+        editor?.chain().focus().insertContent(content).run();
+      },
+      replaceSelection: (content: string) => {
+        if (editor) {
+          const { from, to } = editor.state.selection;
+          editor.chain().focus().deleteRange({ from, to }).insertContent(content).run();
+        }
+      },
+      getSelectedText: () => {
+        if (!editor) return undefined;
+        const { from, to } = editor.state.selection;
+        if (from === to) return undefined;
+        return editor.state.doc.textBetween(from, to, ' ');
+      },
+      getSurroundingContent: () => {
+        if (!editor) return undefined;
+        const { from, to } = editor.state.selection;
+        const doc = editor.state.doc;
+        // Get text from 200 chars before to 200 chars after selection
+        const start = Math.max(0, from - 200);
+        const end = Math.min(doc.content.size, to + 200);
+        return doc.textBetween(start, end, ' ');
       },
       undo: () => {
         editor?.chain().focus().undo().run();
