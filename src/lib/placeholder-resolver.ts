@@ -98,6 +98,10 @@ export interface ResolveOptions {
   currencySymbol?: string;
   missingPlaceholder?: 'blank' | 'keep' | 'highlight';
   numberLocale?: string;
+  /** Tenant ID for resolving partials (if partials are used) */
+  tenantId?: string;
+  /** Pre-fetched partials map (name -> content) to avoid async resolution */
+  partialsMap?: Map<string, string>;
 }
 
 const DEFAULT_OPTIONS: ResolveOptions = {
@@ -107,20 +111,110 @@ const DEFAULT_OPTIONS: ResolveOptions = {
   numberLocale: 'en-SG',
 };
 
+// Regex to find partial references: {{> partial-name}} or {{>partial-name}}
+const PARTIAL_REFERENCE_REGEX = /\{\{>\s*([a-zA-Z][a-zA-Z0-9_-]*)\s*\}\}/g;
+
+// ============================================================================
+// Partial Processing
+// ============================================================================
+
+/**
+ * Extracts all partial references from template content.
+ * Returns array of partial names.
+ */
+export function extractPartialReferences(content: string): string[] {
+  const partialNames = new Set<string>();
+  const matches = content.matchAll(PARTIAL_REFERENCE_REGEX);
+
+  for (const match of matches) {
+    partialNames.add(match[1]);
+  }
+
+  return Array.from(partialNames);
+}
+
+/**
+ * Checks if content contains any partial references.
+ */
+export function hasPartialReferences(content: string): boolean {
+  return PARTIAL_REFERENCE_REGEX.test(content);
+}
+
+/**
+ * Resolves partial references in content using the provided partials map.
+ * This is a synchronous function that requires partials to be pre-fetched.
+ *
+ * @param content - The template content with partial references
+ * @param partialsMap - Map of partial name to partial content
+ * @param options - Resolve options
+ * @param resolvedPartials - Set of already resolved partials (for circular reference detection)
+ */
+function processPartials(
+  content: string,
+  partialsMap: Map<string, string>,
+  options: ResolveOptions,
+  resolvedPartials = new Set<string>()
+): { content: string; missingPartials: string[] } {
+  const missingPartials: string[] = [];
+
+  const resolved = content.replace(PARTIAL_REFERENCE_REGEX, (match, partialName) => {
+    // Check for circular reference
+    if (resolvedPartials.has(partialName)) {
+      console.warn(`Circular partial reference detected: ${partialName}`);
+      return `<!-- Circular reference: ${partialName} -->`;
+    }
+
+    const partialContent = partialsMap.get(partialName);
+
+    if (!partialContent) {
+      missingPartials.push(partialName);
+      if (options.missingPlaceholder === 'keep') return match;
+      if (options.missingPlaceholder === 'highlight')
+        return `<span class="placeholder-missing">[Partial not found: ${partialName}]</span>`;
+      return '';
+    }
+
+    // Mark as resolved to detect circular references
+    resolvedPartials.add(partialName);
+
+    // Recursively resolve nested partials in the partial content
+    const { content: resolvedPartialContent, missingPartials: nestedMissing } = processPartials(
+      partialContent,
+      partialsMap,
+      options,
+      resolvedPartials
+    );
+
+    missingPartials.push(...nestedMissing);
+
+    return resolvedPartialContent;
+  });
+
+  return { content: resolved, missingPartials };
+}
+
 // ============================================================================
 // Main Resolver
 // ============================================================================
 
+export interface ResolveResult {
+  resolved: string;
+  missing: string[];
+  missingPartials: string[];
+}
+
 /**
  * Resolves all placeholders in template content with provided context data.
+ * Now supports template partials via {{> partial-name}} syntax.
  */
 export function resolvePlaceholders(
   content: string,
   context: PlaceholderContext,
   options: ResolveOptions = {}
-): { resolved: string; missing: string[] } {
+): ResolveResult {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const missing: string[] = [];
+  let missingPartials: string[] = [];
 
   // Add system data if not provided
   const fullContext: PlaceholderContext = {
@@ -131,6 +225,26 @@ export function resolvePlaceholders(
   };
 
   let resolved = content;
+
+  // Process partials first (if partialsMap is provided)
+  if (opts.partialsMap && opts.partialsMap.size > 0) {
+    const partialResult = processPartials(resolved, opts.partialsMap, opts);
+    resolved = partialResult.content;
+    missingPartials = partialResult.missingPartials;
+  } else if (hasPartialReferences(resolved)) {
+    // Extract missing partial names for reporting
+    missingPartials = extractPartialReferences(resolved);
+    // Handle missing partials based on options
+    if (opts.missingPlaceholder === 'highlight') {
+      resolved = resolved.replace(
+        PARTIAL_REFERENCE_REGEX,
+        '<span class="placeholder-missing">[Partial: $1]</span>'
+      );
+    } else if (opts.missingPlaceholder === 'blank') {
+      resolved = resolved.replace(PARTIAL_REFERENCE_REGEX, '');
+    }
+    // 'keep' option leaves them as-is
+  }
 
   // Process #each loops first (most complex)
   resolved = processEachBlocks(resolved, fullContext, opts, missing);
@@ -144,7 +258,7 @@ export function resolvePlaceholders(
   // Process simple placeholders last
   resolved = processSimplePlaceholders(resolved, fullContext, opts, missing);
 
-  return { resolved, missing: [...new Set(missing)] };
+  return { resolved, missing: [...new Set(missing)], missingPartials: [...new Set(missingPartials)] };
 }
 
 // ============================================================================

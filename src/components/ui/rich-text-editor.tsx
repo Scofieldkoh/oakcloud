@@ -1,6 +1,7 @@
 'use client';
 
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
+export type { Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Link as TiptapLink } from '@tiptap/extension-link';
 import { Underline } from '@tiptap/extension-underline';
@@ -36,6 +37,10 @@ interface RichTextEditorProps {
   placeholder?: string;
   minHeight?: number;
   className?: string;
+  /** Hide the built-in toolbar (for external toolbar usage) */
+  hideToolbar?: boolean;
+  /** Render prop for external toolbar */
+  renderToolbar?: (editor: Editor | null) => React.ReactNode;
 }
 
 interface ToolbarButtonProps {
@@ -130,11 +135,11 @@ function Dropdown({ trigger, children, isOpen, onToggle, onClose }: DropdownProp
   );
 }
 
-interface ToolbarProps {
+export interface EditorToolbarProps {
   editor: Editor | null;
 }
 
-function Toolbar({ editor }: ToolbarProps) {
+export function EditorToolbar({ editor }: EditorToolbarProps) {
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [showFontSize, setShowFontSize] = useState(false);
@@ -442,6 +447,8 @@ export function RichTextEditor({
   placeholder = 'Enter text...',
   minHeight = 100,
   className = '',
+  hideToolbar = false,
+  renderToolbar,
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -501,12 +508,36 @@ export function RichTextEditor({
     );
   }
 
+  // If renderToolbar is provided, call it (external toolbar mode)
+  if (renderToolbar) {
+    return (
+      <>
+        {renderToolbar(editor)}
+        <div className={`bg-background-elevated ${className}`}>
+          <EditorContent editor={editor} />
+        </div>
+      </>
+    );
+  }
+
+  // If hideToolbar is true, render content only
+  if (hideToolbar) {
+    return (
+      <div className={`bg-background-elevated ${className}`}>
+        <EditorContent editor={editor} />
+      </div>
+    );
+  }
+
+  // Default: render with built-in toolbar
   return (
     <div
-      className={`border border-border-primary rounded-md bg-background-elevated overflow-hidden focus-within:border-accent-primary focus-within:ring-1 focus-within:ring-accent-primary ${className}`}
+      className={`border border-border-primary rounded-md bg-background-elevated flex flex-col focus-within:border-accent-primary focus-within:ring-1 focus-within:ring-accent-primary ${className}`}
     >
-      <Toolbar editor={editor} />
-      <EditorContent editor={editor} />
+      <EditorToolbar editor={editor} />
+      <div className="flex-1">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 }

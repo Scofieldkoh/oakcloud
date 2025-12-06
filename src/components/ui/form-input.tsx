@@ -68,11 +68,11 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             pr={(rightIcon || isPassword) ? config.iconPadding : config.px}
             borderWidth="1px"
             borderRadius="lg"
+            _placeholder={{ color: 'var(--text-muted)', fontSize: config.fontSize }}
             className={`
               bg-background-primary dark:bg-background-secondary
               border-border-primary
               text-text-primary
-              placeholder:text-text-muted
               hover:border-border-secondary
               focus:border-oak-primary focus:ring-1 focus:ring-oak-primary focus:outline-none
               ${error ? 'border-red-500 hover:border-red-500 focus:border-red-500 focus:ring-red-500' : ''}

@@ -42,9 +42,10 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 9. ✅ **Data Purge** - Permanent deletion of soft-deleted records (SUPER_ADMIN)
 10. ✅ **Email Notifications** - SMTP-based transactional emails (invitations, password reset)
 11. ✅ **Connectors Hub** - External service integrations (AI providers, storage)
-12. 🔜 **Module Marketplace** - Browse and install modules
-13. 🔜 **Module Linking** - Configure module relationships
-14. 🔜 **SuperAdmin Dashboard** - System administration
+12. ✅ **Document Generation** - Templates, PDF export, sharing, comments, workflow integration
+13. 🔜 **Module Marketplace** - Browse and install modules
+14. 🔜 **Module Linking** - Configure module relationships
+15. 🔜 **SuperAdmin Dashboard** - System administration
 
 ---
 
@@ -2430,12 +2431,27 @@ The Document Generation module enables users to create, edit, and share professi
 
 ### Features
 
-1. **Document Templates**
+1. **Document Templates** (Admin > Templates)
+   - Combined template management page at `/admin/templates` with tab navigation
    - Create templates with Handlebars placeholders
-   - Rich text content with formatting
-   - Section-based organization
+   - Rich text content with formatting using TipTap editor
+   - Categories: RESOLUTION, CONTRACT, LETTER, MINUTES, NOTICE, CERTIFICATE, OTHER
    - Placeholder categories (company, contacts, directors, shareholders, custom)
+   - Template preview, duplicate, and active/inactive toggle
    - Version tracking and change history
+   - Include Template Partials using `{{>partial_name}}` syntax
+
+   **Full-Page Template Editor** (`/admin/templates/editor`):
+   - Three-panel layout with resizable and collapsible sidebars
+   - **Left Panel Tabs**:
+     - *Details*: Tenant selector (SUPER_ADMIN), template name, category, description, active status
+     - *Placeholders*: Available placeholders palette with categories, includes Template Partials with `{{>partial}}` syntax
+     - *Test Data*: Mock data panel with company selector to pull real company data for testing
+   - **Center Panel**: Rich text editor with TipTap for template content
+   - **Right Panel Tabs**:
+     - *Preview*: Live PDF preview with resolved placeholders
+     - *AI Assistant*: Context-aware AI help with tenant context for template writing assistance
+   - Placeholder syntax help via info icon with hover tooltip
 
 2. **Document Generation**
    - Generate documents from templates
@@ -2470,6 +2486,22 @@ The Document Generation module enables users to create, edit, and share professi
    - Automatic draft saving
    - Draft recovery prompts
    - Conflict detection
+
+7. **Template Partials** (Admin > Templates > Partials tab)
+   - Accessible via the Partials tab in `/admin/templates`
+   - Reusable template fragments (snippets) for common content blocks
+   - Include in Document Templates using `{{>partial_name}}` syntax
+   - Examples: standard clauses, signature blocks, legal disclaimers
+   - Usage tracking (which templates use which partials)
+   - Circular reference detection
+
+8. **Workflow Integration**
+   - Clean interface exports for workflow modules
+   - `IDocumentGenerator` - Generate and manage documents
+   - `IDocumentExporter` - Export to PDF/HTML
+   - `IDocumentPublisher` - Share and publish documents
+   - `DocumentStepResult` for workflow orchestration
+   - E-signature, URL shortener, notification hooks
 
 ### API Endpoints
 
@@ -2530,6 +2562,18 @@ The Document Generation module enables users to create, edit, and share professi
 | PATCH | `/api/letterhead` | Toggle letterhead enabled |
 | DELETE | `/api/letterhead` | Delete letterhead |
 
+#### Template Partials
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/template-partials` | List partials |
+| POST | `/api/template-partials` | Create partial |
+| GET | `/api/template-partials/:id` | Get partial |
+| PATCH | `/api/template-partials/:id` | Update partial |
+| DELETE | `/api/template-partials/:id` | Delete partial |
+| POST | `/api/template-partials/:id/duplicate` | Duplicate partial |
+| GET | `/api/template-partials/:id/usage` | Get usage info |
+
 ### Environment Variables
 
 | Variable | Description | Default |
@@ -2540,21 +2584,82 @@ The Document Generation module enables users to create, edit, and share professi
 
 ```
 src/services/
-├── document-template.service.ts    # Template CRUD & versioning
-├── document-generator.service.ts   # Document generation & sharing
-├── document-validation.service.ts  # Pre-generation validation
-├── document-export.service.ts      # PDF/HTML export
-└── letterhead.service.ts           # Tenant letterhead management
+├── document-template.service.ts      # Template CRUD & versioning
+├── document-generator.service.ts     # Document generation & sharing
+├── document-validation.service.ts    # Pre-generation validation
+├── document-export.service.ts        # PDF/HTML export
+├── document-comment.service.ts       # Comments & review workflow
+├── template-partial.service.ts       # Template partials (snippets)
+├── letterhead.service.ts             # Tenant letterhead management
+└── document-generation/              # Integration module
+    ├── types.ts                      # Type definitions
+    ├── interfaces.ts                 # IDocumentGenerator, IDocumentExporter, IDocumentPublisher
+    ├── implementations.ts            # Interface implementations
+    └── index.ts                      # Barrel exports
+```
+
+#### Integration Module Usage
+
+```typescript
+import {
+  IDocumentGenerator,
+  IDocumentExporter,
+  IDocumentPublisher,
+  getDocumentGenerator,
+  getDocumentExporter,
+  getDocumentPublisher,
+  DocumentStepResult,
+} from '@/services/document-generation';
+
+// Generate a document
+const generator = getDocumentGenerator();
+const document = await generator.generate({
+  tenantId,
+  userId,
+  templateId,
+  companyId,
+  title: 'Annual Report',
+});
+
+// Export to PDF
+const exporter = getDocumentExporter();
+const pdf = await exporter.toPDF({ tenantId, userId, documentId: document.id });
+
+// Create share link
+const publisher = getDocumentPublisher();
+const share = await publisher.publish({ tenantId, userId, documentId: document.id });
 ```
 
 ### UI Components
 
 ```
 src/components/documents/
-├── document-editor.tsx          # Rich text editor
-├── validation-panel.tsx         # Pre-generation validation UI
-├── draft-recovery-prompt.tsx    # Draft recovery modal/banner
-└── index.ts                     # Barrel exports
+├── document-editor.tsx              # Rich text editor
+├── document-generation-wizard.tsx   # Multi-step document generation wizard
+├── template-selector.tsx            # Template selection with search/filter
+├── validation-panel.tsx             # Pre-generation validation UI
+├── draft-recovery-prompt.tsx        # Draft recovery modal/banner
+└── index.ts                         # Barrel exports
+
+src/components/ui/
+└── rich-text-editor.tsx             # Reusable TipTap rich text editor
+```
+
+### Admin Pages
+
+```
+src/app/(dashboard)/admin/
+├── document-templates/page.tsx  # Template management (CRUD, preview, duplicate)
+└── template-partials/page.tsx   # Partial management (reusable snippets)
+```
+
+### User Pages
+
+```
+src/app/(dashboard)/generated-documents/
+├── page.tsx                     # Document list
+├── [id]/page.tsx                # Document view/edit
+└── generate/page.tsx            # Document generation wizard
 ```
 
 ### Public Pages

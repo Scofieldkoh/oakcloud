@@ -3054,29 +3054,38 @@ function EditorToolbar({ editor }) {
 - [x] Insert AI content to editor
 - [x] Conversation persistence (optional)
 
-### Phase 6: Comments & Review
+### Phase 6: Comments & Review ✅ COMPLETED
 
-- [ ] Document comments database schema
-- [ ] Comment service (CRUD, resolve, reply)
-- [ ] Comment panel UI
-- [ ] Text selection highlighting
-- [ ] Comment thread display
-- [ ] Resolve/reopen workflow
+- [x] Document comments database schema (DocumentComment model in Prisma)
+- [x] Comment service (CRUD, resolve, reply, moderation)
+- [x] Comment panel UI (comment-panel.tsx for internal users)
+- [x] External comment panel (external-comment-panel.tsx for shared links)
+- [x] Text selection highlighting (text-selection-highlight.tsx)
+- [x] Comment thread display (comment-thread.tsx with reply threading)
+- [x] Resolve/reopen workflow
+- [x] Hide/unhide moderation workflow
+- [x] Rate limiting for external comments
+- [x] API endpoints for internal and external comment operations
 
-### Phase 7: Template Partials (Future Enhancement)
+### Phase 7: Template Partials ✅ COMPLETED
 
-- [ ] Template partials database schema
-- [ ] Partial service (CRUD)
-- [ ] Partial inclusion syntax (`{{> partial-name}}`)
-- [ ] Partial management UI
-- [ ] Usage tracking (which templates use which partials)
+- [x] Template partials database schema (TemplatePartial model in Prisma)
+- [x] Partial service (CRUD, duplicate, usage tracking)
+- [x] Partial inclusion syntax (`{{> partial-name}}`)
+- [x] Placeholder resolver updated with partial support
+- [x] Partial management UI (accessible via Partials tab in /admin/templates)
+- [x] Usage tracking (which templates use which partials)
+- [x] API endpoints for partials management
+- [x] Circular reference detection for nested partials
 
-### Phase 8: Integration Readiness
+### Phase 8: Integration Readiness ✅ COMPLETED
 
-- [ ] Clean interface exports (IDocumentGenerator, etc.)
-- [ ] DocumentStepResult for workflow
-- [ ] Documentation for workflow integration
-- [ ] API versioning consideration
+- [x] Clean interface exports (IDocumentGenerator, IDocumentExporter, IDocumentPublisher, IDocumentWorkflowStep)
+- [x] DocumentStepResult for workflow orchestration
+- [x] Documentation for workflow integration (barrel exports with examples)
+- [x] Factory functions (getDocumentGenerator, getDocumentExporter, getDocumentPublisher, getDocumentWorkflowStep)
+- [x] Types for e-signature, URL shortener, and notification integration
+- [x] Module exports from `@/services/document-generation`
 
 ---
 

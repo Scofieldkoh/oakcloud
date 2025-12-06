@@ -11,8 +11,10 @@ import { createAuditLog, computeChanges } from '@/lib/audit';
 import {
   resolvePlaceholders,
   prepareCompanyContext,
+  extractPartialReferences,
   type PlaceholderContext,
 } from '@/lib/placeholder-resolver';
+import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
 import { getCompanyById } from '@/services/company.service';
 import type {
   CreateDocumentFromTemplateInput,
@@ -143,11 +145,20 @@ export async function createDocumentFromTemplate(
     };
   }
 
-  // Resolve placeholders
-  const { resolved: resolvedContent, missing } = resolvePlaceholders(
+  // Fetch partials used in the template
+  const partialRefs = extractPartialReferences(template.content);
+  let partialsMap = new Map<string, string>();
+
+  if (partialRefs.length > 0) {
+    const partials = await getPartialsUsedInTemplate(template.content, tenantId);
+    partialsMap = new Map(partials.map((p) => [p.name, p.content]));
+  }
+
+  // Resolve placeholders (with partials)
+  const { resolved: resolvedContent, missing, missingPartials } = resolvePlaceholders(
     template.content,
     context,
-    { missingPlaceholder: 'highlight' }
+    { missingPlaceholder: 'highlight', partialsMap }
   );
 
   // Create document
@@ -164,7 +175,10 @@ export async function createDocumentFromTemplate(
       useLetterhead: data.useLetterhead,
       shareExpiryHours: data.shareExpiryHours ?? template.defaultShareExpiryHours,
       placeholderData: context as Prisma.InputJsonValue,
-      metadata: missing.length > 0 ? { missingPlaceholders: missing } : undefined,
+      metadata:
+        missing.length > 0 || missingPartials.length > 0
+          ? { missingPlaceholders: missing, missingPartials }
+          : undefined,
       createdById: userId,
     },
   });
@@ -183,6 +197,7 @@ export async function createDocumentFromTemplate(
       templateId: template.id,
       templateName: template.name,
       missingPlaceholders: missing,
+      missingPartials,
     },
   });
 

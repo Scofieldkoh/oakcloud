@@ -70,3 +70,34 @@ export {
 
 // PDF Preview Panel
 export { PDFPreviewPanel, type PDFPreviewPanelProps } from './pdf-preview-panel';
+
+// Template Editor Modal
+export { TemplateEditorModal, type TemplateEditorModalProps } from './template-editor-modal';
+
+// Comment Components
+export {
+  CommentThread,
+  type CommentThreadProps,
+  type Comment,
+  type CommentUser,
+} from './comment-thread';
+
+export {
+  CommentPanel,
+  type CommentPanelProps,
+  type CommentFilter,
+} from './comment-panel';
+
+export {
+  ExternalCommentPanel,
+  type ExternalCommentPanelProps,
+} from './external-comment-panel';
+
+export {
+  TextSelectionHighlight,
+  useTextSelection,
+  buildCommentHighlights,
+  type TextSelectionHighlightProps,
+  type TextRange,
+  type CommentHighlight,
+} from './text-selection-highlight';

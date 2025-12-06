@@ -22,6 +22,18 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import {
+  A4_WIDTH_PX,
+  A4_HEIGHT_PX,
+  A4_CONTENT_HEIGHT_PX,
+  A4_CONTENT_HEIGHT_WITH_LETTERHEAD_PX,
+  DEFAULT_MARGIN_TOP_PX,
+  DEFAULT_MARGIN_BOTTOM_PX,
+  DEFAULT_MARGIN_LEFT_PX,
+  DEFAULT_MARGIN_RIGHT_PX,
+  LETTERHEAD_HEADER_HEIGHT_PX,
+  LETTERHEAD_FOOTER_HEIGHT_PX,
+} from '@/lib/constants/a4';
 
 // ============================================================================
 // Types
@@ -42,6 +54,7 @@ export interface PDFPreviewPanelProps {
   showToolbar?: boolean;
   showPageNavigation?: boolean;
   showZoomControls?: boolean;
+  showPageBreaks?: boolean; // Show A4 page break indicators
   defaultZoom?: number;
   maxPages?: number;
   refreshInterval?: number; // ms, 0 to disable auto-refresh
@@ -269,6 +282,7 @@ interface PageContainerProps {
   pageNumber: number;
   zoom: number;
   includeLetterhead: boolean;
+  showPageBreaks?: boolean;
   onPageVisible?: (pageNumber: number) => void;
 }
 
@@ -277,9 +291,33 @@ function PageContainer({
   pageNumber,
   zoom,
   includeLetterhead,
+  showPageBreaks = false,
   onPageVisible,
 }: PageContainerProps) {
   const pageRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [pageBreakPositions, setPageBreakPositions] = useState<number[]>([]);
+
+  // Calculate page break positions based on content height
+  useEffect(() => {
+    if (!showPageBreaks || !contentRef.current) return;
+
+    const contentHeight = contentRef.current.scrollHeight;
+    // Use the correct content height based on letterhead state
+    const pageContentHeight = includeLetterhead
+      ? A4_CONTENT_HEIGHT_WITH_LETTERHEAD_PX
+      : A4_CONTENT_HEIGHT_PX;
+
+    const positions: number[] = [];
+    let currentPosition = pageContentHeight;
+
+    while (currentPosition < contentHeight) {
+      positions.push(currentPosition);
+      currentPosition += pageContentHeight;
+    }
+
+    setPageBreakPositions(positions);
+  }, [content, showPageBreaks, includeLetterhead]);
 
   // Intersection observer to track visible page
   useEffect(() => {
@@ -303,10 +341,10 @@ function PageContainer({
   return (
     <div
       ref={pageRef}
-      className="page-container bg-white shadow-lg mb-4 mx-auto"
+      className="page-container bg-white shadow-lg mb-4 mx-auto relative"
       style={{
-        width: `${(210 * zoom) / 100}mm`, // A4 width
-        minHeight: `${(297 * zoom) / 100}mm`, // A4 height
+        width: `${A4_WIDTH_PX}px`,
+        minHeight: `${A4_HEIGHT_PX}px`,
         transform: `scale(${zoom / 100})`,
         transformOrigin: 'top center',
       }}
@@ -314,21 +352,51 @@ function PageContainer({
     >
       {/* Letterhead header placeholder */}
       {includeLetterhead && (
-        <div className="h-16 bg-gray-50 border-b border-gray-200 flex items-center justify-center text-gray-400 text-sm">
+        <div
+          className="bg-gray-50 border-b border-gray-200 flex items-center justify-center text-gray-400 text-sm"
+          style={{ height: LETTERHEAD_HEADER_HEIGHT_PX }}
+        >
           [Letterhead Header]
         </div>
       )}
 
       {/* Page content */}
       <div
-        className="p-8 prose prose-sm max-w-none"
+        ref={contentRef}
+        className="prose prose-sm max-w-none relative"
+        style={{
+          paddingTop: DEFAULT_MARGIN_TOP_PX,
+          paddingRight: DEFAULT_MARGIN_RIGHT_PX,
+          paddingBottom: DEFAULT_MARGIN_BOTTOM_PX,
+          paddingLeft: DEFAULT_MARGIN_LEFT_PX,
+        }}
         dangerouslySetInnerHTML={{ __html: content }}
       />
 
+      {/* Page break indicators */}
+      {showPageBreaks && pageBreakPositions.map((position, index) => (
+        <div
+          key={index}
+          className="absolute left-0 right-0 pointer-events-none"
+          style={{ top: `${position + DEFAULT_MARGIN_TOP_PX}px` }}
+        >
+          <div className="flex items-center gap-2 px-4">
+            <div className="flex-1 border-t-2 border-dashed border-red-400" />
+            <span className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded whitespace-nowrap">
+              Page {index + 2}
+            </span>
+            <div className="flex-1 border-t-2 border-dashed border-red-400" />
+          </div>
+        </div>
+      ))}
+
       {/* Letterhead footer placeholder */}
       {includeLetterhead && (
-        <div className="h-12 bg-gray-50 border-t border-gray-200 flex items-center justify-center text-gray-400 text-xs mt-auto">
-          [Letterhead Footer] - Page {pageNumber}
+        <div
+          className="bg-gray-50 border-t border-gray-200 flex items-center justify-center text-gray-400 text-xs mt-auto"
+          style={{ height: LETTERHEAD_FOOTER_HEIGHT_PX }}
+        >
+          [Letterhead Footer] — Page {pageNumber}
         </div>
       )}
     </div>
@@ -354,6 +422,7 @@ export function PDFPreviewPanel({
   showToolbar = true,
   showPageNavigation = true,
   showZoomControls = true,
+  showPageBreaks = false,
   defaultZoom = DEFAULT_ZOOM,
   maxPages = 100,
   refreshInterval = 0,
@@ -492,14 +561,195 @@ export function PDFPreviewPanel({
     }
   }, [documentId, includeLetterhead]);
 
-  // Handle print
+  // Handle print - prints only the preview content
   const handlePrint = useCallback(() => {
     if (onPrint) {
       onPrint();
-    } else {
-      window.print();
+      return;
     }
-  }, [onPrint]);
+
+    // Create a new window with only the preview content for printing
+    const printContent = previewContent || '';
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+
+    if (!printWindow) {
+      console.error('Failed to open print window');
+      return;
+    }
+
+    // Use table layout trick for header/footer on each page
+    const headerHtml = includeLetterhead ? `
+      <thead>
+        <tr>
+          <td>
+            <div class="letterhead-header">[Letterhead Header]</div>
+          </td>
+        </tr>
+      </thead>
+    ` : '';
+
+    const footerHtml = includeLetterhead ? `
+      <tfoot>
+        <tr>
+          <td>
+            <div class="letterhead-footer">[Letterhead Footer]</div>
+          </td>
+        </tr>
+      </tfoot>
+    ` : '';
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${title || 'Document'} - Print</title>
+          <style>
+            @page {
+              size: A4;
+              margin: ${includeLetterhead ? '15mm 20mm' : '20mm'};
+            }
+
+            * {
+              box-sizing: border-box;
+            }
+
+            html, body {
+              font-family: 'Times New Roman', Times, serif;
+              font-size: 12pt;
+              line-height: 1.6;
+              color: #000;
+              background: #fff;
+              margin: 0;
+              padding: 0;
+              width: 100%;
+              height: 100%;
+            }
+
+            /* Table layout for repeating header/footer */
+            .print-wrapper {
+              display: table;
+              width: 100%;
+            }
+
+            .print-wrapper > thead {
+              display: table-header-group;
+            }
+
+            .print-wrapper > tfoot {
+              display: table-footer-group;
+            }
+
+            .print-wrapper > tbody {
+              display: table-row-group;
+            }
+
+            /* Letterhead styles */
+            .letterhead-header {
+              text-align: center;
+              color: #666;
+              font-size: 10pt;
+              padding: 8px 0;
+              border-bottom: 1px solid #ccc;
+              margin-bottom: 15px;
+            }
+
+            .letterhead-footer {
+              text-align: center;
+              color: #666;
+              font-size: 9pt;
+              padding: 8px 0;
+              border-top: 1px solid #ccc;
+              margin-top: 15px;
+            }
+
+            /* Content styles */
+            .print-content {
+              max-width: 100%;
+            }
+
+            p {
+              margin: 0 0 1em 0;
+            }
+
+            ul, ol {
+              margin: 0 0 1em 0;
+              padding-left: 2em;
+            }
+
+            li {
+              margin-bottom: 0.5em;
+            }
+
+            strong, b {
+              font-weight: bold;
+            }
+
+            em, i {
+              font-style: italic;
+            }
+
+            u {
+              text-decoration: underline;
+            }
+
+            a {
+              color: #000;
+              text-decoration: underline;
+            }
+
+            hr {
+              border: none;
+              border-top: 1px solid #000;
+              margin: 1em 0;
+            }
+
+            /* Page break handling */
+            .page-break {
+              page-break-before: always;
+            }
+
+            @media print {
+              body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <table class="print-wrapper">
+            ${headerHtml}
+            ${footerHtml}
+            <tbody>
+              <tr>
+                <td class="print-content">
+                  ${printContent}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    };
+
+    // Fallback if onload doesn't fire
+    setTimeout(() => {
+      if (!printWindow.closed) {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      }
+    }, 500);
+  }, [onPrint, previewContent, title, includeLetterhead]);
 
   // Handle download
   const handleDownload = useCallback(async () => {
@@ -643,6 +893,7 @@ export function PDFPreviewPanel({
                 pageNumber={index + 1}
                 zoom={zoom}
                 includeLetterhead={includeLetterhead}
+                showPageBreaks={showPageBreaks}
                 onPageVisible={handlePageVisible}
               />
             ))
@@ -652,6 +903,7 @@ export function PDFPreviewPanel({
               pageNumber={1}
               zoom={zoom}
               includeLetterhead={includeLetterhead}
+              showPageBreaks={showPageBreaks}
             />
           )}
         </div>

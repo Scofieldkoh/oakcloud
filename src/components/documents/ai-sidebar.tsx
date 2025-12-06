@@ -35,6 +35,8 @@ export interface AIContext {
   mode: AIContextMode;
   templateCategory?: DocumentCategory;
   templateName?: string;
+  tenantId?: string;
+  tenantName?: string;
   companyContext?: {
     name: string;
     uen: string;
@@ -200,6 +202,8 @@ export function AISidebar({
                 mode: context.mode,
                 templateCategory: context.templateCategory,
                 templateName: context.templateName,
+                tenantId: context.tenantId,
+                tenantName: context.tenantName,
                 companyContext: context.companyContext,
                 selectedText: context.selectedText,
                 surroundingContent: context.surroundingContent,
@@ -219,6 +223,8 @@ export function AISidebar({
                 mode: context.mode,
                 templateCategory: context.templateCategory,
                 templateName: context.templateName,
+                tenantId: context.tenantId,
+                tenantName: context.tenantName,
                 companyContext: context.companyContext,
                 selectedText: context.selectedText,
                 surroundingContent: context.surroundingContent,
@@ -682,6 +688,8 @@ export interface UseAISidebarOptions {
   mode: AIContextMode;
   templateCategory?: DocumentCategory;
   templateName?: string;
+  tenantId?: string;
+  tenantName?: string;
   companyContext?: AIContext['companyContext'];
 }
 
@@ -703,6 +711,8 @@ export function useAISidebar(options: UseAISidebarOptions) {
     mode: options.mode,
     templateCategory: options.templateCategory,
     templateName: options.templateName,
+    tenantId: options.tenantId,
+    tenantName: options.tenantName,
     companyContext: options.companyContext,
     selectedText,
     surroundingContent,

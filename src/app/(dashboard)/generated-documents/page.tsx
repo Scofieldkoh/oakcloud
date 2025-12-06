@@ -21,9 +21,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useSession } from '@/hooks/use-auth';
 
 // ============================================================================
 // Types
@@ -276,6 +278,15 @@ export default function GeneratedDocumentsPage() {
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
   const { can, isLoading: permissionsLoading } = usePermissions();
+  const { data: session } = useSession();
+
+  // Tenant selection (for SUPER_ADMIN)
+  const [selectedTenantId, setSelectedTenantId] = useState('');
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    selectedTenantId,
+    session?.tenantId
+  );
 
   // Permission checks
   const canCreate = can.createDocument;
@@ -304,15 +315,27 @@ export default function GeneratedDocumentsPage() {
 
   // Fetch documents
   const fetchDocuments = useCallback(async () => {
+    // Don't fetch if SUPER_ADMIN hasn't selected a tenant
+    if (session?.isSuperAdmin && !activeTenantId) {
+      setDocuments([]);
+      setTotal(0);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
       const params = new URLSearchParams();
-      if (searchQuery) params.set('q', searchQuery);
+      if (searchQuery) params.set('query', searchQuery);
       if (statusFilter) params.set('status', statusFilter);
       params.set('page', page.toString());
       params.set('limit', limit.toString());
+      // Add tenantId for SUPER_ADMIN
+      if (session?.isSuperAdmin && activeTenantId) {
+        params.set('tenantId', activeTenantId);
+      }
 
       const response = await fetch(`/api/generated-documents?${params}`);
       if (!response.ok) {
@@ -328,7 +351,7 @@ export default function GeneratedDocumentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, statusFilter, page]);
+  }, [searchQuery, statusFilter, page, session?.isSuperAdmin, activeTenantId]);
 
   useEffect(() => {
     fetchDocuments();
@@ -386,27 +409,38 @@ export default function GeneratedDocumentsPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-text-primary">
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
             Generated Documents
           </h1>
-          <p className="text-sm text-text-muted mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Manage and export your generated documents
           </p>
         </div>
 
         {canCreate && (
           <Link href="/generated-documents/generate">
-            <Button variant="primary" size="sm">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
               Generate Document
             </Button>
           </Link>
         )}
       </div>
+
+      {/* Tenant Selector for SUPER_ADMIN */}
+      {session?.isSuperAdmin && (
+        <div className="mb-6">
+          <TenantSelector
+            value={selectedTenantId}
+            onChange={setSelectedTenantId}
+            label="Select Tenant"
+            helpText="Select a tenant to view their documents"
+          />
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex items-center gap-4 mb-6">
@@ -466,14 +500,18 @@ export default function GeneratedDocumentsPage() {
         <div className="py-16 text-center">
           <FileText className="w-16 h-16 mx-auto text-text-muted opacity-50 mb-4" />
           <h3 className="text-lg font-medium text-text-primary mb-2">
-            No documents found
+            {session?.isSuperAdmin && !activeTenantId
+              ? 'Select a Tenant'
+              : 'No documents found'}
           </h3>
           <p className="text-text-muted mb-6">
-            {searchQuery || statusFilter
-              ? 'Try adjusting your filters'
-              : 'Get started by generating your first document'}
+            {session?.isSuperAdmin && !activeTenantId
+              ? 'Please select a tenant to view their documents'
+              : searchQuery || statusFilter
+                ? 'Try adjusting your filters'
+                : 'Get started by generating your first document'}
           </p>
-          {!searchQuery && !statusFilter && canCreate && (
+          {!searchQuery && !statusFilter && canCreate && activeTenantId && (
             <Link href="/generated-documents/generate">
               <Button variant="primary" size="sm">
                 <Plus className="w-4 h-4 mr-2" />

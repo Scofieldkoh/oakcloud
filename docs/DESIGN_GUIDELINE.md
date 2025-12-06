@@ -12,9 +12,14 @@ This document outlines the design system, UI components, and styling standards f
 - [Component Specifications](#component-specifications)
 - [CSS Classes Reference](#css-classes-reference)
 - [UI Consistency Standards](#ui-consistency-standards)
+  - [Page Layout Patterns](#page-layout-patterns)
+  - [Button Icon Pattern](#button-icon-pattern)
+  - [TenantSelector Placement](#tenantselector-placement)
+  - [Empty States for SUPER_ADMIN](#empty-states-for-super_admin)
 - [Reusable Components](#reusable-components)
 - [Layout Guidelines](#layout-guidelines)
 - [Component Examples](#component-examples)
+- [Best Practices](#best-practices)
 
 ---
 
@@ -313,6 +318,230 @@ All pages follow these consistency standards for a unified look and feel:
 | Error Messages | `text-xs text-status-error mt-1.5` |
 | Card Headers | `p-4 border-b border-border-primary` |
 | Form Labels | `label` class (12px, medium weight) |
+
+### Page Layout Patterns
+
+The application uses three distinct page patterns:
+
+#### 1. Main List Pages (Companies, Contacts, Documents)
+
+These are top-level navigation pages that display lists of items.
+
+```tsx
+<div className="p-4 sm:p-6">
+  {/* Header - NO icon in title */}
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
+        Page Title
+      </h1>
+      <p className="text-sm text-text-secondary mt-1">
+        Description text here
+      </p>
+    </div>
+    <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+      Add Item
+    </Button>
+  </div>
+
+  {/* TenantSelector for SUPER_ADMIN (after header) */}
+  {session?.isSuperAdmin && (
+    <div className="mb-6">
+      <TenantSelector value={...} onChange={...} />
+    </div>
+  )}
+
+  {/* Filters */}
+  {/* Content */}
+</div>
+```
+
+#### 2. Admin List Pages (Tenants, Roles, Users, Templates)
+
+These are admin-specific pages under `/admin/*` that manage system resources.
+
+```tsx
+<div className="p-4 sm:p-6">
+  {/* Header - WITH icon in title */}
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+      <h1 className="text-xl sm:text-2xl font-semibold text-text-primary flex items-center gap-2">
+        <IconName className="w-6 h-6" />
+        Page Title
+      </h1>
+      <p className="text-sm text-text-secondary mt-1">
+        Description text here
+      </p>
+    </div>
+    <Button variant="primary" size="sm" leftIcon={<Plus />} onClick={...}>
+      Add Item
+    </Button>
+  </div>
+
+  {/* TenantSelector for SUPER_ADMIN (after header) */}
+  {session?.isSuperAdmin && (
+    <div className="mb-6">
+      <TenantSelector value={...} onChange={...} />
+    </div>
+  )}
+
+  {/* Filters */}
+  {/* Content */}
+</div>
+```
+
+**Admin page icons:**
+| Page | Icon |
+|------|------|
+| Tenants | `Building` |
+| Roles | `Shield` |
+| Users | `UserCog` (in sidebar) |
+| Templates | `FileText` (combined page with Document Templates and Partials tabs) |
+| Audit Logs | `Activity` |
+| Connectors | `Plug` |
+
+#### 3. Detail/Form/Wizard Pages
+
+These are pages accessed via ID or for specific actions (view, edit, create).
+
+```tsx
+<div className="min-h-screen bg-background-primary">
+  {/* Header with back button */}
+  <div className="border-b border-border-primary bg-background-secondary">
+    <div className="max-w-6xl mx-auto px-6 py-4">
+      <div className="flex items-center gap-4">
+        <Link href="/parent-page">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </Link>
+        <div className="h-6 w-px bg-border-secondary" />
+        <div>
+          <h1 className="text-xl font-semibold text-text-primary">
+            Page Title
+          </h1>
+          <p className="text-sm text-text-muted">
+            Subtitle or context
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Content */}
+  <div className="max-w-6xl mx-auto px-6 py-8">
+    {/* TenantSelector for SUPER_ADMIN (if applicable) */}
+    {/* Page content */}
+  </div>
+</div>
+```
+
+#### 4. Full-Page Editor with Sidebars (e.g., Template Editor)
+
+Complex editors with resizable sidebars and multiple tool panels.
+
+```tsx
+<div className="h-screen flex flex-col bg-background-primary">
+  {/* Fixed Header */}
+  <div className="flex-none border-b border-border-primary bg-background-secondary px-4 py-3">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <h1 className="text-lg font-semibold">Editor Title</h1>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant="secondary">Cancel</Button>
+        <Button variant="primary">Save</Button>
+      </div>
+    </div>
+  </div>
+
+  {/* Main Content with Resizable Panels */}
+  <div className="flex-1 flex overflow-hidden">
+    {/* Left Panel - Collapsible */}
+    <div style={{ width: leftPanelWidth }} className="flex-none border-r">
+      {/* Tab navigation and content */}
+    </div>
+
+    {/* Resize Handle */}
+    <div className="w-1 cursor-col-resize hover:bg-accent-primary/20" />
+
+    {/* Center Editor */}
+    <div className="flex-1 overflow-auto p-6">
+      <RichTextEditor value={content} onChange={setContent} />
+    </div>
+
+    {/* Right Panel - Collapsible */}
+    <div style={{ width: rightPanelWidth }} className="flex-none border-l">
+      {/* Preview, AI Assistant, etc. */}
+    </div>
+  </div>
+</div>
+```
+
+**Template Editor specific features:**
+- **Left Panel Tabs**: Details (tenant selector for SUPER_ADMIN, name, category, description, active), Placeholders (with partials), Test Data (with company selector)
+- **Right Panel Tabs**: Preview (live PDF preview), AI Assistant (with tenant context)
+- **Resizable**: Both panels can be resized via drag handles (min: 200px, max: 500px)
+- **Collapsible**: Both panels can be collapsed to icons-only mode
+- **Placeholder Syntax Info**: Display via info icon with hover tooltip instead of inline text
+
+### Button Icon Pattern
+
+Use the `leftIcon` prop for buttons with icons (preferred over inline icons):
+
+```tsx
+// Preferred: Using leftIcon prop
+<Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+  Add Item
+</Button>
+
+// Alternative: Inline icon (acceptable for Link-wrapped buttons)
+<Link href="/path">
+  <Button variant="primary" size="sm">
+    <Plus className="w-4 h-4 mr-2" />
+    Add Item
+  </Button>
+</Link>
+```
+
+### TenantSelector Placement
+
+For SUPER_ADMIN users who need to select a tenant context:
+
+1. **Always place after the header**, not before
+2. Wrap in a `<div className="mb-6">` for consistent spacing
+3. Use appropriate help text for context
+
+```tsx
+{/* Correct placement - after header */}
+{session?.isSuperAdmin && (
+  <div className="mb-6">
+    <TenantSelector
+      value={selectedTenantId}
+      onChange={setSelectedTenantId}
+      label="Select Tenant"
+      helpText="Select a tenant to manage their resources"
+    />
+  </div>
+)}
+```
+
+### Empty States for SUPER_ADMIN
+
+When SUPER_ADMIN hasn't selected a tenant, show an appropriate empty state:
+
+```tsx
+{session?.isSuperAdmin && !activeTenantId && (
+  <div className="flex flex-col items-center justify-center py-12 text-text-muted">
+    <IconName className="w-12 h-12 mb-3 opacity-50" />
+    <p className="text-sm">Please select a tenant to view resources</p>
+  </div>
+)}
+```
 
 ---
 
