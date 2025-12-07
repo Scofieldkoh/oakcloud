@@ -19,6 +19,22 @@ export type DocumentCategory = 'RESOLUTION' | 'MINUTES' | 'CONTRACT' | 'LETTER' 
 
 const log = createLogger('document-ai');
 
+/**
+ * Strip HTML tags from content for AI processing
+ */
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -91,10 +107,10 @@ Guidelines:
 1. Use formal legal language appropriate for corporate documents
 2. Reference Singapore Companies Act where relevant
 3. When writing templates, use placeholder syntax: {{placeholder.name}}
-4. Suggest page breaks for multi-page documents using <!-- pagebreak -->
-5. Be concise and professional
-6. For resolutions, use proper numbering and structure
-7. Always include proper signature blocks when appropriate`;
+4. Be concise and professional
+5. For resolutions, use proper numbering and structure
+6. Always include proper signature blocks when appropriate
+7. IMPORTANT: Respond with plain text only. Do NOT use HTML tags, markdown formatting, or code blocks in your responses.`;
 
 function buildContextPrompt(context: AIContext): string {
   const parts: string[] = [];
@@ -289,7 +305,7 @@ ${description}
 
 ${context.mode === 'template_editor' ? 'Include appropriate placeholders ({{placeholder.name}}) for dynamic company data.' : ''}
 
-Provide only the drafted content, formatted with proper HTML tags for headings, paragraphs, and lists.`;
+Provide only the drafted content as plain text. Use proper paragraph breaks and formatting but do NOT use HTML tags.`;
 
   return sendAIChatMessage({
     tenantId,
@@ -311,6 +327,9 @@ export async function rephraseText(
   context: AIContext,
   model?: AIModel
 ): Promise<AIChatResponse> {
+  // Strip HTML for cleaner AI processing
+  const plainText = stripHtml(text);
+
   const styleDescriptions: Record<string, string> = {
     formal: 'in more formal legal language',
     simplified: 'in simpler, more accessible language',
@@ -320,15 +339,15 @@ export async function rephraseText(
 
   const prompt = `Please rephrase the following text ${styleDescriptions[style]}:
 
-"${text}"
+"${plainText}"
 
-Provide only the rephrased text, maintaining the same meaning but adjusting the style as requested.`;
+Provide only the rephrased text as plain text, maintaining the same meaning but adjusting the style as requested.`;
 
   return sendAIChatMessage({
     tenantId,
     userId,
     message: prompt,
-    context: { ...context, selectedText: text },
+    context: { ...context, selectedText: plainText },
     model,
   });
 }
@@ -408,6 +427,9 @@ export async function reviewDocument(
   context: AIContext,
   model?: AIModel
 ): Promise<AIChatResponse> {
+  // Strip HTML for cleaner AI processing
+  const plainContent = stripHtml(content);
+
   const prompt = `Please review the following ${context.mode === 'template_editor' ? 'document template' : 'document'} for:
 
 1. Completeness - Are all required sections present?
@@ -417,15 +439,15 @@ export async function reviewDocument(
 5. Potential issues - Any errors or areas for improvement?
 
 Document content:
-${content}
+${plainContent}
 
-Provide a structured review with specific recommendations.`;
+Provide a structured review with specific recommendations as plain text.`;
 
   return sendAIChatMessage({
     tenantId,
     userId,
     message: prompt,
-    context: { ...context, surroundingContent: content },
+    context: { ...context, surroundingContent: plainContent },
     model,
   });
 }

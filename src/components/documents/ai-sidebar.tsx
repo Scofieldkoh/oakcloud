@@ -147,8 +147,8 @@ export function AISidebar({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Hooks
-  const { hasAvailableModels, isLoading: modelsLoading } = useAIModels();
+  // Hooks - pass tenantId for connector-aware model availability
+  const { hasAvailableModels, isLoading: modelsLoading } = useAIModels(context.tenantId);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -432,6 +432,7 @@ export function AISidebar({
               variant="compact"
               label="Model"
               showDetails={false}
+              tenantId={context.tenantId}
             />
           </div>
         )}

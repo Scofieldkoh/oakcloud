@@ -51,7 +51,10 @@
       "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\fix-connector.js\")",
       "Bash(node check-usage-logs.js:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:froala.com)"
+      "WebFetch(domain:froala.com)",
+      "WebFetch(domain:editor.umodoc.com)",
+      "WebFetch(domain:dev.umodoc.com)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

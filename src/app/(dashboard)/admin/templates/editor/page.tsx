@@ -9,13 +9,11 @@ import { FormInput } from '@/components/ui/form-input';
 import { useToast } from '@/components/ui/toast';
 import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
 import { AISidebar, useAISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
-import { PDFPreviewPanel } from '@/components/documents/pdf-preview-panel';
-import { A4PageEditor } from '@/components/documents/a4-page-editor';
+import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
 import { cn } from '@/lib/utils';
 import {
   ArrowLeft,
   Save,
-  Eye,
   Sparkles,
   FileText,
   Braces,
@@ -277,11 +275,9 @@ const DEFAULT_MOCK_DATA: MockDataValues = {
   },
 };
 
-const MIN_PANEL_WIDTH = 280;
-const MAX_LEFT_PANEL_WIDTH = 450;
-const MAX_RIGHT_PANEL_WIDTH = 800; // Allow right panel to expand much wider
-const DEFAULT_LEFT_WIDTH = 320;
-const DEFAULT_RIGHT_WIDTH = 400;
+const MIN_PANEL_WIDTH = 320;
+const MAX_PANEL_WIDTH = 600;
+const DEFAULT_PANEL_WIDTH = 380;
 
 // ============================================================================
 // Resizable Panel Hook
@@ -607,8 +603,6 @@ function PlaceholdersTab({ onInsert, partials, isLoadingPartials }: Placeholders
 interface TestDataTabProps {
   mockData: MockDataValues;
   onMockDataChange: (data: MockDataValues) => void;
-  onPreview: () => void;
-  isPreviewLoading: boolean;
   companies: Company[];
   isLoadingCompanies: boolean;
   onSelectCompany: (companyId: string) => void;
@@ -617,8 +611,6 @@ interface TestDataTabProps {
 function TestDataTab({
   mockData,
   onMockDataChange,
-  onPreview,
-  isPreviewLoading,
   companies,
   isLoadingCompanies,
   onSelectCompany,
@@ -834,18 +826,6 @@ function TestDataTab({
         </div>
       </div>
 
-      <div className="p-4 border-t border-border-primary">
-        <Button
-          variant="secondary"
-          size="sm"
-          className="w-full"
-          onClick={onPreview}
-          isLoading={isPreviewLoading}
-          leftIcon={<Eye className="w-4 h-4" />}
-        >
-          Preview with Test Data
-        </Button>
-      </div>
     </div>
   );
 }
@@ -885,6 +865,9 @@ function TemplateEditorContent() {
       .catch(() => setTenantName(''));
   }, [activeTenantId]);
 
+  // Editor ref for cursor-based insertion
+  const editorRef = useRef<A4PageEditorRef>(null);
+
   // Form state
   const [formData, setFormData] = useState<TemplateFormData>({
     name: '',
@@ -896,15 +879,13 @@ function TemplateEditorContent() {
   const [formError, setFormError] = useState('');
 
   // Panel states
-  const [leftTab, setLeftTab] = useState<'details' | 'placeholders' | 'testdata'>('details');
-  const [rightTab, setRightTab] = useState<'preview' | 'ai'>('preview');
+  const [activeTab, setActiveTab] = useState<'details' | 'placeholders' | 'testdata' | 'ai'>('details');
   const [mockData, setMockData] = useState<MockDataValues>(DEFAULT_MOCK_DATA);
   const [previewContent, setPreviewContent] = useState('');
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
-  // Resizable panels
-  const leftPanel = useResizablePanel(DEFAULT_LEFT_WIDTH, MIN_PANEL_WIDTH, MAX_LEFT_PANEL_WIDTH);
-  const rightPanel = useResizablePanel(DEFAULT_RIGHT_WIDTH, MIN_PANEL_WIDTH, MAX_RIGHT_PANEL_WIDTH);
+  // Resizable panel (combined right panel)
+  const rightPanel = useResizablePanel(DEFAULT_PANEL_WIDTH, MIN_PANEL_WIDTH, MAX_PANEL_WIDTH);
 
   // AI sidebar
   const aiSidebar = useAISidebar({
@@ -1018,20 +999,18 @@ function TemplateEditorContent() {
     setFormData((prev) => ({ ...prev, ...changes }));
   }, []);
 
-  // Handle placeholder insertion
+  // Handle placeholder insertion at cursor position
   const handleInsertPlaceholder = useCallback((placeholder: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      content: prev.content + placeholder,
-    }));
+    if (editorRef.current) {
+      editorRef.current.insertAtCursor(placeholder);
+    }
   }, []);
 
-  // Handle AI content insertion
+  // Handle AI content insertion at cursor position
   const handleAIInsert = useCallback((content: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      content: prev.content + content,
-    }));
+    if (editorRef.current) {
+      editorRef.current.insertAtCursor(content);
+    }
   }, []);
 
   // Handle company selection for test data
@@ -1217,7 +1196,7 @@ function TemplateEditorContent() {
       preview = preview.replace(/<p>\s*<\/p>/g, '<p>&nbsp;</p>');
 
       setPreviewContent(preview);
-      setRightTab('preview');
+      // Preview will be shown inline in the A4PageEditor via the previewContent prop
     } catch (error) {
       console.error('Preview error:', error);
       setPreviewContent('<p class="text-red-500">Error generating preview</p>');
@@ -1330,124 +1309,22 @@ function TemplateEditorContent() {
         </div>
       )}
 
-      {/* Main content */}
+      {/* Main content - Editor (left) + Combined Panel (right) */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel */}
-        <div
-          className={cn(
-            'flex-shrink-0 flex flex-col border-r border-border-primary bg-background-secondary transition-all duration-200',
-            leftPanel.isCollapsed && 'w-0 overflow-hidden border-r-0'
-          )}
-          style={{ width: leftPanel.isCollapsed ? 0 : leftPanel.width }}
-        >
-          {!leftPanel.isCollapsed && (
-            <>
-              {/* Left panel tabs */}
-              <div className="flex border-b border-border-primary">
-                <button
-                  type="button"
-                  onClick={() => setLeftTab('details')}
-                  className={cn(
-                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
-                    leftTab === 'details'
-                      ? 'text-accent-primary border-b-2 border-accent-primary'
-                      : 'text-text-muted hover:text-text-primary'
-                  )}
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  Details
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLeftTab('placeholders')}
-                  className={cn(
-                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
-                    leftTab === 'placeholders'
-                      ? 'text-accent-primary border-b-2 border-accent-primary'
-                      : 'text-text-muted hover:text-text-primary'
-                  )}
-                >
-                  <Braces className="w-3.5 h-3.5" />
-                  Placeholders
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLeftTab('testdata')}
-                  className={cn(
-                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
-                    leftTab === 'testdata'
-                      ? 'text-accent-primary border-b-2 border-accent-primary'
-                      : 'text-text-muted hover:text-text-primary'
-                  )}
-                >
-                  <TestTube className="w-3.5 h-3.5" />
-                  Test Data
-                </button>
-              </div>
-
-              {/* Left panel content */}
-              <div className="flex-1 overflow-hidden">
-                {leftTab === 'details' && (
-                  <DetailsTab
-                    formData={formData}
-                    onChange={handleFormChange}
-                    isSuperAdmin={session?.isSuperAdmin}
-                    selectedTenantId={selectedTenantId}
-                    onTenantChange={setSelectedTenantId}
-                  />
-                )}
-                {leftTab === 'placeholders' && (
-                  <PlaceholdersTab
-                    onInsert={handleInsertPlaceholder}
-                    partials={partials}
-                    isLoadingPartials={isLoadingPartials}
-                  />
-                )}
-                {leftTab === 'testdata' && (
-                  <TestDataTab
-                    mockData={mockData}
-                    onMockDataChange={setMockData}
-                    onPreview={handlePreview}
-                    isPreviewLoading={isPreviewLoading}
-                    companies={companies}
-                    isLoadingCompanies={isLoadingCompanies}
-                    onSelectCompany={handleSelectCompany}
-                  />
-                )}
-              </div>
-            </>
-          )}
+        {/* A4 Page Editor - takes up remaining space */}
+        <div className="flex-1 min-w-0">
+          <A4PageEditor
+            ref={editorRef}
+            value={formData.content}
+            onChange={(html) => setFormData((prev) => ({ ...prev, content: html }))}
+            placeholder="Start typing your template content..."
+            tenantId={activeTenantId}
+            previewContent={previewContent}
+            showPreviewToggle={true}
+            onPreview={handlePreview}
+            isPreviewLoading={isPreviewLoading}
+          />
         </div>
-
-        {/* Left panel resize handle */}
-        <div
-          className={cn(
-            'flex-shrink-0 w-2 cursor-col-resize hover:bg-accent-primary/30 transition-colors flex items-center justify-center relative',
-            leftPanel.isResizing && 'bg-accent-primary/30'
-          )}
-          onMouseDown={(e) => leftPanel.startResize(e, 'right')}
-        >
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); leftPanel.toggle(); }}
-            className="absolute z-20 p-1.5 rounded-md bg-background-secondary border border-border-primary shadow-sm hover:bg-background-tertiary transition-colors"
-            title={leftPanel.isCollapsed ? 'Expand left panel' : 'Collapse left panel'}
-          >
-            {leftPanel.isCollapsed ? (
-              <ChevronRight className="w-3 h-3 text-text-muted" />
-            ) : (
-              <ChevronLeft className="w-3 h-3 text-text-muted" />
-            )}
-          </button>
-        </div>
-
-        {/* Center - A4 Page Editor */}
-        <A4PageEditor
-          value={formData.content}
-          onChange={(html) => setFormData((prev) => ({ ...prev, content: html }))}
-          placeholder="Start typing your template content..."
-          tenantId={activeTenantId}
-        />
 
         {/* Right panel resize handle */}
         <div
@@ -1461,7 +1338,7 @@ function TemplateEditorContent() {
             type="button"
             onClick={(e) => { e.stopPropagation(); rightPanel.toggle(); }}
             className="absolute z-20 p-1.5 rounded-md bg-background-secondary border border-border-primary shadow-sm hover:bg-background-tertiary transition-colors"
-            title={rightPanel.isCollapsed ? 'Expand right panel' : 'Collapse right panel'}
+            title={rightPanel.isCollapsed ? 'Expand panel' : 'Collapse panel'}
           >
             {rightPanel.isCollapsed ? (
               <ChevronLeft className="w-3 h-3 text-text-muted" />
@@ -1471,7 +1348,7 @@ function TemplateEditorContent() {
           </button>
         </div>
 
-        {/* Right Panel */}
+        {/* Combined Right Panel - All tools */}
         <div
           className={cn(
             'flex-shrink-0 flex flex-col border-l border-border-primary bg-background-secondary transition-all duration-200',
@@ -1481,83 +1358,95 @@ function TemplateEditorContent() {
         >
           {!rightPanel.isCollapsed && (
             <>
-              {/* Right panel tabs */}
+              {/* Panel tabs */}
               <div className="flex border-b border-border-primary">
                 <button
                   type="button"
-                  onClick={() => setRightTab('preview')}
+                  onClick={() => setActiveTab('details')}
                   className={cn(
-                    'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors',
-                    rightTab === 'preview'
+                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
+                    activeTab === 'details'
                       ? 'text-accent-primary border-b-2 border-accent-primary'
                       : 'text-text-muted hover:text-text-primary'
                   )}
                 >
-                  <Eye className="w-4 h-4" />
-                  Preview
+                  <Settings className="w-3.5 h-3.5" />
+                  Details
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRightTab('ai')}
+                  onClick={() => setActiveTab('placeholders')}
                   className={cn(
-                    'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors',
-                    rightTab === 'ai'
+                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
+                    activeTab === 'placeholders'
                       ? 'text-accent-primary border-b-2 border-accent-primary'
                       : 'text-text-muted hover:text-text-primary'
                   )}
                 >
-                  <Sparkles className="w-4 h-4" />
-                  AI Assistant
+                  <Braces className="w-3.5 h-3.5" />
+                  Placeholders
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('testdata')}
+                  className={cn(
+                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
+                    activeTab === 'testdata'
+                      ? 'text-accent-primary border-b-2 border-accent-primary'
+                      : 'text-text-muted hover:text-text-primary'
+                  )}
+                >
+                  <TestTube className="w-3.5 h-3.5" />
+                  Test
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('ai')}
+                  className={cn(
+                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
+                    activeTab === 'ai'
+                      ? 'text-accent-primary border-b-2 border-accent-primary'
+                      : 'text-text-muted hover:text-text-primary'
+                  )}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  AI
                 </button>
               </div>
 
-              {/* Right panel content */}
-              <div className="flex-1 overflow-hidden flex flex-col">
-                {rightTab === 'preview' && (
-                  <div className="h-full flex flex-col">
-                    {/* Preview with Test Data button */}
-                    <div className="flex-shrink-0 p-3 border-b border-border-primary bg-background-tertiary">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="w-full"
-                        onClick={handlePreview}
-                        isLoading={isPreviewLoading}
-                        leftIcon={<Eye className="w-4 h-4" />}
-                      >
-                        Preview with Test Data
-                      </Button>
-                    </div>
-                    {/* Preview content */}
-                    <div className="flex-1 overflow-hidden">
-                      {previewContent ? (
-                        <PDFPreviewPanel
-                          content={previewContent}
-                          isLoading={isPreviewLoading}
-                          showToolbar={true}
-                          showPageBreaks={true}
-                          className="h-full rounded-none border-0"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                          <FileText className="w-12 h-12 text-text-muted opacity-50 mb-4" />
-                          <p className="text-sm text-text-muted mb-2">No preview available</p>
-                          <p className="text-xs text-text-muted">
-                            Click the button above to see your template with test data
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              {/* Panel content */}
+              <div className="flex-1 overflow-hidden">
+                {activeTab === 'details' && (
+                  <DetailsTab
+                    formData={formData}
+                    onChange={handleFormChange}
+                    isSuperAdmin={session?.isSuperAdmin}
+                    selectedTenantId={selectedTenantId}
+                    onTenantChange={setSelectedTenantId}
+                  />
                 )}
-
-                {rightTab === 'ai' && (
+                {activeTab === 'placeholders' && (
+                  <PlaceholdersTab
+                    onInsert={handleInsertPlaceholder}
+                    partials={partials}
+                    isLoadingPartials={isLoadingPartials}
+                  />
+                )}
+                {activeTab === 'testdata' && (
+                  <TestDataTab
+                    mockData={mockData}
+                    onMockDataChange={setMockData}
+                    companies={companies}
+                    isLoadingCompanies={isLoadingCompanies}
+                    onSelectCompany={handleSelectCompany}
+                  />
+                )}
+                {activeTab === 'ai' && (
                   <AISidebar
                     isOpen={true}
-                    onClose={() => setRightTab('preview')}
+                    onClose={() => rightPanel.toggle()}
                     context={{
                       ...aiSidebar.context,
-                      // Add tenant context for AI
                     }}
                     onInsert={handleAIInsert}
                     onReplace={handleAIInsert}

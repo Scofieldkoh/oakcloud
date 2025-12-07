@@ -68,13 +68,15 @@ const quickActionSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
+    const body = await request.json();
+
+    // Get tenant ID from session or request body (for SUPER_ADMIN who selects a tenant)
+    const tenantId = session.tenantId || body.context?.tenantId;
 
     // Ensure tenant ID is present
-    if (!session.tenantId) {
+    if (!tenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
-
-    const body = await request.json();
 
     // Check if this is a quick action or regular chat
     const { searchParams } = new URL(request.url);
@@ -96,7 +98,7 @@ export async function POST(request: NextRequest) {
       switch (action) {
         case 'draft':
           response = await draftContent(
-            session.tenantId,
+            tenantId,
             session.id,
             input,
             context as AIContext,
@@ -105,7 +107,7 @@ export async function POST(request: NextRequest) {
           break;
         case 'rephrase':
           response = await rephraseText(
-            session.tenantId,
+            tenantId,
             session.id,
             input,
             style || 'formal',
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
           break;
         case 'explain':
           response = await explainTerm(
-            session.tenantId,
+            tenantId,
             session.id,
             input,
             context as AIContext,
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
           break;
         case 'suggest_placeholders':
           response = await suggestPlaceholders(
-            session.tenantId,
+            tenantId,
             session.id,
             input,
             context as AIContext,
@@ -133,7 +135,7 @@ export async function POST(request: NextRequest) {
           break;
         case 'review':
           response = await reviewDocument(
-            session.tenantId,
+            tenantId,
             session.id,
             input,
             context as AIContext,
@@ -166,7 +168,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const response = await sendAIChatMessage({
-      tenantId: session.tenantId,
+      tenantId,
       userId: session.id,
       message,
       context: context as AIContext,
@@ -184,7 +186,7 @@ export async function POST(request: NextRequest) {
       ];
 
       await saveConversation(
-        session.tenantId,
+        tenantId,
         session.id,
         response.conversationId,
         context.mode === 'template_editor' ? 'template' : 'document',
