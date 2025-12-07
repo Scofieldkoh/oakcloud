@@ -35,6 +35,7 @@ import {
 } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
+import type { TenantAwareParams } from '@/lib/types';
 
 // ============================================================================
 // Types
@@ -91,10 +92,8 @@ export interface DocumentCommentWithReplies extends DocumentComment {
   parent?: DocumentComment | null;
 }
 
-export interface TenantAwareParams {
-  tenantId: string;
-  userId: string;
-}
+// Re-export shared type for backwards compatibility
+export type { TenantAwareParams } from '@/lib/types';
 
 // Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof GeneratedDocument)[] = [

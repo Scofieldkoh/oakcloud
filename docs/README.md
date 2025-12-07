@@ -2432,7 +2432,7 @@ The Document Generation module enables users to create, edit, and share professi
 ### Features
 
 1. **Document Templates** (Admin > Templates)
-   - Combined template management page at `/admin/templates` with tab navigation
+   - Combined template management page at `/admin/template-partials` with tab navigation
    - Create templates with Handlebars placeholders
    - Rich text content with formatting using TipTap editor
    - Categories: RESOLUTION, CONTRACT, LETTER, MINUTES, NOTICE, CERTIFICATE, OTHER
@@ -2441,7 +2441,7 @@ The Document Generation module enables users to create, edit, and share professi
    - Version tracking and change history
    - Include Template Partials using `{{>partial_name}}` syntax
 
-   **Full-Page Template Editor** (`/admin/templates/editor`):
+   **Full-Page Template Editor** (`/admin/template-partials/editor`):
    - Three-panel layout with resizable and collapsible sidebars
    - **Left Panel Tabs**:
      - *Details*: Tenant selector (SUPER_ADMIN), template name, category, description, active status
@@ -2488,7 +2488,7 @@ The Document Generation module enables users to create, edit, and share professi
    - Conflict detection
 
 7. **Template Partials** (Admin > Templates > Partials tab)
-   - Accessible via the Partials tab in `/admin/templates`
+   - Accessible via the Partials tab in `/admin/template-partials`
    - Reusable template fragments (snippets) for common content blocks
    - Include in Document Templates using `{{>partial_name}}` syntax
    - Examples: standard clauses, signature blocks, legal disclaimers

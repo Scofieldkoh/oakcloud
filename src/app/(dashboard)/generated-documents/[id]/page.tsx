@@ -128,7 +128,7 @@ export default function DocumentViewPage() {
   const { success, error: toastError } = useToast();
 
   // State
-  const [document, setDocument] = useState<GeneratedDocument | null>(null);
+  const [docData, setDocData] = useState<GeneratedDocument | null>(null);
   const [sections, setSections] = useState<DocumentSection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -158,7 +158,7 @@ export default function DocumentViewPage() {
         }
 
         const data = await response.json();
-        setDocument(data);
+        setDocData(data);
         setIncludeLetterhead(data.useLetterhead);
 
         // Extract sections from content
@@ -221,7 +221,7 @@ export default function DocumentViewPage() {
       }
 
       const updated = await response.json();
-      setDocument(updated);
+      setDocData(updated);
       success('Document finalized successfully');
     } catch (err) {
       console.error('Finalize error:', err);
@@ -250,7 +250,7 @@ export default function DocumentViewPage() {
       }
 
       const updated = await response.json();
-      setDocument(updated);
+      setDocData(updated);
       success('Document unlocked for editing');
     } catch (err) {
       console.error('Unfinalize error:', err);
@@ -276,7 +276,7 @@ export default function DocumentViewPage() {
       }
 
       const updated = await response.json();
-      setDocument(updated);
+      setDocData(updated);
       success('Document archived');
     } catch (err) {
       console.error('Archive error:', err);
@@ -302,7 +302,7 @@ export default function DocumentViewPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${document?.title || 'document'}.pdf`;
+      a.download = `${docData?.title || 'document'}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -350,7 +350,7 @@ export default function DocumentViewPage() {
   }
 
   // Error state
-  if (error || !document) {
+  if (error || !docData) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-md w-full p-6 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-center">
@@ -383,13 +383,13 @@ export default function DocumentViewPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-3">
                   <h1 className="text-xl font-semibold text-text-primary truncate">
-                    {document.title}
+                    {docData.title}
                   </h1>
-                  <StatusBadge status={document.status} />
+                  <StatusBadge status={docData.status} />
                 </div>
-                {document.template && (
+                {docData.template && (
                   <p className="text-sm text-text-muted">
-                    From: {document.template.name}
+                    From: {docData.template.name}
                   </p>
                 )}
               </div>
@@ -420,8 +420,8 @@ export default function DocumentViewPage() {
               <div className="w-px h-6 bg-border-secondary" />
 
               {/* Edit (only for drafts) */}
-              {document.status === 'DRAFT' && (
-                <Link href={`/generated-documents/${document.id}/edit`}>
+              {docData.status === 'DRAFT' && (
+                <Link href={`/generated-documents/${docData.id}/edit`}>
                   <Button variant="secondary" size="sm">
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
@@ -430,7 +430,7 @@ export default function DocumentViewPage() {
               )}
 
               {/* Finalize/Unfinalize */}
-              {document.status === 'DRAFT' && (
+              {docData.status === 'DRAFT' && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -440,7 +440,7 @@ export default function DocumentViewPage() {
                   Finalize
                 </Button>
               )}
-              {document.status === 'FINALIZED' && (
+              {docData.status === 'FINALIZED' && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -458,7 +458,7 @@ export default function DocumentViewPage() {
               </Button>
 
               {/* Share */}
-              <Link href={`/generated-documents/${document.id}/share`}>
+              <Link href={`/generated-documents/${docData.id}/share`}>
                 <Button variant="secondary" size="sm">
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
@@ -487,7 +487,7 @@ export default function DocumentViewPage() {
                     <Copy className="w-4 h-4" />
                     Clone
                   </button>
-                  {document.status !== 'ARCHIVED' && (
+                  {docData.status !== 'ARCHIVED' && (
                     <>
                       <div className="h-px bg-border-secondary my-1" />
                       <button
@@ -528,13 +528,13 @@ export default function DocumentViewPage() {
                   Details
                 </h4>
 
-                {document.company && (
+                {docData.company && (
                   <div className="flex items-center gap-2 text-sm">
                     <Building2 className="w-4 h-4 text-text-muted" />
                     <div>
-                      <p className="text-text-primary">{document.company.name}</p>
+                      <p className="text-text-primary">{docData.company.name}</p>
                       <p className="text-xs text-text-muted">
-                        {document.company.uen}
+                        {docData.company.uen}
                       </p>
                     </div>
                   </div>
@@ -543,33 +543,33 @@ export default function DocumentViewPage() {
                 <div className="flex items-center gap-2 text-sm">
                   <User className="w-4 h-4 text-text-muted" />
                   <span className="text-text-secondary">
-                    {document.createdBy.firstName} {document.createdBy.lastName}
+                    {docData.createdBy.firstName} {docData.createdBy.lastName}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 text-text-muted" />
                   <span className="text-text-secondary">
-                    {new Date(document.createdAt).toLocaleDateString()}
+                    {new Date(docData.createdAt).toLocaleDateString()}
                   </span>
                 </div>
 
-                {document.finalizedAt && document.finalizedBy && (
+                {docData.finalizedAt && docData.finalizedBy && (
                   <div className="pt-2 border-t border-border-secondary">
                     <p className="text-xs text-text-muted">
-                      Finalized by {document.finalizedBy.firstName}{' '}
-                      {document.finalizedBy.lastName}
+                      Finalized by {docData.finalizedBy.firstName}{' '}
+                      {docData.finalizedBy.lastName}
                     </p>
                     <p className="text-xs text-text-muted">
-                      {new Date(document.finalizedAt).toLocaleString()}
+                      {new Date(docData.finalizedAt).toLocaleString()}
                     </p>
                   </div>
                 )}
 
-                {document._count && (
+                {docData._count && (
                   <div className="pt-2 border-t border-border-secondary flex items-center gap-4 text-xs text-text-muted">
-                    <span>{document._count.shares} shares</span>
-                    <span>{document._count.comments} comments</span>
+                    <span>{docData._count.shares} shares</span>
+                    <span>{docData._count.comments} comments</span>
                   </div>
                 )}
               </div>
@@ -589,7 +589,7 @@ export default function DocumentViewPage() {
               {/* Content */}
               <div className="p-8">
                 <RenderContentWithPageBreaks
-                  html={document.content}
+                  html={docData.content}
                   isEditable={false}
                   className="prose prose-sm max-w-none dark:prose-invert"
                 />
@@ -612,9 +612,9 @@ export default function DocumentViewPage() {
         onClose={() => setFinalizeDialogOpen(false)}
         onConfirm={handleFinalize}
         title="Finalize Document"
-        message="Finalizing this document will lock it for editing. You can unlock it later if needed. Do you want to continue?"
-        confirmText={isProcessing ? 'Finalizing...' : 'Finalize'}
-        variant="default"
+        description="Finalizing this document will lock it for editing. You can unlock it later if needed. Do you want to continue?"
+        confirmLabel={isProcessing ? 'Finalizing...' : 'Finalize'}
+        variant="info"
       />
 
       {/* Unfinalize dialog */}
@@ -623,9 +623,9 @@ export default function DocumentViewPage() {
         onClose={() => setUnfinalizeDialogOpen(false)}
         onConfirm={handleUnfinalize}
         title="Unlock Document"
-        message="Unlocking this document will allow editing. This action will be logged. Do you want to continue?"
-        confirmText={isProcessing ? 'Unlocking...' : 'Unlock'}
-        variant="default"
+        description="Unlocking this document will allow editing. This action will be logged. Do you want to continue?"
+        confirmLabel={isProcessing ? 'Unlocking...' : 'Unlock'}
+        variant="info"
       />
 
       {/* Archive dialog */}
@@ -634,8 +634,8 @@ export default function DocumentViewPage() {
         onClose={() => setArchiveDialogOpen(false)}
         onConfirm={handleArchive}
         title="Archive Document"
-        message="Archiving this document will hide it from the main list. It can still be accessed from archived documents. Do you want to continue?"
-        confirmText={isProcessing ? 'Archiving...' : 'Archive'}
+        description="Archiving this document will hide it from the main list. It can still be accessed from archived documents. Do you want to continue?"
+        confirmLabel={isProcessing ? 'Archiving...' : 'Archive'}
         variant="warning"
       />
 

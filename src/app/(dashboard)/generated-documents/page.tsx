@@ -596,8 +596,8 @@ export default function GeneratedDocumentsPage() {
         }}
         onConfirm={handleDelete}
         title="Delete Document"
-        message="Are you sure you want to delete this document? This action cannot be undone."
-        confirmText="Delete"
+        description="Are you sure you want to delete this document? This action cannot be undone."
+        confirmLabel="Delete"
         variant="danger"
       />
     </div>

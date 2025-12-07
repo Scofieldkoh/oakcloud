@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
+  AlertTriangle,
   Loader2,
   RefreshCw,
   Sparkles,
@@ -20,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Stepper, type Step } from '@/components/ui/stepper';
 import { FormInput } from '@/components/ui/form-input';
 import { TemplateSelector, type DocumentTemplate } from './template-selector';
-import { ValidationPanel, type ValidationResult } from './validation-panel';
+import { type ValidationResult } from './validation-panel';
 import { DocumentEditor, type DocumentEditorRef } from './document-editor';
 
 // ============================================================================
@@ -384,11 +385,30 @@ function PreviewStep({
     <div className="space-y-4">
       {/* Validation warnings */}
       {validationResult && !validationResult.isValid && (
-        <ValidationPanel
-          result={validationResult}
-          onFix={() => {}}
-          className="mb-4"
-        />
+        <div className="p-4 bg-status-warning/10 border border-status-warning/30 rounded-lg mb-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-status-warning flex-shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-text-primary">
+                Validation Issues Found
+              </p>
+              {validationResult.errors.length > 0 && (
+                <ul className="text-sm text-status-error space-y-1">
+                  {validationResult.errors.map((error, i) => (
+                    <li key={i}>• {error.message}</li>
+                  ))}
+                </ul>
+              )}
+              {validationResult.warnings.length > 0 && (
+                <ul className="text-sm text-status-warning space-y-1">
+                  {validationResult.warnings.map((warning, i) => (
+                    <li key={i}>• {warning.message}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Refresh button */}

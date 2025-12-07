@@ -48,7 +48,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Tenants', href: '/admin/tenants', icon: Building, superAdminOnly: true },
   { name: 'Users', href: '/admin/users', icon: UserCog, adminOnly: true },
   { name: 'Roles', href: '/admin/roles', icon: Shield, adminOnly: true },
-  { name: 'Templates', href: '/admin/templates', icon: FileText, adminOnly: true },
+  { name: 'Templates', href: '/admin/template-partials', icon: FileText, adminOnly: true },
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: Activity, adminOnly: true },
   { name: 'Data Purge', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },

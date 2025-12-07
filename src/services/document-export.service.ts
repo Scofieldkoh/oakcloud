@@ -24,7 +24,7 @@ import { JSDOM } from 'jsdom';
 export interface ExportPDFParams {
   documentId: string;
   tenantId: string;
-  userId: string;
+  userId?: string; // Optional for public share access
   includeLetterhead?: boolean;
   format?: 'A4' | 'Letter';
   orientation?: 'portrait' | 'landscape';
@@ -245,9 +245,9 @@ export async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
     action: 'EXPORT',
     entityType: 'GeneratedDocument',
     entityId: documentId,
-    changes: {
-      after: { format: 'PDF', includeLetterhead, orientation },
-    },
+    entityName: document.title,
+    summary: `Exported document "${document.title}" to PDF`,
+    metadata: { format: 'PDF', includeLetterhead, orientation },
     userId,
     tenantId,
     companyId: document.companyId || undefined,

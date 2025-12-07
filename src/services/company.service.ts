@@ -15,6 +15,7 @@ import type {
 } from '@/lib/validations/company';
 import type { Prisma, Company } from '@prisma/client';
 import type { Decimal } from '@prisma/client/runtime/library';
+import type { TenantAwareParams } from '@/lib/types';
 
 // ============================================================================
 // Types
@@ -85,10 +86,8 @@ export interface CompanyWithRelations extends Company {
   };
 }
 
-export interface TenantAwareParams {
-  tenantId: string;
-  userId: string;
-}
+// Re-export shared type for backwards compatibility
+export type { TenantAwareParams } from '@/lib/types';
 
 // Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof Company)[] = [

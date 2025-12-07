@@ -375,8 +375,8 @@ export default function DocumentTemplatesPage() {
     });
   };
 
-  const handleDelete = (reason: string) => {
-    if (!deletingTemplate) return;
+  const handleDelete = (reason?: string) => {
+    if (!deletingTemplate || !reason) return;
     deleteMutation.mutate({ id: deletingTemplate.id, reason });
   };
 
@@ -556,7 +556,7 @@ export default function DocumentTemplatesPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setViewingTemplate(template)}
-                    title="Preview template"
+                    aria-label="Preview template"
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
@@ -568,7 +568,7 @@ export default function DocumentTemplatesPage() {
                           <MoreVertical className="w-4 h-4" />
                         </button>
                       </DropdownTrigger>
-                      <DropdownMenu align="end">
+                      <DropdownMenu align="right">
                         <DropdownItem
                           icon={<Pencil className="w-4 h-4" />}
                           onClick={() => openEditModal(template)}

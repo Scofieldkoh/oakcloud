@@ -54,7 +54,8 @@
       "WebFetch(domain:froala.com)",
       "WebFetch(domain:editor.umodoc.com)",
       "WebFetch(domain:dev.umodoc.com)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []

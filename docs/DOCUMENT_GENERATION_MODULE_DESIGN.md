@@ -3073,7 +3073,7 @@ function EditorToolbar({ editor }) {
 - [x] Partial service (CRUD, duplicate, usage tracking)
 - [x] Partial inclusion syntax (`{{> partial-name}}`)
 - [x] Placeholder resolver updated with partial support
-- [x] Partial management UI (accessible via Partials tab in /admin/templates)
+- [x] Partial management UI (accessible via Partials tab in /admin/template-partials)
 - [x] Usage tracking (which templates use which partials)
 - [x] API endpoints for partials management
 - [x] Circular reference detection for nested partials

@@ -78,12 +78,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .replace(/^-|-$/g, '')
       .slice(0, 50);
 
-    return new NextResponse(result.pdf, {
+    // Convert Buffer to Uint8Array for NextResponse compatibility
+    const pdfData = new Uint8Array(result.buffer);
+    return new NextResponse(pdfData, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}.pdf"`,
-        'Content-Length': String(result.pdf.length),
+        'Content-Length': String(result.buffer.length),
       },
     });
   } catch (error) {

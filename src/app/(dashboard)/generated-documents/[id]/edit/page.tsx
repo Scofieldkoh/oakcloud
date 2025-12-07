@@ -437,9 +437,17 @@ export default function DocumentEditPage() {
       {/* Draft recovery prompt */}
       {showDraftPrompt && draft && (
         <DraftRecoveryPrompt
-          draftDate={new Date(draft.createdAt)}
-          onRecover={handleRecoverDraft}
-          onDiscard={handleDiscardDraft}
+          documentId={documentId}
+          onRecover={(content, contentJson) => {
+            if (editorRef.current) {
+              editorRef.current.setContent(content);
+              setPreviewContent(content);
+              setHasUnsavedChanges(true);
+            }
+            setShowDraftPrompt(false);
+          }}
+          onDiscard={() => setShowDraftPrompt(false)}
+          showBanner
         />
       )}
     </div>

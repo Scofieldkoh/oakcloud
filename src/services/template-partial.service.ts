@@ -9,6 +9,7 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import type { Prisma, TemplatePartial } from '@prisma/client';
+import type { TenantAwareParams } from '@/lib/types';
 
 // ============================================================================
 // Types
@@ -25,10 +26,8 @@ export interface TemplatePartialWithRelations extends TemplatePartial {
   };
 }
 
-export interface TenantAwareParams {
-  tenantId: string;
-  userId: string;
-}
+// Re-export shared type for backwards compatibility
+export type { TenantAwareParams } from '@/lib/types';
 
 export interface CreatePartialInput {
   name: string;

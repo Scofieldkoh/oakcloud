@@ -949,7 +949,7 @@ function TemplateEditorContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
       success('Template created successfully');
-      router.push('/admin/templates');
+      router.push('/admin/template-partials');
     },
     onError: (error: Error) => {
       setFormError(error.message);
@@ -974,7 +974,7 @@ function TemplateEditorContent() {
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
       queryClient.invalidateQueries({ queryKey: ['document-template', templateId] });
       success('Template updated successfully');
-      router.push('/admin/templates');
+      router.push('/admin/template-partials');
     },
     onError: (error: Error) => {
       setFormError(error.message);
@@ -1262,7 +1262,7 @@ function TemplateEditorContent() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push('/admin/templates')}
+            onClick={() => router.push('/admin/template-partials')}
             leftIcon={<ArrowLeft className="w-4 h-4" />}
           >
             Back
@@ -1282,7 +1282,7 @@ function TemplateEditorContent() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => router.push('/admin/templates')}
+            onClick={() => router.push('/admin/template-partials')}
             disabled={isSaving}
           >
             Cancel

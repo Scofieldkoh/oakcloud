@@ -54,7 +54,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
 
     // Return PDF as downloadable file
-    return new NextResponse(result.buffer, {
+    // Convert Buffer to Uint8Array for NextResponse compatibility
+    const pdfData = new Uint8Array(result.buffer);
+    return new NextResponse(pdfData, {
       status: 200,
       headers: {
         'Content-Type': result.mimeType,

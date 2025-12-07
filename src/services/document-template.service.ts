@@ -14,6 +14,7 @@ import type {
   DuplicateDocumentTemplateInput,
 } from '@/lib/validations/document-template';
 import type { Prisma, DocumentTemplate, DocumentTemplateCategory } from '@prisma/client';
+import type { TenantAwareParams } from '@/lib/types';
 
 // ============================================================================
 // Types
@@ -30,10 +31,8 @@ export interface DocumentTemplateWithRelations extends DocumentTemplate {
   };
 }
 
-export interface TenantAwareParams {
-  tenantId: string;
-  userId: string;
-}
+// Re-export shared type for backwards compatibility
+export type { TenantAwareParams } from '@/lib/types';
 
 // Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof DocumentTemplate)[] = [
