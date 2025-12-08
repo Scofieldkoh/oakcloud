@@ -414,7 +414,15 @@ function DocumentTemplatesTab({
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-medium text-text-primary">{template.name}</h3>
+                    <button
+                      onClick={() => canManage && openEditModal(template)}
+                      className={cn(
+                        "font-medium text-text-primary text-left",
+                        canManage && "hover:text-accent-primary hover:underline cursor-pointer"
+                      )}
+                    >
+                      {template.name}
+                    </button>
                     <span
                       className={cn(
                         'badge text-xs',
@@ -799,7 +807,15 @@ function TemplatePartialsTab({
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-medium text-text-primary">{partial.name}</h3>
+                      <button
+                        onClick={() => canManage && openEdit(partial)}
+                        className={cn(
+                          "font-medium text-text-primary text-left",
+                          canManage && "hover:text-accent-primary hover:underline cursor-pointer"
+                        )}
+                      >
+                        {partial.displayName || partial.name}
+                      </button>
                       <PartialSyntax name={partial.name} />
                       <UsageCount count={partial._count?.usedInTemplates || 0} />
                     </div>

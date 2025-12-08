@@ -1241,7 +1241,8 @@ model TemplatePartial {
   tenantId              String    @map("tenant_id")
   tenant                Tenant    @relation(fields: [tenantId], references: [id])
 
-  name                  String    @db.VarChar(100)
+  name                  String    @db.VarChar(100)  // Identifier used in {{>name}} syntax
+  displayName           String?   @map("display_name") @db.VarChar(200)  // Human-readable name shown in UI
   description           String?   @db.Text
   content               String    @db.Text
   placeholders          Json      @default("[]")

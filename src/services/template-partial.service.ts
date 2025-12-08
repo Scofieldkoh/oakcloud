@@ -31,6 +31,7 @@ export type { TenantAwareParams } from '@/lib/types';
 
 export interface CreatePartialInput {
   name: string;
+  displayName: string;
   description?: string | null;
   content: string;
   placeholders?: Prisma.InputJsonValue;
@@ -39,6 +40,7 @@ export interface CreatePartialInput {
 export interface UpdatePartialInput {
   id: string;
   name?: string;
+  displayName?: string;
   description?: string | null;
   content?: string;
   placeholders?: Prisma.InputJsonValue;
@@ -69,6 +71,7 @@ export interface PartialUsageInfo {
 // Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof TemplatePartial)[] = [
   'name',
+  'displayName',
   'description',
   'content',
 ];
@@ -107,6 +110,7 @@ export async function createTemplatePartial(
     data: {
       tenantId,
       name: data.name,
+      displayName: data.displayName,
       description: data.description ?? null,
       content: data.content,
       placeholders: data.placeholders ?? [],
@@ -174,6 +178,7 @@ export async function updateTemplatePartial(
   const updateData: Prisma.TemplatePartialUpdateInput = {};
 
   if (data.name !== undefined) updateData.name = data.name;
+  if (data.displayName !== undefined) updateData.displayName = data.displayName;
   if (data.description !== undefined) updateData.description = data.description;
   if (data.content !== undefined) updateData.content = data.content;
   if (data.placeholders !== undefined) updateData.placeholders = data.placeholders;
@@ -365,10 +370,10 @@ export async function searchTemplatePartials(
 
 export async function getAllTemplatePartials(
   tenantId: string
-): Promise<Pick<TemplatePartial, 'id' | 'name' | 'description' | 'content'>[]> {
+): Promise<Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content'>[]> {
   return prisma.templatePartial.findMany({
     where: { tenantId, deletedAt: null },
-    select: { id: true, name: true, description: true, content: true },
+    select: { id: true, name: true, displayName: true, description: true, content: true },
     orderBy: { name: 'asc' },
   });
 }
@@ -550,6 +555,9 @@ export async function duplicateTemplatePartial(
     data: {
       tenantId,
       name: newName,
+      displayName: source.displayName
+        ? `Copy of ${source.displayName}`
+        : `Copy of ${source.name}`,
       description: source.description
         ? `Copy of: ${source.description}`
         : `Copy of ${source.name}`,

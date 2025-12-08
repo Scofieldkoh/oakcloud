@@ -26,8 +26,9 @@ const partialNameSchema = z
 
 export const createTemplatePartialSchema = z.object({
   name: partialNameSchema,
+  displayName: z.string().min(1, 'Display name is required').max(200, 'Display name must be 200 characters or less'),
   description: z.string().max(1000).optional().nullable(),
-  content: z.string().min(1, 'Content is required').max(50000, 'Content is too large'),
+  content: z.string().min(1, 'Content is required').max(500000, 'Content is too large'),
   placeholders: z.array(placeholderDefinitionSchema).default([]),
 });
 
@@ -40,8 +41,9 @@ export type CreateTemplatePartialInput = z.infer<typeof createTemplatePartialSch
 export const updateTemplatePartialSchema = z.object({
   id: z.string().uuid(),
   name: partialNameSchema.optional(),
+  displayName: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).optional().nullable(),
-  content: z.string().min(1).max(50000).optional(),
+  content: z.string().min(1).max(500000).optional(),
   placeholders: z.array(placeholderDefinitionSchema).optional(),
 });
 

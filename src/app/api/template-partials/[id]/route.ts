@@ -9,6 +9,7 @@ import {
   deleteTemplatePartial,
   getPartialUsage,
 } from '@/services/template-partial.service';
+import { ZodError } from 'zod';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -117,6 +118,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(partial);
   } catch (error) {
+    if (error instanceof ZodError) {
+      const firstError = error.errors[0];
+      return NextResponse.json(
+        { error: firstError?.message || 'Validation error' },
+        { status: 400 }
+      );
+    }
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

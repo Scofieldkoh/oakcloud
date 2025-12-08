@@ -81,7 +81,7 @@ async function fetchPartials(
   return response.json();
 }
 
-async function fetchAllPartials(tenantId?: string): Promise<{ partials: Pick<TemplatePartial, 'id' | 'name' | 'description'>[] }> {
+async function fetchAllPartials(tenantId?: string): Promise<{ partials: Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description'>[] }> {
   const searchParams = new URLSearchParams({ all: 'true' });
   if (tenantId) searchParams.set('tenantId', tenantId);
   const response = await fetch(`/api/template-partials?${searchParams}`);

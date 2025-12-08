@@ -706,6 +706,39 @@ function Page({
 
   const handleInput = useCallback(() => {
     if (contentRef.current && !isPreviewMode) {
+      let html = contentRef.current.innerHTML;
+
+      // Convert typed page break patterns to actual page breaks
+      // Supports: [pagebreak], [page-break], [pb], ---pagebreak---, ===pagebreak===
+      const originalHtml = html;
+      const pageBreakReplacement = '<div class="page-break"></div>';
+
+      html = html
+        .replace(/\[pagebreak\]/gi, pageBreakReplacement)
+        .replace(/\[page-break\]/gi, pageBreakReplacement)
+        .replace(/\[pb\]/gi, pageBreakReplacement)
+        .replace(/---\s*pagebreak\s*---/gi, pageBreakReplacement)
+        .replace(/===\s*pagebreak\s*===/gi, pageBreakReplacement)
+        .replace(/&lt;pagebreak&gt;/gi, pageBreakReplacement);
+
+      if (html !== originalHtml) {
+        // Save cursor position info
+        const selection = window.getSelection();
+        const hadSelection = selection && selection.rangeCount > 0;
+
+        // Update the content
+        contentRef.current.innerHTML = html;
+
+        // Move cursor to end if we had a selection
+        if (hadSelection && contentRef.current) {
+          const range = document.createRange();
+          range.selectNodeContents(contentRef.current);
+          range.collapse(false);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }
+      }
+
       onContentChange(page.id, contentRef.current.innerHTML);
     }
   }, [page.id, onContentChange, isPreviewMode]);
@@ -1015,6 +1048,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (!content) return [{ id: crypto.randomUUID(), content: '' }];
         const normalizedContent = normalizePageSeparators(content);
         const parts = normalizedContent.split(PAGE_SEPARATOR);
+        console.log('[parsePages] Input length:', content.length, 'Has page-break:', content.includes('page-break'), 'Normalized has PAGE_BREAK:', normalizedContent.includes('PAGE_BREAK'), 'Parts count:', parts.length);
         return parts.map((c, i) => ({
           id: existingPages?.[i]?.id || crypto.randomUUID(),
           content: c,
@@ -1313,9 +1347,19 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       const printWindow = window.open('', '_blank');
       if (!printWindow) return;
 
-      const allContent = printPages
+      // Filter out pages that only contain [Remove Page]
+      const filteredPages = printPages.filter((page) => {
+        const textContent = (page.content || '')
+          .replace(/<[^>]*>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .trim();
+        return !/^\[Remove\s*Page\]$/i.test(textContent);
+      });
+
+      // Join pages with page-break divs to trigger CSS page breaks on print
+      const allContent = filteredPages
         .map((page) => sanitizeHtml(page.content) || '')
-        .join('')
+        .join('<div class="page-break"></div>')
         .trim();
 
       const pagesHtml = `<div class="content">${allContent || '&nbsp;'}</div>`;

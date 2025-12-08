@@ -50,6 +50,7 @@ interface TemplateFormData {
 
 interface PartialFormData {
   name: string;
+  displayName: string;
   description: string;
   content: string;
 }
@@ -432,8 +433,8 @@ interface PartialDetailsTabProps {
 }
 
 function PartialDetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, tenantName }: PartialDetailsTabProps) {
-  // Auto-format partial name: convert spaces to hyphens, lowercase, remove invalid chars
-  const handleNameChange = (value: string) => {
+  // Auto-format partial identifier: convert spaces to hyphens, lowercase, remove invalid chars
+  const handleIdentifierChange = (value: string) => {
     const formatted = value
       .toLowerCase()
       .replace(/\s+/g, '-')           // spaces to hyphens
@@ -460,12 +461,22 @@ function PartialDetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, t
       )}
 
       <FormInput
-        label="Partial Name (Identifier)"
+        label="Name"
+        value={formData.displayName}
+        onChange={(e) => onChange({ displayName: e.target.value })}
+        placeholder="e.g., Director Resolution Header"
+        inputSize="xs"
+        hint="Human-readable name shown in the list"
+        required
+      />
+
+      <FormInput
+        label="Identifier"
         value={formData.name}
-        onChange={(e) => handleNameChange(e.target.value)}
+        onChange={(e) => handleIdentifierChange(e.target.value)}
         placeholder="e.g., director-resolution-header"
         inputSize="xs"
-        hint="Auto-formatted: lowercase, hyphens instead of spaces. Used in templates as {{> name }}"
+        hint="Auto-formatted: lowercase, hyphens instead of spaces. Used in templates as {{> identifier }}"
         required
       />
 
@@ -484,7 +495,7 @@ function PartialDetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, t
         <p className="text-xs text-blue-700 dark:text-blue-300">
           <strong>Tip:</strong> Partials are reusable content blocks. Insert them into templates using{' '}
           <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-[10px]">
-            {'{{>'} {formData.name || 'partial-name'} {'}}'}
+            {'{{>'} {formData.name || 'identifier'} {'}}'}
           </code>
         </p>
       </div>
@@ -546,7 +557,10 @@ function PlaceholdersTab({ onInsert, partials, isLoadingPartials, customPlacehol
       label: customFormData.label.trim(),
       type: customFormData.type,
       required: customFormData.required,
-      defaultValue: customFormData.defaultValue.trim() || undefined,
+      // Boolean placeholders default to 'false' if no default is specified
+      defaultValue: customFormData.type === 'boolean'
+        ? (customFormData.defaultValue.trim() || 'false')
+        : (customFormData.defaultValue.trim() || undefined),
     };
 
     onCustomPlaceholdersChange([...customPlaceholders, newPlaceholder]);
@@ -572,7 +586,10 @@ function PlaceholdersTab({ onInsert, partials, isLoadingPartials, customPlacehol
             label: customFormData.label.trim(),
             type: customFormData.type,
             required: customFormData.required,
-            defaultValue: customFormData.defaultValue.trim() || undefined,
+            // Boolean placeholders default to 'false' if no default is specified
+            defaultValue: customFormData.type === 'boolean'
+              ? (customFormData.defaultValue.trim() || 'false')
+              : (customFormData.defaultValue.trim() || undefined),
           }
         : p
     );
@@ -1404,6 +1421,7 @@ function TemplateEditorContent() {
   // Form state for partials
   const [partialFormData, setPartialFormData] = useState<PartialFormData>({
     name: '',
+    displayName: '',
     description: '',
     content: '',
   });
@@ -1547,6 +1565,7 @@ function TemplateEditorContent() {
   // Type for partial save data
   type PartialSaveData = {
     name: string;
+    displayName: string;
     description: string | null;
     content: string;
     placeholders: unknown[];
@@ -1646,6 +1665,7 @@ function TemplateEditorContent() {
     if (existingPartial && isPartialMode) {
       setPartialFormData({
         name: existingPartial.name || '',
+        displayName: existingPartial.displayName || existingPartial.name || '',
         description: existingPartial.description || '',
         content: existingPartial.content || '',
       });
@@ -1790,10 +1810,16 @@ function TemplateEditorContent() {
       let preview = formData.content;
       const { company, directors, shareholders, custom, system } = mockData;
 
+      // Pattern to match # and its HTML-encoded variants (&#35; or &#x23;)
+      // Used for conditionals ({{#if}}) and loops ({{#each}})
+      const hashPattern = '(?:#|&#35;|&#x23;)';
+
       // Debug: Log the raw content to see how partials are stored
       console.log('[Preview] Raw content:', preview);
       console.log('[Preview] Content includes {{>:', preview.includes('{{>'));
       console.log('[Preview] Content includes {{&gt;:', preview.includes('{{&gt;'));
+      console.log('[Preview] Content includes PAGE_BREAK:', preview.includes('PAGE_BREAK'));
+      console.log('[Preview] Content includes page-break class:', preview.includes('page-break'));
 
       // Resolve partials first ({{>partial-name}}) so their content also gets placeholder processing
       // Get partials from the query data
@@ -1882,7 +1908,8 @@ function TemplateEditorContent() {
       });
 
       // Handle director loops - support both {{name}} and {{this.name}} syntax
-      const directorLoopRegex = /\{\{#each directors\}\}([\s\S]*?)\{\{\/each\}\}/g;
+      // Also handle HTML-encoded # as &#35; or &#x23;
+      const directorLoopRegex = new RegExp(`\\{\\{${hashPattern}each directors\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?each\\}\\}`, 'gi');
       preview = preview.replace(directorLoopRegex, (_match, template) => {
         return directors.map((director, index) => {
           let item = template;
@@ -1899,7 +1926,7 @@ function TemplateEditorContent() {
       });
 
       // Handle shareholder loops - support both {{name}} and {{this.name}} syntax
-      const shareholderLoopRegex = /\{\{#each shareholders\}\}([\s\S]*?)\{\{\/each\}\}/g;
+      const shareholderLoopRegex = new RegExp(`\\{\\{${hashPattern}each shareholders\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?each\\}\\}`, 'gi');
       preview = preview.replace(shareholderLoopRegex, (_match, template) => {
         return shareholders.map((shareholder, index) => {
           let item = template;
@@ -1919,17 +1946,36 @@ function TemplateEditorContent() {
       // Helper to get value by path
       const getValueByPath = (path: string): unknown => {
         const context: Record<string, unknown> = { company, directors, shareholders, custom, system };
-        return path.trim().split('.').reduce<unknown>((obj, key) => {
+        const value = path.trim().split('.').reduce<unknown>((obj, key) => {
           if (obj && typeof obj === 'object') return (obj as Record<string, unknown>)[key];
           return undefined;
         }, context);
+
+        // For custom placeholders, fall back to defaultValue if value is undefined
+        if (value === undefined && path.startsWith('custom.')) {
+          const customKey = path.replace('custom.', '');
+          const placeholder = formData.customPlaceholders.find(p => p.key === customKey);
+          if (placeholder?.defaultValue !== undefined) {
+            return placeholder.defaultValue;
+          }
+        }
+
+        return value;
+      };
+
+      // Helper to strip HTML tags from expression (rich text editors wrap text in spans)
+      const stripHtmlTags = (str: string): string => {
+        return str.replace(/<[^>]*>/g, '').trim();
       };
 
       // Helper to evaluate conditional expressions (supports == and != comparisons)
       const evaluateCondition = (expression: string): boolean => {
+        // Strip HTML tags that rich text editors may have inserted
+        const cleanExpression = stripHtmlTags(expression);
+
         // Check for comparison operators
-        const eqMatch = expression.match(/^(.+?)\s*==\s*['"](.+?)['"]$/);
-        const neqMatch = expression.match(/^(.+?)\s*!=\s*['"](.+?)['"]$/);
+        const eqMatch = cleanExpression.match(/^(.+?)\s*==\s*['"](.+?)['"]$/);
+        const neqMatch = cleanExpression.match(/^(.+?)\s*!=\s*['"](.+?)['"]$/);
 
         if (eqMatch) {
           const [, fieldPath, compareValue] = eqMatch;
@@ -1944,24 +1990,25 @@ function TemplateEditorContent() {
         }
 
         // Simple truthy check (handle string boolean values)
-        const value = getValueByPath(expression);
+        const value = getValueByPath(cleanExpression);
+        console.log('[Condition] Expression:', cleanExpression, 'Value:', value, 'Type:', typeof value);
         if (value === 'false' || value === '0' || value === false) return false;
         return !!value;
       };
 
       // Handle conditionals - {{#if field}}...{{/if}} and {{#if field}}...{{else}}...{{/if}}
-      const ifElseRegex = /\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{else\}\}([\s\S]*?)\{\{\/if\}\}/g;
+      const ifElseRegex = new RegExp(`\\{\\{${hashPattern}if\\s+([^}]+)\\}\\}([\\s\\S]*?)\\{\\{else\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?if\\}\\}`, 'gi');
       preview = preview.replace(ifElseRegex, (_match, expression, ifContent, elseContent) => {
         return evaluateCondition(expression) ? ifContent : elseContent;
       });
 
-      const ifRegex = /\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g;
+      const ifRegex = new RegExp(`\\{\\{${hashPattern}if\\s+([^}]+)\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?if\\}\\}`, 'gi');
       preview = preview.replace(ifRegex, (_match, expression, content) => {
         return evaluateCondition(expression) ? content : '';
       });
 
       // Handle {{#unless field}}...{{/unless}} (opposite of if)
-      const unlessRegex = /\{\{#unless\s+([^}]+)\}\}([\s\S]*?)\{\{\/unless\}\}/g;
+      const unlessRegex = new RegExp(`\\{\\{${hashPattern}unless\\s+([^}]+)\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?unless\\}\\}`, 'gi');
       preview = preview.replace(unlessRegex, (_match, expression, content) => {
         return !evaluateCondition(expression) ? content : '';
       });
@@ -1995,6 +2042,32 @@ function TemplateEditorContent() {
       // Preserve empty paragraphs by replacing empty <p></p> with <p>&nbsp;</p>
       preview = preview.replace(/<p><\/p>/g, '<p>&nbsp;</p>');
       preview = preview.replace(/<p>\s*<\/p>/g, '<p>&nbsp;</p>');
+
+      // Remove pages marked with [Remove Page]
+      // Split by page breaks, filter out pages that only contain [Remove Page], rejoin
+      const PAGE_BREAK_MARKER = '<!-- PAGE_BREAK -->';
+
+      // Normalize page breaks to a consistent marker for splitting
+      let normalizedPreview = preview.replace(/<div[^>]*class\s*=\s*["'][^"']*page-break[^"']*["'][^>]*>(?:<\/div>)?/gi, PAGE_BREAK_MARKER);
+
+      // Split into pages
+      const pages = normalizedPreview.split(PAGE_BREAK_MARKER);
+
+      // Filter out pages that only contain [Remove Page] (ignoring HTML tags and whitespace)
+      const filteredPages = pages.filter(pageContent => {
+        // Strip HTML tags and check if the text content is just [Remove Page]
+        const textContent = pageContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        const isRemovePage = /^\[Remove\s*Page\]$/i.test(textContent);
+        if (isRemovePage) {
+          console.log('[Preview] Removing page marked with [Remove Page]');
+        }
+        return !isRemovePage;
+      });
+
+      console.log('[Preview] Pages before filter:', pages.length, 'After filter:', filteredPages.length);
+
+      // Rejoin with page break divs
+      preview = filteredPages.join('<div class="page-break"></div>');
 
       setPreviewContent(preview);
       // Preview will be shown inline in the A4PageEditor via the previewContent prop
@@ -2033,8 +2106,12 @@ function TemplateEditorContent() {
 
     if (isPartialMode) {
       // Save partial
-      if (!partialFormData.name.trim()) {
+      if (!partialFormData.displayName.trim()) {
         setFormError('Partial name is required');
+        return;
+      }
+      if (!partialFormData.name.trim()) {
+        setFormError('Partial identifier is required');
         return;
       }
       if (!partialFormData.content.trim()) {
@@ -2044,6 +2121,7 @@ function TemplateEditorContent() {
 
       const dataToSave = {
         name: partialFormData.name,
+        displayName: partialFormData.displayName,
         description: partialFormData.description || null,
         content: partialFormData.content,
         placeholders: [],
@@ -2130,9 +2208,9 @@ function TemplateEditorContent() {
         </div>
 
         <div className="flex items-center gap-2">
-          {(isPartialMode ? partialFormData.name : formData.name) && (
+          {(isPartialMode ? partialFormData.displayName : formData.name) && (
             <span className="text-sm text-text-muted mr-4">
-              {isPartialMode ? partialFormData.name : formData.name}
+              {isPartialMode ? partialFormData.displayName : formData.name}
             </span>
           )}
           <Button
