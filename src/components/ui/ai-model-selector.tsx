@@ -215,6 +215,32 @@ export function AIModelSelector({
   // Check if no models are available
   const noModelsAvailable = !isLoading && (!filteredModels || filteredModels.length === 0);
 
+  // Handle context change - must be before any early returns
+  const handleContextChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newValue = e.target.value;
+      if (newValue.length <= contextMaxLength) {
+        onContextChange?.(newValue);
+      }
+    },
+    [onContextChange, contextMaxLength]
+  );
+
+  // Handle standard context toggle - must be before any early returns
+  const handleStandardContextToggle = useCallback(
+    (contextId: string) => {
+      if (!onStandardContextsChange) return;
+
+      const isSelected = selectedStandardContexts.includes(contextId);
+      if (isSelected) {
+        onStandardContextsChange(selectedStandardContexts.filter(id => id !== contextId));
+      } else {
+        onStandardContextsChange([...selectedStandardContexts, contextId]);
+      }
+    },
+    [selectedStandardContexts, onStandardContextsChange]
+  );
+
   const selectElement = (
     <div className="relative">
       <select
@@ -289,32 +315,6 @@ export function AIModelSelector({
       <span className="mx-1">•</span>
       <span>{selectedModel.description}</span>
     </div>
-  );
-
-  // Handle context change
-  const handleContextChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const newValue = e.target.value;
-      if (newValue.length <= contextMaxLength) {
-        onContextChange?.(newValue);
-      }
-    },
-    [onContextChange, contextMaxLength]
-  );
-
-  // Handle standard context toggle
-  const handleStandardContextToggle = useCallback(
-    (contextId: string) => {
-      if (!onStandardContextsChange) return;
-
-      const isSelected = selectedStandardContexts.includes(contextId);
-      if (isSelected) {
-        onStandardContextsChange(selectedStandardContexts.filter(id => id !== contextId));
-      } else {
-        onStandardContextsChange([...selectedStandardContexts, contextId]);
-      }
-    },
-    [selectedStandardContexts, onStandardContextsChange]
   );
 
   // Standard context checkboxes element

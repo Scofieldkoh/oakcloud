@@ -12,7 +12,6 @@ import { AISidebar, useAISidebar, type DocumentCategory } from '@/components/doc
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
 import { cn } from '@/lib/utils';
 import {
-  ArrowLeft,
   Save,
   Sparkles,
   FileText,
@@ -29,6 +28,9 @@ import {
   Settings,
   Building2,
   Code,
+  Plus,
+  Trash2,
+  Edit3,
 } from 'lucide-react';
 
 // ============================================================================
@@ -41,6 +43,17 @@ interface TemplateFormData {
   category: string;
   content: string;
   isActive: boolean;
+  customPlaceholders: CustomPlaceholderDefinition[];
+}
+
+interface CustomPlaceholderDefinition {
+  id: string;
+  key: string;
+  label: string;
+  type: 'text' | 'date' | 'number' | 'currency' | 'textarea';
+  required: boolean;
+  defaultValue?: string;
+  description?: string;
 }
 
 interface AddressData {
@@ -414,12 +427,109 @@ interface PlaceholdersTabProps {
   onInsert: (placeholder: string) => void;
   partials: TemplatePartial[];
   isLoadingPartials: boolean;
+  customPlaceholders: CustomPlaceholderDefinition[];
+  onCustomPlaceholdersChange: (placeholders: CustomPlaceholderDefinition[]) => void;
 }
 
-function PlaceholdersTab({ onInsert, partials, isLoadingPartials }: PlaceholdersTabProps) {
+function PlaceholdersTab({ onInsert, partials, isLoadingPartials, customPlaceholders, onCustomPlaceholdersChange }: PlaceholdersTabProps) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['company']);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
+
+  // Custom placeholder editing state
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
+  const [customFormData, setCustomFormData] = useState({
+    key: '',
+    label: '',
+    type: 'text' as CustomPlaceholderDefinition['type'],
+    required: true,
+    defaultValue: '',
+  });
+
+  const resetCustomForm = () => {
+    setCustomFormData({
+      key: '',
+      label: '',
+      type: 'text',
+      required: true,
+      defaultValue: '',
+    });
+  };
+
+  const handleAddCustom = () => {
+    if (!customFormData.key.trim() || !customFormData.label.trim()) return;
+
+    const sanitizedKey = customFormData.key
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '');
+
+    if (customPlaceholders.some((p) => p.key === sanitizedKey)) return;
+
+    const newPlaceholder: CustomPlaceholderDefinition = {
+      id: crypto.randomUUID(),
+      key: sanitizedKey,
+      label: customFormData.label.trim(),
+      type: customFormData.type,
+      required: customFormData.required,
+      defaultValue: customFormData.defaultValue.trim() || undefined,
+    };
+
+    onCustomPlaceholdersChange([...customPlaceholders, newPlaceholder]);
+    resetCustomForm();
+    setIsAddingCustom(false);
+  };
+
+  const handleUpdateCustom = () => {
+    if (!editingCustomId || !customFormData.key.trim() || !customFormData.label.trim()) return;
+
+    const sanitizedKey = customFormData.key
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '');
+
+    if (customPlaceholders.some((p) => p.key === sanitizedKey && p.id !== editingCustomId)) return;
+
+    const updated = customPlaceholders.map((p) =>
+      p.id === editingCustomId
+        ? {
+            ...p,
+            key: sanitizedKey,
+            label: customFormData.label.trim(),
+            type: customFormData.type,
+            required: customFormData.required,
+            defaultValue: customFormData.defaultValue.trim() || undefined,
+          }
+        : p
+    );
+
+    onCustomPlaceholdersChange(updated);
+    resetCustomForm();
+    setEditingCustomId(null);
+  };
+
+  const handleEditCustom = (placeholder: CustomPlaceholderDefinition) => {
+    setCustomFormData({
+      key: placeholder.key,
+      label: placeholder.label,
+      type: placeholder.type,
+      required: placeholder.required,
+      defaultValue: placeholder.defaultValue || '',
+    });
+    setEditingCustomId(placeholder.id);
+    setIsAddingCustom(false);
+  };
+
+  const handleDeleteCustom = (id: string) => {
+    onCustomPlaceholdersChange(customPlaceholders.filter((p) => p.id !== id));
+  };
+
+  const handleCancelCustom = () => {
+    resetCustomForm();
+    setIsAddingCustom(false);
+    setEditingCustomId(null);
+  };
 
   const toggleCategory = (key: string) => {
     setExpandedCategories((prev) =>
@@ -483,7 +593,14 @@ function PlaceholdersTab({ onInsert, partials, isLoadingPartials }: Placeholders
               onClick={() => toggleCategory(category.key)}
               className="w-full flex items-center justify-between px-4 py-2 hover:bg-background-tertiary text-left transition-colors"
             >
-              <span className="text-sm font-medium text-text-primary">{category.label}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-text-primary">{category.label}</span>
+                {category.key === 'custom' && customPlaceholders.length > 0 && (
+                  <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-accent-primary/20 text-accent-primary">
+                    +{customPlaceholders.length}
+                  </span>
+                )}
+              </div>
               {expandedCategories.includes(category.key) ? (
                 <ChevronDown className="w-4 h-4 text-text-muted" />
               ) : (
@@ -493,6 +610,7 @@ function PlaceholdersTab({ onInsert, partials, isLoadingPartials }: Placeholders
 
             {expandedCategories.includes(category.key) && (
               <div className="pb-2">
+                {/* Standard placeholders for this category */}
                 {category.placeholders.map((placeholder) => (
                   <div
                     key={placeholder.key}
@@ -522,6 +640,172 @@ function PlaceholdersTab({ onInsert, partials, isLoadingPartials }: Placeholders
                     </button>
                   </div>
                 ))}
+
+                {/* User-defined custom placeholders (only in 'custom' category) */}
+                {category.key === 'custom' && (
+                  <>
+                    {/* Divider if there are user-defined placeholders */}
+                    {customPlaceholders.length > 0 && (
+                      <div className="mx-4 my-2 border-t border-border-secondary">
+                        <span className="relative -top-2 left-2 px-2 bg-background-secondary text-[10px] text-text-muted">
+                          User Defined
+                        </span>
+                      </div>
+                    )}
+
+                    {/* User-defined placeholders */}
+                    {customPlaceholders.map((placeholder) => (
+                      <div
+                        key={placeholder.id}
+                        className="group flex items-center gap-2 px-4 py-1.5 hover:bg-background-tertiary"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleInsert(`custom.${placeholder.key}`)}
+                          className="flex-1 text-left"
+                        >
+                          <div className="text-xs font-mono text-accent-primary truncate">
+                            {`{{custom.${placeholder.key}}}`}
+                          </div>
+                          <div className="text-xs text-text-muted truncate flex items-center gap-1">
+                            {placeholder.label}
+                            {placeholder.required && <span className="text-red-500 text-[10px]">*</span>}
+                            <span className="text-text-muted/50 text-[10px]">({placeholder.type})</span>
+                          </div>
+                        </button>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => handleEditCustom(placeholder)}
+                            className="p-1 rounded hover:bg-background-elevated text-text-muted hover:text-text-primary"
+                            title="Edit"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCustom(placeholder.id)}
+                            className="p-1 rounded hover:bg-background-elevated text-text-muted hover:text-red-500"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(`custom.${placeholder.key}`)}
+                            className="p-1 rounded hover:bg-background-elevated transition-all"
+                            title="Copy"
+                          >
+                            {copiedKey === `custom.${placeholder.key}` ? (
+                              <Check className="w-3 h-3 text-green-500" />
+                            ) : (
+                              <Copy className="w-3 h-3 text-text-muted" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Add/Edit Form */}
+                    {(isAddingCustom || editingCustomId) && (
+                      <div className="mx-4 my-2 p-3 bg-background-tertiary rounded-lg space-y-2">
+                        <div className="text-xs font-medium text-text-primary mb-2">
+                          {editingCustomId ? 'Edit Placeholder' : 'Add Custom Placeholder'}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] text-text-muted block mb-0.5">Label *</label>
+                            <input
+                              type="text"
+                              value={customFormData.label}
+                              onChange={(e) => {
+                                const label = e.target.value;
+                                // Auto-generate key from label
+                                const key = label
+                                  .toLowerCase()
+                                  .replace(/\s+/g, '_')
+                                  .replace(/[^a-z0-9_]/g, '');
+                                setCustomFormData({ ...customFormData, label, key });
+                              }}
+                              placeholder="e.g., New Address"
+                              className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-text-muted block mb-0.5">Key *</label>
+                            <input
+                              type="text"
+                              value={customFormData.key}
+                              onChange={(e) => setCustomFormData({ ...customFormData, key: e.target.value })}
+                              placeholder="auto-generated from label"
+                              className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary font-mono"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] text-text-muted block mb-0.5">Type</label>
+                            <select
+                              value={customFormData.type}
+                              onChange={(e) => setCustomFormData({ ...customFormData, type: e.target.value as CustomPlaceholderDefinition['type'] })}
+                              className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                            >
+                              <option value="text">Text</option>
+                              <option value="textarea">Long Text</option>
+                              <option value="date">Date</option>
+                              <option value="number">Number</option>
+                              <option value="currency">Currency</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-text-muted block mb-0.5">Required</label>
+                            <select
+                              value={customFormData.required ? 'yes' : 'no'}
+                              onChange={(e) => setCustomFormData({ ...customFormData, required: e.target.value === 'yes' })}
+                              className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                            >
+                              <option value="yes">Yes</option>
+                              <option value="no">No</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={handleCancelCustom}
+                            className="flex-1 h-6 text-xs"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            onClick={editingCustomId ? handleUpdateCustom : handleAddCustom}
+                            disabled={!customFormData.key.trim() || !customFormData.label.trim()}
+                            className="flex-1 h-6 text-xs"
+                          >
+                            {editingCustomId ? 'Update' : 'Add'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add button at the end */}
+                    {!isAddingCustom && !editingCustomId && (
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingCustom(true)}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-accent-primary hover:bg-background-tertiary transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add custom placeholder
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -606,6 +890,7 @@ interface TestDataTabProps {
   companies: Company[];
   isLoadingCompanies: boolean;
   onSelectCompany: (companyId: string) => void;
+  customPlaceholders: CustomPlaceholderDefinition[];
 }
 
 function TestDataTab({
@@ -614,6 +899,7 @@ function TestDataTab({
   companies,
   isLoadingCompanies,
   onSelectCompany,
+  customPlaceholders,
 }: TestDataTabProps) {
   const [expandedSections, setExpandedSections] = useState<string[]>(['source']);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
@@ -651,8 +937,9 @@ function TestDataTab({
         const contactData = newData.contact as unknown as Record<string, string>;
         if (field in contactData) contactData[field] = value;
       } else if (section === 'custom') {
+        // Allow dynamic custom fields
         const customData = newData.custom as unknown as Record<string, string>;
-        if (field in customData) customData[field] = value;
+        customData[field] = value;
       }
     }
 
@@ -795,35 +1082,89 @@ function TestDataTab({
           )}
         </div>
 
-        {/* Custom Section */}
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => toggleSection('custom')}
-            className="flex items-center gap-2 text-sm font-medium text-text-primary"
-          >
-            {expandedSections.includes('custom') ? (
-              <ChevronDown className="w-3 h-3" />
-            ) : (
-              <ChevronRight className="w-3 h-3" />
-            )}
-            Custom Fields
-          </button>
+        {/* Custom Section - Dynamic based on customPlaceholders */}
+        {customPlaceholders.length > 0 && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => toggleSection('custom')}
+              className="flex items-center gap-2 text-sm font-medium text-text-primary"
+            >
+              {expandedSections.includes('custom') ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
+              Custom Fields ({customPlaceholders.length})
+            </button>
 
-          {expandedSections.includes('custom') && (
-            <div className="space-y-2 pl-5">
-              <div>
-                <label className="text-xs text-text-muted">Resolution Number</label>
-                <input
-                  type="text"
-                  value={mockData.custom.resolutionNumber || ''}
-                  onChange={(e) => updateValue('custom.resolutionNumber', e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
-                />
+            {expandedSections.includes('custom') && (
+              <div className="space-y-2 pl-5">
+                {customPlaceholders.map((placeholder) => {
+                  const customValues = mockData.custom as unknown as Record<string, string>;
+                  const fieldValue = customValues[placeholder.key] || placeholder.defaultValue || '';
+                  return (
+                    <div key={placeholder.id}>
+                      <label className="text-xs text-text-muted flex items-center gap-1">
+                        {placeholder.label}
+                        {placeholder.required && <span className="text-red-500">*</span>}
+                      </label>
+                      {placeholder.type === 'textarea' ? (
+                        <textarea
+                          value={fieldValue}
+                          onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.value)}
+                          placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
+                          className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary resize-none"
+                          rows={2}
+                        />
+                      ) : (
+                        <input
+                          type={placeholder.type === 'date' ? 'date' : placeholder.type === 'number' || placeholder.type === 'currency' ? 'number' : 'text'}
+                          value={fieldValue}
+                          onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.value)}
+                          placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
+                          className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
+
+        {/* Legacy Custom Section - shown when no custom placeholders defined */}
+        {customPlaceholders.length === 0 && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => toggleSection('custom')}
+              className="flex items-center gap-2 text-sm font-medium text-text-primary"
+            >
+              {expandedSections.includes('custom') ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
+              Custom Fields
+            </button>
+
+            {expandedSections.includes('custom') && (
+              <div className="space-y-2 pl-5">
+                <div>
+                  <label className="text-xs text-text-muted">Resolution Number</label>
+                  <input
+                    type="text"
+                    value={mockData.custom.resolutionNumber || ''}
+                    onChange={(e) => updateValue('custom.resolutionNumber', e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
     </div>
@@ -875,6 +1216,7 @@ function TemplateEditorContent() {
     category: 'OTHER',
     content: '',
     isActive: true,
+    customPlaceholders: [],
   });
   const [formError, setFormError] = useState('');
 
@@ -932,9 +1274,28 @@ function TemplateEditorContent() {
     enabled: !!activeTenantId,
   });
 
+  // Type for save data (storage format with placeholders array)
+  type TemplateSaveData = {
+    name: string;
+    description: string;
+    category: string;
+    content: string;
+    isActive: boolean;
+    placeholders: Array<{
+      key: string;
+      label: string;
+      type: string;
+      source: string;
+      category: string;
+      path: string;
+      defaultValue?: string;
+      required: boolean;
+    }>;
+  };
+
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: async (data: TemplateFormData & { tenantId: string }) => {
+    mutationFn: async (data: TemplateSaveData & { tenantId: string }) => {
       const res = await fetch('/api/document-templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -958,7 +1319,7 @@ function TemplateEditorContent() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async (data: TemplateFormData & { id: string }) => {
+    mutationFn: async (data: TemplateSaveData & { id: string }) => {
       const res = await fetch(`/api/document-templates/${data.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -981,6 +1342,22 @@ function TemplateEditorContent() {
     },
   });
 
+  // Helper to extract custom placeholders from storage format
+  const storageFormatToCustomPlaceholders = (
+    placeholders: Array<{ key: string; label: string; type: string; source?: string; category?: string; required?: boolean; defaultValue?: string }>
+  ): CustomPlaceholderDefinition[] => {
+    return (placeholders || [])
+      .filter((p) => p.source === 'custom' || p.category === 'custom')
+      .map((p) => ({
+        id: crypto.randomUUID(),
+        key: p.key.replace('custom.', ''),
+        label: p.label,
+        type: (p.type === 'list' || p.type === 'conditional' ? 'text' : p.type) as CustomPlaceholderDefinition['type'],
+        required: p.required ?? true,
+        defaultValue: p.defaultValue,
+      }));
+  };
+
   // Load existing template data
   useEffect(() => {
     if (existingTemplate) {
@@ -990,6 +1367,7 @@ function TemplateEditorContent() {
         category: existingTemplate.category || 'OTHER',
         content: existingTemplate.content || '',
         isActive: existingTemplate.isActive ?? true,
+        customPlaceholders: storageFormatToCustomPlaceholders(existingTemplate.placeholders || []),
       });
     }
   }, [existingTemplate]);
@@ -1106,6 +1484,29 @@ function TemplateEditorContent() {
       preview = preview.replace(/\{\{custom\.effectiveDate\}\}/g, custom.effectiveDate ? new Date(custom.effectiveDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
       preview = preview.replace(/\{\{custom\.meetingDate\}\}/g, custom.meetingDate ? new Date(custom.meetingDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
 
+      // User-defined custom placeholders (dynamic)
+      const customData = custom as unknown as Record<string, string | number | undefined>;
+      formData.customPlaceholders.forEach((placeholder) => {
+        const regex = new RegExp(`\\{\\{custom\\.${placeholder.key}\\}\\}`, 'g');
+        let value = customData[placeholder.key] || '';
+
+        // Format based on type
+        if (placeholder.type === 'date' && value) {
+          try {
+            value = new Date(value as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+          } catch {
+            // Keep original value if date parsing fails
+          }
+        } else if ((placeholder.type === 'currency' || placeholder.type === 'number') && value) {
+          const num = Number(value);
+          if (!isNaN(num)) {
+            value = placeholder.type === 'currency' ? `$${num.toLocaleString()}` : num.toLocaleString();
+          }
+        }
+
+        preview = preview.replace(regex, String(value));
+      });
+
       // System placeholders
       preview = preview.replace(/\{\{system\.currentDate\}\}/g, new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }));
       preview = preview.replace(/\{\{system\.generatedBy\}\}/g, system.generatedBy || '');
@@ -1206,6 +1607,22 @@ function TemplateEditorContent() {
   }, [formData.content, mockData]);
 
   // Handle save
+  // Helper to convert custom placeholders to storage format
+  const customPlaceholdersToStorageFormat = (
+    customPlaceholders: CustomPlaceholderDefinition[]
+  ) => {
+    return customPlaceholders.map((p) => ({
+      key: `custom.${p.key}`,
+      label: p.label,
+      type: p.type === 'textarea' ? 'text' : p.type,
+      source: 'custom',
+      category: 'custom',
+      path: `custom.${p.key}`,
+      defaultValue: p.defaultValue,
+      required: p.required,
+    }));
+  };
+
   const handleSave = useCallback(async () => {
     setFormError('');
 
@@ -1222,10 +1639,21 @@ function TemplateEditorContent() {
       return;
     }
 
+    // Convert custom placeholders to storage format
+    const placeholders = customPlaceholdersToStorageFormat(formData.customPlaceholders);
+    const dataToSave = {
+      name: formData.name,
+      description: formData.description,
+      category: formData.category,
+      content: formData.content,
+      isActive: formData.isActive,
+      placeholders,
+    };
+
     if (isEditMode && templateId) {
-      await updateMutation.mutateAsync({ id: templateId, ...formData });
+      await updateMutation.mutateAsync({ id: templateId, ...dataToSave });
     } else {
-      await createMutation.mutateAsync({ tenantId: activeTenantId, ...formData });
+      await createMutation.mutateAsync({ tenantId: activeTenantId, ...dataToSave });
     }
   }, [formData, activeTenantId, isEditMode, templateId, createMutation, updateMutation]);
 
@@ -1258,21 +1686,11 @@ function TemplateEditorContent() {
     <div className="h-screen flex flex-col bg-background-primary">
       {/* Header */}
       <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border-primary bg-background-secondary">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/admin/template-partials')}
-            leftIcon={<ArrowLeft className="w-4 h-4" />}
-          >
-            Back
-          </Button>
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-accent-primary" />
-            <h1 className="text-lg font-semibold text-text-primary">
-              {isEditMode ? 'Edit Template' : 'Create Template'}
-            </h1>
-          </div>
+        <div className="flex items-center gap-2">
+          <FileText className="w-5 h-5 text-accent-primary" />
+          <h1 className="text-lg font-semibold text-text-primary">
+            {isEditMode ? 'Edit Template' : 'Create Template'}
+          </h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -1430,6 +1848,10 @@ function TemplateEditorContent() {
                     onInsert={handleInsertPlaceholder}
                     partials={partials}
                     isLoadingPartials={isLoadingPartials}
+                    customPlaceholders={formData.customPlaceholders}
+                    onCustomPlaceholdersChange={(placeholders) =>
+                      setFormData((prev) => ({ ...prev, customPlaceholders: placeholders }))
+                    }
                   />
                 )}
                 {activeTab === 'testdata' && (
@@ -1439,6 +1861,7 @@ function TemplateEditorContent() {
                     companies={companies}
                     isLoadingCompanies={isLoadingCompanies}
                     onSelectCompany={handleSelectCompany}
+                    customPlaceholders={formData.customPlaceholders}
                   />
                 )}
                 {activeTab === 'ai' && (

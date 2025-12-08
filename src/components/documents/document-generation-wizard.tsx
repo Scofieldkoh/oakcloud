@@ -257,10 +257,15 @@ function CustomDataForm({
     );
   }, [template]);
 
+  // Helper to strip 'custom.' prefix from keys for proper context resolution
+  // The placeholder resolver expects context.custom.effectiveDate, not context.custom['custom.effectiveDate']
+  const getStorageKey = (key: string) => key.replace(/^custom\./, '');
+
   const handleFieldChange = (key: string, value: string) => {
+    const storageKey = getStorageKey(key);
     onCustomDataChange({
       ...customData,
-      [key]: value,
+      [storageKey]: value,
     });
   };
 
@@ -287,25 +292,28 @@ function CustomDataForm({
             Custom Fields
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {customPlaceholders.map((placeholder) => (
-              <div key={placeholder.key}>
-                <label className="block text-sm text-text-secondary mb-1">
-                  {placeholder.label}
-                  {placeholder.required && (
-                    <span className="text-red-500 ml-1">*</span>
-                  )}
-                </label>
-                <input
-                  type={placeholder.type === 'date' ? 'date' : 'text'}
-                  value={customData[placeholder.key] || ''}
-                  onChange={(e) =>
-                    handleFieldChange(placeholder.key, e.target.value)
-                  }
-                  placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
-                  className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
-                />
-              </div>
-            ))}
+            {customPlaceholders.map((placeholder) => {
+              const storageKey = getStorageKey(placeholder.key);
+              return (
+                <div key={placeholder.key}>
+                  <label className="block text-sm text-text-secondary mb-1">
+                    {placeholder.label}
+                    {placeholder.required && (
+                      <span className="text-red-500 ml-1">*</span>
+                    )}
+                  </label>
+                  <input
+                    type={placeholder.type === 'date' ? 'date' : placeholder.type === 'number' || placeholder.type === 'currency' ? 'number' : 'text'}
+                    value={customData[storageKey] || ''}
+                    onChange={(e) =>
+                      handleFieldChange(placeholder.key, e.target.value)
+                    }
+                    placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
+                    className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

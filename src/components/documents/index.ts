@@ -71,9 +71,6 @@ export {
 // PDF Preview Panel
 export { PDFPreviewPanel, type PDFPreviewPanelProps } from './pdf-preview-panel';
 
-// Template Editor Modal
-export { TemplateEditorModal, type TemplateEditorModalProps } from './template-editor-modal';
-
 // Comment Components
 export {
   CommentThread,
