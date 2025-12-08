@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
 import { useCompany } from '@/hooks/use-companies';
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
@@ -161,10 +161,10 @@ export default function UploadBizFilePage() {
   const { data: existingCompany } = useCompany(existingCompanyId || '');
   const isUpdateMode = !!existingCompanyId;
 
-  // SUPER_ADMIN tenant selection
+  // SUPER_ADMIN tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const [selectedTenantId, setSelectedTenantId] = useState('');
-  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
+  const { selectedTenantId } = useTenantSelection();
+  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
 
   // AI model selection and context
   const [selectedModelId, setSelectedModelId] = useState('');
@@ -425,13 +425,13 @@ export default function UploadBizFilePage() {
         </div>
       )}
 
-      {/* Tenant Selector for SUPER_ADMIN */}
-      {isSuperAdmin && (
-        <TenantSelector
-          value={selectedTenantId}
-          onChange={setSelectedTenantId}
-          helpText="As a Super Admin, please select a tenant to upload the BizFile under."
-        />
+      {/* Tenant context info for SUPER_ADMIN */}
+      {isSuperAdmin && !activeTenantId && (
+        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Please select a tenant from the sidebar to upload a BizFile.
+          </p>
+        </div>
       )}
 
       {/* Error */}

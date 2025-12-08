@@ -27,6 +27,7 @@ import { useIsMobile } from '@/hooks/use-media-query';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { getSidebarWidth as getSidebarWidthFn, SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from '@/lib/constants/layout';
+import { SidebarTenantButton } from '@/components/ui/tenant-selector';
 
 interface NavItem {
   name: string;
@@ -207,6 +208,13 @@ function UserSection({ collapsed }: { collapsed: boolean }) {
 
   return (
     <div className="absolute bottom-0 left-0 right-0 border-t border-border-primary">
+      {/* Tenant selector for SUPER_ADMIN */}
+      {user?.isSuperAdmin && (
+        <div className="p-2.5 pb-0">
+          <SidebarTenantButton collapsed={collapsed} />
+        </div>
+      )}
+
       {/* Theme toggle */}
       <div className="p-2.5 pb-0">
         <ThemeToggleButton collapsed={collapsed} />

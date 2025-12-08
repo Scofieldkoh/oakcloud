@@ -112,7 +112,8 @@ const DEFAULT_OPTIONS: ResolveOptions = {
 };
 
 // Regex to find partial references: {{> partial-name}} or {{>partial-name}}
-const PARTIAL_REFERENCE_REGEX = /\{\{>\s*([a-zA-Z][a-zA-Z0-9_-]*)\s*\}\}/g;
+// Also handles HTML-encoded variants: {{&gt; partial-name}}, {{&#62; partial-name}}, {{&#x3e; partial-name}}
+const PARTIAL_REFERENCE_REGEX = /\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z][a-zA-Z0-9_-]*)\s*\}\}/g;
 
 // ============================================================================
 // Partial Processing

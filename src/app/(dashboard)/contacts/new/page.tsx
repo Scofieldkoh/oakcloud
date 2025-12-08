@@ -12,7 +12,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { DateInput } from '@/components/ui/date-input';
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 
 const contactTypes = [
@@ -41,10 +41,10 @@ export default function NewContactPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const toast = useToast();
 
-  // SUPER_ADMIN tenant selection
+  // SUPER_ADMIN tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const [selectedTenantId, setSelectedTenantId] = useState('');
-  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
+  const { selectedTenantId } = useTenantSelection();
+  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
 
   const {
     register,
@@ -155,13 +155,13 @@ export default function NewContactPage() {
         </div>
       )}
 
-      {/* Tenant Selector for SUPER_ADMIN */}
-      {isSuperAdmin && (
-        <TenantSelector
-          value={selectedTenantId}
-          onChange={setSelectedTenantId}
-          helpText="As a Super Admin, please select a tenant to create the contact under."
-        />
+      {/* Tenant context info for SUPER_ADMIN */}
+      {isSuperAdmin && !activeTenantId && (
+        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Please select a tenant from the sidebar to create a contact.
+          </p>
+        </div>
       )}
 
       {/* Form */}

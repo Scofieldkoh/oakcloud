@@ -1,21 +1,19 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { Pagination } from '@/components/companies/pagination';
-import { RichTextEditor, RichTextDisplay } from '@/components/ui/rich-text-editor';
+import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import {
   useTemplatePartials,
-  useCreatePartial,
-  useUpdatePartial,
   useDeletePartial,
   useDuplicatePartial,
   usePartialUsage,
@@ -88,11 +86,7 @@ interface TemplateSearchResult {
   totalPages: number;
 }
 
-interface PartialFormData {
-  name: string;
-  description: string;
-  content: string;
-}
+// PartialFormData moved to editor page for full-page editing
 
 const CATEGORIES = [
   { value: 'RESOLUTION', label: 'Resolution' },
@@ -460,7 +454,7 @@ function DocumentTemplatesTab({
 
                   {canManage && (
                     <Dropdown>
-                      <DropdownTrigger>
+                      <DropdownTrigger asChild>
                         <button className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors">
                           <MoreVertical className="w-4 h-4" />
                         </button>
@@ -650,6 +644,7 @@ function TemplatePartialsTab({
   canManage: boolean;
   isSuperAdmin: boolean;
 }) {
+  const router = useRouter();
   const { success, error: showError } = useToast();
 
   // Search state
@@ -657,20 +652,13 @@ function TemplatePartialsTab({
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
-  // Modal states
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  // Modal states (keep duplicate, delete, usage modals - create/edit use full page editor)
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [selectedPartial, setSelectedPartial] = useState<TemplatePartialWithRelations | null>(null);
 
-  // Form state
-  const [formData, setFormData] = useState<PartialFormData>({
-    name: '',
-    description: '',
-    content: '',
-  });
+  // Form state for duplicate modal
   const [duplicateName, setDuplicateName] = useState('');
 
   // Queries and mutations
@@ -681,8 +669,7 @@ function TemplatePartialsTab({
     tenantId: isSuperAdmin ? activeTenantId : undefined,
   });
 
-  const createMutation = useCreatePartial();
-  const updateMutation = useUpdatePartial();
+  // createMutation and updateMutation are now handled by the full-page editor
   const deleteMutation = useDeletePartial();
   const duplicateMutation = useDuplicatePartial();
   const { data: usageData, isLoading: usageLoading } = usePartialUsage(
@@ -690,20 +677,13 @@ function TemplatePartialsTab({
     isSuperAdmin ? activeTenantId : undefined
   );
 
-  // Handlers
+  // Handlers - Navigate to editor page for create/edit (same as templates)
   const openCreate = () => {
-    setFormData({ name: '', description: '', content: '' });
-    setIsCreateOpen(true);
+    router.push('/admin/template-partials/editor?type=partial');
   };
 
   const openEdit = (partial: TemplatePartialWithRelations) => {
-    setSelectedPartial(partial);
-    setFormData({
-      name: partial.name,
-      description: partial.description || '',
-      content: partial.content,
-    });
-    setIsEditOpen(true);
+    router.push(`/admin/template-partials/editor?type=partial&id=${partial.id}`);
   };
 
   const openDuplicate = (partial: TemplatePartialWithRelations) => {
@@ -722,38 +702,7 @@ function TemplatePartialsTab({
     setIsUsageOpen(true);
   };
 
-  const handleCreate = async () => {
-    try {
-      await createMutation.mutateAsync({
-        name: formData.name,
-        description: formData.description || null,
-        content: formData.content,
-        placeholders: [],
-        tenantId: isSuperAdmin ? activeTenantId : undefined,
-      });
-      success('Partial created successfully');
-      setIsCreateOpen(false);
-    } catch (err) {
-      showError(err instanceof Error ? err.message : 'Failed to create partial');
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!selectedPartial) return;
-    try {
-      await updateMutation.mutateAsync({
-        id: selectedPartial.id,
-        name: formData.name,
-        description: formData.description || null,
-        content: formData.content,
-        tenantId: isSuperAdmin ? activeTenantId : undefined,
-      });
-      success('Partial updated successfully');
-      setIsEditOpen(false);
-    } catch (err) {
-      showError(err instanceof Error ? err.message : 'Failed to update partial');
-    }
-  };
+  // handleCreate and handleUpdate are now handled by the full-page editor
 
   const handleDuplicate = async () => {
     if (!selectedPartial) return;
@@ -856,7 +805,7 @@ function TemplatePartialsTab({
                   </div>
                   {canManage && (
                     <Dropdown>
-                      <DropdownTrigger>
+                      <DropdownTrigger asChild>
                         <button
                           type="button"
                           className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
@@ -921,93 +870,7 @@ function TemplatePartialsTab({
         </>
       )}
 
-      {/* Create Modal */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create Partial">
-        <ModalBody>
-          <div className="space-y-4">
-            <FormInput
-              label="Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="signing-block"
-              hint="Use lowercase with hyphens (e.g., signing-block, company-header)"
-            />
-            <FormInput
-              label="Description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Brief description of this partial"
-            />
-            <div>
-              <label className="label mb-1.5">Content</label>
-              <textarea
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="HTML content with placeholders..."
-                rows={8}
-                className="w-full px-3 py-2 text-sm border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary/50 font-mono"
-              />
-            </div>
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={() => setIsCreateOpen(false)} disabled={createMutation.isPending}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleCreate}
-            isLoading={createMutation.isPending}
-            disabled={!formData.name || !formData.content}
-          >
-            Create Partial
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Partial">
-        <ModalBody>
-          <div className="space-y-4">
-            <FormInput
-              label="Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="signing-block"
-              hint="Use lowercase with hyphens (e.g., signing-block, company-header)"
-            />
-            <FormInput
-              label="Description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Brief description of this partial"
-            />
-            <div>
-              <label className="label mb-1.5">Content</label>
-              <textarea
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="HTML content with placeholders..."
-                rows={8}
-                className="w-full px-3 py-2 text-sm border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary/50 font-mono"
-              />
-            </div>
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={() => setIsEditOpen(false)} disabled={updateMutation.isPending}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleUpdate}
-            isLoading={updateMutation.isPending}
-            disabled={!formData.name || !formData.content}
-          >
-            Save Changes
-          </Button>
-        </ModalFooter>
-      </Modal>
+      {/* Create/Edit now handled by full-page editor at /admin/template-partials/editor?type=partial */}
 
       {/* Duplicate Modal */}
       <Modal
@@ -1104,13 +967,21 @@ function TemplatePartialsTab({
 
 export default function TemplatesPage() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('templates');
 
-  // Tenant selection (for SUPER_ADMIN)
-  const [selectedTenantId, setSelectedTenantId] = useState('');
+  // Read tab from URL query parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'partials') {
+      setActiveTab('partials');
+    }
+  }, [searchParams]);
+
+  // Tenant selection (from centralized store for SUPER_ADMIN)
+  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
-    selectedTenantId,
     session?.tenantId
   );
 
@@ -1131,15 +1002,12 @@ export default function TemplatesPage() {
         </div>
       </div>
 
-      {/* Tenant Selector for SUPER_ADMIN */}
-      {session?.isSuperAdmin && (
-        <div className="mb-6">
-          <TenantSelector
-            value={selectedTenantId}
-            onChange={setSelectedTenantId}
-            label="Select Tenant"
-            helpText="Select a tenant to manage their templates"
-          />
+      {/* Tenant context info for SUPER_ADMIN */}
+      {session?.isSuperAdmin && !selectedTenantId && (
+        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Please select a tenant from the sidebar to manage templates.
+          </p>
         </div>
       )}
 
@@ -1148,7 +1016,7 @@ export default function TemplatesPage() {
         <div className="flex flex-col items-center justify-center py-12">
           <FileText className="w-12 h-12 mb-3 opacity-50 text-text-muted" />
           <p className="text-sm text-text-muted">
-            Please select a tenant to manage their templates
+            Please select a tenant from the sidebar to manage their templates
           </p>
         </div>
       )}

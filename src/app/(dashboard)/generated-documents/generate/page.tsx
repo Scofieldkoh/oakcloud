@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
 import {
@@ -37,11 +37,10 @@ export default function GenerateDocumentPage() {
   const { success, error: toastError } = useToast();
   const { data: session } = useSession();
 
-  // Tenant selection (for SUPER_ADMIN)
-  const [selectedTenantId, setSelectedTenantId] = useState('');
+  // Tenant selection (from centralized store for SUPER_ADMIN)
+  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
-    selectedTenantId,
     session?.tenantId
   );
 
@@ -209,19 +208,7 @@ export default function GenerateDocumentPage() {
 
       {/* Content */}
       <div>
-        {/* Tenant Selector for SUPER_ADMIN */}
-        {session?.isSuperAdmin && (
-          <div className="mb-6">
-            <TenantSelector
-              value={selectedTenantId}
-              onChange={setSelectedTenantId}
-              label="Select Tenant"
-              helpText="Select a tenant to generate documents for"
-            />
-          </div>
-        )}
-
-        {/* Select Tenant state (for SUPER_ADMIN) */}
+        {/* Tenant context info for SUPER_ADMIN */}
         {session?.isSuperAdmin && !activeTenantId && (
           <div className="py-16 text-center">
             <FileText className="w-16 h-16 mx-auto text-text-muted opacity-50 mb-4" />
@@ -229,7 +216,7 @@ export default function GenerateDocumentPage() {
               Select a Tenant
             </h3>
             <p className="text-text-muted">
-              Please select a tenant above to generate documents
+              Please select a tenant from the sidebar to generate documents
             </p>
           </div>
         )}

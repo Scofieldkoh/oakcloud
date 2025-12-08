@@ -74,7 +74,8 @@ const TRACKED_FIELDS: (keyof TemplatePartial)[] = [
 ];
 
 // Regex to find partial references in template content
-const PARTIAL_REFERENCE_REGEX = /\{\{>\s*([a-zA-Z0-9_-]+)\s*\}\}/g;
+// Also handles HTML-encoded variants: {{&gt; partial-name}}, {{&#62; partial-name}}, {{&#x3e; partial-name}}
+const PARTIAL_REFERENCE_REGEX = /\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z0-9_-]+)\s*\}\}/g;
 
 // ============================================================================
 // Create Partial
@@ -364,10 +365,10 @@ export async function searchTemplatePartials(
 
 export async function getAllTemplatePartials(
   tenantId: string
-): Promise<Pick<TemplatePartial, 'id' | 'name' | 'description'>[]> {
+): Promise<Pick<TemplatePartial, 'id' | 'name' | 'description' | 'content'>[]> {
   return prisma.templatePartial.findMany({
     where: { tenantId, deletedAt: null },
-    select: { id: true, name: true, description: true },
+    select: { id: true, name: true, description: true, content: true },
     orderBy: { name: 'asc' },
   });
 }

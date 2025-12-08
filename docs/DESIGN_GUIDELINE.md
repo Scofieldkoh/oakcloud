@@ -508,37 +508,49 @@ Use the `leftIcon` prop for buttons with icons (preferred over inline icons):
 </Link>
 ```
 
-### TenantSelector Placement
+### Centralized Tenant Selection for SUPER_ADMIN
 
-For SUPER_ADMIN users who need to select a tenant context:
+Tenant selection for SUPER_ADMIN users is centralized in the **sidebar**. A "Select Tenant" button appears above the dark/light mode toggle, visible only to SUPER_ADMIN users. When clicked, it opens a modal with a searchable tenant list.
 
-1. **Always place after the header**, not before
-2. Wrap in a `<div className="mb-6">` for consistent spacing
-3. Use appropriate help text for context
+**Key benefits:**
+1. **Single source of truth** - Selection persists across all pages via Zustand store with localStorage
+2. **Consistent UX** - No repeated tenant selectors on each page
+3. **Always accessible** - Visible in sidebar regardless of current page
 
+**Usage in pages:**
 ```tsx
-{/* Correct placement - after header */}
-{session?.isSuperAdmin && (
-  <div className="mb-6">
-    <TenantSelector
-      value={selectedTenantId}
-      onChange={setSelectedTenantId}
-      label="Select Tenant"
-      helpText="Select a tenant to manage their resources"
-    />
-  </div>
-)}
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+
+function AdminPage() {
+  const { data: session } = useSession();
+  const isSuperAdmin = session?.isSuperAdmin ?? false;
+
+  // Get tenant selection from centralized store
+  const { selectedTenantId, selectedTenantName } = useTenantSelection();
+
+  // Get active tenant (session tenant for normal users, store value for SUPER_ADMIN)
+  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
+
+  // Fetch data using activeTenantId
+  const { data } = useQuery({
+    queryKey: ['resource', activeTenantId],
+    queryFn: () => fetchData(activeTenantId),
+    enabled: !!activeTenantId,
+  });
+
+  return <div>...</div>;
+}
 ```
 
 ### Empty States for SUPER_ADMIN
 
-When SUPER_ADMIN hasn't selected a tenant, show an appropriate empty state:
+When SUPER_ADMIN hasn't selected a tenant, show an appropriate empty state directing them to the sidebar:
 
 ```tsx
 {session?.isSuperAdmin && !activeTenantId && (
   <div className="flex flex-col items-center justify-center py-12 text-text-muted">
     <IconName className="w-12 h-12 mb-3 opacity-50" />
-    <p className="text-sm">Please select a tenant to view resources</p>
+    <p className="text-sm">Please select a tenant from the sidebar to view resources</p>
   </div>
 )}
 ```
@@ -593,7 +605,9 @@ function EditForm() {
 | `ErrorBoundary` | `fallback`, `onError` | React error boundary with fallback UI |
 | `ThemeProvider` | - | Theme context provider, applies theme class to document |
 | `ThemeToggle` | `variant` | Theme switcher (button or dropdown variant) |
-| `TenantSelector` | `value`, `onChange`, `label`, `placeholder`, `helpText`, `variant` | Tenant dropdown for SUPER_ADMIN operations |
+| `SidebarTenantButton` | `collapsed` | Sidebar button for SUPER_ADMIN tenant selection (opens modal) |
+| `useTenantSelection` | - | Hook to access centralized tenant selection state |
+| `useActiveTenantId` | `isSuperAdmin`, `sessionTenantId` | Hook to get active tenant (store value for SUPER_ADMIN, session for others) |
 | `AIModelSelector` | `value`, `onChange`, `showContextInput`, `showStandardContexts`, etc. | AI model selection with optional context input |
 | `RichTextEditor` | `value`, `onChange`, `placeholder`, `minHeight`, `autofocus` | TipTap-based rich text editor |
 | `RichTextDisplay` | `content`, `className` | XSS-safe HTML renderer (DOMPurify sanitization) |
@@ -833,42 +847,56 @@ function MyComponent() {
 }
 ```
 
-### TenantSelector
+### Tenant Selection (Centralized)
 
+Tenant selection for SUPER_ADMIN is centralized in the sidebar via Zustand store with localStorage persistence.
+
+**Store (`src/stores/tenant-store.ts`):**
 ```tsx
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+interface TenantSelectionState {
+  selectedTenantId: string;
+  selectedTenantName: string | null;
+  setSelectedTenant: (tenantId: string, tenantName?: string) => void;
+  clearSelectedTenant: () => void;
+}
+```
+
+**Hooks (`src/components/ui/tenant-selector.tsx`):**
+```tsx
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 
 function AdminPage() {
   const { data: session } = useSession();
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const [selectedTenantId, setSelectedTenantId] = useState('');
 
-  // Get active tenant (session tenant for normal users, selected for SUPER_ADMIN)
-  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
+  // Access centralized tenant selection
+  const { selectedTenantId, selectedTenantName, setSelectedTenant, clearSelectedTenant } = useTenantSelection();
 
-  return (
-    <>
-      {/* Default variant with card wrapper */}
-      {isSuperAdmin && (
-        <TenantSelector
-          value={selectedTenantId}
-          onChange={setSelectedTenantId}
-          helpText="Select a tenant to manage."
-        />
-      )}
+  // Get active tenant (store value for SUPER_ADMIN, session tenant for others)
+  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
 
-      {/* Compact variant without card wrapper */}
-      {isSuperAdmin && (
-        <TenantSelector
-          value={selectedTenantId}
-          onChange={setSelectedTenantId}
-          variant="compact"
-        />
-      )}
-    </>
-  );
+  // Use activeTenantId for all tenant-scoped operations
+  useEffect(() => {
+    if (activeTenantId) {
+      fetchDataForTenant(activeTenantId);
+    }
+  }, [activeTenantId]);
+
+  // Show empty state if SUPER_ADMIN hasn't selected a tenant
+  if (isSuperAdmin && !activeTenantId) {
+    return (
+      <div className="text-center py-12">
+        <p>Please select a tenant from the sidebar</p>
+      </div>
+    );
+  }
+
+  return <div>...</div>;
 }
 ```
+
+**Sidebar Integration:**
+The `SidebarTenantButton` component is automatically rendered in the sidebar for SUPER_ADMIN users, positioned above the theme toggle. When clicked, it opens `TenantSelectorModal` for tenant selection.
 
 ---
 
@@ -925,9 +953,13 @@ src/components/ui/
 ├── pagination.tsx         # Table pagination component
 ├── sidebar.tsx            # Responsive navigation sidebar
 ├── stepper.tsx            # Multi-step wizard component
-├── tenant-selector.tsx    # Tenant dropdown for admins
+├── tenant-selector.tsx    # Tenant selection (SidebarTenantButton, hooks, modal)
 ├── theme-toggle.tsx       # Theme switcher component
 └── toast.tsx              # Toast notification system
+
+src/stores/
+├── ui-store.ts            # Zustand UI state (sidebar, theme)
+└── tenant-store.ts        # SUPER_ADMIN tenant selection (persisted)
 
 src/hooks/
 ├── use-unsaved-changes.ts # Browser warning for unsaved form changes

@@ -1375,6 +1375,8 @@ Nationality: {{nationality}}
 {{/each}}
 ```
 
+> **Tip**: Inside a loop, use `{{this.name}}` or simply `{{name}}` to access item properties. Use `{{@index}}` for 0-based index (0, 1, 2...) or `{{@number}}` for 1-based numbering (1, 2, 3...).
+
 **Conditional Block** - Show/hide content based on conditions:
 
 ```handlebars
@@ -1388,6 +1390,8 @@ Warning: This company has outstanding charges.
 The company has no outstanding charges.
 {{/if}}
 ```
+
+> **Tip**: `{{#if}}` shows content when a field exists and is truthy. `{{#unless}}` shows content when a field is empty or falsy. Use `{{else}}` to provide an alternative.
 
 **Signing Block** - Generate signature sections dynamically:
 
@@ -1440,14 +1444,45 @@ Renders as:
 | Custom | `custom.*` | User-provided values |
 | System | `system.*` | System values (date, user) |
 
+### User-Defined Custom Placeholders
+
+Templates can define their own custom placeholders that will be prompted for input during document generation. These are defined in the template editor under Placeholders > Custom.
+
+#### Creating Custom Placeholders
+
+1. Go to **Placeholders** tab in the template editor
+2. Expand the **Custom** category
+3. Click **"+ Add custom placeholder"**
+4. Fill in:
+   - **Label**: Display name (e.g., "New Address")
+   - **Key**: Auto-generated from label (e.g., "new_address")
+   - **Type**: text, date, number, currency, or textarea
+   - **Required**: Whether the field must be filled during generation
+
+#### Using Custom Placeholders in Templates
+
+```handlebars
+{{custom.new_address}}
+{{custom.effective_date}}
+{{custom.share_price}}
+```
+
+#### Document Generation Flow
+
+When a user generates a document from a template with custom placeholders:
+1. The generation wizard shows a **Custom Fields** section
+2. User fills in values for each custom placeholder
+3. Values are substituted into the document
+
 ### Placeholder Definition Schema
 
 ```typescript
 interface PlaceholderDefinition {
-  key: string;           // e.g., "company.name"
-  label: string;         // e.g., "Company Name"
-  category: string;      // e.g., "company"
+  key: string;           // e.g., "company.name" or "custom.effective_date"
+  label: string;         // e.g., "Company Name" or "Effective Date"
+  category: string;      // e.g., "company" or "custom"
   type: 'text' | 'date' | 'number' | 'currency' | 'list' | 'block';
+  source?: string;       // "custom" for user-defined placeholders
   format?: string;       // e.g., "DD MMMM YYYY"
   required: boolean;
   defaultValue?: string;

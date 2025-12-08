@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -280,11 +280,10 @@ export default function GeneratedDocumentsPage() {
   const { can, isLoading: permissionsLoading } = usePermissions();
   const { data: session } = useSession();
 
-  // Tenant selection (for SUPER_ADMIN)
-  const [selectedTenantId, setSelectedTenantId] = useState('');
+  // Tenant selection (from centralized store for SUPER_ADMIN)
+  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
-    selectedTenantId,
     session?.tenantId
   );
 
@@ -430,15 +429,12 @@ export default function GeneratedDocumentsPage() {
         )}
       </div>
 
-      {/* Tenant Selector for SUPER_ADMIN */}
-      {session?.isSuperAdmin && (
-        <div className="mb-6">
-          <TenantSelector
-            value={selectedTenantId}
-            onChange={setSelectedTenantId}
-            label="Select Tenant"
-            helpText="Select a tenant to view their documents"
-          />
+      {/* Tenant context info for SUPER_ADMIN */}
+      {session?.isSuperAdmin && !activeTenantId && (
+        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Please select a tenant from the sidebar to view documents.
+          </p>
         </div>
       )}
 
@@ -506,7 +502,7 @@ export default function GeneratedDocumentsPage() {
           </h3>
           <p className="text-text-muted mb-6">
             {session?.isSuperAdmin && !activeTenantId
-              ? 'Please select a tenant to view their documents'
+              ? 'Please select a tenant from the sidebar to view their documents'
               : searchQuery || statusFilter
                 ? 'Try adjusting your filters'
                 : 'Get started by generating your first document'}

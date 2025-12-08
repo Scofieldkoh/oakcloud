@@ -33,7 +33,7 @@ import { Alert } from '@/components/ui/alert';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/toast';
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import {
   Plus,
   MoreVertical,
@@ -176,8 +176,8 @@ export default function ConnectorsPage() {
   const isSuperAdmin = session?.isSuperAdmin ?? false;
   const isTenantAdmin = session?.isTenantAdmin ?? false;
 
-  // State
-  const [selectedTenantId, setSelectedTenantId] = useState('');
+  // State - tenant selection from centralized store
+  const { selectedTenantId } = useTenantSelection();
   const [typeFilter, setTypeFilter] = useState<ConnectorType | ''>('');
   const [providerFilter, setProviderFilter] = useState<ConnectorProvider | ''>('');
   const [page, setPage] = useState(1);
@@ -207,8 +207,8 @@ export default function ConnectorsPage() {
   const [formError, setFormError] = useState('');
   const [showCredentials, setShowCredentials] = useState<Record<string, boolean>>({});
 
-  // Active tenant
-  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
+  // Active tenant - using centralized hook
+  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
 
   // Build search params
   const searchParams: ConnectorSearchParams = {
@@ -513,18 +513,11 @@ export default function ConnectorsPage() {
         </Button>
       </div>
 
-      {/* Tenant Selector (SUPER_ADMIN only) */}
-      {isSuperAdmin && (
-        <TenantSelector
-          value={selectedTenantId}
-          onChange={(value) => {
-            setSelectedTenantId(value);
-            setPage(1);
-          }}
-          variant="compact"
-          placeholder="All Tenants"
-          helpText="Filter connectors by tenant or view all"
-        />
+      {/* Tenant context info for SUPER_ADMIN */}
+      {isSuperAdmin && selectedTenantId && (
+        <div className="mb-4 text-sm text-text-secondary">
+          Showing connectors for selected tenant. System connectors are always visible.
+        </div>
       )}
 
       {/* Filters */}

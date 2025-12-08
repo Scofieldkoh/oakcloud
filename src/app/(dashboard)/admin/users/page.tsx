@@ -26,7 +26,7 @@ import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Pagination } from '@/components/companies/pagination';
 import { useToast } from '@/components/ui/toast';
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import {
   Plus,
   Search,
@@ -89,12 +89,12 @@ export default function UsersPage() {
   const [inviteRoleAssignments, setInviteRoleAssignments] = useState<RoleAssignment[]>([]);
   const [isTenantAdminInvite, setIsTenantAdminInvite] = useState(false); // Only for SUPER_ADMIN
 
-  // For SUPER_ADMIN: tenant selection
-  const [selectedTenantId, setSelectedTenantId] = useState('');
+  // For SUPER_ADMIN: tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
+  const { selectedTenantId } = useTenantSelection();
 
-  // Get active tenant ID using the reusable hook
-  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
+  // Get active tenant ID using the centralized hook
+  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
 
   // Invite form state
   const [inviteFormData, setInviteFormData] = useState({
@@ -427,18 +427,13 @@ export default function UsersPage() {
         </Button>
       </div>
 
-      {/* Tenant Selector for SUPER_ADMIN */}
-      {isSuperAdmin && (
-        <TenantSelector
-          value={selectedTenantId}
-          onChange={(value) => {
-            setSelectedTenantId(value);
-            setPage(1);
-          }}
-          placeholder="Select a tenant to manage users..."
-          helpText="As a Super Admin, you must select a tenant to view and manage its users."
-          variant="compact"
-        />
+      {/* Tenant context info for SUPER_ADMIN */}
+      {isSuperAdmin && !selectedTenantId && (
+        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Please select a tenant from the sidebar to manage users.
+          </p>
+        </div>
       )}
 
       {/* Filters */}
@@ -505,7 +500,7 @@ export default function UsersPage() {
           <Building2 className="w-12 h-12 mx-auto text-text-muted mb-4" />
           <h3 className="text-lg font-medium text-text-primary mb-2">Select a Tenant</h3>
           <p className="text-sm text-text-secondary max-w-md mx-auto">
-            As a Super Admin, please select a tenant from the dropdown above to view and manage its users.
+            As a Super Admin, please select a tenant from the sidebar to view and manage its users.
           </p>
         </div>
       )}

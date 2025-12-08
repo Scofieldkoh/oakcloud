@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Allow cross-origin requests from custom domain in development
+  allowedDevOrigins: ['oakcloud.app', '*.oakcloud.app'],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

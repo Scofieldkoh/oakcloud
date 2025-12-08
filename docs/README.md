@@ -405,6 +405,7 @@ Limits are enforced at the service layer before creating new resources.
 4. **Tenant Suspension**: Suspended tenants prevent user login
 5. **Audit Trail**: All actions tracked with tenant context
 6. **Setup Wizard**: Guided onboarding for new tenants with admin user creation
+7. **SUPER_ADMIN Cross-Tenant Access**: Centralized tenant selector in sidebar for SUPER_ADMIN users to switch tenant context (persisted to localStorage)
 
 ---
 
@@ -509,7 +510,7 @@ Tenant admins can create, edit, and delete custom roles with specific permission
 - Permission selector with "Select All" and "Clear All" options
 - Toggle individual permissions or entire resource groups
 - Visual indicators for selected permissions
-- **SUPER_ADMIN tenant selector**: SUPER_ADMIN users see a tenant dropdown to select which tenant's roles to view/manage
+- **SUPER_ADMIN tenant context**: SUPER_ADMIN users select a tenant from the sidebar button to view/manage their roles
 
 ```typescript
 // Example: Create a custom "Auditor" role via API
@@ -2387,7 +2388,8 @@ src/
 │   ├── use-local-storage.ts       # localStorage persistence
 │   └── use-media-query.ts         # Responsive breakpoints
 ├── stores/
-│   └── ui-store.ts                # Zustand UI state (sidebar, theme)
+│   ├── ui-store.ts                # Zustand UI state (sidebar, theme)
+│   └── tenant-store.ts            # SUPER_ADMIN tenant selection (persisted to localStorage)
 ├── lib/
 │   ├── prisma.ts                  # Database client
 │   ├── auth.ts                    # JWT & session management
@@ -2444,7 +2446,7 @@ The Document Generation module enables users to create, edit, and share professi
    **Full-Page Template Editor** (`/admin/template-partials/editor`):
    - Three-panel layout with resizable and collapsible sidebars
    - **Left Panel Tabs**:
-     - *Details*: Tenant selector (SUPER_ADMIN), template name, category, description, active status
+     - *Details*: Tenant display (from sidebar selection for SUPER_ADMIN), template name, category, description, active status
      - *Placeholders*: Available placeholders palette with categories, includes Template Partials with `{{>partial}}` syntax
      - *Test Data*: Mock data panel with company selector to pull real company data for testing
    - **Center Panel**: Rich text editor with TipTap for template content

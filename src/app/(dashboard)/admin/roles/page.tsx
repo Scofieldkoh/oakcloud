@@ -19,7 +19,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Alert } from '@/components/ui/alert';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
-import { TenantSelector, useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import {
   Shield,
   Users,
@@ -354,12 +354,12 @@ export default function RolesPage() {
   const { data: session } = useSession();
   const { success, error: showError } = useToast();
 
-  // For SUPER_ADMIN, allow selecting a tenant
+  // For SUPER_ADMIN: tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const [selectedTenantId, setSelectedTenantId] = useState('');
+  const { selectedTenantId } = useTenantSelection();
 
-  // Get active tenant ID using the reusable hook
-  const activeTenantId = useActiveTenantId(isSuperAdmin, selectedTenantId, session?.tenantId);
+  // Get active tenant ID using the centralized hook
+  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
 
   // Data fetching - use activeTenantId
   const { data: roles, isLoading, error } = useTenantRoles(activeTenantId);
@@ -518,13 +518,13 @@ export default function RolesPage() {
         </Button>
       </div>
 
-      {/* Tenant Selector for SUPER_ADMIN */}
-      {isSuperAdmin && (
-        <TenantSelector
-          value={selectedTenantId}
-          onChange={setSelectedTenantId}
-          helpText="Please select a tenant to view and manage its roles."
-        />
+      {/* Tenant context info for SUPER_ADMIN */}
+      {isSuperAdmin && !selectedTenantId && (
+        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Please select a tenant from the sidebar to manage roles.
+          </p>
+        </div>
       )}
 
       {/* Error State */}
@@ -542,7 +542,7 @@ export default function RolesPage() {
       {/* No Tenant Selected State for SUPER_ADMIN */}
       {isSuperAdmin && !selectedTenantId && (
         <div className="text-center py-12 text-text-muted">
-          Select a tenant above to view and manage roles.
+          Select a tenant from the sidebar to view and manage roles.
         </div>
       )}
 
