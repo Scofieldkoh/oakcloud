@@ -21,7 +21,7 @@ export const documentTemplateCategoryEnum = z.enum([
 export const placeholderDefinitionSchema = z.object({
   key: z.string().min(1).max(100), // e.g., "company.name", "director[0].name"
   label: z.string().min(1).max(200),
-  type: z.enum(['text', 'date', 'number', 'currency', 'list', 'conditional']),
+  type: z.enum(['text', 'date', 'number', 'currency', 'boolean', 'list', 'conditional']),
   source: z.enum(['company', 'contact', 'officer', 'shareholder', 'custom', 'system']),
   category: z.string().optional(), // Category for grouping (e.g., 'custom')
   path: z.string().optional(), // Data path for auto-resolution

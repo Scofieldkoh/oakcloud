@@ -70,7 +70,7 @@ interface DocumentTemplate {
 interface PlaceholderDefinition {
   key: string;
   label: string;
-  type: 'text' | 'date' | 'number' | 'currency' | 'list' | 'conditional';
+  type: 'text' | 'date' | 'number' | 'currency' | 'boolean' | 'list' | 'conditional';
   source: 'company' | 'contact' | 'officer' | 'shareholder' | 'custom' | 'system';
   path?: string;
   defaultValue?: string;

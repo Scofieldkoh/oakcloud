@@ -1,30 +1,40 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+  type ClipboardEvent as ReactClipboardEvent,
+} from 'react';
 import DOMPurify from 'dompurify';
 import {
-  FileText,
-  Printer,
-  Plus,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
   Bold,
+  ChevronDown,
+  ChevronUp,
+  Edit3,
+  Eye,
+  FileText,
+  Indent,
   Italic,
-  Underline,
   List,
   ListOrdered,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Indent,
-  Outdent,
-  Undo,
-  Redo,
-  Eye,
-  Edit3,
   Loader2,
+  Outdent,
+  Plus,
+  Printer,
+  Redo,
+  SeparatorHorizontal,
+  Trash2,
   Type,
+  Underline,
+  Undo,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,15 +48,318 @@ import { cn } from '@/lib/utils';
 function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
-      'p', 'br', 'div', 'span',
-      'strong', 'b', 'em', 'i', 'u', 's', 'strike',
-      'ul', 'ol', 'li',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'a', 'hr',
+      'p',
+      'br',
+      'div',
+      'span',
+      'strong',
+      'b',
+      'em',
+      'i',
+      'u',
+      's',
+      'strike',
+      'ul',
+      'ol',
+      'li',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'a',
+      'hr',
     ],
     ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+    ALLOWED_URI_REGEXP:
+      /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
   });
+}
+
+// ============================================================================
+// Overflow helpers
+// ============================================================================
+
+const OVERFLOW_TOLERANCE_PX = 5;
+const HTML_PAGE_BREAK_REGEX =
+  /<[^>]*class\s*=\s*["'][^"']*\bpage-break\b[^"']*["'][^>]*>(?:\s*<\/[^>]+>)?/gi;
+
+interface SplitResult {
+  fitHtml: string;
+  overflowHtml: string;
+}
+
+interface TextNodeInfo {
+  node: Text;
+  start: number;
+  length: number;
+  end: number;
+}
+
+function fragmentToHtml(fragment: DocumentFragment): string {
+  const wrapper = document.createElement('div');
+  wrapper.appendChild(fragment);
+  return wrapper.innerHTML;
+}
+
+function splitByManualBreak(container: HTMLElement): SplitResult | null {
+  const manualBreak = container.querySelector('.page-break');
+  if (!manualBreak) return null;
+
+  const rangeBefore = document.createRange();
+  rangeBefore.setStart(container, 0);
+  rangeBefore.setEndBefore(manualBreak);
+
+  const rangeAfter = document.createRange();
+  rangeAfter.setStartAfter(manualBreak);
+  rangeAfter.setEnd(container, container.childNodes.length);
+
+  const fitHtml = fragmentToHtml(rangeBefore.cloneContents());
+  const overflowHtml = fragmentToHtml(rangeAfter.cloneContents());
+
+  if (!overflowHtml.trim()) {
+    return null;
+  }
+
+  return { fitHtml, overflowHtml };
+}
+
+function collectTextNodes(container: HTMLElement): {
+  nodes: TextNodeInfo[];
+  totalLength: number;
+} {
+  const walker = document.createTreeWalker(
+    container,
+    NodeFilter.SHOW_TEXT,
+    null,
+  );
+  const nodes: TextNodeInfo[] = [];
+  let totalLength = 0;
+  let current: Node | null;
+
+  while ((current = walker.nextNode())) {
+    const textNode = current as Text;
+    const textContent = textNode.textContent ?? '';
+    const length = textContent.length;
+
+    if (length === 0) continue;
+
+    nodes.push({
+      node: textNode,
+      start: totalLength,
+      length,
+      end: totalLength + length,
+    });
+
+    totalLength += length;
+  }
+
+  return { nodes, totalLength };
+}
+
+function mapOffsetToDomPosition(
+  nodes: TextNodeInfo[],
+  offset: number,
+): { node: Text; offset: number } | null {
+  if (nodes.length === 0) return null;
+
+  if (offset <= 0) {
+    return { node: nodes[0].node, offset: 0 };
+  }
+
+  const totalLength = nodes[nodes.length - 1].end;
+  if (offset >= totalLength) {
+    const last = nodes[nodes.length - 1];
+    return { node: last.node, offset: last.length };
+  }
+
+  for (const info of nodes) {
+    if (offset >= info.start && offset <= info.end) {
+      return { node: info.node, offset: offset - info.start };
+    }
+  }
+
+  const last = nodes[nodes.length - 1];
+  return { node: last.node, offset: last.length };
+}
+
+function getCharAt(nodes: TextNodeInfo[], index: number): string | null {
+  if (index < 0) return null;
+
+  for (const info of nodes) {
+    if (index >= info.start && index < info.end) {
+      const text = info.node.textContent ?? '';
+      return text.charAt(index - info.start) ?? null;
+    }
+  }
+
+  return null;
+}
+
+function findWhitespaceSplitOffset(nodes: TextNodeInfo[], offset: number): number {
+  const WHITESPACE_REGEX = /[\s\u00A0]/;
+  let adjusted = offset;
+
+  for (let i = 0; i < 50 && adjusted > 0; i += 1) {
+    const char = getCharAt(nodes, adjusted - 1);
+    if (!char) break;
+    if (WHITESPACE_REGEX.test(char)) {
+      return adjusted;
+    }
+    adjusted -= 1;
+  }
+
+  return offset;
+}
+
+function measureRangeHeight(range: Range, containerTop: number): number {
+  const rects = Array.from(range.getClientRects?.() ?? []);
+  if (rects.length === 0) {
+    const rect = range.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
+      return 0;
+    }
+    return Math.ceil(rect.bottom - containerTop);
+  }
+
+  let maxBottom = containerTop;
+  rects.forEach((rect) => {
+    if (rect.bottom > maxBottom) {
+      maxBottom = rect.bottom;
+    }
+  });
+
+  return Math.ceil(maxBottom - containerTop);
+}
+
+function splitByCharacter(
+  container: HTMLElement,
+  maxHeight: number,
+): SplitResult | null {
+  const { nodes, totalLength } = collectTextNodes(container);
+  if (nodes.length === 0 || totalLength === 0) {
+    return null;
+  }
+
+  const containerTop = container.getBoundingClientRect().top;
+
+  let low = 0;
+  let high = totalLength;
+  let bestOffset = -1;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const domPos = mapOffsetToDomPosition(nodes, mid);
+    if (!domPos) break;
+
+    const testRange = document.createRange();
+    testRange.setStart(container, 0);
+    testRange.setEnd(domPos.node, domPos.offset);
+
+    const measuredHeight = measureRangeHeight(testRange, containerTop);
+
+    if (measuredHeight <= maxHeight + OVERFLOW_TOLERANCE_PX) {
+      bestOffset = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  if (bestOffset <= 0 || bestOffset >= totalLength) {
+    return null;
+  }
+
+  const adjustedOffset = findWhitespaceSplitOffset(nodes, bestOffset);
+  if (adjustedOffset <= 0 || adjustedOffset >= totalLength) {
+    return null;
+  }
+
+  const finalPosition = mapOffsetToDomPosition(nodes, adjustedOffset);
+  if (!finalPosition) return null;
+
+  const fitRange = document.createRange();
+  fitRange.setStart(container, 0);
+  fitRange.setEnd(finalPosition.node, finalPosition.offset);
+
+  const overflowRange = document.createRange();
+  overflowRange.setStart(finalPosition.node, finalPosition.offset);
+  overflowRange.setEnd(container, container.childNodes.length);
+
+  const fitHtml = fragmentToHtml(fitRange.cloneContents());
+  const overflowHtml = fragmentToHtml(overflowRange.cloneContents());
+
+  if (!overflowHtml.trim()) {
+    return null;
+  }
+
+  return { fitHtml, overflowHtml };
+}
+
+function splitByElement(container: HTMLElement): SplitResult | null {
+  const nodes = Array.from(container.childNodes);
+  if (nodes.length <= 1) return null;
+
+  const splitNode = nodes[nodes.length - 1];
+
+  const fitRange = document.createRange();
+  fitRange.setStart(container, 0);
+  fitRange.setEndBefore(splitNode);
+
+  const overflowRange = document.createRange();
+  overflowRange.setStartBefore(splitNode);
+  overflowRange.setEnd(container, container.childNodes.length);
+
+  const fitHtml = fragmentToHtml(fitRange.cloneContents());
+  const overflowHtml = fragmentToHtml(overflowRange.cloneContents());
+
+  if (!overflowHtml.trim()) {
+    return null;
+  }
+
+  return { fitHtml, overflowHtml };
+}
+
+function splitContainerContent(
+  container: HTMLElement,
+  maxHeight: number,
+): SplitResult | null {
+  const manualSplit = splitByManualBreak(container);
+  if (manualSplit) {
+    return manualSplit;
+  }
+
+  const characterSplit = splitByCharacter(container, maxHeight);
+  if (characterSplit) {
+    return characterSplit;
+  }
+
+  const elementSplit = splitByElement(container);
+  if (elementSplit) {
+    return elementSplit;
+  }
+
+  return null;
+}
+
+function hasRenderableContent(html: string): boolean {
+  if (!html) return false;
+
+  const cleaned = html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+
+  if (cleaned.length > 0) {
+    return true;
+  }
+
+  return /<(img|svg|object|embed|video|audio|canvas|table|tr|td|th|li|ul|ol|hr|br)\b/i.test(
+    html,
+  );
 }
 
 // ============================================================================
@@ -59,21 +372,15 @@ export interface A4PageEditorProps {
   placeholder?: string;
   className?: string;
   tenantId?: string;
-  /** Content to show in preview mode (with placeholders resolved) */
   previewContent?: string;
-  /** Show preview mode toggle */
   showPreviewToggle?: boolean;
-  /** Callback to generate preview (resolves placeholders) */
   onPreview?: () => void;
-  /** Whether preview is currently loading */
   isPreviewLoading?: boolean;
 }
 
-/** Methods exposed via ref */
 export interface A4PageEditorRef {
-  /** Insert text at the current cursor position */
   insertAtCursor: (text: string) => void;
-  /** Focus the editor */
+  insertHtmlAtCursor: (html: string) => void;
   focus: () => void;
 }
 
@@ -87,18 +394,16 @@ interface PageData {
 // ============================================================================
 
 const A4 = {
-  // A4 at 96 DPI (portrait: 210mm x 297mm)
-  // 1 inch = 25.4mm, 96 pixels/inch
-  // Width: 210mm / 25.4 * 96 = 794px
-  // Height: 297mm / 25.4 * 96 = 1123px
   WIDTH_PX: 794,
   HEIGHT_PX: 1123,
-  // Margins: 20mm = 20 / 25.4 * 96 = 76px
   MARGIN_MM: 20,
   MARGIN_PX: 76,
-  // Content area (what user can type in)
-  get CONTENT_WIDTH_PX() { return this.WIDTH_PX - (this.MARGIN_PX * 2); }, // 642px
-  get CONTENT_HEIGHT_PX() { return this.HEIGHT_PX - (this.MARGIN_PX * 2); }, // 971px
+  get CONTENT_WIDTH_PX() {
+    return this.WIDTH_PX - this.MARGIN_PX * 2;
+  },
+  get CONTENT_HEIGHT_PX() {
+    return this.HEIGHT_PX - this.MARGIN_PX * 2;
+  },
 };
 
 // Shared font styles
@@ -110,7 +415,6 @@ const LINE_HEIGHT = '1.5';
 // Toolbar Component
 // ============================================================================
 
-// Font options (Arial is default)
 const FONT_OPTIONS = [
   { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
   { value: "'Times New Roman', Times, serif", label: 'Times New Roman' },
@@ -148,7 +452,7 @@ const LINE_SPACING_OPTIONS = [
 function Toolbar({
   onCommand,
   onSaveSelection,
-  disabled
+  disabled,
 }: {
   onCommand: (cmd: string, value?: string) => void;
   onSaveSelection: () => void;
@@ -157,7 +461,7 @@ function Toolbar({
   const Button = ({
     cmd,
     icon: Icon,
-    title
+    title,
   }: {
     cmd: string;
     icon: React.ElementType;
@@ -174,7 +478,7 @@ function Toolbar({
         'p-1.5 rounded text-gray-700 dark:text-gray-300 transition-colors',
         disabled
           ? 'opacity-40 cursor-not-allowed'
-          : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+          : 'hover:bg-gray-200 dark:hover:bg-gray-700',
       )}
       title={title}
     >
@@ -184,27 +488,25 @@ function Toolbar({
 
   const selectClass = cn(
     'px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300',
-    disabled && 'opacity-40 cursor-not-allowed'
+    disabled && 'opacity-40 cursor-not-allowed',
   );
 
-  // Save selection when mouse enters a dropdown (before it steals focus)
-  const handleSelectMouseDown = (e: React.MouseEvent) => {
-    // Don't prevent default - we need the select to work
-    // But save selection first
+  const handleSelectMouseDown = () => {
     onSaveSelection();
   };
 
   return (
-    <div className={cn(
-      'flex items-center gap-1 p-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex-wrap',
-      disabled && 'opacity-60'
-    )}>
+    <div
+      className={cn(
+        'flex items-center gap-1 p-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex-wrap',
+        disabled && 'opacity-60',
+      )}
+    >
       <Button cmd="undo" icon={Undo} title="Undo (Ctrl+Z)" />
       <Button cmd="redo" icon={Redo} title="Redo (Ctrl+Y)" />
 
       <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
 
-      {/* Font Family */}
       <div className="flex items-center gap-1">
         <Type className="w-4 h-4 text-gray-500" />
         <select
@@ -223,7 +525,6 @@ function Toolbar({
         </select>
       </div>
 
-      {/* Font Size */}
       <select
         onMouseDown={handleSelectMouseDown}
         onChange={(e) => onCommand('customFontSize', e.target.value)}
@@ -263,7 +564,6 @@ function Toolbar({
 
       <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
 
-      {/* Line Spacing */}
       <select
         onMouseDown={handleSelectMouseDown}
         onChange={(e) => onCommand('lineSpacing', e.target.value)}
@@ -278,6 +578,10 @@ function Toolbar({
           </option>
         ))}
       </select>
+
+      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+      <Button cmd="pageBreak" icon={SeparatorHorizontal} title="Insert Page Break" />
     </div>
   );
 }
@@ -321,9 +625,9 @@ function Page({
 }: PageProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const isCheckingOverflow = useRef(false);
-  const isEmpty = !page.content || page.content.replace(/<[^>]*>/g, '').trim() === '';
+  const isEmpty =
+    !page.content || page.content.replace(/<[^>]*>/g, '').trim() === '';
 
-  // Sync content with sanitized HTML
   useEffect(() => {
     if (contentRef.current) {
       const sanitized = sanitizeHtml(page.content || '');
@@ -333,97 +637,68 @@ function Page({
     }
   }, [page.content]);
 
-  // Check for overflow and handle it
   const checkOverflow = useCallback(() => {
     const el = contentRef.current;
-    if (!el || isPreviewMode || isCheckingOverflow.current || !onOverflow) return;
-
-    // Check if content exceeds max height
-    if (el.scrollHeight > maxContentHeight) {
-      isCheckingOverflow.current = true;
-
-      // Find the point where content overflows
-      const children = Array.from(el.childNodes);
-      let fittingContent = '';
-      let overflowContent = '';
-
-      // Create a temporary element to measure heights
-      const tempDiv = document.createElement('div');
-      tempDiv.style.cssText = el.style.cssText;
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.visibility = 'hidden';
-      tempDiv.style.width = `${el.offsetWidth}px`;
-      document.body.appendChild(tempDiv);
-
-      for (let i = 0; i < children.length; i++) {
-        const child = children[i];
-        const clone = child.cloneNode(true);
-        tempDiv.appendChild(clone);
-
-        if (tempDiv.scrollHeight > maxContentHeight) {
-          // This node causes overflow - check if it's a text node we can split
-          if (child.nodeType === Node.TEXT_NODE && child.textContent) {
-            // For text nodes, find the break point
-            const words = child.textContent.split(' ');
-            tempDiv.removeChild(clone);
-            let fittingText = '';
-
-            for (const word of words) {
-              const testText = fittingText ? `${fittingText} ${word}` : word;
-              tempDiv.textContent = fittingContent + testText;
-
-              if (tempDiv.scrollHeight > maxContentHeight) {
-                // This word causes overflow
-                overflowContent = child.textContent.substring(fittingText.length).trim();
-                break;
-              }
-              fittingText = testText;
-            }
-
-            if (fittingText) {
-              fittingContent += fittingText;
-            }
-          }
-
-          // Add remaining nodes to overflow
-          for (let j = i; j < children.length; j++) {
-            const node = children[j];
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              overflowContent += (node as Element).outerHTML;
-            } else if (node.nodeType === Node.TEXT_NODE) {
-              if (j === i && overflowContent) {
-                // Already handled partial text
-              } else {
-                overflowContent += node.textContent || '';
-              }
-            }
-          }
-          break;
-        } else {
-          // This node fits
-          if (child.nodeType === Node.ELEMENT_NODE) {
-            fittingContent += (child as Element).outerHTML;
-          } else if (child.nodeType === Node.TEXT_NODE) {
-            fittingContent += child.textContent || '';
-          }
-        }
-      }
-
-      document.body.removeChild(tempDiv);
-
-      // If we have overflow content, trigger the callback
-      if (overflowContent.trim()) {
-        // Update current page with fitting content
-        onContentChange(page.id, fittingContent);
-        // Pass overflow to parent
-        onOverflow(page.id, overflowContent);
-      }
-
-      isCheckingOverflow.current = false;
+    if (
+      !el ||
+      isPreviewMode ||
+      isCheckingOverflow.current ||
+      !onOverflow ||
+      !el.innerHTML
+    ) {
+      return;
     }
-  }, [maxContentHeight, isPreviewMode, onOverflow, onContentChange, page.id]);
 
-  // Check overflow after content changes
+    const overflowThreshold = maxContentHeight + OVERFLOW_TOLERANCE_PX;
+
+    if (el.scrollHeight <= overflowThreshold) {
+      return;
+    }
+
+    isCheckingOverflow.current = true;
+    const originalHtml = el.innerHTML;
+
+    const split = splitContainerContent(el, maxContentHeight);
+
+    if (!split) {
+      isCheckingOverflow.current = false;
+      return;
+    }
+
+    const sanitizedFit = sanitizeHtml(split.fitHtml);
+    const sanitizedOverflow = sanitizeHtml(split.overflowHtml);
+
+    if (!hasRenderableContent(sanitizedOverflow)) {
+      if (contentRef.current) {
+        contentRef.current.innerHTML = originalHtml;
+      }
+      isCheckingOverflow.current = false;
+      return;
+    }
+
+    if (contentRef.current) {
+      contentRef.current.innerHTML = sanitizedFit;
+    }
+
+    if (sanitizedFit !== page.content) {
+      onContentChange(page.id, sanitizedFit);
+    }
+
+    onOverflow(page.id, sanitizedOverflow);
+
+    setTimeout(() => {
+      isCheckingOverflow.current = false;
+      checkOverflow();
+    }, 30);
+  }, [
+    isPreviewMode,
+    maxContentHeight,
+    onContentChange,
+    onOverflow,
+    page.content,
+    page.id,
+  ]);
+
   useEffect(() => {
     const timer = setTimeout(checkOverflow, 100);
     return () => clearTimeout(timer);
@@ -435,6 +710,57 @@ function Page({
     }
   }, [page.id, onContentChange, isPreviewMode]);
 
+  const handlePaste = useCallback(
+    (e: ReactClipboardEvent<HTMLDivElement>) => {
+      if (isPreviewMode) return;
+      e.preventDefault();
+
+      const clipboard = e.clipboardData;
+      let html = '';
+
+      if (clipboard) {
+        const rawHtml = clipboard.getData('text/html');
+        if (rawHtml) {
+          html = sanitizeHtml(rawHtml);
+        }
+
+        if (!html) {
+          const text = clipboard.getData('text/plain');
+          if (text) {
+            const escape = (str: string) =>
+              str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+            const paragraphHtml = text
+              .replace(/\r\n/g, '\n')
+              .replace(/\r/g, '\n')
+              .split('\n')
+              .map((line) =>
+                line.length ? `<p>${escape(line)}</p>` : '<p><br /></p>',
+              )
+              .join('');
+
+            html = sanitizeHtml(paragraphHtml);
+          }
+        }
+      }
+
+      if (!html) return;
+
+      document.execCommand('insertHTML', false, html);
+
+      setTimeout(() => {
+        handleInput();
+        checkOverflow();
+      }, 0);
+    },
+    [checkOverflow, handleInput, isPreviewMode],
+  );
+
   return (
     <div
       className="relative group"
@@ -443,12 +769,10 @@ function Page({
         height: A4.HEIGHT_PX,
       }}
     >
-      {/* Page label */}
       <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-3 py-1 bg-gray-700 text-white text-xs rounded-t-md z-10">
         Page {pageNumber} of {totalPages}
       </div>
 
-      {/* Delete button */}
       {canDelete && !isPreviewMode && (
         <button
           type="button"
@@ -460,12 +784,11 @@ function Page({
         </button>
       )}
 
-      {/* A4 Page - exact dimensions, no scaling */}
       <div
         className={cn(
           'bg-white shadow-xl transition-all relative',
           isActive && !isPreviewMode && 'ring-2 ring-blue-500',
-          isPreviewMode && 'ring-2 ring-green-500'
+          isPreviewMode && 'ring-2 ring-green-500',
         )}
         style={{
           width: A4.WIDTH_PX,
@@ -473,24 +796,23 @@ function Page({
           boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
         }}
       >
-        {/* Content area - matches print exactly */}
         <div
           ref={(el) => {
-            (contentRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+            (contentRef as React.MutableRefObject<HTMLDivElement | null>).current =
+              el;
             if (isActive && editorRef) {
-              (editorRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+              (editorRef as React.MutableRefObject<HTMLDivElement | null>).current =
+                el;
             }
           }}
           contentEditable={!isPreviewMode}
           suppressContentEditableWarning
+          onPaste={handlePaste}
           onInput={handleInput}
           onFocus={() => !isPreviewMode && onFocus(page.id)}
           onBlur={() => !isPreviewMode && onBlur?.()}
           data-placeholder={placeholder}
-          className={cn(
-            'outline-none',
-            isPreviewMode && 'cursor-default'
-          )}
+          className={cn('outline-none', isPreviewMode && 'cursor-default')}
           style={{
             position: 'absolute',
             top: A4.MARGIN_PX,
@@ -501,7 +823,6 @@ function Page({
             fontSize: '11pt',
             lineHeight: '1.5',
             color: '#000',
-            // Prevent text overflow
             overflow: 'hidden',
             overflowWrap: 'break-word',
             wordBreak: 'break-word',
@@ -509,7 +830,6 @@ function Page({
           }}
         />
 
-        {/* Placeholder overlay */}
         {isEmpty && placeholder && !isPreviewMode && (
           <div
             className="pointer-events-none select-none text-gray-400"
@@ -517,20 +837,19 @@ function Page({
               position: 'absolute',
               top: A4.MARGIN_PX,
               left: A4.MARGIN_PX,
-              fontFamily: "'Times New Roman', Times, serif",
-              fontSize: '12pt',
-              lineHeight: '1.5',
+              fontFamily: FONT_FAMILY,
+              fontSize: FONT_SIZE,
+              lineHeight: LINE_HEIGHT,
             }}
           >
             {placeholder}
           </div>
         )}
 
-        {/* Page number footer */}
         <div
           className="absolute left-1/2 -translate-x-1/2 text-gray-400"
           style={{
-            fontFamily: "'Times New Roman', Times, serif",
+            fontFamily: FONT_FAMILY,
             fontSize: '10pt',
             bottom: '30px',
           }}
@@ -546,394 +865,469 @@ function Page({
 // Main A4 Page Editor Component
 // ============================================================================
 
-export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(function A4PageEditor({
-  value,
-  onChange,
-  placeholder,
-  className,
-  tenantId: _tenantId,
-  previewContent,
-  showPreviewToggle = true,
-  onPreview,
-  isPreviewLoading = false,
-}, ref) {
-  const PAGE_SEPARATOR = '<!-- PAGE_BREAK -->';
-  const activeEditorRef = useRef<HTMLDivElement | null>(null);
-  const lastValueRef = useRef<string>(value);
-  const isInternalUpdate = useRef(false);
+export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
+  function A4PageEditor(
+    {
+      value,
+      onChange,
+      placeholder,
+      className,
+      tenantId: _tenantId,
+      previewContent,
+      showPreviewToggle = true,
+      onPreview,
+      isPreviewLoading = false,
+    },
+    ref,
+  ) {
+    const PAGE_SEPARATOR = '<!-- PAGE_BREAK -->';
+    const activeEditorRef = useRef<HTMLDivElement | null>(null);
+    const lastValueRef = useRef<string>(value);
+    const isInternalUpdate = useRef(false);
 
-  // Store last selection range for formatting commands
-  const savedSelectionRef = useRef<{
-    startNode: Node;
-    startOffset: number;
-    endNode: Node;
-    endOffset: number;
-    collapsed: boolean;
-  } | null>(null);
+    const savedSelectionRef = useRef<{
+      startNode: Node;
+      startOffset: number;
+      endNode: Node;
+      endOffset: number;
+      collapsed: boolean;
+    } | null>(null);
 
-  // Save selection (cursor position and selection range) when editor loses focus
-  const saveCursorPosition = useCallback(() => {
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      // Check if selection is within our editor
-      if (activeEditorRef.current?.contains(range.startContainer)) {
-        savedSelectionRef.current = {
-          startNode: range.startContainer,
-          startOffset: range.startOffset,
-          endNode: range.endContainer,
-          endOffset: range.endOffset,
-          collapsed: range.collapsed,
-        };
-      }
-    }
-  }, []);
-
-  // Restore saved selection to the editor
-  const restoreSelection = useCallback(() => {
-    const editor = activeEditorRef.current;
-    const saved = savedSelectionRef.current;
-    if (!editor || !saved) return false;
-
-    // Check if saved nodes are still in the editor
-    if (!editor.contains(saved.startNode) || !editor.contains(saved.endNode)) {
-      return false;
-    }
-
-    try {
+    const saveCursorPosition = useCallback(() => {
       const selection = window.getSelection();
-      if (!selection) return false;
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        if (activeEditorRef.current?.contains(range.startContainer)) {
+          savedSelectionRef.current = {
+            startNode: range.startContainer,
+            startOffset: range.startOffset,
+            endNode: range.endContainer,
+            endOffset: range.endOffset,
+            collapsed: range.collapsed,
+          };
+        }
+      }
+    }, []);
 
-      const range = document.createRange();
-      range.setStart(saved.startNode, saved.startOffset);
-      range.setEnd(saved.endNode, saved.endOffset);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
+    const restoreSelection = useCallback(() => {
+      const editor = activeEditorRef.current;
+      const saved = savedSelectionRef.current;
+      if (!editor || !saved) return false;
 
-  // Insert text at cursor position
-  const insertAtCursor = useCallback((text: string) => {
-    const editor = activeEditorRef.current;
-    if (!editor) return;
+      if (
+        !editor.contains(saved.startNode) ||
+        !editor.contains(saved.endNode)
+      ) {
+        return false;
+      }
 
-    // Focus the editor first
-    editor.focus();
+      try {
+        const selection = window.getSelection();
+        if (!selection) return false;
 
-    const selection = window.getSelection();
-    if (!selection) return;
-
-    // Try to restore saved position if no current selection in editor
-    if (selection.rangeCount === 0 || !editor.contains(selection.anchorNode)) {
-      if (!restoreSelection()) {
-        // No saved position or restore failed, append to end
         const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
+        range.setStart(saved.startNode, saved.startOffset);
+        range.setEnd(saved.endNode, saved.endOffset);
         selection.removeAllRanges();
         selection.addRange(range);
+        return true;
+      } catch {
+        return false;
       }
-    }
+    }, []);
 
-    // Insert the text using execCommand (maintains undo history)
-    document.execCommand('insertText', false, text);
-  }, [restoreSelection]);
+    const insertAtCursor = useCallback(
+      (text: string) => {
+        const editor = activeEditorRef.current;
+        if (!editor) return;
 
-  // Expose methods via ref
-  useImperativeHandle(ref, () => ({
-    insertAtCursor,
-    focus: () => activeEditorRef.current?.focus(),
-  }), [insertAtCursor]);
+        editor.focus();
 
-  // Parse pages - stable function that preserves IDs and whitespace
-  const parsePages = useCallback((content: string, existingPages?: PageData[]): PageData[] => {
-    if (!content) return [{ id: crypto.randomUUID(), content: '' }];
-    const parts = content.split(PAGE_SEPARATOR);
-    return parts.map((c, i) => ({
-      id: existingPages?.[i]?.id || crypto.randomUUID(),
-      content: c, // Preserve whitespace - don't trim
-    }));
-  }, []);
+        const selection = window.getSelection();
+        if (!selection) return;
 
-  const [pages, setPages] = useState<PageData[]>(() => parsePages(value));
-  const [activePageId, setActivePageId] = useState<string>(pages[0]?.id || '');
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-
-  // Preview pages (when previewContent is provided)
-  const previewPages = useMemo(() => {
-    if (!previewContent) return null;
-    return parsePages(previewContent);
-  }, [previewContent, parsePages]);
-
-  // Display pages (either edit or preview)
-  const displayPages = isPreviewMode && previewPages ? previewPages : pages;
-
-  // Sync activePageId when switching modes or when displayPages change
-  useEffect(() => {
-    if (displayPages.length === 0) return;
-
-    // Check if current activePageId exists in displayPages
-    const currentIdx = displayPages.findIndex(p => p.id === activePageId);
-    if (currentIdx === -1) {
-      // Reset to first page if current ID not found
-      setActivePageId(displayPages[0].id);
-    }
-  }, [displayPages, activePageId]);
-
-  // Sync when value changes externally (not from our own updates)
-  useEffect(() => {
-    // Skip if this is our own update or value hasn't changed
-    if (isInternalUpdate.current || value === lastValueRef.current) {
-      isInternalUpdate.current = false;
-      return;
-    }
-
-    lastValueRef.current = value;
-
-    if (!isPreviewMode) {
-      setPages(prev => {
-        const newPages = parsePages(value, prev);
-        if (!newPages.find(p => p.id === activePageId) && newPages.length > 0) {
-          setActivePageId(newPages[0].id);
+        if (
+          selection.rangeCount === 0 ||
+          !editor.contains(selection.anchorNode)
+        ) {
+          if (!restoreSelection()) {
+            const range = document.createRange();
+            range.selectNodeContents(editor);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
         }
-        return newPages;
-      });
-    }
-  }, [value, parsePages, isPreviewMode, activePageId]);
 
-  // Track if we need to notify parent of changes
-  const pendingUpdateRef = useRef(false);
+        document.execCommand('insertText', false, text);
+      },
+      [restoreSelection],
+    );
 
-  // Notify parent of changes (called via useEffect to avoid setState during render)
-  useEffect(() => {
-    if (pendingUpdateRef.current) {
-      pendingUpdateRef.current = false;
-      const html = pages.map((p) => p.content).join(PAGE_SEPARATOR);
-      isInternalUpdate.current = true;
-      lastValueRef.current = html;
-      onChange(html);
-    }
-  }, [pages, onChange]);
+    const insertHtmlAtCursor = useCallback(
+      (html: string) => {
+        const editor = activeEditorRef.current;
+        if (!editor) return;
 
-  // Content change - just update local state, parent notified via effect
-  const handleContentChange = useCallback((id: string, content: string) => {
-    if (isPreviewMode) return;
-    pendingUpdateRef.current = true;
-    setPages((prev) => prev.map((p) => (p.id === id ? { ...p, content } : p)));
-  }, [isPreviewMode]);
+        editor.focus();
 
-  // Add page
-  const handleAddPage = useCallback(() => {
-    if (isPreviewMode) return;
-    const newPage: PageData = { id: crypto.randomUUID(), content: '' };
-    pendingUpdateRef.current = true;
-    setPages((prev) => [...prev, newPage]);
-    setActivePageId(newPage.id);
-  }, [isPreviewMode]);
+        const selection = window.getSelection();
+        if (!selection) return;
 
-  // Delete page
-  const handleDeletePage = useCallback((id: string) => {
-    if (isPreviewMode) return;
-    pendingUpdateRef.current = true;
-    setPages((prev) => {
-      if (prev.length <= 1) return prev;
-      const newPages = prev.filter((p) => p.id !== id);
-      const deletedIndex = prev.findIndex((p) => p.id === id);
-      const newActiveIndex = Math.min(deletedIndex, newPages.length - 1);
-      // Note: setActivePageId is called outside this callback via effect
-      setTimeout(() => setActivePageId(newPages[newActiveIndex]?.id || ''), 0);
-      return newPages;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPreviewMode]);
+        if (
+          selection.rangeCount === 0 ||
+          !editor.contains(selection.anchorNode)
+        ) {
+          if (!restoreSelection()) {
+            const range = document.createRange();
+            range.selectNodeContents(editor);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+        }
 
-  // Handle overflow - create new page or append to next page
-  const handleOverflow = useCallback((pageId: string, overflowContent: string) => {
-    if (isPreviewMode || !overflowContent.trim()) return;
+        document.execCommand('insertHTML', false, html);
+      },
+      [restoreSelection],
+    );
 
-    pendingUpdateRef.current = true;
-    setPages((prev) => {
-      const pageIndex = prev.findIndex((p) => p.id === pageId);
-      if (pageIndex === -1) return prev;
+    useImperativeHandle(
+      ref,
+      () => ({
+        insertAtCursor,
+        insertHtmlAtCursor,
+        focus: () => activeEditorRef.current?.focus(),
+      }),
+      [insertAtCursor, insertHtmlAtCursor],
+    );
 
-      const nextPageIndex = pageIndex + 1;
+    const normalizePageSeparators = useCallback(
+      (input: string) => {
+        if (!input || input.indexOf('page-break') === -1) return input;
+        return input.replace(HTML_PAGE_BREAK_REGEX, PAGE_SEPARATOR);
+      },
+      [PAGE_SEPARATOR],
+    );
 
-      if (nextPageIndex < prev.length) {
-        // Append to existing next page
-        const nextPage = prev[nextPageIndex];
-        const updatedPages = [...prev];
-        updatedPages[nextPageIndex] = {
-          ...nextPage,
-          content: overflowContent + nextPage.content,
-        };
-        return updatedPages;
-      } else {
-        // Create new page with overflow content
-        const newPage: PageData = {
-          id: crypto.randomUUID(),
-          content: overflowContent,
-        };
-        // Set focus to new page
-        setTimeout(() => setActivePageId(newPage.id), 0);
-        return [...prev, newPage];
+    const parsePages = useCallback(
+      (content: string, existingPages?: PageData[]): PageData[] => {
+        if (!content) return [{ id: crypto.randomUUID(), content: '' }];
+        const normalizedContent = normalizePageSeparators(content);
+        const parts = normalizedContent.split(PAGE_SEPARATOR);
+        return parts.map((c, i) => ({
+          id: existingPages?.[i]?.id || crypto.randomUUID(),
+          content: c,
+        }));
+      },
+      [normalizePageSeparators],
+    );
+
+    const [pages, setPages] = useState<PageData[]>(() => parsePages(value));
+    const [activePageId, setActivePageId] = useState<string>(
+      pages[0]?.id || '',
+    );
+    const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+    const previewPages = useMemo(() => {
+      if (!previewContent) return null;
+      return parsePages(previewContent);
+    }, [previewContent, parsePages]);
+
+    const displayPages = isPreviewMode && previewPages ? previewPages : pages;
+
+    useEffect(() => {
+      if (displayPages.length === 0) return;
+      const currentIdx = displayPages.findIndex((p) => p.id === activePageId);
+      if (currentIdx === -1) {
+        setActivePageId(displayPages[0].id);
       }
-    });
-  }, [isPreviewMode]);
+    }, [displayPages, activePageId]);
 
-  // Toolbar command
-  // NOTE: document.execCommand is deprecated but still widely supported.
-  // For a production app, consider migrating to Selection/Range API or
-  // a rich-text library like TipTap, Slate, or ProseMirror.
-  const handleCommand = useCallback((cmd: string, val?: string) => {
-    if (isPreviewMode) return;
+    useEffect(() => {
+      if (isInternalUpdate.current || value === lastValueRef.current) {
+        isInternalUpdate.current = false;
+        return;
+      }
 
-    const editor = activeEditorRef.current;
-    if (!editor) return;
+      lastValueRef.current = value;
 
-    // Focus editor and restore selection first
-    editor.focus();
-    restoreSelection();
+      if (!isPreviewMode) {
+        setPages((prev) => {
+          const newPages = parsePages(value, prev);
+          if (
+            !newPages.find((p) => p.id === activePageId) &&
+            newPages.length > 0
+          ) {
+            setActivePageId(newPages[0].id);
+          }
+          return newPages;
+        });
+      }
+    }, [value, parsePages, isPreviewMode, activePageId]);
 
-    // Handle custom font size command with CSS
-    if (cmd === 'customFontSize' && val) {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        if (!range.collapsed) {
-          // Use execCommand with fontSize 7, then replace font tags with styled spans
-          document.execCommand('fontSize', false, '7');
-          // Find the font elements and replace with spans
-          const fonts = editor.querySelectorAll('font[size="7"]');
-          fonts.forEach((font) => {
-            const span = document.createElement('span');
-            span.style.fontSize = val;
-            span.innerHTML = font.innerHTML;
-            font.parentNode?.replaceChild(span, font);
-          });
-          // Trigger content change
-          const event = new Event('input', { bubbles: true });
-          editor.dispatchEvent(event);
+    const pendingUpdateRef = useRef(false);
+
+    useEffect(() => {
+      if (pendingUpdateRef.current) {
+        pendingUpdateRef.current = false;
+        const html = pages.map((p) => p.content).join(PAGE_SEPARATOR);
+        isInternalUpdate.current = true;
+        lastValueRef.current = html;
+        onChange(html);
+      }
+    }, [pages, onChange]);
+
+    const handleContentChange = useCallback(
+      (id: string, content: string) => {
+        if (isPreviewMode) return;
+        pendingUpdateRef.current = true;
+        setPages((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, content } : p)),
+        );
+      },
+      [isPreviewMode],
+    );
+
+    const handleAddPage = useCallback(() => {
+      if (isPreviewMode) return;
+      const newPage: PageData = { id: crypto.randomUUID(), content: '' };
+      pendingUpdateRef.current = true;
+      setPages((prev) => [...prev, newPage]);
+      setActivePageId(newPage.id);
+    }, [isPreviewMode]);
+
+    const handleDeletePage = useCallback(
+      (id: string) => {
+        if (isPreviewMode) return;
+        pendingUpdateRef.current = true;
+        setPages((prev) => {
+          if (prev.length <= 1) return prev;
+          const newPages = prev.filter((p) => p.id !== id);
+          const deletedIndex = prev.findIndex((p) => p.id === id);
+          const newActiveIndex = Math.min(deletedIndex, newPages.length - 1);
+          setTimeout(
+            () => setActivePageId(newPages[newActiveIndex]?.id || ''),
+            0,
+          );
+          return newPages;
+        });
+      },
+      [isPreviewMode],
+    );
+
+    const isHandlingOverflow = useRef(false);
+    const pendingFocusPageId = useRef<string | null>(null);
+
+    const focusPageAtEnd = useCallback((pageId: string) => {
+      const pageEl = document.querySelector(
+        `[data-page-id="${pageId}"] [contenteditable]`,
+      ) as HTMLDivElement | null;
+
+      if (pageEl) {
+        pageEl.focus();
+        const selection = window.getSelection();
+        if (selection) {
+          const range = document.createRange();
+          range.selectNodeContents(pageEl);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
         }
       }
-      return;
-    }
+    }, []);
 
-    // Handle font family command
-    if (cmd === 'fontName' && val) {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        if (!range.collapsed) {
-          // Use execCommand with fontName, then clean up font tags to use CSS
-          document.execCommand('fontName', false, '__temp_font__');
-          const fonts = editor.querySelectorAll('font[face="__temp_font__"]');
-          fonts.forEach((font) => {
-            const span = document.createElement('span');
-            span.style.fontFamily = val;
-            span.innerHTML = font.innerHTML;
-            font.parentNode?.replaceChild(span, font);
-          });
-          // Trigger content change
-          const event = new Event('input', { bubbles: true });
-          editor.dispatchEvent(event);
+    const handleOverflow = useCallback(
+      (pageId: string, overflowContent: string) => {
+        if (isPreviewMode || !overflowContent.trim() || isHandlingOverflow.current) {
+          return;
         }
+
+        isHandlingOverflow.current = true;
+        pendingUpdateRef.current = true;
+
+        setPages((prev) => {
+          const pageIndex = prev.findIndex((p) => p.id === pageId);
+          if (pageIndex === -1) return prev;
+
+          const nextPageIndex = pageIndex + 1;
+
+          if (nextPageIndex < prev.length) {
+            const nextPage = prev[nextPageIndex];
+            const updatedPages = [...prev];
+            updatedPages[nextPageIndex] = {
+              ...nextPage,
+              content: overflowContent + nextPage.content,
+            };
+            pendingFocusPageId.current = nextPage.id;
+            return updatedPages;
+          }
+
+          const newPage: PageData = {
+            id: crypto.randomUUID(),
+            content: overflowContent,
+          };
+          pendingFocusPageId.current = newPage.id;
+          return [...prev, newPage];
+        });
+      },
+      [isPreviewMode],
+    );
+
+    useEffect(() => {
+      if (pendingFocusPageId.current && isHandlingOverflow.current) {
+        const targetId = pendingFocusPageId.current;
+        const timer = setTimeout(() => {
+          setActivePageId(targetId);
+          setTimeout(() => {
+            focusPageAtEnd(targetId);
+            pendingFocusPageId.current = null;
+            isHandlingOverflow.current = false;
+          }, 100);
+        }, 50);
+
+        return () => clearTimeout(timer);
       }
-      return;
-    }
+    }, [pages, focusPageAtEnd]);
 
-    // Handle line spacing command
-    if (cmd === 'lineSpacing' && val) {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
+    const handleCommand = useCallback(
+      (cmd: string, val?: string) => {
+        if (isPreviewMode) return;
 
-        // Find the block-level parent element to apply line-height
-        let blockElement: HTMLElement | null = null;
-        let node: Node | null = range.startContainer;
+        const editor = activeEditorRef.current;
+        if (!editor) return;
 
-        // Walk up the tree to find a block-level element
-        while (node && node !== editor) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            const element = node as HTMLElement;
-            const display = window.getComputedStyle(element).display;
-            if (display === 'block' || display === 'list-item' || element.tagName === 'P' || element.tagName === 'DIV') {
-              blockElement = element;
-              break;
+        editor.focus();
+        restoreSelection();
+
+        if (cmd === 'customFontSize' && val) {
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            if (!range.collapsed) {
+              document.execCommand('fontSize', false, '7');
+              const fonts = editor.querySelectorAll('font[size="7"]');
+              fonts.forEach((font) => {
+                const span = document.createElement('span');
+                span.style.fontSize = val;
+                span.innerHTML = font.innerHTML;
+                font.parentNode?.replaceChild(span, font);
+              });
+              const event = new Event('input', { bubbles: true });
+              editor.dispatchEvent(event);
             }
           }
-          node = node.parentNode;
+          return;
         }
 
-        if (blockElement && blockElement !== editor) {
-          // Apply line-height to the block element
-          blockElement.style.lineHeight = val;
-        } else {
-          // If no block element found, wrap content or apply to a new div
-          // For simplicity, wrap selection in a div with line-height
-          if (!range.collapsed) {
-            const div = document.createElement('div');
-            div.style.lineHeight = val;
-            try {
-              range.surroundContents(div);
-            } catch {
-              // If surroundContents fails, apply to editor content area
-              const firstChild = editor.firstElementChild as HTMLElement;
-              if (firstChild) {
-                firstChild.style.lineHeight = val;
+        if (cmd === 'fontName' && val) {
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            if (!range.collapsed) {
+              document.execCommand('fontName', false, '__temp_font__');
+              const fonts = editor.querySelectorAll('font[face="__temp_font__"]');
+              fonts.forEach((font) => {
+                const span = document.createElement('span');
+                span.style.fontFamily = val;
+                span.innerHTML = font.innerHTML;
+                font.parentNode?.replaceChild(span, font);
+              });
+              const event = new Event('input', { bubbles: true });
+              editor.dispatchEvent(event);
+            }
+          }
+          return;
+        }
+
+        if (cmd === 'lineSpacing' && val) {
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            let blockElement: HTMLElement | null = null;
+            let node: Node | null = range.startContainer;
+
+            while (node && node !== editor) {
+              if (node.nodeType === Node.ELEMENT_NODE) {
+                const element = node as HTMLElement;
+                const display = window.getComputedStyle(element).display;
+                if (
+                  display === 'block' ||
+                  display === 'list-item' ||
+                  element.tagName === 'P' ||
+                  element.tagName === 'DIV'
+                ) {
+                  blockElement = element;
+                  break;
+                }
+              }
+              node = node.parentNode;
+            }
+
+            if (blockElement && blockElement !== editor) {
+              blockElement.style.lineHeight = val;
+            } else {
+              if (!range.collapsed) {
+                const div = document.createElement('div');
+                div.style.lineHeight = val;
+                try {
+                  range.surroundContents(div);
+                } catch {
+                  const firstChild = editor.firstElementChild as HTMLElement;
+                  if (firstChild) {
+                    firstChild.style.lineHeight = val;
+                  }
+                }
+              } else {
+                const firstChild = editor.firstElementChild as HTMLElement;
+                if (firstChild) {
+                  firstChild.style.lineHeight = val;
+                }
               }
             }
-          } else {
-            // No selection, apply to current paragraph or create one
-            const firstChild = editor.firstElementChild as HTMLElement;
-            if (firstChild) {
-              firstChild.style.lineHeight = val;
-            }
+
+            const event = new Event('input', { bubbles: true });
+            editor.dispatchEvent(event);
           }
+          return;
         }
 
-        // Trigger content change
-        const event = new Event('input', { bubbles: true });
-        editor.dispatchEvent(event);
-      }
-      return;
-    }
+        if (cmd === 'pageBreak') {
+          document.execCommand(
+            'insertHTML',
+            false,
+            '<div class="page-break"></div><p></p>',
+          );
+          const event = new Event('input', { bubbles: true });
+          editor.dispatchEvent(event);
+          return;
+        }
 
-    document.execCommand(cmd, false, val);
-  }, [isPreviewMode, restoreSelection]);
+        document.execCommand(cmd, false, val);
+      },
+      [isPreviewMode, restoreSelection],
+    );
 
-  // Print
-  const handlePrint = useCallback(() => {
-    const printPages = isPreviewMode && previewPages ? previewPages : pages;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    const handlePrint = useCallback(() => {
+      const printPages = isPreviewMode && previewPages ? previewPages : pages;
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return;
 
-    const pagesHtml = printPages
-      .map((page, i) =>
-        `<div class="page">
-          <div class="content">${sanitizeHtml(page.content) || '&nbsp;'}</div>
-          <div class="page-num">${i + 1}</div>
-        </div>`
-      )
-      .join('')
-      .trim();
+      const allContent = printPages
+        .map((page) => sanitizeHtml(page.content) || '')
+        .join('')
+        .trim();
 
-    // Print styles match screen exactly (WYSIWYG):
-    // - Page: 210mm x 297mm (A4)
-    // - Margins: 20mm all sides
-    // - Content area: 170mm x 257mm
-    // - Font: Arial 11pt, line-height 1.5
-    // - white-space: pre-wrap to preserve spacing
-    printWindow.document.write(`<!DOCTYPE html>
+      const pagesHtml = `<div class="content">${allContent || '&nbsp;'}</div>`;
+
+      printWindow.document.write(`<!DOCTYPE html>
 <html>
 <head>
   <title>Print</title>
   <style>
     @page {
       size: 210mm 297mm;
-      margin: 0;
+      margin: ${A4.MARGIN_MM}mm;
     }
     * {
       box-sizing: border-box;
@@ -946,215 +1340,205 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
       line-height: 1.5;
       color: #000;
     }
-    .page {
-      width: 210mm;
-      height: 297mm;
-      position: relative;
-      overflow: hidden;
-    }
-    .page + .page {
-      page-break-before: always;
-      break-before: page;
-    }
     .content {
-      position: absolute;
-      top: ${A4.MARGIN_MM}mm;
-      left: ${A4.MARGIN_MM}mm;
-      width: calc(210mm - ${A4.MARGIN_MM * 2}mm);
-      height: calc(297mm - ${A4.MARGIN_MM * 2}mm);
-      overflow: hidden;
-      /* WYSIWYG: preserve whitespace and line breaks exactly as in editor */
+      width: 100%;
       white-space: pre-wrap;
       overflow-wrap: break-word;
       word-break: break-word;
     }
-    .page-num {
-      position: absolute;
-      bottom: 8mm;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 10pt;
-      color: #999;
-    }
-    /* Preserve empty paragraphs and divs */
     p:empty, div:empty { min-height: 1em; }
     p { margin: 0 0 0.5em 0; }
     br { display: block; content: ""; margin-top: 0.5em; }
     ul, ol { margin: 0 0 0.5em 0; padding-left: 1.5em; }
+    .page-break {
+      display: block;
+      page-break-before: always !important;
+      break-before: page !important;
+      page-break-after: auto;
+      break-after: auto;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      height: 0;
+      margin: 0;
+      padding: 0;
+      border: none;
+      clear: both;
+    }
   </style>
 </head>
 <body>${pagesHtml}</body>
 </html>`);
 
-    printWindow.document.close();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 200);
-  }, [pages, previewPages, isPreviewMode]);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 200);
+    }, [pages, previewPages, isPreviewMode]);
 
-  // Page navigation
-  const scrollToPage = useCallback((dir: 'up' | 'down') => {
-    const idx = displayPages.findIndex((p) => p.id === activePageId);
-    const newIdx = dir === 'up' ? Math.max(0, idx - 1) : Math.min(displayPages.length - 1, idx + 1);
-    setActivePageId(displayPages[newIdx].id);
-    document.querySelectorAll('[data-page-id]')[newIdx]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [displayPages, activePageId]);
+    const scrollToPage = useCallback(
+      (dir: 'up' | 'down') => {
+        const idx = displayPages.findIndex((p) => p.id === activePageId);
+        const newIdx =
+          dir === 'up'
+            ? Math.max(0, idx - 1)
+            : Math.min(displayPages.length - 1, idx + 1);
+        setActivePageId(displayPages[newIdx].id);
+        document
+          .querySelectorAll('[data-page-id]')
+          [newIdx]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      },
+      [displayPages, activePageId],
+    );
 
-  const currentPageIdx = displayPages.findIndex((p) => p.id === activePageId);
+    const currentPageIdx = displayPages.findIndex((p) => p.id === activePageId);
 
-  return (
-    <div className={cn('flex flex-col h-full bg-gray-200 dark:bg-gray-800', className)}>
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-3">
-          <FileText className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium">Document Editor</span>
-          <span className="text-xs text-gray-500">
-            {displayPages.length} page{displayPages.length !== 1 ? 's' : ''}
-          </span>
-
-          {/* Preview mode indicator */}
-          {isPreviewMode && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
-              Preview Mode
+    return (
+      <div className={cn('flex flex-col h-full bg-gray-200 dark:bg-gray-800', className)}>
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <FileText className="w-4 h-4 text-gray-500" />
+            <span className="text-sm font-medium">Document Editor</span>
+            <span className="text-xs text-gray-500">
+              {displayPages.length} page{displayPages.length !== 1 ? 's' : ''}
             </span>
-          )}
+
+            {isPreviewMode && (
+              <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
+                Preview Mode
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => scrollToPage('up')}
+              disabled={currentPageIdx === 0}
+              className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-medium w-12 text-center">
+              {currentPageIdx + 1}/{displayPages.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => scrollToPage('down')}
+              disabled={currentPageIdx === displayPages.length - 1}
+              className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+
+            <div className="w-px h-5 bg-gray-300 mx-1" />
+
+            {!isPreviewMode && (
+              <button
+                type="button"
+                onClick={handleAddPage}
+                className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200"
+              >
+                <Plus className="w-4 h-4" />
+                Add Page
+              </button>
+            )}
+
+            {(onPreview || (showPreviewToggle && previewContent)) && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (isPreviewMode) {
+                    setIsPreviewMode(false);
+                  } else {
+                    onPreview?.();
+                    setIsPreviewMode(true);
+                  }
+                }}
+                disabled={isPreviewLoading}
+                className={cn(
+                  'flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors',
+                  isPreviewMode
+                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+                  isPreviewLoading && 'opacity-60 cursor-not-allowed',
+                )}
+              >
+                {isPreviewLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isPreviewMode ? (
+                  <Edit3 className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+                {isPreviewLoading ? 'Generating...' : isPreviewMode ? 'Edit' : 'Preview'}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-gray-100 hover:bg-gray-200"
+            >
+              <Printer className="w-4 h-4" />
+              Print
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Page nav */}
-          <button
-            type="button"
-            onClick={() => scrollToPage('up')}
-            disabled={currentPageIdx === 0}
-            className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
-          >
-            <ChevronUp className="w-4 h-4" />
-          </button>
-          <span className="text-xs font-medium w-12 text-center">
-            {currentPageIdx + 1}/{displayPages.length}
+        <Toolbar
+          onCommand={handleCommand}
+          onSaveSelection={saveCursorPosition}
+          disabled={isPreviewMode}
+        />
+
+        <div className="flex-1 overflow-auto py-8">
+          <div className="flex flex-col items-center gap-8">
+            {displayPages.map((page, index) => (
+              <div key={page.id} data-page-id={page.id}>
+                <Page
+                  page={page}
+                  pageNumber={index + 1}
+                  totalPages={displayPages.length}
+                  isActive={page.id === activePageId}
+                  isPreviewMode={isPreviewMode}
+                  onContentChange={handleContentChange}
+                  onFocus={setActivePageId}
+                  onBlur={saveCursorPosition}
+                  onDelete={handleDeletePage}
+                  onOverflow={handleOverflow}
+                  canDelete={displayPages.length > 1}
+                  editorRef={activeEditorRef}
+                  placeholder={index === 0 ? placeholder : undefined}
+                  maxContentHeight={A4.CONTENT_HEIGHT_PX}
+                />
+              </div>
+            ))}
+
+            {!isPreviewMode && (
+              <button
+                type="button"
+                onClick={handleAddPage}
+                className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-400 text-gray-500 hover:border-gray-500 hover:text-gray-600 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Add New Page
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-shrink-0 px-4 py-1.5 bg-white dark:bg-gray-900 border-t text-xs text-gray-500 flex justify-between">
+          <span>
+            A4: {A4.WIDTH_PX}×{A4.HEIGHT_PX}px ({A4.MARGIN_MM}mm margins)
           </span>
-          <button
-            type="button"
-            onClick={() => scrollToPage('down')}
-            disabled={currentPageIdx === displayPages.length - 1}
-            className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
-          >
-            <ChevronDown className="w-4 h-4" />
-          </button>
-
-          <div className="w-px h-5 bg-gray-300 mx-1" />
-
-          {/* Add page (only in edit mode) */}
-          {!isPreviewMode && (
-            <button
-              type="button"
-              onClick={handleAddPage}
-              className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200"
-            >
-              <Plus className="w-4 h-4" />
-              Add Page
-            </button>
-          )}
-
-          {/* Combined Preview/Edit button */}
-          {(onPreview || (showPreviewToggle && previewContent)) && (
-            <button
-              type="button"
-              onClick={() => {
-                if (isPreviewMode) {
-                  // Currently in preview mode - switch back to edit
-                  setIsPreviewMode(false);
-                } else {
-                  // Currently in edit mode - generate preview and switch to preview mode
-                  onPreview?.();
-                  // Switch to preview mode immediately (preview content will update async)
-                  setIsPreviewMode(true);
-                }
-              }}
-              disabled={isPreviewLoading}
-              className={cn(
-                'flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors',
-                isPreviewMode
-                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                  : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
-                isPreviewLoading && 'opacity-60 cursor-not-allowed'
-              )}
-            >
-              {isPreviewLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : isPreviewMode ? (
-                <Edit3 className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-              {isPreviewLoading ? 'Generating...' : isPreviewMode ? 'Edit' : 'Preview'}
-            </button>
-          )}
-
-          {/* Print */}
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-gray-100 hover:bg-gray-200"
-          >
-            <Printer className="w-4 h-4" />
-            Print
-          </button>
+          <span>
+            {isPreviewMode ? 'Viewing preview' : 'Editing'} • What you see = What prints
+          </span>
         </div>
       </div>
-
-      {/* Toolbar */}
-      <Toolbar onCommand={handleCommand} onSaveSelection={saveCursorPosition} disabled={isPreviewMode} />
-
-      {/* Pages */}
-      <div className="flex-1 overflow-auto py-8">
-        <div className="flex flex-col items-center gap-8">
-          {displayPages.map((page, index) => (
-            <div key={page.id} data-page-id={page.id}>
-              <Page
-                page={page}
-                pageNumber={index + 1}
-                totalPages={displayPages.length}
-                isActive={page.id === activePageId}
-                isPreviewMode={isPreviewMode}
-                onContentChange={handleContentChange}
-                onFocus={setActivePageId}
-                onBlur={saveCursorPosition}
-                onDelete={handleDeletePage}
-                onOverflow={handleOverflow}
-                canDelete={displayPages.length > 1}
-                editorRef={activeEditorRef}
-                placeholder={index === 0 ? placeholder : undefined}
-                maxContentHeight={A4.CONTENT_HEIGHT_PX}
-              />
-            </div>
-          ))}
-
-          {/* Add page button */}
-          {!isPreviewMode && (
-            <button
-              type="button"
-              onClick={handleAddPage}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-400 text-gray-500 hover:border-gray-500 hover:text-gray-600 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Add New Page
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Status */}
-      <div className="flex-shrink-0 px-4 py-1.5 bg-white dark:bg-gray-900 border-t text-xs text-gray-500 flex justify-between">
-        <span>A4: {A4.WIDTH_PX}×{A4.HEIGHT_PX}px ({A4.MARGIN_MM}mm margins)</span>
-        <span>
-          {isPreviewMode ? 'Viewing preview' : 'Editing'} • What you see = What prints
-        </span>
-      </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 export default A4PageEditor;

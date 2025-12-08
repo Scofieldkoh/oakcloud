@@ -296,21 +296,42 @@ function CustomDataForm({
               const storageKey = getStorageKey(placeholder.key);
               return (
                 <div key={placeholder.key}>
-                  <label className="block text-sm text-text-secondary mb-1">
-                    {placeholder.label}
-                    {placeholder.required && (
-                      <span className="text-red-500 ml-1">*</span>
+                  <label className={`block text-sm text-text-secondary mb-1 ${placeholder.type === 'boolean' ? 'flex items-center gap-2 cursor-pointer' : ''}`}>
+                    {placeholder.type === 'boolean' ? (
+                      <>
+                        <input
+                          type="checkbox"
+                          checked={customData[storageKey] === 'true' || customData[storageKey] === '1'}
+                          onChange={(e) =>
+                            handleFieldChange(placeholder.key, e.target.checked ? 'true' : 'false')
+                          }
+                          className="w-4 h-4 rounded border-border-primary text-accent-primary focus:ring-accent-primary"
+                        />
+                        <span>{placeholder.label}</span>
+                        {placeholder.required && (
+                          <span className="text-red-500 ml-1">*</span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {placeholder.label}
+                        {placeholder.required && (
+                          <span className="text-red-500 ml-1">*</span>
+                        )}
+                      </>
                     )}
                   </label>
-                  <input
-                    type={placeholder.type === 'date' ? 'date' : placeholder.type === 'number' || placeholder.type === 'currency' ? 'number' : 'text'}
-                    value={customData[storageKey] || ''}
-                    onChange={(e) =>
-                      handleFieldChange(placeholder.key, e.target.value)
-                    }
-                    placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
-                    className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
-                  />
+                  {placeholder.type !== 'boolean' && (
+                    <input
+                      type={placeholder.type === 'date' ? 'date' : placeholder.type === 'number' || placeholder.type === 'currency' ? 'number' : 'text'}
+                      value={customData[storageKey] || ''}
+                      onChange={(e) =>
+                        handleFieldChange(placeholder.key, e.target.value)
+                      }
+                      placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
+                      className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
+                    />
+                  )}
                 </div>
               );
             })}

@@ -58,7 +58,7 @@ interface CustomPlaceholderDefinition {
   id: string;
   key: string;
   label: string;
-  type: 'text' | 'date' | 'number' | 'currency' | 'textarea';
+  type: 'text' | 'date' | 'number' | 'currency' | 'boolean' | 'textarea';
   required: boolean;
   defaultValue?: string;
   description?: string;
@@ -847,6 +847,7 @@ function PlaceholdersTab({ onInsert, partials, isLoadingPartials, customPlacehol
                               <option value="date">Date</option>
                               <option value="number">Number</option>
                               <option value="currency">Currency</option>
+                              <option value="boolean">Boolean</option>
                             </select>
                           </div>
                           <div>
@@ -1326,6 +1327,13 @@ function TestDataTab({
                           placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
                           className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary resize-none"
                           rows={2}
+                        />
+                      ) : placeholder.type === 'boolean' ? (
+                        <input
+                          type="checkbox"
+                          checked={fieldValue === 'true' || fieldValue === '1'}
+                          onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.checked ? 'true' : 'false')}
+                          className="w-4 h-4 rounded border-border-primary text-accent-primary focus:ring-accent-primary"
                         />
                       ) : (
                         <input
@@ -1841,6 +1849,10 @@ function TemplateEditorContent() {
           if (!isNaN(num)) {
             value = placeholder.type === 'currency' ? `$${num.toLocaleString()}` : num.toLocaleString();
           }
+        } else if (placeholder.type === 'boolean') {
+          // Boolean values render as 'true'/'false' for conditionals
+          // The value is already stored as 'true' or 'false' string
+          value = value === 'true' || value === '1' ? 'true' : 'false';
         }
 
         preview = preview.replace(regex, String(value));
@@ -1931,8 +1943,9 @@ function TemplateEditorContent() {
           return String(value) !== compareValue;
         }
 
-        // Simple truthy check
+        // Simple truthy check (handle string boolean values)
         const value = getValueByPath(expression);
+        if (value === 'false' || value === '0' || value === false) return false;
         return !!value;
       };
 

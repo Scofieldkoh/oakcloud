@@ -420,3 +420,44 @@
     margin: 1rem 0;
   }
 }
+
+/* Page Break Visual Styles */
+.page-break {
+  /* Screen: Show visual indicator */
+  display: block;
+  width: 100%;
+  height: 0;
+  margin: 1rem 0;
+  border: none;
+  border-top: 2px dashed #3b82f6;
+  position: relative;
+}
+
+.page-break::before {
+  content: 'Page Break';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 0 8px;
+  font-size: 10px;
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+/* Print: Apply actual page break */
+@media print {
+  .page-break {
+    page-break-before: always;
+    break-before: page;
+    border: none;
+    margin: 0;
+    padding: 0;
+    height: 0;
+  }
+
+  .page-break::before {
+    display: none;
+  }
+}
