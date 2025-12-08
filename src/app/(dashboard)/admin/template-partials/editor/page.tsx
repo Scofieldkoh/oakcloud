@@ -1373,9 +1373,6 @@ function TemplateEditorContent() {
   const isEditMode = !!itemId;
   const isPartialMode = editorType === 'partial';
 
-  // Debug logging
-  console.log('[Editor] Query params:', { type: searchParams.get('type'), id: itemId, editorType, isEditMode, isPartialMode });
-
   // Tenant selection (from centralized store for SUPER_ADMIN)
   const { selectedTenantId, selectedTenantName } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
@@ -1427,13 +1424,10 @@ function TemplateEditorContent() {
   const { data: existingTemplate, isLoading: isLoadingTemplate } = useQuery({
     queryKey: ['document-template', itemId, activeTenantId],
     queryFn: async () => {
-      console.log('[Editor] Fetching template:', itemId, 'tenantId:', activeTenantId);
       if (!itemId || !activeTenantId) return null;
       const res = await fetch(`/api/document-templates/${itemId}?tenantId=${activeTenantId}`);
       if (!res.ok) throw new Error('Failed to fetch template');
-      const data = await res.json();
-      console.log('[Editor] Template fetched:', data?.name, 'content length:', data?.content?.length);
-      return data;
+      return res.json();
     },
     enabled: !!itemId && !isPartialMode && !!activeTenantId,
   });
@@ -1442,13 +1436,10 @@ function TemplateEditorContent() {
   const { data: existingPartial, isLoading: isLoadingPartial } = useQuery({
     queryKey: ['template-partial', itemId, activeTenantId],
     queryFn: async () => {
-      console.log('[Editor] Fetching partial:', itemId, 'tenantId:', activeTenantId);
       if (!itemId || !activeTenantId) return null;
       const res = await fetch(`/api/template-partials/${itemId}?tenantId=${activeTenantId}`);
       if (!res.ok) throw new Error('Failed to fetch partial');
-      const data = await res.json();
-      console.log('[Editor] Partial fetched:', data?.name, 'content length:', data?.content?.length);
-      return data;
+      return res.json();
     },
     enabled: !!itemId && isPartialMode && !!activeTenantId,
   });
@@ -1607,7 +1598,7 @@ function TemplateEditorContent() {
     placeholders: Array<{ key: string; label: string; type: string; source?: string; category?: string; required?: boolean; defaultValue?: string }>
   ): CustomPlaceholderDefinition[] => {
     return (placeholders || [])
-      .filter((p) => p.source === 'custom' || p.category === 'custom')
+      .filter((p) => p.source === 'custom' || p.category === 'custom' || p.key?.startsWith('custom.'))
       .map((p) => ({
         id: crypto.randomUUID(),
         key: p.key.replace('custom.', ''),
@@ -1620,25 +1611,31 @@ function TemplateEditorContent() {
 
   // Load existing template data
   useEffect(() => {
-    console.log('[Editor] Template load effect:', { existingTemplate, isPartialMode, itemId });
     if (existingTemplate && !isPartialMode) {
-      console.log('[Editor] Loading template data:', existingTemplate.name, 'content length:', existingTemplate.content?.length);
+      // Handle case where placeholders might be a string (JSON) or already parsed
+      let placeholdersArray = existingTemplate.placeholders || [];
+      if (typeof placeholdersArray === 'string') {
+        try {
+          placeholdersArray = JSON.parse(placeholdersArray);
+        } catch {
+          placeholdersArray = [];
+        }
+      }
+
       setFormData({
         name: existingTemplate.name || '',
         description: existingTemplate.description || '',
         category: existingTemplate.category || 'OTHER',
         content: existingTemplate.content || '',
         isActive: existingTemplate.isActive ?? true,
-        customPlaceholders: storageFormatToCustomPlaceholders(existingTemplate.placeholders || []),
+        customPlaceholders: storageFormatToCustomPlaceholders(placeholdersArray),
       });
     }
   }, [existingTemplate, isPartialMode, itemId]);
 
   // Load existing partial data
   useEffect(() => {
-    console.log('[Editor] Partial load effect:', { existingPartial, isPartialMode, itemId });
     if (existingPartial && isPartialMode) {
-      console.log('[Editor] Loading partial data:', existingPartial.name, 'content length:', existingPartial.content?.length);
       setPartialFormData({
         name: existingPartial.name || '',
         description: existingPartial.description || '',

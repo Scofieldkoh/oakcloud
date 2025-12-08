@@ -163,3 +163,6 @@ log.error('message'); log.warn('message'); log.info('message'); log.debug('messa
 
 - Super Admin: `admin@oakcloud.local` / `admin123`
 - Tenant Admin: `tenant@oakcloud.local` / `admin123`
+- Remember to keep the code clean, efficient, modular, reusable and consistent. Ensure documentations are kept up to date, updating where applicable (README.md under docs; database-schema, RBAC_GUIDELINE, DESIGN_GUIDELINE under docs) instead of creating new documentation every time. 
+
+you can read "README.md" inside of docs, it contains the latest information on the codebase, RBAC_GUIDELINE and DESIGN_GUIDELINE before implementing. If you encounter error or any potential improvement, raise it up to user.

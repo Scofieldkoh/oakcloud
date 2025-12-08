@@ -789,63 +789,81 @@ function TemplatePartialsTab({
         </div>
       ) : (
         <>
-          {/* Partials Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Partials List - same style as Templates */}
+          <div className="space-y-3">
             {partials.map((partial) => (
               <div
                 key={partial.id}
                 className="card p-4 hover:border-accent-primary transition-colors"
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-text-primary truncate">{partial.name}</h3>
-                    <div className="mt-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-medium text-text-primary">{partial.name}</h3>
                       <PartialSyntax name={partial.name} />
+                      <UsageCount count={partial._count?.usedInTemplates || 0} />
+                    </div>
+                    {partial.description && (
+                      <p className="text-sm text-text-secondary mt-1 line-clamp-2">
+                        {partial.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 mt-2 text-xs text-text-muted">
+                      {partial.createdBy && (
+                        <span>
+                          Created by {partial.createdBy.firstName} {partial.createdBy.lastName}
+                        </span>
+                      )}
+                      <span>Updated {format(new Date(partial.updatedAt), 'MMM d, yyyy')}</span>
                     </div>
                   </div>
-                  {canManage && (
-                    <Dropdown>
-                      <DropdownTrigger asChild>
-                        <button
-                          type="button"
-                          className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                      </DropdownTrigger>
-                      <DropdownMenu>
-                        <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(partial)}>
-                          Edit
-                        </DropdownItem>
-                        <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicate(partial)}>
-                          Duplicate
-                        </DropdownItem>
-                        <DropdownItem icon={<FileCode className="w-4 h-4" />} onClick={() => openUsage(partial)}>
-                          View Usage
-                        </DropdownItem>
-                        <DropdownItem
-                          icon={<Trash2 className="w-4 h-4" />}
-                          destructive
-                          onClick={() => openDelete(partial)}
-                        >
-                          Delete
-                        </DropdownItem>
-                      </DropdownMenu>
-                    </Dropdown>
-                  )}
-                </div>
 
-                {partial.description && (
-                  <p className="text-sm text-text-secondary mb-3 line-clamp-2">
-                    {partial.description}
-                  </p>
-                )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openUsage(partial)}
+                      title="View usage"
+                      className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
 
-                <div className="flex items-center justify-between text-xs text-text-muted">
-                  <UsageCount count={partial._count?.usedInTemplates || 0} />
-                  <span>
-                    Updated {format(new Date(partial.updatedAt), 'MMM d, yyyy')}
-                  </span>
+                    {canManage && (
+                      <Dropdown>
+                        <DropdownTrigger asChild>
+                          <button className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors">
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </DropdownTrigger>
+                        <DropdownMenu align="right">
+                          <DropdownItem
+                            icon={<Pencil className="w-4 h-4" />}
+                            onClick={() => openEdit(partial)}
+                          >
+                            Edit
+                          </DropdownItem>
+                          <DropdownItem
+                            icon={<Copy className="w-4 h-4" />}
+                            onClick={() => openDuplicate(partial)}
+                          >
+                            Duplicate
+                          </DropdownItem>
+                          <DropdownItem
+                            icon={<FileCode className="w-4 h-4" />}
+                            onClick={() => openUsage(partial)}
+                          >
+                            View Usage
+                          </DropdownItem>
+                          <DropdownItem
+                            icon={<Trash2 className="w-4 h-4" />}
+                            destructive
+                            onClick={() => openDelete(partial)}
+                          >
+                            Delete
+                          </DropdownItem>
+                        </DropdownMenu>
+                      </Dropdown>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

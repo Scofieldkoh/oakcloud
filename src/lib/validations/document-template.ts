@@ -23,6 +23,7 @@ export const placeholderDefinitionSchema = z.object({
   label: z.string().min(1).max(200),
   type: z.enum(['text', 'date', 'number', 'currency', 'list', 'conditional']),
   source: z.enum(['company', 'contact', 'officer', 'shareholder', 'custom', 'system']),
+  category: z.string().optional(), // Category for grouping (e.g., 'custom')
   path: z.string().optional(), // Data path for auto-resolution
   defaultValue: z.string().optional(),
   format: z.string().optional(), // Date format, number format, etc.

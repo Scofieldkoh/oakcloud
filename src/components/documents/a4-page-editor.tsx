@@ -17,11 +17,14 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Indent,
+  Outdent,
   Undo,
   Redo,
   Eye,
   Edit3,
   Loader2,
+  Type,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -107,11 +110,48 @@ const LINE_HEIGHT = '1.5';
 // Toolbar Component
 // ============================================================================
 
+// Font options (Arial is default)
+const FONT_OPTIONS = [
+  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+  { value: "'Times New Roman', Times, serif", label: 'Times New Roman' },
+  { value: "'Courier New', Courier, monospace", label: 'Courier New' },
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: 'Verdana, Geneva, sans-serif', label: 'Verdana' },
+  { value: "'Trebuchet MS', sans-serif", label: 'Trebuchet MS' },
+  { value: "'Lucida Console', Monaco, monospace", label: 'Lucida Console' },
+];
+
+const FONT_SIZE_OPTIONS = [
+  { value: '8pt', label: '8' },
+  { value: '9pt', label: '9' },
+  { value: '10pt', label: '10' },
+  { value: '11pt', label: '11' },
+  { value: '12pt', label: '12' },
+  { value: '14pt', label: '14' },
+  { value: '16pt', label: '16' },
+  { value: '18pt', label: '18' },
+  { value: '20pt', label: '20' },
+  { value: '24pt', label: '24' },
+  { value: '28pt', label: '28' },
+  { value: '36pt', label: '36' },
+];
+
+const LINE_SPACING_OPTIONS = [
+  { value: '1', label: 'Single' },
+  { value: '1.15', label: '1.15' },
+  { value: '1.5', label: '1.5' },
+  { value: '2', label: 'Double' },
+  { value: '2.5', label: '2.5' },
+  { value: '3', label: 'Triple' },
+];
+
 function Toolbar({
   onCommand,
+  onSaveSelection,
   disabled
 }: {
   onCommand: (cmd: string, value?: string) => void;
+  onSaveSelection: () => void;
   disabled?: boolean;
 }) {
   const Button = ({
@@ -142,6 +182,18 @@ function Toolbar({
     </button>
   );
 
+  const selectClass = cn(
+    'px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300',
+    disabled && 'opacity-40 cursor-not-allowed'
+  );
+
+  // Save selection when mouse enters a dropdown (before it steals focus)
+  const handleSelectMouseDown = (e: React.MouseEvent) => {
+    // Don't prevent default - we need the select to work
+    // But save selection first
+    onSaveSelection();
+  };
+
   return (
     <div className={cn(
       'flex items-center gap-1 p-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex-wrap',
@@ -149,6 +201,43 @@ function Toolbar({
     )}>
       <Button cmd="undo" icon={Undo} title="Undo (Ctrl+Z)" />
       <Button cmd="redo" icon={Redo} title="Redo (Ctrl+Y)" />
+
+      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+      {/* Font Family */}
+      <div className="flex items-center gap-1">
+        <Type className="w-4 h-4 text-gray-500" />
+        <select
+          onMouseDown={handleSelectMouseDown}
+          onChange={(e) => onCommand('fontName', e.target.value)}
+          disabled={disabled}
+          className={selectClass}
+          defaultValue="Arial, Helvetica, sans-serif"
+          title="Font Family"
+        >
+          {FONT_OPTIONS.map((font) => (
+            <option key={font.value} value={font.value}>
+              {font.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Font Size */}
+      <select
+        onMouseDown={handleSelectMouseDown}
+        onChange={(e) => onCommand('customFontSize', e.target.value)}
+        disabled={disabled}
+        className={selectClass}
+        defaultValue="11pt"
+        title="Font Size"
+      >
+        {FONT_SIZE_OPTIONS.map((size) => (
+          <option key={size.value} value={size.value}>
+            {size.label}
+          </option>
+        ))}
+      </select>
 
       <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
 
@@ -169,21 +258,25 @@ function Toolbar({
 
       <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
 
+      <Button cmd="outdent" icon={Outdent} title="Decrease Indent" />
+      <Button cmd="indent" icon={Indent} title="Increase Indent" />
+
+      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+      {/* Line Spacing */}
       <select
-        onChange={(e) => onCommand('fontSize', e.target.value)}
+        onMouseDown={handleSelectMouseDown}
+        onChange={(e) => onCommand('lineSpacing', e.target.value)}
         disabled={disabled}
-        className={cn(
-          'px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600',
-          disabled && 'opacity-40 cursor-not-allowed'
-        )}
-        defaultValue="3"
+        className={selectClass}
+        defaultValue="1.5"
+        title="Line Spacing"
       >
-        <option value="1">8pt</option>
-        <option value="2">10pt</option>
-        <option value="3">12pt</option>
-        <option value="4">14pt</option>
-        <option value="5">18pt</option>
-        <option value="6">24pt</option>
+        {LINE_SPACING_OPTIONS.map((spacing) => (
+          <option key={spacing.value} value={spacing.value}>
+            {spacing.label}
+          </option>
+        ))}
       </select>
     </div>
   );
@@ -404,8 +497,8 @@ function Page({
             left: A4.MARGIN_PX,
             width: A4.CONTENT_WIDTH_PX,
             height: A4.CONTENT_HEIGHT_PX,
-            fontFamily: "'Times New Roman', Times, serif",
-            fontSize: '12pt',
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontSize: '11pt',
             lineHeight: '1.5',
             color: '#000',
             // Prevent text overflow
@@ -469,10 +562,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
   const lastValueRef = useRef<string>(value);
   const isInternalUpdate = useRef(false);
 
-  // Store last cursor position for inserting placeholders
-  const savedSelectionRef = useRef<{ node: Node; offset: number } | null>(null);
+  // Store last selection range for formatting commands
+  const savedSelectionRef = useRef<{
+    startNode: Node;
+    startOffset: number;
+    endNode: Node;
+    endOffset: number;
+    collapsed: boolean;
+  } | null>(null);
 
-  // Save cursor position when editor loses focus
+  // Save selection (cursor position and selection range) when editor loses focus
   const saveCursorPosition = useCallback(() => {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -480,10 +579,39 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
       // Check if selection is within our editor
       if (activeEditorRef.current?.contains(range.startContainer)) {
         savedSelectionRef.current = {
-          node: range.startContainer,
-          offset: range.startOffset,
+          startNode: range.startContainer,
+          startOffset: range.startOffset,
+          endNode: range.endContainer,
+          endOffset: range.endOffset,
+          collapsed: range.collapsed,
         };
       }
+    }
+  }, []);
+
+  // Restore saved selection to the editor
+  const restoreSelection = useCallback(() => {
+    const editor = activeEditorRef.current;
+    const saved = savedSelectionRef.current;
+    if (!editor || !saved) return false;
+
+    // Check if saved nodes are still in the editor
+    if (!editor.contains(saved.startNode) || !editor.contains(saved.endNode)) {
+      return false;
+    }
+
+    try {
+      const selection = window.getSelection();
+      if (!selection) return false;
+
+      const range = document.createRange();
+      range.setStart(saved.startNode, saved.startOffset);
+      range.setEnd(saved.endNode, saved.endOffset);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return true;
+    } catch {
+      return false;
     }
   }, []);
 
@@ -498,29 +626,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
     const selection = window.getSelection();
     if (!selection) return;
 
-    let range: Range;
-
     // Try to restore saved position if no current selection in editor
     if (selection.rangeCount === 0 || !editor.contains(selection.anchorNode)) {
-      if (savedSelectionRef.current && editor.contains(savedSelectionRef.current.node)) {
-        // Restore saved position
-        range = document.createRange();
-        try {
-          range.setStart(savedSelectionRef.current.node, savedSelectionRef.current.offset);
-          range.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(range);
-        } catch {
-          // If restore fails, append to end
-          range = document.createRange();
-          range.selectNodeContents(editor);
-          range.collapse(false);
-          selection.removeAllRanges();
-          selection.addRange(range);
-        }
-      } else {
-        // No saved position, append to end
-        range = document.createRange();
+      if (!restoreSelection()) {
+        // No saved position or restore failed, append to end
+        const range = document.createRange();
         range.selectNodeContents(editor);
         range.collapse(false);
         selection.removeAllRanges();
@@ -530,7 +640,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
 
     // Insert the text using execCommand (maintains undo history)
     document.execCommand('insertText', false, text);
-  }, []);
+  }, [restoreSelection]);
 
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
@@ -679,9 +789,120 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
   // a rich-text library like TipTap, Slate, or ProseMirror.
   const handleCommand = useCallback((cmd: string, val?: string) => {
     if (isPreviewMode) return;
+
+    const editor = activeEditorRef.current;
+    if (!editor) return;
+
+    // Focus editor and restore selection first
+    editor.focus();
+    restoreSelection();
+
+    // Handle custom font size command with CSS
+    if (cmd === 'customFontSize' && val) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        if (!range.collapsed) {
+          // Use execCommand with fontSize 7, then replace font tags with styled spans
+          document.execCommand('fontSize', false, '7');
+          // Find the font elements and replace with spans
+          const fonts = editor.querySelectorAll('font[size="7"]');
+          fonts.forEach((font) => {
+            const span = document.createElement('span');
+            span.style.fontSize = val;
+            span.innerHTML = font.innerHTML;
+            font.parentNode?.replaceChild(span, font);
+          });
+          // Trigger content change
+          const event = new Event('input', { bubbles: true });
+          editor.dispatchEvent(event);
+        }
+      }
+      return;
+    }
+
+    // Handle font family command
+    if (cmd === 'fontName' && val) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        if (!range.collapsed) {
+          // Use execCommand with fontName, then clean up font tags to use CSS
+          document.execCommand('fontName', false, '__temp_font__');
+          const fonts = editor.querySelectorAll('font[face="__temp_font__"]');
+          fonts.forEach((font) => {
+            const span = document.createElement('span');
+            span.style.fontFamily = val;
+            span.innerHTML = font.innerHTML;
+            font.parentNode?.replaceChild(span, font);
+          });
+          // Trigger content change
+          const event = new Event('input', { bubbles: true });
+          editor.dispatchEvent(event);
+        }
+      }
+      return;
+    }
+
+    // Handle line spacing command
+    if (cmd === 'lineSpacing' && val) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+
+        // Find the block-level parent element to apply line-height
+        let blockElement: HTMLElement | null = null;
+        let node: Node | null = range.startContainer;
+
+        // Walk up the tree to find a block-level element
+        while (node && node !== editor) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const element = node as HTMLElement;
+            const display = window.getComputedStyle(element).display;
+            if (display === 'block' || display === 'list-item' || element.tagName === 'P' || element.tagName === 'DIV') {
+              blockElement = element;
+              break;
+            }
+          }
+          node = node.parentNode;
+        }
+
+        if (blockElement && blockElement !== editor) {
+          // Apply line-height to the block element
+          blockElement.style.lineHeight = val;
+        } else {
+          // If no block element found, wrap content or apply to a new div
+          // For simplicity, wrap selection in a div with line-height
+          if (!range.collapsed) {
+            const div = document.createElement('div');
+            div.style.lineHeight = val;
+            try {
+              range.surroundContents(div);
+            } catch {
+              // If surroundContents fails, apply to editor content area
+              const firstChild = editor.firstElementChild as HTMLElement;
+              if (firstChild) {
+                firstChild.style.lineHeight = val;
+              }
+            }
+          } else {
+            // No selection, apply to current paragraph or create one
+            const firstChild = editor.firstElementChild as HTMLElement;
+            if (firstChild) {
+              firstChild.style.lineHeight = val;
+            }
+          }
+        }
+
+        // Trigger content change
+        const event = new Event('input', { bubbles: true });
+        editor.dispatchEvent(event);
+      }
+      return;
+    }
+
     document.execCommand(cmd, false, val);
-    activeEditorRef.current?.focus();
-  }, [isPreviewMode]);
+  }, [isPreviewMode, restoreSelection]);
 
   // Print
   const handlePrint = useCallback(() => {
@@ -699,11 +920,12 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
       .join('')
       .trim();
 
-    // Print styles match screen exactly:
+    // Print styles match screen exactly (WYSIWYG):
     // - Page: 210mm x 297mm (A4)
     // - Margins: 20mm all sides
     // - Content area: 170mm x 257mm
-    // - Font: Times New Roman 12pt, line-height 1.5
+    // - Font: Arial 11pt, line-height 1.5
+    // - white-space: pre-wrap to preserve spacing
     printWindow.document.write(`<!DOCTYPE html>
 <html>
 <head>
@@ -719,8 +941,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
       padding: 0;
     }
     html, body {
-      font-family: 'Times New Roman', Times, serif;
-      font-size: 12pt;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
       line-height: 1.5;
       color: #000;
     }
@@ -741,6 +963,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
       width: calc(210mm - ${A4.MARGIN_MM * 2}mm);
       height: calc(297mm - ${A4.MARGIN_MM * 2}mm);
       overflow: hidden;
+      /* WYSIWYG: preserve whitespace and line breaks exactly as in editor */
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
     .page-num {
       position: absolute;
@@ -750,7 +976,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
       font-size: 10pt;
       color: #999;
     }
+    /* Preserve empty paragraphs and divs */
+    p:empty, div:empty { min-height: 1em; }
     p { margin: 0 0 0.5em 0; }
+    br { display: block; content: ""; margin-top: 0.5em; }
     ul, ol { margin: 0 0 0.5em 0; padding-left: 1.5em; }
   </style>
 </head>
@@ -877,7 +1106,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(funct
       </div>
 
       {/* Toolbar */}
-      <Toolbar onCommand={handleCommand} disabled={isPreviewMode} />
+      <Toolbar onCommand={handleCommand} onSaveSelection={saveCursorPosition} disabled={isPreviewMode} />
 
       {/* Pages */}
       <div className="flex-1 overflow-auto py-8">

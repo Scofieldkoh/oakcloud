@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { prisma } from '@/lib/prisma';
 import { updateTemplatePartialSchema } from '@/lib/validations/template-partial';
 import {
   getTemplatePartial,
@@ -83,9 +84,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const { tenantId: bodyTenantId, reason, ...partialData } = body;
 
-    // For SUPER_ADMIN, allow specifying tenantId in body
-    const effectiveTenantId =
-      session.isSuperAdmin && bodyTenantId ? bodyTenantId : session.tenantId;
+    // For SUPER_ADMIN, allow specifying tenantId in body, or retrieve from partial
+    let effectiveTenantId = session.tenantId;
+
+    if (session.isSuperAdmin) {
+      if (bodyTenantId) {
+        effectiveTenantId = bodyTenantId;
+      } else {
+        // Get tenant from the existing partial (SUPER_ADMIN can access without tenant filter)
+        const existingPartial = await prisma.templatePartial.findFirst({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
+        if (!existingPartial) {
+          return NextResponse.json({ error: 'Partial not found' }, { status: 404 });
+        }
+        effectiveTenantId = existingPartial.tenantId;
+      }
+    }
 
     if (!effectiveTenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
@@ -134,17 +150,31 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'delete');
 
     const { searchParams } = new URL(request.url);
+    const { id } = await params;
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param
+    // For SUPER_ADMIN, allow specifying tenantId via query param, or retrieve from partial
     const tenantIdParam = searchParams.get('tenantId');
-    const effectiveTenantId =
-      session.isSuperAdmin && tenantIdParam ? tenantIdParam : session.tenantId;
+    let effectiveTenantId = session.tenantId;
+
+    if (session.isSuperAdmin) {
+      if (tenantIdParam) {
+        effectiveTenantId = tenantIdParam;
+      } else {
+        // Get tenant from the existing partial (SUPER_ADMIN can access without tenant filter)
+        const existingPartial = await prisma.templatePartial.findFirst({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
+        if (!existingPartial) {
+          return NextResponse.json({ error: 'Partial not found' }, { status: 404 });
+        }
+        effectiveTenantId = existingPartial.tenantId;
+      }
+    }
 
     if (!effectiveTenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
-
-    const { id } = await params;
     const reason = searchParams.get('reason') || undefined;
 
     await deleteTemplatePartial(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { prisma } from '@/lib/prisma';
 import { updateDocumentTemplateSchema } from '@/lib/validations/document-template';
 import {
   getDocumentTemplateById,
@@ -73,10 +74,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const data = updateDocumentTemplateSchema.parse({ ...body, id });
 
-    // Determine tenant ID
+    // Determine tenant ID - for SUPER_ADMIN, get from body or from existing template
     let tenantId = session.tenantId;
-    if (session.isSuperAdmin && body.tenantId) {
-      tenantId = body.tenantId;
+    if (session.isSuperAdmin) {
+      if (body.tenantId) {
+        tenantId = body.tenantId;
+      } else {
+        // Get tenant from the existing template
+        const existingTemplate = await prisma.documentTemplate.findFirst({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
+        if (!existingTemplate) {
+          return NextResponse.json({ error: 'Template not found' }, { status: 404 });
+        }
+        tenantId = existingTemplate.tenantId;
+      }
     }
 
     if (!tenantId) {
@@ -125,11 +138,23 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Determine tenant ID
+    // Determine tenant ID - for SUPER_ADMIN, get from query param or from existing template
     const tenantIdParam = searchParams.get('tenantId');
     let tenantId = session.tenantId;
-    if (session.isSuperAdmin && tenantIdParam) {
-      tenantId = tenantIdParam;
+    if (session.isSuperAdmin) {
+      if (tenantIdParam) {
+        tenantId = tenantIdParam;
+      } else {
+        // Get tenant from the existing template
+        const existingTemplate = await prisma.documentTemplate.findFirst({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
+        if (!existingTemplate) {
+          return NextResponse.json({ error: 'Template not found' }, { status: 404 });
+        }
+        tenantId = existingTemplate.tenantId;
+      }
     }
 
     if (!tenantId) {
@@ -174,10 +199,22 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
-    // Determine tenant ID
+    // Determine tenant ID - for SUPER_ADMIN, get from body or from existing template
     let tenantId = session.tenantId;
-    if (session.isSuperAdmin && body.tenantId) {
-      tenantId = body.tenantId;
+    if (session.isSuperAdmin) {
+      if (body.tenantId) {
+        tenantId = body.tenantId;
+      } else {
+        // Get tenant from the existing template (including deleted ones for restore)
+        const existingTemplate = await prisma.documentTemplate.findFirst({
+          where: { id },
+          select: { tenantId: true },
+        });
+        if (!existingTemplate) {
+          return NextResponse.json({ error: 'Template not found' }, { status: 404 });
+        }
+        tenantId = existingTemplate.tenantId;
+      }
     }
 
     if (!tenantId) {

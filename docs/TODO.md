@@ -11,5 +11,4 @@ COMPLETED:
 TO DO:
 1. Roles permission granity still have issue
 2. backup of database
-3. Redo the tenant selector, consider having a sticky tenant selector (with a "all" option) that affects all pages for SUPER ADMIN
-4. Company details > edit don't have address; details page don't have home currency, internal note tab increase height, shareholder not showing the percentage, company structure differentiate private limited and exempted private limited, audit log for internal note is not enough
+3. Company details > edit don't have address; details page don't have home currency, internal note tab increase height, shareholder not showing the percentage, company structure differentiate private limited and exempted private limited, audit log for internal note is not enough

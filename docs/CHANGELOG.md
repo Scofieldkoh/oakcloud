@@ -4,6 +4,17 @@ All notable changes to Oakcloud are documented in this file.
 
 ---
 
+## v0.9.23 (2025-12-08)
+
+### Bug Fixes
+- **SUPER_ADMIN Template Partials**: Fixed "Tenant context required" error when SUPER_ADMIN tries to update or delete a template partial. Now retrieves tenant from the partial record itself when not explicitly provided.
+- **SUPER_ADMIN Document Templates**: Fixed "Tenant context required" error when SUPER_ADMIN tries to update, delete, or restore a document template. Now retrieves tenant from the template record itself when not explicitly provided.
+
+### Features
+- **A4 Editor Font Formatting**: Added font family selection (Times New Roman, Arial, Courier New, Georgia, Verdana, Trebuchet MS, Lucida Console) and improved font size selection (8-36pt) to the document editor toolbar.
+
+---
+
 ## v0.9.11 (2025-12-04)
 
 ### Contact Schema Simplification
