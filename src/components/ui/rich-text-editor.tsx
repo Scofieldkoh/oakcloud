@@ -49,6 +49,8 @@ interface ToolbarButtonProps {
   disabled?: boolean;
   children: React.ReactNode;
   title: string;
+  /** For toggle buttons, indicates if the button controls a pressed state */
+  isToggle?: boolean;
 }
 
 const FONT_SIZES = [
@@ -75,6 +77,7 @@ function ToolbarButton({
   disabled,
   children,
   title,
+  isToggle = false,
 }: ToolbarButtonProps) {
   return (
     <button
@@ -82,6 +85,8 @@ function ToolbarButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
+      aria-label={title}
+      aria-pressed={isToggle ? isActive : undefined}
       className={`p-1.5 rounded transition-colors ${
         isActive
           ? 'bg-background-tertiary text-text-primary'
@@ -306,6 +311,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
         isActive={editor.isActive('bold')}
+        isToggle
         title="Bold (Ctrl+B)"
       >
         <Bold className="w-4 h-4" />
@@ -314,6 +320,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleItalic().run()}
         isActive={editor.isActive('italic')}
+        isToggle
         title="Italic (Ctrl+I)"
       >
         <Italic className="w-4 h-4" />
@@ -322,6 +329,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         isActive={editor.isActive('underline')}
+        isToggle
         title="Underline (Ctrl+U)"
       >
         <UnderlineIcon className="w-4 h-4" />
@@ -330,6 +338,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleStrike().run()}
         isActive={editor.isActive('strike')}
+        isToggle
         title="Strikethrough"
       >
         <Strikethrough className="w-4 h-4" />
@@ -340,6 +349,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         isActive={editor.isActive('bulletList')}
+        isToggle
         title="Bullet List"
       >
         <List className="w-4 h-4" />
@@ -348,6 +358,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         isActive={editor.isActive('orderedList')}
+        isToggle
         title="Numbered List"
       >
         <ListOrdered className="w-4 h-4" />
@@ -397,6 +408,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           <ToolbarButton
             onClick={handleLinkClick}
             isActive={editor.isActive('link')}
+            isToggle
             title="Add Link"
           >
             <LinkIcon className="w-4 h-4" />

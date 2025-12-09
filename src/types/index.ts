@@ -6,3 +6,4 @@
  */
 
 export * from './shared';
+export * from './placeholders';

@@ -7,6 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requestPasswordReset } from '@/services/password.service';
 import { z } from 'zod';
+import { createLogger, safeErrorMessage } from '@/lib/logger';
+
+const log = createLogger('auth:forgot-password');
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -31,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Forgot password error:', error);
+    log.error('Forgot password error:', safeErrorMessage(error));
     return NextResponse.json(
       { error: 'An error occurred. Please try again.' },
       { status: 500 }

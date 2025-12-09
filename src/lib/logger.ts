@@ -156,6 +156,39 @@ export function getPrismaLogConfig(): ('query' | 'info' | 'warn' | 'error')[] {
   }
 }
 
+/**
+ * Safely extract error message without exposing sensitive data
+ * Use this instead of logging full error objects
+ */
+export function safeErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    // Only return the message, not the stack trace or other properties
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'Unknown error';
+}
+
+/**
+ * Create a sanitized error object for logging
+ * Removes potentially sensitive data like stack traces in production
+ */
+export function sanitizeError(error: unknown): { message: string; type: string; code?: string } {
+  const result: { message: string; type: string; code?: string } = {
+    message: safeErrorMessage(error),
+    type: error?.constructor?.name || 'Unknown',
+  };
+
+  // Include error code if available (e.g., Prisma errors)
+  if (error && typeof error === 'object' && 'code' in error) {
+    result.code = String((error as { code: unknown }).code);
+  }
+
+  return result;
+}
+
 // Default logger instance
 export const logger = createLogger('app');
 

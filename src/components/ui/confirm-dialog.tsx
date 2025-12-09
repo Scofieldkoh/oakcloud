@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Trash2, AlertCircle, Info } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter } from './modal';
 import { Button } from './button';
 import { FormInput } from './form-input';
 import { cn } from '@/lib/utils';
+import { dialogVariants, type DialogVariant } from './variants';
 
 export interface ConfirmDialogProps {
   isOpen: boolean;
@@ -15,34 +15,13 @@ export interface ConfirmDialogProps {
   description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: 'danger' | 'warning' | 'info';
+  variant?: DialogVariant;
   requireReason?: boolean;
   reasonLabel?: string;
   reasonPlaceholder?: string;
   reasonMinLength?: number;
   isLoading?: boolean;
 }
-
-const variantConfig = {
-  danger: {
-    icon: Trash2,
-    iconBg: 'bg-status-error/10',
-    iconColor: 'text-status-error',
-    buttonVariant: 'danger' as const,
-  },
-  warning: {
-    icon: AlertTriangle,
-    iconBg: 'bg-status-warning/10',
-    iconColor: 'text-status-warning',
-    buttonVariant: 'primary' as const,
-  },
-  info: {
-    icon: Info,
-    iconBg: 'bg-status-info/10',
-    iconColor: 'text-status-info',
-    buttonVariant: 'primary' as const,
-  },
-};
 
 export function ConfirmDialog({
   isOpen,
@@ -62,7 +41,7 @@ export function ConfirmDialog({
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
 
-  const config = variantConfig[variant];
+  const config = dialogVariants[variant];
   const Icon = config.icon;
 
   const handleConfirm = async () => {
@@ -99,8 +78,8 @@ export function ConfirmDialog({
     >
       <ModalBody>
         <div className="flex flex-col items-center text-center">
-          <div className={cn('p-3 rounded-full mb-4', config.iconBg)}>
-            <Icon className={cn('w-6 h-6', config.iconColor)} />
+          <div className={cn('p-3 rounded-full mb-4', config.iconBgClass)}>
+            <Icon className={cn('w-6 h-6', config.iconColorClass)} />
           </div>
           <h3 className="text-lg font-semibold text-text-primary mb-2">{title}</h3>
           {description && (

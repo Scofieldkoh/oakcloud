@@ -16,6 +16,8 @@ export interface ButtonProps {
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  /** Accessible label for icon-only buttons */
+  'aria-label'?: string;
 }
 
 const variantMap = {
@@ -82,7 +84,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         justifyContent="center"
         gap="2"
         transition="all 0.15s"
-        className={cn(className)}
+        className={cn(
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2',
+          className
+        )}
         _disabled={{ opacity: 0.5, cursor: 'not-allowed' }}
         {...props}
       >

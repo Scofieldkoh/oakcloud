@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
   getShareByToken,
-  verifySharePassword,
   recordShareView,
   createDocumentComment,
   checkCommentRateLimit,
@@ -13,8 +12,36 @@ interface RouteParams {
 }
 
 /**
+ * Helper function to verify the verification token from POST /api/share/[token]/verify
+ */
+function verifyVerificationToken(
+  verificationToken: string,
+  shareId: string
+): boolean {
+  try {
+    const decoded = JSON.parse(
+      Buffer.from(verificationToken, 'base64url').toString('utf-8')
+    );
+    return (
+      decoded.shareId === shareId &&
+      decoded.verified === true &&
+      decoded.exp > Date.now()
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * GET /api/share/[token]
  * Get shared document by token (public access)
+ *
+ * For password-protected shares, first call POST /api/share/[token]/verify
+ * with the password, then include the verification token in the
+ * X-Verification-Token header.
+ *
+ * Security: Password is no longer accepted via query string to prevent
+ * exposure in server logs, browser history, and referrer headers.
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
@@ -31,20 +58,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Check if password is required
     if (share.passwordHash) {
-      const { searchParams } = new URL(request.url);
-      const password = searchParams.get('password');
+      // Get verification token from header (secure method)
+      const verificationToken = request.headers.get('X-Verification-Token');
 
-      if (!password) {
+      if (!verificationToken) {
         return NextResponse.json(
           { error: 'Password required', requiresPassword: true },
           { status: 401 }
         );
       }
 
-      const valid = await verifySharePassword(share.id, password);
-      if (!valid) {
+      // Verify the token
+      if (!verifyVerificationToken(verificationToken, share.id)) {
         return NextResponse.json(
-          { error: 'Invalid password', requiresPassword: true },
+          { error: 'Invalid or expired verification', requiresPassword: true },
           { status: 401 }
         );
       }
@@ -72,7 +99,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Share access error:', error);
+    console.error('Share access error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -114,13 +141,27 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check password if required
-    const body = await request.json();
     if (share.passwordHash) {
-      const valid = await verifySharePassword(share.id, body.password);
-      if (!valid) {
-        return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+      // Get verification token from header (secure method)
+      const verificationToken = request.headers.get('X-Verification-Token');
+
+      if (!verificationToken) {
+        return NextResponse.json(
+          { error: 'Password required', requiresPassword: true },
+          { status: 401 }
+        );
+      }
+
+      // Verify the token
+      if (!verifyVerificationToken(verificationToken, share.id)) {
+        return NextResponse.json(
+          { error: 'Invalid or expired verification', requiresPassword: true },
+          { status: 401 }
+        );
       }
     }
+
+    const body = await request.json();
 
     // Validate comment data
     const commentData = externalCommentSchema.parse(body);

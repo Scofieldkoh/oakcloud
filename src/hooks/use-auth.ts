@@ -1,25 +1,54 @@
+/**
+ * Authentication Hooks
+ *
+ * React hooks for authentication, session management, and login/logout.
+ * Uses TanStack Query for caching and automatic refetching.
+ *
+ * @module hooks/use-auth
+ */
+
 'use client';
 
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
+/**
+ * Authenticated user information from session
+ */
 interface User {
+  /** Unique user ID */
   id: string;
+  /** User's email address */
   email: string;
+  /** User's first name */
   firstName: string;
+  /** User's last name */
   lastName: string;
+  /** Tenant ID (null for SUPER_ADMIN) */
   tenantId?: string | null;
+  /** Whether user has super admin privileges */
   isSuperAdmin: boolean;
+  /** Whether user has tenant admin privileges */
   isTenantAdmin: boolean;
+  /** Array of company IDs the user has access to */
   companyIds: string[];
 }
 
+/**
+ * Login request payload
+ */
 interface LoginCredentials {
+  /** User's email address */
   email: string;
+  /** User's password */
   password: string;
 }
 
+/**
+ * Fetch current session from the server
+ * @returns User object or null if not authenticated
+ */
 async function fetchSession(): Promise<User | null> {
   const response = await fetch('/api/auth/me');
   if (!response.ok) {
@@ -63,6 +92,21 @@ async function logout(): Promise<void> {
   }
 }
 
+/**
+ * Hook to get the current user session
+ *
+ * @returns TanStack Query result with user data
+ *
+ * @example
+ * ```tsx
+ * const { data: user, isLoading } = useSession();
+ *
+ * if (isLoading) return <Spinner />;
+ * if (!user) return <LoginPrompt />;
+ *
+ * return <div>Welcome, {user.firstName}!</div>;
+ * ```
+ */
 export function useSession() {
   return useQuery({
     queryKey: ['session'],
@@ -72,6 +116,26 @@ export function useSession() {
   });
 }
 
+/**
+ * Hook for logging in a user
+ *
+ * Handles authentication and redirects:
+ * - On success: redirects to /companies (or /change-password if required)
+ * - On error: throws error with message from server
+ *
+ * @returns Mutation object with mutate function
+ *
+ * @example
+ * ```tsx
+ * const login = useLogin();
+ *
+ * const handleSubmit = (data: LoginCredentials) => {
+ *   login.mutate(data, {
+ *     onError: (error) => toast.error(error.message),
+ *   });
+ * };
+ * ```
+ */
 export function useLogin() {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -91,6 +155,22 @@ export function useLogin() {
   });
 }
 
+/**
+ * Hook for logging out the current user
+ *
+ * Clears all cached data and redirects to login page.
+ *
+ * @returns Mutation object with mutate function
+ *
+ * @example
+ * ```tsx
+ * const logout = useLogout();
+ *
+ * <Button onClick={() => logout.mutate()}>
+ *   Sign Out
+ * </Button>
+ * ```
+ */
 export function useLogout() {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -105,6 +185,25 @@ export function useLogout() {
   });
 }
 
+/**
+ * Hook to require authentication for a page/component
+ *
+ * Automatically redirects to /login if user is not authenticated.
+ * Use this in protected pages instead of manual session checks.
+ *
+ * @returns Object with user data and loading state
+ *
+ * @example
+ * ```tsx
+ * function ProtectedPage() {
+ *   const { user, isLoading } = useRequireAuth();
+ *
+ *   if (isLoading) return <PageLoader />;
+ *
+ *   return <Dashboard user={user} />;
+ * }
+ * ```
+ */
 export function useRequireAuth() {
   const { data: user, isLoading, isFetched } = useSession();
   const router = useRouter();

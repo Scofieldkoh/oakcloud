@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { createToken } from '@/lib/auth';
 import { logAuthEvent } from '@/lib/audit';
+import { createLogger, safeErrorMessage } from '@/lib/logger';
+
+const log = createLogger('auth:login');
 
 export async function POST(request: NextRequest) {
   try {
@@ -163,7 +166,7 @@ export async function POST(request: NextRequest) {
       message: 'Login successful',
     });
   } catch (error) {
-    console.error('Login error:', error);
+    log.error('Login error:', safeErrorMessage(error));
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

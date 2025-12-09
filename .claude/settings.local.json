@@ -55,7 +55,9 @@
       "WebFetch(domain:editor.umodoc.com)",
       "WebFetch(domain:dev.umodoc.com)",
       "Bash(npm run lint:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npm run test:run:*)",
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\src\\services\\bizfile.service.ts\")"
     ],
     "deny": [],
     "ask": []

@@ -307,6 +307,7 @@ model UserRoleAssignment {
   @@index([userId])
   @@index([roleId])
   @@index([companyId])
+  @@index([userId, roleId, companyId]) // Composite index for permission checks
   @@map("user_role_assignments")
 }
 
@@ -1133,6 +1134,7 @@ model DocumentShare {
   @@index([documentId])
   @@index([expiresAt])
   @@index([shareToken])
+  @@index([shareToken, isActive]) // Composite index for share validation
   @@map("document_shares")
 }
 

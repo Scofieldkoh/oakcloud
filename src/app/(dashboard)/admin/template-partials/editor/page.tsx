@@ -32,6 +32,14 @@ import {
   Trash2,
   Edit3,
 } from 'lucide-react';
+import type {
+  AddressData,
+  CustomPlaceholderDefinition,
+  MergedPlaceholder,
+  TemplatePartialData,
+  MockDataValues,
+  CustomData,
+} from '@/types/placeholders';
 
 // ============================================================================
 // Types
@@ -56,76 +64,7 @@ interface PartialFormData {
   customPlaceholders: CustomPlaceholderDefinition[];
 }
 
-interface CustomPlaceholderDefinition {
-  id: string;
-  key: string;
-  label: string;
-  type: 'text' | 'date' | 'number' | 'currency' | 'boolean' | 'textarea';
-  required: boolean;
-  defaultValue?: string;
-  description?: string;
-  linkedTo?: string; // Key of template boolean placeholder (without 'custom.' prefix)
-  sourcePartial?: string; // Name of the partial this placeholder came from
-}
-
-interface MergedPlaceholder extends CustomPlaceholderDefinition {
-  source: 'template' | 'partial';
-  sourceName?: string;
-  sourceDisplayName?: string;
-}
-
-interface AddressData {
-  block: string;
-  street: string;
-  level: string;
-  unit: string;
-  building: string;
-  postalCode: string;
-}
-
-interface CompanyData {
-  name: string;
-  uen: string;
-  registeredAddress: string;
-  address: AddressData;
-  incorporationDate: Date;
-  entityType: string;
-  capital: number;
-}
-
-interface DirectorData {
-  name: string;
-  identificationNumber: string;
-  nationality: string;
-  role: string;
-  address: string;
-}
-
-interface ShareholderData {
-  name: string;
-  shareClass: string;
-  numberOfShares: number;
-  percentageHeld: number;
-  identificationNumber: string;
-  nationality: string;
-}
-
-// CustomData is now a dynamic type based on user-defined placeholders
-type CustomData = Record<string, string | number | Date | undefined>;
-
-interface SystemData {
-  currentDate: Date;
-  generatedBy: string;
-}
-
-interface MockDataValues {
-  company: CompanyData;
-  directors: DirectorData[];
-  shareholders: ShareholderData[];
-  custom: CustomData;
-  system: SystemData;
-}
-
+// Local interface for TemplatePartial as used in this component (content is optional for list views)
 interface TemplatePartial {
   id: string;
   name: string;

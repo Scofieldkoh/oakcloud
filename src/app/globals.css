@@ -429,7 +429,7 @@
   height: 0;
   margin: 1rem 0;
   border: none;
-  border-top: 2px dashed #3b82f6;
+  border-top: 2px dashed var(--oak-primary, #294d44);
   position: relative;
 }
 
@@ -439,10 +439,10 @@
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  background: white;
+  background: var(--bg-primary, white);
   padding: 0 8px;
   font-size: 10px;
-  color: #3b82f6;
+  color: var(--oak-primary, #294d44);
   font-weight: 500;
 }
 

@@ -3,7 +3,7 @@ import { readFile } from 'fs/promises';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
-import { extractBizFileData, processBizFileExtraction } from '@/services/bizfile.service';
+import { extractBizFileData, processBizFileExtraction } from '@/services/bizfile';
 import type { AIModel } from '@/lib/ai';
 
 // Lazy load pdf-parse to reduce initial bundle size

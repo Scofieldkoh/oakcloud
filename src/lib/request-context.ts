@@ -39,11 +39,11 @@ export async function getRequestContext(): Promise<RequestContext> {
 
   let ipAddress: string | null = null;
   if (forwardedFor) {
-    // X-Forwarded-For can contain multiple IPs; take the first one
-    ipAddress = forwardedFor.split(',')[0].trim();
-  } else if (realIp) {
+    // X-Forwarded-For can contain multiple IPs; extract and validate first valid one
+    ipAddress = sanitizeForwardedIp(forwardedFor);
+  } else if (realIp && isValidIp(realIp)) {
     ipAddress = realIp;
-  } else if (cfConnectingIp) {
+  } else if (cfConnectingIp && isValidIp(cfConnectingIp)) {
     ipAddress = cfConnectingIp;
   }
 
@@ -117,6 +117,51 @@ export async function getAuditRequestContext(): Promise<{
 // ============================================================================
 // IP Address Utilities
 // ============================================================================
+
+/**
+ * Validate IP address format (basic validation)
+ * Returns true if the string looks like a valid IPv4 or IPv6 address
+ */
+export function isValidIp(ip: string): boolean {
+  // IPv4 pattern
+  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+  // IPv6 pattern (simplified)
+  const ipv6Pattern = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^([0-9a-fA-F]{1,4}:)*::([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}$/;
+
+  if (ipv4Pattern.test(ip)) {
+    // Validate each octet is 0-255
+    const parts = ip.split('.');
+    return parts.every((part) => {
+      const num = parseInt(part, 10);
+      return num >= 0 && num <= 255;
+    });
+  }
+
+  return ipv6Pattern.test(ip);
+}
+
+/**
+ * Sanitize IP address from X-Forwarded-For header
+ * Extracts first valid IP and validates format
+ */
+export function sanitizeForwardedIp(forwardedFor: string): string | null {
+  const ips = forwardedFor.split(',').map((ip) => ip.trim());
+
+  for (const ip of ips) {
+    // Skip empty strings
+    if (!ip) continue;
+
+    // Skip known proxy identifiers that aren't IPs
+    if (ip.toLowerCase() === 'unknown') continue;
+
+    // Validate IP format
+    if (isValidIp(ip)) {
+      return ip;
+    }
+  }
+
+  return null;
+}
 
 /**
  * Check if IP address is from a private/internal network

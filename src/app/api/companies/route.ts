@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createCompanySchema, companySearchSchema } from '@/lib/validations/company';
 import { createCompany, searchCompanies, getCompanyByUen, getCompanyById } from '@/services/company.service';
+import { getTenantById } from '@/services/tenant.service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -63,9 +64,19 @@ export async function GET(request: NextRequest) {
     // For SUPER_ADMIN, allow specifying tenantId via query param
     // This ensures companies dropdown in user management is scoped to selected tenant
     const tenantIdParam = searchParams.get('tenantId');
-    const effectiveTenantId = session.isSuperAdmin && tenantIdParam
-      ? tenantIdParam
-      : session.tenantId;
+    let effectiveTenantId = session.tenantId;
+
+    if (session.isSuperAdmin && tenantIdParam) {
+      // Validate that the tenant exists before using it
+      const tenant = await getTenantById(tenantIdParam);
+      if (!tenant) {
+        return NextResponse.json(
+          { error: 'Tenant not found' },
+          { status: 404 }
+        );
+      }
+      effectiveTenantId = tenantIdParam;
+    }
 
     const result = await searchCompanies(
       params,

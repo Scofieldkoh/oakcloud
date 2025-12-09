@@ -74,8 +74,8 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               border-border-primary
               text-text-primary
               hover:border-border-secondary
-              focus:border-oak-primary focus:ring-1 focus:ring-oak-primary focus:outline-none
-              ${error ? 'border-red-500 hover:border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+              focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30 focus:ring-offset-2 focus:outline-none
+              ${error ? 'border-status-error hover:border-status-error focus:border-status-error focus:ring-status-error/30' : ''}
             `}
             aria-invalid={error ? 'true' : 'false'}
             aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}

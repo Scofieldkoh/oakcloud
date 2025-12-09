@@ -2,11 +2,12 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { statusVariants, type StatusVariant } from './variants';
 
 // Toast types
-type ToastVariant = 'success' | 'error' | 'warning' | 'info';
+type ToastVariant = StatusVariant;
 
 interface Toast {
   id: string;
@@ -111,30 +112,7 @@ function ToastContainer({
 
 // Individual toast item
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
-  const variantConfig = {
-    success: {
-      icon: CheckCircle,
-      bgClass: 'bg-status-success/10 border-status-success/30',
-      iconClass: 'text-status-success',
-    },
-    error: {
-      icon: AlertCircle,
-      bgClass: 'bg-status-error/10 border-status-error/30',
-      iconClass: 'text-status-error',
-    },
-    warning: {
-      icon: AlertTriangle,
-      bgClass: 'bg-status-warning/10 border-status-warning/30',
-      iconClass: 'text-status-warning',
-    },
-    info: {
-      icon: Info,
-      bgClass: 'bg-status-info/10 border-status-info/30',
-      iconClass: 'text-status-info',
-    },
-  };
-
-  const config = variantConfig[toast.variant];
+  const config = statusVariants[toast.variant];
   const Icon = config.icon;
 
   return (
@@ -142,11 +120,12 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
       className={cn(
         'pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl border shadow-elevation-2 animate-slide-in-right',
         'bg-background-elevated',
-        config.bgClass
+        config.bgClass,
+        config.borderClass
       )}
       role="alert"
     >
-      <Icon className={cn('w-5 h-5 flex-shrink-0 mt-0.5', config.iconClass)} />
+      <Icon className={cn('w-5 h-5 flex-shrink-0 mt-0.5', config.colorClass)} />
       <p className="flex-1 text-sm text-text-primary">{toast.message}</p>
       <button
         onClick={() => onRemove(toast.id)}

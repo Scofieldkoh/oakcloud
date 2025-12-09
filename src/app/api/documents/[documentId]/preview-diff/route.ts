@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { extractBizFileWithVision, generateBizFileDiff, normalizeExtractedData } from '@/services/bizfile.service';
+import { extractBizFileWithVision, generateBizFileDiff, normalizeExtractedData } from '@/services/bizfile';
 import { calculateCost, formatCost, getModelConfig } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { processBizFileExtractionSelective, type ExtractedBizFileData, type OfficerAction } from '@/services/bizfile.service';
+import { processBizFileExtractionSelective, type ExtractedBizFileData, type OfficerAction } from '@/services/bizfile';
 
 /**
  * POST /api/documents/:documentId/apply-update

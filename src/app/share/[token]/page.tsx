@@ -76,18 +76,52 @@ export default function SharedDocumentPage() {
   // PDF Download state
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // Verification token for password-protected shares (stored in memory, not localStorage for security)
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+
+  // Verify password and get verification token
+  const verifyPassword = async (pass: string): Promise<string | null> => {
+    try {
+      const response = await fetch(`/api/share/${token}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pass }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Invalid password');
+      }
+
+      return result.verificationToken || null;
+    } catch (err) {
+      throw err;
+    }
+  };
+
   // Fetch document
   const fetchDocument = async (pass?: string) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      let url = `/api/share/${token}`;
+      // If password provided, verify it first and get verification token
+      let currentVerificationToken = verificationToken;
       if (pass) {
-        url += `?password=${encodeURIComponent(pass)}`;
+        currentVerificationToken = await verifyPassword(pass);
+        if (currentVerificationToken) {
+          setVerificationToken(currentVerificationToken);
+        }
       }
 
-      const response = await fetch(url);
+      // Build headers with verification token if available
+      const headers: HeadersInit = {};
+      if (currentVerificationToken) {
+        headers['X-Verification-Token'] = currentVerificationToken;
+      }
+
+      const response = await fetch(`/api/share/${token}`, { headers });
       const result = await response.json();
 
       if (response.status === 401 && result.requiresPassword) {
@@ -139,14 +173,19 @@ export default function SharedDocumentPage() {
     setCommentError(null);
 
     try {
+      // Build headers with verification token if available (for password-protected shares)
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (verificationToken) {
+        headers['X-Verification-Token'] = verificationToken;
+      }
+
       const response = await fetch(`/api/share/${token}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           content: newComment,
           guestName: guestName.trim() || undefined,
           guestEmail: guestEmail.trim() || undefined,
-          password: password || undefined,
         }),
       });
 
@@ -171,13 +210,17 @@ export default function SharedDocumentPage() {
 
     setIsDownloading(true);
     try {
-      // Use the token-based download endpoint (if available) or redirect
-      const response = await fetch(
-        `/api/share/${token}/pdf${password ? `?password=${encodeURIComponent(password)}` : ''}`
-      );
+      // Build headers with verification token if available (for password-protected shares)
+      const headers: HeadersInit = {};
+      if (verificationToken) {
+        headers['X-Verification-Token'] = verificationToken;
+      }
+
+      const response = await fetch(`/api/share/${token}/pdf`, { headers });
 
       if (!response.ok) {
-        throw new Error('Failed to download PDF');
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || 'Failed to download PDF');
       }
 
       const blob = await response.blob();

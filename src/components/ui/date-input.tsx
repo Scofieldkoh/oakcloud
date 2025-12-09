@@ -364,9 +364,9 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       bg-background-primary dark:bg-background-secondary
       border border-border-primary
       hover:border-border-secondary
-      focus-within:border-oak-primary focus-within:ring-1 focus-within:ring-oak-primary
+      focus-within:border-oak-primary focus-within:ring-2 focus-within:ring-oak-primary/30 focus-within:ring-offset-2
       transition-colors
-      ${error ? 'border-red-500 hover:border-red-500 focus-within:border-red-500 focus-within:ring-red-500' : ''}
+      ${error ? 'border-status-error hover:border-status-error focus-within:border-status-error focus-within:ring-status-error/30' : ''}
       ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
     `;
 

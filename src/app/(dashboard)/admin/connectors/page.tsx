@@ -440,7 +440,7 @@ export default function ConnectorsPage() {
             {(canEdit || canDelete || (isSuperAdmin && isSystem)) && (
               <Dropdown>
                 <DropdownTrigger asChild>
-                  <Button variant="ghost" size="xs" iconOnly leftIcon={<MoreVertical className="w-4 h-4" />} />
+                  <Button variant="ghost" size="xs" iconOnly leftIcon={<MoreVertical className="w-4 h-4" />} aria-label="More options" />
                 </DropdownTrigger>
                 <DropdownMenu align="right">
                   {canEdit && (

@@ -1,78 +1,18 @@
+/**
+ * Company Management Hooks
+ *
+ * React hooks for company CRUD operations, search, and statistics.
+ * Uses TanStack Query for caching, optimistic updates, and automatic invalidation.
+ *
+ * @module hooks/use-companies
+ */
+
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Company, CompanyStatus, EntityType } from '@prisma/client';
-import type { Decimal } from '@prisma/client/runtime/library';
 import type { CreateCompanyInput, UpdateCompanyInput } from '@/lib/validations/company';
-
-interface CompanyWithRelations extends Company {
-  addresses?: Array<{
-    id: string;
-    addressType: string;
-    fullAddress: string;
-    isCurrent: boolean;
-    effectiveFrom?: Date | null;
-  }>;
-  officers?: Array<{
-    id: string;
-    name: string;
-    role: string;
-    nationality?: string | null;
-    address?: string | null;
-    appointmentDate?: Date | null;
-    cessationDate?: Date | null;
-    isCurrent: boolean;
-    contactId?: string | null;
-    contact?: {
-      id: string;
-      email?: string | null;
-      phone?: string | null;
-      nationality?: string | null;
-      fullAddress?: string | null;
-    } | null;
-  }>;
-  shareholders?: Array<{
-    id: string;
-    name: string;
-    shareholderType?: string | null;
-    nationality?: string | null;
-    placeOfOrigin?: string | null;
-    address?: string | null;
-    shareClass?: string | null;
-    numberOfShares: number;
-    percentageHeld: Decimal | null;
-    currency?: string | null;
-    allotmentDate?: Date | null;
-    isCurrent: boolean;
-    contactId?: string | null;
-    contact?: {
-      id: string;
-      email?: string | null;
-      phone?: string | null;
-      nationality?: string | null;
-      fullAddress?: string | null;
-    } | null;
-  }>;
-  charges?: Array<{
-    id: string;
-    chargeNumber?: string | null;
-    chargeType?: string | null;
-    description?: string | null;
-    chargeHolderName: string;
-    amountSecured?: Decimal | null;
-    amountSecuredText?: string | null;
-    currency?: string | null;
-    registrationDate?: Date | null;
-    dischargeDate?: Date | null;
-    isFullyDischarged: boolean;
-  }>;
-  _count?: {
-    documents: number;
-    officers: number;
-    shareholders: number;
-    charges: number;
-  };
-}
+import type { CompanyWithRelations, CompanyStats, CompanyLinkInfo } from '@/services/company/types';
 
 interface CompanySearchParams {
   query?: string;
@@ -93,14 +33,6 @@ interface CompanySearchResult {
   page: number;
   limit: number;
   totalPages: number;
-}
-
-interface CompanyStats {
-  total: number;
-  byStatus: Record<string, number>;
-  byEntityType: Record<string, number>;
-  recentlyAdded: number;
-  withOverdueFilings: number;
 }
 
 async function fetchCompanies(params: CompanySearchParams): Promise<CompanySearchResult> {
@@ -190,6 +122,25 @@ async function bulkDeleteCompanies(ids: string[], reason: string): Promise<{ del
   return response.json();
 }
 
+/**
+ * Hook to search and list companies with pagination and filters
+ *
+ * @param params - Search parameters (query, filters, pagination)
+ * @returns TanStack Query result with companies array and pagination info
+ *
+ * @example
+ * ```tsx
+ * const { data, isLoading } = useCompanies({
+ *   query: 'Acme',
+ *   entityType: 'PRIVATE_LIMITED',
+ *   page: 1,
+ *   limit: 20,
+ * });
+ *
+ * if (isLoading) return <Spinner />;
+ * return <CompanyTable companies={data.companies} />;
+ * ```
+ */
 export function useCompanies(params: CompanySearchParams = {}) {
   return useQuery({
     queryKey: ['companies', params],
@@ -197,6 +148,20 @@ export function useCompanies(params: CompanySearchParams = {}) {
   });
 }
 
+/**
+ * Hook to fetch a single company with all relations
+ *
+ * @param id - Company ID
+ * @returns TanStack Query result with company data including officers, shareholders, etc.
+ *
+ * @example
+ * ```tsx
+ * const { data: company, isLoading } = useCompany(companyId);
+ *
+ * if (isLoading) return <Spinner />;
+ * return <CompanyDetails company={company} />;
+ * ```
+ */
 export function useCompany(id: string) {
   return useQuery({
     queryKey: ['company', id],
@@ -205,6 +170,23 @@ export function useCompany(id: string) {
   });
 }
 
+/**
+ * Hook to fetch company statistics for the current tenant
+ *
+ * @returns TanStack Query result with company statistics
+ *
+ * @example
+ * ```tsx
+ * const { data: stats } = useCompanyStats();
+ *
+ * return (
+ *   <div>
+ *     <span>Total: {stats?.total}</span>
+ *     <span>Active: {stats?.byStatus.LIVE}</span>
+ *   </div>
+ * );
+ * ```
+ */
 export function useCompanyStats() {
   return useQuery({
     queryKey: ['company-stats'],
@@ -242,6 +224,25 @@ export function usePrefetchCompanies() {
   };
 }
 
+/**
+ * Hook to create a new company
+ *
+ * Automatically invalidates company list and stats caches on success.
+ *
+ * @returns Mutation object with mutate/mutateAsync functions
+ *
+ * @example
+ * ```tsx
+ * const createCompany = useCreateCompany();
+ *
+ * const handleSubmit = (data: CreateCompanyInput) => {
+ *   createCompany.mutate(data, {
+ *     onSuccess: () => toast.success('Company created'),
+ *     onError: (error) => toast.error(error.message),
+ *   });
+ * };
+ * ```
+ */
 export function useCreateCompany() {
   const queryClient = useQueryClient();
 
@@ -254,6 +255,24 @@ export function useCreateCompany() {
   });
 }
 
+/**
+ * Hook to update an existing company
+ *
+ * Automatically invalidates both company list and specific company caches on success.
+ *
+ * @returns Mutation object with mutate/mutateAsync functions
+ *
+ * @example
+ * ```tsx
+ * const updateCompany = useUpdateCompany();
+ *
+ * const handleSave = (data: UpdateCompanyInput) => {
+ *   updateCompany.mutate({ id: companyId, data }, {
+ *     onSuccess: () => toast.success('Company updated'),
+ *   });
+ * };
+ * ```
+ */
 export function useUpdateCompany() {
   const queryClient = useQueryClient();
 
@@ -267,6 +286,25 @@ export function useUpdateCompany() {
   });
 }
 
+/**
+ * Hook to delete a company (soft delete)
+ *
+ * Requires a reason for audit logging.
+ *
+ * @returns Mutation object with mutate/mutateAsync functions
+ *
+ * @example
+ * ```tsx
+ * const deleteCompany = useDeleteCompany();
+ *
+ * const handleDelete = () => {
+ *   deleteCompany.mutate(
+ *     { id: companyId, reason: 'Company no longer active' },
+ *     { onSuccess: () => router.push('/companies') }
+ *   );
+ * };
+ * ```
+ */
 export function useDeleteCompany() {
   const queryClient = useQueryClient();
 
@@ -280,6 +318,23 @@ export function useDeleteCompany() {
   });
 }
 
+/**
+ * Hook to bulk delete multiple companies
+ *
+ * @returns Mutation object with mutate/mutateAsync functions
+ *
+ * @example
+ * ```tsx
+ * const bulkDelete = useBulkDeleteCompanies();
+ *
+ * const handleBulkDelete = () => {
+ *   bulkDelete.mutate(
+ *     { ids: selectedIds, reason: 'Batch cleanup' },
+ *     { onSuccess: (result) => toast.success(`Deleted ${result.deleted} companies`) }
+ *   );
+ * };
+ * ```
+ */
 export function useBulkDeleteCompanies() {
   const queryClient = useQueryClient();
 
@@ -297,14 +352,8 @@ export function useBulkDeleteCompanies() {
 // Company Link Info (for delete confirmation)
 // ============================================================================
 
-export interface CompanyLinkInfo {
-  hasLinks: boolean;
-  officerCount: number;
-  shareholderCount: number;
-  chargeCount: number;
-  documentCount: number;
-  totalLinks: number;
-}
+// Re-export for backward compatibility
+export type { CompanyLinkInfo } from '@/services/company/types';
 
 async function fetchCompanyLinkInfo(id: string): Promise<CompanyLinkInfo> {
   const res = await fetch(`/api/companies/${id}/links`);

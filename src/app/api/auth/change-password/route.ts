@@ -8,6 +8,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { changePassword } from '@/services/password.service';
 import { z } from 'zod';
+import { createLogger, safeErrorMessage } from '@/lib/logger';
+
+const log = createLogger('auth:change-password');
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
@@ -53,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Change password error:', error);
+    log.error('Change password error:', safeErrorMessage(error));
     return NextResponse.json(
       { error: 'An error occurred. Please try again.' },
       { status: 500 }

@@ -774,12 +774,16 @@ export function canManageRoles(session: SessionUser): boolean {
 /**
  * Check if user can access audit logs
  * Uses computed flags from session
+ *
+ * Only admins can access audit logs by default.
+ * Regular users need explicit audit_log:read permission.
  */
 export function canAccessAuditLogs(session: SessionUser): boolean {
   // Super admin and tenant admin can always access
   if (session.isSuperAdmin || session.isTenantAdmin) return true;
-  // All authenticated users have basic audit log access
-  return true;
+  // Regular users need explicit permission - this should be checked via hasPermission
+  // in the calling code for more granular control
+  return false;
 }
 
 /**

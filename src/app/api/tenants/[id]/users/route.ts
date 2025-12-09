@@ -11,6 +11,11 @@ import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { inviteUserSchema } from '@/lib/validations/tenant';
 import { inviteUserToTenant } from '@/services/tenant.service';
+import {
+  tenantUsersQuerySchema,
+  safeParseQueryParams,
+  createValidationErrorResponse,
+} from '@/lib/validations/query-params';
 
 export async function GET(
   request: NextRequest,
@@ -27,13 +32,14 @@ export async function GET(
     await requirePermission(session, 'user', 'read');
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100); // Cap at 100
-    // Limit search query length to prevent performance issues
-    const rawQuery = searchParams.get('query') || '';
-    const query = rawQuery.slice(0, 100) || undefined;
-    const role = searchParams.get('role') || undefined;
-    const company = searchParams.get('company') || undefined;
+
+    // Validate query parameters
+    const validation = safeParseQueryParams(searchParams, tenantUsersQuerySchema);
+    if (!validation.success) {
+      return NextResponse.json(createValidationErrorResponse(validation.error), { status: 400 });
+    }
+
+    const { page, limit, query, role, company } = validation.data;
 
     const where = {
       tenantId,

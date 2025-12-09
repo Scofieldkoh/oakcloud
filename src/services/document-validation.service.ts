@@ -8,6 +8,7 @@
 import { prisma } from '@/lib/prisma';
 import { extractPlaceholders, type CompanyData, type OfficerData, type ShareholderData, type CompanyAddressData } from '@/lib/placeholder-resolver';
 import { resolvePartials } from '@/services/template-partial.service';
+import type { PlaceholderDefinition, PlaceholderRequirement, PlaceholderSource } from '@/types/placeholders';
 
 // ============================================================================
 // Types
@@ -47,14 +48,7 @@ export interface ValidateForGenerationInput {
   customData?: Record<string, unknown>;
 }
 
-export interface PlaceholderRequirement {
-  key: string;
-  source: 'company' | 'contact' | 'officer' | 'shareholder' | 'custom' | 'system';
-  required: boolean;
-  minItems?: number;
-  maxItems?: number;
-  linkedTo?: string; // Key of boolean placeholder that controls visibility (without 'custom.' prefix)
-}
+// PlaceholderRequirement is imported from @/types/placeholders
 
 // ============================================================================
 // Placeholder Category Detection
@@ -63,7 +57,7 @@ export interface PlaceholderRequirement {
 /**
  * Determines the source category of a placeholder key.
  */
-function getPlaceholderCategory(key: string): PlaceholderRequirement['source'] {
+function getPlaceholderCategory(key: string): PlaceholderSource {
   const lowerKey = key.toLowerCase();
 
   if (lowerKey.startsWith('company.') || lowerKey === 'company') {
@@ -142,14 +136,7 @@ function analyzeTemplatePlaceholders(content: string, templatePlaceholders?: Pla
   return requirements;
 }
 
-interface PlaceholderDefinition {
-  key: string;
-  required?: boolean;
-  minItems?: number;
-  maxItems?: number;
-  linkedTo?: string; // Key of boolean placeholder that controls visibility
-  sourcePartial?: string; // Name of the partial this placeholder came from
-}
+// PlaceholderDefinition is imported from @/types/placeholders
 
 // ============================================================================
 // Data Fetching

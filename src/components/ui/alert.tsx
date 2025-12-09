@@ -1,10 +1,11 @@
 'use client';
 
-import { Box, Text, IconButton } from '@chakra-ui/react';
-import { AlertCircle, CheckCircle2, Info, AlertTriangle, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { statusVariants, type StatusVariant } from './variants';
 
 export interface AlertProps {
-  variant?: 'error' | 'success' | 'warning' | 'info';
+  variant?: StatusVariant;
   title?: string;
   children: React.ReactNode;
   onClose?: () => void;
@@ -12,74 +13,41 @@ export interface AlertProps {
   compact?: boolean;
 }
 
-const variantConfig = {
-  error: {
-    icon: AlertCircle,
-    bg: 'rgba(239, 68, 68, 0.1)',
-    borderColor: 'rgba(239, 68, 68, 0.2)',
-    color: 'red.400',
-  },
-  success: {
-    icon: CheckCircle2,
-    bg: 'rgba(34, 197, 94, 0.1)',
-    borderColor: 'rgba(34, 197, 94, 0.2)',
-    color: 'green.400',
-  },
-  warning: {
-    icon: AlertTriangle,
-    bg: 'rgba(234, 179, 8, 0.1)',
-    borderColor: 'rgba(234, 179, 8, 0.2)',
-    color: 'yellow.400',
-  },
-  info: {
-    icon: Info,
-    bg: 'rgba(59, 130, 246, 0.1)',
-    borderColor: 'rgba(59, 130, 246, 0.2)',
-    color: 'blue.400',
-  },
-};
-
 export function Alert({ variant = 'info', title, children, onClose, className, compact }: AlertProps) {
-  const config = variantConfig[variant];
+  const config = statusVariants[variant];
   const Icon = config.icon;
 
   return (
-    <Box
-      display="flex"
-      gap="2.5"
-      borderRadius="md"
-      borderWidth="1px"
-      p={compact ? '2.5' : '3'}
-      bg={config.bg}
-      borderColor={config.borderColor}
-      color={config.color}
+    <div
       role="alert"
-      className={className}
+      className={cn(
+        'flex gap-2.5 rounded-md border',
+        compact ? 'p-2.5' : 'p-3',
+        config.className,
+        className
+      )}
     >
-      <Icon size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-      <Box flex="1" minW="0">
+      <Icon size={16} className="shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
         {title && (
-          <Text fontSize="sm" fontWeight="medium" mb="0.5">
+          <p className="text-sm font-medium mb-0.5">
             {title}
-          </Text>
+          </p>
         )}
-        <Box fontSize="sm" opacity="0.9">
+        <div className="text-sm opacity-90">
           {children}
-        </Box>
-      </Box>
+        </div>
+      </div>
       {onClose && (
-        <IconButton
+        <button
           onClick={onClose}
-          size="xs"
-          variant="ghost"
-          aria-label="Dismiss"
-          p="1"
-          borderRadius="sm"
-          className="hover:bg-black/10 dark:hover:bg-white/10"
+          type="button"
+          aria-label="Dismiss alert"
+          className="p-1 rounded-sm hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
         >
           <X size={14} />
-        </IconButton>
+        </button>
       )}
-    </Box>
+    </div>
   );
 }
