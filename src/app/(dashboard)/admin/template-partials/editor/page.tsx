@@ -64,6 +64,8 @@ interface CustomPlaceholderDefinition {
   required: boolean;
   defaultValue?: string;
   description?: string;
+  linkedTo?: string; // Key of template boolean placeholder (without 'custom.' prefix)
+  sourcePartial?: string; // Name of the partial this placeholder came from
 }
 
 interface MergedPlaceholder extends CustomPlaceholderDefinition {
@@ -522,9 +524,26 @@ interface PlaceholdersTabProps {
   isLoadingPartials: boolean;
   customPlaceholders: CustomPlaceholderDefinition[];
   onCustomPlaceholdersChange: (placeholders: CustomPlaceholderDefinition[]) => void;
+  // New props for partial placeholder linking
+  mergedPlaceholders?: MergedPlaceholder[];
+  templateBooleanPlaceholders?: CustomPlaceholderDefinition[];
+  partialPlaceholderLinkings?: Record<string, string>;
+  onPartialPlaceholderLinkingChange?: (key: string, linkedTo: string | undefined) => void;
+  isPartialMode?: boolean;
 }
 
-function PlaceholdersTab({ onInsert, partials, isLoadingPartials, customPlaceholders, onCustomPlaceholdersChange }: PlaceholdersTabProps) {
+function PlaceholdersTab({
+  onInsert,
+  partials,
+  isLoadingPartials,
+  customPlaceholders,
+  onCustomPlaceholdersChange,
+  mergedPlaceholders = [],
+  templateBooleanPlaceholders = [],
+  partialPlaceholderLinkings = {},
+  onPartialPlaceholderLinkingChange,
+  isPartialMode = false,
+}: PlaceholdersTabProps) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['company']);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -994,6 +1013,105 @@ function PlaceholdersTab({ onInsert, partials, isLoadingPartials, customPlacehol
             </div>
           )}
         </div>
+
+        {/* Partial Placeholders Section (only for templates, not partials) */}
+        {!isPartialMode && mergedPlaceholders.filter(p => p.source === 'partial').length > 0 && (
+          <div className="border-t border-border-secondary">
+            <button
+              type="button"
+              onClick={() => toggleCategory('partial-placeholders')}
+              className="w-full flex items-center justify-between px-4 py-2 hover:bg-background-tertiary"
+            >
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-text-muted" />
+                <span className="text-sm font-medium text-text-primary">Partial Placeholders</span>
+                <span className="text-xs text-text-muted">
+                  ({mergedPlaceholders.filter(p => p.source === 'partial').length})
+                </span>
+              </div>
+              {expandedCategories.includes('partial-placeholders') ? (
+                <ChevronDown className="w-4 h-4 text-text-muted" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-text-muted" />
+              )}
+            </button>
+
+            {expandedCategories.includes('partial-placeholders') && (
+              <div className="pb-2 space-y-1">
+                <div className="px-4 py-2 text-xs text-text-muted bg-blue-50 dark:bg-blue-900/20 mx-2 rounded">
+                  <Info className="w-3 h-3 inline mr-1" />
+                  Link partial placeholders to template boolean fields. When the boolean is false, linked placeholders will be hidden.
+                </div>
+
+                {/* Group by source partial */}
+                {(() => {
+                  const partialGroups = mergedPlaceholders
+                    .filter(p => p.source === 'partial')
+                    .reduce((groups, p) => {
+                      const key = p.sourceName || 'unknown';
+                      if (!groups[key]) {
+                        groups[key] = { displayName: p.sourceDisplayName || key, placeholders: [] };
+                      }
+                      groups[key].placeholders.push(p);
+                      return groups;
+                    }, {} as Record<string, { displayName: string; placeholders: MergedPlaceholder[] }>);
+
+                  return Object.entries(partialGroups).map(([partialName, group]) => (
+                    <div key={partialName} className="px-4 py-2">
+                      <div className="text-xs font-medium text-text-secondary mb-2 flex items-center gap-1">
+                        <Code className="w-3 h-3" />
+                        From: {group.displayName}
+                      </div>
+                      <div className="space-y-2">
+                        {group.placeholders.map((placeholder) => (
+                          <div
+                            key={placeholder.id}
+                            className="flex items-center gap-2 p-2 bg-background-tertiary rounded"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-mono text-accent-primary truncate">
+                                {`{{custom.${placeholder.key}}}`}
+                              </div>
+                              <div className="text-xs text-text-muted truncate flex items-center gap-1">
+                                {placeholder.label}
+                                <span className="text-text-muted/50 text-[10px]">({placeholder.type})</span>
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0">
+                              <select
+                                value={partialPlaceholderLinkings[placeholder.key] || ''}
+                                onChange={(e) => onPartialPlaceholderLinkingChange?.(
+                                  placeholder.key,
+                                  e.target.value || undefined
+                                )}
+                                className="px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary min-w-[120px]"
+                                title="Link to boolean placeholder"
+                              >
+                                <option value="">Always show</option>
+                                {templateBooleanPlaceholders.map((bp) => (
+                                  <option key={bp.id} value={bp.key}>
+                                    Show when: {bp.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
+
+                {templateBooleanPlaceholders.length === 0 && (
+                  <div className="px-4 py-2 text-xs text-amber-600 dark:text-amber-400">
+                    <AlertCircle className="w-3 h-3 inline mr-1" />
+                    Add boolean custom placeholders to enable conditional linking.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1326,6 +1444,18 @@ function TestDataTab({
           // Use mergedPlaceholders if available, otherwise fallback to customPlaceholders
           const placeholdersToShow = mergedPlaceholders.length > 0 ? mergedPlaceholders : customPlaceholders;
 
+          // Helper to check if a partial placeholder should be visible based on linkedTo boolean
+          const customValues = mockData.custom as unknown as Record<string, string>;
+          const isPlaceholderVisible = (placeholder: CustomPlaceholderDefinition | MergedPlaceholder) => {
+            // If it's a merged placeholder with linkedTo, check the boolean value
+            if ('linkedTo' in placeholder && placeholder.linkedTo) {
+              const booleanValue = customValues[placeholder.linkedTo];
+              // Hide if the linked boolean is false or not set
+              return booleanValue === 'true' || booleanValue === '1';
+            }
+            return true; // No linkedTo, always visible
+          };
+
           // Group by source for display
           const templatePlaceholders = placeholdersToShow.filter(
             (p) => !('source' in p) || (p as MergedPlaceholder).source === 'template'
@@ -1417,6 +1547,12 @@ function TestDataTab({
               {/* Partial groups */}
               {Object.entries(partialGroups).map(([partialName, group]) => {
                 const sectionKey = `partial_${partialName}`;
+                // Filter visible placeholders based on linkedTo boolean values
+                const visiblePlaceholders = group.placeholders.filter(isPlaceholderVisible);
+
+                // Skip rendering this group if no placeholders are visible
+                if (visiblePlaceholders.length === 0) return null;
+
                 return (
                   <div key={partialName} className="space-y-2">
                     <button
@@ -1431,13 +1567,13 @@ function TestDataTab({
                       )}
                       <span className="flex items-center gap-1">
                         <Code className="w-3 h-3 text-accent-secondary" />
-                        {group.displayName} ({group.placeholders.length})
+                        {group.displayName} ({visiblePlaceholders.length})
                       </span>
                     </button>
 
                     {expandedSections.includes(sectionKey) && (
                       <div className="space-y-2 pl-5 border-l-2 border-accent-secondary/30 ml-1.5">
-                        {group.placeholders.map(renderPlaceholderInput)}
+                        {visiblePlaceholders.map(renderPlaceholderInput)}
                       </div>
                     )}
                   </div>
@@ -1499,6 +1635,10 @@ function TemplateEditorContent() {
   });
 
   const [formError, setFormError] = useState('');
+
+  // State to track partial placeholder linkings (key: partialPlaceholderKey, value: templateBooleanKey)
+  // This stores the user's decisions about which partial placeholders are linked to which template booleans
+  const [partialPlaceholderLinkings, setPartialPlaceholderLinkings] = useState<Record<string, string>>({});
 
   // Panel states
   const [activeTab, setActiveTab] = useState<'details' | 'placeholders' | 'testdata' | 'ai'>('details');
@@ -1694,7 +1834,7 @@ function TemplateEditorContent() {
 
   // Helper to extract custom placeholders from storage format
   const storageFormatToCustomPlaceholders = (
-    placeholders: Array<{ key: string; label: string; type: string; source?: string; category?: string; required?: boolean; defaultValue?: string }>
+    placeholders: Array<{ key: string; label: string; type: string; source?: string; category?: string; required?: boolean; defaultValue?: string; linkedTo?: string; sourcePartial?: string }>
   ): CustomPlaceholderDefinition[] => {
     return (placeholders || [])
       .filter((p) => p.source === 'custom' || p.category === 'custom' || p.key?.startsWith('custom.'))
@@ -1705,6 +1845,8 @@ function TemplateEditorContent() {
         type: (p.type === 'list' || p.type === 'conditional' ? 'text' : p.type) as CustomPlaceholderDefinition['type'],
         required: p.required ?? true,
         defaultValue: p.defaultValue,
+        linkedTo: p.linkedTo,
+        sourcePartial: p.sourcePartial,
       }));
   };
 
@@ -1777,19 +1919,29 @@ function TemplateEditorContent() {
           key = `${partialName}_${p.key}`;
         }
 
+        // Get linkedTo from state (if user has linked this placeholder to a boolean)
+        const linkedTo = partialPlaceholderLinkings[key];
+
         result.push({
           ...p,
           key,
           source: 'partial' as const,
           sourceName: partialName,
           sourceDisplayName: partial.displayName || partialName,
+          sourcePartial: partialName,
+          linkedTo,
         });
         seenKeys.add(key);
       });
     });
 
     return result;
-  }, [isPartialMode, formData.customPlaceholders, formData.content, partialsData?.partials, extractPartialReferences]);
+  }, [isPartialMode, formData.customPlaceholders, formData.content, partialsData?.partials, extractPartialReferences, partialPlaceholderLinkings]);
+
+  // Get template boolean placeholders for linking dropdown
+  const templateBooleanPlaceholders = useMemo(() => {
+    return formData.customPlaceholders.filter((p) => p.type === 'boolean');
+  }, [formData.customPlaceholders]);
 
   // Load existing template data
   useEffect(() => {
@@ -1804,14 +1956,33 @@ function TemplateEditorContent() {
         }
       }
 
+      // Extract only template's own custom placeholders (those without sourcePartial)
+      const templatePlaceholders = storageFormatToCustomPlaceholders(
+        placeholdersArray.filter((p: { sourcePartial?: string }) => !p.sourcePartial)
+      );
+
+      // Extract linkings from partial placeholders stored in template
+      const linkings: Record<string, string> = {};
+      placeholdersArray
+        .filter((p: { sourcePartial?: string; linkedTo?: string }) => p.sourcePartial && p.linkedTo)
+        .forEach((p: { key: string; linkedTo?: string }) => {
+          const key = p.key.replace('custom.', '');
+          if (p.linkedTo) {
+            linkings[key] = p.linkedTo;
+          }
+        });
+
       setFormData({
         name: existingTemplate.name || '',
         description: existingTemplate.description || '',
         category: existingTemplate.category || 'OTHER',
         content: existingTemplate.content || '',
         isActive: existingTemplate.isActive ?? true,
-        customPlaceholders: storageFormatToCustomPlaceholders(placeholdersArray),
+        customPlaceholders: templatePlaceholders,
       });
+
+      // Restore partial placeholder linkings
+      setPartialPlaceholderLinkings(linkings);
     }
   }, [existingTemplate, isPartialMode, itemId]);
 
@@ -2262,7 +2433,30 @@ function TemplateEditorContent() {
       path: `custom.${p.key}`,
       defaultValue: p.defaultValue,
       required: p.required,
+      // Include linkedTo and sourcePartial if present
+      ...(p.linkedTo && { linkedTo: p.linkedTo }),
+      ...(p.sourcePartial && { sourcePartial: p.sourcePartial }),
     }));
+  };
+
+  // Helper to convert merged placeholders (including partial placeholders with linkings) to storage format
+  const mergedPlaceholdersToStorageFormat = (
+    merged: MergedPlaceholder[]
+  ) => {
+    return merged
+      .filter((p) => p.source === 'partial') // Only partial placeholders (template's own are handled separately)
+      .map((p) => ({
+        key: `custom.${p.key}`,
+        label: p.label,
+        type: p.type === 'textarea' ? 'text' : p.type,
+        source: 'custom',
+        category: 'custom',
+        path: `custom.${p.key}`,
+        defaultValue: p.defaultValue,
+        required: p.required,
+        sourcePartial: p.sourcePartial || p.sourceName,
+        ...(p.linkedTo && { linkedTo: p.linkedTo }),
+      }));
   };
 
   const handleSave = useCallback(async () => {
@@ -2315,8 +2509,15 @@ function TemplateEditorContent() {
         return;
       }
 
-      // Convert custom placeholders to storage format
-      const placeholders = customPlaceholdersToStorageFormat(formData.customPlaceholders);
+      // Convert template's own custom placeholders to storage format
+      const templatePlaceholders = customPlaceholdersToStorageFormat(formData.customPlaceholders);
+
+      // Convert partial placeholders (with linkings) to storage format
+      const partialPlaceholders = mergedPlaceholdersToStorageFormat(mergedPlaceholders);
+
+      // Combine both: template's own placeholders + partial placeholders with linkings
+      const placeholders = [...templatePlaceholders, ...partialPlaceholders];
+
       const dataToSave = {
         name: formData.name,
         description: formData.description,
@@ -2332,7 +2533,7 @@ function TemplateEditorContent() {
         await createMutation.mutateAsync({ tenantId: activeTenantId, ...dataToSave });
       }
     }
-  }, [formData, partialFormData, activeTenantId, isEditMode, itemId, isPartialMode, createMutation, updateMutation, createPartialMutation, updatePartialMutation]);
+  }, [formData, partialFormData, activeTenantId, isEditMode, itemId, isPartialMode, createMutation, updateMutation, createPartialMutation, updatePartialMutation, mergedPlaceholders]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -2560,6 +2761,20 @@ function TemplateEditorContent() {
                       ? (placeholders) => setPartialFormData((prev) => ({ ...prev, customPlaceholders: placeholders }))
                       : (placeholders) => setFormData((prev) => ({ ...prev, customPlaceholders: placeholders }))
                     }
+                    mergedPlaceholders={mergedPlaceholders}
+                    templateBooleanPlaceholders={templateBooleanPlaceholders}
+                    partialPlaceholderLinkings={partialPlaceholderLinkings}
+                    onPartialPlaceholderLinkingChange={(key, linkedTo) => {
+                      setPartialPlaceholderLinkings((prev) => {
+                        if (linkedTo) {
+                          return { ...prev, [key]: linkedTo };
+                        } else {
+                          const { [key]: _, ...rest } = prev;
+                          return rest;
+                        }
+                      });
+                    }}
+                    isPartialMode={isPartialMode}
                   />
                 )}
                 {activeTab === 'testdata' && !isPartialMode && (

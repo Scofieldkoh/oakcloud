@@ -373,17 +373,22 @@ function CustomDataForm({
   }, []);
 
   // Get custom placeholders (those that need user input) - merged from template and partials
+  // Now includes linkedTo field for conditional visibility
   const customPlaceholders = useMemo(() => {
     const templatePlaceholders = (template.placeholders || []).filter(
       (p) => p.category === 'custom' || p.category === 'Custom'
     );
 
+    // Template placeholders may already include partial placeholders with linkedTo
+    // These were saved with the template's placeholders array
+    // We only need to add placeholders from partials that aren't already in the template
+    const seenKeys = new Set(templatePlaceholders.map((p) => p.key.replace('custom.', '')));
+
     // Extract partial references from template content
     const referencedPartialNames = extractPartialReferences(template.content || '');
 
-    // Get placeholders from referenced partials
-    const partialPlaceholders: typeof templatePlaceholders = [];
-    const seenKeys = new Set(templatePlaceholders.map((p) => p.key.replace('custom.', '')));
+    // Get placeholders from referenced partials (only those not already in template)
+    const additionalPartialPlaceholders: typeof templatePlaceholders = [];
 
     referencedPartialNames.forEach((partialName) => {
       const partial = partials.find((p) => p.name === partialName);
@@ -399,13 +404,13 @@ function CustomDataForm({
         }
       }
 
-      // Add placeholders from this partial
-      (placeholdersArray as Array<{ key: string; label: string; type?: string; category?: string; required?: boolean; defaultValue?: string }>)
+      // Add placeholders from this partial (only if not already in template)
+      (placeholdersArray as Array<{ key: string; label: string; type?: string; category?: string; required?: boolean; defaultValue?: string; linkedTo?: string; sourcePartial?: string }>)
         .filter((p) => p.category === 'custom' || p.category === 'Custom' || p.key?.startsWith('custom.'))
         .forEach((p) => {
           const key = p.key.replace('custom.', '');
           if (!seenKeys.has(key)) {
-            partialPlaceholders.push({
+            additionalPartialPlaceholders.push({
               ...p,
               key: p.key,
               label: p.label || key,
@@ -418,8 +423,25 @@ function CustomDataForm({
         });
     });
 
-    return [...templatePlaceholders, ...partialPlaceholders];
+    return [...templatePlaceholders, ...additionalPartialPlaceholders];
   }, [template, partials, extractPartialReferences]);
+
+  // Helper to check if a placeholder should be visible based on linkedTo boolean
+  const isPlaceholderVisible = useCallback((placeholder: { key: string; linkedTo?: string }) => {
+    // Type cast to access linkedTo which may exist on template placeholders
+    const linkedTo = (placeholder as { linkedTo?: string }).linkedTo;
+    if (!linkedTo) return true; // No linkedTo, always visible
+
+    // Get the value of the linked boolean placeholder
+    const booleanValue = customData[linkedTo];
+    // Show only if the linked boolean is true
+    return booleanValue === 'true' || booleanValue === '1';
+  }, [customData]);
+
+  // Filter visible placeholders - cast to allow linkedTo access
+  const visiblePlaceholders = useMemo(() => {
+    return customPlaceholders.filter((p) => isPlaceholderVisible(p as { key: string; linkedTo?: string }));
+  }, [customPlaceholders, isPlaceholderVisible]);
 
   // Helper to strip 'custom.' prefix from keys for proper context resolution
   const getStorageKey = (key: string) => key.replace(/^custom\./, '');
@@ -449,14 +471,16 @@ function CustomDataForm({
       </div>
 
       {/* Custom Placeholders */}
-      {customPlaceholders.length > 0 && (
+      {visiblePlaceholders.length > 0 && (
         <div>
           <h4 className="text-sm font-medium text-text-primary mb-3">
             Custom Fields
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {customPlaceholders.map((placeholder) => {
+            {visiblePlaceholders.map((placeholder) => {
               const storageKey = getStorageKey(placeholder.key);
+              // Hidden placeholders are not required (they are filtered out above)
+              const isRequired = placeholder.required;
               return (
                 <div key={placeholder.key}>
                   <label className={`block text-sm text-text-secondary mb-1 ${placeholder.type === 'boolean' ? 'flex items-center gap-2 cursor-pointer' : ''}`}>
@@ -471,14 +495,14 @@ function CustomDataForm({
                           className="w-4 h-4 rounded border-border-primary text-accent-primary focus:ring-accent-primary"
                         />
                         <span>{placeholder.label}</span>
-                        {placeholder.required && (
+                        {isRequired && (
                           <span className="text-red-500 ml-1">*</span>
                         )}
                       </>
                     ) : (
                       <>
                         {placeholder.label}
-                        {placeholder.required && (
+                        {isRequired && (
                           <span className="text-red-500 ml-1">*</span>
                         )}
                       </>
@@ -502,7 +526,7 @@ function CustomDataForm({
         </div>
       )}
 
-      {customPlaceholders.length === 0 && (
+      {visiblePlaceholders.length === 0 && (
         <div className="text-sm text-text-muted italic py-4">
           No custom fields required for this template.
         </div>

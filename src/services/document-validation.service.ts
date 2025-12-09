@@ -53,6 +53,7 @@ export interface PlaceholderRequirement {
   required: boolean;
   minItems?: number;
   maxItems?: number;
+  linkedTo?: string; // Key of boolean placeholder that controls visibility (without 'custom.' prefix)
 }
 
 // ============================================================================
@@ -121,6 +122,7 @@ function analyzeTemplatePlaceholders(content: string, templatePlaceholders?: Pla
       required: definition?.required ?? true, // Default to required
       minItems: undefined,
       maxItems: undefined,
+      linkedTo: definition?.linkedTo, // Pass through conditional visibility link
     });
   }
 
@@ -145,6 +147,8 @@ interface PlaceholderDefinition {
   required?: boolean;
   minItems?: number;
   maxItems?: number;
+  linkedTo?: string; // Key of boolean placeholder that controls visibility
+  sourcePartial?: string; // Name of the partial this placeholder came from
 }
 
 // ============================================================================
@@ -401,6 +405,8 @@ function validateShareholderData(
 
 /**
  * Validates custom data against requirements.
+ * Respects linkedTo conditional visibility - if a placeholder is linked to a boolean
+ * that is false, the placeholder is not required.
  */
 function validateCustomData(
   customData: Record<string, unknown> | undefined,
@@ -414,6 +420,15 @@ function validateCustomData(
   for (const req of customRequirements) {
     const key = req.key.replace('custom.', '');
     const value = customData?.[key];
+
+    // Check if this placeholder is conditionally visible via linkedTo
+    if (req.linkedTo) {
+      const linkedBooleanValue = customData?.[req.linkedTo];
+      // If the linked boolean is false/empty, skip validation for this field
+      if (linkedBooleanValue !== 'true' && linkedBooleanValue !== '1' && linkedBooleanValue !== true) {
+        continue; // Skip - the field is hidden and not required
+      }
+    }
 
     if (req.required && (value === undefined || value === null || value === '')) {
       errors.push({

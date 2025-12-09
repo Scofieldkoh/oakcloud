@@ -28,6 +28,9 @@ export const placeholderDefinitionSchema = z.object({
   defaultValue: z.string().optional(),
   format: z.string().optional(), // Date format, number format, etc.
   required: z.boolean().default(false),
+  // Conditional visibility - link partial placeholder to template boolean
+  linkedTo: z.string().optional(), // Key of template boolean placeholder (without 'custom.' prefix)
+  sourcePartial: z.string().optional(), // Name of the partial this placeholder came from
 });
 
 export type PlaceholderDefinition = z.infer<typeof placeholderDefinitionSchema>;
