@@ -13,3 +13,11 @@ TO DO:
 2. backup of database
 3. Company details > edit don't have address; details page don't have home currency, internal note tab increase height, shareholder not showing the percentage, company structure differentiate private limited and exempted private limited, audit log for internal note is not enough
 4. Ensure connector for onedrive is working
+
+Template tag partials placeholder to template placeholder (boolean)
+
+
+Company filter, change it to a free text field
+document generation - save draft to pause
+
+share button >> format issue, comment issue, notification issue

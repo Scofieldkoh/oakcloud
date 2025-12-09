@@ -11,6 +11,7 @@ import {
   type PurgeableUser,
   type PurgeableCompany,
   type PurgeableContact,
+  type PurgeableGeneratedDocument,
 } from '@/hooks/use-admin';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
@@ -27,17 +28,19 @@ import {
   Contact,
   RefreshCw,
   RotateCcw,
+  FileText,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-type TabType = 'tenants' | 'users' | 'companies' | 'contacts';
+type TabType = 'tenants' | 'users' | 'companies' | 'contacts' | 'generatedDocuments';
 
 const TABS: { id: TabType; label: string; icon: React.ReactNode; entityType: PurgeableEntity }[] = [
   { id: 'tenants', label: 'Tenants', icon: <Building className="w-4 h-4" />, entityType: 'tenant' },
   { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" />, entityType: 'user' },
   { id: 'companies', label: 'Companies', icon: <Building2 className="w-4 h-4" />, entityType: 'company' },
   { id: 'contacts', label: 'Contacts', icon: <Contact className="w-4 h-4" />, entityType: 'contact' },
+  { id: 'generatedDocuments', label: 'Documents', icon: <FileText className="w-4 h-4" />, entityType: 'generatedDocument' },
 ];
 
 export default function DataPurgePage() {
@@ -295,13 +298,23 @@ export default function DataPurgePage() {
                       <th>Deleted At</th>
                     </>
                   )}
+                  {activeTab === 'generatedDocuments' && (
+                    <>
+                      <th>Document</th>
+                      <th>Template</th>
+                      <th>Company</th>
+                      <th>Created By</th>
+                      <th>Tenant</th>
+                      <th>Deleted At</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {currentRecords.length === 0 ? (
                   <tr>
-                    <td colSpan={activeTab === 'contacts' ? 5 : 6} className="text-center py-8 text-text-secondary">
-                      No soft-deleted {activeTab} found
+                    <td colSpan={activeTab === 'generatedDocuments' ? 7 : activeTab === 'contacts' ? 5 : 6} className="text-center py-8 text-text-secondary">
+                      No soft-deleted {activeTab === 'generatedDocuments' ? 'documents' : activeTab} found
                     </td>
                   </tr>
                 ) : (
@@ -394,6 +407,30 @@ export default function DataPurgePage() {
                           </td>
                           <td className="text-sm text-text-secondary">
                             {(record as PurgeableContact).tenant?.name || '—'}
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {format(new Date(record.deletedAt), 'MMM d, yyyy HH:mm')}
+                          </td>
+                        </>
+                      )}
+
+                      {activeTab === 'generatedDocuments' && (
+                        <>
+                          <td className="font-medium text-text-primary">
+                            {(record as PurgeableGeneratedDocument).title}
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {(record as PurgeableGeneratedDocument).template?.name || '—'}
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {(record as PurgeableGeneratedDocument).company?.name || '—'}
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {(record as PurgeableGeneratedDocument).createdBy.firstName}{' '}
+                            {(record as PurgeableGeneratedDocument).createdBy.lastName}
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {(record as PurgeableGeneratedDocument).tenant?.name || '—'}
                           </td>
                           <td className="text-sm text-text-secondary">
                             {format(new Date(record.deletedAt), 'MMM d, yyyy HH:mm')}

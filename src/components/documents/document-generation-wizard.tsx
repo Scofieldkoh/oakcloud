@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   FileText,
   Building2,
-  Users,
   Settings,
   Eye,
-  Check,
   ChevronLeft,
   ChevronRight,
   AlertCircle,
@@ -15,14 +13,16 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
+  Search,
+  Edit3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Stepper, type Step } from '@/components/ui/stepper';
-import { FormInput } from '@/components/ui/form-input';
+import { Pagination } from '@/components/companies/pagination';
 import { TemplateSelector, type DocumentTemplate } from './template-selector';
 import { type ValidationResult } from './validation-panel';
-import { DocumentEditor, type DocumentEditorRef } from './document-editor';
+import { A4PageEditor, type A4PageEditorRef } from './a4-page-editor';
 
 // ============================================================================
 // Types
@@ -58,9 +58,10 @@ export interface GenerationWizardProps {
   templates: DocumentTemplate[];
   companies: Company[];
   partials?: TemplatePartial[];
+  tenantId?: string;
   onGenerate: (data: GenerateDocumentData) => Promise<GeneratedDocumentResult>;
   onPreviewTemplate?: (template: DocumentTemplate) => void;
-  onValidate?: (templateId: string, companyId: string) => Promise<ValidationResult>;
+  onValidate?: (templateId: string, companyId: string | undefined, customData: Record<string, string>) => Promise<ValidationResult>;
   isLoading?: boolean;
   className?: string;
 }
@@ -72,6 +73,7 @@ export interface GenerateDocumentData {
   customData: Record<string, string>;
   useLetterhead: boolean;
   shareExpiryHours?: number;
+  editedContent?: string;
 }
 
 export interface GeneratedDocumentResult {
@@ -92,6 +94,7 @@ interface WizardState {
   validationResult: ValidationResult | null;
   generatedDocument: GeneratedDocumentResult | null;
   previewContent: string | null;
+  editedContent: string | null;
 }
 
 // ============================================================================
@@ -101,13 +104,66 @@ interface WizardState {
 const WIZARD_STEPS: Step[] = [
   { id: 'template', label: 'Template' },
   { id: 'company', label: 'Company' },
-  { id: 'customize', label: 'Customize' },
-  { id: 'preview', label: 'Preview' },
-  { id: 'complete', label: 'Complete' },
+  { id: 'customize', label: 'Custom Fields' },
+  { id: 'edit', label: 'Edit & Preview' },
 ];
 
 // ============================================================================
-// Company Selector Component
+// Summary Card Component
+// ============================================================================
+
+interface SummaryCardProps {
+  template: DocumentTemplate | null;
+  company: Company | null;
+  title: string;
+  customFieldCount: number;
+}
+
+function SummaryCard({ template, company, title, customFieldCount }: SummaryCardProps) {
+  return (
+    <div className="p-4 bg-background-secondary border border-border-primary rounded-lg">
+      <h4 className="text-sm font-medium text-text-primary mb-3">Summary</h4>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+          <span className="text-text-muted block">Template</span>
+          <span className={cn(
+            'font-medium truncate block',
+            template ? 'text-text-primary' : 'text-text-muted italic'
+          )}>
+            {template?.name || 'Not selected'}
+          </span>
+        </div>
+        <div>
+          <span className="text-text-muted block">Company</span>
+          <span className={cn(
+            'font-medium truncate block',
+            company ? 'text-text-primary' : 'text-text-muted italic'
+          )}>
+            {company?.name || 'Not selected'}
+          </span>
+        </div>
+        <div>
+          <span className="text-text-muted block">Document Title</span>
+          <span className={cn(
+            'font-medium truncate block',
+            title ? 'text-text-primary' : 'text-text-muted italic'
+          )}>
+            {title || 'Not set'}
+          </span>
+        </div>
+        <div>
+          <span className="text-text-muted block">Custom Fields</span>
+          <span className="text-text-primary font-medium">
+            {customFieldCount} filled
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Company Selector Component (List View with Pagination)
 // ============================================================================
 
 interface CompanySelectorProps {
@@ -124,6 +180,8 @@ function CompanySelector({
   isLoading,
 }: CompanySelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const filteredCompanies = useMemo(() => {
     if (!searchQuery) return companies;
@@ -134,6 +192,23 @@ function CompanySelector({
         c.uen.toLowerCase().includes(query)
     );
   }, [companies, searchQuery]);
+
+  const paginatedCompanies = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    return filteredCompanies.slice(startIndex, startIndex + limit);
+  }, [filteredCompanies, page, limit]);
+
+  const totalPages = Math.ceil(filteredCompanies.length / limit);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  }, []);
+
+  const handleLimitChange = useCallback((newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1);
+  }, []);
 
   if (isLoading) {
     return (
@@ -147,78 +222,93 @@ function CompanySelector({
     <div className="space-y-4">
       {/* Search */}
       <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
         <input
           type="text"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search companies..."
-          className="w-full pl-4 pr-4 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
+          className="w-full pl-9 pr-4 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
         />
       </div>
 
-      {/* Option to skip company */}
-      <div
-        className={cn(
-          'p-4 border rounded-lg cursor-pointer transition-all',
-          'hover:border-accent-primary',
-          selected === null
-            ? 'border-accent-primary bg-accent-primary/5 ring-1 ring-accent-primary'
-            : 'border-border-primary'
-        )}
-        onClick={() => onSelect(null)}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <FileText className="w-5 h-5 text-gray-600" />
+      {/* Option to skip company - styled as a list item */}
+      <div className="border border-border-primary rounded-lg overflow-hidden">
+        <div
+          className={cn(
+            'flex items-center gap-4 p-3 border-b border-border-secondary cursor-pointer transition-all',
+            'hover:bg-background-secondary',
+            selected === null && 'bg-accent-primary/5'
+          )}
+          onClick={() => onSelect(null)}
+          role="button"
+          tabIndex={0}
+        >
+          {/* Selection indicator */}
+          <div
+            className={cn(
+              'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0',
+              selected === null
+                ? 'border-oak-primary bg-oak-primary'
+                : 'border-gray-400 dark:border-gray-500'
+            )}
+          >
+            {selected === null && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
           </div>
-          <div>
+          <div className="w-8 h-8 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <FileText className="w-4 h-4 text-gray-600" />
+          </div>
+          <div className="flex-1">
             <p className="font-medium text-text-primary">No company selected</p>
             <p className="text-sm text-text-muted">
               Generate document without company context
             </p>
           </div>
         </div>
-      </div>
 
-      {/* Company list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
-        {filteredCompanies.map((company) => (
+        {/* Company list */}
+        {paginatedCompanies.map((company) => (
           <div
             key={company.id}
             className={cn(
-              'p-4 border rounded-lg cursor-pointer transition-all',
-              'hover:border-accent-primary hover:shadow-sm',
-              selected?.id === company.id
-                ? 'border-accent-primary bg-accent-primary/5 ring-1 ring-accent-primary'
-                : 'border-border-primary bg-background-elevated'
+              'flex items-center gap-4 p-3 border-b border-border-secondary last:border-b-0 cursor-pointer transition-all',
+              'hover:bg-background-secondary',
+              selected?.id === company.id && 'bg-accent-primary/5'
             )}
             onClick={() => onSelect(company)}
             role="button"
             tabIndex={0}
           >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-text-primary truncate">
-                  {company.name}
-                </p>
-                <p className="text-sm text-text-muted">{company.uen}</p>
-                <span
-                  className={cn(
-                    'inline-flex px-2 py-0.5 rounded text-xs mt-1',
-                    company.status === 'ACTIVE'
-                      ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                  )}
-                >
-                  {company.status}
-                </span>
-              </div>
+            {/* Selection indicator */}
+            <div
+              className={cn(
+                'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0',
+                selected?.id === company.id
+                  ? 'border-oak-primary bg-oak-primary'
+                  : 'border-gray-400 dark:border-gray-500'
+              )}
+            >
+              {selected?.id === company.id && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
             </div>
+            <div className="w-8 h-8 rounded bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
+              <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-text-primary truncate">
+                {company.name}
+              </p>
+              <p className="text-sm text-text-muted">{company.uen}</p>
+            </div>
+            <span
+              className={cn(
+                'px-2 py-0.5 rounded text-xs flex-shrink-0',
+                company.status === 'ACTIVE'
+                  ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400'
+                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+              )}
+            >
+              {company.status}
+            </span>
           </div>
         ))}
       </div>
@@ -229,12 +319,24 @@ function CompanySelector({
           <p>No companies match your search</p>
         </div>
       )}
+
+      {/* Pagination */}
+      {filteredCompanies.length > 0 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={filteredCompanies.length}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={handleLimitChange}
+        />
+      )}
     </div>
   );
 }
 
 // ============================================================================
-// Custom Data Form Component
+// Custom Data Form Component (with max-width for UX)
 // ============================================================================
 
 interface CustomDataFormProps {
@@ -242,12 +344,10 @@ interface CustomDataFormProps {
   customData: Record<string, string>;
   title: string;
   useLetterhead: boolean;
-  shareExpiryHours: string;
   partials?: TemplatePartial[];
   onTitleChange: (title: string) => void;
   onCustomDataChange: (data: Record<string, string>) => void;
   onLetterheadChange: (value: boolean) => void;
-  onExpiryChange: (value: string) => void;
 }
 
 function CustomDataForm({
@@ -255,12 +355,10 @@ function CustomDataForm({
   customData,
   title,
   useLetterhead,
-  shareExpiryHours,
   partials = [],
   onTitleChange,
   onCustomDataChange,
   onLetterheadChange,
-  onExpiryChange,
 }: CustomDataFormProps) {
   // Helper to extract partial references from content
   const extractPartialReferences = useCallback((content: string): string[] => {
@@ -324,7 +422,6 @@ function CustomDataForm({
   }, [template, partials, extractPartialReferences]);
 
   // Helper to strip 'custom.' prefix from keys for proper context resolution
-  // The placeholder resolver expects context.custom.effectiveDate, not context.custom['custom.effectiveDate']
   const getStorageKey = (key: string) => key.replace(/^custom\./, '');
 
   const handleFieldChange = (key: string, value: string) => {
@@ -336,7 +433,7 @@ function CustomDataForm({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-2xl space-y-6">
       {/* Document Title */}
       <div>
         <label className="block text-sm font-medium text-text-primary mb-1">
@@ -405,6 +502,12 @@ function CustomDataForm({
         </div>
       )}
 
+      {customPlaceholders.length === 0 && (
+        <div className="text-sm text-text-muted italic py-4">
+          No custom fields required for this template.
+        </div>
+      )}
+
       {/* Options */}
       <div className="border-t border-border-secondary pt-4">
         <h4 className="text-sm font-medium text-text-primary mb-3">Options</h4>
@@ -426,52 +529,33 @@ function CustomDataForm({
               </p>
             </div>
           </label>
-
-          {/* Share expiry */}
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-text-primary">
-              Default share link expiry:
-            </label>
-            <select
-              value={shareExpiryHours}
-              onChange={(e) => onExpiryChange(e.target.value)}
-              className="px-3 py-1.5 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
-            >
-              <option value="">Never</option>
-              <option value="24">24 hours</option>
-              <option value="72">3 days</option>
-              <option value="168">7 days</option>
-              <option value="720">30 days</option>
-            </select>
-          </div>
         </div>
       </div>
     </div>
   );
 }
 
+
 // ============================================================================
-// Preview Step Component
+// Edit Step Component (using A4PageEditor)
 // ============================================================================
 
-interface PreviewStepProps {
-  content: string | null;
+interface EditStepProps {
+  content: string;
   validationResult: ValidationResult | null;
   isLoading: boolean;
+  onChange: (content: string) => void;
   onRefresh: () => void;
 }
 
-function PreviewStep({
-  content,
-  validationResult,
-  isLoading,
-  onRefresh,
-}: PreviewStepProps) {
+function EditStep({ content, validationResult, isLoading, onChange, onRefresh }: EditStepProps) {
+  const editorRef = useRef<A4PageEditorRef>(null);
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-accent-primary mb-4" />
-        <p className="text-text-muted">Generating preview...</p>
+        <p className="text-text-muted">Generating document...</p>
       </div>
     );
   }
@@ -480,7 +564,7 @@ function PreviewStep({
     <div className="space-y-4">
       {/* Validation warnings */}
       {validationResult && !validationResult.isValid && (
-        <div className="p-4 bg-status-warning/10 border border-status-warning/30 rounded-lg mb-4">
+        <div className="p-4 bg-status-warning/10 border border-status-warning/30 rounded-lg">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-status-warning flex-shrink-0 mt-0.5" />
             <div className="space-y-2">
@@ -506,10 +590,9 @@ function PreviewStep({
         </div>
       )}
 
-      {/* Refresh button */}
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium text-text-primary">
-          Document Preview
+          Edit & Preview Document
         </h4>
         <Button
           variant="ghost"
@@ -518,105 +601,22 @@ function PreviewStep({
           className="text-text-muted"
         >
           <RefreshCw className="w-4 h-4 mr-1" />
-          Refresh
+          Regenerate
         </Button>
       </div>
 
-      {/* Preview content */}
-      <div className="border border-border-primary rounded-lg overflow-hidden">
-        <div
-          className="p-6 bg-white dark:bg-gray-900 min-h-[400px] max-h-[600px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: content || '' }}
+      <div className="border border-border-primary rounded-lg overflow-hidden bg-background-secondary min-h-[500px]">
+        <A4PageEditor
+          ref={editorRef}
+          value={content}
+          onChange={onChange}
+          placeholder="Document content..."
         />
       </div>
 
       <p className="text-xs text-text-muted text-center">
-        This is a preview. You can edit the document after generation.
+        Edit the document above, then click &quot;Generate Document&quot; to save.
       </p>
-    </div>
-  );
-}
-
-// ============================================================================
-// Complete Step Component
-// ============================================================================
-
-interface CompleteStepProps {
-  document: GeneratedDocumentResult | null;
-  onEdit: () => void;
-  onExportPDF: () => void;
-  onCreateShare: () => void;
-  onGenerateAnother: () => void;
-}
-
-function CompleteStep({
-  document,
-  onEdit,
-  onExportPDF,
-  onCreateShare,
-  onGenerateAnother,
-}: CompleteStepProps) {
-  if (!document) {
-    return (
-      <div className="text-center py-12">
-        <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
-        <p className="text-text-primary font-medium">Generation failed</p>
-        <p className="text-text-muted mt-1">Please try again</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="text-center py-8">
-      <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-950 flex items-center justify-center mx-auto mb-4">
-        <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
-      </div>
-
-      <h3 className="text-xl font-semibold text-text-primary mb-2">
-        Document Generated Successfully
-      </h3>
-      <p className="text-text-muted mb-6">
-        &quot;{document.title}&quot; has been created and saved as a draft.
-      </p>
-
-      {/* Missing placeholders warning */}
-      {document.missingPlaceholders && document.missingPlaceholders.length > 0 && (
-        <div className="max-w-md mx-auto mb-6 p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg text-left">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                Some placeholders could not be resolved:
-              </p>
-              <ul className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                {document.missingPlaceholders.slice(0, 5).map((p) => (
-                  <li key={p}>{p}</li>
-                ))}
-                {document.missingPlaceholders.length > 5 && (
-                  <li>...and {document.missingPlaceholders.length - 5} more</li>
-                )}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button variant="primary" onClick={onEdit}>
-          <FileText className="w-4 h-4 mr-2" />
-          Edit Document
-        </Button>
-        <Button variant="secondary" onClick={onExportPDF}>
-          Export PDF
-        </Button>
-        <Button variant="secondary" onClick={onCreateShare}>
-          Create Share Link
-        </Button>
-        <Button variant="ghost" onClick={onGenerateAnother}>
-          Generate Another
-        </Button>
-      </div>
     </div>
   );
 }
@@ -629,6 +629,7 @@ export function DocumentGenerationWizard({
   templates,
   companies,
   partials = [],
+  tenantId,
   onGenerate,
   onPreviewTemplate,
   onValidate,
@@ -650,6 +651,7 @@ export function DocumentGenerationWizard({
     validationResult: null,
     generatedDocument: null,
     previewContent: null,
+    editedContent: null,
   });
 
   // Update title when template is selected
@@ -662,6 +664,11 @@ export function DocumentGenerationWizard({
     }
   }, [state.selectedTemplate, state.title]);
 
+  // Count filled custom fields for summary
+  const filledCustomFieldCount = useMemo(() => {
+    return Object.values(state.customData).filter((v) => v && v.trim() !== '').length;
+  }, [state.customData]);
+
   // Check if current step is valid
   const isStepValid = useCallback(
     (step: number): boolean => {
@@ -672,9 +679,7 @@ export function DocumentGenerationWizard({
           return true; // Company is optional
         case 2: // Customize
           return state.title.trim().length > 0;
-        case 3: // Preview
-          return true;
-        case 4: // Complete
+        case 3: // Edit & Preview
           return true;
         default:
           return false;
@@ -687,27 +692,30 @@ export function DocumentGenerationWizard({
   const goToNextStep = async () => {
     if (!isStepValid(currentStep)) return;
 
-    // Validate before preview
-    if (currentStep === 2 && onValidate && state.selectedTemplate && state.selectedCompany) {
+    // Generate preview and move to edit step
+    if (currentStep === 2) {
       setIsValidating(true);
-      try {
-        const result = await onValidate(
-          state.selectedTemplate.id,
-          state.selectedCompany.id
-        );
-        setState((prev) => ({ ...prev, validationResult: result }));
-      } catch (err) {
-        console.error('Validation error:', err);
+
+      // Optionally validate
+      if (onValidate && state.selectedTemplate) {
+        try {
+          const result = await onValidate(
+            state.selectedTemplate.id,
+            state.selectedCompany?.id,
+            state.customData
+          );
+          setState((prev) => ({ ...prev, validationResult: result }));
+        } catch (err) {
+          console.error('Validation error:', err);
+        }
       }
+
+      // Generate preview content
+      await generatePreview();
       setIsValidating(false);
     }
 
-    // Generate preview
-    if (currentStep === 2) {
-      await generatePreview();
-    }
-
-    // Generate document at preview step
+    // Generate document at edit step
     if (currentStep === 3) {
       await handleGenerate();
       return;
@@ -726,27 +734,40 @@ export function DocumentGenerationWizard({
     if (!state.selectedTemplate) return;
 
     setIsValidating(true);
+    setError(null);
     try {
+      // Build request body
+      const requestBody: Record<string, unknown> = {
+        templateId: state.selectedTemplate.id,
+        companyId: state.selectedCompany?.id,
+        customData: state.customData,
+      };
+
+      // Add tenantId if provided (for SUPER_ADMIN)
+      if (tenantId) {
+        requestBody.tenantId = tenantId;
+      }
+
       // Call preview API
       const response = await fetch('/api/generated-documents/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          templateId: state.selectedTemplate.id,
-          companyId: state.selectedCompany?.id,
-          customData: state.customData,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate preview');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to generate preview');
       }
 
       const data = await response.json();
-      setState((prev) => ({ ...prev, previewContent: data.content }));
+      setState((prev) => ({
+        ...prev,
+        previewContent: data.preview?.content || data.content,
+      }));
     } catch (err) {
       console.error('Preview error:', err);
-      setError('Failed to generate preview');
+      setError(err instanceof Error ? err.message : 'Failed to generate preview');
     }
     setIsValidating(false);
   };
@@ -768,10 +789,11 @@ export function DocumentGenerationWizard({
         shareExpiryHours: state.shareExpiryHours
           ? parseInt(state.shareExpiryHours)
           : undefined,
+        editedContent: state.editedContent || state.previewContent || undefined,
       });
 
+      // onGenerate will redirect to the view page
       setState((prev) => ({ ...prev, generatedDocument: result }));
-      setCurrentStep(4);
     } catch (err) {
       console.error('Generation error:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate document');
@@ -792,6 +814,7 @@ export function DocumentGenerationWizard({
       validationResult: null,
       generatedDocument: null,
       previewContent: null,
+      editedContent: null,
     });
     setCurrentStep(0);
     setError(null);
@@ -831,7 +854,6 @@ export function DocumentGenerationWizard({
             title={state.title}
             customData={state.customData}
             useLetterhead={state.useLetterhead}
-            shareExpiryHours={state.shareExpiryHours}
             partials={partials}
             onTitleChange={(title) => setState((prev) => ({ ...prev, title }))}
             onCustomDataChange={(data) =>
@@ -840,45 +862,19 @@ export function DocumentGenerationWizard({
             onLetterheadChange={(value) =>
               setState((prev) => ({ ...prev, useLetterhead: value }))
             }
-            onExpiryChange={(value) =>
-              setState((prev) => ({ ...prev, shareExpiryHours: value }))
-            }
           />
         ) : null;
 
       case 3:
         return (
-          <PreviewStep
-            content={state.previewContent}
+          <EditStep
+            content={state.previewContent || ''}
             validationResult={state.validationResult}
             isLoading={isValidating}
+            onChange={(content) =>
+              setState((prev) => ({ ...prev, previewContent: content }))
+            }
             onRefresh={generatePreview}
-          />
-        );
-
-      case 4:
-        return (
-          <CompleteStep
-            document={state.generatedDocument}
-            onEdit={() => {
-              if (state.generatedDocument) {
-                window.location.href = `/generated-documents/${state.generatedDocument.id}/edit`;
-              }
-            }}
-            onExportPDF={() => {
-              if (state.generatedDocument) {
-                window.open(
-                  `/api/generated-documents/${state.generatedDocument.id}/export/pdf`,
-                  '_blank'
-                );
-              }
-            }}
-            onCreateShare={() => {
-              if (state.generatedDocument) {
-                window.location.href = `/generated-documents/${state.generatedDocument.id}/share`;
-              }
-            }}
-            onGenerateAnother={handleReset}
           />
         );
 
@@ -889,8 +885,18 @@ export function DocumentGenerationWizard({
 
   return (
     <div className={cn('flex flex-col', className)}>
+      {/* Summary Card (always visible except on complete step) */}
+      {currentStep < 4 && (
+        <SummaryCard
+          template={state.selectedTemplate}
+          company={state.selectedCompany}
+          title={state.title}
+          customFieldCount={filledCustomFieldCount}
+        />
+      )}
+
       {/* Stepper */}
-      <div className="mb-8">
+      <div className="mt-6 mb-4">
         <Stepper
           steps={WIZARD_STEPS}
           currentStep={currentStep}
@@ -904,7 +910,7 @@ export function DocumentGenerationWizard({
 
       {/* Error message */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="mt-4 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
           <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
             <AlertCircle className="w-5 h-5" />
             <p className="text-sm font-medium">{error}</p>
@@ -928,16 +934,6 @@ export function DocumentGenerationWizard({
           </Button>
 
           <div className="flex items-center gap-3">
-            {currentStep === 3 && (
-              <Button
-                variant="secondary"
-                onClick={() => setCurrentStep(2)}
-                disabled={isGenerating}
-              >
-                Edit Settings
-              </Button>
-            )}
-
             <Button
               variant="primary"
               onClick={goToNextStep}
@@ -946,7 +942,7 @@ export function DocumentGenerationWizard({
               {isGenerating || isValidating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isValidating ? 'Validating...' : 'Generating...'}
+                  {isValidating ? 'Processing...' : 'Generating...'}
                 </>
               ) : currentStep === 3 ? (
                 <>

@@ -9,6 +9,7 @@ import {
   type PlaceholderContext,
 } from '@/lib/placeholder-resolver';
 import { extractSections, addSectionAnchors } from '@/services/document-validation.service';
+import { resolvePartials } from '@/services/template-partial.service';
 
 // Validation schema for preview request
 const previewSchema = z.object({
@@ -138,9 +139,10 @@ export async function POST(request: NextRequest) {
           officers: company.officers,
           shareholders: company.shareholders,
         });
+        // Merge all context including root-level arrays (directors, secretaries, shareholders)
         context = {
           ...context,
-          company: companyContext.company,
+          ...companyContext,
           custom: { ...context.custom, ...companyContext.custom },
         };
       }
@@ -205,8 +207,17 @@ export async function POST(request: NextRequest) {
       context.system.tenantName = tenant.name;
     }
 
+    // Resolve partials first ({{> partial-name}})
+    let contentWithPartials = template.content;
+    try {
+      contentWithPartials = await resolvePartials(template.content, tenantId);
+    } catch (partialError) {
+      // If partial resolution fails, continue with original content
+      console.warn('Failed to resolve partials:', partialError);
+    }
+
     // Resolve placeholders
-    const { resolved, missing } = resolvePlaceholders(template.content, context);
+    const { resolved, missing } = resolvePlaceholders(contentWithPartials, context);
 
     // Add section anchors
     const contentWithAnchors = addSectionAnchors(resolved);

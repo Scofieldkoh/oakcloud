@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { extractPlaceholders, type CompanyData, type OfficerData, type ShareholderData, type CompanyAddressData } from '@/lib/placeholder-resolver';
+import { resolvePartials } from '@/services/template-partial.service';
 
 // ============================================================================
 // Types
@@ -99,8 +100,16 @@ function analyzeTemplatePlaceholders(content: string, templatePlaceholders?: Pla
   const extractedKeys = extractPlaceholders(content);
   const requirements: PlaceholderRequirement[] = [];
 
+  // Array placeholders that are handled by {{#each}} loops and don't need individual validation
+  const arrayPlaceholders = ['directors', 'shareholders', 'secretaries', 'officers', 'contacts'];
+
   // Process extracted placeholders
   for (const key of extractedKeys) {
+    // Skip array placeholders - they're validated separately via #each
+    if (arrayPlaceholders.includes(key)) {
+      continue;
+    }
+
     const source = getPlaceholderCategory(key);
 
     // Check if this placeholder has explicit definition
@@ -115,15 +124,17 @@ function analyzeTemplatePlaceholders(content: string, templatePlaceholders?: Pla
     });
   }
 
-  // Check for array requirements from #each blocks
+  // Check for array requirements from #each blocks (these are warnings, not errors)
   const eachRegex = /\{\{#each\s+([a-zA-Z_][a-zA-Z0-9_.]*)\}\}/g;
   let match;
   while ((match = eachRegex.exec(content)) !== null) {
     const path = match[1];
+    // Only add as requirement if not already in the list
     const existing = requirements.find(r => r.key === path);
     if (existing) {
       existing.minItems = 1; // If using #each, at least 1 item is expected
     }
+    // Don't add array paths as required - they're optional and handled gracefully
   }
 
   return requirements;
@@ -254,7 +265,18 @@ function validateCompanyData(
   // Validate specific company fields
   for (const req of companyRequirements) {
     const field = req.key.replace('company.', '');
-    const value = getNestedValue(company, field);
+    let value: unknown;
+
+    // Special handling for computed fields
+    if (field === 'registeredAddress') {
+      // registeredAddress is computed from the addresses array
+      const regAddress = company.addresses?.find(
+        (a: CompanyAddressData) => a.addressType === 'REGISTERED_OFFICE' && a.isCurrent
+      );
+      value = regAddress?.fullAddress;
+    } else {
+      value = getNestedValue(company, field);
+    }
 
     if (req.required && (value === null || value === undefined || value === '')) {
       errors.push({
@@ -264,15 +286,6 @@ function validateCompanyData(
         fixUrl: `/companies/${company.id}`,
       });
     }
-  }
-
-  // Check for recommended fields
-  if (!company.financialYearEndMonth) {
-    warnings.push({
-      field: 'company.financialYearEndMonth',
-      message: 'Financial year end is not set',
-      suggestion: 'Consider setting the financial year end for accurate reporting',
-    });
   }
 
   return { errors, warnings };
@@ -455,9 +468,18 @@ export async function validateForGeneration(
     };
   }
 
-  // Analyze template requirements
+  // Resolve partials first to include their placeholders in validation
+  let contentToValidate = template.content;
+  try {
+    contentToValidate = await resolvePartials(template.content, tenantId);
+  } catch (partialError) {
+    // If partial resolution fails, continue with original content
+    console.warn('Failed to resolve partials for validation:', partialError);
+  }
+
+  // Analyze template requirements (with resolved partials)
   const requirements = analyzeTemplatePlaceholders(
-    template.content,
+    contentToValidate,
     (template.placeholders as unknown) as PlaceholderDefinition[] | undefined
   );
 

@@ -170,7 +170,7 @@ export async function createDocumentFromTemplate(
       title: data.title,
       content: resolvedContent,
       contentJson: template.contentJson ?? undefined,
-      status: 'DRAFT',
+      status: 'FINALIZED',
       useLetterhead: data.useLetterhead,
       shareExpiryHours: data.shareExpiryHours ?? template.defaultShareExpiryHours,
       placeholderData: context as Prisma.InputJsonValue,

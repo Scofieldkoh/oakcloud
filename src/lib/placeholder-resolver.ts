@@ -18,6 +18,10 @@ export interface PlaceholderContext {
   contact?: ContactData | null;
   custom?: Record<string, unknown>;
   system?: SystemData;
+  // Root-level arrays for {{#each}} loops
+  directors?: OfficerData[];
+  secretaries?: OfficerData[];
+  shareholders?: ShareholderData[];
 }
 
 export interface CompanyData {
@@ -256,6 +260,9 @@ export function resolvePlaceholders(
   // Process #with blocks
   resolved = processWithBlocks(resolved, fullContext, opts, missing);
 
+  // Process external modifiers: MODIFIER({{path}}) syntax
+  resolved = processExternalModifiers(resolved, fullContext, opts, missing);
+
   // Process simple placeholders last
   resolved = processSimplePlaceholders(resolved, fullContext, opts, missing);
 
@@ -302,6 +309,30 @@ function processEachBlocks(
         itemContent = itemContent.replace(/\{\{@index\}\}/g, String(index));
         itemContent = itemContent.replace(/\{\{@first\}\}/g, String(index === 0));
         itemContent = itemContent.replace(/\{\{@last\}\}/g, String(index === items.length - 1));
+
+        // Replace external modifiers with this.property: UCASE({{this.name}})
+        const extModThisRegex = /([A-Z_]+)\(\{\{this\.([a-zA-Z_][a-zA-Z0-9_]*)\}\}\)/g;
+        itemContent = itemContent.replace(extModThisRegex, (_: string, modifier: string, prop: string) => {
+          const modifierFn = VALUE_MODIFIERS[modifier];
+          if (!modifierFn) return _;
+          const value = item[prop];
+          const formatted = formatValue(value, options);
+          if (formatted === null) return '';
+          return modifierFn(formatted);
+        });
+
+        // Replace external modifiers with shorthand property: UCASE({{name}})
+        const extModPropRegex = /([A-Z_]+)\(\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}\)/g;
+        itemContent = itemContent.replace(extModPropRegex, (fullMatch: string, modifier: string, prop: string) => {
+          // Skip if modifier is not recognized
+          const modifierFn = VALUE_MODIFIERS[modifier];
+          if (!modifierFn) return fullMatch;
+          const value = item[prop];
+          if (value === undefined) return fullMatch; // Keep for outer resolution
+          const formatted = formatValue(value, options);
+          if (formatted === null) return '';
+          return modifierFn(formatted);
+        });
 
         // Replace {{this.property}} with item property
         const thisRegex = /\{\{this\.([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g;
@@ -397,7 +428,55 @@ function processWithBlocks(
 }
 
 /**
+ * Available value modifiers/formatters
+ * Usage: {{UCASE(company.name)}} or {{LCASE(company.status)}}
+ */
+const VALUE_MODIFIERS: Record<string, (value: string) => string> = {
+  UCASE: (v) => v.toUpperCase(),
+  UPPERCASE: (v) => v.toUpperCase(),
+  LCASE: (v) => v.toLowerCase(),
+  LOWERCASE: (v) => v.toLowerCase(),
+  CAPITALIZE: (v) => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase(),
+  TITLECASE: (v) => v.replace(/\b\w/g, (c) => c.toUpperCase()),
+  TRIM: (v) => v.trim(),
+};
+
+/**
+ * Process MODIFIER({{placeholder}}) syntax - modifier wraps the placeholder from outside
+ * Example: UCASE({{company.name}}) -> WHAT THE MATH! PTE. LTD.
+ */
+function processExternalModifiers(
+  content: string,
+  context: PlaceholderContext,
+  options: ResolveOptions,
+  missing: string[]
+): string {
+  const regex = /([A-Z_]+)\(\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}\)/g;
+
+  return content.replace(regex, (match, modifier, path) => {
+    const modifierFn = VALUE_MODIFIERS[modifier];
+    if (!modifierFn) {
+      return match; // Unknown modifier, keep as-is
+    }
+
+    const value = getValueByPath(context, path);
+    if (value === undefined || value === null) {
+      missing.push(path);
+      if (options.missingPlaceholder === 'keep') return match;
+      if (options.missingPlaceholder === 'highlight')
+        return `<span class="placeholder-missing">[${path}]</span>`;
+      return '';
+    }
+
+    const formatted = formatValue(value, options);
+    if (formatted === null) return '';
+    return modifierFn(formatted);
+  });
+}
+
+/**
  * Process simple {{placeholder}} values
+ * Now supports modifiers like {{UCASE(company.name)}}
  */
 function processSimplePlaceholders(
   content: string,
@@ -405,6 +484,30 @@ function processSimplePlaceholders(
   options: ResolveOptions,
   missing: string[]
 ): string {
+  // First, process placeholders with modifiers: {{UCASE(path)}}
+  const modifierRegex = /\{\{([A-Z_]+)\(([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\)\}\}/g;
+  content = content.replace(modifierRegex, (match, modifier, path) => {
+    const modifierFn = VALUE_MODIFIERS[modifier];
+    if (!modifierFn) {
+      // Unknown modifier, keep as-is
+      return match;
+    }
+
+    const value = getValueByPath(context, path);
+    if (value === undefined || value === null) {
+      missing.push(path);
+      if (options.missingPlaceholder === 'keep') return match;
+      if (options.missingPlaceholder === 'highlight')
+        return `<span class="placeholder-missing">[${path}]</span>`;
+      return '';
+    }
+
+    const formatted = formatValue(value, options);
+    if (formatted === null) return '';
+    return modifierFn(formatted);
+  });
+
+  // Then process simple placeholders: {{path}}
   const placeholderRegex = /\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}/g;
 
   return content.replace(placeholderRegex, (match, path) => {
@@ -549,16 +652,46 @@ function isTruthy(value: unknown): boolean {
 export function extractPlaceholders(content: string): string[] {
   const placeholders = new Set<string>();
 
+  // Loop-context-only placeholders that should be skipped (used inside {{#each}} blocks)
+  const loopOnlyPlaceholders = [
+    'this.name', 'this.identificationNumber', 'this.nationality', 'this.address',
+    'this.role', 'this.shareClass', 'this.numberOfShares', 'this.percentageHeld',
+    'this.appointmentDate', 'this.cessationDate', 'this.email', 'this.phone',
+    // Short forms used inside loops
+    'name', 'identificationNumber', 'nationality', 'address', 'role',
+    'shareClass', 'numberOfShares', 'percentageHeld', 'appointmentDate',
+    'cessationDate', 'email', 'phone'
+  ];
+
+  // Placeholders with internal modifiers: {{UCASE(company.name)}}
+  const internalModifierRegex = /\{\{[A-Z_]+\(([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\)\}\}/g;
+  let match;
+  while ((match = internalModifierRegex.exec(content)) !== null) {
+    const placeholder = match[1];
+    if (!loopOnlyPlaceholders.includes(placeholder)) {
+      placeholders.add(placeholder);
+    }
+  }
+
+  // Placeholders with external modifiers: UCASE({{company.name}})
+  const externalModifierRegex = /[A-Z_]+\(\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}\)/g;
+  while ((match = externalModifierRegex.exec(content)) !== null) {
+    const placeholder = match[1];
+    if (!loopOnlyPlaceholders.includes(placeholder)) {
+      placeholders.add(placeholder);
+    }
+  }
+
   // Simple placeholders: {{company.name}}
   const simpleRegex = /\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}/g;
-  let match;
   while ((match = simpleRegex.exec(content)) !== null) {
     const placeholder = match[1];
-    // Skip helpers
+    // Skip helpers, loop-context placeholders, and Handlebars keywords
     if (
       !placeholder.startsWith('#') &&
       !placeholder.startsWith('/') &&
       !placeholder.startsWith('@') &&
+      !loopOnlyPlaceholders.includes(placeholder) &&
       !['if', 'each', 'unless', 'with', 'else'].includes(placeholder)
     ) {
       placeholders.add(placeholder);
@@ -624,6 +757,10 @@ export function prepareCompanyContext(company: CompanyData): PlaceholderContext 
       // Add convenience accessors
       registeredAddress,
     } as CompanyData,
+    // Add directors/shareholders/secretaries at root level for {{#each directors}} syntax
+    directors,
+    secretaries,
+    shareholders,
     custom: {
       directors,
       secretaries,

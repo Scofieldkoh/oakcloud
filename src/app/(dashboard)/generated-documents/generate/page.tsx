@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, AlertCircle, FileText } from 'lucide-react';
+import { Loader2, AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
@@ -12,6 +12,7 @@ import {
   DocumentGenerationWizard,
   type GenerateDocumentData,
   type GeneratedDocumentResult,
+  type TemplatePartial,
 } from '@/components/documents/document-generation-wizard';
 import type { DocumentTemplate } from '@/components/documents/template-selector';
 
@@ -47,16 +48,18 @@ export default function GenerateDocumentPage() {
   // State
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [partials, setPartials] = useState<TemplatePartial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch templates and companies
+  // Fetch templates, companies, and partials
   useEffect(() => {
     const fetchData = async () => {
       // Don't fetch if SUPER_ADMIN hasn't selected a tenant
       if (session?.isSuperAdmin && !activeTenantId) {
         setTemplates([]);
         setCompanies([]);
+        setPartials([]);
         setIsLoading(false);
         return;
       }
@@ -68,15 +71,18 @@ export default function GenerateDocumentPage() {
         // Build query params with tenantId for SUPER_ADMIN
         const templatesParams = new URLSearchParams({ isActive: 'true', limit: '100' });
         const companiesParams = new URLSearchParams({ limit: '100', sortBy: 'name', sortOrder: 'asc' });
+        const partialsParams = new URLSearchParams({ all: 'true' });
 
         if (session?.isSuperAdmin && activeTenantId) {
           templatesParams.set('tenantId', activeTenantId);
           companiesParams.set('tenantId', activeTenantId);
+          partialsParams.set('tenantId', activeTenantId);
         }
 
-        const [templatesRes, companiesRes] = await Promise.all([
+        const [templatesRes, companiesRes, partialsRes] = await Promise.all([
           fetch(`/api/document-templates?${templatesParams}`),
           fetch(`/api/companies?${companiesParams}`),
+          fetch(`/api/template-partials?${partialsParams}`),
         ]);
 
         if (!templatesRes.ok) {
@@ -88,9 +94,11 @@ export default function GenerateDocumentPage() {
 
         const templatesData = await templatesRes.json();
         const companiesData = await companiesRes.json();
+        const partialsData = partialsRes.ok ? await partialsRes.json() : { partials: [] };
 
         setTemplates(templatesData.templates || []);
         setCompanies(companiesData.companies || []);
+        setPartials(partialsData.partials || []);
       } catch (err) {
         console.error('Fetch error:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -112,6 +120,8 @@ export default function GenerateDocumentPage() {
         customData: data.customData,
         useLetterhead: data.useLetterhead,
         shareExpiryHours: data.shareExpiryHours,
+        editedContent: data.editedContent,
+        status: 'FINALIZED', // Set as finalized by default
       };
 
       // Add tenantId for SUPER_ADMIN
@@ -132,6 +142,10 @@ export default function GenerateDocumentPage() {
 
       const result = await response.json();
       success('Document generated successfully');
+
+      // Redirect to view page
+      router.push(`/generated-documents/${result.id}`);
+
       return {
         id: result.id,
         title: result.title,
@@ -140,7 +154,7 @@ export default function GenerateDocumentPage() {
         missingPlaceholders: result.metadata?.missingPlaceholders,
       };
     },
-    [success, session?.isSuperAdmin, activeTenantId]
+    [success, session?.isSuperAdmin, activeTenantId, router]
   );
 
   // Handle template preview
@@ -151,9 +165,13 @@ export default function GenerateDocumentPage() {
 
   // Handle validation
   const handleValidate = useCallback(
-    async (templateId: string, companyId: string) => {
+    async (templateId: string, companyId: string | undefined, customData: Record<string, string>) => {
       try {
-        const requestBody: Record<string, unknown> = { templateId, companyId };
+        const requestBody: Record<string, unknown> = {
+          templateId,
+          companyId,
+          customData,
+        };
 
         // Add tenantId for SUPER_ADMIN
         if (session?.isSuperAdmin && activeTenantId) {
@@ -187,22 +205,13 @@ export default function GenerateDocumentPage() {
     <div className="p-4 sm:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <Link href="/generated-documents">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-          </Link>
-          <div className="h-6 w-px bg-border-secondary" />
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
-              Generate Document
-            </h1>
-            <p className="text-sm text-text-secondary mt-1">
-              Create a new document from a template
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
+            Generate Document
+          </h1>
+          <p className="text-sm text-text-secondary mt-1">
+            Create a new document from a template
+          </p>
         </div>
       </div>
 
@@ -270,6 +279,8 @@ export default function GenerateDocumentPage() {
           <DocumentGenerationWizard
             templates={templates}
             companies={companies}
+            partials={partials}
+            tenantId={activeTenantId}
             onGenerate={handleGenerate}
             onPreviewTemplate={handlePreviewTemplate}
             onValidate={handleValidate}

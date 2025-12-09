@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft,
   Loader2,
   AlertCircle,
   FileText,
@@ -24,15 +23,43 @@ import {
   Printer,
   Eye,
   EyeOff,
+  MessageCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
-import { SectionNavigator, type DocumentSection } from '@/components/documents/section-navigator';
-import { PDFPreviewPanel } from '@/components/documents/pdf-preview-panel';
-import { RenderContentWithPageBreaks } from '@/components/documents/page-break-indicator';
+import { useSession } from '@/hooks/use-auth';
+import { A4PageEditor } from '@/components/documents/a4-page-editor';
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Format date as "d MMM yyyy" (e.g., "9 Dec 2025")
+ */
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  const month = date.toLocaleString('en-US', { month: 'short' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+/**
+ * Format datetime as "d MMM yyyy, h:mm a" (e.g., "9 Dec 2025, 2:30 PM")
+ */
+function formatDateTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  const month = date.toLocaleString('en-US', { month: 'short' });
+  const year = date.getFullYear();
+  const time = date.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${day} ${month} ${year}, ${time}`;
+}
 
 // ============================================================================
 // Types
@@ -59,11 +86,11 @@ interface GeneratedDocument {
     name: string;
     uen: string;
   } | null;
-  createdBy: {
+  createdBy?: {
     id: string;
     firstName: string;
     lastName: string;
-  };
+  } | null;
   finalizedBy?: {
     id: string;
     firstName: string;
@@ -73,6 +100,24 @@ interface GeneratedDocument {
     shares: number;
     comments: number;
   };
+}
+
+interface DocumentComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  resolvedAt?: string | null;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+  resolvedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+  replies?: DocumentComment[];
 }
 
 // ============================================================================
@@ -126,14 +171,20 @@ export default function DocumentViewPage() {
   const params = useParams();
   const documentId = params.id as string;
   const { success, error: toastError } = useToast();
+  const { data: session } = useSession();
+
+  // Tenant selection for SUPER_ADMIN
+  const { selectedTenantId } = useTenantSelection();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   // State
   const [docData, setDocData] = useState<GeneratedDocument | null>(null);
-  const [sections, setSections] = useState<DocumentSection[]>([]);
+  const [comments, setComments] = useState<DocumentComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<string | undefined>();
-  const [showPreview, setShowPreview] = useState(false);
   const [includeLetterhead, setIncludeLetterhead] = useState(true);
 
   // Dialogs
@@ -142,28 +193,44 @@ export default function DocumentViewPage() {
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch document
+  // Fetch document and comments
   useEffect(() => {
-    const fetchDocument = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(`/api/generated-documents/${documentId}`);
-        if (!response.ok) {
-          if (response.status === 404) {
+        // Build URL with tenantId for SUPER_ADMIN
+        const urlParams = new URLSearchParams();
+        if (session?.isSuperAdmin && activeTenantId) {
+          urlParams.set('tenantId', activeTenantId);
+        }
+        const queryString = urlParams.toString();
+        const docUrl = `/api/generated-documents/${documentId}${queryString ? `?${queryString}` : ''}`;
+        const commentsUrl = `/api/generated-documents/${documentId}/comments${queryString ? `?${queryString}` : ''}`;
+
+        // Fetch document and comments in parallel
+        const [docResponse, commentsResponse] = await Promise.all([
+          fetch(docUrl),
+          fetch(commentsUrl),
+        ]);
+
+        if (!docResponse.ok) {
+          if (docResponse.status === 404) {
             throw new Error('Document not found');
           }
           throw new Error('Failed to fetch document');
         }
 
-        const data = await response.json();
+        const data = await docResponse.json();
         setDocData(data);
         setIncludeLetterhead(data.useLetterhead);
 
-        // Extract sections from content
-        const extractedSections = extractSectionsFromContent(data.content);
-        setSections(extractedSections);
+        // Load comments if available
+        if (commentsResponse.ok) {
+          const commentsData = await commentsResponse.json();
+          setComments(commentsData);
+        }
       } catch (err) {
         console.error('Fetch error:', err);
         setError(err instanceof Error ? err.message : 'Failed to load document');
@@ -172,48 +239,25 @@ export default function DocumentViewPage() {
       }
     };
 
-    fetchDocument();
-  }, [documentId]);
-
-  // Extract sections from HTML content
-  const extractSectionsFromContent = (content: string): DocumentSection[] => {
-    const sections: DocumentSection[] = [];
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(content, 'text/html');
-
-    // Find all headings
-    const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    headings.forEach((heading, index) => {
-      const level = parseInt(heading.tagName.charAt(1));
-      const text = heading.textContent?.trim() || `Section ${index + 1}`;
-      const anchor =
-        heading.id ||
-        `section-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-
-      // Check for page break before this heading
-      const prevSibling = heading.previousElementSibling;
-      const hasPageBreakBefore = prevSibling?.classList.contains('page-break');
-
-      sections.push({
-        id: `section-${index}`,
-        title: text,
-        anchor,
-        level,
-        order: index,
-        pageBreakBefore: hasPageBreakBefore || false,
-      });
-    });
-
-    return sections;
-  };
+    fetchData();
+  }, [documentId, session?.isSuperAdmin, activeTenantId]);
 
   // Handle finalize
   const handleFinalize = async () => {
     setIsProcessing(true);
     try {
+      const body: Record<string, unknown> = {};
+      if (session?.isSuperAdmin && activeTenantId) {
+        body.tenantId = activeTenantId;
+      }
+
       const response = await fetch(
         `/api/generated-documents/${documentId}/finalize`,
-        { method: 'POST' }
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
       );
 
       if (!response.ok) {
@@ -236,17 +280,23 @@ export default function DocumentViewPage() {
   const handleUnfinalize = async () => {
     setIsProcessing(true);
     try {
+      // Build URL with reason and tenantId as query params
+      const params = new URLSearchParams();
+      params.set('reason', 'User requested to edit document');
+      if (session?.isSuperAdmin && activeTenantId) {
+        params.set('tenantId', activeTenantId);
+      }
+
       const response = await fetch(
-        `/api/generated-documents/${documentId}/finalize`,
+        `/api/generated-documents/${documentId}/finalize?${params}`,
         {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason: 'User requested to edit document' }),
         }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to unfinalize document');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to unfinalize document');
       }
 
       const updated = await response.json();
@@ -254,7 +304,7 @@ export default function DocumentViewPage() {
       success('Document unlocked for editing');
     } catch (err) {
       console.error('Unfinalize error:', err);
-      toastError('Failed to unlock document');
+      toastError(err instanceof Error ? err.message : 'Failed to unlock document');
     } finally {
       setIsProcessing(false);
       setUnfinalizeDialogOpen(false);
@@ -265,10 +315,18 @@ export default function DocumentViewPage() {
   const handleArchive = async () => {
     setIsProcessing(true);
     try {
+      const body: Record<string, unknown> = {
+        action: 'archive',
+        reason: 'User requested to archive document',
+      };
+      if (session?.isSuperAdmin && activeTenantId) {
+        body.tenantId = activeTenantId;
+      }
+
       const response = await fetch(`/api/generated-documents/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'ARCHIVED' }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -290,8 +348,14 @@ export default function DocumentViewPage() {
   // Handle export
   const handleExport = async () => {
     try {
+      const params = new URLSearchParams();
+      params.set('letterhead', String(includeLetterhead));
+      if (session?.isSuperAdmin && activeTenantId) {
+        params.set('tenantId', activeTenantId);
+      }
+
       const response = await fetch(
-        `/api/generated-documents/${documentId}/export/pdf?letterhead=${includeLetterhead}`
+        `/api/generated-documents/${documentId}/export/pdf?${params}`
       );
 
       if (!response.ok) {
@@ -319,9 +383,18 @@ export default function DocumentViewPage() {
   // Handle clone
   const handleClone = async () => {
     try {
+      const body: Record<string, unknown> = {};
+      if (session?.isSuperAdmin && activeTenantId) {
+        body.tenantId = activeTenantId;
+      }
+
       const response = await fetch(
         `/api/generated-documents/${documentId}/clone`,
-        { method: 'POST' }
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
       );
 
       if (!response.ok) {
@@ -367,163 +440,141 @@ export default function DocumentViewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background-primary">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="border-b border-border-primary bg-background-secondary sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 min-w-0">
-              <Link href="/generated-documents">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-              </Link>
-              <div className="h-6 w-px bg-border-secondary" />
-              <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-xl font-semibold text-text-primary truncate">
-                    {docData.title}
-                  </h1>
-                  <StatusBadge status={docData.status} />
-                </div>
-                {docData.template && (
-                  <p className="text-sm text-text-muted">
-                    From: {docData.template.name}
-                  </p>
-                )}
-              </div>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl font-semibold text-text-primary truncate">
+              {docData.title}
+            </h1>
+            <StatusBadge status={docData.status} />
+          </div>
+          {docData.template && (
+            <p className="text-text-secondary text-sm mt-1">
+              From template: {docData.template.name}
+            </p>
+          )}
+        </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              {/* Letterhead toggle */}
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {/* Letterhead toggle */}
+          <button
+            type="button"
+            onClick={() => setIncludeLetterhead(!includeLetterhead)}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors',
+              includeLetterhead
+                ? 'bg-accent-primary/10 text-accent-primary'
+                : 'bg-background-tertiary text-text-muted hover:text-text-primary'
+            )}
+            title={includeLetterhead ? 'Hide letterhead' : 'Show letterhead'}
+          >
+            {includeLetterhead ? (
+              <Eye className="w-4 h-4" />
+            ) : (
+              <EyeOff className="w-4 h-4" />
+            )}
+            Letterhead
+          </button>
+
+          <div className="w-px h-6 bg-border-secondary" />
+
+          {/* Edit (only for drafts) */}
+          {docData.status === 'DRAFT' && (
+            <Link href={`/generated-documents/${docData.id}/edit`}>
+              <Button variant="secondary" size="sm">
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            </Link>
+          )}
+
+          {/* Finalize/Unfinalize */}
+          {docData.status === 'DRAFT' && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setFinalizeDialogOpen(true)}
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Finalize
+            </Button>
+          )}
+          {docData.status === 'FINALIZED' && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setUnfinalizeDialogOpen(true)}
+            >
+              <Unlock className="w-4 h-4 mr-2" />
+              Unlock
+            </Button>
+          )}
+
+          {/* Export */}
+          <Button variant="secondary" size="sm" onClick={handleExport}>
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+
+          {/* Share */}
+          <Link href={`/generated-documents/${docData.id}/share`}>
+            <Button variant="secondary" size="sm">
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+          </Link>
+
+          {/* More actions */}
+          <div className="relative group">
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+            <div className="absolute right-0 top-full mt-1 w-40 py-1 bg-background-elevated border border-border-primary rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
               <button
                 type="button"
-                onClick={() => setIncludeLetterhead(!includeLetterhead)}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors',
-                  includeLetterhead
-                    ? 'bg-accent-primary/10 text-accent-primary'
-                    : 'bg-background-tertiary text-text-muted hover:text-text-primary'
-                )}
-                title={includeLetterhead ? 'Hide letterhead' : 'Show letterhead'}
+                onClick={handlePrint}
+                className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
               >
-                {includeLetterhead ? (
-                  <Eye className="w-4 h-4" />
-                ) : (
-                  <EyeOff className="w-4 h-4" />
-                )}
-                Letterhead
+                <Printer className="w-4 h-4" />
+                Print
               </button>
-
-              <div className="w-px h-6 bg-border-secondary" />
-
-              {/* Edit (only for drafts) */}
-              {docData.status === 'DRAFT' && (
-                <Link href={`/generated-documents/${docData.id}/edit`}>
-                  <Button variant="secondary" size="sm">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                </Link>
-              )}
-
-              {/* Finalize/Unfinalize */}
-              {docData.status === 'DRAFT' && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setFinalizeDialogOpen(true)}
-                >
-                  <Lock className="w-4 h-4 mr-2" />
-                  Finalize
-                </Button>
-              )}
-              {docData.status === 'FINALIZED' && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setUnfinalizeDialogOpen(true)}
-                >
-                  <Unlock className="w-4 h-4 mr-2" />
-                  Unlock
-                </Button>
-              )}
-
-              {/* Export */}
-              <Button variant="secondary" size="sm" onClick={handleExport}>
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-
-              {/* Share */}
-              <Link href={`/generated-documents/${docData.id}/share`}>
-                <Button variant="secondary" size="sm">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-              </Link>
-
-              {/* More actions */}
-              <div className="relative group">
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-                <div className="absolute right-0 top-full mt-1 w-40 py-1 bg-background-elevated border border-border-primary rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+              <button
+                type="button"
+                onClick={handleClone}
+                className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                Clone
+              </button>
+              {docData.status !== 'ARCHIVED' && (
+                <>
+                  <div className="h-px bg-border-secondary my-1" />
                   <button
                     type="button"
-                    onClick={handlePrint}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
+                    onClick={() => setArchiveDialogOpen(true)}
+                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary text-amber-600 flex items-center gap-2"
                   >
-                    <Printer className="w-4 h-4" />
-                    Print
+                    <Archive className="w-4 h-4" />
+                    Archive
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleClone}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
-                  >
-                    <Copy className="w-4 h-4" />
-                    Clone
-                  </button>
-                  {docData.status !== 'ARCHIVED' && (
-                    <>
-                      <div className="h-px bg-border-secondary my-1" />
-                      <button
-                        type="button"
-                        onClick={() => setArchiveDialogOpen(true)}
-                        className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary text-amber-600 flex items-center gap-2"
-                      >
-                        <Archive className="w-4 h-4" />
-                        Archive
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main content with sidebar */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      {/* Main content */}
+      <div className="mt-6">
         <div className="flex gap-6">
-          {/* Section Navigator Sidebar */}
-          {sections.length > 0 && (
-            <div className="w-64 flex-shrink-0">
-              <SectionNavigator
-                sections={sections}
-                activeSection={activeSection}
-                onSectionClick={(section) => setActiveSection(section.anchor)}
-                onScrollToSection={(anchor) => setActiveSection(anchor)}
-                sticky
-                stickyTop={100}
-              />
-
-              {/* Document metadata */}
-              <div className="mt-6 p-4 bg-background-secondary border border-border-primary rounded-lg space-y-3">
+          {/* Document metadata sidebar */}
+          <div className="w-64 flex-shrink-0">
+            <div className="sticky top-24 space-y-4 max-h-[calc(100vh-8rem)] overflow-y-auto">
+              {/* Details Panel */}
+              <div className="p-4 bg-background-secondary border border-border-primary rounded-lg space-y-3">
                 <h4 className="text-sm font-medium text-text-primary">
                   Details
                 </h4>
@@ -540,17 +591,19 @@ export default function DocumentViewPage() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-sm">
-                  <User className="w-4 h-4 text-text-muted" />
-                  <span className="text-text-secondary">
-                    {docData.createdBy.firstName} {docData.createdBy.lastName}
-                  </span>
-                </div>
+                {docData.createdBy && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="w-4 h-4 text-text-muted" />
+                    <span className="text-text-secondary">
+                      {docData.createdBy.firstName} {docData.createdBy.lastName}
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 text-text-muted" />
                   <span className="text-text-secondary">
-                    {new Date(docData.createdAt).toLocaleDateString()}
+                    {formatDate(docData.createdAt)}
                   </span>
                 </div>
 
@@ -561,7 +614,7 @@ export default function DocumentViewPage() {
                       {docData.finalizedBy.lastName}
                     </p>
                     <p className="text-xs text-text-muted">
-                      {new Date(docData.finalizedAt).toLocaleString()}
+                      {formatDateTime(docData.finalizedAt)}
                     </p>
                   </div>
                 )}
@@ -573,34 +626,81 @@ export default function DocumentViewPage() {
                   </div>
                 )}
               </div>
+
+              {/* Comments Section - Inside sticky container */}
+              {comments.length > 0 && (
+                <div className="p-4 bg-background-secondary border border-border-primary rounded-lg">
+                  <h4 className="text-sm font-medium text-text-primary flex items-center gap-2 mb-3">
+                    <MessageCircle className="w-4 h-4" />
+                    Comments ({comments.length})
+                  </h4>
+                  <div className="space-y-3 max-h-48 overflow-y-auto">
+                    {comments.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className={cn(
+                          'p-3 rounded-lg text-sm',
+                          comment.resolvedAt
+                            ? 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800'
+                            : 'bg-background-tertiary'
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-text-primary">
+                            {comment.user
+                              ? `${comment.user.firstName} ${comment.user.lastName}`
+                              : 'Unknown'}
+                          </span>
+                          <span className="text-xs text-text-muted">
+                            {formatDate(comment.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-text-secondary whitespace-pre-wrap">
+                          {comment.content}
+                        </p>
+                        {comment.resolvedAt && comment.resolvedBy && (
+                          <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+                            Resolved by {comment.resolvedBy.firstName}{' '}
+                            {comment.resolvedBy.lastName}
+                          </p>
+                        )}
+                        {/* Replies */}
+                        {comment.replies && comment.replies.length > 0 && (
+                          <div className="mt-2 pl-3 border-l-2 border-border-secondary space-y-2">
+                            {comment.replies.map((reply) => (
+                              <div key={reply.id} className="text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-text-primary text-xs">
+                                    {reply.user
+                                      ? `${reply.user.firstName} ${reply.user.lastName}`
+                                      : 'Unknown'}
+                                  </span>
+                                  <span className="text-xs text-text-muted">
+                                    {formatDate(reply.createdAt)}
+                                  </span>
+                                </div>
+                                <p className="text-text-secondary text-xs mt-0.5">
+                                  {reply.content}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* Document content */}
+          {/* Document content using A4PageEditor in read-only mode */}
           <div className="flex-1 min-w-0">
-            <div className="bg-white dark:bg-gray-900 border border-border-primary rounded-lg shadow-sm overflow-hidden">
-              {/* Letterhead placeholder (if enabled) */}
-              {includeLetterhead && (
-                <div className="h-20 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400">
-                  [Letterhead Header]
-                </div>
-              )}
-
-              {/* Content */}
-              <div className="p-8">
-                <RenderContentWithPageBreaks
-                  html={docData.content}
-                  isEditable={false}
-                  className="prose prose-sm max-w-none dark:prose-invert"
-                />
-              </div>
-
-              {/* Footer placeholder (if enabled) */}
-              {includeLetterhead && (
-                <div className="h-16 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 text-sm">
-                  [Letterhead Footer]
-                </div>
-              )}
+            <div className="border border-border-primary rounded-lg shadow-sm overflow-hidden h-[calc(100vh-12rem)]">
+              <A4PageEditor
+                value={docData.content}
+                readOnly={true}
+              />
             </div>
           </div>
         </div>
@@ -638,24 +738,6 @@ export default function DocumentViewPage() {
         confirmLabel={isProcessing ? 'Archiving...' : 'Archive'}
         variant="warning"
       />
-
-      {/* Print styles */}
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          .print-content,
-          .print-content * {
-            visibility: visible;
-          }
-          .print-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-          }
-        }
-      `}</style>
     </div>
   );
 }

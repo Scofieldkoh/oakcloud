@@ -1320,11 +1320,13 @@ src/app/api/ai/
 #### 2. Document Generation Wizard
 ```
 Step 1: Select Template     →  Category filter, search, preview
-Step 2: Select Context      →  Company selection, contact selection
-Step 3: Review Placeholders →  Auto-populated values with edit capability
-Step 4: Preview & Edit      →  Full document preview, inline editing
-Step 5: Finalize            →  Save, generate share link, export
+Step 2: Select Company      →  Company selection (optional)
+Step 3: Custom Fields       →  Document title, custom placeholders, options
+Step 4: Edit & Preview      →  Full A4 document preview, inline editing, print
+                            →  On "Generate Document": saves as FINALIZED, redirects to view page
 ```
+
+**Note:** The wizard automatically redirects to the document view page after generation. The view page uses the same A4PageEditor in read-only mode.
 
 #### 3. Shareable Document Page
 - Clean, professional layout

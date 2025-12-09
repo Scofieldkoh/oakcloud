@@ -561,21 +561,14 @@ export function PDFPreviewPanel({
     }
   }, [documentId, includeLetterhead]);
 
-  // Handle print - prints only the preview content
+  // Handle print - prints only the preview content using hidden iframe (stays on same page)
   const handlePrint = useCallback(() => {
     if (onPrint) {
       onPrint();
       return;
     }
 
-    // Create a new window with only the preview content for printing
     const printContent = previewContent || '';
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-
-    if (!printWindow) {
-      console.error('Failed to open print window');
-      return;
-    }
 
     // Use table layout trick for header/footer on each page
     const headerHtml = includeLetterhead ? `
@@ -598,7 +591,24 @@ export function PDFPreviewPanel({
       </tfoot>
     ` : '';
 
-    printWindow.document.write(`
+    // Create a hidden iframe for printing (stays on same page)
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'absolute';
+    printFrame.style.top = '-9999px';
+    printFrame.style.left = '-9999px';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = 'none';
+    document.body.appendChild(printFrame);
+
+    const frameDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
+    if (!frameDoc) {
+      document.body.removeChild(printFrame);
+      return;
+    }
+
+    frameDoc.open();
+    frameDoc.write(`
       <!DOCTYPE html>
       <html>
         <head>
@@ -709,7 +719,7 @@ export function PDFPreviewPanel({
             }
 
             @media print {
-              body {
+              html, body {
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
               }
@@ -731,24 +741,17 @@ export function PDFPreviewPanel({
         </body>
       </html>
     `);
+    frameDoc.close();
 
-    printWindow.document.close();
-
-    // Wait for content to load then print
-    printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    };
-
-    // Fallback if onload doesn't fire
+    // Wait for content to load, then print
     setTimeout(() => {
-      if (!printWindow.closed) {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-      }
-    }, 500);
+      printFrame.contentWindow?.focus();
+      printFrame.contentWindow?.print();
+      // Remove iframe after printing
+      setTimeout(() => {
+        document.body.removeChild(printFrame);
+      }, 1000);
+    }, 200);
   }, [onPrint, previewContent, title, includeLetterhead]);
 
   // Handle download

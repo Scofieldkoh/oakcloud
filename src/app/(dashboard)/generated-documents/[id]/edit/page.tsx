@@ -10,17 +10,15 @@ import {
   Save,
   Eye,
   EyeOff,
-  FileText,
-  Split,
   Maximize2,
   Minimize2,
-  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
+import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { cn } from '@/lib/utils';
-import { DocumentEditor, type DocumentEditorRef } from '@/components/documents/document-editor';
-import { PDFPreviewPanel } from '@/components/documents/pdf-preview-panel';
+import { useSession } from '@/hooks/use-auth';
+import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
 import { DraftRecoveryPrompt } from '@/components/documents/draft-recovery-prompt';
 
 // ============================================================================
@@ -61,7 +59,15 @@ export default function DocumentEditPage() {
   const params = useParams();
   const documentId = params.id as string;
   const { success, error: toastError } = useToast();
-  const editorRef = useRef<DocumentEditorRef>(null);
+  const editorRef = useRef<A4PageEditorRef>(null);
+  const { data: session } = useSession();
+
+  // Tenant selection for SUPER_ADMIN
+  const { selectedTenantId } = useTenantSelection();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   // State
   const [document, setDocument] = useState<GeneratedDocument | null>(null);
@@ -70,12 +76,9 @@ export default function DocumentEditPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
-  // Preview state
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewContent, setPreviewContent] = useState<string>('');
   const [includeLetterhead, setIncludeLetterhead] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentContent, setCurrentContent] = useState<string>('');
 
   // Draft recovery
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -88,10 +91,19 @@ export default function DocumentEditPage() {
       setError(null);
 
       try {
+        // Build URL with tenantId for SUPER_ADMIN
+        const urlParams = new URLSearchParams();
+        if (session?.isSuperAdmin && activeTenantId) {
+          urlParams.set('tenantId', activeTenantId);
+        }
+        const queryString = urlParams.toString();
+        const docUrl = `/api/generated-documents/${documentId}${queryString ? `?${queryString}` : ''}`;
+        const draftUrl = `/api/generated-documents/${documentId}/draft${queryString ? `?${queryString}` : ''}`;
+
         // Fetch document and draft in parallel
         const [docResponse, draftResponse] = await Promise.all([
-          fetch(`/api/generated-documents/${documentId}`),
-          fetch(`/api/generated-documents/${documentId}/draft`),
+          fetch(docUrl),
+          fetch(draftUrl),
         ]);
 
         if (!docResponse.ok) {
@@ -110,7 +122,7 @@ export default function DocumentEditPage() {
         }
 
         setDocument(docData);
-        setPreviewContent(docData.content);
+        setCurrentContent(docData.content);
         setIncludeLetterhead(docData.useLetterhead);
 
         // Check for unsaved draft
@@ -130,46 +142,54 @@ export default function DocumentEditPage() {
     };
 
     fetchData();
-  }, [documentId, router]);
+  }, [documentId, router, session?.isSuperAdmin, activeTenantId]);
 
   // Handle content change
   const handleContentChange = useCallback((html: string) => {
     setHasUnsavedChanges(true);
-    setPreviewContent(html);
+    setCurrentContent(html);
   }, []);
 
   // Handle auto-save
   const handleAutoSave = useCallback(
     async (html: string) => {
       try {
+        const body: Record<string, unknown> = { content: html };
+        if (session?.isSuperAdmin && activeTenantId) {
+          body.tenantId = activeTenantId;
+        }
         await fetch(`/api/generated-documents/${documentId}/draft`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: html }),
+          body: JSON.stringify(body),
         });
       } catch (err) {
         console.error('Auto-save error:', err);
       }
     },
-    [documentId]
+    [documentId, session?.isSuperAdmin, activeTenantId]
   );
 
   // Handle save
   const handleSave = useCallback(async () => {
     if (!editorRef.current) return;
 
-    const { html, json } = editorRef.current.getContent();
+    const html = editorRef.current.getContent();
     setIsSaving(true);
 
     try {
+      const body: Record<string, unknown> = {
+        content: html,
+        useLetterhead: includeLetterhead,
+      };
+      if (session?.isSuperAdmin && activeTenantId) {
+        body.tenantId = activeTenantId;
+      }
+
       const response = await fetch(`/api/generated-documents/${documentId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: html,
-          contentJson: json,
-          useLetterhead: includeLetterhead,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -182,7 +202,11 @@ export default function DocumentEditPage() {
       setLastSaved(new Date());
 
       // Clean up drafts
-      await fetch(`/api/generated-documents/${documentId}/draft`, {
+      const deleteParams = new URLSearchParams();
+      if (session?.isSuperAdmin && activeTenantId) {
+        deleteParams.set('tenantId', activeTenantId);
+      }
+      await fetch(`/api/generated-documents/${documentId}/draft${deleteParams.toString() ? `?${deleteParams}` : ''}`, {
         method: 'DELETE',
       });
 
@@ -193,13 +217,13 @@ export default function DocumentEditPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [documentId, includeLetterhead, success, toastError]);
+  }, [documentId, includeLetterhead, success, toastError, session?.isSuperAdmin, activeTenantId]);
 
   // Handle draft recovery
   const handleRecoverDraft = useCallback(() => {
     if (draft && editorRef.current) {
       editorRef.current.setContent(draft.content);
-      setPreviewContent(draft.content);
+      setCurrentContent(draft.content);
       setHasUnsavedChanges(true);
     }
     setShowDraftPrompt(false);
@@ -207,14 +231,18 @@ export default function DocumentEditPage() {
 
   const handleDiscardDraft = useCallback(async () => {
     try {
-      await fetch(`/api/generated-documents/${documentId}/draft`, {
+      const deleteParams = new URLSearchParams();
+      if (session?.isSuperAdmin && activeTenantId) {
+        deleteParams.set('tenantId', activeTenantId);
+      }
+      await fetch(`/api/generated-documents/${documentId}/draft${deleteParams.toString() ? `?${deleteParams}` : ''}`, {
         method: 'DELETE',
       });
     } catch (err) {
       console.error('Discard draft error:', err);
     }
     setShowDraftPrompt(false);
-  }, [documentId]);
+  }, [documentId, session?.isSuperAdmin, activeTenantId]);
 
   // Warn before leaving with unsaved changes
   useEffect(() => {
@@ -334,22 +362,6 @@ export default function DocumentEditPage() {
                 <span className="hidden sm:inline">Letterhead</span>
               </button>
 
-              {/* Preview toggle */}
-              <button
-                type="button"
-                onClick={() => setShowPreview(!showPreview)}
-                className={cn(
-                  'flex items-center gap-1.5 px-2 py-1 rounded text-sm transition-colors',
-                  showPreview
-                    ? 'bg-accent-primary/10 text-accent-primary'
-                    : 'bg-background-tertiary text-text-muted hover:text-text-primary'
-                )}
-                title={showPreview ? 'Hide preview' : 'Show preview'}
-              >
-                <Split className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Preview</span>
-              </button>
-
               {/* Fullscreen toggle */}
               <button
                 type="button"
@@ -390,58 +402,23 @@ export default function DocumentEditPage() {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Editor panel */}
-        <div
-          className={cn(
-            'flex-1 flex flex-col overflow-hidden',
-            showPreview && 'w-1/2'
-          )}
-        >
-          <DocumentEditor
-            ref={editorRef}
-            value={document.content}
-            valueJson={document.contentJson}
-            onChange={handleContentChange}
-            onAutoSave={handleAutoSave}
-            autoSaveInterval={30000}
-            minHeight={600}
-            showPlaceholderButton={!!document.template}
-            availablePlaceholders={document.template?.placeholders?.map((p) => ({
-              key: p.key,
-              label: p.label,
-              category: p.category,
-            }))}
-            className="flex-1 overflow-auto"
-          />
-        </div>
-
-        {/* Preview panel */}
-        {showPreview && (
-          <div className="w-1/2 border-l border-border-primary flex flex-col overflow-hidden">
-            <PDFPreviewPanel
-              content={previewContent}
-              title={document.title}
-              includeLetterhead={includeLetterhead}
-              onLetterheadToggle={setIncludeLetterhead}
-              showToolbar={true}
-              showPageNavigation={true}
-              showZoomControls={true}
-              className="flex-1"
-            />
-          </div>
-        )}
+      {/* Main content - A4PageEditor */}
+      <div className="flex-1 overflow-hidden">
+        <A4PageEditor
+          ref={editorRef}
+          value={currentContent}
+          onChange={handleContentChange}
+        />
       </div>
 
       {/* Draft recovery prompt */}
       {showDraftPrompt && draft && (
         <DraftRecoveryPrompt
           documentId={documentId}
-          onRecover={(content, contentJson) => {
+          onRecover={(content) => {
             if (editorRef.current) {
               editorRef.current.setContent(content);
-              setPreviewContent(content);
+              setCurrentContent(content);
               setHasUnsavedChanges(true);
             }
             setShowDraftPrompt(false);

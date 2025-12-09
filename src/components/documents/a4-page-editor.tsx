@@ -368,7 +368,7 @@ function hasRenderableContent(html: string): boolean {
 
 export interface A4PageEditorProps {
   value: string;
-  onChange: (html: string) => void;
+  onChange?: (html: string) => void;
   placeholder?: string;
   className?: string;
   tenantId?: string;
@@ -376,12 +376,15 @@ export interface A4PageEditorProps {
   showPreviewToggle?: boolean;
   onPreview?: () => void;
   isPreviewLoading?: boolean;
+  readOnly?: boolean;
 }
 
 export interface A4PageEditorRef {
   insertAtCursor: (text: string) => void;
   insertHtmlAtCursor: (html: string) => void;
   focus: () => void;
+  getContent: () => string;
+  setContent: (html: string) => void;
 }
 
 interface PageData {
@@ -910,11 +913,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       showPreviewToggle = true,
       onPreview,
       isPreviewLoading = false,
+      readOnly = false,
     },
     ref,
   ) {
     const PAGE_SEPARATOR = '<!-- PAGE_BREAK -->';
     const activeEditorRef = useRef<HTMLDivElement | null>(null);
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const lastValueRef = useRef<string>(value);
     const isInternalUpdate = useRef(false);
 
@@ -1025,16 +1030,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [restoreSelection],
     );
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        insertAtCursor,
-        insertHtmlAtCursor,
-        focus: () => activeEditorRef.current?.focus(),
-      }),
-      [insertAtCursor, insertHtmlAtCursor],
-    );
-
     const normalizePageSeparators = useCallback(
       (input: string) => {
         if (!input || input.indexOf('page-break') === -1) return input;
@@ -1061,14 +1056,50 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const [activePageId, setActivePageId] = useState<string>(
       pages[0]?.id || '',
     );
-    const [isPreviewMode, setIsPreviewMode] = useState(false);
+    const [isPreviewMode, setIsPreviewMode] = useState(readOnly);
+
+    // Expose methods via ref
+    useImperativeHandle(
+      ref,
+      () => ({
+        insertAtCursor,
+        insertHtmlAtCursor,
+        focus: () => activeEditorRef.current?.focus(),
+        getContent: () => pages.map((p) => p.content).join(PAGE_SEPARATOR),
+        setContent: (html: string) => {
+          const newPages = parsePages(html, pages);
+          setPages(newPages);
+          if (newPages.length > 0 && !newPages.find((p) => p.id === activePageId)) {
+            setActivePageId(newPages[0].id);
+          }
+        },
+      }),
+      [insertAtCursor, insertHtmlAtCursor, pages, parsePages, activePageId, PAGE_SEPARATOR],
+    );
+
+    // In read-only mode, always stay in preview/read mode
+    const effectivePreviewMode = readOnly || isPreviewMode;
 
     const previewPages = useMemo(() => {
       if (!previewContent) return null;
       return parsePages(previewContent);
     }, [previewContent, parsePages]);
 
-    const displayPages = isPreviewMode && previewPages ? previewPages : pages;
+    // Helper to check if a page should be removed (contains only [Remove Page])
+    const shouldRemovePage = useCallback((content: string) => {
+      const textContent = (content || '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim();
+      return /^\[Remove\s*Page\]$/i.test(textContent);
+    }, []);
+
+    // Always filter out pages marked with [Remove Page] from display
+    const rawDisplayPages = (isPreviewMode && previewPages) ? previewPages : pages;
+    const displayPages = useMemo(() => {
+      // Always filter out [Remove Page] pages, both in edit and preview modes
+      return rawDisplayPages.filter((page) => !shouldRemovePage(page.content));
+    }, [rawDisplayPages, shouldRemovePage]);
 
     useEffect(() => {
       if (displayPages.length === 0) return;
@@ -1103,7 +1134,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const pendingUpdateRef = useRef(false);
 
     useEffect(() => {
-      if (pendingUpdateRef.current) {
+      if (pendingUpdateRef.current && onChange) {
         pendingUpdateRef.current = false;
         const html = pages.map((p) => p.content).join(PAGE_SEPARATOR);
         isInternalUpdate.current = true;
@@ -1114,26 +1145,26 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const handleContentChange = useCallback(
       (id: string, content: string) => {
-        if (isPreviewMode) return;
+        if (effectivePreviewMode) return;
         pendingUpdateRef.current = true;
         setPages((prev) =>
           prev.map((p) => (p.id === id ? { ...p, content } : p)),
         );
       },
-      [isPreviewMode],
+      [effectivePreviewMode],
     );
 
     const handleAddPage = useCallback(() => {
-      if (isPreviewMode) return;
+      if (effectivePreviewMode) return;
       const newPage: PageData = { id: crypto.randomUUID(), content: '' };
       pendingUpdateRef.current = true;
       setPages((prev) => [...prev, newPage]);
       setActivePageId(newPage.id);
-    }, [isPreviewMode]);
+    }, [effectivePreviewMode]);
 
     const handleDeletePage = useCallback(
       (id: string) => {
-        if (isPreviewMode) return;
+        if (effectivePreviewMode) return;
         pendingUpdateRef.current = true;
         setPages((prev) => {
           if (prev.length <= 1) return prev;
@@ -1147,7 +1178,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return newPages;
         });
       },
-      [isPreviewMode],
+      [effectivePreviewMode],
     );
 
     const isHandlingOverflow = useRef(false);
@@ -1173,7 +1204,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const handleOverflow = useCallback(
       (pageId: string, overflowContent: string) => {
-        if (isPreviewMode || !overflowContent.trim() || isHandlingOverflow.current) {
+        if (effectivePreviewMode || !overflowContent.trim() || isHandlingOverflow.current) {
           return;
         }
 
@@ -1205,7 +1236,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return [...prev, newPage];
         });
       },
-      [isPreviewMode],
+      [effectivePreviewMode],
     );
 
     useEffect(() => {
@@ -1226,7 +1257,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const handleCommand = useCallback(
       (cmd: string, val?: string) => {
-        if (isPreviewMode) return;
+        if (effectivePreviewMode) return;
 
         const editor = activeEditorRef.current;
         if (!editor) return;
@@ -1339,22 +1370,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
         document.execCommand(cmd, false, val);
       },
-      [isPreviewMode, restoreSelection],
+      [effectivePreviewMode, restoreSelection],
     );
 
     const handlePrint = useCallback(() => {
       const printPages = isPreviewMode && previewPages ? previewPages : pages;
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) return;
 
       // Filter out pages that only contain [Remove Page]
-      const filteredPages = printPages.filter((page) => {
-        const textContent = (page.content || '')
-          .replace(/<[^>]*>/g, '')
-          .replace(/&nbsp;/g, ' ')
-          .trim();
-        return !/^\[Remove\s*Page\]$/i.test(textContent);
-      });
+      const filteredPages = printPages.filter((page) => !shouldRemovePage(page.content));
 
       // Join pages with page-break divs to trigger CSS page breaks on print
       const allContent = filteredPages
@@ -1364,7 +1387,24 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
       const pagesHtml = `<div class="content">${allContent || '&nbsp;'}</div>`;
 
-      printWindow.document.write(`<!DOCTYPE html>
+      // Create a hidden iframe for printing (stays on same page)
+      const printFrame = document.createElement('iframe');
+      printFrame.style.position = 'absolute';
+      printFrame.style.top = '-9999px';
+      printFrame.style.left = '-9999px';
+      printFrame.style.width = '0';
+      printFrame.style.height = '0';
+      printFrame.style.border = 'none';
+      document.body.appendChild(printFrame);
+
+      const frameDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
+      if (!frameDoc) {
+        document.body.removeChild(printFrame);
+        return;
+      }
+
+      frameDoc.open();
+      frameDoc.write(`<!DOCTYPE html>
 <html>
 <head>
   <title>Print</title>
@@ -1408,17 +1448,28 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       border: none;
       clear: both;
     }
+    @media print {
+      html, body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
   </style>
 </head>
 <body>${pagesHtml}</body>
 </html>`);
+      frameDoc.close();
 
-      printWindow.document.close();
+      // Wait for content to load, then print
       setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
+        printFrame.contentWindow?.focus();
+        printFrame.contentWindow?.print();
+        // Remove iframe after printing
+        setTimeout(() => {
+          document.body.removeChild(printFrame);
+        }, 1000);
       }, 200);
-    }, [pages, previewPages, isPreviewMode]);
+    }, [pages, previewPages, isPreviewMode, shouldRemovePage]);
 
     const scrollToPage = useCallback(
       (dir: 'up' | 'down') => {
@@ -1427,10 +1478,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           dir === 'up'
             ? Math.max(0, idx - 1)
             : Math.min(displayPages.length - 1, idx + 1);
-        setActivePageId(displayPages[newIdx].id);
-        document
-          .querySelectorAll('[data-page-id]')
-          [newIdx]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const targetPageId = displayPages[newIdx].id;
+        setActivePageId(targetPageId);
+        // Use ID-based query to find the exact page element
+        const container = scrollContainerRef.current;
+        if (container) {
+          const pageEl = container.querySelector(`[data-page-id="${targetPageId}"]`);
+          pageEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       },
       [displayPages, activePageId],
     );
@@ -1447,7 +1502,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               {displayPages.length} page{displayPages.length !== 1 ? 's' : ''}
             </span>
 
-            {isPreviewMode && (
+            {readOnly && (
+              <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded">
+                View Only
+              </span>
+            )}
+
+            {!readOnly && isPreviewMode && (
               <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
                 Preview Mode
               </span>
@@ -1477,7 +1538,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
             <div className="w-px h-5 bg-gray-300 mx-1" />
 
-            {!isPreviewMode && (
+            {!readOnly && !isPreviewMode && (
               <button
                 type="button"
                 onClick={handleAddPage}
@@ -1488,7 +1549,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               </button>
             )}
 
-            {(onPreview || (showPreviewToggle && previewContent)) && (
+            {!readOnly && (onPreview || (showPreviewToggle && previewContent)) && (
               <button
                 type="button"
                 onClick={() => {
@@ -1530,13 +1591,15 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           </div>
         </div>
 
-        <Toolbar
-          onCommand={handleCommand}
-          onSaveSelection={saveCursorPosition}
-          disabled={isPreviewMode}
-        />
+        {!readOnly && (
+          <Toolbar
+            onCommand={handleCommand}
+            onSaveSelection={saveCursorPosition}
+            disabled={effectivePreviewMode}
+          />
+        )}
 
-        <div className="flex-1 overflow-auto py-8">
+        <div ref={scrollContainerRef} className="flex-1 overflow-auto py-8">
           <div className="flex flex-col items-center gap-8">
             {displayPages.map((page, index) => (
               <div key={page.id} data-page-id={page.id}>
@@ -1545,13 +1608,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                   pageNumber={index + 1}
                   totalPages={displayPages.length}
                   isActive={page.id === activePageId}
-                  isPreviewMode={isPreviewMode}
+                  isPreviewMode={effectivePreviewMode}
                   onContentChange={handleContentChange}
                   onFocus={setActivePageId}
                   onBlur={saveCursorPosition}
                   onDelete={handleDeletePage}
                   onOverflow={handleOverflow}
-                  canDelete={displayPages.length > 1}
+                  canDelete={displayPages.length > 1 && !readOnly}
                   editorRef={activeEditorRef}
                   placeholder={index === 0 ? placeholder : undefined}
                   maxContentHeight={A4.CONTENT_HEIGHT_PX}
@@ -1559,7 +1622,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               </div>
             ))}
 
-            {!isPreviewMode && (
+            {!readOnly && !effectivePreviewMode && (
               <button
                 type="button"
                 onClick={handleAddPage}
@@ -1577,7 +1640,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             A4: {A4.WIDTH_PX}×{A4.HEIGHT_PX}px ({A4.MARGIN_MM}mm margins)
           </span>
           <span>
-            {isPreviewMode ? 'Viewing preview' : 'Editing'} • What you see = What prints
+            {readOnly ? 'Viewing document' : (effectivePreviewMode ? 'Viewing preview' : 'Editing')} • What you see = What prints
           </span>
         </div>
       </div>

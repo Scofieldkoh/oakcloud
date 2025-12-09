@@ -1,64 +1,21 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Plus,
-  FileText,
-  AlertCircle,
-  Trash2,
-  Eye,
-  Download,
-  Share2,
-  MoreVertical,
-  Clock,
-  CheckCircle,
-  Archive,
-  Search,
-  Filter,
-  Building2,
-} from 'lucide-react';
+import { Plus, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
-import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
+import { DocumentTable, type GeneratedDocument } from '@/components/documents/document-table';
+import { Pagination } from '@/components/companies/pagination';
 
 // ============================================================================
 // Types
 // ============================================================================
-
-interface GeneratedDocument {
-  id: string;
-  title: string;
-  status: 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
-  content: string;
-  useLetterhead: boolean;
-  createdAt: string;
-  updatedAt: string;
-  finalizedAt?: string;
-  template?: {
-    id: string;
-    name: string;
-    category: string;
-  } | null;
-  company?: {
-    id: string;
-    name: string;
-    uen: string;
-  } | null;
-  createdBy: {
-    firstName: string;
-    lastName: string;
-  };
-  _count?: {
-    shares: number;
-    comments: number;
-  };
-}
 
 interface DocumentListResponse {
   documents: GeneratedDocument[];
@@ -67,206 +24,10 @@ interface DocumentListResponse {
   limit: number;
 }
 
-// ============================================================================
-// Status Badge Component
-// ============================================================================
-
-function StatusBadge({ status }: { status: string }) {
-  const config = {
-    DRAFT: {
-      icon: Clock,
-      label: 'Draft',
-      className: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
-    },
-    FINALIZED: {
-      icon: CheckCircle,
-      label: 'Finalized',
-      className: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400',
-    },
-    ARCHIVED: {
-      icon: Archive,
-      label: 'Archived',
-      className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-    },
-  }[status] || {
-    icon: FileText,
-    label: status,
-    className: 'bg-gray-100 text-gray-600',
-  };
-
-  const Icon = config.icon;
-
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
-        config.className
-      )}
-    >
-      <Icon className="w-3 h-3" />
-      {config.label}
-    </span>
-  );
-}
-
-// ============================================================================
-// Document Card Component
-// ============================================================================
-
-interface DocumentCardProps {
-  document: GeneratedDocument;
-  onView: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onExport?: () => void;
-  onShare?: () => void;
-}
-
-function DocumentCard({
-  document,
-  onView,
-  onEdit,
-  onDelete,
-  onExport,
-  onShare,
-}: DocumentCardProps) {
-  const [showMenu, setShowMenu] = useState(false);
-
-  return (
-    <div className="group relative p-4 bg-background-elevated border border-border-primary rounded-lg hover:border-accent-primary hover:shadow-sm transition-all">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-start gap-3 min-w-0 flex-1">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950 flex items-center justify-center flex-shrink-0">
-            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-medium text-text-primary truncate">
-              {document.title}
-            </h3>
-            {document.template && (
-              <p className="text-xs text-text-muted">
-                Template: {document.template.name}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Actions menu */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-1.5 rounded hover:bg-background-secondary text-text-muted hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
-
-          {showMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowMenu(false)}
-              />
-              <div className="absolute right-0 top-full mt-1 w-40 py-1 bg-background-elevated border border-border-primary rounded-lg shadow-lg z-20">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onView();
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  View
-                </button>
-                {onEdit && document.status === 'DRAFT' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onEdit();
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Edit
-                  </button>
-                )}
-                {onExport && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onExport();
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Export PDF
-                  </button>
-                )}
-                {onShare && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onShare();
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    Share
-                  </button>
-                )}
-                {onDelete && (
-                  <>
-                    <div className="h-px bg-border-secondary my-1" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onDelete();
-                        setShowMenu(false);
-                      }}
-                      className="w-full px-3 py-1.5 text-left text-sm hover:bg-red-50 dark:hover:bg-red-950 text-red-600 dark:text-red-400 flex items-center gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Company info */}
-      {document.company && (
-        <div className="flex items-center gap-1.5 mb-3 text-sm text-text-muted">
-          <Building2 className="w-3.5 h-3.5" />
-          <span className="truncate">{document.company.name}</span>
-          <span className="text-xs">({document.company.uen})</span>
-        </div>
-      )}
-
-      {/* Status and stats */}
-      <div className="flex items-center justify-between">
-        <StatusBadge status={document.status} />
-        <div className="flex items-center gap-3 text-xs text-text-muted">
-          {document._count?.shares !== undefined && document._count.shares > 0 && (
-            <span className="flex items-center gap-1">
-              <Share2 className="w-3 h-3" />
-              {document._count.shares}
-            </span>
-          )}
-          <span>
-            {new Date(document.updatedAt).toLocaleDateString()}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
+interface Company {
+  id: string;
+  name: string;
+  uen: string;
 }
 
 // ============================================================================
@@ -274,7 +35,6 @@ function DocumentCard({
 // ============================================================================
 
 export default function GeneratedDocumentsPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
   const { can, isLoading: permissionsLoading } = usePermissions();
@@ -296,6 +56,7 @@ export default function GeneratedDocumentsPage() {
 
   // State
   const [documents, setDocuments] = useState<GeneratedDocument[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -307,10 +68,36 @@ export default function GeneratedDocumentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>(
     searchParams.get('status') || ''
   );
+  const [companyFilter, setCompanyFilter] = useState<string>(
+    searchParams.get('companyId') || ''
+  );
   const [page, setPage] = useState(
     parseInt(searchParams.get('page') || '1', 10)
   );
-  const limit = 12;
+  const limit = 20; // More items per page for list view
+
+  // Fetch companies for filter
+  const fetchCompanies = useCallback(async () => {
+    if (session?.isSuperAdmin && !activeTenantId) {
+      setCompanies([]);
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams({ limit: '100', sortBy: 'name', sortOrder: 'asc' });
+      if (session?.isSuperAdmin && activeTenantId) {
+        params.set('tenantId', activeTenantId);
+      }
+
+      const response = await fetch(`/api/companies?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCompanies(data.companies || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch companies:', err);
+    }
+  }, [session?.isSuperAdmin, activeTenantId]);
 
   // Fetch documents
   const fetchDocuments = useCallback(async () => {
@@ -329,6 +116,7 @@ export default function GeneratedDocumentsPage() {
       const params = new URLSearchParams();
       if (searchQuery) params.set('query', searchQuery);
       if (statusFilter) params.set('status', statusFilter);
+      if (companyFilter) params.set('companyId', companyFilter);
       params.set('page', page.toString());
       params.set('limit', limit.toString());
       // Add tenantId for SUPER_ADMIN
@@ -350,24 +138,41 @@ export default function GeneratedDocumentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, statusFilter, page, session?.isSuperAdmin, activeTenantId]);
+  }, [searchQuery, statusFilter, companyFilter, page, session?.isSuperAdmin, activeTenantId]);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, [fetchCompanies]);
 
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
 
   // Handle delete
-  const handleDelete = async () => {
-    if (!documentToDelete) return;
+  const handleDelete = async (reason?: string) => {
+    if (!documentToDelete || !reason) return;
 
     try {
-      const response = await fetch(
-        `/api/generated-documents/${documentToDelete}`,
-        { method: 'DELETE' }
-      );
+      // Build URL with tenantId for SUPER_ADMIN and reason
+      const params = new URLSearchParams();
+      params.set('reason', reason);
+      if (session?.isSuperAdmin && activeTenantId) {
+        params.set('tenantId', activeTenantId);
+      }
+      const url = `/api/generated-documents/${documentToDelete}?${params}`;
+
+      const response = await fetch(url, { method: 'DELETE' });
 
       if (!response.ok) {
-        throw new Error('Failed to delete document');
+        const errorData = await response.json().catch(() => ({}));
+        // If already deleted, still remove from UI and show success
+        if (errorData.error === 'Document is already deleted') {
+          success('Document removed from list');
+          setDocuments((prev) => prev.filter((d) => d.id !== documentToDelete));
+          setTotal((prev) => prev - 1);
+          return;
+        }
+        throw new Error(errorData.error || 'Failed to delete document');
       }
 
       success('Document deleted successfully');
@@ -375,7 +180,7 @@ export default function GeneratedDocumentsPage() {
       setTotal((prev) => prev - 1);
     } catch (err) {
       console.error('Delete error:', err);
-      toastError('Failed to delete document');
+      toastError(err instanceof Error ? err.message : 'Failed to delete document');
     } finally {
       setDeleteDialogOpen(false);
       setDocumentToDelete(null);
@@ -385,20 +190,25 @@ export default function GeneratedDocumentsPage() {
   // Handle export
   const handleExport = async (documentId: string) => {
     try {
-      const response = await fetch(
-        `/api/generated-documents/${documentId}/export/pdf`
-      );
+      // Build URL with tenantId for SUPER_ADMIN
+      const params = new URLSearchParams();
+      if (session?.isSuperAdmin && activeTenantId) {
+        params.set('tenantId', activeTenantId);
+      }
+      const url = `/api/generated-documents/${documentId}/export/pdf${params.toString() ? `?${params}` : ''}`;
+
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to export document');
       }
 
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = blobUrl;
       a.download = `document-${documentId}.pdf`;
       a.click();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error('Export error:', err);
       toastError('Failed to export document');
@@ -419,14 +229,6 @@ export default function GeneratedDocumentsPage() {
             Manage and export your generated documents
           </p>
         </div>
-
-        {canCreate && (
-          <Link href="/generated-documents/generate">
-            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-              Generate Document
-            </Button>
-          </Link>
-        )}
       </div>
 
       {/* Tenant context info for SUPER_ADMIN */}
@@ -439,8 +241,8 @@ export default function GeneratedDocumentsPage() {
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex-1 max-w-md relative">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="flex-1 min-w-[200px] max-w-md relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
@@ -450,23 +252,51 @@ export default function GeneratedDocumentsPage() {
               setPage(1);
             }}
             placeholder="Search documents..."
-            className="w-full pl-9 pr-4 py-2 border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
           />
         </div>
 
+        {/* Company Filter */}
+        <select
+          value={companyFilter}
+          onChange={(e) => {
+            setCompanyFilter(e.target.value);
+            setPage(1);
+          }}
+          className="px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary min-w-[150px]"
+        >
+          <option value="">All Companies</option>
+          {companies.map((company) => (
+            <option key={company.id} value={company.id}>
+              {company.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Status Filter */}
         <select
           value={statusFilter}
           onChange={(e) => {
             setStatusFilter(e.target.value);
             setPage(1);
           }}
-          className="px-3 py-2 border border-border-primary rounded-lg bg-background-elevated text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
+          className="px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
         >
           <option value="">All Statuses</option>
           <option value="DRAFT">Draft</option>
           <option value="FINALIZED">Finalized</option>
           <option value="ARCHIVED">Archived</option>
         </select>
+
+        <div className="flex-1" />
+
+        {canCreate && activeTenantId && (
+          <Link href="/generated-documents/generate">
+            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+              Generate Document
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Error state */}
@@ -479,108 +309,38 @@ export default function GeneratedDocumentsPage() {
         </div>
       )}
 
-      {/* Loading state */}
-      {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div
-              key={i}
-              className="h-40 bg-background-secondary rounded-lg animate-pulse"
-            />
-          ))}
-        </div>
-      )}
+      {/* Document Table */}
+      <div className="mb-6">
+        <DocumentTable
+          documents={documents}
+          onDelete={(id) => {
+            setDocumentToDelete(id);
+            setDeleteDialogOpen(true);
+          }}
+          onExport={handleExport}
+          isLoading={isLoading}
+          canEdit={canUpdate}
+          canDelete={canDelete}
+          canExport={canExport}
+          canShare={canUpdate}
+          canCreate={canCreate && !!activeTenantId}
+        />
+      </div>
 
-      {/* Empty state */}
-      {!isLoading && documents.length === 0 && (
-        <div className="py-16 text-center">
-          <FileText className="w-16 h-16 mx-auto text-text-muted opacity-50 mb-4" />
-          <h3 className="text-lg font-medium text-text-primary mb-2">
-            {session?.isSuperAdmin && !activeTenantId
-              ? 'Select a Tenant'
-              : 'No documents found'}
-          </h3>
-          <p className="text-text-muted mb-6">
-            {session?.isSuperAdmin && !activeTenantId
-              ? 'Please select a tenant from the sidebar to view their documents'
-              : searchQuery || statusFilter
-                ? 'Try adjusting your filters'
-                : 'Get started by generating your first document'}
-          </p>
-          {!searchQuery && !statusFilter && canCreate && activeTenantId && (
-            <Link href="/generated-documents/generate">
-              <Button variant="primary" size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Generate Document
-              </Button>
-            </Link>
-          )}
-        </div>
-      )}
-
-      {/* Document grid */}
-      {!isLoading && documents.length > 0 && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            {documents.map((doc) => (
-              <DocumentCard
-                key={doc.id}
-                document={doc}
-                onView={() => router.push(`/generated-documents/${doc.id}`)}
-                onEdit={
-                  canUpdate && doc.status === 'DRAFT'
-                    ? () => router.push(`/generated-documents/${doc.id}/edit`)
-                    : undefined
-                }
-                onDelete={
-                  canDelete
-                    ? () => {
-                        setDocumentToDelete(doc.id);
-                        setDeleteDialogOpen(true);
-                      }
-                    : undefined
-                }
-                onExport={canExport ? () => handleExport(doc.id) : undefined}
-                onShare={
-                  canUpdate
-                    ? () => router.push(`/generated-documents/${doc.id}/share`)
-                    : undefined
-                }
-              />
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-text-muted">
-                Showing {(page - 1) * limit + 1} to{' '}
-                {Math.min(page * limit, total)} of {total} documents
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="xs"
-                  disabled={page <= 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Previous
-                </Button>
-                <span className="px-3 py-1 text-xs text-text-muted">
-                  Page {page} of {totalPages}
-                </span>
-                <Button
-                  variant="secondary"
-                  size="xs"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
+      {/* Pagination */}
+      {!isLoading && totalPages > 0 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setPage(1);
+            // Note: limit is a const, so we need to refetch with new limit
+            // For now, we'll keep the current behavior
+          }}
+        />
       )}
 
       {/* Delete confirmation dialog */}
@@ -592,9 +352,13 @@ export default function GeneratedDocumentsPage() {
         }}
         onConfirm={handleDelete}
         title="Delete Document"
-        description="Are you sure you want to delete this document? This action cannot be undone."
+        description="This action cannot be undone. The document will be soft-deleted and can be restored by an administrator."
         confirmLabel="Delete"
         variant="danger"
+        requireReason
+        reasonLabel="Reason for deletion"
+        reasonPlaceholder="Please provide a reason for deleting this document..."
+        reasonMinLength={10}
       />
     </div>
   );

@@ -850,13 +850,14 @@ export function useRemoveCompanyAssignment(userId: string | undefined) {
 // Data Purge Hooks (Permanent Deletion)
 // ============================================================================
 
-export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact';
+export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact' | 'generatedDocument';
 
 export interface PurgeStats {
   tenants: number;
   users: number;
   companies: number;
   contacts: number;
+  generatedDocuments: number;
 }
 
 export interface PurgeableTenant {
@@ -903,6 +904,17 @@ export interface PurgeableContact {
   tenant: { name: string } | null;
 }
 
+export interface PurgeableGeneratedDocument {
+  id: string;
+  title: string;
+  status: string;
+  deletedAt: string;
+  tenant: { name: string } | null;
+  template: { name: string } | null;
+  company: { name: string } | null;
+  createdBy: { firstName: string; lastName: string };
+}
+
 export interface PurgeDataResponse {
   stats: PurgeStats;
   records: {
@@ -910,6 +922,7 @@ export interface PurgeDataResponse {
     users: PurgeableUser[];
     companies: PurgeableCompany[];
     contacts: PurgeableContact[];
+    generatedDocuments: PurgeableGeneratedDocument[];
   };
 }
 
@@ -952,6 +965,7 @@ export function usePurgeRecords() {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['generated-documents'] });
     },
   });
 }
@@ -980,6 +994,7 @@ export function useRestoreRecords() {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['generated-documents'] });
     },
   });
 }

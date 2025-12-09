@@ -4,20 +4,13 @@ import { useState, useCallback, useMemo } from 'react';
 import {
   FileText,
   Search,
-  Filter,
-  Grid,
-  List,
-  ChevronRight,
-  Clock,
-  User,
   FolderOpen,
   Star,
-  StarOff,
+  Clock,
   Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { FormInput } from '@/components/ui/form-input';
+import { Pagination } from '@/components/companies/pagination';
 
 // ============================================================================
 // Types
@@ -58,48 +51,54 @@ export interface TemplateSelectorProps {
   className?: string;
   showCategories?: boolean;
   showPreviewButton?: boolean;
-  viewMode?: 'grid' | 'list';
 }
 
 // Template categories with icons and colors
 const CATEGORY_CONFIG: Record<
   string,
-  { label: string; color: string; bgColor: string }
+  { label: string; color: string; bgColor: string; selectedColor: string }
 > = {
   RESOLUTION: {
     label: 'Resolution',
     color: 'text-blue-600 dark:text-blue-400',
     bgColor: 'bg-blue-50 dark:bg-blue-950',
+    selectedColor: 'bg-blue-600 dark:bg-blue-500 text-white',
   },
   CONTRACT: {
     label: 'Contract',
     color: 'text-purple-600 dark:text-purple-400',
     bgColor: 'bg-purple-50 dark:bg-purple-950',
+    selectedColor: 'bg-purple-600 dark:bg-purple-500 text-white',
   },
   LETTER: {
     label: 'Letter',
     color: 'text-green-600 dark:text-green-400',
     bgColor: 'bg-green-50 dark:bg-green-950',
+    selectedColor: 'bg-green-600 dark:bg-green-500 text-white',
   },
   NOTICE: {
     label: 'Notice',
     color: 'text-amber-600 dark:text-amber-400',
     bgColor: 'bg-amber-50 dark:bg-amber-950',
+    selectedColor: 'bg-amber-600 dark:bg-amber-500 text-white',
   },
   MINUTES: {
     label: 'Minutes',
     color: 'text-cyan-600 dark:text-cyan-400',
     bgColor: 'bg-cyan-50 dark:bg-cyan-950',
+    selectedColor: 'bg-cyan-600 dark:bg-cyan-500 text-white',
   },
   CERTIFICATE: {
     label: 'Certificate',
     color: 'text-rose-600 dark:text-rose-400',
     bgColor: 'bg-rose-50 dark:bg-rose-950',
+    selectedColor: 'bg-rose-600 dark:bg-rose-500 text-white',
   },
   OTHER: {
     label: 'Other',
     color: 'text-gray-600 dark:text-gray-400',
     bgColor: 'bg-gray-50 dark:bg-gray-950',
+    selectedColor: 'bg-gray-600 dark:bg-gray-500 text-white',
   },
 };
 
@@ -124,10 +123,10 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 // ============================================================================
-// Template Card Component (Grid View)
+// Template Row Component (List View)
 // ============================================================================
 
-interface TemplateCardProps {
+interface TemplateRowProps {
   template: DocumentTemplate;
   isSelected: boolean;
   onClick: () => void;
@@ -135,128 +134,13 @@ interface TemplateCardProps {
   showPreviewButton?: boolean;
 }
 
-function TemplateCard({
-  template,
-  isSelected,
-  onClick,
-  onPreview,
-  showPreviewButton = false,
-}: TemplateCardProps) {
-  const placeholderCount = template.placeholders?.length || 0;
-  const requiredCount = template.placeholders?.filter((p) => p.required).length || 0;
-
-  return (
-    <div
-      className={cn(
-        'group relative p-4 border rounded-lg cursor-pointer transition-all',
-        'hover:border-accent-primary hover:shadow-sm',
-        isSelected
-          ? 'border-accent-primary bg-accent-primary/5 ring-1 ring-accent-primary'
-          : 'border-border-primary bg-background-elevated'
-      )}
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-    >
-      {/* Selected indicator */}
-      {isSelected && (
-        <div className="absolute top-2 right-2">
-          <div className="w-5 h-5 rounded-full bg-accent-primary flex items-center justify-center">
-            <ChevronRight className="w-3 h-3 text-white" />
-          </div>
-        </div>
-      )}
-
-      {/* Template icon and category */}
-      <div className="flex items-start gap-3 mb-3">
-        <div
-          className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center',
-            CATEGORY_CONFIG[template.category]?.bgColor || 'bg-gray-100 dark:bg-gray-800'
-          )}
-        >
-          <FileText
-            className={cn(
-              'w-5 h-5',
-              CATEGORY_CONFIG[template.category]?.color || 'text-gray-600'
-            )}
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <CategoryBadge category={template.category} />
-        </div>
-      </div>
-
-      {/* Template name and description */}
-      <h3 className="font-medium text-text-primary mb-1 line-clamp-2">
-        {template.name}
-      </h3>
-      {template.description && (
-        <p className="text-sm text-text-muted line-clamp-2 mb-3">
-          {template.description}
-        </p>
-      )}
-
-      {/* Metadata */}
-      <div className="flex items-center gap-3 text-xs text-text-muted">
-        <span className="flex items-center gap-1">
-          <FolderOpen className="w-3 h-3" />
-          {placeholderCount} fields
-        </span>
-        {requiredCount > 0 && (
-          <span className="flex items-center gap-1">
-            <Star className="w-3 h-3" />
-            {requiredCount} required
-          </span>
-        )}
-      </div>
-
-      {/* Usage count */}
-      {template._count?.documents !== undefined && (
-        <div className="mt-2 pt-2 border-t border-border-secondary text-xs text-text-muted">
-          Used {template._count.documents} times
-        </div>
-      )}
-
-      {/* Preview button */}
-      {showPreviewButton && onPreview && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onPreview();
-          }}
-          className={cn(
-            'absolute bottom-2 right-2 p-1.5 rounded opacity-0 group-hover:opacity-100',
-            'bg-background-secondary hover:bg-background-tertiary transition-all',
-            'text-text-muted hover:text-text-primary'
-          )}
-          title="Preview template"
-        >
-          <Eye className="w-4 h-4" />
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ============================================================================
-// Template Row Component (List View)
-// ============================================================================
-
 function TemplateRow({
   template,
   isSelected,
   onClick,
   onPreview,
   showPreviewButton = false,
-}: TemplateCardProps) {
+}: TemplateRowProps) {
   const placeholderCount = template.placeholders?.length || 0;
 
   return (
@@ -279,13 +163,13 @@ function TemplateRow({
       {/* Selection indicator */}
       <div
         className={cn(
-          'w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0',
+          'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0',
           isSelected
-            ? 'border-accent-primary bg-accent-primary'
-            : 'border-border-primary'
+            ? 'border-oak-primary bg-oak-primary'
+            : 'border-gray-400 dark:border-gray-500'
         )}
       >
-        {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+        {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
       </div>
 
       {/* Icon */}
@@ -351,7 +235,7 @@ function TemplateRow({
 }
 
 // ============================================================================
-// Category Filter Component
+// Category Filter Component (Fixed colors for light mode)
 // ============================================================================
 
 interface CategoryFilterProps {
@@ -367,26 +251,27 @@ function CategoryFilter({ categories, selected, onSelect }: CategoryFilterProps)
         type="button"
         onClick={() => onSelect(null)}
         className={cn(
-          'px-3 py-1.5 text-sm rounded-full transition-colors',
+          'px-3 py-1.5 text-sm rounded-full transition-colors font-medium',
           selected === null
-            ? 'bg-accent-primary text-white'
-            : 'bg-background-secondary text-text-muted hover:text-text-primary hover:bg-background-tertiary'
+            ? 'bg-oak-primary text-white'
+            : 'bg-background-tertiary text-text-secondary hover:text-text-primary hover:bg-background-elevated border border-border-primary'
         )}
       >
         All
       </button>
       {categories.map((category) => {
         const config = CATEGORY_CONFIG[category] || CATEGORY_CONFIG.OTHER;
+        const isSelected = selected === category;
         return (
           <button
             key={category}
             type="button"
             onClick={() => onSelect(category)}
             className={cn(
-              'px-3 py-1.5 text-sm rounded-full transition-colors',
-              selected === category
-                ? cn('text-white', 'bg-accent-primary')
-                : cn('hover:text-text-primary', config.bgColor, config.color)
+              'px-3 py-1.5 text-sm rounded-full transition-colors font-medium border',
+              isSelected
+                ? config.selectedColor + ' border-transparent'
+                : cn(config.bgColor, config.color, 'hover:opacity-80 border-transparent')
             )}
           >
             {config.label}
@@ -410,11 +295,11 @@ export function TemplateSelector({
   className,
   showCategories = true,
   showPreviewButton = true,
-  viewMode: initialViewMode = 'grid',
 }: TemplateSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialViewMode);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   // Get unique categories from templates
   const categories = useMemo(() => {
@@ -430,7 +315,7 @@ export function TemplateSelector({
         return false;
       }
 
-      // Search filter
+      // Search filter (searches name AND description)
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesName = template.name.toLowerCase().includes(query);
@@ -442,6 +327,30 @@ export function TemplateSelector({
       return true;
     });
   }, [templates, selectedCategory, searchQuery]);
+
+  // Paginated templates
+  const paginatedTemplates = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    return filteredTemplates.slice(startIndex, startIndex + limit);
+  }, [filteredTemplates, page, limit]);
+
+  const totalPages = Math.ceil(filteredTemplates.length / limit);
+
+  // Reset to page 1 when filters change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  }, []);
+
+  const handleCategoryChange = useCallback((category: string | null) => {
+    setSelectedCategory(category);
+    setPage(1);
+  }, []);
+
+  const handleLimitChange = useCallback((newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1);
+  }, []);
 
   const handleSelect = useCallback(
     (template: DocumentTemplate) => {
@@ -457,11 +366,11 @@ export function TemplateSelector({
           <div className="h-10 w-64 bg-background-secondary rounded animate-pulse" />
           <div className="h-10 w-32 bg-background-secondary rounded animate-pulse" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="h-40 bg-background-secondary rounded-lg animate-pulse"
+              className="h-14 bg-background-secondary rounded animate-pulse"
             />
           ))}
         </div>
@@ -471,46 +380,17 @@ export function TemplateSelector({
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
-      {/* Search and View Toggle */}
+      {/* Search */}
       <div className="flex items-center gap-4 flex-wrap">
         <div className="flex-1 min-w-[200px] max-w-md relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search templates..."
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Search templates by name or description..."
             className="w-full pl-9 pr-4 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
           />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setViewMode('grid')}
-            className={cn(
-              'p-2 rounded transition-colors',
-              viewMode === 'grid'
-                ? 'bg-background-tertiary text-text-primary'
-                : 'text-text-muted hover:text-text-primary hover:bg-background-secondary'
-            )}
-            title="Grid view"
-          >
-            <Grid className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('list')}
-            className={cn(
-              'p-2 rounded transition-colors',
-              viewMode === 'list'
-                ? 'bg-background-tertiary text-text-primary'
-                : 'text-text-muted hover:text-text-primary hover:bg-background-secondary'
-            )}
-            title="List view"
-          >
-            <List className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -519,12 +399,12 @@ export function TemplateSelector({
         <CategoryFilter
           categories={categories}
           selected={selectedCategory}
-          onSelect={setSelectedCategory}
+          onSelect={handleCategoryChange}
         />
       )}
 
-      {/* Templates */}
-      {filteredTemplates.length === 0 ? (
+      {/* Templates List */}
+      {paginatedTemplates.length === 0 ? (
         <div className="py-12 text-center">
           <FileText className="w-12 h-12 mx-auto text-text-muted opacity-50 mb-3" />
           <p className="text-text-muted">
@@ -545,38 +425,34 @@ export function TemplateSelector({
             </button>
           )}
         </div>
-      ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTemplates.map((template) => (
-            <TemplateCard
-              key={template.id}
-              template={template}
-              isSelected={selectedTemplate?.id === template.id}
-              onClick={() => handleSelect(template)}
-              onPreview={onPreview ? () => onPreview(template) : undefined}
-              showPreviewButton={showPreviewButton}
-            />
-          ))}
-        </div>
       ) : (
-        <div className="border border-border-primary rounded-lg overflow-hidden">
-          {filteredTemplates.map((template) => (
-            <TemplateRow
-              key={template.id}
-              template={template}
-              isSelected={selectedTemplate?.id === template.id}
-              onClick={() => handleSelect(template)}
-              onPreview={onPreview ? () => onPreview(template) : undefined}
-              showPreviewButton={showPreviewButton}
-            />
-          ))}
-        </div>
-      )}
+        <>
+          <div className="border border-border-primary rounded-lg overflow-hidden">
+            {paginatedTemplates.map((template) => (
+              <TemplateRow
+                key={template.id}
+                template={template}
+                isSelected={selectedTemplate?.id === template.id}
+                onClick={() => handleSelect(template)}
+                onPreview={onPreview ? () => onPreview(template) : undefined}
+                showPreviewButton={showPreviewButton}
+              />
+            ))}
+          </div>
 
-      {/* Results count */}
-      <div className="text-xs text-text-muted text-center">
-        Showing {filteredTemplates.length} of {templates.length} templates
-      </div>
+          {/* Pagination */}
+          {filteredTemplates.length > 0 && (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={filteredTemplates.length}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={handleLimitChange}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }

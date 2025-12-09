@@ -51,40 +51,49 @@ export interface HTMLResult {
   sections: DocumentSection[];
 }
 
-// Default page margins in mm
+// Default page margins in mm (matches A4PageEditor's 20mm margins)
 const DEFAULT_MARGINS: PageMargins = {
-  top: 25,
+  top: 20,
   right: 20,
-  bottom: 25,
+  bottom: 20,
   left: 20,
 };
 
 // ============================================================================
-// Document Styles
+// Document Styles - Matches A4PageEditor print CSS exactly
+// Uses CSS @page margin (same as browser print) instead of Puppeteer margin API
 // ============================================================================
 
 const DOCUMENT_STYLES = `
   @page {
-    size: A4;
-    margin: 0;
+    size: 210mm 297mm;
+    margin: 20mm;
   }
 
   * {
     box-sizing: border-box;
   }
 
-  body {
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 12pt;
-    line-height: 1.6;
-    color: #000;
+  html, body {
     margin: 0;
     padding: 0;
     background: #fff;
+    color: #000;
   }
 
+  /*
+   * Default font styles - these are inherited defaults.
+   * Inline styles from the editor (font-family, font-size, line-height)
+   * will override these due to CSS specificity.
+   */
   .document-content {
-    padding: 25mm 20mm;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    width: 100%;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   h1 {
@@ -93,6 +102,7 @@ const DOCUMENT_STYLES = `
     margin: 1em 0 0.5em;
     color: #000;
     page-break-after: avoid;
+    white-space: pre-wrap;
   }
 
   h2 {
@@ -101,6 +111,7 @@ const DOCUMENT_STYLES = `
     margin: 0.8em 0 0.4em;
     color: #000;
     page-break-after: avoid;
+    white-space: pre-wrap;
   }
 
   h3 {
@@ -109,20 +120,34 @@ const DOCUMENT_STYLES = `
     margin: 0.6em 0 0.3em;
     color: #000;
     page-break-after: avoid;
+    white-space: pre-wrap;
   }
 
   p {
-    margin: 0.5em 0;
-    text-align: justify;
+    margin: 0 0 0.5em 0;
+  }
+
+  /* Ensure empty paragraphs create space */
+  p:empty,
+  div:empty {
+    min-height: 1em;
+  }
+
+  /* Preserve line breaks */
+  br {
+    display: block;
+    content: "";
+    margin-top: 0.5em;
   }
 
   ul, ol {
-    margin: 0.5em 0;
-    padding-left: 2em;
+    margin: 0 0 0.5em 0;
+    padding-left: 1.5em;
   }
 
   li {
     margin: 0.25em 0;
+    white-space: pre-wrap;
   }
 
   table {
@@ -136,6 +161,7 @@ const DOCUMENT_STYLES = `
     border: 1px solid #000;
     padding: 8px;
     text-align: left;
+    white-space: pre-wrap;
   }
 
   th {
@@ -144,11 +170,18 @@ const DOCUMENT_STYLES = `
   }
 
   .page-break {
-    page-break-after: always;
+    display: block;
+    page-break-before: always !important;
+    break-before: page !important;
+    page-break-after: auto;
+    break-after: auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
     height: 0;
     margin: 0;
     padding: 0;
     border: none;
+    clear: both;
   }
 
   .signature-block {
@@ -175,12 +208,33 @@ const DOCUMENT_STYLES = `
     pointer-events: none;
   }
 
-  @media print {
-    .page-break {
-      page-break-after: always;
-    }
+  /* Horizontal rule styling */
+  hr {
+    border: none;
+    border-top: 1px solid #000;
+    margin: 1em 0;
+  }
 
-    .draft-watermark {
+  /* Underline and strikethrough */
+  u {
+    text-decoration: underline;
+  }
+
+  s, strike {
+    text-decoration: line-through;
+  }
+
+  /* Bold and italic */
+  strong, b {
+    font-weight: bold;
+  }
+
+  em, i {
+    font-style: italic;
+  }
+
+  @media print {
+    html, body {
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -301,18 +355,21 @@ async function generatePDF(
       waitUntil: 'networkidle0',
     });
 
+    // Use preferCSSPageSize to let CSS @page handle margins (matches browser print)
+    // This ensures PDF export looks identical to browser print dialog
     const pdfBuffer = await page.pdf({
       format: options.format,
       landscape: options.orientation === 'landscape',
       printBackground: true,
+      preferCSSPageSize: true,
       displayHeaderFooter: !!(options.headerHtml || options.footerHtml),
       headerTemplate: options.headerHtml || '<div></div>',
       footerTemplate: options.footerHtml || '<div></div>',
       margin: {
-        top: `${options.margins.top}mm`,
-        right: `${options.margins.right}mm`,
-        bottom: `${options.margins.bottom}mm`,
-        left: `${options.margins.left}mm`,
+        top: '0mm',
+        right: '0mm',
+        bottom: '0mm',
+        left: '0mm',
       },
     });
 
@@ -433,6 +490,39 @@ export async function exportToHTML(params: ExportHTMLParams): Promise<HTMLResult
 // ============================================================================
 
 /**
+ * Check if a page content should be removed (contains only [Remove Page])
+ */
+function shouldRemovePage(content: string): boolean {
+  const textContent = (content || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim();
+  return /^\[Remove\s*Page\]$/i.test(textContent);
+}
+
+/**
+ * Parse content into pages (split by page-break markers)
+ * Supports multiple formats:
+ * - <!-- PAGE_BREAK --> (A4PageEditor internal format)
+ * - <div class="page-break"></div> (HTML format)
+ */
+function parsePages(content: string): string[] {
+  // First normalize all page break formats to a common separator
+  let normalizedContent = content;
+
+  // Handle A4PageEditor's internal page break format
+  normalizedContent = normalizedContent.replace(/<!--\s*PAGE_BREAK\s*-->/gi, '{{PAGE_BREAK}}');
+
+  // Handle HTML page-break div format
+  const pageBreakDivRegex = /<div[^>]*class\s*=\s*["'][^"']*\bpage-break\b[^"']*["'][^>]*>(?:\s*<\/div>)?/gi;
+  normalizedContent = normalizedContent.replace(pageBreakDivRegex, '{{PAGE_BREAK}}');
+
+  // Split by the normalized separator
+  const pages = normalizedContent.split('{{PAGE_BREAK}}');
+  return pages.map(page => page.trim()).filter(page => page.length > 0);
+}
+
+/**
  * Build complete HTML for PDF generation
  */
 function buildPDFHtml(
@@ -444,16 +534,36 @@ function buildPDFHtml(
   letterhead: Awaited<ReturnType<typeof getLetterhead>>,
   margins: PageMargins
 ): string {
+  // Parse content into pages
+  const pages = parsePages(document.content);
+
+  // Filter out pages marked with [Remove Page]
+  const filteredPages = pages.filter(page => !shouldRemovePage(page));
+
+  // Process each page to preserve formatting
+  const processedPages = filteredPages.map(pageContent => {
+    // Pre-process content to preserve empty paragraphs and line breaks
+    return pageContent
+      // Ensure empty paragraphs have content to maintain height
+      .replace(/<p><\/p>/gi, '<p>&nbsp;</p>')
+      .replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '<p>&nbsp;</p>')
+      // Preserve multiple line breaks
+      .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '<br/><p>&nbsp;</p>');
+  });
+
+  // Join pages with page-break divs
+  const joinedContent = processedPages.join('<div class="page-break"></div>');
+
   // Sanitize content using JSDOM
   const window = new JSDOM('').window;
   const purify = DOMPurify(window);
-  const sanitizedContent = purify.sanitize(document.content, {
+  const sanitizedContent = purify.sanitize(joinedContent, {
     ALLOWED_TAGS: [
       'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',
       'ul', 'ol', 'li', 'a', 'span', 'div', 'hr',
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
       'table', 'thead', 'tbody', 'tr', 'th', 'td',
-      'img',
+      'img', 'sup', 'sub',
     ],
     ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class', 'id', 'src', 'alt'],
   });
@@ -599,11 +709,17 @@ export async function generatePreviewHtml(
           max-width: 210mm;
           min-height: 297mm;
           position: relative;
+          padding: 20mm;
+        }
+
+        .preview-page .document-content {
+          /* Content area within preview page */
         }
 
         .preview-header {
           padding: 15mm 20mm 5mm;
           border-bottom: 1px solid #eee;
+          margin: -20mm -20mm 20mm -20mm;
         }
 
         .preview-footer {
