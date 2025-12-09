@@ -24,11 +24,6 @@ interface DocumentListResponse {
   limit: number;
 }
 
-interface Company {
-  id: string;
-  name: string;
-  uen: string;
-}
 
 // ============================================================================
 // Main Page Component
@@ -56,7 +51,6 @@ export default function GeneratedDocumentsPage() {
 
   // State
   const [documents, setDocuments] = useState<GeneratedDocument[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,35 +63,12 @@ export default function GeneratedDocumentsPage() {
     searchParams.get('status') || ''
   );
   const [companyFilter, setCompanyFilter] = useState<string>(
-    searchParams.get('companyId') || ''
+    searchParams.get('company') || ''
   );
   const [page, setPage] = useState(
     parseInt(searchParams.get('page') || '1', 10)
   );
   const limit = 20; // More items per page for list view
-
-  // Fetch companies for filter
-  const fetchCompanies = useCallback(async () => {
-    if (session?.isSuperAdmin && !activeTenantId) {
-      setCompanies([]);
-      return;
-    }
-
-    try {
-      const params = new URLSearchParams({ limit: '100', sortBy: 'name', sortOrder: 'asc' });
-      if (session?.isSuperAdmin && activeTenantId) {
-        params.set('tenantId', activeTenantId);
-      }
-
-      const response = await fetch(`/api/companies?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCompanies(data.companies || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch companies:', err);
-    }
-  }, [session?.isSuperAdmin, activeTenantId]);
 
   // Fetch documents
   const fetchDocuments = useCallback(async () => {
@@ -116,7 +87,7 @@ export default function GeneratedDocumentsPage() {
       const params = new URLSearchParams();
       if (searchQuery) params.set('query', searchQuery);
       if (statusFilter) params.set('status', statusFilter);
-      if (companyFilter) params.set('companyId', companyFilter);
+      if (companyFilter) params.set('companyName', companyFilter);
       params.set('page', page.toString());
       params.set('limit', limit.toString());
       // Add tenantId for SUPER_ADMIN
@@ -139,10 +110,6 @@ export default function GeneratedDocumentsPage() {
       setIsLoading(false);
     }
   }, [searchQuery, statusFilter, companyFilter, page, session?.isSuperAdmin, activeTenantId]);
-
-  useEffect(() => {
-    fetchCompanies();
-  }, [fetchCompanies]);
 
   useEffect(() => {
     fetchDocuments();
@@ -257,21 +224,16 @@ export default function GeneratedDocumentsPage() {
         </div>
 
         {/* Company Filter */}
-        <select
+        <input
+          type="text"
           value={companyFilter}
           onChange={(e) => {
             setCompanyFilter(e.target.value);
             setPage(1);
           }}
-          className="px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary min-w-[150px]"
-        >
-          <option value="">All Companies</option>
-          {companies.map((company) => (
-            <option key={company.id} value={company.id}>
-              {company.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Filter by company..."
+          className="px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary min-w-[150px]"
+        />
 
         {/* Status Filter */}
         <select

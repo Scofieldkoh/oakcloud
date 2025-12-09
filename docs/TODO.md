@@ -15,9 +15,6 @@ TO DO:
 4. Ensure connector for onedrive is working
 
 Template tag partials placeholder to template placeholder (boolean)
-
-
-Company filter, change it to a free text field
 document generation - save draft to pause
 
 share button >> format issue, comment issue, notification issue

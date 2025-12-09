@@ -59,6 +59,7 @@ export type UpdateGeneratedDocumentInput = z.infer<typeof updateGeneratedDocumen
 export const searchGeneratedDocumentsSchema = z.object({
   query: z.string().optional(),
   companyId: z.string().uuid().optional(),
+  companyName: z.string().optional(), // Free text filter by company name
   templateId: z.string().uuid().optional(),
   status: generatedDocumentStatusEnum.optional(),
   page: z.number().min(1).default(1),

@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     const params = searchGeneratedDocumentsSchema.parse({
       query: searchParams.get('query') || undefined,
       companyId: searchParams.get('companyId') || undefined,
+      companyName: searchParams.get('companyName') || undefined,
       templateId: searchParams.get('templateId') || undefined,
       status: searchParams.get('status') || undefined,
       page: searchParams.get('page') ? Number(searchParams.get('page')) : undefined,

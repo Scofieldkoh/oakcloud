@@ -736,6 +736,13 @@ export async function searchGeneratedDocuments(
     where.companyId = params.companyId;
   }
 
+  // Company name filter (free text search)
+  if (params.companyName) {
+    where.company = {
+      name: { contains: params.companyName, mode: 'insensitive' },
+    };
+  }
+
   if (params.templateId) {
     where.templateId = params.templateId;
   }

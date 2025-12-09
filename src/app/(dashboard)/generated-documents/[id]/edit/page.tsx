@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft,
   Loader2,
   AlertCircle,
   Save,
@@ -312,13 +311,6 @@ export default function DocumentEditPage() {
           <div className="flex items-center justify-between">
             {/* Left section */}
             <div className="flex items-center gap-4 min-w-0">
-              <Link href={`/generated-documents/${document.id}`}>
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-              </Link>
-              <div className="h-6 w-px bg-border-secondary" />
               <div className="min-w-0">
                 <h1 className="text-lg font-semibold text-text-primary truncate">
                   {document.title}
@@ -377,6 +369,13 @@ export default function DocumentEditPage() {
               </button>
 
               <div className="w-px h-6 bg-border-secondary mx-1" />
+
+              {/* Cancel button */}
+              <Link href={`/generated-documents/${document.id}`}>
+                <Button variant="secondary" size="sm">
+                  Cancel
+                </Button>
+              </Link>
 
               {/* Save button */}
               <Button
