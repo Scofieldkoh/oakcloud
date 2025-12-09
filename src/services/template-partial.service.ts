@@ -370,10 +370,10 @@ export async function searchTemplatePartials(
 
 export async function getAllTemplatePartials(
   tenantId: string
-): Promise<Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content'>[]> {
+): Promise<Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content' | 'placeholders'>[]> {
   return prisma.templatePartial.findMany({
     where: { tenantId, deletedAt: null },
-    select: { id: true, name: true, displayName: true, description: true, content: true },
+    select: { id: true, name: true, displayName: true, description: true, content: true, placeholders: true },
     orderBy: { name: 'asc' },
   });
 }

@@ -12,3 +12,4 @@ TO DO:
 1. Roles permission granity still have issue
 2. backup of database
 3. Company details > edit don't have address; details page don't have home currency, internal note tab increase height, shareholder not showing the percentage, company structure differentiate private limited and exempted private limited, audit log for internal note is not enough
+4. Ensure connector for onedrive is working

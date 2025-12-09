@@ -45,9 +45,19 @@ export interface Contact {
   designation?: string | null;
 }
 
+export interface TemplatePartial {
+  id: string;
+  name: string;
+  displayName?: string | null;
+  description?: string | null;
+  content: string;
+  placeholders?: unknown;
+}
+
 export interface GenerationWizardProps {
   templates: DocumentTemplate[];
   companies: Company[];
+  partials?: TemplatePartial[];
   onGenerate: (data: GenerateDocumentData) => Promise<GeneratedDocumentResult>;
   onPreviewTemplate?: (template: DocumentTemplate) => void;
   onValidate?: (templateId: string, companyId: string) => Promise<ValidationResult>;
@@ -233,6 +243,7 @@ interface CustomDataFormProps {
   title: string;
   useLetterhead: boolean;
   shareExpiryHours: string;
+  partials?: TemplatePartial[];
   onTitleChange: (title: string) => void;
   onCustomDataChange: (data: Record<string, string>) => void;
   onLetterheadChange: (value: boolean) => void;
@@ -245,17 +256,72 @@ function CustomDataForm({
   title,
   useLetterhead,
   shareExpiryHours,
+  partials = [],
   onTitleChange,
   onCustomDataChange,
   onLetterheadChange,
   onExpiryChange,
 }: CustomDataFormProps) {
-  // Get custom placeholders (those that need user input)
+  // Helper to extract partial references from content
+  const extractPartialReferences = useCallback((content: string): string[] => {
+    if (!content) return [];
+    const partialRefPattern = /\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z][a-zA-Z0-9_-]*)\s*\}\}/g;
+    const matches = content.matchAll(partialRefPattern);
+    const partialNames = new Set<string>();
+    for (const match of matches) {
+      if (match[1]) partialNames.add(match[1]);
+    }
+    return Array.from(partialNames);
+  }, []);
+
+  // Get custom placeholders (those that need user input) - merged from template and partials
   const customPlaceholders = useMemo(() => {
-    return (template.placeholders || []).filter(
+    const templatePlaceholders = (template.placeholders || []).filter(
       (p) => p.category === 'custom' || p.category === 'Custom'
     );
-  }, [template]);
+
+    // Extract partial references from template content
+    const referencedPartialNames = extractPartialReferences(template.content || '');
+
+    // Get placeholders from referenced partials
+    const partialPlaceholders: typeof templatePlaceholders = [];
+    const seenKeys = new Set(templatePlaceholders.map((p) => p.key.replace('custom.', '')));
+
+    referencedPartialNames.forEach((partialName) => {
+      const partial = partials.find((p) => p.name === partialName);
+      if (!partial?.placeholders) return;
+
+      // Parse placeholders if string
+      let placeholdersArray = partial.placeholders;
+      if (typeof placeholdersArray === 'string') {
+        try {
+          placeholdersArray = JSON.parse(placeholdersArray);
+        } catch {
+          placeholdersArray = [];
+        }
+      }
+
+      // Add placeholders from this partial
+      (placeholdersArray as Array<{ key: string; label: string; type?: string; category?: string; required?: boolean; defaultValue?: string }>)
+        .filter((p) => p.category === 'custom' || p.category === 'Custom' || p.key?.startsWith('custom.'))
+        .forEach((p) => {
+          const key = p.key.replace('custom.', '');
+          if (!seenKeys.has(key)) {
+            partialPlaceholders.push({
+              ...p,
+              key: p.key,
+              label: p.label || key,
+              type: p.type || 'text',
+              category: 'custom',
+              required: p.required ?? false,
+            });
+            seenKeys.add(key);
+          }
+        });
+    });
+
+    return [...templatePlaceholders, ...partialPlaceholders];
+  }, [template, partials, extractPartialReferences]);
 
   // Helper to strip 'custom.' prefix from keys for proper context resolution
   // The placeholder resolver expects context.custom.effectiveDate, not context.custom['custom.effectiveDate']
@@ -562,6 +628,7 @@ function CompleteStep({
 export function DocumentGenerationWizard({
   templates,
   companies,
+  partials = [],
   onGenerate,
   onPreviewTemplate,
   onValidate,
@@ -765,6 +832,7 @@ export function DocumentGenerationWizard({
             customData={state.customData}
             useLetterhead={state.useLetterhead}
             shareExpiryHours={state.shareExpiryHours}
+            partials={partials}
             onTitleChange={(title) => setState((prev) => ({ ...prev, title }))}
             onCustomDataChange={(data) =>
               setState((prev) => ({ ...prev, customData: data }))

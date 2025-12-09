@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
+import { useState, useCallback, useEffect, useRef, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/hooks/use-auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -53,6 +53,7 @@ interface PartialFormData {
   displayName: string;
   description: string;
   content: string;
+  customPlaceholders: CustomPlaceholderDefinition[];
 }
 
 interface CustomPlaceholderDefinition {
@@ -63,6 +64,12 @@ interface CustomPlaceholderDefinition {
   required: boolean;
   defaultValue?: string;
   description?: string;
+}
+
+interface MergedPlaceholder extends CustomPlaceholderDefinition {
+  source: 'template' | 'partial';
+  sourceName?: string;
+  sourceDisplayName?: string;
 }
 
 interface AddressData {
@@ -120,8 +127,10 @@ interface MockDataValues {
 interface TemplatePartial {
   id: string;
   name: string;
-  description?: string;
+  displayName?: string | null;
+  description?: string | null;
   content?: string;
+  placeholders?: unknown;
 }
 
 interface Company {
@@ -1001,6 +1010,7 @@ interface TestDataTabProps {
   isLoadingCompanies: boolean;
   onSelectCompany: (companyId: string) => void;
   customPlaceholders: CustomPlaceholderDefinition[];
+  mergedPlaceholders?: MergedPlaceholder[];
 }
 
 function TestDataTab({
@@ -1010,6 +1020,7 @@ function TestDataTab({
   isLoadingCompanies,
   onSelectCompany,
   customPlaceholders,
+  mergedPlaceholders = [],
 }: TestDataTabProps) {
   // Auto-expand custom section if custom placeholders exist
   const [expandedSections, setExpandedSections] = useState<string[]>(['source']);
@@ -1310,71 +1321,131 @@ function TestDataTab({
           )}
         </div>
 
-        {/* Custom Section - Dynamic based on customPlaceholders */}
-        {customPlaceholders.length > 0 && (
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => toggleSection('custom')}
-              className="flex items-center gap-2 text-sm font-medium text-text-primary"
-            >
-              {expandedSections.includes('custom') ? (
-                <ChevronDown className="w-3 h-3" />
-              ) : (
-                <ChevronRight className="w-3 h-3" />
-              )}
-              Custom Fields ({customPlaceholders.length})
-            </button>
+        {/* Custom Section - Dynamic based on customPlaceholders or mergedPlaceholders */}
+        {(() => {
+          // Use mergedPlaceholders if available, otherwise fallback to customPlaceholders
+          const placeholdersToShow = mergedPlaceholders.length > 0 ? mergedPlaceholders : customPlaceholders;
 
-            {expandedSections.includes('custom') && (
-              <div className="space-y-2 pl-5">
-                {customPlaceholders.map((placeholder) => {
-                  const customValues = mockData.custom as unknown as Record<string, string>;
-                  const fieldValue = customValues[placeholder.key] || placeholder.defaultValue || '';
-                  return (
-                    <div key={placeholder.id}>
-                      <label className="text-xs text-text-muted flex items-center gap-1">
-                        {placeholder.label}
-                        {placeholder.required && <span className="text-red-500">*</span>}
-                      </label>
-                      {placeholder.type === 'textarea' ? (
-                        <textarea
-                          value={fieldValue}
-                          onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.value)}
-                          placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
-                          className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary resize-none"
-                          rows={2}
-                        />
-                      ) : placeholder.type === 'boolean' ? (
-                        <input
-                          type="checkbox"
-                          checked={fieldValue === 'true' || fieldValue === '1'}
-                          onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.checked ? 'true' : 'false')}
-                          className="w-4 h-4 rounded border-border-primary text-accent-primary focus:ring-accent-primary"
-                        />
-                      ) : (
-                        <input
-                          type={placeholder.type === 'date' ? 'date' : placeholder.type === 'number' || placeholder.type === 'currency' ? 'number' : 'text'}
-                          value={fieldValue}
-                          onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.value)}
-                          placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
-                          className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+          // Group by source for display
+          const templatePlaceholders = placeholdersToShow.filter(
+            (p) => !('source' in p) || (p as MergedPlaceholder).source === 'template'
+          );
+          const partialGroups = placeholdersToShow
+            .filter((p) => 'source' in p && (p as MergedPlaceholder).source === 'partial')
+            .reduce((groups, p) => {
+              const mp = p as MergedPlaceholder;
+              const key = mp.sourceName || 'unknown';
+              if (!groups[key]) {
+                groups[key] = { displayName: mp.sourceDisplayName || key, placeholders: [] };
+              }
+              groups[key].placeholders.push(mp);
+              return groups;
+            }, {} as Record<string, { displayName: string; placeholders: MergedPlaceholder[] }>);
+
+          const renderPlaceholderInput = (placeholder: CustomPlaceholderDefinition | MergedPlaceholder) => {
+            const customValues = mockData.custom as unknown as Record<string, string>;
+            const fieldValue = customValues[placeholder.key] || placeholder.defaultValue || '';
+
+            return (
+              <div key={placeholder.id}>
+                <label className="text-xs text-text-muted flex items-center gap-1">
+                  {placeholder.label}
+                  {placeholder.required && <span className="text-red-500">*</span>}
+                </label>
+                {placeholder.type === 'textarea' ? (
+                  <textarea
+                    value={fieldValue}
+                    onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.value)}
+                    placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
+                    className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary resize-none"
+                    rows={2}
+                  />
+                ) : placeholder.type === 'boolean' ? (
+                  <input
+                    type="checkbox"
+                    checked={fieldValue === 'true' || fieldValue === '1'}
+                    onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.checked ? 'true' : 'false')}
+                    className="w-4 h-4 rounded border-border-primary text-accent-primary focus:ring-accent-primary"
+                  />
+                ) : (
+                  <input
+                    type={placeholder.type === 'date' ? 'date' : placeholder.type === 'number' || placeholder.type === 'currency' ? 'number' : 'text'}
+                    value={fieldValue}
+                    onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.value)}
+                    placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
+                    className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                  />
+                )}
               </div>
-            )}
-          </div>
-        )}
+            );
+          };
 
-        {/* Message when no custom placeholders defined */}
-        {customPlaceholders.length === 0 && (
-          <div className="text-xs text-text-muted italic px-1 py-2">
-            No custom placeholders defined. Add them in the Placeholders tab.
-          </div>
-        )}
+          if (placeholdersToShow.length === 0) {
+            return (
+              <div className="text-xs text-text-muted italic px-1 py-2">
+                No custom placeholders defined. Add them in the Placeholders tab.
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-3">
+              {/* Template's own custom fields */}
+              {templatePlaceholders.length > 0 && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('custom')}
+                    className="flex items-center gap-2 text-sm font-medium text-text-primary"
+                  >
+                    {expandedSections.includes('custom') ? (
+                      <ChevronDown className="w-3 h-3" />
+                    ) : (
+                      <ChevronRight className="w-3 h-3" />
+                    )}
+                    Template Fields ({templatePlaceholders.length})
+                  </button>
+
+                  {expandedSections.includes('custom') && (
+                    <div className="space-y-2 pl-5">
+                      {templatePlaceholders.map(renderPlaceholderInput)}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Partial groups */}
+              {Object.entries(partialGroups).map(([partialName, group]) => {
+                const sectionKey = `partial_${partialName}`;
+                return (
+                  <div key={partialName} className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(sectionKey)}
+                      className="flex items-center gap-2 text-sm font-medium text-text-primary"
+                    >
+                      {expandedSections.includes(sectionKey) ? (
+                        <ChevronDown className="w-3 h-3" />
+                      ) : (
+                        <ChevronRight className="w-3 h-3" />
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Code className="w-3 h-3 text-accent-secondary" />
+                        {group.displayName} ({group.placeholders.length})
+                      </span>
+                    </button>
+
+                    {expandedSections.includes(sectionKey) && (
+                      <div className="space-y-2 pl-5 border-l-2 border-accent-secondary/30 ml-1.5">
+                        {group.placeholders.map(renderPlaceholderInput)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
     </div>
@@ -1424,6 +1495,7 @@ function TemplateEditorContent() {
     displayName: '',
     description: '',
     content: '',
+    customPlaceholders: [],
   });
 
   const [formError, setFormError] = useState('');
@@ -1636,6 +1708,89 @@ function TemplateEditorContent() {
       }));
   };
 
+  // Helper to extract partial references from content
+  const extractPartialReferences = useCallback((content: string): string[] => {
+    if (!content) return [];
+
+    // Pattern matches: {{> partial-name }} or HTML-encoded variants
+    // Handles: {{>name}}, {{> name}}, {{&gt; name}}, {{&#62; name}}, {{&#x3e; name}}
+    const partialRefPattern = /\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z][a-zA-Z0-9_-]*)\s*\}\}/g;
+
+    const matches = content.matchAll(partialRefPattern);
+    const partialNames = new Set<string>();
+
+    for (const match of matches) {
+      if (match[1]) {
+        partialNames.add(match[1]);
+      }
+    }
+
+    return Array.from(partialNames);
+  }, []);
+
+  // Compute merged placeholders (template's own + from referenced partials)
+  const mergedPlaceholders = useMemo((): MergedPlaceholder[] => {
+    // Only merge for templates, not for partials
+    if (isPartialMode) return [];
+
+    const result: MergedPlaceholder[] = [];
+    const seenKeys = new Set<string>();
+
+    // First, add template's own custom placeholders
+    formData.customPlaceholders.forEach((p) => {
+      result.push({
+        ...p,
+        source: 'template' as const,
+      });
+      seenKeys.add(p.key);
+    });
+
+    // Then, find all partial references in template content
+    const referencedPartialNames = extractPartialReferences(formData.content);
+    const availablePartials = (partialsData?.partials || []) as TemplatePartial[];
+
+    // For each referenced partial, add its placeholders
+    referencedPartialNames.forEach((partialName) => {
+      const partial = availablePartials.find((p: TemplatePartial) => p.name === partialName);
+      if (!partial) return;
+
+      // Parse partial's placeholders
+      let partialPlaceholders = partial.placeholders || [];
+      if (typeof partialPlaceholders === 'string') {
+        try {
+          partialPlaceholders = JSON.parse(partialPlaceholders);
+        } catch {
+          partialPlaceholders = [];
+        }
+      }
+
+      // Convert to CustomPlaceholderDefinition format
+      const customPlaceholders = storageFormatToCustomPlaceholders(
+        partialPlaceholders as Array<{ key: string; label: string; type: string; source?: string; category?: string; required?: boolean; defaultValue?: string }>
+      );
+
+      // Add each placeholder from this partial
+      customPlaceholders.forEach((p) => {
+        // Handle duplicate keys by prefixing with partial name
+        let key = p.key;
+        if (seenKeys.has(key)) {
+          key = `${partialName}_${p.key}`;
+        }
+
+        result.push({
+          ...p,
+          key,
+          source: 'partial' as const,
+          sourceName: partialName,
+          sourceDisplayName: partial.displayName || partialName,
+        });
+        seenKeys.add(key);
+      });
+    });
+
+    return result;
+  }, [isPartialMode, formData.customPlaceholders, formData.content, partialsData?.partials, extractPartialReferences]);
+
   // Load existing template data
   useEffect(() => {
     if (existingTemplate && !isPartialMode) {
@@ -1663,11 +1818,22 @@ function TemplateEditorContent() {
   // Load existing partial data
   useEffect(() => {
     if (existingPartial && isPartialMode) {
+      // Parse placeholders from JSON if it's a string
+      let placeholdersArray = existingPartial.placeholders || [];
+      if (typeof placeholdersArray === 'string') {
+        try {
+          placeholdersArray = JSON.parse(placeholdersArray);
+        } catch {
+          placeholdersArray = [];
+        }
+      }
+
       setPartialFormData({
         name: existingPartial.name || '',
         displayName: existingPartial.displayName || existingPartial.name || '',
         description: existingPartial.description || '',
         content: existingPartial.content || '',
+        customPlaceholders: storageFormatToCustomPlaceholders(placeholdersArray),
       });
     }
   }, [existingPartial, isPartialMode, itemId]);
@@ -1857,9 +2023,10 @@ function TemplateEditorContent() {
       preview = preview.replace(/\{\{company\.address\.building\}\}/g, company.address?.building || '');
       preview = preview.replace(/\{\{company\.address\.postalCode\}\}/g, company.address?.postalCode || '');
 
-      // User-defined custom placeholders (dynamic)
+      // User-defined custom placeholders (dynamic) - use merged placeholders if available
       const customData = custom as unknown as Record<string, string | number | undefined>;
-      formData.customPlaceholders.forEach((placeholder) => {
+      const placeholdersToProcess = mergedPlaceholders.length > 0 ? mergedPlaceholders : formData.customPlaceholders;
+      placeholdersToProcess.forEach((placeholder) => {
         const regex = new RegExp(`\\{\\{custom\\.${placeholder.key}\\}\\}`, 'g');
         let value = customData[placeholder.key] || '';
 
@@ -1952,9 +2119,11 @@ function TemplateEditorContent() {
         }, context);
 
         // For custom placeholders, fall back to defaultValue if value is undefined
+        // Use merged placeholders if available for better coverage
         if (value === undefined && path.startsWith('custom.')) {
           const customKey = path.replace('custom.', '');
-          const placeholder = formData.customPlaceholders.find(p => p.key === customKey);
+          const allPlaceholders = mergedPlaceholders.length > 0 ? mergedPlaceholders : formData.customPlaceholders;
+          const placeholder = allPlaceholders.find(p => p.key === customKey);
           if (placeholder?.defaultValue !== undefined) {
             return placeholder.defaultValue;
           }
@@ -2077,7 +2246,7 @@ function TemplateEditorContent() {
     } finally {
       setIsPreviewLoading(false);
     }
-  }, [formData.content, mockData, partialsData]);
+  }, [formData.content, mockData, partialsData, mergedPlaceholders]);
 
   // Handle save
   // Helper to convert custom placeholders to storage format
@@ -2119,12 +2288,15 @@ function TemplateEditorContent() {
         return;
       }
 
+      // Convert custom placeholders to storage format
+      const placeholders = customPlaceholdersToStorageFormat(partialFormData.customPlaceholders);
+
       const dataToSave = {
         name: partialFormData.name,
         displayName: partialFormData.displayName,
         description: partialFormData.description || null,
         content: partialFormData.content,
-        placeholders: [],
+        placeholders,
       };
 
       if (isEditMode && itemId) {
@@ -2383,9 +2555,10 @@ function TemplateEditorContent() {
                     onInsert={handleInsertPlaceholder}
                     partials={partials}
                     isLoadingPartials={isLoadingPartials}
-                    customPlaceholders={isPartialMode ? [] : formData.customPlaceholders}
-                    onCustomPlaceholdersChange={isPartialMode ? () => {} : (placeholders) =>
-                      setFormData((prev) => ({ ...prev, customPlaceholders: placeholders }))
+                    customPlaceholders={isPartialMode ? partialFormData.customPlaceholders : formData.customPlaceholders}
+                    onCustomPlaceholdersChange={isPartialMode
+                      ? (placeholders) => setPartialFormData((prev) => ({ ...prev, customPlaceholders: placeholders }))
+                      : (placeholders) => setFormData((prev) => ({ ...prev, customPlaceholders: placeholders }))
                     }
                   />
                 )}
@@ -2397,6 +2570,7 @@ function TemplateEditorContent() {
                     isLoadingCompanies={isLoadingCompanies}
                     onSelectCompany={handleSelectCompany}
                     customPlaceholders={formData.customPlaceholders}
+                    mergedPlaceholders={mergedPlaceholders}
                   />
                 )}
                 {activeTab === 'ai' && (
