@@ -17,6 +17,13 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditContext, logCreate, logUpdate, logDelete } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
+import { sendEmail } from '@/lib/email';
+import { notificationEmail } from '@/lib/email-templates';
+import {
+  MAX_COMMENT_LENGTH,
+  DEFAULT_COMMENT_RATE_LIMIT,
+  COMMENT_RATE_LIMIT_WINDOW_MS,
+} from '@/lib/constants/application';
 import type { DocumentComment, DocumentCommentStatus, Prisma } from '@prisma/client';
 
 const log = createLogger('document-comment');
@@ -83,14 +90,6 @@ export interface RateLimitResult {
   remainingCount: number;
   resetAt: Date;
 }
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const MAX_COMMENT_LENGTH = 1000;
-const DEFAULT_RATE_LIMIT = 20; // comments per hour per IP
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 // ============================================================================
 // Include definitions for queries
@@ -528,8 +527,8 @@ export async function checkCommentRateLimit(
     return { allowed: false, remainingCount: 0, resetAt: new Date() };
   }
 
-  const rateLimit = share.commentRateLimit || DEFAULT_RATE_LIMIT;
-  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+  const rateLimit = share.commentRateLimit || DEFAULT_COMMENT_RATE_LIMIT;
+  const windowStart = new Date(Date.now() - COMMENT_RATE_LIMIT_WINDOW_MS);
 
   // Count recent comments from this IP
   const recentCount = await prisma.documentComment.count({
@@ -540,7 +539,7 @@ export async function checkCommentRateLimit(
     },
   });
 
-  const resetAt = new Date(Date.now() + RATE_LIMIT_WINDOW_MS);
+  const resetAt = new Date(Date.now() + COMMENT_RATE_LIMIT_WINDOW_MS);
   const remaining = Math.max(0, rateLimit - recentCount);
 
   return {
@@ -548,6 +547,81 @@ export async function checkCommentRateLimit(
     remainingCount: remaining,
     resetAt,
   };
+}
+
+/**
+ * Send notification email when a new external comment is added
+ */
+async function sendCommentNotification(
+  share: { documentId: string; createdById: string },
+  comment: { content: string; selectedText?: string | null },
+  guestName: string
+): Promise<void> {
+  // Get the document and its creator
+  const document = await prisma.generatedDocument.findUnique({
+    where: { id: share.documentId },
+    include: {
+      template: { select: { name: true } },
+    },
+  });
+
+  if (!document) {
+    log.warn(`Document ${share.documentId} not found for notification`);
+    return;
+  }
+
+  // Get the share creator to notify them
+  const shareCreator = await prisma.user.findUnique({
+    where: { id: share.createdById },
+    select: { email: true, firstName: true, lastName: true },
+  });
+
+  if (!shareCreator?.email) {
+    log.warn(`Share creator ${share.createdById} not found or has no email`);
+    return;
+  }
+
+  // Prepare email content
+  const documentTitle = document.title || document.template?.name || 'Untitled Document';
+  const commentPreview = comment.content.length > 200
+    ? comment.content.slice(0, 200) + '...'
+    : comment.content;
+
+  let messageHtml = `
+    <p><strong>${guestName}</strong> left a comment on your shared document:</p>
+    <div style="background-color: #f5f5f5; border-left: 4px solid #294d44; padding: 16px; margin: 16px 0; border-radius: 4px;">
+      <p style="margin: 0; font-style: italic;">"${commentPreview}"</p>
+    </div>
+    <p><strong>Document:</strong> ${documentTitle}</p>
+  `;
+
+  if (comment.selectedText) {
+    messageHtml += `
+    <p><strong>Selected text:</strong></p>
+    <div style="background-color: #fff3cd; padding: 12px; border-radius: 4px; margin-top: 8px;">
+      <p style="margin: 0; font-size: 13px;">"${comment.selectedText}"</p>
+    </div>
+    `;
+  }
+
+  const email = notificationEmail({
+    firstName: shareCreator.firstName,
+    subject: `New comment on "${documentTitle}" from ${guestName}`,
+    title: 'New Comment Received',
+    message: messageHtml,
+  });
+
+  const result = await sendEmail({
+    to: shareCreator.email,
+    subject: email.subject,
+    html: email.html,
+  });
+
+  if (result.success) {
+    log.info(`Comment notification sent to ${shareCreator.email} for document ${share.documentId}`);
+  } else {
+    log.error(`Failed to send comment notification: ${result.error}`);
+  }
 }
 
 /**
@@ -639,10 +713,12 @@ export async function createExternalComment(
     include: commentInclude,
   });
 
-  // TODO: Send notification if notifyOnComment is enabled
+  // Send notification if notifyOnComment is enabled
   if (share.notifyOnComment) {
-    log.info(`New external comment on document ${share.documentId}`);
-    // Notification logic would go here
+    // Run notification asynchronously to not block the response
+    sendCommentNotification(share, comment, input.guestName).catch((err) => {
+      log.error('Failed to send comment notification:', err);
+    });
   }
 
   return comment as CommentWithRelations;

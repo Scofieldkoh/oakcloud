@@ -119,6 +119,19 @@ export const MAX_SHARE_EXPIRY_HOURS = 8760;
 export const SHARE_RATE_LIMIT_WINDOW_SECONDS = 3600;
 
 // ============================================================================
+// Comment Constants
+// ============================================================================
+
+/** Maximum comment length in characters */
+export const MAX_COMMENT_LENGTH = 1000;
+
+/** Default rate limit for external comments (per hour per IP) */
+export const DEFAULT_COMMENT_RATE_LIMIT = 20;
+
+/** Rate limit window in milliseconds (1 hour) */
+export const COMMENT_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
+// ============================================================================
 // Validation Limits
 // ============================================================================
 
