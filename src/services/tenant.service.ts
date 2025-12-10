@@ -38,6 +38,15 @@ import type {
   TenantSettingsInput,
 } from '@/lib/validations/tenant';
 import bcrypt from 'bcryptjs';
+import {
+  BCRYPT_SALT_ROUNDS,
+  DEFAULT_TENANT_MAX_USERS,
+  DEFAULT_TENANT_MAX_COMPANIES,
+  DEFAULT_TENANT_MAX_STORAGE_MB,
+  DEFAULT_TENANT_PRIMARY_COLOR,
+  TENANT_STATUSES,
+  ERROR_MESSAGES,
+} from '@/lib/constants/application';
 
 const log = createLogger('tenant');
 
@@ -99,14 +108,14 @@ export async function createTenant(
         data: {
           name: data.name,
           slug,
-          status: 'PENDING_SETUP',
+          status: TENANT_STATUSES.PENDING_SETUP,
           contactEmail: data.contactEmail,
           contactPhone: data.contactPhone,
-          maxUsers: data.maxUsers || 50,
-          maxCompanies: data.maxCompanies || 100,
-          maxStorageMb: data.maxStorageMb || 10240,
+          maxUsers: data.maxUsers || DEFAULT_TENANT_MAX_USERS,
+          maxCompanies: data.maxCompanies || DEFAULT_TENANT_MAX_COMPANIES,
+          maxStorageMb: data.maxStorageMb || DEFAULT_TENANT_MAX_STORAGE_MB,
           logoUrl: data.logoUrl,
-          primaryColor: data.primaryColor || '#294d44',
+          primaryColor: data.primaryColor || DEFAULT_TENANT_PRIMARY_COLOR,
           settings: data.settings ? (data.settings as Prisma.InputJsonValue) : Prisma.JsonNull,
         },
       });
@@ -178,7 +187,7 @@ export async function updateTenant(
   });
 
   if (!existing) {
-    throw new Error('Tenant not found');
+    throw new Error(ERROR_MESSAGES.TENANT_NOT_FOUND);
   }
 
   // Check slug uniqueness if being updated
@@ -231,7 +240,7 @@ export async function updateTenantStatus(
   });
 
   if (!existing) {
-    throw new Error('Tenant not found');
+    throw new Error(ERROR_MESSAGES.TENANT_NOT_FOUND);
   }
 
   const oldStatus = existing.status;
@@ -241,11 +250,11 @@ export async function updateTenantStatus(
   };
 
   // Set timestamps based on status change
-  if (status === 'ACTIVE' && oldStatus !== 'ACTIVE') {
+  if (status === TENANT_STATUSES.ACTIVE && oldStatus !== TENANT_STATUSES.ACTIVE) {
     updateData.activatedAt = new Date();
     updateData.suspendedAt = null;
     updateData.suspendReason = null;
-  } else if (status === 'SUSPENDED') {
+  } else if (status === TENANT_STATUSES.SUSPENDED) {
     updateData.suspendedAt = new Date();
     updateData.suspendReason = reason;
   }
@@ -256,7 +265,7 @@ export async function updateTenantStatus(
   });
 
   // Log status change
-  const action = status === 'SUSPENDED' ? 'TENANT_SUSPENDED' : 'TENANT_ACTIVATED';
+  const action = status === TENANT_STATUSES.SUSPENDED ? 'TENANT_SUSPENDED' : 'TENANT_ACTIVATED';
   await logTenantOperation(
     action,
     tenant.id,
@@ -340,11 +349,11 @@ export async function deleteTenant(
   });
 
   if (!existing) {
-    throw new Error('Tenant not found');
+    throw new Error(ERROR_MESSAGES.TENANT_NOT_FOUND);
   }
 
   // Only allow deletion when tenant is SUSPENDED or PENDING_SETUP
-  if (existing.status !== 'SUSPENDED' && existing.status !== 'PENDING_SETUP') {
+  if (existing.status !== TENANT_STATUSES.SUSPENDED && existing.status !== TENANT_STATUSES.PENDING_SETUP) {
     throw new Error('Tenant must be suspended or pending setup before it can be deleted');
   }
 
@@ -376,7 +385,7 @@ export async function deleteTenant(
       data: {
         deletedAt,
         deletedReason: reason,
-        status: 'DEACTIVATED',
+        status: TENANT_STATUSES.DEACTIVATED,
       },
     });
 
@@ -483,7 +492,7 @@ export async function inviteUserToTenant(
 
   // Generate temporary password (should be changed on first login)
   const tempPassword = generateTemporaryPassword();
-  const passwordHash = await bcrypt.hash(tempPassword, 10);
+  const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_SALT_ROUNDS);
 
   const user = await prisma.user.create({
     data: {
@@ -710,7 +719,7 @@ export async function updateTenantSettings(
   });
 
   if (!existing) {
-    throw new Error('Tenant not found');
+    throw new Error(ERROR_MESSAGES.TENANT_NOT_FOUND);
   }
 
   const currentSettings = (existing.settings as Record<string, unknown>) || {};
@@ -886,10 +895,10 @@ export async function completeTenantSetup(
   });
 
   if (!tenant) {
-    throw new Error('Tenant not found');
+    throw new Error(ERROR_MESSAGES.TENANT_NOT_FOUND);
   }
 
-  if (tenant.status !== 'PENDING_SETUP') {
+  if (tenant.status !== TENANT_STATUSES.PENDING_SETUP) {
     throw new Error(`Cannot complete setup for tenant with status: ${tenant.status}`);
   }
 
@@ -919,7 +928,7 @@ export async function completeTenantSetup(
 
   // Generate temporary password for admin user
   const tempPassword = generateTemporaryPassword();
-  const passwordHash = await bcrypt.hash(tempPassword, 10);
+  const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_SALT_ROUNDS);
 
   // Execute all operations in a transaction
   const result = await prisma.$transaction(async (tx) => {
@@ -978,7 +987,7 @@ export async function completeTenantSetup(
     const activatedTenant = await tx.tenant.update({
       where: { id: tenantId },
       data: {
-        status: 'ACTIVE',
+        status: TENANT_STATUSES.ACTIVE,
         activatedAt: new Date(),
         suspendedAt: null,
         suspendReason: null,

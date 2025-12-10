@@ -4,6 +4,11 @@
  */
 
 import { z } from 'zod';
+import {
+  DEFAULT_PAGE_LIMIT,
+  MAX_PAGE_LIMIT,
+  MAX_QUERY_STRING_LENGTH,
+} from '../constants/application';
 
 // ============================================================================
 // Primitive Validators
@@ -72,9 +77,9 @@ export const paginationSchema = z.object({
   limit: z
     .string()
     .regex(/^\d+$/)
-    .transform((val) => Math.min(parseInt(val, 10), 100)) // Cap at 100
+    .transform((val) => Math.min(parseInt(val, 10), MAX_PAGE_LIMIT))
     .optional()
-    .default('20'),
+    .default(String(DEFAULT_PAGE_LIMIT)),
 });
 
 export type PaginationParams = z.infer<typeof paginationSchema>;
@@ -101,7 +106,7 @@ export const tenantIdParamSchema = z.object({
 });
 
 export const querySearchSchema = z.object({
-  query: z.string().max(200).optional(),
+  query: z.string().max(MAX_QUERY_STRING_LENGTH).optional(),
 });
 
 export const dateRangeSchema = z.object({
@@ -191,7 +196,7 @@ export const auditLogsQuerySchema = paginationSchema.merge(dateRangeSchema).exte
  * Companies list query
  */
 export const companiesQuerySchema = paginationSchema.extend({
-  query: z.string().max(200).optional(),
+  query: z.string().max(MAX_QUERY_STRING_LENGTH).optional(),
   entityType: z.string().optional(),
   status: z.string().optional(),
   incorporationDateFrom: dateString.optional(),
@@ -211,7 +216,7 @@ export const companiesQuerySchema = paginationSchema.extend({
  * Document templates query
  */
 export const documentTemplatesQuerySchema = paginationSchema.extend({
-  query: z.string().max(200).optional(),
+  query: z.string().max(MAX_QUERY_STRING_LENGTH).optional(),
   category: z.string().optional(),
   isActive: optionalBooleanString,
   sortBy: z.enum(['name', 'createdAt', 'category']).optional(),
@@ -222,7 +227,7 @@ export const documentTemplatesQuerySchema = paginationSchema.extend({
  * Generated documents query
  */
 export const generatedDocumentsQuerySchema = paginationSchema.extend({
-  query: z.string().max(200).optional(),
+  query: z.string().max(MAX_QUERY_STRING_LENGTH).optional(),
   companyId: uuidString.optional(),
   companyName: z.string().optional(),
   templateId: uuidString.optional(),
@@ -235,7 +240,7 @@ export const generatedDocumentsQuerySchema = paginationSchema.extend({
  * Contacts query
  */
 export const contactsQuerySchema = paginationSchema.extend({
-  query: z.string().max(200).optional(),
+  query: z.string().max(MAX_QUERY_STRING_LENGTH).optional(),
   contactType: z.string().optional(),
   companyId: uuidString.optional(),
   sortBy: z.enum(['firstName', 'lastName', 'email', 'createdAt']).optional(),
@@ -247,7 +252,7 @@ export const contactsQuerySchema = paginationSchema.extend({
  */
 export const documentSharesQuerySchema = paginationSchema.extend({
   status: z.enum(['active', 'expired', 'revoked', 'all']).optional(),
-  query: z.string().max(200).optional(),
+  query: z.string().max(MAX_QUERY_STRING_LENGTH).optional(),
   documentId: uuidString.optional(),
 });
 
@@ -270,5 +275,5 @@ export const pdfExportQuerySchema = z.object({
   format: z.enum(['A4', 'Letter']).optional().default('A4'),
   orientation: z.enum(['portrait', 'landscape']).optional().default('portrait'),
   letterhead: booleanString.optional().default('true'),
-  filename: z.string().max(200).optional(),
+  filename: z.string().max(MAX_QUERY_STRING_LENGTH).optional(),
 });

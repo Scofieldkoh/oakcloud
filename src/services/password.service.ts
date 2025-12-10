@@ -11,6 +11,12 @@ import { sendEmail, isEmailConfigured, getAppBaseUrl } from '@/lib/email';
 import { passwordResetEmail, passwordChangedEmail } from '@/lib/email-templates';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import {
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_RESET_EXPIRY_HOURS,
+  BCRYPT_SALT_ROUNDS,
+  ENUMERATION_PROTECTION_DELAY,
+} from '@/lib/constants/application';
 
 const log = createLogger('password');
 
@@ -35,13 +41,6 @@ export interface ChangePasswordResult {
   success: boolean;
   message: string;
 }
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const RESET_TOKEN_EXPIRY_HOURS = 24;
-const MIN_PASSWORD_LENGTH = 8;
 
 // ============================================================================
 // Password Validation
@@ -85,7 +84,8 @@ export async function requestPasswordReset(email: string): Promise<RequestResetR
   if (!user || !user.isActive) {
     // Add random delay to prevent timing-based email enumeration
     // This makes response time similar to successful requests
-    const randomDelay = 50 + Math.random() * 100; // 50-150ms
+    const delayRange = ENUMERATION_PROTECTION_DELAY.max - ENUMERATION_PROTECTION_DELAY.min;
+    const randomDelay = ENUMERATION_PROTECTION_DELAY.min + Math.random() * delayRange;
     await new Promise((resolve) => setTimeout(resolve, randomDelay));
     return {
       success: true,
@@ -98,7 +98,7 @@ export async function requestPasswordReset(email: string): Promise<RequestResetR
   const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
   // Set expiry time
-  const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_HOURS * 60 * 60 * 1000);
 
   // Save token to database
   await prisma.user.update({
@@ -131,7 +131,7 @@ export async function requestPasswordReset(email: string): Promise<RequestResetR
     lastName: user.lastName,
     email: user.email,
     resetUrl,
-    expiryHours: RESET_TOKEN_EXPIRY_HOURS,
+    expiryHours: PASSWORD_RESET_EXPIRY_HOURS,
   });
 
   const emailResult = await sendEmail({
@@ -198,7 +198,7 @@ export async function resetPasswordWithToken(
   }
 
   // Hash new password
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
   // Update user
   await prisma.user.update({
@@ -294,7 +294,7 @@ export async function changePassword(
   }
 
   // Hash new password
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
   // Update user
   await prisma.user.update({

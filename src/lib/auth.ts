@@ -10,6 +10,15 @@ import { cookies } from 'next/headers';
 import { prisma } from './prisma';
 import type { TenantStatus } from '@prisma/client';
 import { logAuthEvent } from './audit';
+import {
+  AUTH_COOKIE_NAME,
+  DEFAULT_JWT_EXPIRES_IN,
+  COOKIE_MAX_AGE_SECONDS,
+  COOKIE_OPTIONS,
+  MIN_JWT_SECRET_LENGTH,
+  ERROR_MESSAGES,
+  TENANT_STATUSES,
+} from './constants/application';
 
 // ============================================================================
 // Configuration
@@ -27,15 +36,15 @@ function getJwtSecret(): Uint8Array {
     return new TextEncoder().encode('development-only-secret-do-not-use-in-production');
   }
 
-  if (secret.length < 32) {
-    throw new Error('JWT_SECRET must be at least 32 characters long');
+  if (secret.length < MIN_JWT_SECRET_LENGTH) {
+    throw new Error(`JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters long`);
   }
 
   return new TextEncoder().encode(secret);
 }
 
 const JWT_SECRET = getJwtSecret();
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || DEFAULT_JWT_EXPIRES_IN;
 
 // ============================================================================
 // Types
@@ -128,7 +137,7 @@ function parseExpiration(exp: string): string {
  */
 export async function getSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get('auth-token')?.value;
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
   if (!token) return null;
 
@@ -200,7 +209,7 @@ export async function getSession(): Promise<SessionUser | null> {
  */
 export async function getSessionWithTenant(): Promise<SessionWithTenant | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get('auth-token')?.value;
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
   if (!token) return null;
 
@@ -249,7 +258,7 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
   );
 
   // Check tenant is active (for non-SUPER_ADMIN)
-  if (user.tenant && user.tenant.status !== 'ACTIVE' && !isSuperAdmin) {
+  if (user.tenant && user.tenant.status !== TENANT_STATUSES.ACTIVE && !isSuperAdmin) {
     return null;
   }
 
@@ -291,7 +300,7 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
 export async function requireAuth(): Promise<SessionUser> {
   const session = await getSession();
   if (!session) {
-    throw new Error('Unauthorized');
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
   }
   return session;
 }
@@ -302,7 +311,7 @@ export async function requireAuth(): Promise<SessionUser> {
 export async function requireAuthWithTenant(): Promise<SessionWithTenant> {
   const session = await getSessionWithTenant();
   if (!session) {
-    throw new Error('Unauthorized');
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
   }
   return session;
 }
@@ -313,10 +322,10 @@ export async function requireAuthWithTenant(): Promise<SessionWithTenant> {
 export async function requireTenant(): Promise<SessionWithTenant & { tenantId: string }> {
   const session = await getSessionWithTenant();
   if (!session) {
-    throw new Error('Unauthorized');
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
   }
   if (!session.tenantId && !session.isSuperAdmin) {
-    throw new Error('No tenant association');
+    throw new Error(ERROR_MESSAGES.NO_TENANT_ASSOCIATION);
   }
   return session as SessionWithTenant & { tenantId: string };
 }
@@ -456,7 +465,7 @@ export async function performLogin(
 
   if (!user || user.deletedAt || !user.isActive) {
     await logAuthEvent('LOGIN_FAILED', undefined, { email, reason: 'User not found or inactive' });
-    throw new Error('Invalid credentials');
+    throw new Error(ERROR_MESSAGES.INVALID_CREDENTIALS);
   }
 
   // Compute flags from role assignments (authoritative source)
@@ -468,15 +477,15 @@ export async function performLogin(
   );
 
   // Check tenant status (for non-SUPER_ADMIN)
-  if (user.tenant && user.tenant.status !== 'ACTIVE' && !isSuperAdmin) {
+  if (user.tenant && user.tenant.status !== TENANT_STATUSES.ACTIVE && !isSuperAdmin) {
     await logAuthEvent('LOGIN_FAILED', user.id, { reason: 'Tenant not active', tenantStatus: user.tenant.status });
-    throw new Error('Account access restricted');
+    throw new Error(ERROR_MESSAGES.ACCOUNT_ACCESS_RESTRICTED);
   }
 
   const isValid = await verifyPassword(user.passwordHash, password);
   if (!isValid) {
     await logAuthEvent('LOGIN_FAILED', user.id, { reason: 'Invalid password' });
-    throw new Error('Invalid credentials');
+    throw new Error(ERROR_MESSAGES.INVALID_CREDENTIALS);
   }
 
   // Update last login
@@ -494,12 +503,10 @@ export async function performLogin(
 
   // Set cookie
   const cookieStore = await cookies();
-  cookieStore.set('auth-token', token, {
-    httpOnly: true,
+  cookieStore.set(AUTH_COOKIE_NAME, token, {
+    ...COOKIE_OPTIONS,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: '/',
+    maxAge: COOKIE_MAX_AGE_SECONDS,
   });
 
   // Log successful login
@@ -539,7 +546,7 @@ export async function performLogout(): Promise<void> {
   const session = await getSession();
 
   const cookieStore = await cookies();
-  cookieStore.delete('auth-token');
+  cookieStore.delete(AUTH_COOKIE_NAME);
 
   if (session) {
     await logAuthEvent('LOGOUT', session.id);
@@ -562,7 +569,7 @@ export async function getSessionTenantId(): Promise<string | null> {
   }
 
   if (!session.tenantId) {
-    throw new Error('User has no tenant association');
+    throw new Error(ERROR_MESSAGES.NO_TENANT_ASSOCIATION);
   }
 
   return session.tenantId;
@@ -575,7 +582,7 @@ export async function validateTenantAccess(tenantId: string): Promise<SessionUse
   const session = await requireAuth();
 
   if (!canAccessTenant(session, tenantId)) {
-    throw new Error('Forbidden');
+    throw new Error(ERROR_MESSAGES.FORBIDDEN);
   }
 
   return session;
@@ -594,17 +601,17 @@ export async function validateCompanyAccess(companyId: string): Promise<SessionU
   });
 
   if (!company) {
-    throw new Error('Company not found');
+    throw new Error(ERROR_MESSAGES.COMPANY_NOT_FOUND);
   }
 
   // Check tenant access first
   if (!canAccessTenant(session, company.tenantId)) {
-    throw new Error('Forbidden');
+    throw new Error(ERROR_MESSAGES.FORBIDDEN);
   }
 
   // Then check company-level access
   if (!(await canAccessCompany(session, companyId))) {
-    throw new Error('Forbidden');
+    throw new Error(ERROR_MESSAGES.FORBIDDEN);
   }
 
   return session;
