@@ -6,10 +6,11 @@
  */
 
 import crypto from 'crypto';
-
-const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16;
-const TAG_LENGTH = 16;
+import {
+  ENCRYPTION_ALGORITHM,
+  ENCRYPTION_IV_LENGTH,
+  ENCRYPTION_TAG_LENGTH,
+} from './constants/application';
 
 /**
  * Get the encryption key from environment variable
@@ -37,8 +38,8 @@ function getEncryptionKey(): Buffer {
  */
 export function encrypt(plaintext: string): string {
   const key = getEncryptionKey();
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  const iv = crypto.randomBytes(ENCRYPTION_IV_LENGTH);
+  const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
 
   let encrypted = cipher.update(plaintext, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -80,15 +81,15 @@ export function decrypt(ciphertext: string): string {
   const iv = Buffer.from(ivHex, 'hex');
   const tag = Buffer.from(tagHex, 'hex');
 
-  if (iv.length !== IV_LENGTH) {
+  if (iv.length !== ENCRYPTION_IV_LENGTH) {
     throw new Error('Invalid IV length');
   }
 
-  if (tag.length !== TAG_LENGTH) {
+  if (tag.length !== ENCRYPTION_TAG_LENGTH) {
     throw new Error('Invalid auth tag length');
   }
 
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
   decipher.setAuthTag(tag);
 
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');

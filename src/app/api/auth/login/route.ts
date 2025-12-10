@@ -5,6 +5,13 @@ import { prisma } from '@/lib/prisma';
 import { createToken } from '@/lib/auth';
 import { logAuthEvent } from '@/lib/audit';
 import { createLogger, safeErrorMessage } from '@/lib/logger';
+import {
+  AUTH_COOKIE_NAME,
+  COOKIE_MAX_AGE_SECONDS,
+  COOKIE_OPTIONS,
+  TENANT_STATUSES,
+  HTTP_STATUS,
+} from '@/lib/constants/application';
 
 const log = createLogger('auth:login');
 
@@ -16,7 +23,7 @@ export async function POST(request: NextRequest) {
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
-        { status: 400 }
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
@@ -45,7 +52,7 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json(
         { error: 'Invalid email or password' },
-        { status: 401 }
+        { status: HTTP_STATUS.UNAUTHORIZED }
       );
     }
 
@@ -59,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     // Check tenant status (skip for SUPER_ADMIN who may not have a tenant)
     if (user.tenant) {
-      if (user.tenant.status === 'SUSPENDED') {
+      if (user.tenant.status === TENANT_STATUSES.SUSPENDED) {
         await logAuthEvent('LOGIN_FAILED', user.id, {
           email: user.email,
           userName: `${user.firstName} ${user.lastName}`,
@@ -69,10 +76,10 @@ export async function POST(request: NextRequest) {
         });
         return NextResponse.json(
           { error: 'Your organization has been suspended. Please contact support.' },
-          { status: 403 }
+          { status: HTTP_STATUS.FORBIDDEN }
         );
       }
-      if (user.tenant.status === 'DEACTIVATED') {
+      if (user.tenant.status === TENANT_STATUSES.DEACTIVATED) {
         await logAuthEvent('LOGIN_FAILED', user.id, {
           email: user.email,
           userName: `${user.firstName} ${user.lastName}`,
@@ -82,10 +89,10 @@ export async function POST(request: NextRequest) {
         });
         return NextResponse.json(
           { error: 'Your organization has been deactivated. Please contact support.' },
-          { status: 403 }
+          { status: HTTP_STATUS.FORBIDDEN }
         );
       }
-      if (user.tenant.status === 'PENDING_SETUP') {
+      if (user.tenant.status === TENANT_STATUSES.PENDING_SETUP) {
         await logAuthEvent('LOGIN_FAILED', user.id, {
           email: user.email,
           userName: `${user.firstName} ${user.lastName}`,
@@ -95,7 +102,7 @@ export async function POST(request: NextRequest) {
         });
         return NextResponse.json(
           { error: 'Your organization setup is not complete. Please contact your administrator.' },
-          { status: 403 }
+          { status: HTTP_STATUS.FORBIDDEN }
         );
       }
     }
@@ -110,7 +117,7 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json(
         { error: 'Invalid email or password' },
-        { status: 401 }
+        { status: HTTP_STATUS.UNAUTHORIZED }
       );
     }
 
@@ -144,12 +151,10 @@ export async function POST(request: NextRequest) {
 
     // Set cookie
     const cookieStore = await cookies();
-    cookieStore.set('auth-token', token, {
-      httpOnly: true,
+    cookieStore.set(AUTH_COOKIE_NAME, token, {
+      ...COOKIE_OPTIONS,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
+      maxAge: COOKIE_MAX_AGE_SECONDS,
     });
 
     return NextResponse.json({
@@ -169,7 +174,7 @@ export async function POST(request: NextRequest) {
     log.error('Login error:', safeErrorMessage(error));
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: HTTP_STATUS.SERVER_ERROR }
     );
   }
 }
