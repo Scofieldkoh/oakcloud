@@ -151,9 +151,22 @@ export async function updateNoteTab(
     if (input.title !== undefined && input.title !== existingTab.title) {
       changes.title = { old: existingTab.title, new: input.title };
     }
-    // Don't log content changes in detail (can be large)
+    // Log content changes with truncated preview for better audit visibility
     if (input.content !== undefined && input.content !== existingTab.content) {
-      changes.content = { old: '[previous]', new: '[updated]' };
+      // Strip HTML tags for preview
+      const stripHtml = (html: string | null) => {
+        if (!html) return '';
+        return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      };
+      const oldPreview = stripHtml(existingTab.content);
+      const newPreview = stripHtml(input.content);
+      // Truncate to 100 chars for preview
+      const truncate = (str: string, len: number) =>
+        str.length > len ? str.substring(0, len) + '...' : str;
+      changes.content = {
+        old: oldPreview ? truncate(oldPreview, 100) : '[empty]',
+        new: newPreview ? truncate(newPreview, 100) : '[empty]',
+      };
     }
 
     if (Object.keys(changes).length > 0) {

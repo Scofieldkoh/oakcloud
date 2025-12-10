@@ -3,6 +3,7 @@
 import { Search, Filter, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import type { CompanyStatus, EntityType } from '@prisma/client';
+import { ENTITY_TYPES } from '@/lib/constants';
 
 interface CompanyFiltersProps {
   onSearch: (query: string) => void;
@@ -17,17 +18,6 @@ export interface FilterValues {
   hasCharges?: boolean;
   financialYearEndMonth?: number;
 }
-
-const entityTypes: { value: EntityType; label: string }[] = [
-  { value: 'PRIVATE_LIMITED', label: 'Private Limited' },
-  { value: 'PUBLIC_LIMITED', label: 'Public Limited' },
-  { value: 'SOLE_PROPRIETORSHIP', label: 'Sole Proprietorship' },
-  { value: 'PARTNERSHIP', label: 'Partnership' },
-  { value: 'LIMITED_PARTNERSHIP', label: 'Limited Partnership' },
-  { value: 'LIMITED_LIABILITY_PARTNERSHIP', label: 'LLP' },
-  { value: 'FOREIGN_COMPANY', label: 'Foreign Company' },
-  { value: 'VARIABLE_CAPITAL_COMPANY', label: 'VCC' },
-];
 
 const statuses: { value: CompanyStatus; label: string }[] = [
   { value: 'LIVE', label: 'Live' },
@@ -138,9 +128,9 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
                 className="input input-sm"
               >
                 <option value="">All types</option>
-                {entityTypes.map((type) => (
+                {ENTITY_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
-                    {type.label}
+                    {type.shortLabel}
                   </option>
                 ))}
               </select>

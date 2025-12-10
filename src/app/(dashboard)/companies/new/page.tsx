@@ -13,18 +13,7 @@ import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { DateInput } from '@/components/ui/date-input';
 import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
-
-const entityTypes = [
-  { value: 'PRIVATE_LIMITED', label: 'Private Limited Company' },
-  { value: 'PUBLIC_LIMITED', label: 'Public Limited Company' },
-  { value: 'SOLE_PROPRIETORSHIP', label: 'Sole Proprietorship' },
-  { value: 'PARTNERSHIP', label: 'Partnership' },
-  { value: 'LIMITED_PARTNERSHIP', label: 'Limited Partnership' },
-  { value: 'LIMITED_LIABILITY_PARTNERSHIP', label: 'Limited Liability Partnership' },
-  { value: 'FOREIGN_COMPANY', label: 'Foreign Company' },
-  { value: 'VARIABLE_CAPITAL_COMPANY', label: 'Variable Capital Company' },
-  { value: 'OTHER', label: 'Other' },
-];
+import { ENTITY_TYPES } from '@/lib/constants';
 
 const statuses = [
   { value: 'LIVE', label: 'Live' },
@@ -208,7 +197,7 @@ export default function NewCompanyPage() {
               <div>
                 <label className="label">Entity Type</label>
                 <select {...register('entityType')} className="input input-sm">
-                  {entityTypes.map((type) => (
+                  {ENTITY_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
                       {type.label}
                     </option>

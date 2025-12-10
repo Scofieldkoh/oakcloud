@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
+import { getEntityTypeLabel } from '@/lib/constants';
 import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -59,17 +60,6 @@ const statusConfig: Record<CompanyStatus, { color: string; label: string }> = {
   OTHER: { color: 'badge-neutral', label: 'Other' },
 };
 
-const entityTypeLabels: Record<EntityType, string> = {
-  PRIVATE_LIMITED: 'Private Limited',
-  PUBLIC_LIMITED: 'Public Limited',
-  SOLE_PROPRIETORSHIP: 'Sole Prop.',
-  PARTNERSHIP: 'Partnership',
-  LIMITED_PARTNERSHIP: 'LP',
-  LIMITED_LIABILITY_PARTNERSHIP: 'LLP',
-  FOREIGN_COMPANY: 'Foreign',
-  VARIABLE_CAPITAL_COMPANY: 'VCC',
-  OTHER: 'Other',
-};
 
 interface CompanyActionsDropdownProps {
   companyId: string;
@@ -259,7 +249,7 @@ export function CompanyTable({
                 {company.uen}
               </td>
               <td className="text-text-secondary">
-                {entityTypeLabels[company.entityType]}
+                {getEntityTypeLabel(company.entityType, true)}
               </td>
               <td>
                 <span className={`badge ${statusConfig[company.status].color}`}>

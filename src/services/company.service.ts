@@ -318,9 +318,115 @@ export async function updateCompany(
       ? new Date(data.gstRegistrationDate)
       : null;
 
-  const company = await prisma.company.update({
-    where: { id: data.id },
-    data: updateData,
+  // Handle registered address update within a transaction
+  const company = await prisma.$transaction(async (tx) => {
+    // Update company fields
+    const updatedCompany = await tx.company.update({
+      where: { id: data.id },
+      data: updateData,
+    });
+
+    // Handle registered address update if provided
+    if (data.registeredAddress) {
+      const addr = data.registeredAddress;
+      // Check if we have meaningful address data
+      const hasAddressData = addr.streetName || addr.postalCode || addr.block || addr.buildingName;
+
+      if (hasAddressData) {
+        // Build full address string
+        const addressParts: string[] = [];
+        if (addr.block) addressParts.push(addr.block);
+        if (addr.streetName) addressParts.push(addr.streetName);
+        if (addr.level || addr.unit) {
+          const levelUnit = [addr.level, addr.unit].filter(Boolean).join('-');
+          if (levelUnit) addressParts.push(`#${levelUnit}`);
+        }
+        if (addr.buildingName) addressParts.push(addr.buildingName);
+        if (addr.country || 'SINGAPORE') addressParts.push(addr.country || 'SINGAPORE');
+        if (addr.postalCode) addressParts.push(addr.postalCode);
+        const fullAddress = addressParts.join(' ');
+
+        // Find current registered office address
+        const currentAddress = await tx.companyAddress.findFirst({
+          where: {
+            companyId: data.id,
+            addressType: 'REGISTERED_OFFICE',
+            isCurrent: true,
+          },
+        });
+
+        if (currentAddress) {
+          // Update existing address
+          const oldFullAddress = currentAddress.fullAddress;
+          await tx.companyAddress.update({
+            where: { id: currentAddress.id },
+            data: {
+              block: addr.block ?? currentAddress.block,
+              streetName: addr.streetName ?? currentAddress.streetName,
+              level: addr.level ?? currentAddress.level,
+              unit: addr.unit ?? currentAddress.unit,
+              buildingName: addr.buildingName ?? currentAddress.buildingName,
+              postalCode: addr.postalCode ?? currentAddress.postalCode,
+              country: addr.country ?? currentAddress.country,
+              fullAddress,
+            },
+          });
+
+          // Log address change
+          if (oldFullAddress !== fullAddress) {
+            await createAuditLog({
+              tenantId,
+              userId,
+              companyId: updatedCompany.id,
+              action: 'UPDATE',
+              entityType: 'CompanyAddress',
+              entityId: currentAddress.id,
+              entityName: 'Registered Office',
+              summary: `Updated registered office address for "${updatedCompany.name}"`,
+              changeSource: 'MANUAL',
+              changes: {
+                fullAddress: { old: oldFullAddress, new: fullAddress },
+              },
+              reason,
+            });
+          }
+        } else {
+          // Create new address
+          const newAddress = await tx.companyAddress.create({
+            data: {
+              companyId: data.id,
+              addressType: 'REGISTERED_OFFICE',
+              block: addr.block,
+              streetName: addr.streetName || '',
+              level: addr.level,
+              unit: addr.unit,
+              buildingName: addr.buildingName,
+              postalCode: addr.postalCode || '',
+              country: addr.country || 'SINGAPORE',
+              fullAddress,
+              isCurrent: true,
+              effectiveFrom: new Date(),
+            },
+          });
+
+          // Log address creation
+          await createAuditLog({
+            tenantId,
+            userId,
+            companyId: updatedCompany.id,
+            action: 'CREATE',
+            entityType: 'CompanyAddress',
+            entityId: newAddress.id,
+            entityName: 'Registered Office',
+            summary: `Added registered office address for "${updatedCompany.name}"`,
+            changeSource: 'MANUAL',
+            reason,
+          });
+        }
+      }
+    }
+
+    return updatedCompany;
   });
 
   const changes = computeChanges(existing as Record<string, unknown>, data, TRACKED_FIELDS as string[]);
@@ -482,6 +588,13 @@ export async function getCompanyById(
         select: {
           id: true,
           addressType: true,
+          block: true,
+          streetName: true,
+          level: true,
+          unit: true,
+          buildingName: true,
+          postalCode: true,
+          country: true,
           fullAddress: true,
           isCurrent: true,
           effectiveFrom: true,
@@ -519,6 +632,7 @@ export async function getCompanyById(
           id: true,
           name: true,
           shareholderType: true,
+          identificationType: true,
           identificationNumber: true,
           nationality: true,
           placeOfOrigin: true,
@@ -537,6 +651,7 @@ export async function getCompanyById(
               phone: true,
               nationality: true,
               fullAddress: true,
+              identificationType: true,
               identificationNumber: true,
             },
           },

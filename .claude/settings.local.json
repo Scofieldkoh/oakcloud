@@ -57,7 +57,8 @@
       "Bash(npm run lint:*)",
       "Bash(wc:*)",
       "Bash(npm run test:run:*)",
-      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\src\\services\\bizfile.service.ts\")"
+      "Bash(del \"C:\\Users\\Scotfield\\oakcloud\\src\\services\\bizfile.service.ts\")",
+      "Bash(npm run test:coverage:*)"
     ],
     "deny": [],
     "ask": []

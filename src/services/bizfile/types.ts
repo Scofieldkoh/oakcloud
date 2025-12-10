@@ -49,6 +49,14 @@ export interface ExtractedBizFileData {
     buildingName?: string;
     postalCode: string;
   };
+  paidUpCapital?: {
+    amount: number;
+    currency: string;
+  };
+  issuedCapital?: {
+    amount: number;
+    currency: string;
+  };
   shareCapital?: Array<{
     shareClass: string;
     currency: string;
@@ -299,8 +307,15 @@ export function mapEntityType(type: string): EntityType {
   const mapping: Record<string, EntityType> = {
     PRIVATE_LIMITED: 'PRIVATE_LIMITED',
     'PRIVATE LIMITED': 'PRIVATE_LIMITED',
+    'PRIVATE COMPANY LIMITED BY SHARES': 'PRIVATE_LIMITED',
+    EXEMPTED_PRIVATE_LIMITED: 'EXEMPTED_PRIVATE_LIMITED',
+    'EXEMPTED PRIVATE LIMITED': 'EXEMPTED_PRIVATE_LIMITED',
+    'EXEMPT PRIVATE LIMITED': 'EXEMPTED_PRIVATE_LIMITED',
+    'EXEMPT PRIVATE COMPANY LIMITED BY SHARES': 'EXEMPTED_PRIVATE_LIMITED',
+    'EXEMPTED PRIVATE COMPANY LIMITED BY SHARES': 'EXEMPTED_PRIVATE_LIMITED',
     PUBLIC_LIMITED: 'PUBLIC_LIMITED',
     'PUBLIC LIMITED': 'PUBLIC_LIMITED',
+    'PUBLIC COMPANY LIMITED BY SHARES': 'PUBLIC_LIMITED',
     SOLE_PROPRIETORSHIP: 'SOLE_PROPRIETORSHIP',
     'SOLE PROPRIETORSHIP': 'SOLE_PROPRIETORSHIP',
     PARTNERSHIP: 'PARTNERSHIP',

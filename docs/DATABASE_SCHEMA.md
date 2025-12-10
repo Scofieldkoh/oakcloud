@@ -544,8 +544,9 @@ DEACTIVATED
 
 ### EntityType
 ```sql
-PRIVATE_LIMITED
-PUBLIC_LIMITED
+PRIVATE_LIMITED              -- Private Company Limited by Shares
+EXEMPTED_PRIVATE_LIMITED     -- Exempt Private Company Limited by Shares
+PUBLIC_LIMITED               -- Public Company Limited by Shares
 SOLE_PROPRIETORSHIP
 PARTNERSHIP
 LIMITED_PARTNERSHIP

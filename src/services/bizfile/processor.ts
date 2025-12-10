@@ -130,19 +130,29 @@ export async function processBizFileExtractionSelective(
 
   // Handle capital updates if either paid up or issued capital changed
   const hasCapitalChanges = differences.some(d => d.field === 'paidUpCapital' || d.field === 'issuedCapital');
-  if (hasCapitalChanges && normalizedData.shareCapital?.length) {
-    const totalPaidUp = normalizedData.shareCapital
-      .filter((c) => c.isPaidUp && !c.isTreasury)
-      .reduce((sum, c) => sum + c.totalValue, 0);
-    const totalIssued = normalizedData.shareCapital
-      .filter((c) => !c.isTreasury)
-      .reduce((sum, c) => sum + c.totalValue, 0);
-    const primaryCurrency = normalizedData.shareCapital[0]?.currency || 'SGD';
+  if (hasCapitalChanges) {
+    // Use directly extracted capital if available, otherwise calculate from share capital
+    if (normalizedData.paidUpCapital?.amount !== undefined) {
+      updateData.paidUpCapitalAmount = normalizedData.paidUpCapital.amount;
+      updateData.paidUpCapitalCurrency = normalizedData.paidUpCapital.currency || 'SGD';
+    } else if (normalizedData.shareCapital?.length) {
+      const totalPaidUp = normalizedData.shareCapital
+        .filter((c) => c.isPaidUp && !c.isTreasury)
+        .reduce((sum, c) => sum + c.totalValue, 0);
+      updateData.paidUpCapitalAmount = totalPaidUp;
+      updateData.paidUpCapitalCurrency = normalizedData.shareCapital[0]?.currency || 'SGD';
+    }
 
-    updateData.paidUpCapitalAmount = totalPaidUp;
-    updateData.paidUpCapitalCurrency = primaryCurrency;
-    updateData.issuedCapitalAmount = totalIssued;
-    updateData.issuedCapitalCurrency = primaryCurrency;
+    if (normalizedData.issuedCapital?.amount !== undefined) {
+      updateData.issuedCapitalAmount = normalizedData.issuedCapital.amount;
+      updateData.issuedCapitalCurrency = normalizedData.issuedCapital.currency || 'SGD';
+    } else if (normalizedData.shareCapital?.length) {
+      const totalIssued = normalizedData.shareCapital
+        .filter((c) => !c.isTreasury)
+        .reduce((sum, c) => sum + c.totalValue, 0);
+      updateData.issuedCapitalAmount = totalIssued;
+      updateData.issuedCapitalCurrency = normalizedData.shareCapital[0]?.currency || 'SGD';
+    }
   }
 
   // Perform the update in a transaction
@@ -666,18 +676,32 @@ export async function processBizFileExtraction(
         });
       }
 
-      // Calculate paid up capital (shares marked as paid up, excluding treasury)
-      const totalPaidUp = normalizedData.shareCapital
-        .filter((c) => c.isPaidUp && !c.isTreasury)
-        .reduce((sum, c) => sum + c.totalValue, 0);
+      // Use directly extracted capital if available, otherwise calculate from share capital
+      let totalPaidUp: number;
+      let totalIssued: number;
+      let primaryCurrency: string;
 
-      // Calculate issued capital (all shares excluding treasury)
-      const totalIssued = normalizedData.shareCapital
-        .filter((c) => !c.isTreasury)
-        .reduce((sum, c) => sum + c.totalValue, 0);
+      if (normalizedData.paidUpCapital?.amount !== undefined) {
+        // Use directly extracted paid-up capital from bizfile
+        totalPaidUp = normalizedData.paidUpCapital.amount;
+        primaryCurrency = normalizedData.paidUpCapital.currency || 'SGD';
+      } else {
+        // Fallback: Calculate from share capital (legacy behavior)
+        totalPaidUp = normalizedData.shareCapital
+          .filter((c) => c.isPaidUp && !c.isTreasury)
+          .reduce((sum, c) => sum + c.totalValue, 0);
+        primaryCurrency = normalizedData.shareCapital[0]?.currency || 'SGD';
+      }
 
-      // Get primary currency from share capital (default to SGD)
-      const primaryCurrency = normalizedData.shareCapital[0]?.currency || 'SGD';
+      if (normalizedData.issuedCapital?.amount !== undefined) {
+        // Use directly extracted issued capital from bizfile
+        totalIssued = normalizedData.issuedCapital.amount;
+      } else {
+        // Fallback: Calculate from share capital (legacy behavior)
+        totalIssued = normalizedData.shareCapital
+          .filter((c) => !c.isTreasury)
+          .reduce((sum, c) => sum + c.totalValue, 0);
+      }
 
       await tx.company.update({
         where: { id: company.id },
@@ -685,7 +709,7 @@ export async function processBizFileExtraction(
           paidUpCapitalAmount: totalPaidUp,
           paidUpCapitalCurrency: primaryCurrency,
           issuedCapitalAmount: totalIssued,
-          issuedCapitalCurrency: primaryCurrency,
+          issuedCapitalCurrency: normalizedData.issuedCapital?.currency || primaryCurrency,
         },
       });
     }

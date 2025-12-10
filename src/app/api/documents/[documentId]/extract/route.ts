@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { extractBizFileWithVision, processBizFileExtraction } from '@/services/bizfile';
+import { extractBizFileWithVision, processBizFileExtraction, normalizeExtractedData } from '@/services/bizfile';
 import { calculateCost, formatCost, getModelConfig } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
 
@@ -120,11 +120,14 @@ export async function POST(
         formattedCost = formatCost(estimatedCost);
       }
 
+      // Normalize the extracted data for preview (same normalization applied when saving)
+      const normalizedData = normalizeExtractedData(extractionResult.data);
+
       return NextResponse.json({
         success: true,
         companyId: result.companyId,
         created: result.created,
-        extractedData: extractionResult.data,
+        extractedData: normalizedData,
         aiMetadata: {
           modelUsed: extractionResult.modelUsed,
           modelName: modelConfig.name,

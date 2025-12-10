@@ -11,18 +11,7 @@ import { useCompany, useUpdateCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { DateInput } from '@/components/ui/date-input';
-
-const entityTypes = [
-  { value: 'PRIVATE_LIMITED', label: 'Private Limited Company' },
-  { value: 'PUBLIC_LIMITED', label: 'Public Limited Company' },
-  { value: 'SOLE_PROPRIETORSHIP', label: 'Sole Proprietorship' },
-  { value: 'PARTNERSHIP', label: 'Partnership' },
-  { value: 'LIMITED_PARTNERSHIP', label: 'Limited Partnership' },
-  { value: 'LIMITED_LIABILITY_PARTNERSHIP', label: 'Limited Liability Partnership' },
-  { value: 'FOREIGN_COMPANY', label: 'Foreign Company' },
-  { value: 'VARIABLE_CAPITAL_COMPANY', label: 'Variable Capital Company' },
-  { value: 'OTHER', label: 'Other' },
-];
+import { ENTITY_TYPES } from '@/lib/constants';
 
 const statuses = [
   { value: 'LIVE', label: 'Live' },
@@ -79,6 +68,11 @@ export default function EditCompanyPage({
 
   useEffect(() => {
     if (company) {
+      // Find the current registered office address
+      const registeredAddress = company.addresses?.find(
+        (addr) => addr.addressType === 'REGISTERED_OFFICE' && addr.isCurrent
+      );
+
       reset({
         id: company.id,
         uen: company.uen,
@@ -116,6 +110,18 @@ export default function EditCompanyPage({
           : undefined,
         isGstRegistered: company.isGstRegistered,
         gstRegistrationNumber: company.gstRegistrationNumber || undefined,
+        // Registered address fields - parsed from fullAddress if individual fields not available
+        registeredAddress: registeredAddress
+          ? {
+              block: (registeredAddress as { block?: string }).block || undefined,
+              streetName: (registeredAddress as { streetName?: string }).streetName || undefined,
+              level: (registeredAddress as { level?: string }).level || undefined,
+              unit: (registeredAddress as { unit?: string }).unit || undefined,
+              buildingName: (registeredAddress as { buildingName?: string }).buildingName || undefined,
+              postalCode: (registeredAddress as { postalCode?: string }).postalCode || undefined,
+              country: (registeredAddress as { country?: string }).country || 'SINGAPORE',
+            }
+          : undefined,
       });
     }
   }, [company, reset]);
@@ -243,7 +249,7 @@ export default function EditCompanyPage({
               <div>
                 <label className="label">Entity Type</label>
                 <select {...register('entityType')} className="input input-sm">
-                  {entityTypes.map((type) => (
+                  {ENTITY_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
                       {type.label}
                     </option>
@@ -313,6 +319,101 @@ export default function EditCompanyPage({
                   render={({ field }) => (
                     <DateInput
                       label="Date of Name Change"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Registered Address */}
+        <div className="card">
+          <div className="p-4 border-b border-border-primary">
+            <h2 className="font-medium text-text-primary">Registered Address</h2>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="label">Block</label>
+                <input
+                  type="text"
+                  {...register('registeredAddress.block')}
+                  className="input input-sm"
+                  placeholder="e.g. 10"
+                />
+              </div>
+              <div className="md:col-span-3">
+                <label className="label">Street Name</label>
+                <input
+                  type="text"
+                  {...register('registeredAddress.streetName')}
+                  className="input input-sm"
+                  placeholder="e.g. Anson Road"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="label">Level</label>
+                <input
+                  type="text"
+                  {...register('registeredAddress.level')}
+                  className="input input-sm"
+                  placeholder="e.g. 10"
+                />
+              </div>
+              <div>
+                <label className="label">Unit</label>
+                <input
+                  type="text"
+                  {...register('registeredAddress.unit')}
+                  className="input input-sm"
+                  placeholder="e.g. 01"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="label">Building Name</label>
+                <input
+                  type="text"
+                  {...register('registeredAddress.buildingName')}
+                  className="input input-sm"
+                  placeholder="e.g. International Plaza"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="label">Postal Code</label>
+                <input
+                  type="text"
+                  {...register('registeredAddress.postalCode')}
+                  className="input input-sm"
+                  placeholder="e.g. 079903"
+                />
+              </div>
+              <div>
+                <label className="label">Country</label>
+                <input
+                  type="text"
+                  {...register('registeredAddress.country')}
+                  className="input input-sm"
+                  placeholder="SINGAPORE"
+                  defaultValue="SINGAPORE"
+                />
+              </div>
+              <div>
+                <Controller
+                  name="dateOfAddress"
+                  control={control}
+                  render={({ field }) => (
+                    <DateInput
+                      label="Date of Address"
                       value={field.value || ''}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -410,35 +511,19 @@ export default function EditCompanyPage({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Controller
-                  name="fyeAsAtLastAr"
-                  control={control}
-                  render={({ field }) => (
-                    <DateInput
-                      label="FYE as at Last AR"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                    />
-                  )}
-                />
-              </div>
-              <div>
-                <Controller
-                  name="dateOfAddress"
-                  control={control}
-                  render={({ field }) => (
-                    <DateInput
-                      label="Date of Address"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                    />
-                  )}
-                />
-              </div>
+            <div>
+              <Controller
+                name="fyeAsAtLastAr"
+                control={control}
+                render={({ field }) => (
+                  <DateInput
+                    label="FYE as at Last AR"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                )}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

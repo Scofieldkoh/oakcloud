@@ -20,6 +20,8 @@ export interface RelatedContact {
   phone?: string | null;
   nationality?: string | null;
   fullAddress?: string | null;
+  identificationType?: string | null;
+  identificationNumber?: string | null;
 }
 
 /**
@@ -29,6 +31,13 @@ export interface CompanyWithRelations extends Company {
   addresses?: Array<{
     id: string;
     addressType: string;
+    block?: string | null;
+    streetName: string;
+    level?: string | null;
+    unit?: string | null;
+    buildingName?: string | null;
+    postalCode: string;
+    country: string;
     fullAddress: string;
     isCurrent: boolean;
     effectiveFrom?: Date | null;
@@ -59,6 +68,8 @@ export interface CompanyWithRelations extends Company {
     allotmentDate?: Date | null;
     isCurrent: boolean;
     contactId?: string | null;
+    identificationType?: string | null;
+    identificationNumber?: string | null;
     contact?: RelatedContact | null;
   }>;
   charges?: Array<{

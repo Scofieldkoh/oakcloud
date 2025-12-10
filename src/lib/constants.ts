@@ -123,22 +123,25 @@ export function getCompanyStatusLabel(value: string): string {
 // =============================================================================
 
 export const ENTITY_TYPES = [
-  { value: 'LOCAL_COMPANY', label: 'Local Company' },
-  { value: 'FOREIGN_COMPANY', label: 'Foreign Company' },
-  { value: 'LIMITED_PARTNERSHIP', label: 'Limited Partnership' },
-  { value: 'LIMITED_LIABILITY_PARTNERSHIP', label: 'Limited Liability Partnership' },
-  { value: 'SOLE_PROPRIETORSHIP', label: 'Sole Proprietorship' },
-  { value: 'PARTNERSHIP', label: 'Partnership' },
-  { value: 'PUBLIC_COMPANY', label: 'Public Company' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'PRIVATE_LIMITED', label: 'Private Limited', shortLabel: 'Private Limited' },
+  { value: 'EXEMPTED_PRIVATE_LIMITED', label: 'Exempted Private Limited Company', shortLabel: 'Exempted Private Limited' },
+  { value: 'PUBLIC_LIMITED', label: 'Public Limited Company', shortLabel: 'Public Limited' },
+  { value: 'SOLE_PROPRIETORSHIP', label: 'Sole Proprietorship', shortLabel: 'Sole Prop.' },
+  { value: 'PARTNERSHIP', label: 'Partnership', shortLabel: 'Partnership' },
+  { value: 'LIMITED_PARTNERSHIP', label: 'Limited Partnership', shortLabel: 'LP' },
+  { value: 'LIMITED_LIABILITY_PARTNERSHIP', label: 'Limited Liability Partnership', shortLabel: 'LLP' },
+  { value: 'FOREIGN_COMPANY', label: 'Foreign Company', shortLabel: 'Foreign' },
+  { value: 'VARIABLE_CAPITAL_COMPANY', label: 'Variable Capital Company', shortLabel: 'VCC' },
+  { value: 'OTHER', label: 'Other', shortLabel: 'Other' },
 ] as const;
 
 export type EntityTypeValue = (typeof ENTITY_TYPES)[number]['value'];
 
 /** Get display label for an entity type */
-export function getEntityTypeLabel(value: string): string {
+export function getEntityTypeLabel(value: string, short = false): string {
   const type = ENTITY_TYPES.find((t) => t.value === value);
-  return type?.label || value.replace(/_/g, ' ');
+  if (!type) return value.replace(/_/g, ' ');
+  return short ? type.shortLabel : type.label;
 }
 
 // =============================================================================

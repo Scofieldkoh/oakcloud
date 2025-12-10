@@ -41,7 +41,7 @@ Return a JSON object with the following structure (include only fields that have
     "formerName": "string - Previous company name if any (from 'former_name' field)",
     "dateOfNameChange": "YYYY-MM-DD - Date when name was changed",
     "formerNames": [{ "name": "string", "effectiveFrom": "YYYY-MM-DD", "effectiveTo": "YYYY-MM-DD" }],
-    "entityType": "PRIVATE_LIMITED | PUBLIC_LIMITED | SOLE_PROPRIETORSHIP | PARTNERSHIP | LIMITED_PARTNERSHIP | LIMITED_LIABILITY_PARTNERSHIP | FOREIGN_COMPANY | VARIABLE_CAPITAL_COMPANY | OTHER",
+    "entityType": "PRIVATE_LIMITED | EXEMPTED_PRIVATE_LIMITED | PUBLIC_LIMITED | SOLE_PROPRIETORSHIP | PARTNERSHIP | LIMITED_PARTNERSHIP | LIMITED_LIABILITY_PARTNERSHIP | FOREIGN_COMPANY | VARIABLE_CAPITAL_COMPANY | OTHER (use EXEMPTED_PRIVATE_LIMITED for 'Exempt Private Company Limited by Shares')",
     "status": "LIVE | STRUCK_OFF | WINDING_UP | DISSOLVED | IN_LIQUIDATION | IN_RECEIVERSHIP | AMALGAMATED | CONVERTED | OTHER",
     "statusDate": "YYYY-MM-DD - Date when status became effective (from 'status_date')",
     "incorporationDate": "YYYY-MM-DD",
@@ -61,6 +61,14 @@ Return a JSON object with the following structure (include only fields that have
     "effectiveFrom": "YYYY-MM-DD - Date of address (from 'date_of_address')"
   },
   "mailingAddress": { ... same as registeredAddress },
+  "paidUpCapital": {
+    "amount": number,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": number,
+    "currency": "SGD"
+  },
   "shareCapital": [{
     "shareClass": "ORDINARY | PREFERENCE | etc",
     "currency": "SGD",
@@ -131,6 +139,7 @@ Important:
 - Include all officers (current and ceased)
 - Include all shareholders with their nationality and address
 - Extract share capital structure completely including treasury shares
+- IMPORTANT: Extract paidUpCapital and issuedCapital amounts directly from the "PAID-UP CAPITAL" and "ISSUED/REGISTERED CAPITAL" sections in the document - do NOT calculate from share capital
 - Mark cessation dates as null for current officers
 - Include both primary and secondary SSIC codes if available
 - Extract any charges/encumbrances registered against the company

@@ -33,6 +33,7 @@ import {
 } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate, formatCurrency, formatPercentage } from '@/lib/utils';
+import { getEntityTypeLabel } from '@/lib/constants';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -309,17 +310,6 @@ export default function CompanyDetailPage({
     OTHER: { color: 'badge-neutral', label: 'Other' },
   };
 
-  const entityTypeLabels: Record<string, string> = {
-    PRIVATE_LIMITED: 'Private Limited',
-    PUBLIC_LIMITED: 'Public Limited',
-    SOLE_PROPRIETORSHIP: 'Sole Proprietorship',
-    PARTNERSHIP: 'Partnership',
-    LIMITED_PARTNERSHIP: 'Limited Partnership',
-    LIMITED_LIABILITY_PARTNERSHIP: 'LLP',
-    FOREIGN_COMPANY: 'Foreign Company',
-    VARIABLE_CAPITAL_COMPANY: 'VCC',
-    OTHER: 'Other',
-  };
 
   const currentStatus = statusConfig[company.status] || { color: 'badge-neutral', label: company.status };
 
@@ -348,7 +338,7 @@ export default function CompanyDetailPage({
           </div>
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2 text-sm text-text-secondary">
             <span>{company.uen}</span>
-            <span>{entityTypeLabels[company.entityType] || company.entityType}</span>
+            <span>{getEntityTypeLabel(company.entityType, true)}</span>
             {company.incorporationDate && (
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" />
@@ -753,7 +743,7 @@ export default function CompanyDetailPage({
                         </div>
                         <p className="text-sm text-text-secondary">
                           {shareholder.numberOfShares.toLocaleString()} {toTitleCase(shareholder.shareClass || 'Ordinary')} shares
-                          {shareholder.percentageHeld && (
+                          {shareholder.percentageHeld !== null && shareholder.percentageHeld !== undefined && (
                             <span className="ml-2 text-text-tertiary">
                               ({formatPercentage(shareholder.percentageHeld)})
                             </span>
@@ -785,17 +775,26 @@ export default function CompanyDetailPage({
                         )}
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="grid grid-cols-2 gap-2 text-xs text-text-secondary">
+                      {(shareholder.contact?.identificationNumber || shareholder.identificationNumber) && (
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-text-tertiary" />
+                          <span>
+                            {shareholder.contact?.identificationType || shareholder.identificationType || 'ID'}:{' '}
+                            {shareholder.contact?.identificationNumber || shareholder.identificationNumber}
+                          </span>
+                        </div>
+                      )}
                       {(shareholder.contact?.nationality || shareholder.nationality || shareholder.placeOfOrigin) && (
-                        <div className="flex items-center gap-1.5 text-text-secondary">
+                        <div className="flex items-center gap-1.5">
                           <Globe className="w-3.5 h-3.5 text-text-tertiary" />
                           {shareholder.contact?.nationality || shareholder.nationality || shareholder.placeOfOrigin}
                         </div>
                       )}
                       {(getContactAddress(shareholder.contact) || shareholder.address) && (
-                        <div className="col-span-2 flex items-start gap-1.5 text-text-secondary">
+                        <div className="col-span-2 flex items-start gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-text-tertiary shrink-0 mt-0.5" />
-                          <span className="text-xs">{getContactAddress(shareholder.contact) || shareholder.address}</span>
+                          <span>{getContactAddress(shareholder.contact) || shareholder.address}</span>
                         </div>
                       )}
                     </div>
@@ -963,12 +962,10 @@ export default function CompanyDetailPage({
                   <p className="text-sm text-text-primary">{formatDate(company.fyeAsAtLastAr)}</p>
                 </div>
               )}
-              {company.homeCurrency && company.homeCurrency !== 'SGD' && (
-                <div>
-                  <p className="text-xs text-text-tertiary uppercase mb-1">Home Currency</p>
-                  <p className="text-sm text-text-primary">{company.homeCurrency}</p>
-                </div>
-              )}
+              <div>
+                <p className="text-xs text-text-tertiary uppercase mb-1">Home Currency</p>
+                <p className="text-sm text-text-primary">{company.homeCurrency || 'SGD'}</p>
+              </div>
               <div>
                 <p className="text-xs text-text-tertiary uppercase mb-1">Last AGM</p>
                 <p className="text-sm text-text-primary">{formatDate(company.lastAgmDate)}</p>

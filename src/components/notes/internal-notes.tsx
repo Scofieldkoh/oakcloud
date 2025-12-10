@@ -300,8 +300,8 @@ export function InternalNotes({
 
         {/* Content Area */}
         <div
-          className="min-h-[300px] overflow-auto resize-y"
-          style={{ maxHeight: '600px' }}
+          className="min-h-[400px] overflow-auto resize-y"
+          style={{ maxHeight: '800px' }}
         >
           {tabs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-text-muted">
@@ -324,7 +324,7 @@ export function InternalNotes({
               <RichTextEditor
                 value={editedContent}
                 onChange={setEditedContent}
-                minHeight={280}
+                minHeight={380}
                 placeholder="Enter your notes here..."
                 className="border-0 rounded-none"
               />

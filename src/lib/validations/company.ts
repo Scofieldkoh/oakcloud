@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const entityTypeEnum = z.enum([
   'PRIVATE_LIMITED',
+  'EXEMPTED_PRIVATE_LIMITED',
   'PUBLIC_LIMITED',
   'SOLE_PROPRIETORSHIP',
   'PARTNERSHIP',
@@ -75,8 +76,21 @@ export const createCompanySchema = z.object({
   gstRegistrationDate: dateStringTransform,
 });
 
+// Schema for updating registered office address
+export const registeredAddressSchema = z.object({
+  block: z.string().max(10).optional().nullable(),
+  streetName: z.string().max(200).optional().nullable(),
+  level: z.string().max(10).optional().nullable(),
+  unit: z.string().max(10).optional().nullable(),
+  buildingName: z.string().max(200).optional().nullable(),
+  postalCode: z.string().max(10).optional().nullable(),
+  country: z.string().max(50).optional().nullable(),
+}).optional().nullable();
+
 export const updateCompanySchema = createCompanySchema.partial().extend({
   id: z.string().uuid(),
+  // Optional registered address update
+  registeredAddress: registeredAddressSchema,
 });
 
 export const deleteCompanySchema = z.object({
