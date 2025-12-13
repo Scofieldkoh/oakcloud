@@ -25,6 +25,7 @@ export const RESOURCES = [
   'officer',
   'shareholder',
   'audit_log',
+  'connector',
 ] as const;
 
 export type Resource = (typeof RESOURCES)[number];
@@ -92,6 +93,10 @@ export const SYSTEM_ROLES = {
       'shareholder:delete',
       'audit_log:read',
       'audit_log:export',
+      'connector:create',
+      'connector:read',
+      'connector:update',
+      'connector:delete',
     ] as PermissionString[],
   },
   COMPANY_ADMIN: {
