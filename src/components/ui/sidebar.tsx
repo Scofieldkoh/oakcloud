@@ -21,6 +21,7 @@ import {
   Trash2,
   Plug,
   Share2,
+  ScanText,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -42,6 +43,7 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
+  { name: 'Document Processing', href: '/processing', icon: ScanText },
   { name: 'Document Generation', href: '/generated-documents', icon: FileText },
   { name: 'Shared Documents', href: '/shared-documents', icon: Share2 },
   { name: 'Settings', href: '/settings', icon: Settings, badge: 'Soon' },

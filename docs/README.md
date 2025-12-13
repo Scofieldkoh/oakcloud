@@ -11,6 +11,8 @@ A modular internal management system designed for accounting practices. Clean, e
 - [API Reference](#api-reference)
 - [Module: Company Management](#module-company-management)
 - [Module: Contact Management](#module-contact-management)
+- [Module: Document Generation](#module-document-generation)
+- [Module: Document Processing](#module-document-processing)
 - [Version History](#version-history) | [Full Changelog](./CHANGELOG.md)
 
 **Related Documentation:**
@@ -43,9 +45,13 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 10. ✅ **Email Notifications** - SMTP-based transactional emails (invitations, password reset)
 11. ✅ **Connectors Hub** - External service integrations (AI providers, storage)
 12. ✅ **Document Generation** - Templates, PDF export, sharing, comments, workflow integration
-13. 🔜 **Module Marketplace** - Browse and install modules
-14. 🔜 **Module Linking** - Configure module relationships
-15. 🔜 **SuperAdmin Dashboard** - System administration
+13. ✅ **Document Processing** - AI-powered ingestion, extraction, revisions, duplicate detection
+14. 🔜 **Bank Reconciliation** - Bank transaction matching, multi-currency support
+15. 🔜 **Client Portal** - Client access, document requests, communications
+16. 🔜 **Accounting Integration** - Xero, QuickBooks, MYOB connectors
+17. 🔜 **Module Marketplace** - Browse and install modules
+18. 🔜 **Module Linking** - Configure module relationships
+19. 🔜 **SuperAdmin Dashboard** - System administration
 
 ---
 
@@ -3223,11 +3229,110 @@ docker ps
 
 ---
 
+## Module: Document Processing
+
+The Document Processing module provides AI-powered document ingestion, extraction, revision workflow, and duplicate detection. Implements Oakcloud_Document_Processing_Spec_v3.3.
+
+### Pipeline Overview
+
+```
+Container Upload → Queued → Processing → Split Detection → Child Documents
+                                              ↓
+                                      Field Extraction → Revision (DRAFT)
+                                              ↓
+                                      Duplicate Check → User Review → APPROVED
+```
+
+### Pipeline Status
+
+| Status | Description |
+|--------|-------------|
+| `UPLOADED` | File uploaded, awaiting processing |
+| `QUEUED` | Queued for processing |
+| `PROCESSING` | Currently being processed |
+| `SPLIT_PENDING` | Split detection in progress |
+| `SPLIT_DONE` | Split complete, children created |
+| `EXTRACTION_DONE` | Field extraction complete |
+| `FAILED_RETRYABLE` | Failed, can retry |
+| `FAILED_PERMANENT` | Permanent failure |
+| `DEAD_LETTER` | Exhausted retries |
+
+### Revision Workflow
+
+| Status | Description |
+|--------|-------------|
+| `DRAFT` | Initial extraction or edit, awaiting approval |
+| `APPROVED` | User-approved, becomes current revision |
+| `SUPERSEDED` | Replaced by newer approved revision |
+
+### Duplicate Detection
+
+The system uses content-based duplicate scoring:
+- Vendor name similarity (25%)
+- Document number matching (30%)
+- Date proximity (20%)
+- Amount matching (15% doc currency, 10% home currency)
+
+| Confidence | Score Range | Action |
+|------------|-------------|--------|
+| HIGH | ≥ 0.95 | Blocking decision required |
+| SUSPECTED | 0.80-0.94 | Warning, soft requirement |
+| POSSIBLE | 0.60-0.79 | Informational |
+| NONE | < 0.60 | No indication |
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/processing-documents` | Upload document for processing |
+| `GET` | `/api/processing-documents` | List processing documents |
+| `GET` | `/api/processing-documents/:id` | Get document details |
+| `POST` | `/api/processing-documents/:id/extract` | Trigger field extraction |
+| `POST` | `/api/processing-documents/:id/lock` | Acquire document lock |
+| `POST` | `/api/processing-documents/:id/unlock` | Release document lock |
+| `GET` | `/api/processing-documents/:id/revisions` | Get revision history |
+| `POST` | `/api/processing-documents/:id/revisions` | Create new revision (edit) |
+| `POST` | `/api/processing-documents/:id/revisions/:revId/approve` | Approve revision |
+| `POST` | `/api/processing-documents/:id/duplicate-decision` | Record duplicate decision |
+
+### Services
+
+| Service | Purpose |
+|---------|---------|
+| `document-processing.service.ts` | Pipeline management, locking, splitting |
+| `document-revision.service.ts` | Revision CRUD, approval, validation |
+| `document-extraction.service.ts` | AI-powered field extraction |
+| `duplicate-detection.service.ts` | Duplicate scoring, decision workflow |
+
+### Database Models (Phase 1A)
+
+- `ProcessingDocument` - Extended document with pipeline state
+- `DocumentPage` - Rendered pages for UI highlights
+- `DocumentExtraction` - Immutable AI/OCR outputs
+- `DocumentRevision` - Structured accounting data snapshots
+- `DocumentRevisionLineItem` - Line items for revisions
+- `VendorAlias` - Vendor name normalization
+- `DuplicateDecision` - User decisions on duplicates
+- `ProcessingAttempt` - Processing attempt tracking
+- `ProcessingCheckpoint` - Checkpointing for recovery
+- `SplitPlan` - Document splitting plans
+- `DocumentStateEvent` - Auditable state transitions
+- `DocumentDerivedFile` - Child PDFs, thumbnails
+
+### Future Phases
+
+- **Phase 1B**: Multi-currency, GST validation, exchange rates
+- **Phase 2**: Bank reconciliation, transaction matching
+- **Phase 3**: Client portal, communications
+- **Phase 4**: Accounting software integration (Xero, QuickBooks)
+
+---
+
 ## Version History
 
 For detailed version history and changelog, see [CHANGELOG.md](./CHANGELOG.md).
 
-**Current Version:** v0.9.11 (2025-12-04)
+**Current Version:** v0.9.12 (2025-12-13)
 
 ---
 
