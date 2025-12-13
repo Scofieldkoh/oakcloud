@@ -637,6 +637,3 @@ export async function canApproveDocument(processingDocumentId: string): Promise<
 
   return { canApprove: true };
 }
-
-// Export types
-export type { DuplicateScore, DuplicateCandidate, DuplicateCheckResult };
