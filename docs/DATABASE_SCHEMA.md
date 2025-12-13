@@ -1233,6 +1233,156 @@ COMMENT_HIDDEN
 
 ---
 
+## Document Processing Module Tables
+
+### ProcessingDocument
+
+Extended document model for the processing pipeline.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| documentId | UUID | Reference to base Document |
+| isContainer | Boolean | Whether this is a container document |
+| parentProcessingDocId | UUID? | Parent container (for child documents) |
+| pageFrom | Int? | Starting page (inclusive) |
+| pageTo | Int? | Ending page (inclusive) |
+| pageCount | Int? | Total page count |
+| fileHash | String? | SHA-256 for duplicate detection |
+| pipelineStatus | PipelineStatus | Current processing status |
+| processingPriority | ProcessingPriority | Processing priority |
+| duplicateStatus | DuplicateStatus | Duplicate detection status |
+| currentRevisionId | UUID? | Current approved revision |
+| lockVersion | Int | Optimistic locking version |
+| lockedById | UUID? | User holding edit lock |
+| uploadSource | UploadSource | WEB, EMAIL, API, CLIENT_PORTAL |
+
+### DocumentPage
+
+Rendered pages for UI highlights.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| processingDocumentId | UUID | Parent processing document |
+| pageNumber | Int | Page number (1-indexed) |
+| renderDpi | Int | Render resolution (default 200) |
+| imagePath | String | Path to rendered image |
+| widthPx | Int | Image width in pixels |
+| heightPx | Int | Image height in pixels |
+| ocrJson | JSON? | OCR word boxes and confidence |
+
+### DocumentRevision
+
+Immutable snapshots of structured accounting data.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| processingDocumentId | UUID | Parent processing document |
+| revisionNumber | Int | Revision number (1, 2, 3...) |
+| revisionType | RevisionType | EXTRACTION, USER_EDIT, REPROCESS |
+| status | RevisionStatus | DRAFT, APPROVED, SUPERSEDED |
+| documentCategory | DocumentCategory | INVOICE, RECEIPT, etc. |
+| vendorName | String? | Extracted vendor name |
+| documentNumber | String? | Invoice/receipt number |
+| documentDate | Date? | Document date |
+| currency | String | ISO 4217 currency code |
+| totalAmount | Decimal(18,4) | Total amount |
+| validationStatus | ValidationStatus | PENDING, VALID, WARNINGS, INVALID |
+| createdById | UUID | User who created |
+| approvedById | UUID? | User who approved |
+
+### DocumentExtraction
+
+Immutable AI/OCR outputs.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| processingDocumentId | UUID | Parent processing document |
+| extractionType | ExtractionType | SPLIT or FIELDS |
+| provider | String | AI provider (openai, anthropic) |
+| model | String | Model used |
+| rawJson | JSON | Raw extraction output |
+| confidenceJson | JSON | Confidence scores |
+| evidenceJson | JSON? | Bounding box evidence |
+| tokensUsed | Int? | Token consumption |
+
+### BankAccount
+
+Bank accounts for reconciliation.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| tenantId | UUID | Tenant reference |
+| companyId | UUID | Company reference |
+| name | String | Account name |
+| accountNumber | String | Account number (encrypted) |
+| currency | String | Account currency |
+
+### BankTransaction
+
+Bank transactions for matching.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| bankAccountId | UUID | Parent bank account |
+| transactionDate | Date | Transaction date |
+| description | String | Transaction description |
+| amount | Decimal(18,4) | Transaction amount |
+| transactionType | BankTransactionType | CREDIT, DEBIT, etc. |
+| reconciliationStatus | ReconciliationStatus | UNMATCHED, MATCHED, etc. |
+
+## Document Processing Module Enums
+
+```typescript
+enum PipelineStatus {
+  UPLOADED
+  QUEUED
+  PROCESSING
+  SPLIT_PENDING
+  SPLIT_DONE
+  EXTRACTION_DONE
+  FAILED_RETRYABLE
+  FAILED_PERMANENT
+  DEAD_LETTER
+}
+
+enum RevisionStatus {
+  DRAFT
+  APPROVED
+  SUPERSEDED
+}
+
+enum DocumentCategory {
+  INVOICE
+  RECEIPT
+  CREDIT_NOTE
+  DEBIT_NOTE
+  PURCHASE_ORDER
+  STATEMENT
+  OTHER
+}
+
+enum DuplicateStatus {
+  NONE
+  SUSPECTED
+  CONFIRMED
+  REJECTED
+}
+
+enum DuplicateAction {
+  CONFIRM_DUPLICATE
+  REJECT_DUPLICATE
+  MARK_AS_NEW_VERSION
+}
+```
+
+---
+
 ## Migration Notes
 
 ### Multi-Tenancy

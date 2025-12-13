@@ -1280,3 +1280,1178 @@ model AiConversation {
   @@index([contextType, contextId])
   @@map("ai_conversations")
 }
+
+// ============================================================================
+// DOCUMENT PROCESSING MODULE - PHASE 1A
+// Ingestion, Splitting, Classification & Extraction
+// ============================================================================
+
+// Document Pipeline Status
+enum PipelineStatus {
+  UPLOADED
+  QUEUED
+  PROCESSING
+  SPLIT_PENDING
+  SPLIT_DONE
+  EXTRACTION_DONE
+  FAILED_RETRYABLE
+  FAILED_PERMANENT
+  DEAD_LETTER
+}
+
+// Processing Priority
+enum ProcessingPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+// Upload Source
+enum UploadSource {
+  WEB
+  EMAIL
+  API
+  CLIENT_PORTAL
+}
+
+// Duplicate Status
+enum DuplicateStatus {
+  NONE
+  SUSPECTED
+  CONFIRMED
+  REJECTED
+}
+
+// Extraction Type
+enum ExtractionType {
+  SPLIT
+  FIELDS
+}
+
+// Revision Type
+enum RevisionType {
+  EXTRACTION
+  USER_EDIT
+  REPROCESS
+  SYSTEM_MERGE
+}
+
+// Revision Status
+enum RevisionStatus {
+  DRAFT
+  APPROVED
+  SUPERSEDED
+}
+
+// Document Category
+enum DocumentCategory {
+  INVOICE
+  RECEIPT
+  CREDIT_NOTE
+  DEBIT_NOTE
+  PURCHASE_ORDER
+  STATEMENT
+  OTHER
+}
+
+// GST Treatment
+enum GstTreatment {
+  STANDARD_RATED
+  ZERO_RATED
+  EXEMPT
+  OUT_OF_SCOPE
+  REVERSE_CHARGE
+}
+
+// Validation Status
+enum ValidationStatus {
+  PENDING
+  VALID
+  WARNINGS
+  INVALID
+}
+
+// Exchange Rate Source
+enum ExchangeRateSource {
+  MAS_DAILY
+  IRAS_MONTHLY_AVG
+  ECB_DAILY
+  MANUAL
+  PROVIDER_DEFAULT
+}
+
+// Rounding Mode
+enum RoundingMode {
+  HALF_UP
+  HALF_EVEN
+  DOWN
+  UP
+}
+
+// Revision Posting Status
+enum RevisionPostingStatus {
+  NOT_POSTED
+  POSTING
+  POSTED
+  POST_FAILED
+  REVERSED
+}
+
+// Revision Reconciliation Status
+enum RevisionReconciliationStatus {
+  NOT_RECONCILED
+  SUGGESTED
+  RECONCILED
+  UNRECONCILED
+}
+
+// Processing Step
+enum ProcessingStep {
+  FILE_VALIDATION
+  RENDER
+  TEXT_ACQUISITION
+  SPLIT_DETECTION
+  FIELD_EXTRACTION
+  VALIDATION
+  REVISION_CREATION
+  DUPLICATE_CHECK
+}
+
+// Attempt Status
+enum AttemptStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED_RETRYABLE
+  FAILED_PERMANENT
+}
+
+// Split Method
+enum SplitMethod {
+  AUTO
+  MANUAL
+}
+
+// Derived File Kind
+enum DerivedFileKind {
+  CHILD_PDF
+  THUMBNAIL
+  REDACTED_PDF
+}
+
+// Duplicate Action
+enum DuplicateAction {
+  CONFIRM_DUPLICATE
+  REJECT_DUPLICATE
+  MARK_AS_NEW_VERSION
+}
+
+// Checkpoint Status
+enum CheckpointStatus {
+  STARTED
+  COMPLETED
+  FAILED
+}
+
+// ============================================================================
+// PROCESSING DOCUMENT (Extended Document Model for Processing Module)
+// ============================================================================
+
+// Processing-specific document data
+model ProcessingDocument {
+  id                    String              @id @default(uuid())
+  documentId            String              @unique @map("document_id")
+
+  // Container/child relationship
+  isContainer           Boolean             @default(false) @map("is_container")
+  parentProcessingDocId String?             @map("parent_processing_doc_id")
+  parentProcessingDoc   ProcessingDocument? @relation("ProcessingDocumentSplit", fields: [parentProcessingDocId], references: [id])
+  children              ProcessingDocument[] @relation("ProcessingDocumentSplit")
+
+  // Page addressing (contiguous ranges only for child docs)
+  pageFrom              Int?                @map("page_from") // inclusive
+  pageTo                Int?                @map("page_to")   // inclusive
+  pageCount             Int?                @map("page_count") // container: computed on ingestion
+
+  // File characteristics
+  fileHash              String?             @map("file_hash") // SHA-256 for duplicate detection
+  perceptualHash        String?             @map("perceptual_hash") // pHash for scanned similarity
+  isEncryptedPdf        Boolean             @default(false) @map("is_encrypted_pdf")
+  isPasswordProtected   Boolean             @default(false) @map("is_password_protected")
+  contentTypeDetected   String?             @map("content_type_detected")
+
+  // Processing lifecycle
+  pipelineStatus        PipelineStatus      @default(UPLOADED) @map("pipeline_status")
+  processingPriority    ProcessingPriority  @default(NORMAL) @map("processing_priority")
+  slaDeadline           DateTime?           @map("sla_deadline")
+
+  // Error tracking
+  lastError             Json?               @map("last_error")
+  errorCount            Int                 @default(0) @map("error_count")
+  firstErrorAt          DateTime?           @map("first_error_at")
+  canRetry              Boolean             @default(true) @map("can_retry")
+  nextRetryAt           DateTime?           @map("next_retry_at")
+  deadLetterAt          DateTime?           @map("dead_letter_at")
+
+  // Duplicate workflow
+  duplicateStatus       DuplicateStatus     @default(NONE) @map("duplicate_status")
+  duplicateOfId         String?             @map("duplicate_of_id")
+  duplicateOf           ProcessingDocument? @relation("DocumentDuplicates", fields: [duplicateOfId], references: [id])
+  duplicates            ProcessingDocument[] @relation("DocumentDuplicates")
+  duplicateScore        Float?              @map("duplicate_score")
+  duplicateReason       String?             @map("duplicate_reason")
+
+  // Versioning (same economic document, better scan)
+  rootDocumentId        String?             @map("root_document_id")
+  rootDocument          ProcessingDocument? @relation("DocumentVersions", fields: [rootDocumentId], references: [id])
+  versions              ProcessingDocument[] @relation("DocumentVersions")
+  version               Int                 @default(1)
+
+  // Archive/canonical handling
+  isArchived            Boolean             @default(false) @map("is_archived")
+  archivedAt            DateTime?           @map("archived_at")
+  archivedById          String?             @map("archived_by_id")
+  archiveReason         String?             @map("archive_reason")
+
+  // Current revision pointer
+  currentRevisionId     String?             @unique @map("current_revision_id")
+  currentRevision       DocumentRevision?   @relation("CurrentRevision", fields: [currentRevisionId], references: [id])
+
+  // Concurrency control
+  lockVersion           Int                 @default(0) @map("lock_version")
+  lockedById            String?             @map("locked_by_id")
+  lockedAt              DateTime?           @map("locked_at")
+  lockExpiresAt         DateTime?           @map("lock_expires_at")
+
+  // Upload context
+  uploadSource          UploadSource        @default(WEB) @map("upload_source")
+
+  // Compliance
+  legalHold             Boolean             @default(false) @map("legal_hold")
+  retentionUntil        DateTime?           @map("retention_until")
+
+  // Timestamps
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  pages                 DocumentPage[]
+  extractions           DocumentExtraction[]
+  revisions             DocumentRevision[]  @relation("DocumentRevisions")
+  duplicateDecisions    DuplicateDecision[]
+  processingAttempts    ProcessingAttempt[]
+  processingCheckpoints ProcessingCheckpoint[]
+  stateEvents           DocumentStateEvent[]
+  derivedFiles          DocumentDerivedFile[]
+  splitPlans            SplitPlan[]
+
+  @@index([documentId])
+  @@index([pipelineStatus])
+  @@index([parentProcessingDocId])
+  @@index([rootDocumentId])
+  @@index([fileHash])
+  @@index([pipelineStatus, nextRetryAt])
+  @@index([duplicateOfId])
+  @@map("processing_documents")
+}
+
+// ============================================================================
+// DOCUMENT PAGE - Rendered pages for UI highlights
+// ============================================================================
+
+model DocumentPage {
+  id                    String              @id @default(uuid())
+  processingDocumentId  String              @map("processing_document_id")
+  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  pageNumber            Int                 @map("page_number")
+
+  // Rendered image for UI highlights
+  renderDpi             Int                 @default(200) @map("render_dpi") // e.g., 200
+  imagePath             String              @map("image_path") // stored image for consistent UI rendering
+  imageFingerprint      String?             @map("image_fingerprint") // sha256 of rendered image bytes
+
+  // Geometry
+  widthPx               Int                 @map("width_px")
+  heightPx              Int                 @map("height_px")
+  rotationDeg           Int                 @default(0) @map("rotation_deg") // 0/90/180/270
+
+  // OCR outputs
+  ocrProvider           String?             @map("ocr_provider")
+  ocrJson               Json?               @map("ocr_json") // Word boxes and confidence scores
+
+  // Text acquisition decision
+  textAcquisitionDecision String?           @map("text_acquisition_decision") // EMBEDDED/OCR/HYBRID
+  textAcquisitionSignals  Json?             @map("text_acquisition_signals")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  @@unique([processingDocumentId, pageNumber])
+  @@index([processingDocumentId])
+  @@map("document_pages")
+}
+
+// ============================================================================
+// DOCUMENT EXTRACTION - Immutable AI/OCR outputs
+// ============================================================================
+
+model DocumentExtraction {
+  id                      String              @id @default(uuid())
+  processingDocumentId    String              @map("processing_document_id")
+  processingDocument      ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  extractionType          ExtractionType      @map("extraction_type")
+
+  // Provider details
+  provider                String              // e.g., "openai", "anthropic"
+  model                   String              // e.g., "gpt-4-vision"
+  promptVersion           String              @map("prompt_version")
+  extractionSchemaVersion String              @map("extraction_schema_version") // e.g., "1.0.0"
+
+  // Inputs and reproducibility
+  inputFingerprint        String?             @map("input_fingerprint") // hash of prompt+tools+file/page ranges
+  selectorVersion         String?             @map("selector_version") // model selector version
+
+  // Results
+  rawJson                 Json                @map("raw_json")
+  rawText                 String?             @map("raw_text")
+  confidenceJson          Json                @map("confidence_json")
+  evidenceJson            Json?               @map("evidence_json") // includes evidence per Appendix A
+  overallConfidence       Float?              @map("overall_confidence")
+
+  // Text acquisition metadata
+  hasEmbeddedText         Boolean             @default(false) @map("has_embedded_text")
+  textAcquisitionJson     Json?               @map("text_acquisition_json") // selector signals and per-page choice
+  ocrProvider             String?             @map("ocr_provider")
+
+  // Cost/usage
+  promptTokens            Int?                @map("prompt_tokens")
+  completionTokens        Int?                @map("completion_tokens")
+  tokensUsed              Int?                @map("tokens_used")
+  latencyMs               Int?                @map("latency_ms")
+  providerRequestId       String?             @map("provider_request_id")
+
+  createdAt               DateTime            @default(now()) @map("created_at")
+
+  // Relations
+  revisions               DocumentRevision[]
+
+  @@index([processingDocumentId, extractionType])
+  @@index([providerRequestId])
+  @@map("document_extractions")
+}
+
+// ============================================================================
+// DOCUMENT REVISION - Immutable snapshots of structured accounting data
+// ============================================================================
+
+model DocumentRevision {
+  id                      String                      @id @default(uuid())
+  processingDocumentId    String                      @map("processing_document_id")
+  processingDocument      ProcessingDocument          @relation("DocumentRevisions", fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  // Lineage
+  basedOnRevisionId       String?                     @map("based_on_revision_id")
+  basedOnRevision         DocumentRevision?           @relation("RevisionChain", fields: [basedOnRevisionId], references: [id])
+  derivedRevisions        DocumentRevision[]          @relation("RevisionChain")
+  extractionId            String?                     @map("extraction_id")
+  extraction              DocumentExtraction?         @relation(fields: [extractionId], references: [id])
+
+  revisionNumber          Int                         @map("revision_number")
+  revisionType            RevisionType                @map("revision_type")
+  status                  RevisionStatus              @default(DRAFT)
+  reason                  String?                     // initial_extraction, user_edit, reprocess
+
+  // Classification
+  documentCategory        DocumentCategory            @map("document_category")
+
+  // Header fields
+  vendorName              String?                     @map("vendor_name")
+  vendorId                String?                     @map("vendor_id")
+  documentNumber          String?                     @map("document_number")
+  documentDate            DateTime?                   @db.Date @map("document_date")
+  dueDate                 DateTime?                   @db.Date @map("due_date")
+
+  // Amounts (document currency)
+  currency                String
+  subtotal                Decimal?                    @db.Decimal(18, 4)
+  taxAmount               Decimal?                    @db.Decimal(18, 4) @map("tax_amount")
+  totalAmount             Decimal                     @db.Decimal(18, 4) @map("total_amount") // CREDIT_NOTE must be negative
+
+  // Rounding policy used at approval time
+  roundingMode            RoundingMode                @default(HALF_UP) @map("rounding_mode")
+
+  // GST
+  gstTreatment            GstTreatment?               @map("gst_treatment")
+  supplierGstNo           String?                     @map("supplier_gst_no")
+
+  // Currency conversion (home currency)
+  homeCurrency            String?                     @map("home_currency")
+  homeExchangeRateSource  ExchangeRateSource?         @map("home_exchange_rate_source")
+  homeExchangeRate        Decimal?                    @db.Decimal(18, 8) @map("home_exchange_rate")
+  exchangeRateDate        DateTime?                   @db.Date @map("exchange_rate_date")
+  homeEquivalent          Decimal?                    @db.Decimal(18, 4) @map("home_equivalent")
+
+  // Validation
+  validationStatus        ValidationStatus            @default(PENDING) @map("validation_status")
+  validationIssues        Json?                       @map("validation_issues")
+
+  // Document key for duplicates
+  documentKey             String?                     @map("document_key")
+  documentKeyVersion      String?                     @map("document_key_version") // e.g., "1"
+  documentKeyConfidence   Float?                      @map("document_key_confidence")
+
+  // Evidence for header fields
+  headerEvidenceJson      Json?                       @map("header_evidence_json")
+
+  // Posting/export lifecycle
+  postingStatus           RevisionPostingStatus       @default(NOT_POSTED) @map("posting_status")
+  postedAt                DateTime?                   @map("posted_at")
+  postingLock             Boolean                     @default(false) @map("posting_lock") // set true when posted
+
+  // Reconciliation lifecycle
+  reconciliationStatus    RevisionReconciliationStatus @default(NOT_RECONCILED) @map("reconciliation_status")
+
+  // Full-text search
+  searchText              String?                     @map("search_text") // normalized searchable text
+
+  // Audit fields
+  createdById             String                      @map("created_by_id")
+  createdAt               DateTime                    @default(now()) @map("created_at")
+  approvedById            String?                     @map("approved_by_id")
+  approvedAt              DateTime?                   @map("approved_at")
+  supersededAt            DateTime?                   @map("superseded_at")
+
+  // Relations
+  currentForDocument      ProcessingDocument?         @relation("CurrentRevision")
+  items                   DocumentRevisionLineItem[]
+  matchGroupItems         MatchGroupItem[]
+  postings                ExternalPosting[]
+
+  @@unique([processingDocumentId, revisionNumber])
+  @@index([processingDocumentId, status])
+  @@index([vendorId])
+  @@index([documentDate])
+  @@index([documentKey])
+  @@map("document_revisions")
+}
+
+// ============================================================================
+// DOCUMENT REVISION LINE ITEM - Line items for revisions
+// ============================================================================
+
+model DocumentRevisionLineItem {
+  id            String           @id @default(uuid())
+  revisionId    String           @map("revision_id")
+  revision      DocumentRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+
+  lineNo        Int              @map("line_no")
+
+  description   String
+  quantity      Decimal?         @db.Decimal(18, 4)
+  unitPrice     Decimal?         @db.Decimal(18, 4) @map("unit_price")
+  amount        Decimal          @db.Decimal(18, 4)
+
+  gstAmount     Decimal?         @db.Decimal(18, 4) @map("gst_amount")
+  taxCode       String?          @map("tax_code")
+
+  // Evidence for this line item
+  evidenceJson  Json?            @map("evidence_json")
+
+  @@unique([revisionId, lineNo])
+  @@index([revisionId])
+  @@map("document_revision_line_items")
+}
+
+// ============================================================================
+// VENDOR ALIAS - Vendor name normalization
+// ============================================================================
+
+model VendorAlias {
+  id                    String    @id @default(uuid())
+  tenantId              String    @map("tenant_id")
+  companyId             String    @map("company_id")
+
+  rawName               String    @map("raw_name")
+  normalizedContactId   String    @map("normalized_contact_id")
+  confidence            Float     @default(1.0)
+
+  createdById           String?   @map("created_by_id")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  @@index([tenantId, companyId])
+  @@index([companyId, rawName])
+  @@map("vendor_aliases")
+}
+
+// ============================================================================
+// DUPLICATE DECISION - User decisions on duplicates
+// ============================================================================
+
+model DuplicateDecision {
+  id                    String              @id @default(uuid())
+  processingDocumentId  String              @map("processing_document_id")
+  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  suspectedOfId         String              @map("suspected_of_id")
+  decision              DuplicateAction
+  reason                String?
+
+  decidedById           String              @map("decided_by_id")
+  decidedAt             DateTime            @default(now()) @map("decided_at")
+
+  @@index([processingDocumentId])
+  @@index([suspectedOfId])
+  @@map("duplicate_decisions")
+}
+
+// ============================================================================
+// PROCESSING ATTEMPT - Tracking processing attempts for retry logic
+// ============================================================================
+
+model ProcessingAttempt {
+  id                    String              @id @default(uuid())
+  processingDocumentId  String              @map("processing_document_id")
+  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  attemptNumber         Int                 @map("attempt_number")
+  step                  ProcessingStep
+  status                AttemptStatus
+
+  startedAt             DateTime            @map("started_at")
+  completedAt           DateTime?           @map("completed_at")
+
+  errorCode             String?             @map("error_code")
+  errorMessage          String?             @map("error_message")
+  errorDetails          Json?               @map("error_details")
+
+  providerLatencyMs     Int?                @map("provider_latency_ms")
+  providerRequestId     String?             @map("provider_request_id")
+
+  @@unique([processingDocumentId, attemptNumber, step])
+  @@index([processingDocumentId, attemptNumber])
+  @@index([status, completedAt])
+  @@map("processing_attempts")
+}
+
+// ============================================================================
+// PROCESSING CHECKPOINT - Checkpointing for recovery
+// ============================================================================
+
+model ProcessingCheckpoint {
+  id                    String              @id @default(uuid())
+  processingDocumentId  String              @map("processing_document_id")
+  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  step                  ProcessingStep
+  status                CheckpointStatus
+  stateJson             Json?               @map("state_json") // Step-specific state for resume
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  @@unique([processingDocumentId, step])
+  @@index([processingDocumentId])
+  @@map("processing_checkpoints")
+}
+
+// ============================================================================
+// SPLIT PLAN - Document splitting plans
+// ============================================================================
+
+model SplitPlan {
+  id                    String              @id @default(uuid())
+  processingDocumentId  String              @map("processing_document_id")
+  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  tenantId              String              @map("tenant_id")
+  companyId             String              @map("company_id")
+
+  method                SplitMethod
+  schemaVersion         String              @map("schema_version") // e.g., "1.0"
+  rangesJson            Json                @map("ranges_json") // ordered page ranges and metadata
+  supersededAt          DateTime?           @map("superseded_at")
+
+  createdById           String?             @map("created_by_id")
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  @@index([processingDocumentId, createdAt])
+  @@map("split_plans")
+}
+
+// ============================================================================
+// DOCUMENT STATE EVENT - Auditable state transitions
+// ============================================================================
+
+model DocumentStateEvent {
+  id                    String              @id @default(uuid())
+  processingDocumentId  String              @map("processing_document_id")
+  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  tenantId              String              @map("tenant_id")
+  companyId             String              @map("company_id")
+
+  eventType             String              @map("event_type") // PIPELINE_STATUS_CHANGED, LOCK_ACQUIRED, etc.
+  fromState             String?             @map("from_state")
+  toState               String?             @map("to_state")
+  reason                String?
+  metadata              Json?
+
+  actorUserId           String?             @map("actor_user_id")
+  actorServiceId        String?             @map("actor_service_id")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  @@index([tenantId, companyId, createdAt])
+  @@index([processingDocumentId, createdAt])
+  @@map("document_state_events")
+}
+
+// ============================================================================
+// DOCUMENT DERIVED FILE - Child PDFs, thumbnails, etc.
+// ============================================================================
+
+model DocumentDerivedFile {
+  id                    String              @id @default(uuid())
+  processingDocumentId  String              @map("processing_document_id")
+  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  tenantId              String              @map("tenant_id")
+  companyId             String              @map("company_id")
+
+  kind                  DerivedFileKind
+  path                  String
+  mimeType              String              @map("mime_type")
+  sizeBytes             Int?                @map("size_bytes")
+  fingerprint           String?             // hash for cache/evidence compatibility
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  @@index([processingDocumentId, kind])
+  @@index([tenantId, companyId, createdAt])
+  @@map("document_derived_files")
+}
+
+// ============================================================================
+// IDEMPOTENCY RECORD - For idempotent API operations
+// ============================================================================
+
+model IdempotencyRecord {
+  key                   String              @id
+  tenantId              String              @map("tenant_id")
+  endpoint              String
+  method                String
+  requestHash           String              @map("request_hash") // Hash of request body
+  response              Json
+  statusCode            Int                 @map("status_code")
+  expiresAt             DateTime            @map("expires_at")
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@index([tenantId])
+  @@map("idempotency_records")
+}
+
+// ============================================================================
+// WEBHOOK SUBSCRIPTION - For webhook events
+// ============================================================================
+
+model WebhookSubscription {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+
+  url                   String
+  events                String[]            // Array of event types
+  secret                String              // Encrypted HMAC secret
+
+  isActive              Boolean             @default(true) @map("is_active")
+
+  // Health tracking
+  lastDeliveryAt        DateTime?           @map("last_delivery_at")
+  lastDeliveryStatus    String?             @map("last_delivery_status")
+  failureCount          Int                 @default(0) @map("failure_count")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("webhook_subscriptions")
+}
+
+// ============================================================================
+// DOCUMENT PROCESSING MODULE - PHASE 1B
+// Multi-Currency & GST
+// ============================================================================
+
+// Exchange Rate Type
+enum ExchangeRateType {
+  MAS_DAILY_RATE
+  IRAS_MONTHLY_AVG_RATE
+  ECB_DAILY_RATE
+  MANUAL_RATE
+}
+
+// Exchange Rate - Global currency conversion rates
+model ExchangeRate {
+  id                    String              @id @default(uuid())
+
+  sourceCurrency        String              @map("source_currency") // ISO 4217
+  targetCurrency        String              @map("target_currency") // ISO 4217
+  rate                  Decimal             @db.Decimal(18, 8)
+  rateDate              DateTime            @db.Date @map("rate_date")
+  rateType              ExchangeRateType    @map("rate_type")
+
+  // Audit
+  fetchedAt             DateTime            @default(now()) @map("fetched_at")
+  sourceRef             String?             @map("source_ref") // URL or dataset identifier
+  sourceHash            String?             @map("source_hash") // Checksum for audit
+
+  @@unique([sourceCurrency, targetCurrency, rateDate, rateType])
+  @@index([sourceCurrency, targetCurrency, rateDate])
+  @@map("exchange_rates")
+}
+
+// GST Filing Frequency
+enum GstFilingFrequency {
+  MONTHLY
+  QUARTERLY
+}
+
+// ============================================================================
+// DOCUMENT PROCESSING MODULE - PHASE 2
+// Bank Reconciliation
+// ============================================================================
+
+// Bank Transaction Type
+enum BankTransactionType {
+  CREDIT
+  DEBIT
+  TRANSFER
+  FEE
+  INTEREST
+  OTHER_BANK_TXN
+}
+
+// Reconciliation Status
+enum ReconciliationStatus {
+  UNMATCHED
+  MATCH_SUGGESTED
+  MATCHED
+  EXCLUDED
+}
+
+// Match Type
+enum MatchType {
+  ONE_TO_ONE
+  ONE_TO_MANY
+  MANY_TO_ONE
+  MANY_TO_MANY
+}
+
+// Match Method
+enum MatchMethod {
+  AUTO_MATCH
+  MANUAL_MATCH
+  RULE_BASED_MATCH
+}
+
+// Match Group Status
+enum MatchGroupStatus {
+  MATCH_SUGGESTED
+  MATCH_CONFIRMED
+  MATCH_REJECTED
+}
+
+// Period Status
+enum PeriodStatus {
+  PERIOD_OPEN
+  PERIOD_LOCKED
+  PERIOD_CLOSED
+}
+
+// Bank Account
+model BankAccount {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+  companyId             String              @map("company_id")
+
+  name                  String
+  accountNumber         String              @map("account_number") // Encrypted
+  currency              String              // ISO 4217 - matching basis
+
+  // Integration
+  bankProvider          String?             @map("bank_provider") // e.g., "plaid", "yodlee"
+  externalId            String?             @map("external_id")
+  lastSyncAt            DateTime?           @map("last_sync_at")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+  deletedAt             DateTime?           @map("deleted_at")
+
+  // Relations
+  transactions          BankTransaction[]
+  reconciliationPeriods ReconciliationPeriod[]
+
+  @@index([tenantId, companyId])
+  @@index([companyId])
+  @@map("bank_accounts")
+}
+
+// Bank Transaction
+model BankTransaction {
+  id                    String              @id @default(uuid())
+  bankAccountId         String              @map("bank_account_id")
+  bankAccount           BankAccount         @relation(fields: [bankAccountId], references: [id])
+  tenantId              String              @map("tenant_id")
+
+  // Transaction details
+  transactionDate       DateTime            @db.Date @map("transaction_date")
+  valueDate             DateTime?           @db.Date @map("value_date")
+  description           String
+  reference             String?
+
+  // Amount in bank account currency
+  amount                Decimal             @db.Decimal(18, 4)
+  currency              String              // Should match bankAccount.currency
+
+  // Balance after transaction
+  runningBalance        Decimal?            @db.Decimal(18, 4) @map("running_balance")
+
+  // Categorization
+  transactionType       BankTransactionType @map("transaction_type")
+
+  // Import tracking
+  importBatchId         String?             @map("import_batch_id")
+  externalId            String?             @map("external_id")
+
+  // Reconciliation status
+  reconciliationStatus  ReconciliationStatus @default(UNMATCHED) @map("reconciliation_status")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  matchGroupItems       MatchGroupItem[]
+
+  @@index([tenantId, bankAccountId])
+  @@index([bankAccountId, transactionDate])
+  @@index([bankAccountId, reconciliationStatus])
+  @@index([externalId])
+  @@map("bank_transactions")
+}
+
+// Match Group - Group of matched documents and transactions
+model MatchGroup {
+  id                      String              @id @default(uuid())
+  tenantId                String              @map("tenant_id")
+  companyId               String              @map("company_id")
+
+  matchType               MatchType           @map("match_type")
+  matchMethod             MatchMethod         @map("match_method")
+  matchAlgorithmVersion   String              @map("match_algorithm_version")
+
+  // Confidence and reasoning
+  confidence              Float
+  matchReasons            Json                @map("match_reasons") // Detailed scoring breakdown
+
+  // Status
+  status                  MatchGroupStatus    @default(MATCH_SUGGESTED)
+
+  // FX conversion used (if applicable)
+  fxConversionJson        Json?               @map("fx_conversion_json") // Rate, date, source
+
+  // Audit
+  createdAt               DateTime            @default(now()) @map("created_at")
+  confirmedById           String?             @map("confirmed_by_id")
+  confirmedAt             DateTime?           @map("confirmed_at")
+  rejectedById            String?             @map("rejected_by_id")
+  rejectedAt              DateTime?           @map("rejected_at")
+  rejectionReason         String?             @map("rejection_reason")
+
+  // Relations
+  items                   MatchGroupItem[]
+
+  @@index([tenantId, companyId])
+  @@index([companyId, status])
+  @@map("match_groups")
+}
+
+// Match Group Item - Individual items in a match group
+model MatchGroupItem {
+  id                      String              @id @default(uuid())
+  matchGroupId            String              @map("match_group_id")
+  matchGroup              MatchGroup          @relation(fields: [matchGroupId], references: [id], onDelete: Cascade)
+
+  bankTransactionId       String?             @map("bank_transaction_id")
+  bankTransaction         BankTransaction?    @relation(fields: [bankTransactionId], references: [id])
+  documentRevisionId      String?             @map("document_revision_id")
+  documentRevision        DocumentRevision?   @relation(fields: [documentRevisionId], references: [id])
+
+  // Allocation for partial matches
+  allocatedAmount         Decimal?            @db.Decimal(18, 4) @map("allocated_amount")
+  allocationCurrency      String?             @map("allocation_currency")
+
+  @@index([matchGroupId])
+  @@index([bankTransactionId])
+  @@index([documentRevisionId])
+  @@map("match_group_items")
+}
+
+// Reconciliation Period - Lock periods for reconciliation
+model ReconciliationPeriod {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+  companyId             String              @map("company_id")
+  bankAccountId         String?             @map("bank_account_id") // Null = all accounts
+  bankAccount           BankAccount?        @relation(fields: [bankAccountId], references: [id])
+
+  periodStart           DateTime            @db.Date @map("period_start")
+  periodEnd             DateTime            @db.Date @map("period_end")
+
+  status                PeriodStatus        @default(PERIOD_OPEN)
+
+  lockedById            String?             @map("locked_by_id")
+  lockedAt              DateTime?           @map("locked_at")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  @@unique([companyId, bankAccountId, periodStart, periodEnd])
+  @@index([tenantId, companyId])
+  @@index([companyId, status])
+  @@map("reconciliation_periods")
+}
+
+// ============================================================================
+// DOCUMENT PROCESSING MODULE - PHASE 3
+// Client Portal & Communication
+// ============================================================================
+
+// Client Request Status
+enum ClientRequestStatus {
+  REQUEST_PENDING
+  REQUEST_IN_PROGRESS
+  REQUEST_WAITING_CLIENT
+  REQUEST_RESOLVED
+  REQUEST_CANCELLED
+}
+
+// Request Priority
+enum RequestPriority {
+  PRIORITY_LOW
+  PRIORITY_NORMAL
+  PRIORITY_HIGH
+  PRIORITY_URGENT
+}
+
+// Communication Direction
+enum CommunicationDirection {
+  INBOUND
+  OUTBOUND
+}
+
+// Communication Channel
+enum CommunicationChannel {
+  EMAIL_CHANNEL
+  PORTAL_MESSAGE_CHANNEL
+  SMS_CHANNEL
+}
+
+// Client Portal User - Separate from main User for security isolation
+model ClientPortalUser {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+  companyId             String              @map("company_id")
+
+  email                 String
+  name                  String
+
+  // Authentication
+  passwordHash          String              @map("password_hash")
+  mfaEnabled            Boolean             @default(false) @map("mfa_enabled")
+  mfaSecret             String?             @map("mfa_secret") // Encrypted
+
+  isActive              Boolean             @default(true) @map("is_active")
+  lastLoginAt           DateTime?           @map("last_login_at")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  communications        Communication[]     @relation("ClientCommunications")
+
+  @@unique([companyId, email])
+  @@index([tenantId, companyId])
+  @@map("client_portal_users")
+}
+
+// Client Request - Requests for documents or information
+model ClientRequest {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+  companyId             String              @map("company_id")
+
+  title                 String
+  description           String?
+  dueDate               DateTime?           @db.Date @map("due_date")
+
+  status                ClientRequestStatus @default(REQUEST_PENDING)
+  priority              RequestPriority     @default(PRIORITY_NORMAL)
+
+  createdById           String              @map("created_by_id")
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  resolvedById          String?             @map("resolved_by_id")
+  resolvedAt            DateTime?           @map("resolved_at")
+
+  // Relations
+  communications        Communication[]
+
+  @@index([tenantId, companyId])
+  @@index([companyId, status])
+  @@map("client_requests")
+}
+
+// Communication - Messages between staff and clients
+model Communication {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+  companyId             String              @map("company_id")
+  clientRequestId       String?             @map("client_request_id")
+  clientRequest         ClientRequest?      @relation(fields: [clientRequestId], references: [id])
+
+  direction             CommunicationDirection
+  channel               CommunicationChannel
+
+  subject               String?
+  body                  String
+
+  fromUserId            String?             @map("from_user_id")
+  fromClientUserId      String?             @map("from_client_user_id")
+  fromClientUser        ClientPortalUser?   @relation("ClientCommunications", fields: [fromClientUserId], references: [id])
+  toEmails              String[]            @map("to_emails")
+
+  externalMessageId     String?             @map("external_message_id")
+  threadId              String?             @map("thread_id")
+
+  sentAt                DateTime?           @map("sent_at")
+  readAt                DateTime?           @map("read_at")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  @@index([tenantId, companyId])
+  @@index([clientRequestId])
+  @@index([threadId])
+  @@map("communications")
+}
+
+// ============================================================================
+// DOCUMENT PROCESSING MODULE - PHASE 4
+// Accounting Software Integration
+// ============================================================================
+
+// Accounting Provider
+enum AccountingProvider {
+  XERO
+  QUICKBOOKS
+  MYOB
+  SAGE
+}
+
+// Posting Status
+enum PostingStatus {
+  POSTING_PENDING
+  POSTING_PROCESSING
+  POSTING_POSTED
+  POSTING_FAILED
+  POSTING_SKIPPED
+}
+
+// Accounting Integration - OAuth connections to accounting software
+model AccountingIntegration {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+  companyId             String              @map("company_id")
+
+  provider              AccountingProvider
+
+  // OAuth credentials (encrypted)
+  accessToken           String              @map("access_token")
+  refreshToken          String?             @map("refresh_token")
+  tokenExpiresAt        DateTime?           @map("token_expires_at")
+
+  // Connection status
+  isActive              Boolean             @default(true) @map("is_active")
+  lastSyncAt            DateTime?           @map("last_sync_at")
+  lastError             String?             @map("last_error")
+
+  // Provider-specific settings
+  settings              Json?
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  postings              ExternalPosting[]
+  fieldMappings         FieldMapping[]
+
+  @@unique([companyId, provider])
+  @@index([tenantId, companyId])
+  @@map("accounting_integrations")
+}
+
+// External Posting - Records of postings to accounting software
+model ExternalPosting {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+  documentRevisionId    String              @map("document_revision_id")
+  documentRevision      DocumentRevision    @relation(fields: [documentRevisionId], references: [id])
+  integrationId         String              @map("integration_id")
+  integration           AccountingIntegration @relation(fields: [integrationId], references: [id])
+
+  // Idempotency
+  idempotencyKey        String              @unique @map("idempotency_key")
+
+  // External reference
+  externalId            String?             @map("external_id")
+  externalType          String?             @map("external_type") // e.g., "Invoice", "Bill"
+  externalUrl           String?             @map("external_url")
+
+  // Status
+  status                PostingStatus       @default(POSTING_PENDING)
+
+  // Attempt tracking
+  attemptCount          Int                 @default(0) @map("attempt_count")
+  lastAttemptAt         DateTime?           @map("last_attempt_at")
+  lastError             Json?               @map("last_error")
+
+  // Timestamps
+  createdAt             DateTime            @default(now()) @map("created_at")
+  postedAt              DateTime?           @map("posted_at")
+
+  @@index([tenantId, status])
+  @@index([documentRevisionId])
+  @@index([integrationId, status])
+  @@map("external_postings")
+}
+
+// Field Mapping - Map Oakcloud fields to accounting software fields
+model FieldMapping {
+  id                    String              @id @default(uuid())
+  integrationId         String              @map("integration_id")
+  integration           AccountingIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  sourceField           String              @map("source_field") // Oakcloud field path
+  targetField           String              @map("target_field") // Provider field path
+  transformRule         Json?               @map("transform_rule") // Transformation logic
+
+  isActive              Boolean             @default(true) @map("is_active")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  @@unique([integrationId, sourceField, targetField])
+  @@index([integrationId])
+  @@map("field_mappings")
+}
