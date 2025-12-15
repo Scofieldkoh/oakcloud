@@ -17,74 +17,125 @@ import {
   uploadDocument,
   checkExactDuplicate,
   queueDocumentForProcessing,
-  listProcessingDocuments,
+  listProcessingDocumentsPaged,
   PROCESSING_LIMITS,
 } from '@/services/document-processing.service';
-import type { ProcessingPriority, UploadSource, PipelineStatus } from '@prisma/client';
+import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus } from '@prisma/client';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 
 /**
  * GET /api/processing-documents
- * List processing documents with filters
+ * List processing documents with page-based pagination and filters
+ *
+ * Query params:
+ * - page: Page number (default: 1)
+ * - limit: Items per page (default: 20, max: 100)
+ * - sortBy: Sort field (createdAt, updatedAt, pipelineStatus, duplicateStatus)
+ * - sortOrder: Sort direction (asc, desc)
+ * - pipelineStatus: Filter by pipeline status
+ * - duplicateStatus: Filter by duplicate status
+ * - isContainer: Filter by container/child type
+ * - companyId: Optional company filter (if not provided, shows all accessible companies)
  */
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth();
     const { searchParams } = new URL(request.url);
 
-    const companyId = searchParams.get('companyId');
-    const statusStr = searchParams.get('status');
-    const isContainerStr = searchParams.get('isContainer');
+    // Parse query parameters
+    const pageStr = searchParams.get('page');
     const limitStr = searchParams.get('limit');
-    const cursor = searchParams.get('cursor');
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+    const pipelineStatus = searchParams.get('pipelineStatus') as PipelineStatus | null;
+    const duplicateStatus = searchParams.get('duplicateStatus') as DuplicateStatus | null;
+    const isContainerStr = searchParams.get('isContainer');
+    const companyId = searchParams.get('companyId');
 
-    if (!companyId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'companyId is required' },
-        },
-        { status: 400 }
-      );
-    }
-
-    // Check permission
-    await requirePermission(session, 'document', 'read', companyId);
-
-    if (!(await canAccessCompany(session, companyId))) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
-        },
-        { status: 403 }
-      );
-    }
-
-    const status = statusStr
-      ? (statusStr.split(',') as PipelineStatus[])
-      : undefined;
+    const page = pageStr ? parseInt(pageStr, 10) : 1;
+    const limit = Math.min(limitStr ? parseInt(limitStr, 10) : 20, 100);
     const isContainer =
       isContainerStr === 'true' ? true : isContainerStr === 'false' ? false : undefined;
-    const limit = limitStr ? parseInt(limitStr, 10) : 50;
 
-    const result = await listProcessingDocuments({
-      companyId,
-      status,
+    // Determine accessible company IDs
+    let companyIds: string[] | undefined;
+
+    if (companyId) {
+      // If specific company requested, verify access
+      if (!(await canAccessCompany(session, companyId))) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
+          },
+          { status: 403 }
+        );
+      }
+      companyIds = [companyId];
+    } else {
+      // Use session's accessible company IDs
+      companyIds = session.companyIds;
+    }
+
+    // Get documents with paged results
+    const result = await listProcessingDocumentsPaged({
+      tenantId: session.tenantId,
+      companyIds,
+      pipelineStatus: pipelineStatus ?? undefined,
+      duplicateStatus: duplicateStatus ?? undefined,
       isContainer,
-      limit: Math.min(limit, 100),
-      cursor: cursor ?? undefined,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
     });
+
+    // Transform for API response (convert Decimal to string, Date to ISO string)
+    const documents = result.documents.map((doc) => ({
+      id: doc.id,
+      documentId: doc.documentId,
+      isContainer: doc.isContainer,
+      parentProcessingDocId: doc.parentProcessingDocId,
+      pageFrom: doc.pageFrom,
+      pageTo: doc.pageTo,
+      pageCount: doc.pageCount,
+      pipelineStatus: doc.pipelineStatus,
+      duplicateStatus: doc.duplicateStatus,
+      currentRevisionId: doc.currentRevisionId,
+      lockVersion: doc.lockVersion,
+      createdAt: doc.createdAt.toISOString(),
+      document: {
+        id: doc.document.id,
+        fileName: doc.document.originalFileName || doc.document.fileName,
+        mimeType: doc.document.mimeType,
+        fileSize: doc.document.fileSize,
+        companyId: doc.document.companyId,
+        company: doc.document.company,
+      },
+      currentRevision: doc.currentRevision
+        ? {
+            id: doc.currentRevision.id,
+            revisionNumber: doc.currentRevision.revisionNumber,
+            status: doc.currentRevision.status,
+            documentCategory: doc.currentRevision.documentCategory,
+            vendorName: doc.currentRevision.vendorName,
+            documentNumber: doc.currentRevision.documentNumber,
+            documentDate: doc.currentRevision.documentDate?.toISOString() ?? null,
+            totalAmount: doc.currentRevision.totalAmount.toString(),
+            currency: doc.currentRevision.currency,
+          }
+        : undefined,
+    }));
 
     return NextResponse.json({
       success: true,
       data: {
-        items: result.items,
-        pagination: {
-          hasMore: !!result.nextCursor,
-          nextCursor: result.nextCursor,
-        },
+        documents,
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
       },
       meta: {
         requestId: uuidv4(),

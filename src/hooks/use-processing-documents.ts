@@ -359,3 +359,216 @@ export function useRecordDuplicateDecision() {
     },
   });
 }
+
+// Page types
+export interface DocumentPageInfo {
+  id: string;
+  pageNumber: number;
+  width: number;
+  height: number;
+  rotation: number;
+  dpi: number;
+  imageUrl: string;
+  fingerprint: string | null;
+  ocrProvider: string | null;
+  textAcquisition: string | null;
+  createdAt: string;
+}
+
+export interface DocumentPagesResult {
+  documentId: string;
+  pageCount: number;
+  pages: DocumentPageInfo[];
+}
+
+// Fetch document pages
+async function fetchDocumentPages(documentId: string): Promise<DocumentPagesResult> {
+  const response = await fetch(`/api/processing-documents/${documentId}/pages`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to fetch document pages');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export function useDocumentPages(documentId: string) {
+  return useQuery({
+    queryKey: ['document-pages', documentId],
+    queryFn: () => fetchDocumentPages(documentId),
+    enabled: !!documentId,
+    staleTime: 60_000, // 1 minute - pages don't change often
+  });
+}
+
+// Line item types
+export interface LineItemData {
+  id: string;
+  lineNo: number;
+  description: string;
+  quantity: string | null;
+  unitPrice: string | null;
+  amount: string;
+  gstAmount: string | null;
+  taxCode: string | null;
+  evidenceJson: Record<string, unknown> | null;
+}
+
+export interface RevisionWithLineItems {
+  id: string;
+  revisionNumber: number;
+  status: RevisionStatus;
+  documentCategory: DocumentCategory | null;
+  vendorName: string | null;
+  documentNumber: string | null;
+  documentDate: string | null;
+  dueDate: string | null;
+  currency: string;
+  subtotal: string | null;
+  taxAmount: string | null;
+  totalAmount: string;
+  gstTreatment: string | null;
+  validationStatus: string;
+  validationIssues: Record<string, unknown> | null;
+  headerEvidenceJson: Record<string, unknown> | null;
+  lineItems: LineItemData[];
+}
+
+// Fetch revision with line items
+async function fetchRevisionWithLineItems(
+  documentId: string,
+  revisionId: string
+): Promise<RevisionWithLineItems> {
+  const response = await fetch(`/api/processing-documents/${documentId}/revisions/${revisionId}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to fetch revision');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export function useRevisionWithLineItems(documentId: string, revisionId: string | null) {
+  return useQuery({
+    queryKey: ['revision-line-items', documentId, revisionId],
+    queryFn: () => fetchRevisionWithLineItems(documentId, revisionId!),
+    enabled: !!documentId && !!revisionId,
+    staleTime: 30_000,
+  });
+}
+
+// Update revision with line item changes
+async function updateRevision(
+  documentId: string,
+  revisionId: string,
+  lockVersion: number,
+  data: {
+    headerUpdates?: Partial<{
+      vendorName: string;
+      documentNumber: string;
+      documentDate: string;
+      dueDate: string;
+      subtotal: string;
+      taxAmount: string;
+      totalAmount: string;
+      gstTreatment: string;
+    }>;
+    itemsToUpsert?: Array<{
+      id?: string;
+      lineNo: number;
+      description: string;
+      quantity?: string;
+      unitPrice?: string;
+      amount: string;
+      gstAmount?: string;
+      taxCode?: string;
+    }>;
+    itemsToDelete?: string[];
+  }
+): Promise<{ revisionId: string; lockVersion: number }> {
+  const response = await fetch(`/api/processing-documents/${documentId}/revisions/${revisionId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'If-Match': lockVersion.toString(),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to update revision');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export function useUpdateRevision() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      documentId,
+      revisionId,
+      lockVersion,
+      data,
+    }: {
+      documentId: string;
+      revisionId: string;
+      lockVersion: number;
+      data: Parameters<typeof updateRevision>[3];
+    }) => updateRevision(documentId, revisionId, lockVersion, data),
+    onSuccess: (_, { documentId, revisionId }) => {
+      queryClient.invalidateQueries({ queryKey: ['revision-line-items', documentId, revisionId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['revision-history', documentId] });
+    },
+  });
+}
+
+// Bulk operations
+type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'ARCHIVE';
+
+interface BulkResult {
+  documentId: string;
+  success: boolean;
+  error?: string;
+}
+
+interface BulkOperationResponse {
+  operation: BulkOperation;
+  results: BulkResult[];
+  summary: {
+    total: number;
+    succeeded: number;
+    failed: number;
+  };
+}
+
+async function executeBulkOperation(
+  operation: BulkOperation,
+  documentIds: string[]
+): Promise<BulkOperationResponse> {
+  const response = await fetch('/api/processing-documents/bulk', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ operation, documentIds }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to execute bulk operation');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export function useBulkOperation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ operation, documentIds }: { operation: BulkOperation; documentIds: string[] }) =>
+      executeBulkOperation(operation, documentIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
+    },
+  });
+}

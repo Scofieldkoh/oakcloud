@@ -1,10 +1,10 @@
 ```md
 # Oakcloud Document Processing Module
-## Technical Specification v3.3
+## Technical Specification v3.4
 
-**Version:** 3.3
+**Version:** 3.4
 **Date:** December 2025
-**Status:** Phase 1A Backend Implemented
+**Status:** Phase 1A Core Complete
 
 ---
 
@@ -17,8 +17,13 @@
 | **1A** | Document Revision Service | ✅ Complete | Revision CRUD, approval workflow |
 | **1A** | Document Extraction Service | ✅ Complete | AI extraction, split detection |
 | **1A** | Duplicate Detection Service | ✅ Complete | Jaro-Winkler scoring |
-| **1A** | API Routes | ✅ Complete | 8 endpoints implemented |
-| **1A** | UI Components | 🚧 In Progress | List & detail pages pending |
+| **1A** | API Routes | ✅ Complete | 11 endpoints implemented (list, detail, pages, bulk) |
+| **1A** | UI - List Page | ✅ Complete | `/processing` with filters, stats, pagination, multi-select |
+| **1A** | UI - Detail Page | ✅ Complete | `/processing/[id]` with revision history |
+| **1A** | UI - Dialogs | ✅ Complete | Approve, duplicate decision dialogs |
+| **1A** | UI - Document Page Viewer | ✅ Complete | Zoom, navigation, evidence highlight support |
+| **1A** | UI - Line Item Editor | ✅ Complete | Editable table with auto-calc, validation display |
+| **1A** | UI - Bulk Operations | ✅ Complete | Approve, re-extract, archive actions |
 | **1B** | Multi-Currency | ⏳ Pending | Schema ready |
 | **2** | Bank Reconciliation | ⏳ Pending | Schema ready |
 | **3** | Client Portal | ⏳ Pending | Schema ready |
@@ -38,17 +43,19 @@
 6. [Phase 3: Client Portal & Communication](#6-phase-3-client-portal--communication)
 7. [Phase 4: Accounting Software Integration](#7-phase-4-accounting-software-integration)
 8. [API Specifications](#8-api-specifications)
-9. [Error Handling & Recovery](#9-error-handling--recovery)
-10. [Non-Functional Requirements](#10-non-functional-requirements)
-11. [Data Retention & Privacy](#11-data-retention--privacy)
-12. [Implementation Timeline](#12-implementation-timeline)
-13. [Appendix A: Evidence Coordinate Contract](#appendix-a-evidence-coordinate-contract)
-14. [Appendix B: Document Fingerprints & Duplicate Scoring](#appendix-b-document-fingerprints--duplicate-scoring)
-15. [Appendix C: Error Codes](#appendix-c-error-codes)
-16. [Appendix D: State Diagrams](#appendix-d-state-diagrams)
-17. [Appendix E: Invariants & Business Rules](#appendix-e-invariants--business-rules)
-18. [Appendix F: Validation Issue Codes](#appendix-f-validation-issue-codes)
-19. [Appendix G: Search (MVP)](#appendix-g-search-mvp)
+9. [UI Specification](#9-ui-specification)
+10. [User Logic Flow](#10-user-logic-flow)
+11. [Error Handling & Recovery](#11-error-handling--recovery)
+12. [Non-Functional Requirements](#12-non-functional-requirements)
+13. [Data Retention & Privacy](#13-data-retention--privacy)
+14. [Implementation Timeline](#14-implementation-timeline)
+15. [Appendix A: Evidence Coordinate Contract](#appendix-a-evidence-coordinate-contract)
+16. [Appendix B: Document Fingerprints & Duplicate Scoring](#appendix-b-document-fingerprints--duplicate-scoring)
+17. [Appendix C: Error Codes](#appendix-c-error-codes)
+18. [Appendix D: State Diagrams](#appendix-d-state-diagrams)
+19. [Appendix E: Invariants & Business Rules](#appendix-e-invariants--business-rules)
+20. [Appendix F: Validation Issue Codes](#appendix-f-validation-issue-codes)
+21. [Appendix G: Search (MVP)](#appendix-g-search-mvp)
 
 ---
 
@@ -2650,9 +2657,625 @@ model IdempotencyRecord {
 
 ---
 
-## 9. Error Handling & Recovery
+## 9. UI Specification
 
-### 9.1 Error Classification
+This section defines the user interface components, layouts, and interactions for the Document Processing module.
+
+### 9.1 Page Structure
+
+#### 9.1.1 Document Processing List Page
+
+**Route:** `/processing`
+
+**Purpose:** Display all processing documents with filtering, pagination, and status overview.
+
+**Layout:**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Header                                                          │
+│ ├── Title: "Document Processing"                                │
+│ ├── Subtitle: Description of AI-powered workflow                │
+│ └── Actions: [Refresh] [Upload Document]                        │
+├─────────────────────────────────────────────────────────────────┤
+│ Stats Cards (5 columns)                                         │
+│ ├── Total Documents                                             │
+│ ├── Queued                                                      │
+│ ├── Processing                                                  │
+│ ├── Extracted                                                   │
+│ └── Failed                                                      │
+├─────────────────────────────────────────────────────────────────┤
+│ Filter Bar                                                      │
+│ ├── Pipeline Status (dropdown)                                  │
+│ ├── Duplicate Status (dropdown)                                 │
+│ └── Document Type (dropdown: All/Containers/Children)           │
+├─────────────────────────────────────────────────────────────────┤
+│ Document Table                                                  │
+│ ├── Columns: Document | Pipeline | Duplicate | Vendor | Amount │
+│ │            | Date | Actions                                   │
+│ └── Pagination: [Previous] Page X of Y [Next]                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Components:**
+
+| Component | Description | Implementation |
+|-----------|-------------|----------------|
+| Stats Cards | Display aggregate counts by status | Grid of 5 cards with icons and counts |
+| Filter Bar | Filter documents by pipeline/duplicate/type | Dropdown selects with URL sync |
+| Document Table | Paginated list of documents | Table with status badges, click-to-view |
+| Status Badge | Visual indicator for status | Colored badge with icon (see §9.3) |
+
+#### 9.1.2 Document Detail Page
+
+**Route:** `/processing/[id]`
+
+**Purpose:** Display detailed document information, current revision, and allow workflow actions.
+
+**Layout:**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Header                                                          │
+│ ├── Back Button (→ /processing)                                 │
+│ ├── Title: "Container Document" or "Processing Document"        │
+│ ├── Pipeline Status Badge                                       │
+│ ├── Document ID                                                 │
+│ └── Refresh Button                                              │
+├─────────────────────────────────────────────────────────────────┤
+│ Actions Bar                                                     │
+│ ├── [Trigger Extraction] (if UPLOADED or FAILED_RETRYABLE)      │
+│ ├── [Acquire Lock] / [Release Lock]                             │
+│ ├── [Resolve Duplicate] (if SUSPECTED)                          │
+│ └── [Approve Revision] (if DRAFT and duplicate resolved)        │
+├─────────────────────────────────────────────────────────────────┤
+│ Content Area (2:1 grid)                                         │
+│ ┌─────────────────────────────┬─────────────────────────────────┐
+│ │ Document Details Card       │ Revision History Card           │
+│ │ ├── Type (Container/Child)  │ ├── Revision #N (status)        │
+│ │ ├── Pages                   │ │   ├── Type                    │
+│ │ ├── Pipeline Status         │ │   ├── Vendor                  │
+│ │ ├── Duplicate Status        │ │   ├── Amount                  │
+│ │ ├── Lock Version            │ │   ├── Created                 │
+│ │ └── Created Date            │ │   └── Approved (if any)       │
+│ ├─────────────────────────────│ └── ... more revisions          │
+│ │ Current Revision Card       │                                 │
+│ │ ├── Category                │                                 │
+│ │ ├── Vendor Name             │                                 │
+│ │ ├── Document Number         │                                 │
+│ │ ├── Document Date           │                                 │
+│ │ ├── Total Amount            │                                 │
+│ │ ├── Home Equivalent         │                                 │
+│ │ ├── Validation Status       │                                 │
+│ │ └── Line Item Count         │                                 │
+│ └─────────────────────────────┴─────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 9.2 UI Components
+
+#### 9.2.1 Status Badge Component
+
+Displays status with appropriate color and icon.
+
+**Props:**
+```typescript
+interface StatusBadgeProps {
+  status: PipelineStatus | DuplicateStatus | RevisionStatus;
+  config: {
+    label: string;
+    color: string;
+    icon: React.ComponentType<{ className?: string }>;
+  };
+}
+```
+
+**Status Configurations:**
+
+| Pipeline Status | Label | Color | Icon |
+|-----------------|-------|-------|------|
+| UPLOADED | Uploaded | text-secondary / bg-tertiary | Upload |
+| QUEUED | Queued | text-info / bg-info/10 | Clock |
+| PROCESSING | Processing | text-info / bg-info/10 | RefreshCw (animated) |
+| SPLIT_PENDING | Split Pending | text-warning / bg-warning/10 | FileStack |
+| SPLIT_DONE | Split Done | text-success / bg-success/10 | FileStack |
+| EXTRACTION_DONE | Extracted | text-success / bg-success/10 | CheckCircle |
+| FAILED_RETRYABLE | Failed (Retry) | text-warning / bg-warning/10 | AlertTriangle |
+| FAILED_PERMANENT | Failed | text-error / bg-error/10 | XCircle |
+| DEAD_LETTER | Dead Letter | text-error / bg-error/10 | XCircle |
+
+| Duplicate Status | Label | Color | Icon |
+|------------------|-------|-------|------|
+| NONE | Not Checked | text-muted / bg-tertiary | Clock |
+| SUSPECTED | Suspected Duplicate | text-warning / bg-warning/10 | AlertTriangle |
+| CONFIRMED | Confirmed Duplicate | text-error / bg-error/10 | Copy |
+| REJECTED | Not Duplicate | text-success / bg-success/10 | CheckCircle |
+
+| Revision Status | Label | Color |
+|-----------------|-------|-------|
+| DRAFT | Draft | text-warning / bg-warning/10 |
+| APPROVED | Approved | text-success / bg-success/10 |
+| SUPERSEDED | Superseded | text-muted / bg-tertiary |
+
+#### 9.2.2 Action Buttons
+
+| Action | Condition | Button Style | Icon |
+|--------|-----------|--------------|------|
+| Upload Document | Always (with permission) | Primary | Upload |
+| Refresh | Always | Secondary/Ghost | RefreshCw |
+| Trigger Extraction | UPLOADED or FAILED_RETRYABLE | Primary | Play |
+| Acquire Lock | Always (with permission) | Secondary | Lock |
+| Release Lock | Always (with permission) | Secondary | Unlock |
+| Resolve Duplicate | SUSPECTED status | Warning border | Copy |
+| Approve Revision | DRAFT + duplicate resolved | Primary | Check |
+| View Details | Always | Ghost | Eye |
+
+#### 9.2.3 Dialogs
+
+**Approve Revision Dialog:**
+- Type: ConfirmDialog
+- Variant: info
+- Title: "Approve Revision"
+- Description: Confirmation message with revision number
+- Actions: Cancel / Approve
+
+**Duplicate Decision Dialog:**
+- Type: Custom Modal
+- Title: "Resolve Duplicate Status"
+- Options (radio buttons):
+  - Not a duplicate - unique document
+  - Confirmed duplicate - do not process
+  - Version update - replaces previous
+- Actions: Cancel / Confirm Decision
+
+### 9.3 Responsive Design
+
+| Breakpoint | Stats Cards | Table | Filters |
+|------------|-------------|-------|---------|
+| Mobile (< 640px) | 2 columns | Horizontal scroll | Stack vertically |
+| Tablet (640-1024px) | 3-4 columns | Full width | Wrap |
+| Desktop (> 1024px) | 5 columns | Full width | Single row |
+
+### 9.4 Future UI Components (Phase 1A Pending)
+
+| Component | Description | Priority |
+|-----------|-------------|----------|
+| PDF Viewer | Display document pages with zoom/pan | High |
+| Evidence Highlighter | Highlight extracted fields on PDF | High |
+| Line Item Editor | Edit individual line items with evidence | Medium |
+| Bulk Actions Toolbar | Select multiple documents for batch operations | Medium |
+| Split Editor | Manually adjust document page splits | Low |
+| Audit Timeline | Visual history of document changes | Low |
+
+---
+
+## 10. User Logic Flow
+
+This section documents the user journey through the Document Processing module, including decision points, actions, and system responses.
+
+### 10.1 Document Upload Flow
+
+```
+┌──────────────┐
+│  Start       │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────────┐
+│ User navigates   │
+│ to Upload page   │
+│ (/companies/     │
+│ upload)          │
+└──────┬───────────┘
+       │
+       ▼
+┌──────────────────┐
+│ User selects     │
+│ company and      │
+│ drops file(s)    │
+└──────┬───────────┘
+       │
+       ▼
+┌──────────────────┐     ┌─────────────────┐
+│ System computes  │────►│ Exact hash match│
+│ file hash (SHA-  │     │ found?          │
+│ 256)             │     └────────┬────────┘
+└──────────────────┘              │
+                         ┌────────┴────────┐
+                         │ Yes             │ No
+                         ▼                 ▼
+              ┌──────────────────┐  ┌──────────────────┐
+              │ Show duplicate   │  │ Create Document  │
+              │ warning dialog   │  │ record           │
+              └────────┬─────────┘  │ (UPLOADED)       │
+                       │            └──────┬───────────┘
+              ┌────────┴────────┐          │
+              │                 │          │
+         ┌────▼────┐     ┌──────▼─────┐    │
+         │ Cancel  │     │ Proceed    │    │
+         │ upload  │     │ anyway     │    │
+         └─────────┘     └─────┬──────┘    │
+                               │           │
+                               ▼           │
+                    ┌──────────────────┐   │
+                    │ Record duplicate │   │
+                    │ acknowledgement  │   │
+                    └──────┬───────────┘   │
+                           │               │
+                           └───────┬───────┘
+                                   │
+                                   ▼
+                        ┌──────────────────┐
+                        │ Queue for        │
+                        │ processing       │
+                        │ (QUEUED)         │
+                        └──────┬───────────┘
+                               │
+                               ▼
+                        ┌──────────────────┐
+                        │ Redirect to      │
+                        │ /processing      │
+                        └──────────────────┘
+```
+
+### 10.2 Document Processing Pipeline (System Flow)
+
+```
+┌──────────────┐
+│ QUEUED       │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────────┐
+│ PROCESSING       │
+│ ├── Render pages │
+│ ├── OCR/text     │
+│ │   acquisition  │
+│ └── Split detect │
+└──────┬───────────┘
+       │
+       ├──────────────────┐
+       │ Container        │ Child
+       ▼                  ▼
+┌──────────────────┐  ┌──────────────────┐
+│ SPLIT_PENDING    │  │ Continue to      │
+│ (creating child  │  │ extraction       │
+│ documents)       │  └──────┬───────────┘
+└──────┬───────────┘         │
+       │                     │
+       ▼                     │
+┌──────────────────┐         │
+│ SPLIT_DONE       │         │
+│ (children queued)│         │
+└──────────────────┘         │
+                             ▼
+                  ┌──────────────────┐
+                  │ Field extraction │
+                  │ ├── Category     │
+                  │ ├── Header       │
+                  │ ├── Line items   │
+                  │ └── Evidence     │
+                  └──────┬───────────┘
+                         │
+                         ▼
+                  ┌──────────────────┐
+                  │ Validation       │
+                  │ ├── Arithmetic   │
+                  │ ├── Date ranges  │
+                  │ └── GST rules    │
+                  └──────┬───────────┘
+                         │
+                         ▼
+                  ┌──────────────────┐
+                  │ Create DRAFT     │
+                  │ revision         │
+                  └──────┬───────────┘
+                         │
+                         ▼
+                  ┌──────────────────┐
+                  │ Duplicate check  │
+                  │ (content-based)  │
+                  └──────┬───────────┘
+                         │
+                  ┌──────┴──────┐
+                  │ Score ≥0.80 │
+                  └──────┬──────┘
+             ┌───────────┴───────────┐
+             │ Yes                   │ No
+             ▼                       ▼
+  ┌──────────────────┐    ┌──────────────────┐
+  │ EXTRACTION_DONE  │    │ EXTRACTION_DONE  │
+  │ duplicateStatus: │    │ duplicateStatus: │
+  │ SUSPECTED        │    │ NONE             │
+  └──────────────────┘    └──────────────────┘
+```
+
+### 10.3 Document Review Flow
+
+```
+┌───────────────────────┐
+│ User views Processing │
+│ List (/processing)    │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ Filter/search for     │
+│ documents to review   │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ Click "View" on       │
+│ document row          │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ Document Detail Page  │
+│ (/processing/[id])    │
+└───────────┬───────────┘
+            │
+            ▼
+  ┌─────────┴─────────┐
+  │ Need to re-extract?│
+  └─────────┬─────────┘
+       ┌────┴────┐
+       │ Yes     │ No
+       ▼         ▼
+┌────────────┐  ┌────────────────────┐
+│ Click      │  │ Review current     │
+│ "Trigger   │  │ revision details   │
+│ Extraction"│  └────────┬───────────┘
+└─────┬──────┘           │
+      │                  ▼
+      │         ┌────────────────────┐
+      │         │ Is duplicate       │
+      │         │ status SUSPECTED?  │
+      │         └────────┬───────────┘
+      │            ┌─────┴─────┐
+      │            │ Yes       │ No
+      │            ▼           │
+      │   ┌────────────────┐   │
+      │   │ Click "Resolve │   │
+      │   │ Duplicate"     │   │
+      │   └───────┬────────┘   │
+      │           │            │
+      │           ▼            │
+      │   ┌────────────────┐   │
+      │   │ Select decision:│  │
+      │   │ • Not duplicate │  │
+      │   │ • Is duplicate  │  │
+      │   │ • Is version    │  │
+      │   └───────┬────────┘   │
+      │           │            │
+      │           ▼            │
+      │   ┌────────────────┐   │
+      │   │ Click "Confirm │   │
+      │   │ Decision"      │   │
+      │   └───────┬────────┘   │
+      │           │            │
+      │           ▼            │
+      │   ┌────────────────┐   │
+      │   │ Status updated:│   │
+      │   │ REJECTED or    │   │
+      │   │ CONFIRMED      │───┘
+      │   └────────────────┘
+      │                  │
+      └──────────────────┘
+                         │
+                         ▼
+              ┌────────────────────┐
+              │ Is revision DRAFT  │
+              │ and duplicate      │
+              │ resolved?          │
+              └────────┬───────────┘
+                  ┌────┴────┐
+                  │ Yes     │ No
+                  ▼         ▼
+       ┌────────────────┐  ┌────────────────┐
+       │ Click "Approve │  │ Cannot approve │
+       │ Revision"      │  │ yet            │
+       └───────┬────────┘  └────────────────┘
+               │
+               ▼
+       ┌────────────────┐
+       │ Confirm in     │
+       │ dialog         │
+       └───────┬────────┘
+               │
+               ▼
+       ┌────────────────┐
+       │ Revision status│
+       │ → APPROVED     │
+       │ Prior APPROVED │
+       │ → SUPERSEDED   │
+       └────────────────┘
+```
+
+### 10.4 Concurrency Control Flow
+
+```
+┌───────────────────────┐
+│ User wants to edit    │
+│ document              │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ Click "Acquire Lock"  │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ System checks:        │
+│ - Already locked?     │
+│ - Lock expired?       │
+└───────────┬───────────┘
+            │
+     ┌──────┴──────┐
+     │ Available   │ Locked by other
+     ▼             ▼
+┌──────────┐  ┌──────────────────┐
+│ Lock     │  │ Show error:      │
+│ acquired │  │ "Document locked │
+│ (15 min) │  │ by [user]"       │
+└────┬─────┘  └──────────────────┘
+     │
+     ▼
+┌───────────────────────┐
+│ User performs edits   │
+│ (within lock window)  │
+└───────────┬───────────┘
+     │
+     ├──────────────────┐
+     │ Done editing     │ Need more time
+     ▼                  ▼
+┌──────────────┐  ┌──────────────────┐
+│ Click        │  │ Lock auto-extends│
+│ "Release     │  │ on activity      │
+│ Lock"        │  └──────────────────┘
+└──────┬───────┘
+       │
+       ▼
+┌──────────────────┐
+│ Lock released    │
+│ (available for   │
+│ other users)     │
+└──────────────────┘
+
+Admin Override:
+┌──────────────────┐
+│ Admin clicks     │
+│ "Force Release"  │
+└──────┬───────────┘
+       │
+       ▼
+┌──────────────────┐
+│ Lock forcibly    │
+│ released + audit │
+│ entry created    │
+└──────────────────┘
+```
+
+### 10.5 Error Recovery Flow
+
+```
+┌───────────────────────┐
+│ Document in           │
+│ FAILED_RETRYABLE      │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ User views document   │
+│ detail page           │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ Review error details  │
+│ in lastError field    │
+└───────────┬───────────┘
+            │
+     ┌──────┴──────┐
+     │ Retryable   │ Permanent
+     ▼             ▼
+┌──────────────┐  ┌──────────────────┐
+│ Click        │  │ Document moves   │
+│ "Trigger     │  │ to DEAD_LETTER   │
+│ Extraction"  │  │ after max        │
+└──────┬───────┘  │ retries          │
+       │          └──────────────────┘
+       ▼
+┌──────────────────┐
+│ Document queued  │
+│ for retry        │
+│ (QUEUED)         │
+└──────────────────┘
+```
+
+### 10.6 Bulk Operations Flow
+
+```
+┌───────────────────────┐
+│ User on Processing    │
+│ List page             │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ Select multiple       │
+│ documents (checkbox)  │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ Bulk Actions toolbar  │
+│ appears               │
+│ ├── Approve Selected  │
+│ ├── Re-extract        │
+│ └── Archive           │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ Click bulk action     │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ System validates:     │
+│ - All docs eligible?  │
+│ - Permission check    │
+└───────────┬───────────┘
+            │
+     ┌──────┴──────┐
+     │ Valid       │ Invalid
+     ▼             ▼
+┌──────────────┐  ┌──────────────────┐
+│ Show confirm │  │ Show error with  │
+│ dialog with  │  │ ineligible items │
+│ count        │  │ highlighted      │
+└──────┬───────┘  └──────────────────┘
+       │
+       ▼
+┌──────────────────┐
+│ Execute batch    │
+│ operation        │
+│ (progress shown) │
+└──────────────────┘
+```
+
+### 10.7 Decision Matrix
+
+| Current State | User Action | Preconditions | Result |
+|---------------|-------------|---------------|--------|
+| UPLOADED | Trigger Extraction | document:write permission | → QUEUED |
+| QUEUED | - | System processing | → PROCESSING |
+| PROCESSING | - | System processing | → SPLIT_PENDING (container) or EXTRACTION_DONE (child) |
+| FAILED_RETRYABLE | Trigger Extraction | document:write, retries < max | → QUEUED |
+| EXTRACTION_DONE | - | DRAFT revision exists | Ready for review |
+| DRAFT revision | Approve | duplicate resolved, valid | → APPROVED |
+| SUSPECTED duplicate | Resolve Duplicate | document:write | → REJECTED/CONFIRMED |
+| Any | Acquire Lock | document:lock, not locked | Lock acquired |
+| Locked (by self) | Release Lock | document:lock | Lock released |
+| Locked (by other) | Force Release | document:overrideLock (admin) | Lock released + audit |
+
+### 10.8 Validation Gates
+
+Before certain actions can proceed, the system enforces these validation gates:
+
+| Action | Required Conditions |
+|--------|---------------------|
+| Approve Revision | Revision status = DRAFT; duplicateStatus ∈ {NONE, REJECTED}; validationStatus ≠ INVALID |
+| Export to Accounting | Revision status = APPROVED; postingStatus = NOT_POSTED |
+| Confirm Match (Phase 2) | Revision status = APPROVED; duplicateStatus ∈ {NONE, REJECTED} |
+| Create New Version | duplicateStatus = SUSPECTED with decision = MARK_AS_NEW_VERSION |
+
+---
+
+## 11. Error Handling & Recovery
+
+### 11.1 Error Classification
 
 | Category | Retry | Examples |
 |----------|-------|----------|
@@ -2661,7 +3284,7 @@ model IdempotencyRecord {
 | Provider Error | Conditional | AI provider errors, rate limits |
 | Infrastructure Error | Yes | Database, queue, storage |
 
-### 9.2 Retry Strategy
+### 11.2 Retry Strategy
 
 ```typescript
 const retryConfig = {
@@ -2686,7 +3309,7 @@ const retryConfig = {
 | Network error | 5 | Exponential backoff |
 | Database deadlock | 3 | Immediate retry |
 
-### 9.3 Dead Letter Queue
+### 11.3 Dead Letter Queue
 
 Documents move to dead letter after exhausting retries:
 
@@ -2711,7 +3334,7 @@ if (document.errorCount >= maxRetries && !document.canRetry) {
 - Ability to retry with different parameters
 - Ability to mark as permanently failed with reason
 
-### 9.4 Circuit Breaker
+### 11.4 Circuit Breaker
 
 For external provider calls:
 
@@ -2732,7 +3355,7 @@ const circuitBreaker = {
 - OPEN: Fail fast, queue requests for retry
 - HALF_OPEN: Allow single request to test recovery
 
-### 9.5 Checkpointing
+### 11.5 Checkpointing
 
 Pipeline progress is checkpointed after each step:
 
@@ -2758,15 +3381,15 @@ enum CheckpointStatus {
 
 **Recovery:** On worker restart, query incomplete checkpoints and resume from last completed step.
 
-### 9.6 Partial Failure Handling
+### 11.6 Partial Failure Handling
 
 Default behavior is strict extraction: if OCR/text acquisition fails for required pages, the extraction job fails retryably and no revision is created. If tenant configuration allows partial extraction drafts, the system may create a draft revision marked with `PARTIAL_EXTRACTION` and block approval/export/match confirmation until a complete extraction exists.
 
 ---
 
-## 10. Non-Functional Requirements
+## 12. Non-Functional Requirements
 
-### 10.1 Performance
+### 12.1 Performance
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
@@ -2779,7 +3402,7 @@ Default behavior is strict extraction: if OCR/text acquisition fails for require
 | API response (simple) | P95 < 200ms | APM |
 | API response (complex) | P95 < 500ms | APM |
 
-### 10.2 Processing Limits
+### 12.2 Processing Limits
 
 | Limit | Value |
 |-------|-------|
@@ -2790,7 +3413,7 @@ Default behavior is strict extraction: if OCR/text acquisition fails for require
 | Max batch size | 100 documents |
 | API rate limit | 1000 requests/minute per tenant |
 
-### 10.3 Priority SLAs
+### 12.3 Priority SLAs
 
 | Priority | Target P95 | Alert Threshold |
 |----------|-----------|-----------------|
@@ -2799,7 +3422,7 @@ Default behavior is strict extraction: if OCR/text acquisition fails for require
 | NORMAL | 10 min | 30 min |
 | LOW | 4 hours | 8 hours |
 
-### 10.4 Availability
+### 12.4 Availability
 
 | Component | Target | Measurement |
 |-----------|--------|-------------|
@@ -2807,16 +3430,16 @@ Default behavior is strict extraction: if OCR/text acquisition fails for require
 | Processing availability | 99.5% | Job success rate |
 | Data durability | 99.999999999% (11 9s) | Cloud storage SLA |
 
-### 10.5 Observability
+### 12.5 Observability
 
-#### 10.5.1 Logging
+#### 12.5.1 Logging
 
 - Structured JSON logging
 - Correlation IDs across all services
 - Log levels: DEBUG, INFO, WARN, ERROR
 - PII masking in logs
 
-#### 10.5.2 Metrics (Prometheus)
+#### 12.5.2 Metrics (Prometheus)
 
 ```
 # Document processing
@@ -2845,13 +3468,13 @@ http_requests_total{method, path, status}
 http_request_duration_seconds{method, path}
 ```
 
-#### 10.5.3 Tracing
+#### 12.5.3 Tracing
 
 - OpenTelemetry integration
 - Trace IDs propagated through queues
 - Span attributes include: documentId, tenantId, provider, model
 
-#### 10.5.4 Health Endpoints
+#### 12.5.4 Health Endpoints
 
 **GET /health**
 ```json
@@ -2882,9 +3505,9 @@ http_request_duration_seconds{method, path}
 
 ---
 
-## 11. Data Retention & Privacy
+## 13. Data Retention & Privacy
 
-### 11.1 Retention Policies
+### 13.1 Retention Policies
 
 | Data Type | Default Retention | Legal Hold Override | Notes |
 |-----------|-------------------|---------------------|-------|
@@ -2896,7 +3519,7 @@ http_request_duration_seconds{method, path}
 | Idempotency records | 7 days | N/A | Operational |
 | User sessions | 30 days | N/A | Security |
 
-### 11.2 Deletion Workflow
+### 13.2 Deletion Workflow
 
 ```typescript
 async function processRetention() {
@@ -2935,7 +3558,7 @@ async function processRetention() {
 }
 ```
 
-### 11.3 Right to Erasure (GDPR Article 17)
+### 13.3 Right to Erasure (GDPR Article 17)
 
 For vendor/contact PII:
 
@@ -2960,7 +3583,7 @@ async function anonymizeContact(contactId: string) {
 - Anonymization preserves record integrity
 - Audit trail of erasure request retained
 
-### 11.4 Data Export (GDPR Article 20)
+### 13.4 Data Export (GDPR Article 20)
 
 ```
 GET /api/companies/{companyId}/export
@@ -2972,7 +3595,7 @@ GET /api/companies/{companyId}/export
 - files/ (original documents and derived child PDFs where applicable)
 - audit.json (activity history)
 
-### 11.5 PII Inventory
+### 13.5 PII Inventory
 
 Classification rules:
 - **Personal (PII):** names, emails, phone, addresses
@@ -2990,7 +3613,7 @@ Classification rules:
 
 ---
 
-## 12. Implementation Timeline
+## 14. Implementation Timeline
 
 | Phase | Duration | Key Deliverables | Risk Factors |
 |-------|----------|------------------|--------------|
@@ -3000,7 +3623,7 @@ Classification rules:
 | **3** | 4–6 weeks | Client portal, communication, document requests | Authentication isolation, UX complexity |
 | **4** | 5–8 weeks | Accounting integrations, posting model, field mapping | API compatibility, rate limiting |
 
-### 12.1 Phase 1A Milestones
+### 14.1 Phase 1A Milestones
 
 | Week | Milestone |
 |------|-----------|

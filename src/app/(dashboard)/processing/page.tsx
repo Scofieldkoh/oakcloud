@@ -15,9 +15,13 @@ import {
   Eye,
   Copy,
   FileStack,
+  Square,
+  CheckSquare,
+  MinusSquare,
 } from 'lucide-react';
 import { useProcessingDocuments, type ProcessingDocumentSearchParams } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
+import { BulkActionsToolbar } from '@/components/processing/bulk-actions-toolbar';
 import type { PipelineStatus, DuplicateStatus } from '@prisma/client';
 import { cn } from '@/lib/utils';
 
@@ -101,8 +105,42 @@ export default function ProcessingDocumentsPage() {
   }, [searchParams]);
 
   const [params, setParams] = useState(getParamsFromUrl);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const { data, isLoading, error, refetch } = useProcessingDocuments(params);
+
+  // Clear selection when data changes (e.g., page change, filter change)
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [params]);
+
+  // Selection handlers
+  const toggleSelectAll = useCallback(() => {
+    if (!data?.documents) return;
+    const allIds = data.documents.map((d) => d.id);
+    const allSelected = allIds.every((id) => selectedIds.includes(id));
+    setSelectedIds(allSelected ? [] : allIds);
+  }, [data?.documents, selectedIds]);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds([]);
+  }, []);
+
+  // Selection state
+  const selectionState = useMemo(() => {
+    if (!data?.documents || data.documents.length === 0) return 'none';
+    const allIds = data.documents.map((d) => d.id);
+    const selectedCount = allIds.filter((id) => selectedIds.includes(id)).length;
+    if (selectedCount === 0) return 'none';
+    if (selectedCount === allIds.length) return 'all';
+    return 'partial';
+  }, [data?.documents, selectedIds]);
 
   // Memoize URL construction
   const targetUrl = useMemo(() => {
@@ -335,6 +373,21 @@ export default function ProcessingDocumentsPage() {
             <table className="w-full">
               <thead className="bg-background-tertiary border-b border-border-primary">
                 <tr>
+                  <th className="w-10 px-4 py-3">
+                    <button
+                      onClick={toggleSelectAll}
+                      className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                      title={selectionState === 'all' ? 'Deselect all' : 'Select all'}
+                    >
+                      {selectionState === 'all' ? (
+                        <CheckSquare className="w-4 h-4 text-oak-primary" />
+                      ) : selectionState === 'partial' ? (
+                        <MinusSquare className="w-4 h-4 text-oak-light" />
+                      ) : (
+                        <Square className="w-4 h-4 text-text-muted" />
+                      )}
+                    </button>
+                  </th>
                   <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Document</th>
                   <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Pipeline</th>
                   <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Duplicate</th>
@@ -345,71 +398,91 @@ export default function ProcessingDocumentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.documents.map((doc) => (
-                  <tr
-                    key={doc.id}
-                    className="border-b border-border-primary hover:bg-background-tertiary/50 transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-1.5 rounded bg-background-tertiary">
-                          {doc.isContainer ? (
-                            <FileStack className="w-4 h-4 text-text-secondary" />
+                {data.documents.map((doc) => {
+                  const isSelected = selectedIds.includes(doc.id);
+                  return (
+                    <tr
+                      key={doc.id}
+                      className={cn(
+                        'border-b border-border-primary transition-colors',
+                        isSelected
+                          ? 'bg-oak-primary/5 hover:bg-oak-primary/10'
+                          : 'hover:bg-background-tertiary/50'
+                      )}
+                    >
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => toggleSelect(doc.id)}
+                          className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-oak-primary" />
                           ) : (
-                            <FileText className="w-4 h-4 text-text-secondary" />
+                            <Square className="w-4 h-4 text-text-muted" />
                           )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-1.5 rounded bg-background-tertiary">
+                            {doc.isContainer ? (
+                              <FileStack className="w-4 h-4 text-text-secondary" />
+                            ) : (
+                              <FileText className="w-4 h-4 text-text-secondary" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-text-primary truncate max-w-[200px]">
+                              {doc.document.fileName}
+                            </p>
+                            <p className="text-xs text-text-muted">
+                              {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
+                              {doc.document.company && ` • ${doc.document.company.name}`}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-text-primary truncate max-w-[200px]">
-                            {doc.document.fileName}
-                          </p>
-                          <p className="text-xs text-text-muted">
-                            {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
-                            {doc.document.company && ` • ${doc.document.company.name}`}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge
-                        status={doc.pipelineStatus}
-                        config={pipelineStatusConfig[doc.pipelineStatus]}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge
-                        status={doc.duplicateStatus}
-                        config={duplicateStatusConfig[doc.duplicateStatus]}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-text-primary">
-                        {doc.currentRevision?.vendorName || '-'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="text-sm font-mono text-text-primary">
-                        {doc.currentRevision
-                          ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
-                          : '-'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-text-secondary">
-                        {formatDate(doc.createdAt)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/processing/${doc.id}`}
-                        className="btn-ghost btn-xs inline-flex items-center gap-1"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge
+                          status={doc.pipelineStatus}
+                          config={pipelineStatusConfig[doc.pipelineStatus]}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge
+                          status={doc.duplicateStatus}
+                          config={duplicateStatusConfig[doc.duplicateStatus]}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-text-primary">
+                          {doc.currentRevision?.vendorName || '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-sm font-mono text-text-primary">
+                          {doc.currentRevision
+                            ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
+                            : '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-text-secondary">
+                          {formatDate(doc.createdAt)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          href={`/processing/${doc.id}`}
+                          className="btn-ghost btn-xs inline-flex items-center gap-1"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -444,6 +517,12 @@ export default function ProcessingDocumentsPage() {
           )}
         </div>
       )}
+
+      {/* Bulk Actions Toolbar */}
+      <BulkActionsToolbar
+        selectedIds={selectedIds}
+        onClearSelection={clearSelection}
+      />
     </div>
   );
 }

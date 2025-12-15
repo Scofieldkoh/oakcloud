@@ -15,7 +15,11 @@ import type {
   ProcessingStep,
   CheckpointStatus,
   AttemptStatus,
+  DuplicateStatus,
+  RevisionStatus,
+  DocumentCategory,
 } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import crypto from 'crypto';
 
 const log = createLogger('document-processing');
@@ -629,7 +633,7 @@ export async function getProcessingDocumentByDocumentId(
 }
 
 /**
- * List processing documents with filters
+ * List processing documents with cursor-based pagination
  */
 export async function listProcessingDocuments(options: {
   companyId?: string;
@@ -667,6 +671,166 @@ export async function listProcessingDocuments(options: {
     items: documents as ProcessingDocumentWithRelations[],
     nextCursor,
   };
+}
+
+/**
+ * List processing documents with page-based pagination
+ * Supports filtering by pipelineStatus, duplicateStatus, isContainer
+ * Supports sorting by various fields
+ */
+export async function listProcessingDocumentsPaged(options: {
+  tenantId: string;
+  companyIds?: string[];
+  pipelineStatus?: PipelineStatus;
+  duplicateStatus?: DuplicateStatus;
+  isContainer?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}): Promise<{
+  documents: ProcessingDocumentWithDocument[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}> {
+  const {
+    tenantId,
+    companyIds,
+    pipelineStatus,
+    duplicateStatus,
+    isContainer,
+    page = 1,
+    limit = 20,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+  } = options;
+
+  const where: Prisma.ProcessingDocumentWhereInput = {
+    tenantId,
+    isArchived: false,
+  };
+
+  if (companyIds && companyIds.length > 0) {
+    where.companyId = { in: companyIds };
+  }
+
+  if (pipelineStatus) {
+    where.pipelineStatus = pipelineStatus;
+  }
+
+  if (duplicateStatus) {
+    where.duplicateStatus = duplicateStatus;
+  }
+
+  if (isContainer !== undefined) {
+    where.isContainer = isContainer;
+  }
+
+  // Build orderBy based on sortBy field
+  const orderByField = ['createdAt', 'updatedAt', 'pipelineStatus', 'duplicateStatus'].includes(sortBy)
+    ? sortBy
+    : 'createdAt';
+  const orderBy: Prisma.ProcessingDocumentOrderByWithRelationInput = {
+    [orderByField]: sortOrder,
+  };
+
+  const skip = (page - 1) * limit;
+
+  // Get total count and documents in parallel
+  const [total, documents] = await Promise.all([
+    prisma.processingDocument.count({ where }),
+    prisma.processingDocument.findMany({
+      where,
+      include: {
+        document: {
+          select: {
+            id: true,
+            fileName: true,
+            originalFileName: true,
+            mimeType: true,
+            fileSize: true,
+            companyId: true,
+            company: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        currentRevision: {
+          select: {
+            id: true,
+            revisionNumber: true,
+            status: true,
+            documentCategory: true,
+            vendorName: true,
+            documentNumber: true,
+            documentDate: true,
+            totalAmount: true,
+            currency: true,
+          },
+        },
+      },
+      orderBy,
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    documents: documents as ProcessingDocumentWithDocument[],
+    total,
+    page,
+    limit,
+    totalPages,
+  };
+}
+
+// Type for the paged list result with document relations
+export interface ProcessingDocumentWithDocument {
+  id: string;
+  documentId: string;
+  tenantId: string;
+  companyId: string;
+  isContainer: boolean;
+  parentProcessingDocId: string | null;
+  pageFrom: number | null;
+  pageTo: number | null;
+  pageCount: number | null;
+  pipelineStatus: PipelineStatus;
+  duplicateStatus: DuplicateStatus;
+  currentRevisionId: string | null;
+  lockVersion: number;
+  createdAt: Date;
+  updatedAt: Date;
+  document: {
+    id: string;
+    fileName: string;
+    originalFileName: string | null;
+    mimeType: string | null;
+    fileSize: number | null;
+    companyId: string | null;
+    company: {
+      id: string;
+      name: string;
+    } | null;
+  };
+  currentRevision: {
+    id: string;
+    revisionNumber: number;
+    status: RevisionStatus;
+    documentCategory: DocumentCategory | null;
+    vendorName: string | null;
+    documentNumber: string | null;
+    documentDate: Date | null;
+    totalAmount: Decimal;
+    currency: string;
+  } | null;
 }
 
 /**
