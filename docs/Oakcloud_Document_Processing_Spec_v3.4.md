@@ -17,13 +17,13 @@
 | **1A** | Document Revision Service | ✅ Complete | Revision CRUD, approval workflow |
 | **1A** | Document Extraction Service | ✅ Complete | AI extraction, split detection |
 | **1A** | Duplicate Detection Service | ✅ Complete | Jaro-Winkler scoring |
-| **1A** | API Routes | ✅ Complete | 8 endpoints implemented |
-| **1A** | UI - List Page | ✅ Complete | `/processing` with filters, stats, pagination |
+| **1A** | API Routes | ✅ Complete | 11 endpoints implemented (list, detail, pages, bulk) |
+| **1A** | UI - List Page | ✅ Complete | `/processing` with filters, stats, pagination, multi-select |
 | **1A** | UI - Detail Page | ✅ Complete | `/processing/[id]` with revision history |
 | **1A** | UI - Dialogs | ✅ Complete | Approve, duplicate decision dialogs |
-| **1A** | UI - PDF Viewer | 🚧 In Progress | Evidence highlighting pending |
-| **1A** | UI - Line Item Editor | ⏳ Pending | Edit extracted line items |
-| **1A** | UI - Bulk Operations | ⏳ Pending | Multi-select actions |
+| **1A** | UI - Document Page Viewer | ✅ Complete | Zoom, navigation, evidence highlight support |
+| **1A** | UI - Line Item Editor | ✅ Complete | Editable table with auto-calc, validation display |
+| **1A** | UI - Bulk Operations | ✅ Complete | Approve, re-extract, archive actions |
 | **1B** | Multi-Currency | ⏳ Pending | Schema ready |
 | **2** | Bank Reconciliation | ⏳ Pending | Schema ready |
 | **3** | Client Portal | ⏳ Pending | Schema ready |
