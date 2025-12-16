@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Plus, Users, AlertCircle, Building2, User, Trash2, X } from 'lucide-react';
 import { useContacts, useDeleteContact, useBulkDeleteContacts } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSelection } from '@/hooks/use-selection';
 import { ContactTable } from '@/components/contacts/contact-table';
 import { ContactFilters, type FilterValues } from '@/components/contacts/contact-filters';
@@ -19,6 +21,13 @@ export default function ContactsPage() {
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
+  const { data: session } = useSession();
+
+  // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   // Parse URL params
   const getParamsFromUrl = useCallback(() => {
@@ -39,7 +48,11 @@ export default function ContactsPage() {
   const [contactToDelete, setContactToDelete] = useState<string | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
-  const { data, isLoading, error } = useContacts(params);
+  // Pass tenantId to filter contacts by selected tenant (for SUPER_ADMIN)
+  const { data, isLoading, error } = useContacts({
+    ...params,
+    tenantId: activeTenantId,
+  });
   const deleteContact = useDeleteContact();
   const bulkDeleteContacts = useBulkDeleteContacts();
 
@@ -83,6 +96,12 @@ export default function ContactsPage() {
     const queryString = urlParams.toString();
     return queryString ? `/contacts?${queryString}` : '/contacts';
   }, [params]);
+
+  // Reset page and selection when tenant changes
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, page: 1 }));
+    clearSelection();
+  }, [activeTenantId, clearSelection]);
 
   // Sync URL when params change
   useEffect(() => {

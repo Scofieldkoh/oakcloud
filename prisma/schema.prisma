@@ -471,6 +471,11 @@ model Company {
   @@index([entityType])
   @@index([tenantId, deletedAt])
   @@index([deletedAt])
+  // Performance indexes for stats and search
+  @@index([createdAt])
+  @@index([nextArDueDate])
+  @@index([status, nextArDueDate]) // For overdue filings query
+  @@index([tenantId, status])
   @@map("companies")
 }
 
@@ -513,6 +518,8 @@ model CompanyAddress {
   @@index([companyId])
   @@index([addressType])
   @@index([isCurrent])
+  @@index([companyId, isCurrent]) // For search queries
+  @@index([companyId, isCurrent, addressType])
   @@map("company_addresses")
 }
 
@@ -624,6 +631,9 @@ model CompanyOfficer {
   @@index([contactId])
   @@index([role])
   @@index([isCurrent])
+  @@index([companyId, isCurrent]) // For search queries
+  @@index([contactId, companyId]) // For contact lookup
+  @@index([name, isCurrent]) // For name search
   @@map("company_officers")
 }
 
@@ -690,6 +700,9 @@ model CompanyShareholder {
   @@index([companyId])
   @@index([contactId])
   @@index([isCurrent])
+  @@index([companyId, isCurrent]) // For search queries
+  @@index([contactId, companyId]) // For contact lookup
+  @@index([name, isCurrent]) // For name search
   @@map("company_shareholders")
 }
 
@@ -772,6 +785,7 @@ model Document {
   shareCapital    ShareCapital[]
   shareholders    CompanyShareholder[]
   charges         CompanyCharge[]
+  processingDocument ProcessingDocument?
 
   @@index([tenantId])
   @@index([companyId])
@@ -1461,6 +1475,7 @@ enum CheckpointStatus {
 model ProcessingDocument {
   id                    String              @id @default(uuid())
   documentId            String              @unique @map("document_id")
+  document              Document            @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   // Container/child relationship
   isContainer           Boolean             @default(false) @map("is_container")

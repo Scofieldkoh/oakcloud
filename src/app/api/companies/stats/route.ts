@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getCompanyStats } from '@/services/company.service';
+import { getTenantById } from '@/services/tenant.service';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Allow both SUPER_ADMIN (global stats) and TENANT_ADMIN (tenant-scoped stats)
     const session = await requireAuth();
@@ -10,11 +11,29 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const { searchParams } = new URL(request.url);
+
+    // For SUPER_ADMIN, allow specifying tenantId via query param
+    const tenantIdParam = searchParams.get('tenantId');
+    let effectiveTenantId = session.tenantId;
+
+    if (session.isSuperAdmin && tenantIdParam) {
+      // Validate that the tenant exists before using it
+      const tenant = await getTenantById(tenantIdParam);
+      if (!tenant) {
+        return NextResponse.json(
+          { error: 'Tenant not found' },
+          { status: 404 }
+        );
+      }
+      effectiveTenantId = tenantIdParam;
+    }
+
     // Pass tenantId for non-SUPER_ADMIN users to get tenant-scoped stats
-    // SUPER_ADMIN can get global stats with skipTenantFilter
+    // SUPER_ADMIN can get global stats with skipTenantFilter only if no tenant selected
     const stats = await getCompanyStats(
-      session.tenantId,
-      { skipTenantFilter: session.isSuperAdmin && !session.tenantId }
+      effectiveTenantId,
+      { skipTenantFilter: session.isSuperAdmin && !effectiveTenantId }
     );
 
     return NextResponse.json(stats);

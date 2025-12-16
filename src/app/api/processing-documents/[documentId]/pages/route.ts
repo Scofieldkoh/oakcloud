@@ -22,10 +22,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { documentId } = await params;
 
-    // Get the processing document with its pages
+    // Get the processing document with its pages and document for company context
     const processingDoc = await prisma.processingDocument.findUnique({
       where: { id: documentId },
       include: {
+        document: {
+          select: {
+            companyId: true,
+            tenantId: true,
+          },
+        },
         pages: {
           orderBy: { pageNumber: 'asc' },
           select: {
@@ -55,8 +61,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Check access to the company
-    if (!(await canAccessCompany(session, processingDoc.companyId))) {
+    // Check access to the company via document relation
+    const companyId = processingDoc.document?.companyId;
+    if (!companyId || !(await canAccessCompany(session, companyId))) {
       return NextResponse.json(
         {
           success: false,

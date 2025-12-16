@@ -91,6 +91,7 @@ export interface ProcessingDocumentSearchParams {
   duplicateStatus?: DuplicateStatus;
   isContainer?: boolean;
   companyId?: string;
+  tenantId?: string; // For SUPER_ADMIN to filter by specific tenant
   page?: number;
   limit?: number;
   sortBy?: string;
@@ -257,9 +258,21 @@ async function recordDuplicateDecision(
 // Hooks
 export function useProcessingDocuments(params: ProcessingDocumentSearchParams = {}) {
   return useQuery({
-    queryKey: ['processing-documents', params],
+    queryKey: [
+      'processing-documents',
+      params.pipelineStatus,
+      params.duplicateStatus,
+      params.isContainer,
+      params.companyId,
+      params.tenantId,
+      params.page,
+      params.limit,
+      params.sortBy,
+      params.sortOrder,
+    ],
     queryFn: () => fetchProcessingDocuments(params),
-    staleTime: 30_000, // 30 seconds
+    staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
   });
 }
 
@@ -268,7 +281,8 @@ export function useProcessingDocument(id: string) {
     queryKey: ['processing-document', id],
     queryFn: () => fetchProcessingDocument(id),
     enabled: !!id,
-    staleTime: 30_000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 

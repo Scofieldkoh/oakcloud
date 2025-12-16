@@ -303,7 +303,8 @@ export interface ProcessingResult {
 /**
  * Map extracted entity type string to Prisma EntityType enum
  */
-export function mapEntityType(type: string): EntityType {
+export function mapEntityType(type: string | null | undefined): EntityType {
+  if (!type) return 'OTHER';
   const mapping: Record<string, EntityType> = {
     PRIVATE_LIMITED: 'PRIVATE_LIMITED',
     'PRIVATE LIMITED': 'PRIVATE_LIMITED',
@@ -334,7 +335,8 @@ export function mapEntityType(type: string): EntityType {
 /**
  * Map extracted status string to Prisma CompanyStatus enum
  */
-export function mapCompanyStatus(status: string): CompanyStatus {
+export function mapCompanyStatus(status: string | null | undefined): CompanyStatus {
+  if (!status) return 'OTHER';
   const mapping: Record<string, CompanyStatus> = {
     LIVE: 'LIVE',
     'LIVE COMPANY': 'LIVE',
@@ -356,7 +358,8 @@ export function mapCompanyStatus(status: string): CompanyStatus {
 /**
  * Map extracted officer role to Prisma OfficerRole enum
  */
-export function mapOfficerRole(role: string): OfficerRole {
+export function mapOfficerRole(role: string | null | undefined): OfficerRole {
+  if (!role) return 'DIRECTOR';
   const mapping: Record<string, OfficerRole> = {
     DIRECTOR: 'DIRECTOR',
     MANAGING_DIRECTOR: 'MANAGING_DIRECTOR',
@@ -381,7 +384,8 @@ export function mapOfficerRole(role: string): OfficerRole {
 /**
  * Map contact type string to Prisma ContactType enum
  */
-export function mapContactType(type: string): ContactType {
+export function mapContactType(type: string | null | undefined): ContactType {
+  if (!type) return 'INDIVIDUAL';
   return type.toUpperCase() === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL';
 }
 

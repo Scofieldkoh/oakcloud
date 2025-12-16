@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { useProcessingDocuments, type ProcessingDocumentSearchParams } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { BulkActionsToolbar } from '@/components/processing/bulk-actions-toolbar';
 import type { PipelineStatus, DuplicateStatus } from '@prisma/client';
 import { cn } from '@/lib/utils';
@@ -89,6 +91,13 @@ export default function ProcessingDocumentsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { can } = usePermissions();
+  const { data: session } = useSession();
+
+  // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   // Parse URL params
   const getParamsFromUrl = useCallback((): ProcessingDocumentSearchParams => {
@@ -107,9 +116,19 @@ export default function ProcessingDocumentsPage() {
   const [params, setParams] = useState(getParamsFromUrl);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const { data, isLoading, error, refetch } = useProcessingDocuments(params);
+  // Pass tenantId to filter documents by selected tenant (for SUPER_ADMIN)
+  const { data, isLoading, error, refetch } = useProcessingDocuments({
+    ...params,
+    tenantId: activeTenantId,
+  });
 
-  // Clear selection when data changes (e.g., page change, filter change)
+  // Reset page and selection when tenant changes
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, page: 1 }));
+    setSelectedIds([]);
+  }, [activeTenantId]);
+
+  // Clear selection when params change (e.g., page change, filter change)
   useEffect(() => {
     setSelectedIds([]);
   }, [params]);

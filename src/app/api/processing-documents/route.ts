@@ -13,6 +13,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { getTenantById } from '@/services/tenant.service';
 import {
   uploadDocument,
   checkExactDuplicate,
@@ -58,6 +59,37 @@ export async function GET(request: NextRequest) {
     const isContainer =
       isContainerStr === 'true' ? true : isContainerStr === 'false' ? false : undefined;
 
+    // For SUPER_ADMIN, allow specifying tenantId via query param
+    const tenantIdParam = searchParams.get('tenantId');
+    let effectiveTenantId: string | null = session.tenantId;
+
+    if (session.isSuperAdmin && tenantIdParam) {
+      // Validate that the tenant exists before using it
+      const tenant = await getTenantById(tenantIdParam);
+      if (!tenant) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: 'RESOURCE_NOT_FOUND', message: 'Tenant not found' },
+          },
+          { status: 404 }
+        );
+      }
+      effectiveTenantId = tenantIdParam;
+    }
+
+    // SUPER_ADMIN without tenant selection sees no documents (must select a tenant first)
+    if (!effectiveTenantId) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          documents: [],
+          pagination: { total: 0, page: 1, limit, totalPages: 0, hasMore: false },
+        },
+        meta: { requestId: uuidv4(), timestamp: new Date().toISOString() },
+      });
+    }
+
     // Determine accessible company IDs
     let companyIds: string[] | undefined;
 
@@ -73,14 +105,15 @@ export async function GET(request: NextRequest) {
         );
       }
       companyIds = [companyId];
-    } else {
-      // Use session's accessible company IDs
+    } else if (!session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess) {
+      // Company-scoped users: filter by their assigned companies
       companyIds = session.companyIds;
     }
+    // SUPER_ADMIN, TENANT_ADMIN, and users with hasAllCompaniesAccess see all documents in the tenant
 
     // Get documents with paged results
     const result = await listProcessingDocumentsPaged({
-      tenantId: session.tenantId,
+      tenantId: effectiveTenantId,
       companyIds,
       pipelineStatus: pipelineStatus ?? undefined,
       duplicateStatus: duplicateStatus ?? undefined,
@@ -312,11 +345,13 @@ export async function POST(request: NextRequest) {
       metadata: metadataStr ? JSON.parse(metadataStr) : undefined,
     });
 
-    // Queue for processing
+    // Queue for processing - pass file info so pages can be created
     await queueDocumentForProcessing(
       processingDocument.id,
       company.tenantId,
-      companyId
+      companyId,
+      filePath,
+      file.type
     );
 
     // Create audit log

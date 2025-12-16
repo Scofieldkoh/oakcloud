@@ -61,8 +61,11 @@ async function fetchCompany(id: string): Promise<CompanyWithRelations> {
   return response.json();
 }
 
-async function fetchCompanyStats(): Promise<CompanyStats> {
-  const response = await fetch('/api/companies/stats');
+async function fetchCompanyStats(tenantId?: string): Promise<CompanyStats> {
+  const url = tenantId
+    ? `/api/companies/stats?tenantId=${tenantId}`
+    : '/api/companies/stats';
+  const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch stats');
@@ -143,8 +146,22 @@ async function bulkDeleteCompanies(ids: string[], reason: string): Promise<{ del
  */
 export function useCompanies(params: CompanySearchParams = {}) {
   return useQuery({
-    queryKey: ['companies', params],
+    queryKey: [
+      'companies',
+      params.query,
+      params.page,
+      params.limit,
+      params.sortBy,
+      params.sortOrder,
+      params.entityType,
+      params.status,
+      params.hasCharges,
+      params.financialYearEndMonth,
+      params.tenantId,
+    ],
     queryFn: () => fetchCompanies(params),
+    staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
   });
 }
 
@@ -167,12 +184,15 @@ export function useCompany(id: string) {
     queryKey: ['company', id],
     queryFn: () => fetchCompany(id),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
 /**
  * Hook to fetch company statistics for the current tenant
  *
+ * @param tenantId - Optional tenant ID for SUPER_ADMIN to filter by specific tenant
  * @returns TanStack Query result with company statistics
  *
  * @example
@@ -187,10 +207,12 @@ export function useCompany(id: string) {
  * );
  * ```
  */
-export function useCompanyStats() {
+export function useCompanyStats(tenantId?: string) {
   return useQuery({
-    queryKey: ['company-stats'],
-    queryFn: fetchCompanyStats,
+    queryKey: ['company-stats', tenantId],
+    queryFn: () => fetchCompanyStats(tenantId),
+    staleTime: 30 * 60 * 1000, // 30 minutes - stats change infrequently
+    gcTime: 60 * 60 * 1000, // 1 hour
   });
 }
 

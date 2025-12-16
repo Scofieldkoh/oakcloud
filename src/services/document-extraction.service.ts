@@ -244,6 +244,13 @@ export async function extractFields(
       orderBy: { pageNumber: 'asc' },
     });
 
+    // Validate that pages exist - cannot extract without rendered pages
+    if (pages.length === 0) {
+      throw new Error('No pages found for document. Pages must be created before extraction.');
+    }
+
+    log.info(`Found ${pages.length} pages for document ${processingDocumentId}`);
+
     // Generate input fingerprint for reproducibility
     const inputFingerprint = generateInputFingerprint(
       pages.map((p) => p.id),

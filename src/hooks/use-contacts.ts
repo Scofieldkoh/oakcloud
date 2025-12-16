@@ -193,8 +193,20 @@ async function unlinkContactFromCompany(
 
 export function useContacts(params: ContactSearchParams = {}) {
   return useQuery({
-    queryKey: ['contacts', params],
+    queryKey: [
+      'contacts',
+      params.query,
+      params.contactType,
+      params.companyId,
+      params.page,
+      params.limit,
+      params.sortBy,
+      params.sortOrder,
+      params.tenantId,
+    ],
     queryFn: () => fetchContacts(params),
+    staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
   });
 }
 
@@ -203,6 +215,8 @@ export function useContact(id: string, full = true) {
     queryKey: ['contact', id, full],
     queryFn: () => fetchContact(id, full),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 

@@ -59,6 +59,12 @@ export async function POST(request: NextRequest) {
     const documents = await prisma.processingDocument.findMany({
       where: { id: { in: documentIds } },
       include: {
+        document: {
+          select: {
+            tenantId: true,
+            companyId: true,
+          },
+        },
         currentRevision: true,
       },
     });
@@ -68,7 +74,8 @@ export async function POST(request: NextRequest) {
     const accessDenied: string[] = [];
 
     for (const doc of documents) {
-      if (await canAccessCompany(session, doc.companyId)) {
+      const companyId = doc.document?.companyId;
+      if (companyId && (await canAccessCompany(session, companyId))) {
         accessibleDocs.push(doc);
       } else {
         accessDenied.push(doc.id);
@@ -141,9 +148,9 @@ export async function POST(request: NextRequest) {
             ]);
 
             await createAuditLog({
-              tenantId: doc.tenantId,
+              tenantId: doc.document!.tenantId,
               userId: session.id,
-              companyId: doc.companyId,
+              companyId: doc.document!.companyId!,
               action: 'UPDATE',
               entityType: 'DocumentRevision',
               entityId: doc.currentRevisionId,
@@ -182,14 +189,14 @@ export async function POST(request: NextRequest) {
               where: { id: doc.id },
               data: {
                 pipelineStatus: 'QUEUED',
-                lastError: null,
+                lastError: undefined,
               },
             });
 
             await createAuditLog({
-              tenantId: doc.tenantId,
+              tenantId: doc.document!.tenantId,
               userId: session.id,
-              companyId: doc.companyId,
+              companyId: doc.document!.companyId!,
               action: 'UPDATE',
               entityType: 'ProcessingDocument',
               entityId: doc.id,
@@ -218,9 +225,9 @@ export async function POST(request: NextRequest) {
             });
 
             await createAuditLog({
-              tenantId: doc.tenantId,
+              tenantId: doc.document!.tenantId,
               userId: session.id,
-              companyId: doc.companyId,
+              companyId: doc.document!.companyId!,
               action: 'DELETE',
               entityType: 'ProcessingDocument',
               entityId: doc.id,

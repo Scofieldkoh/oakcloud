@@ -173,25 +173,38 @@ export async function uploadDocument(
 }
 
 /**
- * Check for exact file hash duplicates
+ * Check for exact file hash duplicates within the same tenant
+ * Duplicate detection is tenant-scoped to ensure data isolation
+ * Filters through document relation since ProcessingDocument inherits tenant from Document
  */
 export async function checkExactDuplicate(
   fileHash: string,
   tenantId: string,
-  companyId: string
+  companyId?: string
 ): Promise<{ isDuplicate: boolean; originalDocumentId?: string }> {
+  // Build document filter - tenant is required, company is optional
+  const documentFilter: Prisma.DocumentWhereInput = {
+    tenantId,
+  };
+  if (companyId) {
+    documentFilter.companyId = companyId;
+  }
+
+  const where: Prisma.ProcessingDocumentWhereInput = {
+    fileHash,
+    isArchived: false,
+    document: documentFilter,
+  };
+
   const existing = await prisma.processingDocument.findFirst({
-    where: {
-      fileHash,
-      isArchived: false,
-    },
+    where,
     select: {
       documentId: true,
     },
   });
 
   if (existing) {
-    log.info(`Found exact duplicate for hash ${fileHash.substring(0, 16)}...`);
+    log.info(`Found exact duplicate for hash ${fileHash.substring(0, 16)}... in tenant ${tenantId}`);
     return {
       isDuplicate: true,
       originalDocumentId: existing.documentId,
@@ -283,13 +296,99 @@ export async function transitionPipelineStatus(
 }
 
 /**
+ * Prepare document pages for processing
+ * Creates DocumentPage records from the uploaded file
+ * - For images: creates a single page
+ * - For PDFs: creates pages for each page in the document
+ */
+export async function prepareDocumentPages(
+  processingDocumentId: string,
+  filePath: string,
+  mimeType: string
+): Promise<{ pageCount: number }> {
+  log.info(`Preparing pages for document ${processingDocumentId}, type: ${mimeType}`);
+
+  // Check if pages already exist
+  const existingPages = await prisma.documentPage.count({
+    where: { processingDocumentId },
+  });
+
+  if (existingPages > 0) {
+    log.info(`Document ${processingDocumentId} already has ${existingPages} pages`);
+    return { pageCount: existingPages };
+  }
+
+  // For image files, create a single page
+  if (mimeType.startsWith('image/')) {
+    await prisma.documentPage.create({
+      data: {
+        processingDocumentId,
+        pageNumber: 1,
+        imagePath: filePath,
+        widthPx: 0, // Will be updated when image is processed
+        heightPx: 0,
+        renderDpi: 200,
+        imageFingerprint: crypto.createHash('sha256').update(filePath).digest('hex').substring(0, 16),
+      },
+    });
+
+    // Update page count on processing document
+    await prisma.processingDocument.update({
+      where: { id: processingDocumentId },
+      data: { pageCount: 1 },
+    });
+
+    log.info(`Created 1 page for image document ${processingDocumentId}`);
+    return { pageCount: 1 };
+  }
+
+  // For PDFs, create placeholder pages
+  // In production, this would render the PDF and get actual page count
+  // For now, create a single placeholder page for the PDF
+  if (mimeType === 'application/pdf') {
+    // TODO: Implement PDF page rendering with pdf-lib or similar
+    // For now, create a single placeholder page
+    await prisma.documentPage.create({
+      data: {
+        processingDocumentId,
+        pageNumber: 1,
+        imagePath: filePath, // Use PDF path as placeholder
+        widthPx: 612, // Standard US Letter width at 72 DPI
+        heightPx: 792, // Standard US Letter height at 72 DPI
+        renderDpi: 72,
+        imageFingerprint: crypto.createHash('sha256').update(filePath).digest('hex').substring(0, 16),
+      },
+    });
+
+    // Update page count on processing document
+    await prisma.processingDocument.update({
+      where: { id: processingDocumentId },
+      data: { pageCount: 1 },
+    });
+
+    log.info(`Created placeholder page for PDF document ${processingDocumentId}`);
+    return { pageCount: 1 };
+  }
+
+  throw new Error(`Unsupported file type: ${mimeType}`);
+}
+
+/**
  * Queue document for processing
+ * Prepares pages and transitions status to QUEUED
  */
 export async function queueDocumentForProcessing(
   processingDocumentId: string,
   tenantId: string,
-  companyId: string
+  companyId: string,
+  filePath?: string,
+  mimeType?: string
 ): Promise<string> {
+  // If file info provided, prepare pages first
+  if (filePath && mimeType) {
+    await prepareDocumentPages(processingDocumentId, filePath, mimeType);
+  }
+
   await transitionPipelineStatus(processingDocumentId, 'QUEUED', tenantId, companyId, {
     reason: 'Document queued for processing',
   });
@@ -634,17 +733,32 @@ export async function getProcessingDocumentByDocumentId(
 
 /**
  * List processing documents with cursor-based pagination
+ * Requires tenantId for data isolation
+ * Filters through document relation since ProcessingDocument inherits tenant from Document
  */
 export async function listProcessingDocuments(options: {
+  tenantId: string;
   companyId?: string;
   status?: PipelineStatus[];
   isContainer?: boolean;
   limit?: number;
   cursor?: string;
 }): Promise<{ items: ProcessingDocumentWithRelations[]; nextCursor: string | null }> {
-  const { companyId, status, isContainer, limit = 50, cursor } = options;
+  const { tenantId, companyId, status, isContainer, limit = 50, cursor } = options;
 
-  const where: Prisma.ProcessingDocumentWhereInput = {};
+  // Build document filter - tenant is required, company is optional
+  const documentFilter: Prisma.DocumentWhereInput = {
+    tenantId,
+  };
+  if (companyId) {
+    documentFilter.companyId = companyId;
+  }
+
+  // Filter through document relation for tenant isolation
+  const where: Prisma.ProcessingDocumentWhereInput = {
+    isArchived: false,
+    document: documentFilter,
+  };
 
   if (status && status.length > 0) {
     where.pipelineStatus = { in: status };
@@ -677,6 +791,9 @@ export async function listProcessingDocuments(options: {
  * List processing documents with page-based pagination
  * Supports filtering by pipelineStatus, duplicateStatus, isContainer
  * Supports sorting by various fields
+ *
+ * Note: tenantId and companyIds are filtered through the document relation
+ * since ProcessingDocument inherits these from its associated Document
  */
 export async function listProcessingDocumentsPaged(options: {
   tenantId: string;
@@ -707,14 +824,19 @@ export async function listProcessingDocumentsPaged(options: {
     sortOrder = 'desc',
   } = options;
 
-  const where: Prisma.ProcessingDocumentWhereInput = {
+  // Build document filter - tenant is required, companyIds is optional
+  const documentFilter: Prisma.DocumentWhereInput = {
     tenantId,
-    isArchived: false,
   };
-
   if (companyIds && companyIds.length > 0) {
-    where.companyId = { in: companyIds };
+    documentFilter.companyId = { in: companyIds };
   }
+
+  // Filter through document relation for tenant isolation
+  const where: Prisma.ProcessingDocumentWhereInput = {
+    isArchived: false,
+    document: documentFilter,
+  };
 
   if (pipelineStatus) {
     where.pipelineStatus = pipelineStatus;
@@ -751,6 +873,7 @@ export async function listProcessingDocumentsPaged(options: {
             originalFileName: true,
             mimeType: true,
             fileSize: true,
+            tenantId: true,
             companyId: true,
             company: {
               select: {
@@ -792,11 +915,10 @@ export async function listProcessingDocumentsPaged(options: {
 }
 
 // Type for the paged list result with document relations
+// Note: tenantId and companyId are accessed through the document relation
 export interface ProcessingDocumentWithDocument {
   id: string;
   documentId: string;
-  tenantId: string;
-  companyId: string;
   isContainer: boolean;
   parentProcessingDocId: string | null;
   pageFrom: number | null;
@@ -814,6 +936,7 @@ export interface ProcessingDocumentWithDocument {
     originalFileName: string | null;
     mimeType: string | null;
     fileSize: number | null;
+    tenantId: string;
     companyId: string | null;
     company: {
       id: string;
@@ -835,14 +958,28 @@ export interface ProcessingDocumentWithDocument {
 
 /**
  * Get documents pending retry
+ * When called without tenantId, returns all pending retries (for system-wide worker)
+ * When tenantId is provided, scopes to that tenant
  */
-export async function getDocumentsPendingRetry(limit: number = 100): Promise<ProcessingDocumentWithRelations[]> {
+export async function getDocumentsPendingRetry(options: {
+  limit?: number;
+  tenantId?: string;
+} = {}): Promise<ProcessingDocumentWithRelations[]> {
+  const { limit = 100, tenantId } = options;
+
+  const where: Prisma.ProcessingDocumentWhereInput = {
+    pipelineStatus: 'FAILED_RETRYABLE',
+    canRetry: true,
+    nextRetryAt: { lte: new Date() },
+  };
+
+  // Filter by tenant through document relation if tenantId provided
+  if (tenantId) {
+    where.document = { tenantId };
+  }
+
   return prisma.processingDocument.findMany({
-    where: {
-      pipelineStatus: 'FAILED_RETRYABLE',
-      canRetry: true,
-      nextRetryAt: { lte: new Date() },
-    },
+    where,
     orderBy: [{ processingPriority: 'desc' }, { nextRetryAt: 'asc' }],
     take: limit,
   }) as Promise<ProcessingDocumentWithRelations[]>;

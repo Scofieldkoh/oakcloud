@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Plus, Building2, AlertCircle, FileUp, Trash2, X } from 'lucide-react';
 import { useCompanies, useCompanyStats, useDeleteCompany, useBulkDeleteCompanies } from '@/hooks/use-companies';
 import { usePermissions, useCompanyPermissions } from '@/hooks/use-permissions';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSelection } from '@/hooks/use-selection';
 import { CompanyTable } from '@/components/companies/company-table';
 import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
@@ -19,6 +21,13 @@ export default function CompaniesPage() {
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
+  const { data: session } = useSession();
+
+  // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   // Parse URL params
   const getParamsFromUrl = useCallback(() => {
@@ -42,8 +51,12 @@ export default function CompaniesPage() {
   const [companyToDelete, setCompanyToDelete] = useState<string | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
-  const { data, isLoading, error } = useCompanies(params);
-  const { data: stats, error: statsError } = useCompanyStats();
+  // Pass tenantId to filter companies by selected tenant (for SUPER_ADMIN)
+  const { data, isLoading, error } = useCompanies({
+    ...params,
+    tenantId: activeTenantId,
+  });
+  const { data: stats, error: statsError } = useCompanyStats(activeTenantId);
   const deleteCompany = useDeleteCompany();
   const bulkDeleteCompanies = useBulkDeleteCompanies();
 
@@ -82,6 +95,12 @@ export default function CompaniesPage() {
     const queryString = urlParams.toString();
     return queryString ? `/companies?${queryString}` : '/companies';
   }, [params]);
+
+  // Reset page and selection when tenant changes
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, page: 1 }));
+    clearSelection();
+  }, [activeTenantId, clearSelection]);
 
   // Sync URL when params change
   useEffect(() => {

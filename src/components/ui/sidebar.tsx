@@ -30,6 +30,7 @@ import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { getSidebarWidth as getSidebarWidthFn, SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from '@/lib/constants/layout';
 import { SidebarTenantButton } from '@/components/ui/tenant-selector';
+import { SidebarCompanyButton } from '@/components/ui/company-selector';
 
 interface NavItem {
   name: string;
@@ -203,7 +204,9 @@ function UserSection({ collapsed }: { collapsed: boolean }) {
 
   const getInitials = () => {
     if (!user) return 'U';
-    return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    const first = user.firstName?.[0] || '';
+    const last = user.lastName?.[0] || '';
+    return (first + last).toUpperCase() || 'U';
   };
 
   const handleLogout = () => {
@@ -218,6 +221,11 @@ function UserSection({ collapsed }: { collapsed: boolean }) {
           <SidebarTenantButton collapsed={collapsed} />
         </div>
       )}
+
+      {/* Company selector - available to all users */}
+      <div className="p-2.5 pb-0">
+        <SidebarCompanyButton collapsed={collapsed} />
+      </div>
 
       {/* Theme toggle */}
       <div className="p-2.5 pb-0">
@@ -238,7 +246,7 @@ function UserSection({ collapsed }: { collapsed: boolean }) {
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-text-primary truncate">
-                {user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
+                {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User' : 'Loading...'}
               </p>
               <p className="text-xs text-text-tertiary truncate">{user?.email}</p>
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Modal, ModalBody, ModalFooter } from './modal';
 import { Button } from './button';
 import { FormInput } from './form-input';
@@ -12,7 +12,7 @@ export interface ConfirmDialogProps {
   onClose: () => void;
   onConfirm: (reason?: string) => void | Promise<void>;
   title: string;
-  description?: string;
+  description?: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: DialogVariant;
@@ -83,7 +83,7 @@ export function ConfirmDialog({
           </div>
           <h3 className="text-lg font-semibold text-text-primary mb-2">{title}</h3>
           {description && (
-            <p className="text-sm text-text-secondary mb-4">{description}</p>
+            <div className="text-sm text-text-secondary mb-4">{description}</div>
           )}
 
           {requireReason && (

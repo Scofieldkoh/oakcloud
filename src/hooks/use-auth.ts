@@ -61,6 +61,31 @@ async function fetchSession(): Promise<User | null> {
   return data.user;
 }
 
+/**
+ * Combined session + permissions response
+ */
+interface SessionWithPermissions {
+  user: User;
+  permissions: string[];
+  isSuperAdmin: boolean;
+  isTenantAdmin: boolean;
+}
+
+/**
+ * Fetch session and permissions in a single API call
+ * @returns Combined session and permissions data
+ */
+async function fetchSessionWithPermissions(): Promise<SessionWithPermissions | null> {
+  const response = await fetch('/api/auth/session');
+  if (!response.ok) {
+    if (response.status === 401) {
+      return null;
+    }
+    throw new Error('Failed to fetch session');
+  }
+  return response.json();
+}
+
 interface LoginResponse {
   user: User;
   mustChangePassword: boolean;
@@ -111,7 +136,37 @@ export function useSession() {
   return useQuery({
     queryKey: ['session'],
     queryFn: fetchSession,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - session rarely changes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: false,
+  });
+}
+
+/**
+ * Hook to get current user session AND permissions in a single API call
+ *
+ * This is more efficient than calling useSession() + usePermissions() separately
+ * as it reduces the number of API calls from 2 to 1 on page load.
+ *
+ * @returns TanStack Query result with user, permissions, and role flags
+ *
+ * @example
+ * ```tsx
+ * const { data, isLoading } = useSessionWithPermissions();
+ *
+ * if (isLoading) return <Spinner />;
+ * if (!data) return <LoginPrompt />;
+ *
+ * const { user, permissions, isSuperAdmin } = data;
+ * const canCreate = permissions.includes('company:create') || isSuperAdmin;
+ * ```
+ */
+export function useSessionWithPermissions() {
+  return useQuery({
+    queryKey: ['session-with-permissions'],
+    queryFn: fetchSessionWithPermissions,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
     retry: false,
   });
 }

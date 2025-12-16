@@ -85,11 +85,11 @@ export function LineItemEditor({
   const totals = useMemo(() => {
     const items = editMode ? editingItems : (data?.lineItems ?? []);
     const subtotal = items.reduce((sum, item) => {
-      const amount = parseFloat(editMode ? item.amount : (item.amount || '0'));
+      const amount = parseFloat(item.amount ?? '0');
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
     const gst = items.reduce((sum, item) => {
-      const amount = parseFloat(editMode ? item.gstAmount : (item.gstAmount || '0'));
+      const amount = parseFloat(item.gstAmount ?? '0');
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
     return { subtotal, gst, total: subtotal + gst };
@@ -311,7 +311,7 @@ export function LineItemEditor({
                     {editMode ? (
                       <input
                         type="number"
-                        value={item.quantity}
+                        value={item.quantity ?? ''}
                         onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                         className="input input-sm w-full text-right"
                         placeholder="0"
@@ -327,7 +327,7 @@ export function LineItemEditor({
                     {editMode ? (
                       <input
                         type="number"
-                        value={item.unitPrice}
+                        value={item.unitPrice ?? ''}
                         onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
                         className="input input-sm w-full text-right"
                         placeholder="0.00"
@@ -343,7 +343,7 @@ export function LineItemEditor({
                     {editMode ? (
                       <input
                         type="number"
-                        value={item.amount}
+                        value={item.amount ?? ''}
                         onChange={(e) => handleItemChange(index, 'amount', e.target.value)}
                         className="input input-sm w-full text-right"
                         placeholder="0.00"
@@ -359,7 +359,7 @@ export function LineItemEditor({
                     {editMode ? (
                       <input
                         type="number"
-                        value={item.gstAmount}
+                        value={item.gstAmount ?? ''}
                         onChange={(e) => handleItemChange(index, 'gstAmount', e.target.value)}
                         className="input input-sm w-full text-right"
                         placeholder="0.00"

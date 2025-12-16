@@ -34,7 +34,8 @@ export function usePermissions(companyId?: string) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['permissions', companyId],
     queryFn: () => fetchPermissions(companyId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 15 * 60 * 1000, // 15 minutes - permissions rarely change
+    gcTime: 30 * 60 * 1000, // 30 minutes
     retry: false,
   });
 
