@@ -21,6 +21,8 @@ import type {
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import crypto from 'crypto';
+import { readFile } from 'fs/promises';
+import { PDFDocument } from 'pdf-lib';
 
 const log = createLogger('document-processing');
 
@@ -56,6 +58,9 @@ export interface ProcessingDocumentWithRelations {
   lockVersion: number;
   createdAt: Date;
   updatedAt: Date;
+  // Versioning
+  version: number;
+  rootDocumentId: string | null;
 }
 
 export interface SplitRange {
@@ -192,7 +197,7 @@ export async function checkExactDuplicate(
 
   const where: Prisma.ProcessingDocumentWhereInput = {
     fileHash,
-    isArchived: false,
+    deletedAt: null,
     document: documentFilter,
   };
 
@@ -295,6 +300,49 @@ export async function transitionPipelineStatus(
   log.info(`Document ${processingDocumentId} transitioned from ${fromStatus} to ${updateData.pipelineStatus}`);
 }
 
+// ============================================================================
+// PDF Metadata Extraction
+// ============================================================================
+
+interface PdfMetadata {
+  pageCount: number;
+  pages: Array<{
+    pageNumber: number;
+    width: number;  // in PDF points (1/72 inch)
+    height: number;
+  }>;
+}
+
+/**
+ * Extract PDF metadata using pdf-lib (lightweight, no image rendering)
+ * PDFs are rendered client-side using pdfjs-dist for better coordinate accuracy
+ */
+async function extractPdfMetadata(pdfPath: string): Promise<PdfMetadata> {
+  try {
+    const pdfBytes = await readFile(pdfPath);
+    const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+
+    const pageCount = pdfDoc.getPageCount();
+    const pages: PdfMetadata['pages'] = [];
+
+    for (let i = 0; i < pageCount; i++) {
+      const page = pdfDoc.getPage(i);
+      const { width, height } = page.getSize();
+      pages.push({
+        pageNumber: i + 1,
+        width: Math.round(width),
+        height: Math.round(height),
+      });
+    }
+
+    log.info(`Extracted metadata for ${pageCount} pages from PDF`);
+    return { pageCount, pages };
+  } catch (error) {
+    log.error('Failed to extract PDF metadata:', error);
+    throw new Error(`PDF metadata extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 /**
  * Prepare document pages for processing
  * Creates DocumentPage records from the uploaded file
@@ -342,32 +390,58 @@ export async function prepareDocumentPages(
     return { pageCount: 1 };
   }
 
-  // For PDFs, create placeholder pages
-  // In production, this would render the PDF and get actual page count
-  // For now, create a single placeholder page for the PDF
+  // For PDFs, extract metadata only (client-side rendering via pdfjs-dist)
   if (mimeType === 'application/pdf') {
-    // TODO: Implement PDF page rendering with pdf-lib or similar
-    // For now, create a single placeholder page
-    await prisma.documentPage.create({
-      data: {
-        processingDocumentId,
-        pageNumber: 1,
-        imagePath: filePath, // Use PDF path as placeholder
-        widthPx: 612, // Standard US Letter width at 72 DPI
-        heightPx: 792, // Standard US Letter height at 72 DPI
-        renderDpi: 72,
-        imageFingerprint: crypto.createHash('sha256').update(filePath).digest('hex').substring(0, 16),
-      },
-    });
+    try {
+      // Extract PDF metadata (page count, dimensions)
+      const metadata = await extractPdfMetadata(filePath);
 
-    // Update page count on processing document
-    await prisma.processingDocument.update({
-      where: { id: processingDocumentId },
-      data: { pageCount: 1 },
-    });
+      // Create DocumentPage records for each page (no image rendering)
+      for (const page of metadata.pages) {
+        await prisma.documentPage.create({
+          data: {
+            processingDocumentId,
+            pageNumber: page.pageNumber,
+            imagePath: filePath, // Store original PDF path - rendered client-side
+            widthPx: page.width,
+            heightPx: page.height,
+            renderDpi: 72, // PDF points are 72 DPI
+            imageFingerprint: crypto.createHash('sha256').update(`${filePath}:${page.pageNumber}`).digest('hex').substring(0, 16),
+          },
+        });
+      }
 
-    log.info(`Created placeholder page for PDF document ${processingDocumentId}`);
-    return { pageCount: 1 };
+      // Update page count on processing document
+      await prisma.processingDocument.update({
+        where: { id: processingDocumentId },
+        data: { pageCount: metadata.pageCount },
+      });
+
+      log.info(`Created ${metadata.pageCount} page records for PDF document ${processingDocumentId}`);
+      return { pageCount: metadata.pageCount };
+    } catch (error) {
+      // If metadata extraction fails, create a single placeholder page
+      log.warn(`PDF metadata extraction failed for ${processingDocumentId}, creating placeholder:`, error);
+
+      await prisma.documentPage.create({
+        data: {
+          processingDocumentId,
+          pageNumber: 1,
+          imagePath: filePath,
+          widthPx: 612, // Default US Letter width in points
+          heightPx: 792, // Default US Letter height in points
+          renderDpi: 72,
+          imageFingerprint: crypto.createHash('sha256').update(filePath).digest('hex').substring(0, 16),
+        },
+      });
+
+      await prisma.processingDocument.update({
+        where: { id: processingDocumentId },
+        data: { pageCount: 1 },
+      });
+
+      return { pageCount: 1 };
+    }
   }
 
   throw new Error(`Unsupported file type: ${mimeType}`);
@@ -756,7 +830,7 @@ export async function listProcessingDocuments(options: {
 
   // Filter through document relation for tenant isolation
   const where: Prisma.ProcessingDocumentWhereInput = {
-    isArchived: false,
+    deletedAt: null,
     document: documentFilter,
   };
 
@@ -834,7 +908,7 @@ export async function listProcessingDocumentsPaged(options: {
 
   // Filter through document relation for tenant isolation
   const where: Prisma.ProcessingDocumentWhereInput = {
-    isArchived: false,
+    deletedAt: null,
     document: documentFilter,
   };
 
@@ -1002,10 +1076,8 @@ export async function archiveDocument(
   await prisma.processingDocument.update({
     where: { id: processingDocumentId },
     data: {
-      isArchived: true,
-      archivedAt: new Date(),
-      archivedById,
-      archiveReason: reason,
+      deletedAt: new Date(),
+      deletedReason: reason,
     },
   });
 
@@ -1050,14 +1122,12 @@ export async function markAsNewVersion(
         duplicateStatus: 'NONE',
       },
     }),
-    // Archive the original
+    // Soft delete the original (superseded)
     prisma.processingDocument.update({
       where: { id: originalProcessingDocId },
       data: {
-        isArchived: true,
-        archivedAt: new Date(),
-        archivedById: userId,
-        archiveReason: 'SUPERSEDED_BY_NEW_VERSION',
+        deletedAt: new Date(),
+        deletedReason: 'SUPERSEDED_BY_NEW_VERSION',
       },
     }),
   ]);
@@ -1159,11 +1229,19 @@ async function createStateEvent(input: {
  * Calculate SHA-256 hash of file for duplicate detection
  */
 async function calculateFileHash(filePath: string): Promise<string> {
-  // In a real implementation, this would read the file and hash it
-  // For now, we return a placeholder hash based on the path
-  const hash = crypto.createHash('sha256');
-  hash.update(filePath + Date.now().toString());
-  return hash.digest('hex');
+  const fs = await import('fs/promises');
+  try {
+    const fileBuffer = await fs.readFile(filePath);
+    const hash = crypto.createHash('sha256');
+    hash.update(fileBuffer);
+    return hash.digest('hex');
+  } catch (error) {
+    log.error(`Failed to read file for hash calculation: ${filePath}`, error);
+    // Fallback: use path-based hash if file read fails
+    const hash = crypto.createHash('sha256');
+    hash.update(filePath);
+    return hash.digest('hex');
+  }
 }
 
 // Export constants for use in other modules

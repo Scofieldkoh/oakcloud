@@ -69,6 +69,18 @@ export interface ProcessingDocumentDetail {
   lockVersion: number;
   createdAt: string;
   pages: number;
+  // Versioning
+  version: number;
+  rootDocumentId: string | null;
+  // File details
+  fileName?: string;
+  mimeType?: string;
+  fileSize?: number;
+  // Company info
+  company?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface RevisionSummary {
@@ -238,14 +250,14 @@ async function approveRevision(
 
 async function recordDuplicateDecision(
   documentId: string,
-  decision: 'NOT_DUPLICATE' | 'IS_DUPLICATE' | 'IS_VERSION',
-  duplicateOfId?: string,
+  suspectedOfId: string,
+  decision: 'CONFIRM_DUPLICATE' | 'REJECT_DUPLICATE' | 'MARK_AS_NEW_VERSION',
   reason?: string
-): Promise<{ decisionId: string; duplicateStatus: DuplicateStatus }> {
+): Promise<{ documentId: string; suspectedOfId: string; decision: string }> {
   const response = await fetch(`/api/processing-documents/${documentId}/duplicate-decision`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ decision, duplicateOfId, reason }),
+    body: JSON.stringify({ suspectedOfId, decision, reason }),
   });
   if (!response.ok) {
     const error = await response.json();
@@ -281,8 +293,9 @@ export function useProcessingDocument(id: string) {
     queryKey: ['processing-document', id],
     queryFn: () => fetchProcessingDocument(id),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30_000, // 30 seconds - shorter to show fresher data
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: 'always', // Always refetch when component mounts (page navigation)
   });
 }
 
@@ -292,6 +305,7 @@ export function useRevisionHistory(documentId: string) {
     queryFn: () => fetchRevisionHistory(documentId),
     enabled: !!documentId,
     staleTime: 30_000,
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 
@@ -358,18 +372,19 @@ export function useRecordDuplicateDecision() {
   return useMutation({
     mutationFn: ({
       documentId,
+      suspectedOfId,
       decision,
-      duplicateOfId,
       reason,
     }: {
       documentId: string;
-      decision: 'NOT_DUPLICATE' | 'IS_DUPLICATE' | 'IS_VERSION';
-      duplicateOfId?: string;
+      suspectedOfId: string;
+      decision: 'CONFIRM_DUPLICATE' | 'REJECT_DUPLICATE' | 'MARK_AS_NEW_VERSION';
       reason?: string;
-    }) => recordDuplicateDecision(documentId, decision, duplicateOfId, reason),
+    }) => recordDuplicateDecision(documentId, suspectedOfId, decision, reason),
     onSuccess: (_, { documentId }) => {
       queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
       queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-comparison', documentId] });
     },
   });
 }
@@ -393,6 +408,9 @@ export interface DocumentPagesResult {
   documentId: string;
   pageCount: number;
   pages: DocumentPageInfo[];
+  // PDF-specific fields for client-side rendering
+  isPdf: boolean;
+  pdfUrl: string | null;
 }
 
 // Fetch document pages
@@ -412,6 +430,7 @@ export function useDocumentPages(documentId: string) {
     queryFn: () => fetchDocumentPages(documentId),
     enabled: !!documentId,
     staleTime: 60_000, // 1 minute - pages don't change often
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 
@@ -425,6 +444,7 @@ export interface LineItemData {
   amount: string;
   gstAmount: string | null;
   taxCode: string | null;
+  accountCode: string | null;
   evidenceJson: Record<string, unknown> | null;
 }
 
@@ -468,6 +488,7 @@ export function useRevisionWithLineItems(documentId: string, revisionId: string 
     queryFn: () => fetchRevisionWithLineItems(documentId, revisionId!),
     enabled: !!documentId && !!revisionId,
     staleTime: 30_000,
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 
@@ -478,14 +499,17 @@ async function updateRevision(
   lockVersion: number,
   data: {
     headerUpdates?: Partial<{
+      documentCategory: string;
       vendorName: string;
       documentNumber: string;
       documentDate: string;
       dueDate: string;
+      currency: string;
       subtotal: string;
       taxAmount: string;
       totalAmount: string;
       gstTreatment: string;
+      supplierGstNo: string;
     }>;
     itemsToUpsert?: Array<{
       id?: string;
@@ -496,6 +520,7 @@ async function updateRevision(
       amount: string;
       gstAmount?: string;
       taxCode?: string;
+      accountCode?: string;
     }>;
     itemsToDelete?: string[];
   }
@@ -540,7 +565,7 @@ export function useUpdateRevision() {
 }
 
 // Bulk operations
-type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'ARCHIVE';
+type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE';
 
 interface BulkResult {
   documentId: string;
@@ -584,5 +609,185 @@ export function useBulkOperation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
     },
+  });
+}
+
+// Bulk download types and hook
+interface DownloadInfo {
+  documentId: string;
+  fileName: string;
+  downloadUrl: string;
+  mimeType: string;
+  fileSize: number;
+}
+
+interface BulkDownloadResponse {
+  downloads: DownloadInfo[];
+  errors: { documentId: string; error: string }[];
+  summary: {
+    total: number;
+    available: number;
+    failed: number;
+  };
+}
+
+async function fetchBulkDownloadInfo(documentIds: string[]): Promise<BulkDownloadResponse> {
+  const response = await fetch('/api/processing-documents/bulk-download', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ documentIds }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to get download info');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export function useBulkDownload() {
+  return useMutation({
+    mutationFn: (documentIds: string[]) => fetchBulkDownloadInfo(documentIds),
+  });
+}
+
+// ============================================================================
+// Document Navigation (for review workflow)
+// ============================================================================
+
+export interface DocumentNavigationResult {
+  documents: Array<{
+    id: string;
+    fileName: string;
+    pipelineStatus: PipelineStatus;
+    duplicateStatus: DuplicateStatus;
+    approvalStatus: string;
+    overallConfidence?: number;
+  }>;
+  total: number;
+  currentIndex: number;
+}
+
+/**
+ * Hook for navigating between documents that need review
+ * Filters by: DRAFT status, suspected duplicate, or low confidence
+ */
+export function useDocumentNavigation(
+  currentDocumentId: string,
+  filter: 'all' | 'needs-review' = 'needs-review'
+) {
+  return useQuery({
+    queryKey: ['document-navigation', currentDocumentId, filter],
+    queryFn: async (): Promise<DocumentNavigationResult> => {
+      // Fetch documents needing review (DRAFT status or suspected duplicate)
+      const params = new URLSearchParams();
+      params.set('limit', '100'); // Get enough for navigation
+      params.set('sortBy', 'createdAt');
+      params.set('sortOrder', 'desc');
+
+      const response = await fetch(`/api/processing-documents?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents for navigation');
+      }
+      const result = await response.json();
+      const allDocs = result.data.documents || [];
+
+      // Filter documents based on criteria
+      const filteredDocs = filter === 'needs-review'
+        ? allDocs.filter((doc: ProcessingDocumentListItem) =>
+            doc.currentRevision?.status === 'DRAFT' ||
+            doc.duplicateStatus === 'SUSPECTED'
+          )
+        : allDocs;
+
+      const currentIndex = filteredDocs.findIndex(
+        (doc: ProcessingDocumentListItem) => doc.id === currentDocumentId
+      );
+
+      return {
+        documents: filteredDocs.map((doc: ProcessingDocumentListItem) => ({
+          id: doc.id,
+          fileName: doc.document?.fileName || 'Unknown',
+          pipelineStatus: doc.pipelineStatus,
+          duplicateStatus: doc.duplicateStatus,
+          approvalStatus: doc.currentRevision?.status || 'N/A',
+        })),
+        total: filteredDocs.length,
+        currentIndex: currentIndex >= 0 ? currentIndex : 0,
+      };
+    },
+    enabled: !!currentDocumentId,
+    staleTime: 30_000,
+    refetchOnMount: 'always', // Always refetch when component mounts
+  });
+}
+
+// ============================================================================
+// Duplicate Comparison
+// ============================================================================
+
+export interface DuplicateComparisonData {
+  currentDocument: {
+    id: string;
+    fileName?: string;
+    pipelineStatus: string;
+    approvalStatus: string;
+    createdAt: string;
+    revision: RevisionWithLineItems | null;
+    pdfUrl: string;
+    pages: Array<{
+      pageNumber: number;
+      imageUrl: string;
+      width: number;
+      height: number;
+    }>;
+  };
+  duplicateDocument: {
+    id: string;
+    fileName?: string;
+    pipelineStatus: string;
+    approvalStatus: string;
+    createdAt: string;
+    revision: RevisionWithLineItems | null;
+    pdfUrl: string;
+    pages: Array<{
+      pageNumber: number;
+      imageUrl: string;
+      width: number;
+      height: number;
+    }>;
+  };
+  comparison: {
+    duplicateScore: number | null;
+    duplicateReason: string | null;
+    fieldComparison: Array<{
+      field: string;
+      currentValue: string | null;
+      duplicateValue: string | null;
+      isMatch: boolean;
+    }>;
+  };
+}
+
+async function fetchDuplicateComparison(documentId: string): Promise<DuplicateComparisonData> {
+  const response = await fetch(`/api/processing-documents/${documentId}/duplicate-of`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to fetch duplicate comparison');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Hook for fetching duplicate comparison data for side-by-side view
+ */
+export function useDuplicateComparison(documentId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['duplicate-comparison', documentId],
+    queryFn: () => fetchDuplicateComparison(documentId),
+    enabled: enabled && !!documentId,
+    staleTime: 30_000,
+    retry: false, // Don't retry if no duplicate exists
   });
 }

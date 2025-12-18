@@ -10,6 +10,24 @@ import { join } from 'path';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * Generate an SVG placeholder image
+ * Returns a simple SVG with "No Preview" text
+ */
+function generatePlaceholderSVG(width = 600, height = 800): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="100%" height="100%" fill="#f3f4f6"/>
+  <rect x="2" y="2" width="${width - 4}" height="${height - 4}" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-dasharray="8,4"/>
+  <g transform="translate(${width / 2}, ${height / 2})">
+    <rect x="-60" y="-50" width="120" height="100" fill="#e5e7eb" rx="8"/>
+    <path d="M-30,-20 L30,-20 L30,10 L20,0 L5,15 L-10,5 L-30,25 L-30,-20Z" fill="#9ca3af"/>
+    <circle cx="15" cy="-5" r="8" fill="#9ca3af"/>
+  </g>
+  <text x="${width / 2}" y="${height / 2 + 80}" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" fill="#6b7280">No Preview Available</text>
+  <text x="${width / 2}" y="${height / 2 + 105}" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="#9ca3af">Image file not found</text>
+</svg>`;
+}
+
 interface RouteParams {
   params: Promise<{ documentId: string; pageNumber: string }>;
 }
@@ -23,6 +41,9 @@ const MIME_TYPES: Record<string, string> = {
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
   '.gif': 'image/gif',
+  '.tif': 'image/tiff',
+  '.tiff': 'image/tiff',
+  '.pdf': 'application/pdf',
 };
 
 /**
@@ -88,32 +109,59 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const page = processingDoc.pages[0];
     if (!page) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'RESOURCE_NOT_FOUND', message: `Page ${pageNumber} not found` },
+      // No page record exists - return placeholder
+      const placeholderSVG = generatePlaceholderSVG();
+      return new NextResponse(placeholderSVG, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Content-Length': Buffer.byteLength(placeholderSVG).toString(),
+          'Cache-Control': 'no-cache',
+          'X-Placeholder': 'true',
+          'X-Reason': 'page-not-found',
         },
-        { status: 404 }
-      );
+      });
     }
 
     // Determine the full file path
-    // imagePath could be absolute or relative to UPLOAD_DIR
-    const imagePath = page.imagePath.startsWith('/')
-      ? page.imagePath
-      : join(UPLOAD_DIR, page.imagePath);
+    // imagePath could be:
+    // - Absolute path (starts with / or drive letter on Windows)
+    // - Relative path already including 'uploads/' prefix
+    // - Relative path without 'uploads/' prefix
+    let imagePath: string;
+    if (page.imagePath.startsWith('/') || /^[A-Za-z]:/.test(page.imagePath)) {
+      // Absolute path
+      imagePath = page.imagePath;
+    } else if (page.imagePath.startsWith('uploads\\') || page.imagePath.startsWith('uploads/')) {
+      // Already has uploads prefix - use relative to project root
+      imagePath = join('.', page.imagePath);
+    } else {
+      // No uploads prefix - join with UPLOAD_DIR
+      imagePath = join(UPLOAD_DIR, page.imagePath);
+    }
 
     // Check if file exists
+    let fileExists = false;
     try {
       await stat(imagePath);
+      fileExists = true;
     } catch {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'RESOURCE_NOT_FOUND', message: 'Page image file not found' },
+      // File doesn't exist - will serve placeholder
+      fileExists = false;
+    }
+
+    // If file doesn't exist, return a placeholder SVG
+    if (!fileExists) {
+      const placeholderSVG = generatePlaceholderSVG();
+      return new NextResponse(placeholderSVG, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Content-Length': Buffer.byteLength(placeholderSVG).toString(),
+          'Cache-Control': 'no-cache', // Don't cache placeholder
+          'X-Placeholder': 'true',
         },
-        { status: 404 }
-      );
+      });
     }
 
     // Read the image file

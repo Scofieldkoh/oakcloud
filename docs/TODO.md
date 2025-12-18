@@ -51,3 +51,7 @@ you can read "README.md" inside of docs, it contains the latest information on t
 - [ ] URL shortener
 - [ ] E-signature
 - [ ] Salesrooms
+
+- checkbox selector consistency
+- arhive and delete options/ data purge
+- all extracted data should have bounding box, and the indicator for AI extraction confidence

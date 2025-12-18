@@ -8,11 +8,14 @@
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import type { Prisma, DocumentExtraction } from '@prisma/client';
-import type { ExtractionType, DocumentCategory, GstTreatment } from '@prisma/client';
+import type { ExtractionType, DocumentCategory } from '@prisma/client';
 import { createRevision, type LineItemInput } from './document-revision.service';
 import { transitionPipelineStatus, recordProcessingAttempt } from './document-processing.service';
+import { callAIWithConnector, getBestAvailableModelForTenant, extractJSON } from '@/lib/ai';
+import type { AIModel } from '@/lib/ai/types';
 import crypto from 'crypto';
 import { Decimal } from '@prisma/client/runtime/library';
+import * as fs from 'fs/promises';
 
 const log = createLogger('document-extraction');
 
@@ -43,7 +46,7 @@ export interface FieldEvidence {
   confidence: number;
   coordSpace: 'RENDERED_IMAGE';
   renderFingerprint: string;
-  bbox: EvidenceBbox;
+  bbox?: EvidenceBbox; // Optional - bounding box highlighting is now done via PDF text layer
 }
 
 export interface ExtractedField<T> {
@@ -72,7 +75,6 @@ export interface FieldExtractionResult {
   subtotal?: ExtractedField<string>;
   taxAmount?: ExtractedField<string>;
   totalAmount: ExtractedField<string>;
-  gstTreatment?: ExtractedField<GstTreatment>;
   supplierGstNo?: ExtractedField<string>;
   lineItems?: Array<{
     lineNo: number;
@@ -82,6 +84,7 @@ export interface FieldExtractionResult {
     amount: ExtractedField<string>;
     gstAmount?: ExtractedField<string>;
     taxCode?: ExtractedField<string>;
+    accountCode?: ExtractedField<string>;
   }>;
   overallConfidence: number;
 }
@@ -257,8 +260,8 @@ export async function extractFields(
       mergedConfig
     );
 
-    // Perform extraction (in production, this calls AI provider)
-    const extractionResult = await simulateFieldExtraction(pages);
+    // Perform AI extraction (falls back to simulation if AI unavailable)
+    const { result: extractionResult, modelUsed, providerUsed } = await performAIExtraction(pages, tenantId, userId, mergedConfig);
 
     const latencyMs = Date.now() - startTime;
 
@@ -270,8 +273,8 @@ export async function extractFields(
       data: {
         processingDocumentId,
         extractionType: 'FIELDS',
-        provider: mergedConfig.provider,
-        model: mergedConfig.model,
+        provider: providerUsed,
+        model: modelUsed,
         promptVersion: mergedConfig.promptVersion,
         extractionSchemaVersion: mergedConfig.schemaVersion,
         inputFingerprint,
@@ -300,7 +303,6 @@ export async function extractFields(
       subtotal: extractionResult.subtotal?.value,
       taxAmount: extractionResult.taxAmount?.value,
       totalAmount: extractionResult.totalAmount.value,
-      gstTreatment: extractionResult.gstTreatment?.value,
       supplierGstNo: extractionResult.supplierGstNo?.value,
       headerEvidenceJson: evidenceJson,
       items: extractionResult.lineItems?.map((item) => ({
@@ -311,6 +313,7 @@ export async function extractFields(
         amount: item.amount.value,
         gstAmount: item.gstAmount?.value,
         taxCode: item.taxCode?.value,
+        accountCode: item.accountCode?.value,
         evidenceJson: {
           description: item.description.evidence,
           amount: item.amount.evidence,
@@ -368,15 +371,355 @@ export async function extractFields(
   }
 }
 
+interface AIExtractionResult {
+  result: FieldExtractionResult;
+  modelUsed: string;
+  providerUsed: string;
+}
+
 /**
- * Simulate field extraction (placeholder for actual AI implementation)
+ * Extract fields using AI vision model
  */
-async function simulateFieldExtraction(
+async function performAIExtraction(
+  pages: { pageNumber: number; imagePath: string; imageFingerprint: string | null }[],
+  tenantId: string,
+  userId: string,
+  config: ExtractionConfig
+): Promise<AIExtractionResult> {
+  // Get the best available model for this tenant
+  const modelId = await getBestAvailableModelForTenant(tenantId);
+
+  if (!modelId) {
+    log.warn('No AI model available, falling back to simulation');
+    return {
+      result: simulateFallbackExtraction(pages),
+      modelUsed: 'simulation',
+      providerUsed: 'none',
+    };
+  }
+
+  // Read and encode the first page image
+  const firstPage = pages[0];
+  if (!firstPage) {
+    throw new Error('No pages to extract from');
+  }
+
+  let imageBase64: string;
+  let mimeType: string = 'image/png';
+
+  // Derive provider from model ID
+  const providerFromModel = modelId.startsWith('gpt') ? 'openai'
+    : modelId.startsWith('claude') ? 'anthropic'
+    : modelId.startsWith('gemini') ? 'google'
+    : 'openai';
+
+  // Resolve the file path - handle various path formats
+  let resolvedPath = firstPage.imagePath;
+  if (!resolvedPath.startsWith('/') && !/^[A-Za-z]:/.test(resolvedPath)) {
+    // Relative path - check if it already has 'uploads' prefix
+    if (resolvedPath.startsWith('uploads\\') || resolvedPath.startsWith('uploads/')) {
+      resolvedPath = `./${resolvedPath.replace(/\\/g, '/')}`;
+    } else {
+      resolvedPath = `./uploads/${resolvedPath.replace(/\\/g, '/')}`;
+    }
+  }
+
+  try {
+    const imageBuffer = await fs.readFile(resolvedPath);
+    imageBase64 = imageBuffer.toString('base64');
+
+    // Detect mime type from extension
+    if (resolvedPath.endsWith('.pdf')) {
+      mimeType = 'application/pdf';
+    } else if (resolvedPath.endsWith('.jpg') || resolvedPath.endsWith('.jpeg')) {
+      mimeType = 'image/jpeg';
+    } else if (resolvedPath.endsWith('.png')) {
+      mimeType = 'image/png';
+    }
+  } catch (error) {
+    log.error(`Failed to read image file: ${resolvedPath} (original: ${firstPage.imagePath})`, error);
+    return {
+      result: simulateFallbackExtraction(pages),
+      modelUsed: 'simulation',
+      providerUsed: 'none',
+    };
+  }
+
+  const extractionPrompt = `You are a document data extraction AI. Analyze this document image and extract all relevant business document information.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "INVOICE" | "RECEIPT" | "CREDIT_NOTE" | "DEBIT_NOTE" | "PURCHASE_ORDER" | "STATEMENT" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (e.g., SR, ZR, ES, OP)", "confidence": number } | null,
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56")
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- Be precise with numbers - don't round unless clearly appropriate`;
+
+  try {
+    const response = await callAIWithConnector({
+      model: modelId as AIModel,
+      tenantId,
+      userId,
+      userPrompt: extractionPrompt,
+      jsonMode: true,
+      images: [{ base64: imageBase64, mimeType }],
+      operation: 'document_extraction',
+      temperature: 0.1, // Low temperature for precise extraction
+    });
+
+    // Parse the AI response
+    const extractedData = JSON.parse(response.content);
+
+    // Debug: log raw AI response to understand bbox format
+    log.debug('AI extraction raw response (sample fields):', {
+      vendorName: extractedData.vendorName,
+      documentNumber: extractedData.documentNumber,
+      totalAmount: extractedData.totalAmount,
+    });
+
+    // Map to our FieldExtractionResult format
+    return {
+      result: mapAIResponseToResult(extractedData, pages),
+      modelUsed: modelId,
+      providerUsed: providerFromModel,
+    };
+  } catch (error) {
+    log.error('AI extraction failed, falling back to simulation', error);
+    return {
+      result: simulateFallbackExtraction(pages),
+      modelUsed: 'simulation',
+      providerUsed: 'none',
+    };
+  }
+}
+
+// Type for AI field response
+interface AIFieldValue {
+  value: string | number;
+  confidence?: number;
+}
+
+/**
+ * Create field evidence from extraction data
+ * Note: Bounding box highlighting is now done via PDF text layer search,
+ * so we no longer store bbox data in evidence
+ */
+function createFieldEvidence(
+  text: string,
+  confidence: number,
+  pageNum: number,
+  fingerprint: string
+): FieldEvidence {
+  return {
+    containerPageNumber: pageNum,
+    childPageNumber: 1,
+    text,
+    confidence,
+    coordSpace: 'RENDERED_IMAGE',
+    renderFingerprint: fingerprint,
+    // bbox is no longer used - highlighting uses PDF text layer
+  };
+}
+
+/**
+ * Extract value from AI field response
+ */
+function extractFieldValue(field: unknown): { value: string; confidence: number } | null {
+  if (!field) return null;
+
+  // Object format: { value, confidence }
+  if (typeof field === 'object' && 'value' in (field as object)) {
+    const f = field as AIFieldValue;
+    return {
+      value: String(f.value),
+      confidence: typeof f.confidence === 'number' ? f.confidence : 0.8,
+    };
+  }
+
+  // Plain value format
+  return { value: String(field), confidence: 0.8 };
+}
+
+/**
+ * Map AI response to FieldExtractionResult format
+ */
+function mapAIResponseToResult(
+  data: Record<string, unknown>,
   pages: { pageNumber: number; imagePath: string; imageFingerprint: string | null }[]
-): Promise<FieldExtractionResult> {
-  // Generate sample extraction result
-  // In production, this would call the AI provider
+): FieldExtractionResult {
+  const pageNum = pages[0]?.pageNumber ?? 1;
+  const fingerprint = pages[0]?.imageFingerprint ?? '';
+
+  // Handle documentCategory (required field)
+  const docCategory = extractFieldValue(data.documentCategory);
+  const documentCategory: ExtractedField<DocumentCategory> = {
+    value: (docCategory?.value as DocumentCategory) || 'OTHER',
+    confidence: docCategory?.confidence || 0.8,
+  };
+
+  // Handle optional header fields with bbox
+  const vendorNameField = extractFieldValue(data.vendorName);
+  const documentNumberField = extractFieldValue(data.documentNumber);
+  const documentDateField = extractFieldValue(data.documentDate);
+  const dueDateField = extractFieldValue(data.dueDate);
+  const currencyField = extractFieldValue(data.currency);
+  const subtotalField = extractFieldValue(data.subtotal);
+  const taxAmountField = extractFieldValue(data.taxAmount);
+  const totalAmountField = extractFieldValue(data.totalAmount);
+  const supplierGstNoField = extractFieldValue(data.supplierGstNo);
+
+  // Map line items with bbox support
+  const rawLineItems = data.lineItems as Array<Record<string, unknown>> || [];
+  const lineItems = rawLineItems.map((item, idx) => {
+    const descField = extractFieldValue(item.description);
+    const qtyField = extractFieldValue(item.quantity);
+    const unitPriceField = extractFieldValue(item.unitPrice);
+    const amountField = extractFieldValue(item.amount);
+    const gstAmountField = extractFieldValue(item.gstAmount);
+    const taxCodeField = extractFieldValue(item.taxCode);
+    const accountCodeField = extractFieldValue(item.accountCode);
+
+    return {
+      lineNo: (item.lineNo as number) || idx + 1,
+      description: {
+        value: descField?.value || 'Unknown',
+        confidence: descField?.confidence || 0.9,
+        evidence: descField ? createFieldEvidence(descField.value, descField.confidence || 0.9, pageNum, fingerprint) : undefined,
+      },
+      quantity: qtyField ? { value: qtyField.value, confidence: qtyField.confidence } : undefined,
+      unitPrice: unitPriceField ? { value: unitPriceField.value, confidence: unitPriceField.confidence } : undefined,
+      amount: {
+        value: amountField?.value || '0',
+        confidence: amountField?.confidence || 0.9,
+        evidence: amountField ? createFieldEvidence(amountField.value, amountField.confidence || 0.9, pageNum, fingerprint) : undefined,
+      },
+      gstAmount: gstAmountField ? { value: gstAmountField.value, confidence: gstAmountField.confidence } : undefined,
+      taxCode: taxCodeField ? { value: taxCodeField.value, confidence: taxCodeField.confidence } : undefined,
+      accountCode: accountCodeField ? { value: accountCodeField.value, confidence: accountCodeField.confidence } : undefined,
+    };
+  });
+
+  // Get overall confidence from data or calculate default
+  const overallConfidence = typeof data.overallConfidence === 'number' ? data.overallConfidence : 0.8;
+
+  return {
+    documentCategory,
+    vendorName: vendorNameField ? {
+      value: vendorNameField.value,
+      confidence: vendorNameField.confidence,
+      evidence: createFieldEvidence(vendorNameField.value, vendorNameField.confidence, pageNum, fingerprint),
+    } : undefined,
+    documentNumber: documentNumberField ? {
+      value: documentNumberField.value,
+      confidence: documentNumberField.confidence,
+      evidence: createFieldEvidence(documentNumberField.value, documentNumberField.confidence, pageNum, fingerprint),
+    } : undefined,
+    documentDate: documentDateField ? {
+      value: documentDateField.value,
+      confidence: documentDateField.confidence,
+      evidence: createFieldEvidence(documentDateField.value, documentDateField.confidence, pageNum, fingerprint),
+    } : undefined,
+    dueDate: dueDateField ? {
+      value: dueDateField.value,
+      confidence: dueDateField.confidence,
+      evidence: createFieldEvidence(dueDateField.value, dueDateField.confidence, pageNum, fingerprint),
+    } : undefined,
+    currency: {
+      value: currencyField?.value || 'SGD',
+      confidence: currencyField?.confidence || 0.9,
+    },
+    subtotal: subtotalField ? {
+      value: subtotalField.value,
+      confidence: subtotalField.confidence,
+      evidence: createFieldEvidence(subtotalField.value, subtotalField.confidence, pageNum, fingerprint),
+    } : undefined,
+    taxAmount: taxAmountField ? {
+      value: taxAmountField.value,
+      confidence: taxAmountField.confidence,
+      evidence: createFieldEvidence(taxAmountField.value, taxAmountField.confidence, pageNum, fingerprint),
+    } : undefined,
+    totalAmount: {
+      value: totalAmountField?.value || '0',
+      confidence: totalAmountField?.confidence || 0.8,
+      evidence: createFieldEvidence(`Total: ${totalAmountField?.value || '0'}`, totalAmountField?.confidence || 0.8, pageNum, fingerprint),
+    },
+    supplierGstNo: supplierGstNoField ? {
+      value: supplierGstNoField.value,
+      confidence: supplierGstNoField.confidence,
+      evidence: createFieldEvidence(supplierGstNoField.value, supplierGstNoField.confidence, pageNum, fingerprint),
+    } : undefined,
+    lineItems: lineItems.length > 0 ? lineItems : undefined,
+    overallConfidence,
+  };
+}
+
+/**
+ * Fallback simulation when AI is not available
+ */
+function simulateFallbackExtraction(
+  pages: { pageNumber: number; imagePath: string; imageFingerprint: string | null }[]
+): FieldExtractionResult {
   const now = new Date();
+  const pageNum = pages[0]?.pageNumber ?? 1;
+  const fingerprint = pages[0]?.imageFingerprint ?? '';
+
+  log.info('Using fallback simulation for extraction (no AI available)');
 
   return {
     documentCategory: {
@@ -384,72 +727,31 @@ async function simulateFieldExtraction(
       confidence: 0.95,
     },
     vendorName: {
-      value: 'Acme Corporation Pte Ltd',
-      confidence: 0.92,
-      evidence: {
-        containerPageNumber: pages[0]?.pageNumber ?? 1,
-        childPageNumber: 1,
-        text: 'Acme Corporation Pte Ltd',
-        confidence: 0.92,
-        coordSpace: 'RENDERED_IMAGE',
-        renderFingerprint: pages[0]?.imageFingerprint ?? '',
-        bbox: { x0: 0.1, y0: 0.05, x1: 0.4, y1: 0.08, unit: 'normalized', origin: 'top-left' },
-      },
+      value: 'Sample Vendor Pte Ltd',
+      confidence: 0.5,
+      evidence: createFieldEvidence('Sample Vendor Pte Ltd', 0.5, pageNum, fingerprint),
     },
     documentNumber: {
       value: `INV-${now.getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
-      confidence: 0.98,
+      confidence: 0.5,
+      evidence: createFieldEvidence('Invoice Number', 0.5, pageNum, fingerprint),
     },
     documentDate: {
       value: now.toISOString().split('T')[0],
-      confidence: 0.94,
+      confidence: 0.5,
+      evidence: createFieldEvidence(now.toISOString().split('T')[0], 0.5, pageNum, fingerprint),
     },
     currency: {
       value: 'SGD',
-      confidence: 0.99,
-    },
-    subtotal: {
-      value: '1000.00',
-      confidence: 0.96,
-    },
-    taxAmount: {
-      value: '90.00',
-      confidence: 0.96,
+      confidence: 0.9,
     },
     totalAmount: {
-      value: '1090.00',
-      confidence: 0.98,
-      evidence: {
-        containerPageNumber: pages[0]?.pageNumber ?? 1,
-        childPageNumber: 1,
-        text: 'Total: SGD 1,090.00',
-        confidence: 0.98,
-        coordSpace: 'RENDERED_IMAGE',
-        renderFingerprint: pages[0]?.imageFingerprint ?? '',
-        bbox: { x0: 0.6, y0: 0.85, x1: 0.9, y1: 0.88, unit: 'normalized', origin: 'top-left' },
-      },
+      value: '0.00',
+      confidence: 0.5,
+      evidence: createFieldEvidence('AMOUNT DUE SGD 0.00', 0.5, pageNum, fingerprint),
     },
-    gstTreatment: {
-      value: 'STANDARD_RATED',
-      confidence: 0.85,
-    },
-    lineItems: [
-      {
-        lineNo: 1,
-        description: { value: 'Consulting Services', confidence: 0.92 },
-        quantity: { value: '10', confidence: 0.90 },
-        unitPrice: { value: '50.00', confidence: 0.88 },
-        amount: { value: '500.00', confidence: 0.95 },
-      },
-      {
-        lineNo: 2,
-        description: { value: 'Software License', confidence: 0.94 },
-        quantity: { value: '1', confidence: 0.95 },
-        unitPrice: { value: '500.00', confidence: 0.92 },
-        amount: { value: '500.00', confidence: 0.96 },
-      },
-    ],
-    overallConfidence: 0.92,
+    lineItems: [],
+    overallConfidence: 0.5,
   };
 }
 
@@ -570,9 +872,24 @@ function buildEvidenceJson(result: FieldExtractionResult): Record<string, FieldE
   if (result.documentDate?.evidence) {
     evidence.documentDate = result.documentDate.evidence;
   }
+  if (result.dueDate?.evidence) {
+    evidence.dueDate = result.dueDate.evidence;
+  }
+  if (result.subtotal?.evidence) {
+    evidence.subtotal = result.subtotal.evidence;
+  }
+  if (result.taxAmount?.evidence) {
+    evidence.taxAmount = result.taxAmount.evidence;
+  }
   if (result.totalAmount?.evidence) {
     evidence.totalAmount = result.totalAmount.evidence;
   }
+  if (result.supplierGstNo?.evidence) {
+    evidence.supplierGstNo = result.supplierGstNo.evidence;
+  }
+
+  // Log evidence summary for debugging
+  log.debug('Built evidence JSON with fields:', Object.keys(evidence));
 
   return evidence;
 }

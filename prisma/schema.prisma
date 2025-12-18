@@ -775,6 +775,11 @@ model Document {
   isLatest        Boolean   @default(true)
   previousVersionId String?
 
+  // Soft delete
+  deletedAt       DateTime? @map("deleted_at")
+  deletedReason   String?   @map("deleted_reason")
+  deletedById     String?   @map("deleted_by_id")
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -792,6 +797,7 @@ model Document {
   @@index([documentType])
   @@index([uploadedById])
   @@index([tenantId, companyId])
+  @@index([tenantId, deletedAt])
   @@map("documents")
 }
 
@@ -1522,11 +1528,9 @@ model ProcessingDocument {
   versions              ProcessingDocument[] @relation("DocumentVersions")
   version               Int                 @default(1)
 
-  // Archive/canonical handling
-  isArchived            Boolean             @default(false) @map("is_archived")
-  archivedAt            DateTime?           @map("archived_at")
-  archivedById          String?             @map("archived_by_id")
-  archiveReason         String?             @map("archive_reason")
+  // Soft delete (standardized with other entities)
+  deletedAt             DateTime?           @map("deleted_at")
+  deletedReason         String?             @map("deleted_reason")
 
   // Current revision pointer
   currentRevisionId     String?             @unique @map("current_revision_id")
@@ -1769,6 +1773,9 @@ model DocumentRevisionLineItem {
 
   gstAmount     Decimal?         @db.Decimal(18, 4) @map("gst_amount")
   taxCode       String?          @map("tax_code")
+
+  // Chart of accounts mapping
+  accountCode   String?          @map("account_code")
 
   // Evidence for this line item
   evidenceJson  Json?            @map("evidence_json")

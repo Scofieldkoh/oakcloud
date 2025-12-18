@@ -13,7 +13,7 @@ import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 
-export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact' | 'generatedDocument';
+export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact' | 'generatedDocument' | 'processingDocument';
 
 interface PurgeStats {
   tenants: number;
@@ -21,6 +21,7 @@ interface PurgeStats {
   companies: number;
   contacts: number;
   generatedDocuments: number;
+  processingDocuments: number;
 }
 
 /**
@@ -34,7 +35,7 @@ export async function GET() {
     }
 
     // Get counts of soft-deleted records
-    const [tenants, users, companies, contacts, generatedDocuments] = await Promise.all([
+    const [tenants, users, companies, contacts, generatedDocuments, processingDocuments] = await Promise.all([
       prisma.tenant.findMany({
         where: { deletedAt: { not: null } },
         select: {
@@ -122,6 +123,26 @@ export async function GET() {
         },
         orderBy: { deletedAt: 'desc' },
       }),
+      prisma.processingDocument.findMany({
+        where: { deletedAt: { not: null } },
+        include: {
+          document: {
+            select: {
+              fileName: true,
+              tenant: { select: { name: true } },
+              company: { select: { name: true } },
+            },
+          },
+          currentRevision: {
+            select: {
+              vendorName: true,
+              documentNumber: true,
+              documentCategory: true,
+            },
+          },
+        },
+        orderBy: { deletedAt: 'desc' },
+      }),
     ]);
 
     const stats: PurgeStats = {
@@ -130,6 +151,7 @@ export async function GET() {
       companies: companies.length,
       contacts: contacts.length,
       generatedDocuments: generatedDocuments.length,
+      processingDocuments: processingDocuments.length,
     };
 
     return NextResponse.json({
@@ -140,6 +162,7 @@ export async function GET() {
         companies,
         contacts,
         generatedDocuments,
+        processingDocuments,
       },
     });
   } catch (error) {
@@ -174,9 +197,9 @@ export async function POST(request: NextRequest) {
     };
 
     // Validate inputs
-    if (!entityType || !['tenant', 'user', 'company', 'contact', 'generatedDocument'].includes(entityType)) {
+    if (!entityType || !['tenant', 'user', 'company', 'contact', 'generatedDocument', 'processingDocument'].includes(entityType)) {
       return NextResponse.json(
-        { error: 'Invalid entity type. Must be tenant, user, company, contact, or generatedDocument' },
+        { error: 'Invalid entity type. Must be tenant, user, company, contact, generatedDocument, or processingDocument' },
         { status: 400 }
       );
     }
@@ -533,6 +556,107 @@ export async function POST(request: NextRequest) {
           }
         }
         break;
+
+      case 'processingDocument':
+        const processingDocsToDelete = await prisma.processingDocument.findMany({
+          where: {
+            id: { in: entityIds },
+            deletedAt: { not: null },
+          },
+          include: {
+            document: {
+              select: { fileName: true },
+            },
+          },
+        });
+
+        if (processingDocsToDelete.length === 0) {
+          return NextResponse.json(
+            { error: 'No soft-deleted processing documents found with the provided IDs' },
+            { status: 404 }
+          );
+        }
+
+        for (const procDoc of processingDocsToDelete) {
+          const docName = procDoc.document?.fileName || procDoc.id;
+          try {
+            await prisma.$transaction(async (tx) => {
+              // Delete line items for all revisions
+              await tx.documentRevisionLineItem.deleteMany({
+                where: {
+                  revision: {
+                    processingDocumentId: procDoc.id,
+                  },
+                },
+              });
+
+              // Delete all revisions
+              await tx.documentRevision.deleteMany({
+                where: { processingDocumentId: procDoc.id },
+              });
+
+              // Delete processing attempts
+              await tx.processingAttempt.deleteMany({
+                where: { processingDocumentId: procDoc.id },
+              });
+
+              // Delete processing checkpoints
+              await tx.processingCheckpoint.deleteMany({
+                where: { processingDocumentId: procDoc.id },
+              });
+
+              // Delete state events
+              await tx.documentStateEvent.deleteMany({
+                where: { processingDocumentId: procDoc.id },
+              });
+
+              // Delete derived files
+              await tx.documentDerivedFile.deleteMany({
+                where: { processingDocumentId: procDoc.id },
+              });
+
+              // Delete extractions
+              await tx.documentExtraction.deleteMany({
+                where: { processingDocumentId: procDoc.id },
+              });
+
+              // Delete pages
+              await tx.documentPage.deleteMany({
+                where: { processingDocumentId: procDoc.id },
+              });
+
+              // Delete duplicate decisions
+              await tx.duplicateDecision.deleteMany({
+                where: { processingDocumentId: procDoc.id },
+              });
+
+              // Delete split plans
+              await tx.splitPlan.deleteMany({
+                where: { processingDocumentId: procDoc.id },
+              });
+
+              // Delete the processing document
+              await tx.processingDocument.delete({
+                where: { id: procDoc.id },
+              });
+
+              // Delete the underlying document
+              if (procDoc.documentId) {
+                await tx.document.delete({
+                  where: { id: procDoc.documentId },
+                });
+              }
+            });
+
+            deletedRecords.push({ id: procDoc.id, name: docName });
+            deletedCount++;
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            console.error(`Failed to purge processing document ${procDoc.id}:`, err);
+            failedRecords.push({ id: procDoc.id, name: docName, error: errorMessage });
+          }
+        }
+        break;
     }
 
     // Log the purge action (only if at least one record was deleted)
@@ -617,9 +741,9 @@ export async function PATCH(request: NextRequest) {
     };
 
     // Validate inputs
-    if (!entityType || !['tenant', 'user', 'company', 'contact', 'generatedDocument'].includes(entityType)) {
+    if (!entityType || !['tenant', 'user', 'company', 'contact', 'generatedDocument', 'processingDocument'].includes(entityType)) {
       return NextResponse.json(
-        { error: 'Invalid entity type. Must be tenant, user, company, contact, or generatedDocument' },
+        { error: 'Invalid entity type. Must be tenant, user, company, contact, generatedDocument, or processingDocument' },
         { status: 400 }
       );
     }
@@ -868,6 +992,54 @@ export async function PATCH(request: NextRequest) {
           restoredRecords.push({ id: doc.id, name: doc.title });
         }
         restoredCount = documentsToRestore.length;
+        break;
+
+      case 'processingDocument':
+        const processingDocsToRestore = await prisma.processingDocument.findMany({
+          where: {
+            id: { in: entityIds },
+            deletedAt: { not: null },
+          },
+          include: {
+            document: {
+              select: {
+                fileName: true,
+                tenantId: true,
+                tenant: { select: { deletedAt: true } },
+              },
+            },
+          },
+        });
+
+        if (processingDocsToRestore.length === 0) {
+          return NextResponse.json(
+            { error: 'No soft-deleted processing documents found with the provided IDs' },
+            { status: 404 }
+          );
+        }
+
+        // Check if parent tenant is active
+        for (const procDoc of processingDocsToRestore) {
+          if (procDoc.document?.tenant?.deletedAt) {
+            return NextResponse.json(
+              { error: `Cannot restore document "${procDoc.document?.fileName || procDoc.id}" - parent tenant is deleted. Restore the tenant first.` },
+              { status: 400 }
+            );
+          }
+        }
+
+        await prisma.processingDocument.updateMany({
+          where: { id: { in: entityIds }, deletedAt: { not: null } },
+          data: {
+            deletedAt: null,
+            deletedReason: null,
+          },
+        });
+
+        for (const procDoc of processingDocsToRestore) {
+          restoredRecords.push({ id: procDoc.id, name: procDoc.document?.fileName || procDoc.id });
+        }
+        restoredCount = processingDocsToRestore.length;
         break;
     }
 

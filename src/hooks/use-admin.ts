@@ -850,7 +850,7 @@ export function useRemoveCompanyAssignment(userId: string | undefined) {
 // Data Purge Hooks (Permanent Deletion)
 // ============================================================================
 
-export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact' | 'generatedDocument';
+export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact' | 'generatedDocument' | 'processingDocument';
 
 export interface PurgeStats {
   tenants: number;
@@ -858,6 +858,7 @@ export interface PurgeStats {
   companies: number;
   contacts: number;
   generatedDocuments: number;
+  processingDocuments: number;
 }
 
 export interface PurgeableTenant {
@@ -915,6 +916,24 @@ export interface PurgeableGeneratedDocument {
   createdBy: { firstName: string; lastName: string };
 }
 
+export interface PurgeableProcessingDocument {
+  id: string;
+  deletedAt: string;
+  deletedReason: string | null;
+  pipelineStatus: string;
+  createdAt: string;
+  document: {
+    fileName: string;
+    tenant: { name: string } | null;
+    company: { name: string } | null;
+  } | null;
+  currentRevision: {
+    vendorName: string | null;
+    documentNumber: string | null;
+    documentCategory: string | null;
+  } | null;
+}
+
 export interface PurgeDataResponse {
   stats: PurgeStats;
   records: {
@@ -923,6 +942,7 @@ export interface PurgeDataResponse {
     companies: PurgeableCompany[];
     contacts: PurgeableContact[];
     generatedDocuments: PurgeableGeneratedDocument[];
+    processingDocuments: PurgeableProcessingDocument[];
   };
 }
 

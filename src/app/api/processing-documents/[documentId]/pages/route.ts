@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { documentId } = await params;
 
-    // Get the processing document with its pages and document for company context
+    // Get the processing document with its pages and document for company context and file info
     const processingDoc = await prisma.processingDocument.findUnique({
       where: { id: documentId },
       include: {
@@ -30,6 +30,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           select: {
             companyId: true,
             tenantId: true,
+            mimeType: true,
+            originalFileName: true,
+            filePath: true,
           },
         },
         pages: {
@@ -50,6 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         },
       },
     });
+
 
     if (!processingDoc) {
       return NextResponse.json(
@@ -73,6 +77,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Detect if this is a PDF file (from the Document relation)
+    const isPdf =
+      processingDoc.document?.mimeType === 'application/pdf' ||
+      processingDoc.document?.originalFileName?.toLowerCase().endsWith('.pdf') ||
+      processingDoc.document?.filePath?.toLowerCase().endsWith('.pdf');
+
     // Transform pages to include image URL
     const pages = processingDoc.pages.map((page) => ({
       id: page.id,
@@ -94,6 +104,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         documentId,
         pageCount: pages.length,
         pages,
+        // PDF-specific fields for client-side rendering
+        isPdf: isPdf || false,
+        pdfUrl: isPdf ? `/api/processing-documents/${documentId}/pdf` : null,
       },
       meta: {
         requestId: uuidv4(),

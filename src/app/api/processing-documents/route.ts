@@ -16,11 +16,15 @@ import { createAuditLog } from '@/lib/audit';
 import { getTenantById } from '@/services/tenant.service';
 import {
   uploadDocument,
-  checkExactDuplicate,
   queueDocumentForProcessing,
   listProcessingDocumentsPaged,
   PROCESSING_LIMITS,
 } from '@/services/document-processing.service';
+import {
+  checkForDuplicates,
+  updateDuplicateStatus,
+} from '@/services/duplicate-detection.service';
+import { extractFields } from '@/services/document-extraction.service';
 import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus } from '@prisma/client';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -324,14 +328,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Check for exact duplicates
-    const duplicateCheck = await checkExactDuplicate(
-      filePath, // Will be hashed internally
-      company.tenantId,
-      companyId
-    );
-
-    // Upload document for processing
+    // Upload document for processing (this calculates file hash internally)
     const { processingDocument, jobId } = await uploadDocument({
       documentId: document.id,
       tenantId: company.tenantId,
@@ -345,6 +342,18 @@ export async function POST(request: NextRequest) {
       metadata: metadataStr ? JSON.parse(metadataStr) : undefined,
     });
 
+    // Check for duplicates using the file hash calculated during upload
+    const duplicateCheckResult = await checkForDuplicates(
+      processingDocument.id,
+      company.tenantId,
+      companyId
+    );
+
+    // Update duplicate status on the processing document if duplicates found
+    if (duplicateCheckResult.hasPotentialDuplicate) {
+      await updateDuplicateStatus(processingDocument.id, duplicateCheckResult);
+    }
+
     // Queue for processing - pass file info so pages can be created
     await queueDocumentForProcessing(
       processingDocument.id,
@@ -353,6 +362,20 @@ export async function POST(request: NextRequest) {
       filePath,
       file.type
     );
+
+    // Auto-trigger extraction immediately after upload (async, don't block response)
+    // This runs in the background so users don't have to manually trigger extraction
+    extractFields(processingDocument.id, company.tenantId, companyId, session.id)
+      .then((result) => {
+        if (result.success) {
+          console.log(`Auto-extraction completed for document ${processingDocument.id}`);
+        } else {
+          console.error(`Auto-extraction failed for document ${processingDocument.id}:`, result.error);
+        }
+      })
+      .catch((error) => {
+        console.error(`Auto-extraction error for document ${processingDocument.id}:`, error);
+      });
 
     // Create audit log
     await createAuditLog({
@@ -381,12 +404,16 @@ export async function POST(request: NextRequest) {
           fileName: file.name,
           pipelineStatus: processingDocument.pipelineStatus,
           isContainer: processingDocument.isContainer,
+          duplicateStatus: duplicateCheckResult.hasPotentialDuplicate ? 'SUSPECTED' : 'NONE',
         },
         jobId,
-        duplicateWarning: duplicateCheck.isDuplicate
+        duplicateWarning: duplicateCheckResult.hasPotentialDuplicate
           ? {
-              originalDocumentId: duplicateCheck.originalDocumentId,
-              message: 'An exact duplicate of this file already exists',
+              originalDocumentId: duplicateCheckResult.exactFileHashMatch?.documentId
+                || duplicateCheckResult.candidates[0]?.documentId,
+              message: duplicateCheckResult.exactFileHashMatch
+                ? 'An exact duplicate of this file already exists'
+                : `Potential duplicate detected (${(duplicateCheckResult.candidates[0]?.score.totalScore * 100).toFixed(0)}% match)`,
             }
           : undefined,
       },

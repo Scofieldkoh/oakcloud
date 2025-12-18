@@ -12,7 +12,7 @@ import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import type { PipelineStatus, DuplicateStatus } from '@prisma/client';
 
-type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'ARCHIVE';
+type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE';
 
 interface BulkRequest {
   operation: BulkOperation;
@@ -216,12 +216,13 @@ export async function POST(request: NextRequest) {
         }
         break;
 
-      case 'ARCHIVE':
+      case 'DELETE':
+        // Soft delete - sets deletedAt timestamp
         for (const doc of accessibleDocs) {
           try {
             await prisma.processingDocument.update({
               where: { id: doc.id },
-              data: { isArchived: true },
+              data: { deletedAt: new Date() },
             });
 
             await createAuditLog({
@@ -232,7 +233,7 @@ export async function POST(request: NextRequest) {
               entityType: 'ProcessingDocument',
               entityId: doc.id,
               entityName: doc.id,
-              summary: 'Bulk archived document',
+              summary: 'Bulk soft-deleted document',
               changeSource: 'MANUAL',
             });
 

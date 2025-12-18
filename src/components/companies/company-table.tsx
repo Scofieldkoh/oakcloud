@@ -2,13 +2,12 @@
 
 import { memo } from 'react';
 import Link from 'next/link';
-import { formatDate } from '@/lib/utils';
+import { formatDate, cn } from '@/lib/utils';
 import { getEntityTypeLabel } from '@/lib/constants';
-import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2, Square, CheckSquare, MinusSquare } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
-import { Checkbox } from '@/components/ui/checkbox';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
-import type { Company, CompanyStatus, EntityType } from '@prisma/client';
+import type { Company, CompanyStatus } from '@prisma/client';
 
 interface CompanyWithRelations extends Company {
   addresses?: Array<{
@@ -199,13 +198,19 @@ export function CompanyTable({
           <tr>
             {selectable && (
               <th className="w-10">
-                <Checkbox
-                  size="sm"
-                  checked={isAllSelected}
-                  indeterminate={isIndeterminate}
-                  onChange={onToggleAll}
-                  aria-label="Select all companies"
-                />
+                <button
+                  onClick={onToggleAll}
+                  className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                  title={isAllSelected ? 'Deselect all' : 'Select all'}
+                >
+                  {isAllSelected ? (
+                    <CheckSquare className="w-4 h-4 text-oak-primary" />
+                  ) : isIndeterminate ? (
+                    <MinusSquare className="w-4 h-4 text-oak-light" />
+                  ) : (
+                    <Square className="w-4 h-4 text-text-muted" />
+                  )}
+                </button>
               </th>
             )}
             <th>Company</th>
@@ -218,16 +223,30 @@ export function CompanyTable({
           </tr>
         </thead>
         <tbody>
-          {companies.map((company) => (
-            <tr key={company.id} className={selectedIds.has(company.id) ? 'bg-oak-primary/5' : ''}>
+          {companies.map((company) => {
+            const isSelected = selectedIds.has(company.id);
+            return (
+            <tr
+              key={company.id}
+              className={cn(
+                'transition-colors',
+                isSelected
+                  ? 'bg-oak-primary/5 hover:bg-oak-primary/10'
+                  : 'hover:bg-background-tertiary/50'
+              )}
+            >
               {selectable && (
                 <td>
-                  <Checkbox
-                    size="sm"
-                    checked={selectedIds.has(company.id)}
-                    onChange={() => onToggleOne?.(company.id)}
-                    aria-label={`Select ${company.name}`}
-                  />
+                  <button
+                    onClick={() => onToggleOne?.(company.id)}
+                    className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="w-4 h-4 text-oak-primary" />
+                    ) : (
+                      <Square className="w-4 h-4 text-text-muted" />
+                    )}
+                  </button>
                 </td>
               )}
               <td>
@@ -271,7 +290,8 @@ export function CompanyTable({
                 />
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

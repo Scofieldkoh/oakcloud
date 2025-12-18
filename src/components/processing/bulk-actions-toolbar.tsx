@@ -4,17 +4,18 @@ import { useState } from 'react';
 import {
   CheckCircle,
   Play,
-  Archive,
+  Trash2,
+  Download,
   X,
   AlertTriangle,
   Loader2,
 } from 'lucide-react';
-import { useBulkOperation } from '@/hooks/use-processing-documents';
+import { useBulkOperation, useBulkDownload } from '@/hooks/use-processing-documents';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 
-type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'ARCHIVE';
+type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE' | 'DOWNLOAD';
 
 interface BulkActionsToolbarProps {
   selectedIds: string[];
@@ -28,13 +29,23 @@ const operations: {
   icon: typeof CheckCircle;
   description: string;
   variant: 'default' | 'warning' | 'danger';
+  requiresConfirmation: boolean;
 }[] = [
+  {
+    id: 'DOWNLOAD',
+    label: 'Download',
+    icon: Download,
+    description: 'Download selected documents',
+    variant: 'default',
+    requiresConfirmation: false,
+  },
   {
     id: 'APPROVE',
     label: 'Approve',
     icon: CheckCircle,
     description: 'Approve selected documents with DRAFT revisions',
     variant: 'default',
+    requiresConfirmation: true,
   },
   {
     id: 'TRIGGER_EXTRACTION',
@@ -42,13 +53,15 @@ const operations: {
     icon: Play,
     description: 'Trigger extraction for selected documents',
     variant: 'default',
+    requiresConfirmation: true,
   },
   {
-    id: 'ARCHIVE',
-    label: 'Archive',
-    icon: Archive,
-    description: 'Archive selected documents',
+    id: 'DELETE',
+    label: 'Delete',
+    icon: Trash2,
+    description: 'Delete selected documents',
     variant: 'danger',
+    requiresConfirmation: true,
   },
 ];
 
@@ -58,6 +71,7 @@ export function BulkActionsToolbar({
   className,
 }: BulkActionsToolbarProps) {
   const bulkOperation = useBulkOperation();
+  const bulkDownload = useBulkDownload();
   const { success, error: toastError } = useToast();
 
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -65,12 +79,63 @@ export function BulkActionsToolbar({
     operation: BulkOperation | null;
   }>({ isOpen: false, operation: null });
 
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownload = async () => {
+    setDownloadingId('DOWNLOAD');
+    try {
+      const result = await bulkDownload.mutateAsync(selectedIds);
+
+      if (result.downloads.length === 0) {
+        toastError('No documents available for download');
+        return;
+      }
+
+      // Download files sequentially with small delays to avoid browser blocking
+      for (let i = 0; i < result.downloads.length; i++) {
+        const download = result.downloads[i];
+
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = download.downloadUrl;
+        link.download = download.fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Small delay between downloads to prevent browser blocking
+        if (i < result.downloads.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+      }
+
+      success(`Downloaded ${result.downloads.length} document${result.downloads.length > 1 ? 's' : ''}`);
+
+      if (result.errors.length > 0) {
+        toastError(`${result.errors.length} document(s) could not be downloaded`);
+      }
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to download documents');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   const handleOperation = (operation: BulkOperation) => {
+    const op = operations.find((o) => o.id === operation);
+    if (op && !op.requiresConfirmation) {
+      // Execute immediately without confirmation
+      if (operation === 'DOWNLOAD') {
+        handleDownload();
+      }
+      return;
+    }
     setConfirmDialog({ isOpen: true, operation });
   };
 
   const executeOperation = async () => {
-    if (!confirmDialog.operation) return;
+    if (!confirmDialog.operation || confirmDialog.operation === 'DOWNLOAD') return;
 
     try {
       const result = await bulkOperation.mutateAsync({
@@ -132,22 +197,28 @@ export function BulkActionsToolbar({
         <div className="flex items-center gap-1">
           {operations.map((op) => {
             const Icon = op.icon;
+            const isLoading =
+              (bulkOperation.isPending && confirmDialog.operation === op.id) ||
+              (downloadingId === op.id);
+            const isDisabled = bulkOperation.isPending || downloadingId !== null;
+
             return (
               <button
                 key={op.id}
                 onClick={() => handleOperation(op.id)}
-                disabled={bulkOperation.isPending}
+                disabled={isDisabled}
                 className={cn(
                   'btn-sm flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors',
                   op.variant === 'danger'
                     ? 'hover:bg-status-error/10 hover:text-status-error text-text-secondary'
                     : op.variant === 'warning'
                     ? 'hover:bg-status-warning/10 hover:text-status-warning text-text-secondary'
-                    : 'hover:bg-oak-light/10 hover:text-oak-primary text-text-secondary'
+                    : 'hover:bg-oak-light/10 hover:text-oak-primary text-text-secondary',
+                  isDisabled && 'opacity-50 cursor-not-allowed'
                 )}
                 title={op.description}
               >
-                {bulkOperation.isPending && confirmDialog.operation === op.id ? (
+                {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Icon className="w-4 h-4" />
@@ -168,10 +239,10 @@ export function BulkActionsToolbar({
         description={
           <div className="space-y-2">
             <p>{currentOp?.description}</p>
-            {confirmDialog.operation === 'ARCHIVE' && (
+            {confirmDialog.operation === 'DELETE' && (
               <div className="flex items-start gap-2 p-2 bg-status-warning/10 rounded text-sm text-status-warning">
                 <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>Archived documents will be hidden from the list.</span>
+                <span>Deleted documents can be restored from Data Purge.</span>
               </div>
             )}
           </div>
@@ -181,7 +252,7 @@ export function BulkActionsToolbar({
             ? 'Processing...'
             : `${currentOp?.label} ${selectedIds.length} Documents`
         }
-        variant={confirmDialog.operation === 'ARCHIVE' ? 'danger' : 'info'}
+        variant={confirmDialog.operation === 'DELETE' ? 'danger' : 'info'}
         isLoading={bulkOperation.isPending}
       />
     </>

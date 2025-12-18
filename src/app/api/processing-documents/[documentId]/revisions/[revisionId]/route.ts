@@ -1,0 +1,416 @@
+/**
+ * Single Revision API
+ *
+ * GET /api/processing-documents/:documentId/revisions/:revisionId - Get revision with line items
+ * PATCH /api/processing-documents/:documentId/revisions/:revisionId - Update revision (draft only)
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
+import { requireAuth, canAccessCompany } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
+import { prisma } from '@/lib/prisma';
+import { getProcessingDocument } from '@/services/document-processing.service';
+import { validateRevision } from '@/services/document-revision.service';
+import { createAuditLog } from '@/lib/audit';
+
+type Params = { documentId: string; revisionId: string };
+
+/**
+ * GET /api/processing-documents/:documentId/revisions/:revisionId
+ * Get a single revision with its line items
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<Params> }
+) {
+  try {
+    const session = await requireAuth();
+    const { documentId, revisionId } = await params;
+
+    const processingDoc = await getProcessingDocument(documentId);
+
+    if (!processingDoc) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Document not found' },
+        },
+        { status: 404 }
+      );
+    }
+
+    // Get the base document for company context
+    const document = await prisma.document.findUnique({
+      where: { id: processingDoc.documentId },
+      select: { companyId: true },
+    });
+
+    if (!document || !document.companyId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Base document not found' },
+        },
+        { status: 404 }
+      );
+    }
+
+    // Check permission
+    await requirePermission(session, 'document', 'read', document.companyId);
+
+    if (!(await canAccessCompany(session, document.companyId))) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
+        },
+        { status: 403 }
+      );
+    }
+
+    // Get the revision with line items
+    const revision = await prisma.documentRevision.findUnique({
+      where: { id: revisionId, processingDocumentId: documentId },
+      include: {
+        items: {
+          orderBy: { lineNo: 'asc' },
+        },
+      },
+    });
+
+    if (!revision) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Revision not found' },
+        },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: revision.id,
+        revisionNumber: revision.revisionNumber,
+        status: revision.status,
+        documentCategory: revision.documentCategory,
+        vendorName: revision.vendorName,
+        documentNumber: revision.documentNumber,
+        documentDate: revision.documentDate?.toISOString().split('T')[0] || null,
+        dueDate: revision.dueDate?.toISOString().split('T')[0] || null,
+        currency: revision.currency,
+        subtotal: revision.subtotal?.toString() || null,
+        taxAmount: revision.taxAmount?.toString() || null,
+        totalAmount: revision.totalAmount.toString(),
+        gstTreatment: revision.gstTreatment,
+        supplierGstNo: revision.supplierGstNo,
+        validationStatus: revision.validationStatus,
+        validationIssues: revision.validationIssues,
+        headerEvidenceJson: revision.headerEvidenceJson,
+        lineItems: revision.items.map((item) => ({
+          id: item.id,
+          lineNo: item.lineNo,
+          description: item.description,
+          quantity: item.quantity?.toString() || null,
+          unitPrice: item.unitPrice?.toString() || null,
+          amount: item.amount.toString(),
+          gstAmount: item.gstAmount?.toString() || null,
+          taxCode: item.taxCode,
+          accountCode: item.accountCode,
+          evidenceJson: item.evidenceJson,
+        })),
+      },
+      meta: {
+        requestId: uuidv4(),
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+/**
+ * PATCH /api/processing-documents/:documentId/revisions/:revisionId
+ * Update a draft revision
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<Params> }
+) {
+  try {
+    const session = await requireAuth();
+    const { documentId, revisionId } = await params;
+    const ifMatch = request.headers.get('If-Match');
+
+    const processingDoc = await getProcessingDocument(documentId);
+
+    if (!processingDoc) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Document not found' },
+        },
+        { status: 404 }
+      );
+    }
+
+    // Get the base document for company context
+    const document = await prisma.document.findUnique({
+      where: { id: processingDoc.documentId },
+      select: { companyId: true, tenantId: true },
+    });
+
+    if (!document || !document.companyId || !document.tenantId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Base document not found' },
+        },
+        { status: 404 }
+      );
+    }
+
+    // Check permission
+    await requirePermission(session, 'document', 'update', document.companyId);
+
+    if (!(await canAccessCompany(session, document.companyId))) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check lock version (optimistic concurrency)
+    if (ifMatch) {
+      const expectedVersion = parseInt(ifMatch, 10);
+      if (processingDoc.lockVersion !== expectedVersion) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'CONCURRENT_MODIFICATION',
+              message: 'Document has been modified by another user',
+            },
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Get the revision - can only edit DRAFT revisions
+    const revision = await prisma.documentRevision.findUnique({
+      where: { id: revisionId, processingDocumentId: documentId },
+    });
+
+    if (!revision) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Revision not found' },
+        },
+        { status: 404 }
+      );
+    }
+
+    if (revision.status !== 'DRAFT') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'INVALID_STATE',
+            message: 'Only draft revisions can be edited',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { headerUpdates, itemsToUpsert, itemsToDelete } = body as {
+      headerUpdates?: {
+        vendorName?: string;
+        documentNumber?: string;
+        documentDate?: string;
+        dueDate?: string;
+        currency?: string;
+        subtotal?: string;
+        taxAmount?: string;
+        totalAmount?: string;
+        gstTreatment?: string;
+        supplierGstNo?: string;
+        documentCategory?: string;
+      };
+      itemsToUpsert?: Array<{
+        id?: string;
+        lineNo: number;
+        description: string;
+        quantity?: string;
+        unitPrice?: string;
+        amount: string;
+        gstAmount?: string;
+        taxCode?: string;
+        accountCode?: string;
+      }>;
+      itemsToDelete?: string[];
+    };
+
+    // Build header update data
+    const headerData: Record<string, unknown> = {};
+    if (headerUpdates) {
+      if (headerUpdates.vendorName !== undefined) headerData.vendorName = headerUpdates.vendorName;
+      if (headerUpdates.documentNumber !== undefined) headerData.documentNumber = headerUpdates.documentNumber;
+      if (headerUpdates.documentDate !== undefined) headerData.documentDate = headerUpdates.documentDate ? new Date(headerUpdates.documentDate) : null;
+      if (headerUpdates.dueDate !== undefined) headerData.dueDate = headerUpdates.dueDate ? new Date(headerUpdates.dueDate) : null;
+      if (headerUpdates.currency !== undefined) headerData.currency = headerUpdates.currency;
+      if (headerUpdates.subtotal !== undefined) headerData.subtotal = headerUpdates.subtotal ? parseFloat(headerUpdates.subtotal) : null;
+      if (headerUpdates.taxAmount !== undefined) headerData.taxAmount = headerUpdates.taxAmount ? parseFloat(headerUpdates.taxAmount) : null;
+      if (headerUpdates.totalAmount !== undefined) headerData.totalAmount = parseFloat(headerUpdates.totalAmount);
+      if (headerUpdates.gstTreatment !== undefined) headerData.gstTreatment = headerUpdates.gstTreatment || null;
+      if (headerUpdates.supplierGstNo !== undefined) headerData.supplierGstNo = headerUpdates.supplierGstNo || null;
+      if (headerUpdates.documentCategory !== undefined) headerData.documentCategory = headerUpdates.documentCategory;
+    }
+
+    // Start a transaction
+    await prisma.$transaction(async (tx) => {
+      // Update header fields
+      if (Object.keys(headerData).length > 0) {
+        await tx.documentRevision.update({
+          where: { id: revisionId },
+          data: headerData,
+        });
+      }
+
+      // Delete items
+      if (itemsToDelete && itemsToDelete.length > 0) {
+        await tx.documentRevisionLineItem.deleteMany({
+          where: {
+            id: { in: itemsToDelete },
+            revisionId,
+          },
+        });
+      }
+
+      // Upsert items
+      if (itemsToUpsert && itemsToUpsert.length > 0) {
+        for (const item of itemsToUpsert) {
+          if (item.id) {
+            // Update existing item
+            await tx.documentRevisionLineItem.update({
+              where: { id: item.id },
+              data: {
+                lineNo: item.lineNo,
+                description: item.description,
+                quantity: item.quantity ? parseFloat(item.quantity) : null,
+                unitPrice: item.unitPrice ? parseFloat(item.unitPrice) : null,
+                amount: parseFloat(item.amount),
+                gstAmount: item.gstAmount ? parseFloat(item.gstAmount) : null,
+                taxCode: item.taxCode || null,
+                accountCode: item.accountCode || null,
+              },
+            });
+          } else {
+            // Create new item
+            await tx.documentRevisionLineItem.create({
+              data: {
+                revisionId,
+                lineNo: item.lineNo,
+                description: item.description,
+                quantity: item.quantity ? parseFloat(item.quantity) : null,
+                unitPrice: item.unitPrice ? parseFloat(item.unitPrice) : null,
+                amount: parseFloat(item.amount),
+                gstAmount: item.gstAmount ? parseFloat(item.gstAmount) : null,
+                taxCode: item.taxCode || null,
+                accountCode: item.accountCode || null,
+              },
+            });
+          }
+        }
+      }
+
+      // Increment lock version
+      await tx.processingDocument.update({
+        where: { id: documentId },
+        data: { lockVersion: { increment: 1 } },
+      });
+    });
+
+    // Get updated lock version
+    const updatedDoc = await getProcessingDocument(documentId);
+
+    // Re-run validation after update
+    const validationResult = await validateRevision(revisionId);
+
+    // Create audit log
+    await createAuditLog({
+      tenantId: document.tenantId,
+      userId: session.id,
+      companyId: document.companyId,
+      action: 'UPDATE',
+      entityType: 'DocumentRevision',
+      entityId: revisionId,
+      summary: `Updated draft revision #${revision.revisionNumber}`,
+      changeSource: 'MANUAL',
+      metadata: {
+        revisionNumber: revision.revisionNumber,
+        headerUpdates: headerUpdates ? Object.keys(headerUpdates) : [],
+        itemsUpserted: itemsToUpsert?.length || 0,
+        itemsDeleted: itemsToDelete?.length || 0,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        revisionId,
+        lockVersion: updatedDoc?.lockVersion ?? processingDoc.lockVersion + 1,
+        validationStatus: validationResult.status,
+        validationIssues: validationResult.issues,
+      },
+      meta: {
+        requestId: uuidv4(),
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+function handleError(error: unknown): NextResponse {
+  console.error('Revision API error:', error);
+
+  if (error instanceof Error) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'AUTHENTICATION_REQUIRED', message: 'Unauthorized' },
+        },
+        { status: 401 }
+      );
+    }
+    if (error.message === 'Forbidden') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
+        },
+        { status: 403 }
+      );
+    }
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
+    },
+    { status: 500 }
+  );
+}

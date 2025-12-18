@@ -1,37 +1,51 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   FileText,
   ArrowLeft,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
   RefreshCw,
-  Lock,
-  Unlock,
   Play,
   FileStack,
   History,
   Copy,
   AlertCircle,
+  AlertTriangle,
   Check,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  Save,
+  Plus,
+  Trash2,
+  Pencil,
+  XCircle,
 } from 'lucide-react';
 import {
   useProcessingDocument,
   useRevisionHistory,
   useTriggerExtraction,
-  useAcquireLock,
-  useReleaseLock,
   useApproveRevision,
   useRecordDuplicateDecision,
+  useDocumentPages,
+  useRevisionWithLineItems,
+  useUpdateRevision,
+  useDocumentNavigation,
+  useDuplicateComparison,
 } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import {
+  DocumentPageViewer,
+  ResizableSplitView,
+  ConfidenceDot,
+  DuplicateComparisonModal,
+} from '@/components/processing';
+import type { FieldValue } from '@/components/processing/document-page-viewer';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory } from '@prisma/client';
 import { cn } from '@/lib/utils';
 
@@ -80,6 +94,61 @@ const categoryLabels: Record<DocumentCategory, string> = {
   OTHER: 'Other',
 };
 
+const currencyOptions = ['SGD', 'USD', 'EUR', 'GBP', 'MYR', 'CNY', 'JPY', 'AUD', 'HKD', 'THB'];
+
+// GST tax codes with their rates
+const gstTaxCodes = [
+  { code: 'SR', label: 'SR (9%)', rate: 0.09 },
+  { code: 'SR8', label: 'SR (8%)', rate: 0.08 },
+  { code: 'SR7', label: 'SR (7%)', rate: 0.07 },
+  { code: 'ZR', label: 'ZR (0%)', rate: 0 },
+  { code: 'ES', label: 'ES (Exempt)', rate: 0 },
+  { code: 'OS', label: 'OS (Out of Scope)', rate: 0 },
+  { code: 'NA', label: 'N/A', rate: 0 },
+];
+
+// Helper to get GST rate from tax code
+function getGstRate(taxCode: string | null | undefined): number {
+  if (!taxCode) return 0;
+  const gstCode = gstTaxCodes.find((g) => g.code === taxCode);
+  return gstCode?.rate ?? 0;
+}
+
+const chartOfAccounts = [
+  { code: '5000', name: 'Cost of Goods Sold' },
+  { code: '5100', name: 'Direct Labor' },
+  { code: '5200', name: 'Direct Materials' },
+  { code: '6000', name: 'Operating Expenses' },
+  { code: '6100', name: 'Advertising & Marketing' },
+  { code: '6200', name: 'Bank Charges' },
+  { code: '6300', name: 'Depreciation' },
+  { code: '6400', name: 'Insurance' },
+  { code: '6500', name: 'Office Supplies' },
+  { code: '6600', name: 'Professional Fees' },
+  { code: '6700', name: 'Rent' },
+  { code: '6800', name: 'Repairs & Maintenance' },
+  { code: '6900', name: 'Telephone & Internet' },
+  { code: '7000', name: 'Travel & Entertainment' },
+  { code: '7100', name: 'Utilities' },
+  { code: '7200', name: 'Other Expenses' },
+];
+
+// Bounding box type for highlight integration
+interface BoundingBox {
+  pageNumber: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label?: string;
+  color?: string;
+  fieldKey?: string;
+}
+
+// Highlight colors - mild pastel shades for cleaner appearance
+const HIGHLIGHT_COLOR_DEFAULT = '#93C5FD'; // Pastel blue - subtle highlight
+const HIGHLIGHT_COLOR_FOCUS = '#FCD34D'; // Pastel yellow/gold - focused field
+
 function formatDate(dateString: string | null): string {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString('en-SG', {
@@ -99,14 +168,57 @@ function formatDateTime(dateString: string): string {
   });
 }
 
-function formatCurrency(amount: string | null, currency: string): string {
-  if (!amount) return '-';
-  const num = parseFloat(amount);
-  return new Intl.NumberFormat('en-SG', {
+function formatCurrency(amount: string | number | null, currency: string): string {
+  if (amount === null || amount === undefined || amount === '') return '-';
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '-';
+
+  const isNegative = num < 0;
+  const absNum = Math.abs(num);
+
+  const formatted = new Intl.NumberFormat('en-SG', {
     style: 'currency',
     currency: currency || 'SGD',
     minimumFractionDigits: 2,
-  }).format(num);
+  }).format(absNum);
+
+  return isNegative ? `(${formatted})` : formatted;
+}
+
+function formatNumber(value: string | number | null, decimals: number = 2): string {
+  if (value === null || value === undefined || value === '') return '-';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '-';
+
+  const isNegative = num < 0;
+  const absNum = Math.abs(num);
+
+  const formatted = absNum.toLocaleString('en-SG', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+
+  return isNegative ? `(${formatted})` : formatted;
+}
+
+// Type for validation issues
+interface ValidationIssue {
+  code: string;
+  severity: 'WARN' | 'ERROR';
+  message: string;
+  field?: string;
+}
+
+// Evidence type from backend
+interface FieldEvidence {
+  bbox?: {
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+  };
+  containerPageNumber?: number;
+  confidence?: number;
 }
 
 interface PageProps {
@@ -116,22 +228,259 @@ interface PageProps {
 export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
 
+  // Check if we should auto-open compare modal from query param
+  const shouldAutoCompare = searchParams.get('compare') === 'true';
+
+  // Data fetching
   const { data, isLoading, error, refetch } = useProcessingDocument(id);
   const { data: revisions, isLoading: revisionsLoading } = useRevisionHistory(id);
+  const { data: pagesData, isLoading: pagesLoading } = useDocumentPages(id);
+  const { data: navData } = useDocumentNavigation(id);
 
+  // Current revision data
+  const currentRevisionId = data?.currentRevision?.id || null;
+  const { data: revisionWithLineItems, isLoading: lineItemsLoading, refetch: refetchLineItems } = useRevisionWithLineItems(id, currentRevisionId);
+
+  // Duplicate comparison (only fetch when needed)
+  const { data: duplicateData } = useDuplicateComparison(
+    id,
+    data?.document?.duplicateStatus === 'SUSPECTED'
+  );
+
+  // Mutations
   const triggerExtraction = useTriggerExtraction();
-  const acquireLock = useAcquireLock();
-  const releaseLock = useReleaseLock();
   const approveRevision = useApproveRevision();
   const recordDuplicateDecision = useRecordDuplicateDecision();
+  const updateRevision = useUpdateRevision();
 
+  // UI State
   const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-  const [duplicateDecision, setDuplicateDecision] = useState<'NOT_DUPLICATE' | 'IS_DUPLICATE' | 'IS_VERSION'>('NOT_DUPLICATE');
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState<{
+    documentCategory: string;
+    vendorName: string;
+    documentNumber: string;
+    documentDate: string;
+    dueDate: string;
+    currency: string;
+    subtotal: string;
+    taxAmount: string;
+    totalAmount: string;
+    supplierGstNo: string;
+  }>({
+    documentCategory: '',
+    vendorName: '',
+    documentNumber: '',
+    documentDate: '',
+    dueDate: '',
+    currency: 'SGD',
+    subtotal: '',
+    taxAmount: '',
+    totalAmount: '',
+    supplierGstNo: '',
+  });
+  const [editLineItems, setEditLineItems] = useState<Array<{
+    id?: string;
+    lineNo: number;
+    description: string;
+    quantity: string;
+    unitPrice: string;
+    amount: string;
+    gstAmount: string;
+    taxCode: string;
+    accountCode: string;
+  }>>([]);
+  const [deletedLineItemIds, setDeletedLineItemIds] = useState<string[]>([]);
+
+  // Auto-open compare modal if query param is set
+  useEffect(() => {
+    if (shouldAutoCompare && duplicateData && !showDuplicateModal) {
+      setShowDuplicateModal(true);
+      // Remove the query param to prevent re-opening on navigation
+      router.replace(`/processing/${id}`, { scroll: false });
+    }
+  }, [shouldAutoCompare, duplicateData, id, router, showDuplicateModal]);
+
+  // Initialize edit form when revision data changes
+  useEffect(() => {
+    if (revisionWithLineItems && !isEditing) {
+      setEditFormData({
+        documentCategory: revisionWithLineItems.documentCategory || '',
+        vendorName: revisionWithLineItems.vendorName || '',
+        documentNumber: revisionWithLineItems.documentNumber || '',
+        documentDate: revisionWithLineItems.documentDate || '',
+        dueDate: revisionWithLineItems.dueDate || '',
+        currency: revisionWithLineItems.currency || 'SGD',
+        subtotal: revisionWithLineItems.subtotal || '',
+        taxAmount: revisionWithLineItems.taxAmount || '',
+        totalAmount: revisionWithLineItems.totalAmount || '',
+        supplierGstNo: '',
+      });
+      setEditLineItems(
+        revisionWithLineItems.lineItems?.map((item) => ({
+          id: item.id,
+          lineNo: item.lineNo,
+          description: item.description,
+          quantity: item.quantity || '',
+          unitPrice: item.unitPrice || '',
+          amount: item.amount,
+          gstAmount: item.gstAmount || '',
+          taxCode: item.taxCode || '',
+          accountCode: item.accountCode || '',
+        })) || []
+      );
+    }
+  }, [revisionWithLineItems, isEditing]);
+
+  // Convert evidence JSON to highlights for DocumentPageViewer
+  const highlights = useMemo((): BoundingBox[] => {
+    if (!revisionWithLineItems?.headerEvidenceJson) return [];
+
+    const evidence = revisionWithLineItems.headerEvidenceJson as Record<string, FieldEvidence>;
+    const boxes: BoundingBox[] = [];
+
+    // Field keys that have evidence
+    const fieldKeys = ['vendorName', 'documentNumber', 'documentDate', 'totalAmount', 'subtotal', 'taxAmount', 'supplierGstNo'];
+
+    // Debug: log raw evidence
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ProcessingDetail] Raw evidence JSON:', evidence);
+    }
+
+    fieldKeys.forEach((key) => {
+      const fieldEvidence = evidence[key];
+      if (fieldEvidence?.bbox) {
+        const { x0, y0, x1, y1 } = fieldEvidence.bbox;
+        const isFocused = focusedField === key;
+
+        // Debug: log individual field evidence
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[ProcessingDetail] Field "${key}" bbox:`, { x0, y0, x1, y1 });
+        }
+
+        boxes.push({
+          pageNumber: fieldEvidence.containerPageNumber || 1,
+          x: x0,
+          y: y0,
+          width: x1 - x0,
+          height: y1 - y0,
+          label: isFocused ? key : undefined,
+          color: isFocused ? HIGHLIGHT_COLOR_FOCUS : HIGHLIGHT_COLOR_DEFAULT,
+          fieldKey: key,
+        });
+      }
+    });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ProcessingDetail] Generated highlights:', boxes);
+    }
+
+    return boxes;
+  }, [revisionWithLineItems?.headerEvidenceJson, focusedField]);
+
+  // Get confidence for a field from evidence
+  const getFieldConfidence = useCallback((fieldKey: string): number | undefined => {
+    if (!revisionWithLineItems?.headerEvidenceJson) return undefined;
+    const evidence = revisionWithLineItems.headerEvidenceJson as Record<string, FieldEvidence>;
+    return evidence[fieldKey]?.confidence;
+  }, [revisionWithLineItems?.headerEvidenceJson]);
+
+  // Create fieldValues for text layer search (more accurate bounding boxes)
+  const fieldValues = useMemo((): FieldValue[] => {
+    if (!revisionWithLineItems) return [];
+
+    const values: FieldValue[] = [];
+    const isFocusedColor = HIGHLIGHT_COLOR_FOCUS;
+    const defaultColor = HIGHLIGHT_COLOR_DEFAULT;
+
+    // Add field values that we want to highlight
+    if (revisionWithLineItems.vendorName) {
+      values.push({
+        label: 'vendorName',
+        value: revisionWithLineItems.vendorName,
+        color: focusedField === 'vendorName' ? isFocusedColor : defaultColor,
+      });
+    }
+    if (revisionWithLineItems.documentNumber) {
+      values.push({
+        label: 'documentNumber',
+        value: revisionWithLineItems.documentNumber,
+        color: focusedField === 'documentNumber' ? isFocusedColor : defaultColor,
+      });
+    }
+    if (revisionWithLineItems.totalAmount) {
+      values.push({
+        label: 'totalAmount',
+        value: revisionWithLineItems.totalAmount,
+        color: focusedField === 'totalAmount' ? isFocusedColor : defaultColor,
+      });
+    }
+    if (revisionWithLineItems.subtotal) {
+      values.push({
+        label: 'subtotal',
+        value: revisionWithLineItems.subtotal,
+        color: focusedField === 'subtotal' ? isFocusedColor : defaultColor,
+      });
+    }
+    if (revisionWithLineItems.taxAmount) {
+      values.push({
+        label: 'taxAmount',
+        value: revisionWithLineItems.taxAmount,
+        color: focusedField === 'taxAmount' ? isFocusedColor : defaultColor,
+      });
+    }
+    if (revisionWithLineItems.currency) {
+      values.push({
+        label: 'currency',
+        value: revisionWithLineItems.currency,
+        color: focusedField === 'currency' ? isFocusedColor : defaultColor,
+      });
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ProcessingDetail] Field values for text layer search:', values);
+    }
+
+    return values;
+  }, [revisionWithLineItems, focusedField]);
+
+  // Navigation handlers
+  const handleNavigatePrev = useCallback(() => {
+    if (!navData || navData.currentIndex <= 0) return;
+    const prevDoc = navData.documents[navData.currentIndex - 1];
+    if (prevDoc) router.push(`/processing/${prevDoc.id}`);
+  }, [navData, router]);
+
+  const handleNavigateNext = useCallback(() => {
+    if (!navData || navData.currentIndex >= navData.total - 1) return;
+    const nextDoc = navData.documents[navData.currentIndex + 1];
+    if (nextDoc) router.push(`/processing/${nextDoc.id}`);
+  }, [navData, router]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (e.key === 'ArrowLeft' && e.altKey) {
+        handleNavigatePrev();
+      } else if (e.key === 'ArrowRight' && e.altKey) {
+        handleNavigateNext();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNavigatePrev, handleNavigateNext]);
+
+  // Action handlers
   const handleTriggerExtraction = async () => {
     try {
       await triggerExtraction.mutateAsync(id);
@@ -139,28 +488,6 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       refetch();
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to trigger extraction');
-    }
-  };
-
-  const handleAcquireLock = async () => {
-    if (!data?.document) return;
-    try {
-      await acquireLock.mutateAsync({ documentId: id, lockVersion: data.document.lockVersion });
-      success('Lock acquired');
-      refetch();
-    } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to acquire lock');
-    }
-  };
-
-  const handleReleaseLock = async () => {
-    if (!data?.document) return;
-    try {
-      await releaseLock.mutateAsync({ documentId: id, lockVersion: data.document.lockVersion });
-      success('Lock released');
-      refetch();
-    } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to release lock');
     }
   };
 
@@ -175,25 +502,164 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       success('Revision approved');
       setShowApproveDialog(false);
       refetch();
+      // Auto-advance to next document after approval
+      if (navData && navData.currentIndex < navData.total - 1) {
+        const nextDoc = navData.documents[navData.currentIndex + 1];
+        if (nextDoc) router.push(`/processing/${nextDoc.id}`);
+      }
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to approve revision');
     }
   };
 
-  const handleDuplicateDecision = async () => {
+  const handleDuplicateDecision = async (decision: 'REJECT_DUPLICATE' | 'CONFIRM_DUPLICATE' | 'MARK_AS_NEW_VERSION') => {
+    if (!duplicateData?.duplicateDocument?.id) {
+      toastError('No duplicate document found');
+      return;
+    }
     try {
       await recordDuplicateDecision.mutateAsync({
         documentId: id,
-        decision: duplicateDecision,
+        suspectedOfId: duplicateData.duplicateDocument.id,
+        decision,
       });
       success('Duplicate decision recorded');
-      setShowDuplicateDialog(false);
+      setShowDuplicateModal(false);
       refetch();
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to record decision');
     }
   };
 
+  const handleStartEdit = () => {
+    if (revisionWithLineItems) {
+      setEditFormData({
+        documentCategory: revisionWithLineItems.documentCategory || '',
+        vendorName: revisionWithLineItems.vendorName || '',
+        documentNumber: revisionWithLineItems.documentNumber || '',
+        documentDate: revisionWithLineItems.documentDate || '',
+        dueDate: revisionWithLineItems.dueDate || '',
+        currency: revisionWithLineItems.currency || 'SGD',
+        subtotal: revisionWithLineItems.subtotal || '',
+        taxAmount: revisionWithLineItems.taxAmount || '',
+        totalAmount: revisionWithLineItems.totalAmount || '',
+        supplierGstNo: '',
+      });
+      setEditLineItems(
+        revisionWithLineItems.lineItems?.map((item) => ({
+          id: item.id,
+          lineNo: item.lineNo,
+          description: item.description,
+          quantity: item.quantity || '',
+          unitPrice: item.unitPrice || '',
+          amount: item.amount,
+          gstAmount: item.gstAmount || '',
+          taxCode: item.taxCode || '',
+          accountCode: item.accountCode || '',
+        })) || []
+      );
+      setDeletedLineItemIds([]); // Reset deleted items when starting edit
+    }
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!data?.document || !currentRevisionId) return;
+    try {
+      await updateRevision.mutateAsync({
+        documentId: id,
+        revisionId: currentRevisionId,
+        lockVersion: data.document.lockVersion,
+        data: {
+          headerUpdates: {
+            documentCategory: editFormData.documentCategory || undefined,
+            vendorName: editFormData.vendorName || undefined,
+            documentNumber: editFormData.documentNumber || undefined,
+            documentDate: editFormData.documentDate || undefined,
+            dueDate: editFormData.dueDate || undefined,
+            currency: editFormData.currency || undefined,
+            subtotal: editFormData.subtotal || undefined,
+            taxAmount: editFormData.taxAmount || undefined,
+            totalAmount: editFormData.totalAmount || undefined,
+          },
+          itemsToUpsert: editLineItems.map((item) => ({
+            id: item.id,
+            lineNo: item.lineNo,
+            description: item.description,
+            quantity: item.quantity || undefined,
+            unitPrice: item.unitPrice || undefined,
+            amount: item.amount,
+            gstAmount: item.gstAmount || undefined,
+            taxCode: item.taxCode || undefined,
+            accountCode: item.accountCode || undefined,
+          })),
+          itemsToDelete: deletedLineItemIds.length > 0 ? deletedLineItemIds : undefined,
+        },
+      });
+      success('Changes saved successfully');
+      setIsEditing(false);
+      setDeletedLineItemIds([]); // Reset deleted items tracking
+      refetch();
+      refetchLineItems();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to save changes');
+    }
+  };
+
+  const handleAddLineItem = () => {
+    const maxLineNo = editLineItems.reduce((max, item) => Math.max(max, item.lineNo), 0);
+    setEditLineItems([
+      ...editLineItems,
+      {
+        lineNo: maxLineNo + 1,
+        description: '',
+        quantity: '',
+        unitPrice: '',
+        amount: '0',
+        gstAmount: '',
+        taxCode: 'SR', // Default to 9% GST
+        accountCode: '',
+      },
+    ]);
+  };
+
+  const handleRemoveLineItem = (index: number) => {
+    const itemToRemove = editLineItems[index];
+    // Track the deleted item ID if it exists (i.e., it was saved before)
+    if (itemToRemove.id) {
+      setDeletedLineItemIds((prev) => [...prev, itemToRemove.id!]);
+    }
+    const updated = editLineItems.filter((_, i) => i !== index);
+    setEditLineItems(updated);
+  };
+
+  const handleLineItemChange = (index: number, field: string, value: string) => {
+    const updated = [...editLineItems];
+    updated[index] = { ...updated[index], [field]: value };
+
+    // Auto-calculate amount when qty or unitPrice changes
+    if (field === 'quantity' || field === 'unitPrice') {
+      const qty = parseFloat(field === 'quantity' ? value : updated[index].quantity) || 0;
+      const unitPrice = parseFloat(field === 'unitPrice' ? value : updated[index].unitPrice) || 0;
+      if (qty > 0 && unitPrice > 0) {
+        const calculatedAmount = qty * unitPrice;
+        updated[index].amount = calculatedAmount.toFixed(2);
+      }
+    }
+
+    // Auto-calculate GST amount when amount or taxCode changes
+    if (field === 'amount' || field === 'taxCode' || field === 'quantity' || field === 'unitPrice') {
+      const amount = parseFloat(updated[index].amount) || 0;
+      const taxCode = field === 'taxCode' ? value : updated[index].taxCode;
+      const rate = getGstRate(taxCode);
+      const gstAmount = amount * rate;
+      updated[index].gstAmount = gstAmount > 0 ? gstAmount.toFixed(2) : '';
+    }
+
+    setEditLineItems(updated);
+  };
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
@@ -203,6 +669,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     );
   }
 
+  // Error state
   if (error || !data) {
     return (
       <div className="p-6">
@@ -226,285 +693,253 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
   const canTriggerExtraction =
     doc.pipelineStatus === 'UPLOADED' ||
+    doc.pipelineStatus === 'QUEUED' ||
     doc.pipelineStatus === 'FAILED_RETRYABLE';
 
   const canApprove =
     currentRevision?.status === 'DRAFT' &&
     (doc.duplicateStatus === 'NONE' || doc.duplicateStatus === 'REJECTED');
 
-  const needsDuplicateDecision =
-    doc.duplicateStatus === 'SUSPECTED' && currentRevision?.status === 'DRAFT';
+  const needsDuplicateDecision = doc.duplicateStatus === 'SUSPECTED' && currentRevision?.status === 'DRAFT';
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/processing" className="btn-ghost btn-sm p-2">
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
-              {doc.isContainer ? 'Container Document' : 'Processing Document'}
-            </h1>
-            <span className={cn('px-2 py-0.5 rounded text-xs font-medium', pipelineConfig.bgColor, pipelineConfig.color)}>
-              {pipelineConfig.label}
-            </span>
-          </div>
-          <p className="text-text-secondary text-sm mt-1">
-            ID: <span className="font-mono text-xs">{doc.id}</span>
-          </p>
-        </div>
-        <button onClick={() => refetch()} className="btn-ghost btn-sm p-2">
-          <RefreshCw className="w-4 h-4" />
-        </button>
-      </div>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-background-primary flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <Link href="/processing" className="btn-ghost btn-sm p-2" title="Back to list">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
 
-      {/* Actions Bar */}
-      <div className="card p-4 mb-6">
-        <div className="flex flex-wrap items-center gap-3">
+          {/* Document Navigation */}
+          {navData && navData.total > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleNavigatePrev}
+                disabled={navData.currentIndex <= 0}
+                className="btn-ghost btn-xs p-1.5"
+                title="Previous document (Alt+Left)"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm text-text-secondary whitespace-nowrap">
+                {navData.currentIndex + 1} / {navData.total}
+              </span>
+              <button
+                onClick={handleNavigateNext}
+                disabled={navData.currentIndex >= navData.total - 1}
+                className="btn-ghost btn-xs p-1.5"
+                title="Next document (Alt+Right)"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          <div className="h-4 w-px bg-border-primary mx-1" />
+
+          <h1 className="text-sm font-medium text-text-primary truncate max-w-[300px]">
+            {doc.fileName || 'Processing Document'}
+          </h1>
+          {doc.version > 1 && (
+            <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-status-info/10 text-status-info">
+              v{doc.version}
+            </span>
+          )}
+          <span className={cn('px-2 py-0.5 rounded text-xs font-medium', pipelineConfig.bgColor, pipelineConfig.color)}>
+            {pipelineConfig.label}
+          </span>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
           {canTriggerExtraction && can.updateDocument && (
             <button
               onClick={handleTriggerExtraction}
               disabled={triggerExtraction.isPending}
-              className="btn-primary btn-sm flex items-center gap-2"
+              className="btn-secondary btn-sm"
             >
               {triggerExtraction.isPending ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
               ) : (
-                <Play className="w-4 h-4" />
+                <Play className="w-3.5 h-3.5 mr-1.5" />
               )}
-              Trigger Extraction
+              Extract
             </button>
           )}
-
-          {can.updateDocument && (
+          {isEditing ? (
             <>
-              <button
-                onClick={handleAcquireLock}
-                disabled={acquireLock.isPending}
-                className="btn-secondary btn-sm flex items-center gap-2"
-              >
-                <Lock className="w-4 h-4" />
-                Acquire Lock
+              <button onClick={() => { setIsEditing(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm">
+                Cancel
               </button>
               <button
-                onClick={handleReleaseLock}
-                disabled={releaseLock.isPending}
-                className="btn-secondary btn-sm flex items-center gap-2"
+                onClick={handleSaveEdit}
+                disabled={updateRevision.isPending}
+                className="btn-primary btn-sm"
               >
-                <Unlock className="w-4 h-4" />
-                Release Lock
+                {updateRevision.isPending ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <Save className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                Save
               </button>
             </>
+          ) : (
+            <>
+              {currentRevision?.status === 'DRAFT' && can.updateDocument && (
+                <button onClick={handleStartEdit} className="btn-secondary btn-sm">
+                  <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                  Edit
+                </button>
+              )}
+              {canApprove && can.updateDocument && (
+                <button onClick={() => setShowApproveDialog(true)} className="btn-primary btn-sm">
+                  <Check className="w-3.5 h-3.5 mr-1.5" />
+                  Approve
+                </button>
+              )}
+            </>
           )}
-
-          {needsDuplicateDecision && can.updateDocument && (
-            <button
-              onClick={() => setShowDuplicateDialog(true)}
-              className="btn-secondary btn-sm flex items-center gap-2 border-status-warning text-status-warning"
-            >
-              <Copy className="w-4 h-4" />
-              Resolve Duplicate
-            </button>
-          )}
-
-          {canApprove && can.updateDocument && (
-            <button
-              onClick={() => setShowApproveDialog(true)}
-              className="btn-primary btn-sm flex items-center gap-2"
-            >
-              <Check className="w-4 h-4" />
-              Approve Revision
-            </button>
-          )}
+          <button onClick={() => refetch()} className="btn-ghost btn-sm p-2" title="Refresh">
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Document Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Document Details */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Document Details
-            </h2>
-            <dl className="grid grid-cols-2 gap-4">
-              <div>
-                <dt className="text-xs text-text-muted mb-1">Type</dt>
-                <dd className="text-sm text-text-primary">
-                  {doc.isContainer ? 'Container' : 'Child Document'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-text-muted mb-1">Pages</dt>
-                <dd className="text-sm text-text-primary">
-                  {doc.isContainer
-                    ? `${doc.pages} pages`
-                    : doc.pageFrom && doc.pageTo
-                    ? `${doc.pageFrom} - ${doc.pageTo}`
-                    : '-'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-text-muted mb-1">Pipeline Status</dt>
-                <dd>
-                  <span className={cn('px-2 py-0.5 rounded text-xs font-medium', pipelineConfig.bgColor, pipelineConfig.color)}>
-                    {pipelineConfig.label}
-                  </span>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-text-muted mb-1">Duplicate Status</dt>
-                <dd>
-                  <span className={cn('px-2 py-0.5 rounded text-xs font-medium', duplicateConfig.bgColor, duplicateConfig.color)}>
-                    {duplicateConfig.label}
-                  </span>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-text-muted mb-1">Lock Version</dt>
-                <dd className="text-sm font-mono text-text-primary">{doc.lockVersion}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-text-muted mb-1">Created</dt>
-                <dd className="text-sm text-text-primary">{formatDateTime(doc.createdAt)}</dd>
-              </div>
-            </dl>
+      {/* Duplicate Warning Banner */}
+      {needsDuplicateDecision && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
+            <span className="text-sm text-yellow-800 dark:text-yellow-200">
+              This document is suspected to be a duplicate
+            </span>
           </div>
+          <button
+            onClick={() => setShowDuplicateModal(true)}
+            className="btn-secondary btn-sm border-yellow-500 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/40"
+          >
+            <Copy className="w-3.5 h-3.5 mr-1.5" />
+            Compare
+          </button>
+        </div>
+      )}
 
-          {/* Current Revision */}
-          {currentRevision && (
-            <div className="card p-6">
-              <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                <FileStack className="w-5 h-5" />
-                Current Revision #{currentRevision.revisionNumber}
-                <span
-                  className={cn(
-                    'px-2 py-0.5 rounded text-xs font-medium ml-auto',
-                    revisionStatusConfig[currentRevision.status].bgColor,
-                    revisionStatusConfig[currentRevision.status].color
+      {/* Main Content - Split View */}
+      <div className="flex-1 overflow-hidden">
+        <ResizableSplitView
+          leftPanel={
+            pagesLoading ? (
+              <div className="flex items-center justify-center h-full bg-background-secondary">
+                <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
+              </div>
+            ) : (
+              <DocumentPageViewer
+                documentId={id}
+                highlights={highlights}
+                fieldValues={fieldValues}
+                className="h-full"
+              />
+            )
+          }
+          rightPanel={
+            <div className="h-full overflow-y-auto bg-background-primary p-4 pb-6">
+              {/* Extracted Data Section */}
+              {!currentRevision ? (
+                <NoExtractionPlaceholder
+                  canTrigger={canTriggerExtraction}
+                  isPending={triggerExtraction.isPending}
+                  pipelineStatus={doc.pipelineStatus}
+                  onTrigger={handleTriggerExtraction}
+                />
+              ) : (
+                <div className="space-y-6">
+                  {/* Header Fields */}
+                  <ExtractedHeaderFields
+                    revision={revisionWithLineItems || currentRevision}
+                    isEditing={isEditing}
+                    editFormData={editFormData}
+                    setEditFormData={setEditFormData}
+                    focusedField={focusedField}
+                    setFocusedField={setFocusedField}
+                    getFieldConfidence={getFieldConfidence}
+                    categoryLabels={categoryLabels}
+                    currencyOptions={currencyOptions}
+                  />
+
+                  {/* Validation Status */}
+                  {revisionWithLineItems?.validationStatus && revisionWithLineItems.validationStatus !== 'PENDING' && (
+                    <ValidationStatusSection
+                      status={revisionWithLineItems.validationStatus}
+                      issues={(revisionWithLineItems.validationIssues as { issues?: ValidationIssue[] })?.issues}
+                    />
                   )}
-                >
-                  {revisionStatusConfig[currentRevision.status].label}
-                </span>
-              </h2>
-              <dl className="grid grid-cols-2 gap-4">
-                <div>
-                  <dt className="text-xs text-text-muted mb-1">Category</dt>
-                  <dd className="text-sm text-text-primary">
-                    {currentRevision.documentCategory
-                      ? categoryLabels[currentRevision.documentCategory]
-                      : '-'}
-                  </dd>
+
+                  {/* Line Items */}
+                  <LineItemsSection
+                    lineItems={isEditing ? editLineItems : revisionWithLineItems?.lineItems}
+                    isEditing={isEditing}
+                    isLoading={lineItemsLoading}
+                    currency={revisionWithLineItems?.currency || currentRevision.currency}
+                    chartOfAccounts={chartOfAccounts}
+                    onAdd={handleAddLineItem}
+                    onRemove={handleRemoveLineItem}
+                    onChange={handleLineItemChange}
+                    subtotal={revisionWithLineItems?.subtotal}
+                    taxAmount={revisionWithLineItems?.taxAmount}
+                    totalAmount={revisionWithLineItems?.totalAmount}
+                  />
                 </div>
-                <div>
-                  <dt className="text-xs text-text-muted mb-1">Vendor</dt>
-                  <dd className="text-sm text-text-primary">
-                    {currentRevision.vendorName || '-'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-text-muted mb-1">Document Number</dt>
-                  <dd className="text-sm font-mono text-text-primary">
-                    {currentRevision.documentNumber || '-'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-text-muted mb-1">Document Date</dt>
-                  <dd className="text-sm text-text-primary">
-                    {formatDate(currentRevision.documentDate)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-text-muted mb-1">Total Amount</dt>
-                  <dd className="text-sm font-mono text-text-primary">
-                    {formatCurrency(currentRevision.totalAmount, currentRevision.currency)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-text-muted mb-1">Home Equivalent</dt>
-                  <dd className="text-sm font-mono text-text-primary">
-                    {currentRevision.homeEquivalent
-                      ? formatCurrency(currentRevision.homeEquivalent, 'SGD')
-                      : '-'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-text-muted mb-1">Validation</dt>
-                  <dd className="text-sm text-text-primary">
-                    {currentRevision.validationStatus}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-text-muted mb-1">Line Items</dt>
-                  <dd className="text-sm text-text-primary">
-                    {currentRevision.lineItemCount} items
-                  </dd>
-                </div>
-              </dl>
+              )}
             </div>
+          }
+          defaultLeftWidth={45}
+          minLeftWidth={30}
+          maxLeftWidth={70}
+        />
+      </div>
+
+      {/* Status Bar */}
+      <div className="flex items-center justify-between px-4 py-2 border-t border-border-primary bg-background-tertiary text-xs flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1.5">
+            <span className="text-text-muted">Pipeline:</span>
+            <span className={cn('font-medium', pipelineConfig.color)}>{pipelineConfig.label}</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-text-muted">Duplicate:</span>
+            <span className={cn('font-medium', duplicateConfig.color)}>{duplicateConfig.label}</span>
+          </span>
+          {currentRevision && (
+            <span className="flex items-center gap-1.5">
+              <span className="text-text-muted">Revision:</span>
+              <span className={cn('font-medium', revisionStatusConfig[currentRevision.status].color)}>
+                #{currentRevision.revisionNumber} {revisionStatusConfig[currentRevision.status].label}
+              </span>
+            </span>
           )}
         </div>
 
-        {/* Right Column - Revision History */}
-        <div>
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <History className="w-5 h-5" />
-              Revision History
-            </h2>
-            {revisionsLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <RefreshCw className="w-4 h-4 animate-spin text-text-muted" />
-              </div>
-            ) : revisions && revisions.length > 0 ? (
-              <div className="space-y-3">
-                {revisions.map((rev) => (
-                  <div
-                    key={rev.id}
-                    className={cn(
-                      'p-3 rounded border',
-                      rev.status === 'APPROVED'
-                        ? 'border-status-success/30 bg-status-success/5'
-                        : rev.status === 'DRAFT'
-                        ? 'border-status-warning/30 bg-status-warning/5'
-                        : 'border-border-primary bg-background-tertiary'
-                    )}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-text-primary">
-                        Revision #{rev.revisionNumber}
-                      </span>
-                      <span
-                        className={cn(
-                          'px-2 py-0.5 rounded text-xs font-medium',
-                          revisionStatusConfig[rev.status].bgColor,
-                          revisionStatusConfig[rev.status].color
-                        )}
-                      >
-                        {revisionStatusConfig[rev.status].label}
-                      </span>
-                    </div>
-                    <div className="text-xs text-text-secondary space-y-1">
-                      <p>Type: {rev.revisionType}</p>
-                      <p>Vendor: {rev.vendorName || '-'}</p>
-                      <p>Amount: {formatCurrency(rev.totalAmount, rev.currency)}</p>
-                      <p>Created: {formatDateTime(rev.createdAt)}</p>
-                      {rev.approvedAt && (
-                        <p className="text-status-success">
-                          Approved: {formatDateTime(rev.approvedAt)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-text-muted text-center py-4">No revisions yet</p>
-            )}
-          </div>
+        {/* History Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowHistoryDropdown(!showHistoryDropdown)}
+            className="flex items-center gap-1.5 text-text-secondary hover:text-text-primary"
+          >
+            <History className="w-3.5 h-3.5" />
+            <span>History</span>
+            <ChevronRight className={cn('w-3.5 h-3.5 transition-transform', showHistoryDropdown && 'rotate-90')} />
+          </button>
+
+          {showHistoryDropdown && (
+            <HistoryDropdown
+              revisions={revisions}
+              isLoading={revisionsLoading}
+              onClose={() => setShowHistoryDropdown(false)}
+              categoryLabels={categoryLabels}
+            />
+          )}
         </div>
       </div>
 
@@ -520,67 +955,767 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         isLoading={approveRevision.isPending}
       />
 
-      {/* Duplicate Decision Dialog */}
-      {showDuplicateDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="card p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">Resolve Duplicate Status</h3>
-            <p className="text-text-secondary text-sm mb-4">
-              This document has been flagged as a potential duplicate. Please review and confirm.
-            </p>
-            <div className="space-y-3 mb-6">
-              <label className="flex items-center gap-3 p-3 rounded border border-border-primary hover:bg-background-tertiary cursor-pointer">
-                <input
-                  type="radio"
-                  name="duplicateDecision"
-                  value="NOT_DUPLICATE"
-                  checked={duplicateDecision === 'NOT_DUPLICATE'}
-                  onChange={() => setDuplicateDecision('NOT_DUPLICATE')}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-text-primary">Not a duplicate - unique document</span>
-              </label>
-              <label className="flex items-center gap-3 p-3 rounded border border-border-primary hover:bg-background-tertiary cursor-pointer">
-                <input
-                  type="radio"
-                  name="duplicateDecision"
-                  value="IS_DUPLICATE"
-                  checked={duplicateDecision === 'IS_DUPLICATE'}
-                  onChange={() => setDuplicateDecision('IS_DUPLICATE')}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-text-primary">Confirmed duplicate - do not process</span>
-              </label>
-              <label className="flex items-center gap-3 p-3 rounded border border-border-primary hover:bg-background-tertiary cursor-pointer">
-                <input
-                  type="radio"
-                  name="duplicateDecision"
-                  value="IS_VERSION"
-                  checked={duplicateDecision === 'IS_VERSION'}
-                  onChange={() => setDuplicateDecision('IS_VERSION')}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-text-primary">Version update - replaces previous</span>
-              </label>
-            </div>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowDuplicateDialog(false)}
-                className="btn-secondary btn-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDuplicateDecision}
-                disabled={recordDuplicateDecision.isPending}
-                className="btn-primary btn-sm"
-              >
-                {recordDuplicateDecision.isPending ? 'Saving...' : 'Confirm Decision'}
-              </button>
-            </div>
+      {/* Duplicate Comparison Modal */}
+      {showDuplicateModal && duplicateData && (
+        <DuplicateComparisonModal
+          isOpen={showDuplicateModal}
+          onClose={() => setShowDuplicateModal(false)}
+          currentDocument={{
+            id: duplicateData.currentDocument.id,
+            fileName: duplicateData.currentDocument.fileName,
+            pipelineStatus: duplicateData.currentDocument.pipelineStatus,
+            approvalStatus: duplicateData.currentDocument.approvalStatus,
+            createdAt: duplicateData.currentDocument.createdAt,
+            pdfUrl: duplicateData.currentDocument.pdfUrl,
+            pages: duplicateData.currentDocument.pages,
+          }}
+          duplicateDocument={{
+            id: duplicateData.duplicateDocument.id,
+            fileName: duplicateData.duplicateDocument.fileName,
+            pipelineStatus: duplicateData.duplicateDocument.pipelineStatus,
+            approvalStatus: duplicateData.duplicateDocument.approvalStatus,
+            createdAt: duplicateData.duplicateDocument.createdAt,
+            pdfUrl: duplicateData.duplicateDocument.pdfUrl,
+            pages: duplicateData.duplicateDocument.pages,
+          }}
+          duplicateScore={duplicateData.comparison.duplicateScore || undefined}
+          duplicateReason={duplicateData.comparison.duplicateReason || undefined}
+          fieldComparison={duplicateData.comparison.fieldComparison}
+          onDecision={handleDuplicateDecision}
+          isSubmitting={recordDuplicateDecision.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Sub-components
+// ============================================================================
+
+function NoExtractionPlaceholder({
+  canTrigger,
+  isPending,
+  pipelineStatus,
+  onTrigger,
+}: {
+  canTrigger: boolean;
+  isPending: boolean;
+  pipelineStatus: string;
+  onTrigger: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center py-12">
+      <AlertCircle className="w-12 h-12 text-text-muted opacity-50 mb-4" />
+      <h3 className="text-lg font-semibold text-text-primary mb-2">No Extracted Data</h3>
+      <p className="text-sm text-text-muted mb-6 max-w-sm">
+        {canTrigger
+          ? 'This document has not been extracted yet. Click the button below to extract data from this document.'
+          : pipelineStatus === 'PROCESSING'
+          ? 'Extraction is currently in progress...'
+          : 'Extraction is not available for this document status.'}
+      </p>
+      {canTrigger && (
+        <button onClick={onTrigger} disabled={isPending} className="btn-primary">
+          {isPending ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+              Extracting...
+            </>
+          ) : (
+            <>
+              <Play className="w-4 h-4 mr-2" />
+              Trigger Extraction
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ExtractedHeaderFields({
+  revision,
+  isEditing,
+  editFormData,
+  setEditFormData,
+  focusedField,
+  setFocusedField,
+  getFieldConfidence,
+  categoryLabels,
+  currencyOptions,
+}: {
+  revision: {
+    documentCategory: DocumentCategory | null;
+    vendorName: string | null;
+    documentNumber: string | null;
+    documentDate: string | null;
+    dueDate?: string | null;
+    currency: string;
+    subtotal?: string | null;
+    taxAmount?: string | null;
+    totalAmount: string;
+  };
+  isEditing: boolean;
+  editFormData: {
+    documentCategory: string;
+    vendorName: string;
+    documentNumber: string;
+    documentDate: string;
+    dueDate: string;
+    currency: string;
+    subtotal: string;
+    taxAmount: string;
+    totalAmount: string;
+    supplierGstNo: string;
+  };
+  setEditFormData: React.Dispatch<React.SetStateAction<{
+    documentCategory: string;
+    vendorName: string;
+    documentNumber: string;
+    documentDate: string;
+    dueDate: string;
+    currency: string;
+    subtotal: string;
+    taxAmount: string;
+    totalAmount: string;
+    supplierGstNo: string;
+  }>>;
+  focusedField: string | null;
+  setFocusedField: (field: string | null) => void;
+  getFieldConfidence: (key: string) => number | undefined;
+  categoryLabels: Record<DocumentCategory, string>;
+  currencyOptions: string[];
+}) {
+  const handleFieldFocus = (fieldKey: string) => setFocusedField(fieldKey);
+  const handleFieldBlur = () => setFocusedField(null);
+
+  if (isEditing) {
+    return (
+      <div className="card p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <FileStack className="w-4 h-4" />
+          Extracted Data
+        </h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Category</label>
+            <select
+              value={editFormData.documentCategory}
+              onChange={(e) => setEditFormData({ ...editFormData, documentCategory: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+            >
+              <option value="">Select...</option>
+              {Object.entries(categoryLabels).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Vendor</label>
+            <input
+              type="text"
+              value={editFormData.vendorName}
+              onChange={(e) => setEditFormData({ ...editFormData, vendorName: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+              placeholder="Vendor name"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Document #</label>
+            <input
+              type="text"
+              value={editFormData.documentNumber}
+              onChange={(e) => setEditFormData({ ...editFormData, documentNumber: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+              placeholder="INV-001"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Document Date</label>
+            <input
+              type="date"
+              value={editFormData.documentDate}
+              onChange={(e) => setEditFormData({ ...editFormData, documentDate: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Due Date</label>
+            <input
+              type="date"
+              value={editFormData.dueDate}
+              onChange={(e) => setEditFormData({ ...editFormData, dueDate: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Currency</label>
+            <select
+              value={editFormData.currency}
+              onChange={(e) => setEditFormData({ ...editFormData, currency: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+            >
+              {currencyOptions.map((curr) => (
+                <option key={curr} value={curr}>{curr}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Subtotal</label>
+            <input
+              type="number"
+              step="0.01"
+              value={editFormData.subtotal}
+              onChange={(e) => setEditFormData({ ...editFormData, subtotal: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Tax Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              value={editFormData.taxAmount}
+              onChange={(e) => setEditFormData({ ...editFormData, taxAmount: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Total Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              value={editFormData.totalAmount}
+              onChange={(e) => setEditFormData({ ...editFormData, totalAmount: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm font-semibold bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+              placeholder="0.00"
+            />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card p-4">
+      <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+        <FileStack className="w-4 h-4" />
+        Extracted Data
+      </h3>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+        <FieldDisplay
+          label="Category"
+          value={revision.documentCategory ? categoryLabels[revision.documentCategory] : '-'}
+          fieldKey="documentCategory"
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+        />
+        <FieldDisplay
+          label="Vendor"
+          value={revision.vendorName}
+          fieldKey="vendorName"
+          confidence={getFieldConfidence('vendorName')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+        />
+        <FieldDisplay
+          label="Document #"
+          value={revision.documentNumber}
+          fieldKey="documentNumber"
+          confidence={getFieldConfidence('documentNumber')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+        />
+        <FieldDisplay
+          label="Document Date"
+          value={formatDate(revision.documentDate)}
+          fieldKey="documentDate"
+          confidence={getFieldConfidence('documentDate')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+        />
+        <FieldDisplay
+          label="Due Date"
+          value={formatDate(revision.dueDate || null)}
+          fieldKey="dueDate"
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+        />
+        <FieldDisplay
+          label="Currency"
+          value={revision.currency}
+          fieldKey="currency"
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+        />
+        <FieldDisplay
+          label="Subtotal"
+          value={formatCurrency(revision.subtotal || null, revision.currency)}
+          fieldKey="subtotal"
+          confidence={getFieldConfidence('subtotal')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+        />
+        <FieldDisplay
+          label="Tax Amount"
+          value={formatCurrency(revision.taxAmount || null, revision.currency)}
+          fieldKey="taxAmount"
+          confidence={getFieldConfidence('taxAmount')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+        />
+        <FieldDisplay
+          label="Total Amount"
+          value={formatCurrency(revision.totalAmount, revision.currency)}
+          fieldKey="totalAmount"
+          confidence={getFieldConfidence('totalAmount')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+          highlight
+        />
+      </div>
+    </div>
+  );
+}
+
+function FieldDisplay({
+  label,
+  value,
+  fieldKey,
+  confidence,
+  focusedField,
+  onFocus,
+  onBlur,
+  highlight = false,
+}: {
+  label: string;
+  value: string | null;
+  fieldKey: string;
+  confidence?: number;
+  focusedField: string | null;
+  onFocus: (key: string) => void;
+  onBlur: () => void;
+  highlight?: boolean;
+}) {
+  const isFocused = focusedField === fieldKey;
+
+  return (
+    <div
+      className={cn(
+        'py-1.5 px-2 rounded cursor-pointer transition-colors',
+        isFocused ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'hover:bg-background-tertiary'
       )}
+      onMouseEnter={() => onFocus(fieldKey)}
+      onMouseLeave={onBlur}
+    >
+      <dt className="text-xs text-text-muted mb-0.5 flex items-center gap-1.5">
+        {label}
+        {confidence !== undefined && <ConfidenceDot confidence={confidence} size="sm" />}
+      </dt>
+      <dd className={cn('text-sm', highlight ? 'font-semibold text-text-primary' : 'text-text-primary')}>
+        {value || '-'}
+      </dd>
+    </div>
+  );
+}
+
+function ValidationStatusSection({
+  status,
+  issues,
+}: {
+  status: string;
+  issues?: ValidationIssue[];
+}) {
+  if (status === 'VALID') {
+    return (
+      <div className="flex items-center gap-2 text-status-success px-4 py-2 bg-status-success/10 rounded-lg">
+        <CheckCircle className="w-4 h-4" />
+        <span className="text-sm font-medium">Validation Passed</span>
+      </div>
+    );
+  }
+
+  const isError = status === 'INVALID';
+
+  return (
+    <div className={cn(
+      'p-4 rounded-lg',
+      isError ? 'bg-status-error/10' : 'bg-status-warning/10'
+    )}>
+      <div className="flex items-start gap-2">
+        {isError ? (
+          <XCircle className="w-4 h-4 text-status-error flex-shrink-0 mt-0.5" />
+        ) : (
+          <AlertTriangle className="w-4 h-4 text-status-warning flex-shrink-0 mt-0.5" />
+        )}
+        <div className="flex-1">
+          <h4 className={cn('text-sm font-medium mb-2', isError ? 'text-status-error' : 'text-status-warning')}>
+            {isError ? 'Validation Errors' : 'Validation Warnings'}
+          </h4>
+          {issues && issues.length > 0 ? (
+            <ul className="space-y-1.5">
+              {issues.map((issue, idx) => (
+                <li key={idx} className="flex items-start gap-2 text-sm">
+                  <span className={cn(
+                    'px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0',
+                    issue.severity === 'ERROR' ? 'bg-status-error/20 text-status-error' : 'bg-status-warning/20 text-status-warning'
+                  )}>
+                    {issue.severity}
+                  </span>
+                  <span className="text-text-secondary">
+                    {issue.message}
+                    {issue.field && <span className="text-text-muted ml-1">({issue.field})</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-text-secondary">No detailed validation messages available.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LineItemsSection({
+  lineItems,
+  isEditing,
+  isLoading,
+  currency,
+  chartOfAccounts,
+  onAdd,
+  onRemove,
+  onChange,
+  subtotal,
+  taxAmount,
+  totalAmount,
+}: {
+  lineItems?: Array<{
+    id?: string;
+    lineNo: number;
+    description: string;
+    quantity?: string | null;
+    unitPrice?: string | null;
+    amount: string;
+    gstAmount?: string | null;
+    taxCode?: string | null;
+    accountCode?: string | null;
+  }>;
+  isEditing: boolean;
+  isLoading: boolean;
+  currency: string;
+  chartOfAccounts: Array<{ code: string; name: string }>;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  onChange: (index: number, field: string, value: string) => void;
+  subtotal?: string | null;
+  taxAmount?: string | null;
+  totalAmount?: string;
+}) {
+  if (isLoading) {
+    return (
+      <div className="card p-8 flex items-center justify-center">
+        <RefreshCw className="w-5 h-5 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="card">
+      <div className="p-4 border-b border-border-primary flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+          <List className="w-4 h-4" />
+          Line Items ({lineItems?.length || 0})
+        </h3>
+        {isEditing && (
+          <button onClick={onAdd} className="btn-secondary btn-xs flex items-center gap-1">
+            <Plus className="w-3 h-3" />
+            Add Item
+          </button>
+        )}
+      </div>
+
+      {lineItems && lineItems.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-background-tertiary">
+              <tr>
+                <th className="text-left text-xs font-medium text-text-secondary px-4 py-2.5 w-12">#</th>
+                <th className="text-left text-xs font-medium text-text-secondary px-4 py-2.5">Description</th>
+                <th className="text-left text-xs font-medium text-text-secondary px-4 py-2.5 w-24">Account</th>
+                <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-20">Qty</th>
+                <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-24">
+                  Unit Price
+                </th>
+                <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-24">Amount</th>
+                <th className="text-left text-xs font-medium text-text-secondary px-2 py-2.5 w-32">GST</th>
+                <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-20">
+                  GST Amt
+                </th>
+                {isEditing && <th className="w-10"></th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-primary">
+              {lineItems.map((item, index) => {
+                const account = chartOfAccounts.find((a) => a.code === item.accountCode);
+                const gstCode = gstTaxCodes.find((g) => g.code === item.taxCode);
+                return (
+                  <tr key={item.id || `new-${index}`} className="hover:bg-background-tertiary/50">
+                    <td className="px-4 py-2.5 text-text-muted">{item.lineNo}</td>
+                    <td className="px-4 py-2.5 text-text-primary">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={item.description}
+                          onChange={(e) => onChange(index, 'description', e.target.value)}
+                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+                        />
+                      ) : (
+                        <span
+                          className="truncate block max-w-[200px] cursor-default"
+                          title={item.description}
+                        >
+                          {item.description}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-text-secondary text-xs">
+                      {isEditing ? (
+                        <select
+                          value={item.accountCode || ''}
+                          onChange={(e) => onChange(index, 'accountCode', e.target.value)}
+                          className="w-full px-2 py-1 text-xs bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+                        >
+                          <option value="">-</option>
+                          {chartOfAccounts.map((acc) => (
+                            <option key={acc.code} value={acc.code}>
+                              {acc.code}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          className="cursor-default"
+                          title={account ? `${account.code} - ${account.name}` : item.accountCode || ''}
+                        >
+                          {account?.code || item.accountCode || '-'}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-text-secondary">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="1"
+                          value={item.quantity || ''}
+                          onChange={(e) => onChange(index, 'quantity', e.target.value)}
+                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      ) : (
+                        formatNumber(item.quantity || null, 0)
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-text-secondary">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.unitPrice || ''}
+                          onChange={(e) => onChange(index, 'unitPrice', e.target.value)}
+                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      ) : (
+                        formatNumber(item.unitPrice || null)
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-text-primary">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.amount}
+                          onChange={(e) => onChange(index, 'amount', e.target.value)}
+                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      ) : (
+                        formatCurrency(item.amount, currency)
+                      )}
+                    </td>
+                    <td className="px-2 py-2.5 text-left text-text-secondary text-xs">
+                      {isEditing ? (
+                        <select
+                          value={item.taxCode || ''}
+                          onChange={(e) => onChange(index, 'taxCode', e.target.value)}
+                          className="w-full px-2 py-1 text-xs bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-left"
+                        >
+                          <option value="">-</option>
+                          {gstTaxCodes.map((gst) => (
+                            <option key={gst.code} value={gst.code}>
+                              {gst.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        gstCode?.label || item.taxCode || '-'
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-text-secondary">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.gstAmount || ''}
+                          onChange={(e) => onChange(index, 'gstAmount', e.target.value)}
+                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      ) : (
+                        formatCurrency(item.gstAmount || '0', currency)
+                      )}
+                    </td>
+                    {isEditing && (
+                      <td className="px-2 py-2.5 text-center">
+                        <button
+                          onClick={() => onRemove(index)}
+                          className="p-1 text-status-error hover:bg-status-error/10 rounded transition-colors"
+                          title="Remove item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot className="bg-background-tertiary border-t border-border-primary">
+              <tr>
+                <td colSpan={5} className="px-4 py-2 text-right text-text-secondary">
+                  Subtotal
+                </td>
+                <td className="px-4 py-2 text-right text-text-primary">
+                  {formatCurrency(subtotal || '0', currency)}
+                </td>
+                <td colSpan={isEditing ? 3 : 2}></td>
+              </tr>
+              <tr>
+                <td colSpan={5} className="px-4 py-2 text-right text-text-secondary">
+                  Tax
+                </td>
+                <td className="px-4 py-2 text-right text-text-primary">
+                  {formatCurrency(taxAmount || '0', currency)}
+                </td>
+                <td colSpan={isEditing ? 3 : 2}></td>
+              </tr>
+              <tr className="font-semibold">
+                <td colSpan={5} className="px-4 py-2 text-right text-text-primary">
+                  Total
+                </td>
+                <td className="px-4 py-2 text-right text-text-primary">
+                  {formatCurrency(totalAmount || '0', currency)}
+                </td>
+                <td colSpan={isEditing ? 3 : 2}></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      ) : (
+        <div className="p-8 text-center text-text-muted">
+          <List className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No line items extracted</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HistoryDropdown({
+  revisions,
+  isLoading,
+  onClose,
+  categoryLabels,
+}: {
+  revisions?: Array<{
+    id: string;
+    revisionNumber: number;
+    status: RevisionStatus;
+    revisionType: string;
+    documentCategory: DocumentCategory | null;
+    vendorName: string | null;
+    totalAmount: string;
+    currency: string;
+    createdAt: string;
+    approvedAt: string | null;
+  }>;
+  isLoading: boolean;
+  onClose: () => void;
+  categoryLabels: Record<DocumentCategory, string>;
+}) {
+  useEffect(() => {
+    const handleClickOutside = () => onClose();
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div
+      className="absolute bottom-full right-0 mb-2 w-80 bg-background-secondary border border-border-primary rounded-lg shadow-lg z-50"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="p-3 border-b border-border-primary">
+        <h4 className="text-sm font-medium text-text-primary">Revision History</h4>
+      </div>
+      <div className="max-h-64 overflow-y-auto">
+        {isLoading ? (
+          <div className="p-4 flex items-center justify-center">
+            <RefreshCw className="w-4 h-4 animate-spin text-text-muted" />
+          </div>
+        ) : revisions && revisions.length > 0 ? (
+          <div className="p-2 space-y-2">
+            {revisions.map((rev) => (
+              <div
+                key={rev.id}
+                className={cn(
+                  'p-3 rounded-lg border',
+                  rev.status === 'APPROVED'
+                    ? 'border-status-success/30 bg-status-success/5'
+                    : rev.status === 'DRAFT'
+                    ? 'border-status-warning/30 bg-status-warning/5'
+                    : 'border-border-primary bg-background-tertiary'
+                )}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-text-primary">#{rev.revisionNumber}</span>
+                  <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', revisionStatusConfig[rev.status].bgColor, revisionStatusConfig[rev.status].color)}>
+                    {revisionStatusConfig[rev.status].label}
+                  </span>
+                </div>
+                <div className="text-xs text-text-secondary space-y-0.5">
+                  <div>{rev.documentCategory ? categoryLabels[rev.documentCategory] : '-'}</div>
+                  <div>{formatCurrency(rev.totalAmount, rev.currency)}</div>
+                  <div className="text-text-muted">{formatDateTime(rev.createdAt)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-4 text-center text-text-muted text-sm">
+            No revision history
+          </div>
+        )}
+      </div>
     </div>
   );
 }

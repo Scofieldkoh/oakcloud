@@ -66,6 +66,9 @@ export async function callOpenAI(
 
   if (options.systemPrompt) {
     messages.push({ role: 'system', content: options.systemPrompt });
+  } else if (options.jsonMode) {
+    // OpenAI requires "json" to appear in the messages when using response_format: json_object
+    messages.push({ role: 'system', content: 'You are a helpful assistant. Respond with valid JSON.' });
   }
 
   // Build user message content (text + optional images/files)

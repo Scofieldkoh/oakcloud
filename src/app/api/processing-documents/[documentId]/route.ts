@@ -38,10 +38,23 @@ export async function GET(
       );
     }
 
-    // Get the base document for company context
+    // Get the base document with file details and company info
     const document = await prisma.document.findUnique({
       where: { id: processingDoc.documentId },
-      select: { companyId: true, tenantId: true },
+      select: {
+        companyId: true,
+        tenantId: true,
+        fileName: true,
+        originalFileName: true,
+        mimeType: true,
+        fileSize: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!document || !document.companyId || !document.tenantId) {
@@ -67,10 +80,33 @@ export async function GET(
       );
     }
 
-    // Get current revision if available
-    const currentRevision = processingDoc.currentRevisionId
+    // Get current revision if available, or latest draft revision
+    let currentRevision = processingDoc.currentRevisionId
       ? await getCurrentRevision(documentId)
       : null;
+
+    // If no approved revision, get the latest draft revision to show extracted data
+    if (!currentRevision) {
+      const latestRevision = await prisma.documentRevision.findFirst({
+        where: { processingDocumentId: documentId },
+        orderBy: { revisionNumber: 'desc' },
+        include: {
+          items: {
+            orderBy: { lineNo: 'asc' },
+          },
+        },
+      });
+      if (latestRevision) {
+        currentRevision = {
+          ...latestRevision,
+          totalAmount: latestRevision.totalAmount,
+          subtotal: latestRevision.subtotal,
+          taxAmount: latestRevision.taxAmount,
+          homeEquivalent: latestRevision.homeEquivalent,
+          items: latestRevision.items,
+        };
+      }
+    }
 
     // Get pages info
     const pages = await prisma.documentPage.findMany({
@@ -100,6 +136,15 @@ export async function GET(
           lockVersion: processingDoc.lockVersion,
           createdAt: processingDoc.createdAt,
           pages: pages.length,
+          // Versioning
+          version: processingDoc.version,
+          rootDocumentId: processingDoc.rootDocumentId,
+          // File details
+          fileName: document.originalFileName || document.fileName,
+          mimeType: document.mimeType,
+          fileSize: document.fileSize,
+          // Company info
+          company: document.company,
         },
         currentRevision: currentRevision
           ? {

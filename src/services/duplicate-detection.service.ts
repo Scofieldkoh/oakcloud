@@ -103,7 +103,7 @@ export async function checkForDuplicates(
       where: {
         fileHash: processingDoc.fileHash,
         id: { not: processingDocumentId },
-        isArchived: false,
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -149,7 +149,7 @@ export async function checkForDuplicates(
   const candidateDocs = await prisma.processingDocument.findMany({
     where: {
       id: { not: processingDocumentId },
-      isArchived: false,
+      deletedAt: null,
       currentRevisionId: { not: null },
     },
     select: {
@@ -518,12 +518,15 @@ export async function recordDuplicateDecision(
   // Update document status based on decision
   switch (decision) {
     case 'CONFIRM_DUPLICATE':
+      // Soft delete the duplicate document
       await prisma.processingDocument.update({
         where: { id: processingDocumentId },
         data: {
           duplicateStatus: 'CONFIRMED',
+          deletedAt: new Date(),
         },
       });
+      log.info(`Soft deleted confirmed duplicate document ${processingDocumentId}`);
       break;
 
     case 'REJECT_DUPLICATE':

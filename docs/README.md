@@ -84,7 +84,8 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 | OpenAI | 4.x | AI extraction - GPT models (lazy loaded) |
 | Anthropic | 0.x | AI extraction - Claude models (lazy loaded) |
 | Google Generative AI | 0.x | AI extraction - Gemini models (lazy loaded) |
-| pdf-parse | 1.x | PDF text extraction (lazy loaded) |
+| pdf-lib | 1.x | PDF metadata extraction (server-side) |
+| pdfjs-dist | 5.x | PDF rendering (client-side) |
 
 ### Infrastructure
 | Technology | Purpose |
@@ -3307,7 +3308,7 @@ The system uses content-based duplicate scoring:
 ### Database Models (Phase 1A)
 
 - `ProcessingDocument` - Extended document with pipeline state
-- `DocumentPage` - Rendered pages for UI highlights
+- `DocumentPage` - Page metadata for UI (dimensions, page count)
 - `DocumentExtraction` - Immutable AI/OCR outputs
 - `DocumentRevision` - Structured accounting data snapshots
 - `DocumentRevisionLineItem` - Line items for revisions
@@ -3318,6 +3319,19 @@ The system uses content-based duplicate scoring:
 - `SplitPlan` - Document splitting plans
 - `DocumentStateEvent` - Auditable state transitions
 - `DocumentDerivedFile` - Child PDFs, thumbnails
+
+### PDF Rendering Architecture
+
+PDFs are rendered **client-side** using `pdfjs-dist` for optimal coordinate accuracy:
+
+- **Server-side**: Uses `pdf-lib` to extract page metadata (count, dimensions) - no image rendering
+- **Client-side**: Uses `pdfjs-dist` to render PDFs in browser canvas with SVG highlight overlays
+- **Benefits**: Better bounding box accuracy, no storage overhead, vector quality at any zoom
+
+**Key Components:**
+- `PdfPageViewer` - Client-side PDF renderer with highlight support
+- `/api/processing-documents/:id/pdf` - Streams original PDF file
+- `/api/processing-documents/:id/pages` - Returns page metadata with `isPdf` flag
 
 ### Future Phases
 

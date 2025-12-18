@@ -14,22 +14,17 @@ import {
 } from 'lucide-react';
 import { useDocumentPages, type DocumentPageInfo } from '@/hooks/use-processing-documents';
 import { cn } from '@/lib/utils';
+import { PdfPageViewer, type BoundingBox, type FieldValue, type TextLayerItem } from './pdf-page-viewer';
 
-interface BoundingBox {
-  pageNumber: number;
-  x: number; // 0-1 normalized
-  y: number; // 0-1 normalized
-  width: number; // 0-1 normalized
-  height: number; // 0-1 normalized
-  label?: string;
-  color?: string;
-}
+export type { BoundingBox, FieldValue, TextLayerItem };
 
 interface DocumentPageViewerProps {
   documentId: string;
   initialPage?: number;
   highlights?: BoundingBox[];
+  fieldValues?: FieldValue[]; // Values to find in PDF text layer
   onPageChange?: (pageNumber: number) => void;
+  onTextLayerReady?: (textItems: TextLayerItem[], pageNumber: number) => void;
   className?: string;
 }
 
@@ -40,9 +35,12 @@ export function DocumentPageViewer({
   documentId,
   initialPage = 1,
   highlights = [],
+  fieldValues = [],
   onPageChange,
+  onTextLayerReady,
   className,
 }: DocumentPageViewerProps) {
+  // All hooks must be called unconditionally at the top
   const { data, isLoading, error, refetch } = useDocumentPages(documentId);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
@@ -97,10 +95,14 @@ export function DocumentPageViewer({
 
     if (!isFullscreen) {
       containerRef.current.requestFullscreen?.();
+      setIsFullscreen(true);
     } else {
-      document.exitFullscreen?.();
+      // Only exit fullscreen if we're actually in fullscreen mode
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.();
+      }
+      setIsFullscreen(false);
     }
-    setIsFullscreen(!isFullscreen);
   }, [isFullscreen]);
 
   // Handle keyboard navigation
@@ -131,6 +133,21 @@ export function DocumentPageViewer({
 
   // Get highlights for current page
   const currentHighlights = highlights.filter((h) => h.pageNumber === currentPage);
+
+  // If this is a PDF, use the PDF viewer (must be after all hooks)
+  if (data?.isPdf && data.pdfUrl) {
+    return (
+      <PdfPageViewer
+        pdfUrl={data.pdfUrl}
+        initialPage={initialPage}
+        highlights={highlights}
+        fieldValues={fieldValues}
+        onPageChange={onPageChange}
+        onTextLayerReady={onTextLayerReady}
+        className={className}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -166,8 +183,8 @@ export function DocumentPageViewer({
     <div
       ref={containerRef}
       className={cn(
-        'flex flex-col bg-background-secondary rounded-lg overflow-hidden',
-        isFullscreen && 'fixed inset-0 z-50 rounded-none',
+        'flex flex-col bg-background-secondary overflow-hidden',
+        isFullscreen && 'fixed inset-0 z-50',
         className
       )}
     >
@@ -331,13 +348,6 @@ export function DocumentPageViewer({
         </div>
       </div>
 
-      {/* Page info footer */}
-      {currentPageData && (
-        <div className="px-3 py-1.5 bg-background-tertiary border-t border-border-primary text-xs text-text-muted">
-          {currentPageData.width} × {currentPageData.height} px • {currentPageData.dpi} DPI
-          {currentPageData.textAcquisition && ` • Text: ${currentPageData.textAcquisition}`}
-        </div>
-      )}
     </div>
   );
 }

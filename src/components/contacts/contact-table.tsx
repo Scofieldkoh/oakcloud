@@ -2,10 +2,10 @@
 
 import { memo } from 'react';
 import Link from 'next/link';
-import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2 } from 'lucide-react';
+import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2, Square, CheckSquare, MinusSquare } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
-import { Checkbox } from '@/components/ui/checkbox';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
+import { cn } from '@/lib/utils';
 import type { Contact, ContactType, IdentificationType } from '@prisma/client';
 
 interface ContactWithCount extends Contact {
@@ -207,12 +207,19 @@ export function ContactTable({
           <tr>
             {selectable && (
               <th className="w-10">
-                <Checkbox
-                  checked={isAllSelected}
-                  indeterminate={isIndeterminate}
-                  onChange={onToggleAll}
-                  size="sm"
-                />
+                <button
+                  onClick={onToggleAll}
+                  className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                  title={isAllSelected ? 'Deselect all' : 'Select all'}
+                >
+                  {isAllSelected ? (
+                    <CheckSquare className="w-4 h-4 text-oak-primary" />
+                  ) : isIndeterminate ? (
+                    <MinusSquare className="w-4 h-4 text-oak-light" />
+                  ) : (
+                    <Square className="w-4 h-4 text-text-muted" />
+                  )}
+                </button>
               </th>
             )}
             <th>Name</th>
@@ -225,18 +232,30 @@ export function ContactTable({
           </tr>
         </thead>
         <tbody>
-          {contacts.map((contact) => (
+          {contacts.map((contact) => {
+            const isSelected = selectedIds.has(contact.id);
+            return (
             <tr
               key={contact.id}
-              className={selectedIds.has(contact.id) ? 'bg-oak-primary/5' : ''}
+              className={cn(
+                'transition-colors',
+                isSelected
+                  ? 'bg-oak-primary/5 hover:bg-oak-primary/10'
+                  : 'hover:bg-background-tertiary/50'
+              )}
             >
               {selectable && (
                 <td>
-                  <Checkbox
-                    checked={selectedIds.has(contact.id)}
-                    onChange={() => onToggleOne?.(contact.id)}
-                    size="sm"
-                  />
+                  <button
+                    onClick={() => onToggleOne?.(contact.id)}
+                    className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="w-4 h-4 text-oak-primary" />
+                    ) : (
+                      <Square className="w-4 h-4 text-text-muted" />
+                    )}
+                  </button>
                 </td>
               )}
               <td>
@@ -297,7 +316,8 @@ export function ContactTable({
                 />
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

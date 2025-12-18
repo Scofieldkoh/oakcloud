@@ -228,9 +228,9 @@ export default function ProcessingDocumentsPage() {
             Refresh
           </button>
           {can.createDocument && (
-            <Link href="/companies/upload" className="btn-primary btn-sm flex items-center gap-2">
+            <Link href="/processing/upload" className="btn-primary btn-sm flex items-center gap-2">
               <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload Document</span>
+              <span className="hidden sm:inline">Upload Documents</span>
               <span className="sm:hidden">Upload</span>
             </Link>
           )}
@@ -376,11 +376,11 @@ export default function ProcessingDocumentsPage() {
           <FileText className="w-12 h-12 text-text-muted mx-auto mb-4" />
           <h3 className="text-lg font-medium text-text-primary mb-2">No documents found</h3>
           <p className="text-text-secondary mb-4">
-            Upload documents to start processing with AI extraction.
+            Upload invoices, receipts, and other business documents for AI-powered extraction.
           </p>
-          <Link href="/companies/upload" className="btn-primary btn-sm inline-flex items-center gap-2">
+          <Link href="/processing/upload" className="btn-primary btn-sm inline-flex items-center gap-2">
             <Upload className="w-4 h-4" />
-            Upload Document
+            Upload Documents
           </Link>
         </div>
       )}
@@ -451,9 +451,12 @@ export default function ProcessingDocumentsPage() {
                             )}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-text-primary truncate max-w-[200px]">
+                            <Link
+                              href={`/processing/${doc.id}`}
+                              className="text-sm font-medium text-text-primary hover:text-oak-light transition-colors truncate max-w-[200px] block"
+                            >
                               {doc.document.fileName}
-                            </p>
+                            </Link>
                             <p className="text-xs text-text-muted">
                               {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
                               {doc.document.company && ` • ${doc.document.company.name}`}
@@ -491,13 +494,25 @@ export default function ProcessingDocumentsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/processing/${doc.id}`}
-                          className="btn-ghost btn-xs inline-flex items-center gap-1"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          View
-                        </Link>
+                        <div className="flex items-center justify-end gap-1">
+                          {doc.duplicateStatus === 'SUSPECTED' && (
+                            <Link
+                              href={`/processing/${doc.id}?compare=true`}
+                              className="btn-ghost btn-xs inline-flex items-center gap-1 text-status-warning"
+                              title="Compare with suspected duplicate"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              Compare
+                            </Link>
+                          )}
+                          <Link
+                            href={`/processing/${doc.id}`}
+                            className="btn-ghost btn-xs inline-flex items-center gap-1"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            View
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );

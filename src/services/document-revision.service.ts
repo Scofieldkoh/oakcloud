@@ -117,11 +117,15 @@ const VALIDATION_CODES = {
   PARTIAL_EXTRACTION: { severity: 'WARN' as const, message: 'Extraction may be incomplete' },
   HEADER_ARITHMETIC_MISMATCH: {
     severity: 'WARN' as const,
-    message: 'Header amounts do not compute correctly',
+    message: 'Header amounts do not compute correctly (subtotal + tax ≠ total)',
   },
   LINE_SUM_MISMATCH: {
     severity: 'WARN' as const,
     message: 'Sum of line items does not match subtotal',
+  },
+  LINE_GST_SUM_MISMATCH: {
+    severity: 'WARN' as const,
+    message: 'Sum of line item GST does not match tax amount',
   },
   FUTURE_DATE: { severity: 'WARN' as const, message: 'Document date is in the future' },
   INVALID_CURRENCY: { severity: 'ERROR' as const, message: 'Currency code is invalid' },
@@ -483,21 +487,48 @@ export async function validateRevision(revisionId: string): Promise<{
   }
 
   // Check line item sum matches subtotal
-  if (revision.items.length > 0 && revision.subtotal) {
+  if (revision.items.length > 0) {
     const lineSum = revision.items.reduce((sum, item) => sum.add(item.amount), new Decimal(0));
-    if (!lineSum.equals(revision.subtotal)) {
-      issues.push({
-        code: 'LINE_SUM_MISMATCH',
-        ...VALIDATION_CODES.LINE_SUM_MISMATCH,
-        field: 'subtotal',
-      });
+
+    // Compare against subtotal if available, otherwise against total (when no tax)
+    if (revision.subtotal) {
+      // Allow small rounding difference (0.01)
+      const diff = lineSum.sub(revision.subtotal).abs();
+      if (diff.greaterThan(new Decimal('0.01'))) {
+        issues.push({
+          code: 'LINE_SUM_MISMATCH',
+          ...VALIDATION_CODES.LINE_SUM_MISMATCH,
+          field: 'subtotal',
+        });
+      }
+    }
+
+    // Check line item GST sum matches tax amount
+    const lineGstSum = revision.items.reduce(
+      (sum, item) => sum.add(item.gstAmount || new Decimal(0)),
+      new Decimal(0)
+    );
+    if (revision.taxAmount) {
+      const gstDiff = lineGstSum.sub(revision.taxAmount).abs();
+      if (gstDiff.greaterThan(new Decimal('0.01'))) {
+        issues.push({
+          code: 'LINE_GST_SUM_MISMATCH',
+          ...VALIDATION_CODES.LINE_GST_SUM_MISMATCH,
+          field: 'taxAmount',
+        });
+      }
     }
   }
 
   // Check header arithmetic: subtotal + tax = total
-  if (revision.subtotal && revision.taxAmount) {
-    const expected = revision.subtotal.add(revision.taxAmount);
-    if (!expected.equals(revision.totalAmount)) {
+  // This check runs if we have subtotal OR taxAmount (not just both)
+  if (revision.subtotal || revision.taxAmount) {
+    const subtotal = revision.subtotal || new Decimal(0);
+    const tax = revision.taxAmount || new Decimal(0);
+    const expected = subtotal.add(tax);
+    // Allow small rounding difference (0.01)
+    const diff = expected.sub(revision.totalAmount).abs();
+    if (diff.greaterThan(new Decimal('0.01'))) {
       issues.push({
         code: 'HEADER_ARITHMETIC_MISMATCH',
         ...VALIDATION_CODES.HEADER_ARITHMETIC_MISMATCH,
