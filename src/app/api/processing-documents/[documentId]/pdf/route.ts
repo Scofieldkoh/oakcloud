@@ -5,16 +5,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, stat } from 'fs/promises';
-import { join } from 'path';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { storage } from '@/lib/storage';
 
 interface RouteParams {
   params: Promise<{ documentId: string }>;
 }
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 
 /**
  * GET /api/processing-documents/{documentId}/pdf
@@ -25,14 +22,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { documentId } = await params;
 
-    // Get the processing document with its file path (from Document relation)
+    // Get the processing document with its storage key (from Document relation)
     const processingDoc = await prisma.processingDocument.findUnique({
       where: { id: documentId },
       include: {
         document: {
           select: {
             companyId: true,
-            filePath: true,
+            storageKey: true,
             originalFileName: true,
             mimeType: true,
           },
@@ -63,15 +60,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get file info from the Document relation
-    const documentFilePath = processingDoc.document?.filePath;
+    const storageKey = processingDoc.document?.storageKey;
     const documentMimeType = processingDoc.document?.mimeType;
     const documentOriginalFileName = processingDoc.document?.originalFileName;
 
-    if (!documentFilePath) {
+    if (!storageKey) {
       return NextResponse.json(
         {
           success: false,
-          error: { code: 'FILE_NOT_FOUND', message: 'Document file path not found' },
+          error: { code: 'FILE_NOT_FOUND', message: 'Document storage key not found' },
         },
         { status: 404 }
       );
@@ -81,7 +78,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const isPdf =
       documentMimeType === 'application/pdf' ||
       documentOriginalFileName?.toLowerCase().endsWith('.pdf') ||
-      documentFilePath?.toLowerCase().endsWith('.pdf');
+      storageKey?.toLowerCase().endsWith('.pdf');
 
     if (!isPdf) {
       return NextResponse.json(
@@ -93,37 +90,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Determine the full file path
-    let filePath: string;
-    if (documentFilePath.startsWith('/') || /^[A-Za-z]:/.test(documentFilePath)) {
-      // Absolute path
-      filePath = documentFilePath;
-    } else if (documentFilePath.startsWith('uploads\\') || documentFilePath.startsWith('uploads/')) {
-      // Already has uploads prefix - use relative to project root
-      filePath = join('.', documentFilePath);
-    } else {
-      // No uploads prefix - join with UPLOAD_DIR
-      filePath = join(UPLOAD_DIR, documentFilePath);
-    }
-
-    // Check if file exists
-    try {
-      await stat(filePath);
-    } catch {
+    // Check if file exists in storage
+    const exists = await storage.exists(storageKey);
+    if (!exists) {
       return NextResponse.json(
         {
           success: false,
-          error: { code: 'FILE_NOT_FOUND', message: 'PDF file not found on disk' },
+          error: { code: 'FILE_NOT_FOUND', message: 'PDF file not found in storage' },
         },
         { status: 404 }
       );
     }
 
-    // Read the PDF file
-    const pdfBuffer = await readFile(filePath);
+    // Download the PDF from storage
+    const pdfBuffer = await storage.download(storageKey);
 
     // Return the PDF with appropriate headers
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

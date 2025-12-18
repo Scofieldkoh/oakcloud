@@ -56,7 +56,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           orderBy: { pageNumber: 'asc' },
           select: {
             pageNumber: true,
-            imagePath: true,
+            storageKey: true,
             widthPx: true,
             heightPx: true,
           },
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           orderBy: { pageNumber: 'asc' },
           select: {
             pageNumber: true,
-            imagePath: true,
+            storageKey: true,
             widthPx: true,
             heightPx: true,
           },

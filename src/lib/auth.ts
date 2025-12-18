@@ -8,7 +8,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { prisma } from './prisma';
-import type { TenantStatus } from '@prisma/client';
+import type { TenantStatus } from '@/generated/prisma';
 import { logAuthEvent } from './audit';
 import {
   AUTH_COOKIE_NAME,

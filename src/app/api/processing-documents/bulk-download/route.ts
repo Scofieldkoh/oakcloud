@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { stat } from 'fs/promises';
+import { storage } from '@/lib/storage';
 
 interface BulkDownloadRequest {
   documentIds: string[];
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         document: {
           select: {
             companyId: true,
-            filePath: true,
+            storageKey: true,
             fileName: true,
             originalFileName: true,
             mimeType: true,
@@ -81,16 +81,15 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Check if file exists
-      if (!doc.document?.filePath) {
-        errors.push({ documentId: doc.id, error: 'File path not found' });
+      // Check if file exists in storage
+      if (!doc.document?.storageKey) {
+        errors.push({ documentId: doc.id, error: 'Storage key not found' });
         continue;
       }
 
-      try {
-        await stat(doc.document.filePath);
-      } catch {
-        errors.push({ documentId: doc.id, error: 'File not found on disk' });
+      const fileExists = await storage.exists(doc.document.storageKey);
+      if (!fileExists) {
+        errors.push({ documentId: doc.id, error: 'File not found in storage' });
         continue;
       }
 

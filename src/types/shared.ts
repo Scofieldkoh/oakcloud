@@ -14,7 +14,7 @@ import type {
   ShareCapital,
   Document,
   Contact,
-} from '@prisma/client';
+} from '@/generated/prisma';
 
 // ============================================================================
 // Company Types

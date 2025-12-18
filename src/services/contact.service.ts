@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import type { CreateContactInput, UpdateContactInput, ContactSearchInput } from '@/lib/validations/contact';
-import type { Prisma, Contact, ContactType, PrismaClient } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { Contact, ContactType, PrismaClient } from '@/generated/prisma';
 
 /**
  * Type for Prisma transaction client (interactive transaction)
@@ -318,7 +319,7 @@ export async function getContactLinkInfo(
   };
 }
 
-import type { OfficerRole } from '@prisma/client';
+import type { OfficerRole } from '@/generated/prisma';
 
 // Officer roles that create Officer records
 const OFFICER_ROLES = ['Director', 'Secretary', 'Auditor', 'Authorized Representative'];

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { getCompanyAuditHistory } from '@/lib/audit';
-import type { AuditAction } from '@prisma/client';
+import type { AuditAction } from '@/generated/prisma';
 
 export async function GET(
   request: NextRequest,

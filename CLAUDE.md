@@ -26,8 +26,12 @@ npm run db:studio        # Open Prisma Studio
 npm run db:seed          # Seed with sample data
 
 # Docker
-npm run docker:up        # Start PostgreSQL + Redis
+npm run docker:up        # Start PostgreSQL + Redis + MinIO
 npm run docker:down      # Stop containers
+
+# Testing
+npm run test:run         # Run all tests
+npm run test:coverage    # Run tests with coverage
 ```
 
 ## Architecture
@@ -43,9 +47,12 @@ src/
 ├── components/
 │   ├── ui/                 # Reusable UI components (Button, Modal, Toast, etc.)
 │   └── companies/          # Company-specific components
+├── generated/
+│   └── prisma/             # Generated Prisma client (import from @/generated/prisma)
 ├── hooks/                  # React hooks (useAuth, useCompanies, etc.)
 ├── lib/                    # Core utilities
-│   ├── prisma.ts           # Database client
+│   ├── prisma.ts           # Database client with PrismaPg adapter
+│   ├── storage/            # Object storage abstraction (S3/MinIO)
 │   ├── auth.ts             # JWT & session management
 │   ├── audit.ts            # Audit logging
 │   ├── rbac.ts             # Role-based access control
@@ -104,10 +111,12 @@ Note: This doesn't apply to `react-hook-form` with `{ valueAsNumber: true }` whi
 
 ### Database
 
-- PostgreSQL with Prisma ORM
+- PostgreSQL with Prisma ORM 7.x (Rust-free client with driver adapters)
 - Docker runs on port `5433` (to avoid conflicts with local PostgreSQL)
 - Soft delete pattern with `deletedAt` field
 - Historical tracking with `isCurrent`, `effectiveFrom/To` fields
+- Generated client at `src/generated/prisma/` - import from `@/generated/prisma`
+- Uses `@prisma/adapter-pg` with connection pooling for PostgreSQL
 
 ### Authentication
 
@@ -140,10 +149,19 @@ All API routes under `src/app/api/`:
 - `/api/users/:id/companies` - Multi-company user assignments
 - `/api/audit-logs/*` - Audit history
 
+### Object Storage (MinIO/S3)
+
+Documents are stored in S3-compatible object storage (MinIO in development):
+- Storage abstraction: `src/lib/storage/` with `StorageKeys` utility
+- Key pattern: `{tenantId}/companies/{companyId}/documents/{docId}/...`
+- Pending uploads: `{tenantId}/pending/{docId}/original.{ext}`
+- Environment: `STORAGE_PROVIDER=s3`, `S3_ENDPOINT`, `S3_BUCKET`, etc.
+
 ### Environment Variables
 
 Required: `DATABASE_URL`, `JWT_SECRET`
 Optional: `OPENAI_API_KEY` (for BizFile extraction), `LOG_LEVEL` (silent|error|warn|info|debug|trace)
+Storage: `STORAGE_PROVIDER` (s3|local), `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`
 
 ### Logging
 

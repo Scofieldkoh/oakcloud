@@ -13,9 +13,11 @@ import type {
   UpdateCompanyInput,
   CompanySearchInput,
 } from '@/lib/validations/company';
-import type { Prisma, Company } from '@prisma/client';
-import type { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@/generated/prisma';
+import type { Company } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
+
+type Decimal = Prisma.Decimal;
 
 // ============================================================================
 // Types

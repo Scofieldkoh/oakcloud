@@ -2,7 +2,7 @@
 
 import { Search, Filter, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import type { CompanyStatus, EntityType } from '@prisma/client';
+import type { CompanyStatus, EntityType } from '@/generated/prisma';
 import { ENTITY_TYPES } from '@/lib/constants';
 
 interface CompanyFiltersProps {

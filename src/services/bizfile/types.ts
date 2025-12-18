@@ -4,7 +4,7 @@
  * Shared types for the BizFile extraction and processing service.
  */
 
-import type { EntityType, CompanyStatus, OfficerRole, ContactType, IdentificationType } from '@prisma/client';
+import type { EntityType, CompanyStatus, OfficerRole, ContactType, IdentificationType } from '@/generated/prisma';
 import type { AIModel } from '@/lib/ai';
 
 // ============================================================================

@@ -6,7 +6,7 @@ import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2, Square,
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { cn } from '@/lib/utils';
-import type { Contact, ContactType, IdentificationType } from '@prisma/client';
+import type { Contact, ContactType, IdentificationType } from '@/generated/prisma';
 
 interface ContactWithCount extends Contact {
   _count?: {

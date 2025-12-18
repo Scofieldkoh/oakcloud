@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join, extname } from 'path';
+import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { storage, StorageKeys } from '@/lib/storage';
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '10485760'); // 10MB
 
 // Supported file types for BizFile extraction
@@ -87,30 +86,36 @@ export async function POST(request: NextRequest) {
       tenantId = session.tenantId;
     }
 
-    // Create upload directory for pending documents
-    const pendingDir = join(UPLOAD_DIR, 'pending', tenantId);
-    await mkdir(pendingDir, { recursive: true });
-
-    // Generate unique filename with correct extension
-    const fileId = uuidv4();
+    // Generate unique document ID and filename
+    const documentId = uuidv4();
     const fileExt = MIME_TO_EXT[file.type] || extname(file.name) || '.pdf';
-    const fileName = `${fileId}${fileExt}`;
-    const filePath = join(pendingDir, fileName);
+    const fileName = `${documentId}${fileExt}`;
 
-    // Save file
+    // Generate storage key for pending document
+    const storageKey = StorageKeys.pendingDocument(tenantId, documentId, fileName);
+
+    // Upload file to storage
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    await storage.upload(storageKey, buffer, {
+      contentType: file.type,
+      metadata: {
+        originalFileName: file.name,
+        uploadedBy: session.id,
+        tenantId,
+      },
+    });
 
     // Create document record without company association
     const document = await prisma.document.create({
       data: {
+        id: documentId, // Use the generated ID
         tenantId,
         uploadedById: session.id,
         documentType,
         fileName,
         originalFileName: file.name,
-        filePath,
+        storageKey,
         fileSize: file.size,
         mimeType: file.type,
         version: 1,

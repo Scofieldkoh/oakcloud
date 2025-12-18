@@ -17,13 +17,28 @@ you can read "README.md" inside of docs, it contains the latest information on t
 - [x] Look out for const that should be centrally managed for good practises
   - **Resolved**: Comment constants (MAX_COMMENT_LENGTH, DEFAULT_COMMENT_RATE_LIMIT, COMMENT_RATE_LIMIT_WINDOW_MS) moved to `src/lib/constants/application.ts`
 
+### Infrastructure (Updated 2025-12-19)
+- [x] Prisma 7.x Migration
+  - **Completed**: Migrated from Prisma 6.19.1 to 7.2.0
+  - Uses `@prisma/adapter-pg` driver adapter with connection pooling
+  - Generated client at `src/generated/prisma/` (import from `@/generated/prisma`)
+  - Configuration via `prisma.config.ts` at project root
+  - 302 tests passing with comprehensive Prisma 7 test coverage
+- [x] MinIO Object Storage
+  - **Completed**: Implemented S3-compatible storage abstraction
+  - `StorageKeys` utility for tenant-isolated paths
+  - `S3StorageAdapter` with full operation support (upload, download, delete, list, copy, move)
+  - Docker Compose includes MinIO container (ports 9000/9001)
+  - 42 storage tests passing with 91%+ coverage
+
 ### Companies
 - [x] Where are uploaded bizfile saved?
-  - **Resolved**: BizFile documents are stored locally at:
-    - Path: `{UPLOAD_DIR}/pending/{tenantId}/{fileId}.{ext}` (default: `./uploads/pending/...`)
-    - Configure via `UPLOAD_DIR` environment variable
+  - **Resolved**: BizFile documents are stored in MinIO (S3-compatible object storage):
+    - Path: `{tenantId}/pending/{documentId}/original.{ext}`
+    - Storage adapter: MinIO/S3 with centralized `StorageKeys` utility
     - Max file size: 10MB (configurable via `MAX_FILE_SIZE` env var)
     - Supported formats: PDF, PNG, JPG, WebP
+    - MinIO Console: http://localhost:9001 (oakcloud / oakcloud_minio_secret)
 
 ### Connectors
 - [ ] Ensure connector for OneDrive is working

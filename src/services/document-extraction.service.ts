@@ -7,15 +7,17 @@
 
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
-import type { Prisma, DocumentExtraction } from '@prisma/client';
-import type { ExtractionType, DocumentCategory } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { DocumentExtraction } from '@/generated/prisma';
+import type { ExtractionType, DocumentCategory } from '@/generated/prisma';
 import { createRevision, type LineItemInput } from './document-revision.service';
 import { transitionPipelineStatus, recordProcessingAttempt } from './document-processing.service';
 import { callAIWithConnector, getBestAvailableModelForTenant, extractJSON } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai/types';
 import crypto from 'crypto';
-import { Decimal } from '@prisma/client/runtime/library';
-import * as fs from 'fs/promises';
+import { storage } from '@/lib/storage';
+
+type Decimal = Prisma.Decimal;
 
 const log = createLogger('document-extraction');
 
@@ -381,7 +383,7 @@ interface AIExtractionResult {
  * Extract fields using AI vision model
  */
 async function performAIExtraction(
-  pages: { pageNumber: number; imagePath: string; imageFingerprint: string | null }[],
+  pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[],
   tenantId: string,
   userId: string,
   config: ExtractionConfig
@@ -400,8 +402,8 @@ async function performAIExtraction(
 
   // Read and encode the first page image
   const firstPage = pages[0];
-  if (!firstPage) {
-    throw new Error('No pages to extract from');
+  if (!firstPage || !firstPage.storageKey) {
+    throw new Error('No pages to extract from or missing storage key');
   }
 
   let imageBase64: string;
@@ -413,31 +415,22 @@ async function performAIExtraction(
     : modelId.startsWith('gemini') ? 'google'
     : 'openai';
 
-  // Resolve the file path - handle various path formats
-  let resolvedPath = firstPage.imagePath;
-  if (!resolvedPath.startsWith('/') && !/^[A-Za-z]:/.test(resolvedPath)) {
-    // Relative path - check if it already has 'uploads' prefix
-    if (resolvedPath.startsWith('uploads\\') || resolvedPath.startsWith('uploads/')) {
-      resolvedPath = `./${resolvedPath.replace(/\\/g, '/')}`;
-    } else {
-      resolvedPath = `./uploads/${resolvedPath.replace(/\\/g, '/')}`;
-    }
-  }
-
   try {
-    const imageBuffer = await fs.readFile(resolvedPath);
+    // Download image from storage
+    const imageBuffer = await storage.download(firstPage.storageKey);
     imageBase64 = imageBuffer.toString('base64');
 
     // Detect mime type from extension
-    if (resolvedPath.endsWith('.pdf')) {
+    const storageKey = firstPage.storageKey.toLowerCase();
+    if (storageKey.endsWith('.pdf')) {
       mimeType = 'application/pdf';
-    } else if (resolvedPath.endsWith('.jpg') || resolvedPath.endsWith('.jpeg')) {
+    } else if (storageKey.endsWith('.jpg') || storageKey.endsWith('.jpeg')) {
       mimeType = 'image/jpeg';
-    } else if (resolvedPath.endsWith('.png')) {
+    } else if (storageKey.endsWith('.png')) {
       mimeType = 'image/png';
     }
   } catch (error) {
-    log.error(`Failed to read image file: ${resolvedPath} (original: ${firstPage.imagePath})`, error);
+    log.error(`Failed to read image from storage: ${firstPage.storageKey}`, error);
     return {
       result: simulateFallbackExtraction(pages),
       modelUsed: 'simulation',
@@ -601,7 +594,7 @@ function extractFieldValue(field: unknown): { value: string; confidence: number 
  */
 function mapAIResponseToResult(
   data: Record<string, unknown>,
-  pages: { pageNumber: number; imagePath: string; imageFingerprint: string | null }[]
+  pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[]
 ): FieldExtractionResult {
   const pageNum = pages[0]?.pageNumber ?? 1;
   const fingerprint = pages[0]?.imageFingerprint ?? '';
@@ -713,7 +706,7 @@ function mapAIResponseToResult(
  * Fallback simulation when AI is not available
  */
 function simulateFallbackExtraction(
-  pages: { pageNumber: number; imagePath: string; imageFingerprint: string | null }[]
+  pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[]
 ): FieldExtractionResult {
   const now = new Date();
   const pageNum = pages[0]?.pageNumber ?? 1;
@@ -812,7 +805,7 @@ export async function createDocumentPages(
   processingDocumentId: string,
   pages: Array<{
     pageNumber: number;
-    imagePath: string;
+    storageKey: string;
     widthPx: number;
     heightPx: number;
     imageFingerprint?: string;
@@ -823,7 +816,7 @@ export async function createDocumentPages(
     data: pages.map((page) => ({
       processingDocumentId,
       pageNumber: page.pageNumber,
-      imagePath: page.imagePath,
+      storageKey: page.storageKey,
       widthPx: page.widthPx,
       heightPx: page.heightPx,
       imageFingerprint: page.imageFingerprint,

@@ -10,7 +10,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
-import type { PipelineStatus, DuplicateStatus } from '@prisma/client';
+import type { PipelineStatus, DuplicateStatus } from '@/generated/prisma';
 
 type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE';
 

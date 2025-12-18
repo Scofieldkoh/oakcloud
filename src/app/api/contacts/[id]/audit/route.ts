@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { getAuditHistory } from '@/lib/audit';
-import type { AuditAction } from '@prisma/client';
+import type { AuditAction } from '@/generated/prisma';
 
 export async function GET(
   request: NextRequest,

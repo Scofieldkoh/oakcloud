@@ -1,53 +1,36 @@
-import { PrismaClient, EntityType, CompanyStatus } from '@prisma/client';
+import 'dotenv/config';
+import { PrismaClient } from '@/generated/prisma';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
+
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 /**
- * Database seed script for Oakcloud
+ * Database seed script for Oakcloud (Minimal Setup)
  *
  * This script is idempotent - it can be run multiple times safely.
- * It creates:
- * - A default tenant for development
- * - A super admin user (system-wide, no tenant)
- * - A tenant admin user (assigned to default tenant)
- * - Sample companies with addresses, directors, and shareholders
- * - Audit logs for seeded data
+ * Creates only the essential data:
+ * - A SUPER_ADMIN user with global role
+ * - Core permissions for the RBAC system
  *
  * Usage: npm run db:seed
  */
 
 async function main() {
-  console.log('Seeding database...\n');
+  console.log('Seeding database (minimal setup)...\n');
 
   // =========================================================================
-  // STEP 1: Create default tenant
+  // STEP 1: Create SUPER_ADMIN user
   // =========================================================================
-  console.log('Step 1: Creating default tenant...');
-
-  const defaultTenant = await prisma.tenant.upsert({
-    where: { slug: 'default' },
-    update: {
-      // Update existing tenant to ensure it's active
-      status: 'ACTIVE',
-    },
-    create: {
-      name: 'Default Tenant',
-      slug: 'default',
-      status: 'ACTIVE',
-      contactEmail: 'admin@oakcloud.local',
-      maxUsers: 50,
-      maxCompanies: 100,
-      maxStorageMb: 10240,
-    },
-  });
-
-  console.log(`  Created/updated tenant: ${defaultTenant.name} (${defaultTenant.id})\n`);
-
-  // =========================================================================
-  // STEP 2: Create users
-  // =========================================================================
-  console.log('Step 2: Creating users...');
+  console.log('Step 1: Creating SUPER_ADMIN user...');
 
   const passwordHash = await bcrypt.hash('admin123', 10);
 
@@ -66,31 +49,12 @@ async function main() {
       isActive: true,
     },
   });
-  console.log(`  Super Admin: ${superAdmin.email}`);
-
-  // Tenant Admin (assigned to default tenant)
-  const tenantAdmin = await prisma.user.upsert({
-    where: { email: 'tenant@oakcloud.local' },
-    update: {
-      passwordHash,
-      tenantId: defaultTenant.id,
-      isActive: true,
-    },
-    create: {
-      email: 'tenant@oakcloud.local',
-      passwordHash,
-      firstName: 'Tenant',
-      lastName: 'Admin',
-      tenantId: defaultTenant.id,
-      isActive: true,
-    },
-  });
-  console.log(`  Tenant Admin: ${tenantAdmin.email}\n`);
+  console.log(`  Created/updated SUPER_ADMIN: ${superAdmin.email}\n`);
 
   // =========================================================================
-  // STEP 3: Seed permissions
+  // STEP 2: Seed permissions
   // =========================================================================
-  console.log('Step 3: Seeding permissions...');
+  console.log('Step 2: Seeding permissions...');
 
   const RESOURCES = [
     'tenant',
@@ -102,6 +66,7 @@ async function main() {
     'officer',
     'shareholder',
     'audit_log',
+    'connector',
   ];
 
   const ACTIONS = [
@@ -196,6 +161,15 @@ async function main() {
       import: 'Import audit logs',
       manage: 'Full audit management',
     },
+    connector: {
+      create: 'Create connectors',
+      read: 'View connectors',
+      update: 'Update connector settings',
+      delete: 'Delete connectors',
+      export: 'Export connector data',
+      import: 'Import connector data',
+      manage: 'Full connector management',
+    },
   };
 
   let permissionCount = 0;
@@ -224,124 +198,11 @@ async function main() {
   console.log(`  Created/updated ${permissionCount} permissions\n`);
 
   // =========================================================================
-  // STEP 4: Create system roles for default tenant
+  // STEP 3: Create global SUPER_ADMIN role
   // =========================================================================
-  console.log('Step 4: Creating system roles for default tenant...');
-
-  // Get all permissions for role assignments
-  const allPermissions = await prisma.permission.findMany();
-  const permissionMap = new Map(
-    allPermissions.map((p) => [`${p.resource}:${p.action}`, p.id])
-  );
-
-  // Define system role permissions
-  const TENANT_ADMIN_PERMISSIONS = [
-    'user:create', 'user:read', 'user:update', 'user:delete', 'user:manage',
-    'role:create', 'role:read', 'role:update', 'role:delete', 'role:manage',
-    'company:create', 'company:read', 'company:update', 'company:delete', 'company:export', 'company:manage',
-    'contact:create', 'contact:read', 'contact:update', 'contact:delete', 'contact:export', 'contact:manage',
-    'document:create', 'document:read', 'document:update', 'document:delete', 'document:export', 'document:manage',
-    'officer:create', 'officer:read', 'officer:update', 'officer:delete', 'officer:export', 'officer:manage',
-    'shareholder:create', 'shareholder:read', 'shareholder:update', 'shareholder:delete', 'shareholder:export', 'shareholder:manage',
-    'audit_log:read', 'audit_log:export',
-  ];
-
-  const COMPANY_ADMIN_PERMISSIONS = [
-    'company:read', 'company:update',
-    'contact:create', 'contact:read', 'contact:update', 'contact:delete',
-    'document:create', 'document:read', 'document:update', 'document:delete',
-    'officer:create', 'officer:read', 'officer:update', 'officer:delete',
-    'shareholder:create', 'shareholder:read', 'shareholder:update', 'shareholder:delete',
-    'audit_log:read',
-  ];
-
-  const COMPANY_USER_PERMISSIONS = [
-    'company:read',
-    'contact:read',
-    'document:read',
-    'officer:read',
-    'shareholder:read',
-    'audit_log:read',
-  ];
-
-  // System role type mapping for proper auth checks
-  const SYSTEM_ROLE_TYPE_MAP: Record<string, string> = {
-    'Tenant Admin': 'TENANT_ADMIN',
-    'Company Admin': 'COMPANY_ADMIN',
-    'Company User': 'COMPANY_USER',
-  };
-
-  const systemRoles = [
-    {
-      name: 'Tenant Admin',
-      description: 'Full access to all tenant resources',
-      permissions: TENANT_ADMIN_PERMISSIONS,
-    },
-    {
-      name: 'Company Admin',
-      description: 'Manage assigned company and its data',
-      permissions: COMPANY_ADMIN_PERMISSIONS,
-    },
-    {
-      name: 'Company User',
-      description: 'View-only access to assigned company',
-      permissions: COMPANY_USER_PERMISSIONS,
-    },
-  ];
-
-  // Track created roles for assignment later
-  const createdRoles: Record<string, string> = {};
-
-  for (const roleData of systemRoles) {
-    const systemRoleType = SYSTEM_ROLE_TYPE_MAP[roleData.name];
-
-    // Upsert the role with systemRoleType
-    const role = await prisma.role.upsert({
-      where: {
-        tenantId_name: {
-          tenantId: defaultTenant.id,
-          name: roleData.name,
-        },
-      },
-      update: {
-        description: roleData.description,
-        systemRoleType, // Ensure systemRoleType is set on update too
-      },
-      create: {
-        tenantId: defaultTenant.id,
-        name: roleData.name,
-        description: roleData.description,
-        isSystem: true,
-        systemRoleType,
-      },
-    });
-
-    createdRoles[roleData.name] = role.id;
-
-    // Clear existing role permissions and re-add
-    await prisma.rolePermission.deleteMany({
-      where: { roleId: role.id },
-    });
-
-    // Add permissions to role
-    const permissionIds = roleData.permissions
-      .map((p) => permissionMap.get(p))
-      .filter((id): id is string => !!id);
-
-    if (permissionIds.length > 0) {
-      await prisma.rolePermission.createMany({
-        data: permissionIds.map((permissionId) => ({
-          roleId: role.id,
-          permissionId,
-        })),
-      });
-    }
-
-    console.log(`  Created/updated role: ${role.name} (${permissionIds.length} permissions)`);
-  }
+  console.log('Step 3: Creating global SUPER_ADMIN role...');
 
   // Create global SUPER_ADMIN role (no tenantId - system-wide)
-  // Using a special ID pattern to avoid conflicts with tenant-scoped unique constraint
   const superAdminRole = await prisma.role.upsert({
     where: {
       id: 'super-admin-global-role', // Fixed ID for the global super admin role
@@ -360,10 +221,14 @@ async function main() {
       systemRoleType: 'SUPER_ADMIN',
     },
   });
-  console.log(`  Created/updated global role: Super Admin`);
+  console.log(`  Created/updated global role: Super Admin\n`);
 
-  // Assign SUPER_ADMIN role to super admin user
-  // Check if assignment already exists (companyId is null for tenant-wide roles)
+  // =========================================================================
+  // STEP 4: Assign SUPER_ADMIN role to user
+  // =========================================================================
+  console.log('Step 4: Assigning SUPER_ADMIN role...');
+
+  // Check if assignment already exists
   const existingSuperAdminAssignment = await prisma.userRoleAssignment.findFirst({
     where: {
       userId: superAdmin.id,
@@ -381,351 +246,7 @@ async function main() {
       },
     });
   }
-  console.log(`  Assigned Super Admin role to: ${superAdmin.email}`);
-
-  // Assign TENANT_ADMIN role to tenant admin user
-  const tenantAdminRoleId = createdRoles['Tenant Admin'];
-  if (tenantAdminRoleId) {
-    const existingTenantAdminAssignment = await prisma.userRoleAssignment.findFirst({
-      where: {
-        userId: tenantAdmin.id,
-        roleId: tenantAdminRoleId,
-        companyId: null,
-      },
-    });
-
-    if (!existingTenantAdminAssignment) {
-      await prisma.userRoleAssignment.create({
-        data: {
-          userId: tenantAdmin.id,
-          roleId: tenantAdminRoleId,
-          companyId: null,
-        },
-      });
-    }
-    console.log(`  Assigned Tenant Admin role to: ${tenantAdmin.email}`);
-  }
-
-  // =========================================================================
-  // STEP 4b: Create default custom roles
-  // =========================================================================
-  console.log('\nStep 4b: Creating default custom roles...');
-
-  // Import from rbac.ts to ensure consistency
-  const { DEFAULT_CUSTOM_ROLES } = await import('../src/lib/rbac');
-
-  for (const roleData of DEFAULT_CUSTOM_ROLES) {
-    // Check if role already exists
-    const existing = await prisma.role.findUnique({
-      where: {
-        tenantId_name: {
-          tenantId: defaultTenant.id,
-          name: roleData.name,
-        },
-      },
-    });
-
-    if (existing) {
-      console.log(`  Skipping existing role: ${roleData.name}`);
-      continue;
-    }
-
-    // Create the custom role
-    const role = await prisma.role.create({
-      data: {
-        tenantId: defaultTenant.id,
-        name: roleData.name,
-        description: roleData.description,
-        isSystem: false, // Custom roles are not system roles
-      },
-    });
-
-    // Add permissions to role
-    const permissionIds = roleData.permissions
-      .map((p) => permissionMap.get(p))
-      .filter((id): id is string => !!id);
-
-    if (permissionIds.length > 0) {
-      await prisma.rolePermission.createMany({
-        data: permissionIds.map((permissionId) => ({
-          roleId: role.id,
-          permissionId,
-        })),
-      });
-    }
-
-    console.log(`  Created custom role: ${role.name} (${permissionIds.length} permissions)`);
-  }
-  console.log('');
-
-  // =========================================================================
-  // STEP 5: Create sample companies
-  // =========================================================================
-  console.log('Step 5: Creating sample companies...');
-
-  const companiesData = [
-    {
-      uen: '202012345A',
-      name: 'Oakcloud Technologies Pte Ltd',
-      entityType: EntityType.PRIVATE_LIMITED,
-      status: CompanyStatus.LIVE,
-      incorporationDate: new Date('2020-03-15'),
-      primarySsicCode: '62011',
-      primarySsicDescription: 'Development of software and applications',
-      financialYearEndDay: 31,
-      financialYearEndMonth: 12,
-      paidUpCapitalAmount: 100000,
-      issuedCapitalAmount: 100000,
-    },
-    {
-      uen: '201923456B',
-      name: 'Green Leaf Accounting Services Pte Ltd',
-      entityType: EntityType.PRIVATE_LIMITED,
-      status: CompanyStatus.LIVE,
-      incorporationDate: new Date('2019-06-20'),
-      primarySsicCode: '69201',
-      primarySsicDescription: 'Accounting, bookkeeping and auditing activities',
-      financialYearEndDay: 31,
-      financialYearEndMonth: 3,
-      paidUpCapitalAmount: 50000,
-      issuedCapitalAmount: 50000,
-    },
-    {
-      uen: '201834567C',
-      name: 'Sunrise Trading Co Pte Ltd',
-      entityType: EntityType.PRIVATE_LIMITED,
-      status: CompanyStatus.LIVE,
-      incorporationDate: new Date('2018-11-08'),
-      primarySsicCode: '46100',
-      primarySsicDescription: 'Wholesale on a fee or contract basis',
-      secondarySsicCode: '47190',
-      secondarySsicDescription: 'Other retail sale in non-specialised stores',
-      financialYearEndDay: 30,
-      financialYearEndMonth: 6,
-      paidUpCapitalAmount: 250000,
-      issuedCapitalAmount: 250000,
-      hasCharges: true,
-    },
-    {
-      uen: '202245678D',
-      name: 'Digital Solutions Hub Pte Ltd',
-      entityType: EntityType.PRIVATE_LIMITED,
-      status: CompanyStatus.LIVE,
-      incorporationDate: new Date('2022-01-10'),
-      primarySsicCode: '62029',
-      primarySsicDescription: 'Other software and information technology service activities',
-      financialYearEndDay: 31,
-      financialYearEndMonth: 12,
-      paidUpCapitalAmount: 10000,
-      issuedCapitalAmount: 10000,
-    },
-    {
-      uen: '201556789E',
-      name: 'Heritage Properties Pte Ltd',
-      entityType: EntityType.PRIVATE_LIMITED,
-      status: CompanyStatus.STRUCK_OFF,
-      incorporationDate: new Date('2015-04-22'),
-      primarySsicCode: '68100',
-      primarySsicDescription: 'Real estate activities with own or leased property',
-      financialYearEndDay: 31,
-      financialYearEndMonth: 12,
-      paidUpCapitalAmount: 1000000,
-      issuedCapitalAmount: 1000000,
-    },
-  ];
-
-  // Sample directors data (deterministic, not random)
-  const directorsTemplate = [
-    { firstName: 'John', lastName: 'Tan Wei Ming', nationality: 'SINGAPOREAN' },
-    { firstName: 'Sarah', lastName: 'Lim Hui Ling', nationality: 'SINGAPOREAN' },
-  ];
-
-  // Sample addresses (deterministic)
-  const addressTemplates = [
-    { block: '10', level: '12', unit: '01', postalCode: '048623' },
-    { block: '25', level: '8', unit: '05', postalCode: '049712' },
-    { block: '50', level: '15', unit: '10', postalCode: '018956' },
-    { block: '88', level: '20', unit: '15', postalCode: '049318' },
-    { block: '100', level: '5', unit: '02', postalCode: '048424' },
-  ];
-
-  for (let companyIndex = 0; companyIndex < companiesData.length; companyIndex++) {
-    const companyData = companiesData[companyIndex];
-    const addressTemplate = addressTemplates[companyIndex];
-
-    // Create company with tenant ID (using compound unique constraint)
-    const company = await prisma.company.upsert({
-      where: {
-        tenantId_uen: {
-          tenantId: defaultTenant.id,
-          uen: companyData.uen,
-        },
-      },
-      update: {},
-      create: {
-        ...companyData,
-        tenantId: defaultTenant.id,
-      },
-    });
-
-    // Create registered address (deterministic ID for idempotency)
-    const addressId = `${company.id}-registered`;
-    await prisma.companyAddress.upsert({
-      where: { id: addressId },
-      update: {},
-      create: {
-        id: addressId,
-        companyId: company.id,
-        addressType: 'REGISTERED_OFFICE',
-        streetName: 'Robinson Road',
-        block: addressTemplate.block,
-        level: addressTemplate.level,
-        unit: addressTemplate.unit,
-        postalCode: addressTemplate.postalCode,
-        fullAddress: `${addressTemplate.block} Robinson Road #${addressTemplate.level}-${addressTemplate.unit} Singapore ${addressTemplate.postalCode}`,
-        isCurrent: true,
-      },
-    });
-
-    // Create directors and shareholders
-    for (let i = 0; i < directorsTemplate.length; i++) {
-      const director = directorsTemplate[i];
-      // Generate consistent NRIC based on company UEN and director index
-      const nricNumber = `S${70 + i}${companyData.uen.slice(-5)}${String.fromCharCode(65 + i)}`;
-      const fullName = `${director.firstName} ${director.lastName}`;
-
-      // Create or update contact
-      const contact = await prisma.contact.upsert({
-        where: {
-          tenantId_identificationType_identificationNumber: {
-            tenantId: defaultTenant.id,
-            identificationType: 'NRIC',
-            identificationNumber: nricNumber,
-          },
-        },
-        update: {},
-        create: {
-          tenantId: defaultTenant.id,
-          contactType: 'INDIVIDUAL',
-          firstName: director.firstName,
-          lastName: director.lastName,
-          fullName: fullName,
-          identificationType: 'NRIC',
-          identificationNumber: nricNumber,
-          nationality: director.nationality,
-        },
-      });
-
-      // Check if officer record already exists
-      const existingOfficer = await prisma.companyOfficer.findFirst({
-        where: {
-          companyId: company.id,
-          contactId: contact.id,
-          role: 'DIRECTOR',
-        },
-      });
-
-      if (!existingOfficer) {
-        await prisma.companyOfficer.create({
-          data: {
-            companyId: company.id,
-            contactId: contact.id,
-            role: 'DIRECTOR',
-            name: fullName,
-            identificationType: 'NRIC',
-            nationality: director.nationality,
-            appointmentDate: company.incorporationDate,
-            isCurrent: true,
-          },
-        });
-      }
-
-      // Check if shareholder record already exists
-      const existingShareholder = await prisma.companyShareholder.findFirst({
-        where: {
-          companyId: company.id,
-          contactId: contact.id,
-        },
-      });
-
-      if (!existingShareholder) {
-        // Deterministic share count based on index
-        const shares = (i + 1) * 25000;
-        await prisma.companyShareholder.create({
-          data: {
-            companyId: company.id,
-            contactId: contact.id,
-            name: fullName,
-            shareholderType: 'INDIVIDUAL',
-            identificationType: 'NRIC',
-            nationality: director.nationality,
-            shareClass: 'ORDINARY',
-            numberOfShares: shares,
-            percentageHeld: 50,
-            isCurrent: true,
-          },
-        });
-      }
-
-      // Link contact to company
-      await prisma.companyContact.upsert({
-        where: {
-          companyId_contactId_relationship: {
-            companyId: company.id,
-            contactId: contact.id,
-            relationship: 'Director',
-          },
-        },
-        update: {},
-        create: {
-          companyId: company.id,
-          contactId: contact.id,
-          relationship: 'Director',
-          isPrimary: i === 0,
-        },
-      });
-    }
-
-    console.log(`  Created company: ${company.name}`);
-  }
-
-  // =========================================================================
-  // STEP 6: Create audit logs for seeded data
-  // =========================================================================
-  console.log('\nStep 6: Creating audit logs...');
-
-  const companies = await prisma.company.findMany({
-    where: { tenantId: defaultTenant.id },
-  });
-
-  for (const company of companies) {
-    // Check if audit log already exists for this company creation
-    const existingLog = await prisma.auditLog.findFirst({
-      where: {
-        entityType: 'Company',
-        entityId: company.id,
-        action: 'CREATE',
-        changeSource: 'SYSTEM',
-      },
-    });
-
-    if (!existingLog) {
-      await prisma.auditLog.create({
-        data: {
-          tenantId: defaultTenant.id,
-          userId: superAdmin.id,
-          companyId: company.id,
-          action: 'CREATE',
-          entityType: 'Company',
-          entityId: company.id,
-          changeSource: 'SYSTEM',
-          metadata: { seeded: true },
-        },
-      });
-    }
-  }
-
-  console.log(`  Created audit logs for ${companies.length} companies\n`);
+  console.log(`  Assigned Super Admin role to: ${superAdmin.email}\n`);
 
   // =========================================================================
   // Summary
@@ -737,10 +258,9 @@ async function main() {
   console.log('  Super Admin:');
   console.log('    Email: admin@oakcloud.local');
   console.log('    Password: admin123');
-  console.log('  Tenant Admin:');
-  console.log('    Email: tenant@oakcloud.local');
-  console.log('    Password: admin123');
-  console.log('\nNote: Change these passwords in production!\n');
+  console.log('\nNote: Change this password in production!');
+  console.log('\nTo create tenants, users, and companies, use the');
+  console.log('Super Admin account to access the Admin dashboard.\n');
 }
 
 main()

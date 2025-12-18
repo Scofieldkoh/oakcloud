@@ -13,7 +13,8 @@ import type {
   SearchDocumentTemplatesInput,
   DuplicateDocumentTemplateInput,
 } from '@/lib/validations/document-template';
-import type { Prisma, DocumentTemplate, DocumentTemplateCategory } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { DocumentTemplate, DocumentTemplateCategory } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 
 // ============================================================================

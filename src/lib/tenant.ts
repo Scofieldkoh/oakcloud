@@ -6,7 +6,7 @@
  */
 
 import { prisma } from './prisma';
-import type { Tenant, TenantStatus, User } from '@prisma/client';
+import type { Tenant, TenantStatus, User } from '@/generated/prisma';
 import type { SessionUser } from './auth';
 
 // ============================================================================

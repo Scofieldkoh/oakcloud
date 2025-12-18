@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { TemplatePartial } from '@prisma/client';
+import type { TemplatePartial } from '@/generated/prisma';
 import type {
   CreateTemplatePartialInput,
   UpdateTemplatePartialInput,

@@ -5,9 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, stat } from 'fs/promises';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { storage } from '@/lib/storage';
 
 interface RouteParams {
   params: Promise<{ documentId: string }>;
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         document: {
           select: {
             companyId: true,
-            filePath: true,
+            storageKey: true,
             fileName: true,
             originalFileName: true,
             mimeType: true,
@@ -73,41 +73,40 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const document = processingDoc.document;
-    if (!document?.filePath) {
+    if (!document?.storageKey) {
       return NextResponse.json(
         {
           success: false,
-          error: { code: 'RESOURCE_NOT_FOUND', message: 'Document file path not found' },
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Document storage key not found' },
         },
         { status: 404 }
       );
     }
 
-    // Check if file exists
-    try {
-      await stat(document.filePath);
-    } catch {
+    // Check if file exists in storage
+    const exists = await storage.exists(document.storageKey);
+    if (!exists) {
       return NextResponse.json(
         {
           success: false,
-          error: { code: 'RESOURCE_NOT_FOUND', message: 'Document file not found on disk' },
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Document file not found in storage' },
         },
         { status: 404 }
       );
     }
 
-    // Read the file
-    const fileBuffer = await readFile(document.filePath);
+    // Download the file from storage
+    const fileBuffer = await storage.download(document.storageKey);
 
     // Determine content type
-    const extension = document.filePath.substring(document.filePath.lastIndexOf('.')).toLowerCase();
+    const extension = document.storageKey.substring(document.storageKey.lastIndexOf('.')).toLowerCase();
     const contentType = document.mimeType || MIME_TYPES[extension] || 'application/octet-stream';
 
     // Use original filename for download, fallback to stored filename
     const downloadFileName = document.originalFileName || document.fileName;
 
     // Return the file with appropriate headers
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         'Content-Type': contentType,

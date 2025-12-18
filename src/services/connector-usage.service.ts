@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
 import { calculateCost } from '@/lib/ai/models';
 import type { AIModel, AIProvider } from '@/lib/ai/types';
 

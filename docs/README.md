@@ -77,7 +77,8 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 |------------|---------|---------|
 | Node.js | 20 LTS | Runtime environment |
 | PostgreSQL | 16 | Primary database |
-| Prisma | 6.x | ORM & database toolkit |
+| Prisma | 7.x | ORM with driver adapters (`@prisma/adapter-pg`) |
+| @prisma/adapter-pg | 7.x | PostgreSQL driver adapter with connection pooling |
 | Next.js API Routes | 15.x | Backend API |
 | JWT (jose) | 6.x | Authentication |
 | Nodemailer | 6.x | Email sending (SMTP) |
@@ -93,6 +94,8 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 | Docker Compose | Container orchestration |
 | PostgreSQL | Database container |
 | Redis | Cache/sessions (optional) |
+| MinIO | S3-compatible object storage |
+| @aws-sdk/client-s3 | AWS S3 client for storage operations |
 
 ---
 
@@ -118,17 +121,20 @@ cp .env.example .env
 # Edit .env with your configuration
 ```
 
-3. **Start database containers:**
+3. **Start infrastructure containers:**
 ```bash
 npm run docker:up
 ```
 
 This will automatically create:
-- PostgreSQL database named `oakcloud`
+- PostgreSQL database named `oakcloud` (port 5433)
 - User `oakcloud` with password `oakcloud_password`
-- Redis instance for caching
+- Redis instance for caching (port 6379)
+- MinIO object storage (S3 API: port 9000, Web Console: port 9001)
 
 > **Note:** The Docker PostgreSQL runs on port `5433` to avoid conflicts with local PostgreSQL installations.
+
+**MinIO Console:** Access at http://localhost:9001 with credentials `oakcloud` / `oakcloud_minio_secret`
 
 4. **Initialize database:**
 ```bash
@@ -178,9 +184,10 @@ After seeding, you can login with:
 | Role | Email | Password |
 |------|-------|----------|
 | Super Admin | `admin@oakcloud.local` | `admin123` |
-| Tenant Admin | `tenant@oakcloud.local` | `admin123` |
 
-> **Security:** Change these passwords in production!
+> **Security:** Change this password in production!
+
+The minimal seed creates only the SUPER_ADMIN user. Use this account to create tenants, users, and companies through the Admin dashboard.
 
 ---
 
@@ -3305,6 +3312,50 @@ The system uses content-based duplicate scoring:
 | `document-extraction.service.ts` | AI-powered field extraction |
 | `duplicate-detection.service.ts` | Duplicate scoring, decision workflow |
 
+### Storage Architecture
+
+All document files are stored in **MinIO** (S3-compatible object storage) with a centralized storage abstraction layer.
+
+**Storage Key Structure:**
+```
+{tenantId}/
+├── pending/                           # BizFile pending uploads
+│   └── {documentId}/
+│       └── {filename}
+└── companies/
+    └── {companyId}/
+        └── documents/
+            └── {processingDocId}/
+                ├── original.{ext}     # Original upload
+                ├── pages/
+                │   ├── 1.png
+                │   ├── 2.png
+                │   └── ...
+                └── derived/
+                    ├── thumbnail.jpg
+                    └── child-pages.pdf
+```
+
+**Storage Service (`src/lib/storage/`):**
+| File | Purpose |
+|------|---------|
+| `types.ts` | StorageAdapter interface definition |
+| `config.ts` | Environment configuration, storage key utilities |
+| `local.adapter.ts` | Filesystem adapter (development fallback) |
+| `s3.adapter.ts` | S3/MinIO adapter (production) |
+| `index.ts` | Factory function, singleton export |
+
+**Environment Variables:**
+```bash
+STORAGE_PROVIDER=s3                    # s3 | local
+S3_ENDPOINT=http://localhost:9000      # MinIO endpoint
+S3_REGION=us-east-1
+S3_BUCKET=oakcloud
+S3_ACCESS_KEY=oakcloud
+S3_SECRET_KEY=oakcloud_minio_secret
+S3_FORCE_PATH_STYLE=true               # Required for MinIO
+```
+
 ### Database Models (Phase 1A)
 
 - `ProcessingDocument` - Extended document with pipeline state
@@ -3346,7 +3397,7 @@ PDFs are rendered **client-side** using `pdfjs-dist` for optimal coordinate accu
 
 For detailed version history and changelog, see [CHANGELOG.md](./CHANGELOG.md).
 
-**Current Version:** v0.9.12 (2025-12-13)
+**Current Version:** v0.10.01 (2025-12-19)
 
 ---
 

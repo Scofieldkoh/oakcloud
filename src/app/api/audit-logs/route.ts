@@ -10,7 +10,8 @@ import { requirePermission } from '@/lib/rbac';
 import { auditLogQuerySchema } from '@/lib/validations/audit';
 import { getTenantAuditHistory, getUserAuditHistory } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
-import type { AuditAction, Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { AuditAction } from '@/generated/prisma';
 
 export async function GET(request: NextRequest) {
   try {

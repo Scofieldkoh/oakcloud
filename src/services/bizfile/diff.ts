@@ -6,7 +6,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { normalizeName, normalizeCompanyName } from '@/lib/utils';
-import type { OfficerRole, IdentificationType, ContactType } from '@prisma/client';
+import type { OfficerRole, IdentificationType, ContactType } from '@/generated/prisma';
 import type {
   ExtractedBizFileData,
   ExtractedOfficerData,

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { extractBizFileWithVision, processBizFileExtraction, normalizeExtractedData } from '@/services/bizfile';
 import { calculateCost, formatCost, getModelConfig } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
+import { storage } from '@/lib/storage';
 
 // Supported MIME types for vision extraction
 const VISION_SUPPORTED_TYPES = [
@@ -81,8 +81,11 @@ export async function POST(
     });
 
     try {
-      // Read file and convert to base64 for vision extraction
-      const fileBuffer = await readFile(document.filePath);
+      // Download file from storage and convert to base64 for vision extraction
+      if (!document.storageKey) {
+        throw new Error('Document has no storage key');
+      }
+      const fileBuffer = await storage.download(document.storageKey);
       const base64Data = fileBuffer.toString('base64');
 
       // Extract data using AI vision (connector-aware for tenant)

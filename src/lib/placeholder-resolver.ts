@@ -7,7 +7,10 @@
  */
 
 import { format as formatDate, parseISO } from 'date-fns';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@/generated/prisma';
+import { Decimal as PrismaDecimal } from '@prisma/client/runtime/client';
+
+type Decimal = Prisma.Decimal;
 
 // ============================================================================
 // Types
@@ -575,7 +578,7 @@ function formatValue(value: unknown, options: ResolveOptions): string | null {
   if (value === null || value === undefined) return null;
 
   // Handle Decimal (from Prisma)
-  if (value instanceof Decimal) {
+  if (value instanceof PrismaDecimal) {
     return formatNumber(value.toNumber(), options);
   }
 

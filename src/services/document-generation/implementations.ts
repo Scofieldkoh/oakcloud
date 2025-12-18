@@ -30,7 +30,7 @@ import type {
   Signatory,
   SectionDefinition,
 } from './types';
-import type { GeneratedDocument, DocumentShare } from '@prisma/client';
+import type { GeneratedDocument, DocumentShare } from '@/generated/prisma';
 
 // Import existing service functions
 import {

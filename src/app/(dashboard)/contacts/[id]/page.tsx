@@ -29,7 +29,7 @@ import { useToast } from '@/components/ui/toast';
 import { DateInput } from '@/components/ui/date-input';
 import { CompanyRelationships } from '@/components/contacts/company-relationships';
 import { InternalNotes } from '@/components/notes/internal-notes';
-import type { ContactType, IdentificationType } from '@prisma/client';
+import type { ContactType, IdentificationType } from '@/generated/prisma';
 
 const contactTypeConfig: Record<ContactType, { color: string; label: string }> = {
   INDIVIDUAL: { color: 'badge-info', label: 'Individual' },

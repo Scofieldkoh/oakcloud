@@ -6,8 +6,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
@@ -25,9 +23,8 @@ import {
   updateDuplicateStatus,
 } from '@/services/duplicate-detection.service';
 import { extractFields } from '@/services/document-extraction.service';
-import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus } from '@prisma/client';
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+import { storage, StorageKeys } from '@/lib/storage';
+import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus } from '@/generated/prisma';
 
 /**
  * GET /api/processing-documents
@@ -297,30 +294,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create upload directory
-    const companyDir = join(UPLOAD_DIR, companyId, 'processing');
-    await mkdir(companyDir, { recursive: true });
+    // Generate document ID and storage key
+    const documentId = uuidv4();
+    const extension = StorageKeys.getExtension(file.name, file.type);
+    const storageKey = StorageKeys.documentOriginal(company.tenantId, companyId, documentId, extension);
 
-    // Save file
-    const fileId = uuidv4();
-    const extension = file.name.split('.').pop() || 'pdf';
-    const fileName = `${fileId}.${extension}`;
-    const filePath = join(companyDir, fileName);
-
+    // Upload file to storage
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    await storage.upload(storageKey, buffer, {
+      contentType: file.type,
+      metadata: {
+        originalFileName: file.name,
+        uploadedBy: session.id,
+      },
+    });
 
     // Create base document record
     const document = await prisma.document.create({
       data: {
+        id: documentId,
         tenantId: company.tenantId,
         companyId,
         uploadedById: session.id,
         documentType: 'UPLOADED',
-        fileName,
+        fileName: `${documentId}${extension}`,
         originalFileName: file.name,
-        filePath,
+        storageKey,
         fileSize: file.size,
         mimeType: file.type,
         version: 1,
@@ -336,7 +336,7 @@ export async function POST(request: NextRequest) {
       fileName: file.name,
       mimeType: file.type,
       fileSize: file.size,
-      filePath,
+      storageKey,
       priority,
       uploadSource,
       metadata: metadataStr ? JSON.parse(metadataStr) : undefined,
@@ -354,12 +354,12 @@ export async function POST(request: NextRequest) {
       await updateDuplicateStatus(processingDocument.id, duplicateCheckResult);
     }
 
-    // Queue for processing - pass file info so pages can be created
+    // Queue for processing - pass storage key so pages can be created
     await queueDocumentForProcessing(
       processingDocument.id,
       company.tenantId,
       companyId,
-      filePath,
+      storageKey,
       file.type
     );
 

@@ -7,7 +7,7 @@ import { getEntityTypeLabel } from '@/lib/constants';
 import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2, Square, CheckSquare, MinusSquare } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
-import type { Company, CompanyStatus } from '@prisma/client';
+import type { Company, CompanyStatus } from '@/generated/prisma';
 
 interface CompanyWithRelations extends Company {
   addresses?: Array<{

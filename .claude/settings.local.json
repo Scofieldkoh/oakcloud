@@ -64,7 +64,11 @@
       "Bash(taskkill:*)",
       "Bash(npm uninstall:*)",
       "Bash(npm ls:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(npm i:*)",
+      "Bash(del \"prisma\\prisma.config.ts\")",
+      "Bash(done)",
+      "Bash(head:*)"
     ],
     "deny": [],
     "ask": []

@@ -26,13 +26,13 @@ import type {
   CreateDocumentCommentInput,
   SaveDraftInput,
 } from '@/lib/validations/generated-document';
-import {
-  Prisma,
-  type GeneratedDocument,
-  type DocumentShare,
-  type DocumentComment,
-  type GeneratedDocumentStatus,
-} from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type {
+  GeneratedDocument,
+  DocumentShare,
+  DocumentComment,
+  GeneratedDocumentStatus,
+} from '@/generated/prisma';
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
 import type { TenantAwareParams } from '@/lib/types';

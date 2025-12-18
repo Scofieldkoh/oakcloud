@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             tenantId: true,
             mimeType: true,
             originalFileName: true,
-            filePath: true,
+            storageKey: true,
           },
         },
         pages: {
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             heightPx: true,
             rotationDeg: true,
             renderDpi: true,
-            imagePath: true,
+            storageKey: true,
             imageFingerprint: true,
             ocrProvider: true,
             textAcquisitionDecision: true,
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const isPdf =
       processingDoc.document?.mimeType === 'application/pdf' ||
       processingDoc.document?.originalFileName?.toLowerCase().endsWith('.pdf') ||
-      processingDoc.document?.filePath?.toLowerCase().endsWith('.pdf');
+      processingDoc.document?.storageKey?.toLowerCase().endsWith('.pdf');
 
     // Transform pages to include image URL
     const pages = processingDoc.pages.map((page) => ({

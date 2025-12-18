@@ -12,6 +12,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { storage } from '@/lib/storage';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('admin-purge');
 
 export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact' | 'generatedDocument' | 'processingDocument';
 
@@ -389,6 +393,44 @@ export async function POST(request: NextRequest) {
 
         for (const company of companiesToDelete) {
           try {
+            // Get all documents and their storage keys before deletion
+            const documentsWithStorage = await prisma.document.findMany({
+              where: { companyId: company.id },
+              select: { storageKey: true },
+            });
+
+            // Get all processing documents with their related files
+            const processingDocs = await prisma.processingDocument.findMany({
+              where: { document: { companyId: company.id } },
+              include: {
+                pages: { select: { storageKey: true } },
+                derivedFiles: { select: { storageKey: true } },
+              },
+            });
+
+            // Collect all storage keys
+            const storageKeysToDelete: string[] = [];
+            for (const doc of documentsWithStorage) {
+              if (doc.storageKey) storageKeysToDelete.push(doc.storageKey);
+            }
+            for (const procDoc of processingDocs) {
+              for (const page of procDoc.pages) {
+                if (page.storageKey) storageKeysToDelete.push(page.storageKey);
+              }
+              for (const derivedFile of procDoc.derivedFiles) {
+                if (derivedFile.storageKey) storageKeysToDelete.push(derivedFile.storageKey);
+              }
+            }
+
+            // Delete files from storage
+            for (const key of storageKeysToDelete) {
+              try {
+                await storage.delete(key);
+              } catch (storageErr) {
+                log.warn(`Failed to delete file from storage: ${key}`, storageErr);
+              }
+            }
+
             await prisma.$transaction(async (tx) => {
               // Delete company-related data
               await tx.companyCharge.deleteMany({
@@ -413,6 +455,43 @@ export async function POST(request: NextRequest) {
                 where: { companyId: company.id },
               });
 
+              // Delete processing document related data first
+              for (const procDoc of processingDocs) {
+                await tx.documentRevisionLineItem.deleteMany({
+                  where: { revision: { processingDocumentId: procDoc.id } },
+                });
+                await tx.documentRevision.deleteMany({
+                  where: { processingDocumentId: procDoc.id },
+                });
+                await tx.processingAttempt.deleteMany({
+                  where: { processingDocumentId: procDoc.id },
+                });
+                await tx.processingCheckpoint.deleteMany({
+                  where: { processingDocumentId: procDoc.id },
+                });
+                await tx.documentStateEvent.deleteMany({
+                  where: { processingDocumentId: procDoc.id },
+                });
+                await tx.documentDerivedFile.deleteMany({
+                  where: { processingDocumentId: procDoc.id },
+                });
+                await tx.documentExtraction.deleteMany({
+                  where: { processingDocumentId: procDoc.id },
+                });
+                await tx.documentPage.deleteMany({
+                  where: { processingDocumentId: procDoc.id },
+                });
+                await tx.duplicateDecision.deleteMany({
+                  where: { processingDocumentId: procDoc.id },
+                });
+                await tx.splitPlan.deleteMany({
+                  where: { processingDocumentId: procDoc.id },
+                });
+                await tx.processingDocument.delete({
+                  where: { id: procDoc.id },
+                });
+              }
+
               // Delete documents
               await tx.document.deleteMany({
                 where: { companyId: company.id },
@@ -434,6 +513,7 @@ export async function POST(request: NextRequest) {
               });
             });
 
+            log.info(`Purged company ${company.id} with ${storageKeysToDelete.length} files`);
             deletedRecords.push({ id: company.id, name: company.name });
             deletedCount++;
           } catch (err) {
@@ -565,7 +645,13 @@ export async function POST(request: NextRequest) {
           },
           include: {
             document: {
-              select: { fileName: true },
+              select: { fileName: true, storageKey: true },
+            },
+            pages: {
+              select: { storageKey: true },
+            },
+            derivedFiles: {
+              select: { storageKey: true },
             },
           },
         });
@@ -580,6 +666,39 @@ export async function POST(request: NextRequest) {
         for (const procDoc of processingDocsToDelete) {
           const docName = procDoc.document?.fileName || procDoc.id;
           try {
+            // Collect all storage keys to delete
+            const storageKeysToDelete: string[] = [];
+
+            // Add original document storage key
+            if (procDoc.document?.storageKey) {
+              storageKeysToDelete.push(procDoc.document.storageKey);
+            }
+
+            // Add page image storage keys
+            for (const page of procDoc.pages) {
+              if (page.storageKey) {
+                storageKeysToDelete.push(page.storageKey);
+              }
+            }
+
+            // Add derived file storage keys
+            for (const derivedFile of procDoc.derivedFiles) {
+              if (derivedFile.storageKey) {
+                storageKeysToDelete.push(derivedFile.storageKey);
+              }
+            }
+
+            // Delete files from storage first
+            for (const key of storageKeysToDelete) {
+              try {
+                await storage.delete(key);
+                log.debug(`Deleted file from storage: ${key}`);
+              } catch (storageErr) {
+                // Log but continue - file might not exist
+                log.warn(`Failed to delete file from storage: ${key}`, storageErr);
+              }
+            }
+
             await prisma.$transaction(async (tx) => {
               // Delete line items for all revisions
               await tx.documentRevisionLineItem.deleteMany({
@@ -648,6 +767,7 @@ export async function POST(request: NextRequest) {
               }
             });
 
+            log.info(`Purged processing document ${procDoc.id} with ${storageKeysToDelete.length} files`);
             deletedRecords.push({ id: procDoc.id, name: docName });
             deletedCount++;
           } catch (err) {

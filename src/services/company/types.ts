@@ -4,8 +4,10 @@
  * Shared types for the company, officer, and shareholder services.
  */
 
-import type { Company } from '@prisma/client';
-import type { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@/generated/prisma';
+import type { Company } from '@/generated/prisma';
+
+type Decimal = Prisma.Decimal;
 
 // ============================================================================
 // Company Types

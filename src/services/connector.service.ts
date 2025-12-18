@@ -6,8 +6,8 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
-import type { Connector, ConnectorType, ConnectorProvider } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { Connector, ConnectorType, ConnectorProvider } from '@/generated/prisma';
 import { encrypt, decrypt, maskSensitive } from '@/lib/encryption';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import type {

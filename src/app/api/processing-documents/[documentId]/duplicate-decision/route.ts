@@ -12,7 +12,7 @@ import { prisma } from '@/lib/prisma';
 import { getProcessingDocument, markAsNewVersion } from '@/services/document-processing.service';
 import { recordDuplicateDecision } from '@/services/duplicate-detection.service';
 import { createAuditLog } from '@/lib/audit';
-import type { DuplicateAction } from '@prisma/client';
+import type { DuplicateAction } from '@/generated/prisma';
 
 type Params = { documentId: string };
 

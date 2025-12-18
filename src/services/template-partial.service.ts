@@ -8,7 +8,8 @@
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
-import type { Prisma, TemplatePartial } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { TemplatePartial } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 
 // ============================================================================

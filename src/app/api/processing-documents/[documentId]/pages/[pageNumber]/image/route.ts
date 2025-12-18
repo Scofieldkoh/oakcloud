@@ -5,10 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, stat } from 'fs/promises';
-import { join } from 'path';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { storage } from '@/lib/storage';
 
 /**
  * Generate an SVG placeholder image
@@ -31,8 +30,6 @@ function generatePlaceholderSVG(width = 600, height = 800): string {
 interface RouteParams {
   params: Promise<{ documentId: string; pageNumber: string }>;
 }
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 
 // MIME type mapping
 const MIME_TYPES: Record<string, string> = {
@@ -78,7 +75,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         pages: {
           where: { pageNumber },
           select: {
-            imagePath: true,
+            storageKey: true,
             imageFingerprint: true,
           },
         },
@@ -108,8 +105,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const page = processingDoc.pages[0];
-    if (!page) {
-      // No page record exists - return placeholder
+    if (!page || !page.storageKey) {
+      // No page record or no storage key - return placeholder
       const placeholderSVG = generatePlaceholderSVG();
       return new NextResponse(placeholderSVG, {
         status: 200,
@@ -123,32 +120,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       });
     }
 
-    // Determine the full file path
-    // imagePath could be:
-    // - Absolute path (starts with / or drive letter on Windows)
-    // - Relative path already including 'uploads/' prefix
-    // - Relative path without 'uploads/' prefix
-    let imagePath: string;
-    if (page.imagePath.startsWith('/') || /^[A-Za-z]:/.test(page.imagePath)) {
-      // Absolute path
-      imagePath = page.imagePath;
-    } else if (page.imagePath.startsWith('uploads\\') || page.imagePath.startsWith('uploads/')) {
-      // Already has uploads prefix - use relative to project root
-      imagePath = join('.', page.imagePath);
-    } else {
-      // No uploads prefix - join with UPLOAD_DIR
-      imagePath = join(UPLOAD_DIR, page.imagePath);
-    }
-
-    // Check if file exists
-    let fileExists = false;
-    try {
-      await stat(imagePath);
-      fileExists = true;
-    } catch {
-      // File doesn't exist - will serve placeholder
-      fileExists = false;
-    }
+    // Check if file exists in storage
+    const fileExists = await storage.exists(page.storageKey);
 
     // If file doesn't exist, return a placeholder SVG
     if (!fileExists) {
@@ -164,15 +137,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       });
     }
 
-    // Read the image file
-    const imageBuffer = await readFile(imagePath);
+    // Read the image file from storage
+    const imageBuffer = await storage.download(page.storageKey);
 
     // Determine content type from file extension
-    const extension = imagePath.substring(imagePath.lastIndexOf('.')).toLowerCase();
+    const extension = page.storageKey.substring(page.storageKey.lastIndexOf('.')).toLowerCase();
     const contentType = MIME_TYPES[extension] || 'application/octet-stream';
 
     // Return the image with appropriate headers
-    const response = new NextResponse(imageBuffer, {
+    const response = new NextResponse(new Uint8Array(imageBuffer), {
       status: 200,
       headers: {
         'Content-Type': contentType,

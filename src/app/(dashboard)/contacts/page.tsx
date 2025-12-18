@@ -14,7 +14,7 @@ import { ContactFilters, type FilterValues } from '@/components/contacts/contact
 import { Pagination } from '@/components/companies/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
-import type { ContactType } from '@prisma/client';
+import type { ContactType } from '@/generated/prisma';
 
 export default function ContactsPage() {
   const router = useRouter();

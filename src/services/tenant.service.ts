@@ -6,8 +6,8 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
-import type { TenantStatus } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { TenantStatus } from '@/generated/prisma';
 import {
   createAuditLog,
   computeChanges,

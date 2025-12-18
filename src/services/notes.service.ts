@@ -7,7 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, type AuditContext } from '@/lib/audit';
-import type { NoteTab } from '@prisma/client';
+import type { NoteTab } from '@/generated/prisma';
 
 // ============================================================================
 // Types

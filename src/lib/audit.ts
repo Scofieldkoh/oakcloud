@@ -7,8 +7,8 @@
  */
 
 import { prisma } from './prisma';
-import { Prisma } from '@prisma/client';
-import type { AuditAction, ChangeSource } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { AuditAction, ChangeSource } from '@/generated/prisma';
 import { getAuditRequestContext } from './request-context';
 
 // ============================================================================

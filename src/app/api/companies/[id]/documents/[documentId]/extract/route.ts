@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { extractBizFileData, processBizFileExtraction } from '@/services/bizfile';
 import type { AIModel } from '@/lib/ai';
+import { storage } from '@/lib/storage';
 
 // Lazy load pdf-parse to reduce initial bundle size
 async function parsePdf(buffer: Buffer) {
@@ -61,8 +61,11 @@ export async function POST(
     });
 
     try {
-      // Read PDF file
-      const pdfBuffer = await readFile(document.filePath);
+      // Read PDF file from storage
+      if (!document.storageKey) {
+        throw new Error('Document has no storage key');
+      }
+      const pdfBuffer = await storage.download(document.storageKey);
       const pdfData = await parsePdf(pdfBuffer);
       const pdfText = pdfData.text;
 
@@ -168,8 +171,11 @@ export async function GET(
       });
     }
 
-    // Read PDF and extract
-    const pdfBuffer = await readFile(document.filePath);
+    // Read PDF from storage and extract
+    if (!document.storageKey) {
+      return NextResponse.json({ error: 'Document has no storage key' }, { status: 400 });
+    }
+    const pdfBuffer = await storage.download(document.storageKey);
     const pdfData = await parsePdf(pdfBuffer);
     const pdfText = pdfData.text;
 

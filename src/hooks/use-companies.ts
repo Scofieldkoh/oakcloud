@@ -10,7 +10,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Company, CompanyStatus, EntityType } from '@prisma/client';
+import type { Company, CompanyStatus, EntityType } from '@/generated/prisma';
 import type { CreateCompanyInput, UpdateCompanyInput } from '@/lib/validations/company';
 import type { CompanyWithRelations, CompanyStats, CompanyLinkInfo } from '@/services/company/types';
 
@@ -160,8 +160,9 @@ export function useCompanies(params: CompanySearchParams = {}) {
       params.tenantId,
     ],
     queryFn: () => fetchCompanies(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
+    staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 

@@ -24,7 +24,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { BulkActionsToolbar } from '@/components/processing/bulk-actions-toolbar';
-import type { PipelineStatus, DuplicateStatus } from '@prisma/client';
+import type { PipelineStatus, DuplicateStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 
 // Pipeline status display config

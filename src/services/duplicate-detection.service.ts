@@ -7,10 +7,12 @@
 
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
-import type { Prisma, DuplicateAction, ProcessingDocument } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { DuplicateAction, ProcessingDocument } from '@/generated/prisma';
 import { normalizeVendorName } from './document-revision.service';
 import crypto from 'crypto';
-import { Decimal } from '@prisma/client/runtime/library';
+
+type Decimal = Prisma.Decimal;
 
 const log = createLogger('duplicate-detection');
 

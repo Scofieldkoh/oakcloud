@@ -7,7 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
 import type {
   PipelineStatus,
   ProcessingPriority,
@@ -18,11 +18,12 @@ import type {
   DuplicateStatus,
   RevisionStatus,
   DocumentCategory,
-} from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+} from '@/generated/prisma';
 import crypto from 'crypto';
-import { readFile } from 'fs/promises';
 import { PDFDocument } from 'pdf-lib';
+import { storage, StorageKeys } from '@/lib/storage';
+
+type Decimal = Prisma.Decimal;
 
 const log = createLogger('document-processing');
 
@@ -37,7 +38,7 @@ export interface UploadDocumentInput {
   fileName: string;
   mimeType: string;
   fileSize: number;
-  filePath: string;
+  storageKey: string;  // Storage key for file in object storage
   priority?: ProcessingPriority;
   uploadSource?: UploadSource;
   metadata?: Record<string, unknown>;
@@ -124,7 +125,7 @@ export async function uploadDocument(
     fileName,
     mimeType,
     fileSize,
-    filePath,
+    storageKey,
     priority = 'NORMAL',
     uploadSource = 'WEB',
   } = input;
@@ -137,7 +138,7 @@ export async function uploadDocument(
   }
 
   // Calculate file hash for duplicate detection
-  const fileHash = await calculateFileHash(filePath);
+  const fileHash = await calculateFileHash(storageKey);
 
   // Calculate SLA deadline based on priority
   const slaDeadline = new Date(Date.now() + SLA_DEADLINES[priority] * 1000);
@@ -317,9 +318,9 @@ interface PdfMetadata {
  * Extract PDF metadata using pdf-lib (lightweight, no image rendering)
  * PDFs are rendered client-side using pdfjs-dist for better coordinate accuracy
  */
-async function extractPdfMetadata(pdfPath: string): Promise<PdfMetadata> {
+async function extractPdfMetadata(storageKey: string): Promise<PdfMetadata> {
   try {
-    const pdfBytes = await readFile(pdfPath);
+    const pdfBytes = await storage.download(storageKey);
     const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
 
     const pageCount = pdfDoc.getPageCount();
@@ -351,7 +352,7 @@ async function extractPdfMetadata(pdfPath: string): Promise<PdfMetadata> {
  */
 export async function prepareDocumentPages(
   processingDocumentId: string,
-  filePath: string,
+  storageKey: string,
   mimeType: string
 ): Promise<{ pageCount: number }> {
   log.info(`Preparing pages for document ${processingDocumentId}, type: ${mimeType}`);
@@ -372,11 +373,11 @@ export async function prepareDocumentPages(
       data: {
         processingDocumentId,
         pageNumber: 1,
-        imagePath: filePath,
+        storageKey,
         widthPx: 0, // Will be updated when image is processed
         heightPx: 0,
         renderDpi: 200,
-        imageFingerprint: crypto.createHash('sha256').update(filePath).digest('hex').substring(0, 16),
+        imageFingerprint: crypto.createHash('sha256').update(storageKey).digest('hex').substring(0, 16),
       },
     });
 
@@ -394,7 +395,7 @@ export async function prepareDocumentPages(
   if (mimeType === 'application/pdf') {
     try {
       // Extract PDF metadata (page count, dimensions)
-      const metadata = await extractPdfMetadata(filePath);
+      const metadata = await extractPdfMetadata(storageKey);
 
       // Create DocumentPage records for each page (no image rendering)
       for (const page of metadata.pages) {
@@ -402,11 +403,11 @@ export async function prepareDocumentPages(
           data: {
             processingDocumentId,
             pageNumber: page.pageNumber,
-            imagePath: filePath, // Store original PDF path - rendered client-side
+            storageKey, // Store original PDF storage key - rendered client-side
             widthPx: page.width,
             heightPx: page.height,
             renderDpi: 72, // PDF points are 72 DPI
-            imageFingerprint: crypto.createHash('sha256').update(`${filePath}:${page.pageNumber}`).digest('hex').substring(0, 16),
+            imageFingerprint: crypto.createHash('sha256').update(`${storageKey}:${page.pageNumber}`).digest('hex').substring(0, 16),
           },
         });
       }
@@ -427,11 +428,11 @@ export async function prepareDocumentPages(
         data: {
           processingDocumentId,
           pageNumber: 1,
-          imagePath: filePath,
+          storageKey,
           widthPx: 612, // Default US Letter width in points
           heightPx: 792, // Default US Letter height in points
           renderDpi: 72,
-          imageFingerprint: crypto.createHash('sha256').update(filePath).digest('hex').substring(0, 16),
+          imageFingerprint: crypto.createHash('sha256').update(storageKey).digest('hex').substring(0, 16),
         },
       });
 
@@ -455,12 +456,12 @@ export async function queueDocumentForProcessing(
   processingDocumentId: string,
   tenantId: string,
   companyId: string,
-  filePath?: string,
+  storageKey?: string,
   mimeType?: string
 ): Promise<string> {
   // If file info provided, prepare pages first
-  if (filePath && mimeType) {
-    await prepareDocumentPages(processingDocumentId, filePath, mimeType);
+  if (storageKey && mimeType) {
+    await prepareDocumentPages(processingDocumentId, storageKey, mimeType);
   }
 
   await transitionPipelineStatus(processingDocumentId, 'QUEUED', tenantId, companyId, {
@@ -1154,7 +1155,7 @@ export async function createDerivedFile(input: {
   tenantId: string;
   companyId: string;
   kind: 'CHILD_PDF' | 'THUMBNAIL' | 'REDACTED_PDF';
-  path: string;
+  storageKey: string;
   mimeType: string;
   sizeBytes?: number;
   fingerprint?: string;
@@ -1165,7 +1166,7 @@ export async function createDerivedFile(input: {
       tenantId: input.tenantId,
       companyId: input.companyId,
       kind: input.kind,
-      path: input.path,
+      storageKey: input.storageKey,
       mimeType: input.mimeType,
       sizeBytes: input.sizeBytes,
       fingerprint: input.fingerprint,
@@ -1181,10 +1182,10 @@ export async function createDerivedFile(input: {
 export async function getDerivedFile(
   processingDocumentId: string,
   kind: 'CHILD_PDF' | 'THUMBNAIL' | 'REDACTED_PDF'
-): Promise<{ path: string; mimeType: string } | null> {
+): Promise<{ storageKey: string; mimeType: string } | null> {
   const file = await prisma.documentDerivedFile.findFirst({
     where: { processingDocumentId, kind },
-    select: { path: true, mimeType: true },
+    select: { storageKey: true, mimeType: true },
   });
 
   return file;
@@ -1228,18 +1229,17 @@ async function createStateEvent(input: {
 /**
  * Calculate SHA-256 hash of file for duplicate detection
  */
-async function calculateFileHash(filePath: string): Promise<string> {
-  const fs = await import('fs/promises');
+async function calculateFileHash(storageKey: string): Promise<string> {
   try {
-    const fileBuffer = await fs.readFile(filePath);
+    const fileBuffer = await storage.download(storageKey);
     const hash = crypto.createHash('sha256');
     hash.update(fileBuffer);
     return hash.digest('hex');
   } catch (error) {
-    log.error(`Failed to read file for hash calculation: ${filePath}`, error);
-    // Fallback: use path-based hash if file read fails
+    log.error(`Failed to read file for hash calculation: ${storageKey}`, error);
+    // Fallback: use key-based hash if file read fails
     const hash = crypto.createHash('sha256');
-    hash.update(filePath);
+    hash.update(storageKey);
     return hash.digest('hex');
   }
 }

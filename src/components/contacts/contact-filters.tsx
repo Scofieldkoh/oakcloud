@@ -2,7 +2,7 @@
 
 import { Search, Filter, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import type { ContactType } from '@prisma/client';
+import type { ContactType } from '@/generated/prisma';
 
 interface ContactFiltersProps {
   onSearch: (query: string) => void;

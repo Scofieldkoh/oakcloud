@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { storage, StorageKeys } from '@/lib/storage';
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '10485760'); // 10MB
 
 export async function GET(
@@ -120,19 +118,25 @@ export async function POST(
       );
     }
 
-    // Create upload directory if it doesn't exist
-    const companyDir = join(UPLOAD_DIR, companyId);
-    await mkdir(companyDir, { recursive: true });
+    // Generate unique document ID and filename
+    const documentId = uuidv4();
+    const fileName = `${documentId}.pdf`;
 
-    // Generate unique filename
-    const fileId = uuidv4();
-    const fileName = `${fileId}.pdf`;
-    const filePath = join(companyDir, fileName);
+    // Generate storage key for company document
+    const storageKey = StorageKeys.documentOriginal(company.tenantId, companyId, documentId, fileName);
 
-    // Save file
+    // Upload file to storage
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    await storage.upload(storageKey, buffer, {
+      contentType: file.type,
+      metadata: {
+        originalFileName: file.name,
+        uploadedBy: session.id,
+        companyId,
+        tenantId: company.tenantId,
+      },
+    });
 
     // Get previous version count
     const previousVersion = await prisma.document.findFirst({
@@ -155,13 +159,14 @@ export async function POST(
     // Create document record
     const document = await prisma.document.create({
       data: {
+        id: documentId, // Use the generated ID
         tenantId: company.tenantId,
         companyId,
         uploadedById: session.id,
         documentType,
         fileName,
         originalFileName: file.name,
-        filePath,
+        storageKey,
         fileSize: file.size,
         mimeType: file.type,
         version: previousVersion ? previousVersion.version + 1 : 1,

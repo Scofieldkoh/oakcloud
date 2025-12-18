@@ -13,7 +13,7 @@ import { getProcessingDocument } from '@/services/document-processing.service';
 import { approveRevision, getRevision } from '@/services/document-revision.service';
 import { canApproveDocument } from '@/services/duplicate-detection.service';
 import { createAuditLog } from '@/lib/audit';
-import type { ExchangeRateSource } from '@prisma/client';
+import type { ExchangeRateSource } from '@/generated/prisma';
 
 type Params = { documentId: string; revisionId: string };
 

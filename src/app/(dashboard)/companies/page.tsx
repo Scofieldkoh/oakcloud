@@ -14,7 +14,7 @@ import { CompanyFilters, type FilterValues } from '@/components/companies/compan
 import { Pagination } from '@/components/companies/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
-import type { EntityType, CompanyStatus } from '@prisma/client';
+import type { EntityType, CompanyStatus } from '@/generated/prisma';
 
 export default function CompaniesPage() {
   const router = useRouter();

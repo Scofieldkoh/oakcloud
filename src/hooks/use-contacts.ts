@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Contact, ContactType, IdentificationType } from '@prisma/client';
+import type { Contact, ContactType, IdentificationType } from '@/generated/prisma';
 import type { CreateContactInput, UpdateContactInput } from '@/lib/validations/contact';
 
 interface ContactWithCount extends Contact {
@@ -205,8 +205,9 @@ export function useContacts(params: ContactSearchParams = {}) {
       params.tenantId,
     ],
     queryFn: () => fetchContacts(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
+    staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 

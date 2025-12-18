@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ============================================================================
@@ -760,7 +760,7 @@ model Document {
   documentType    String    // "BIZFILE", "CONSTITUTION", "RESOLUTION", etc.
   fileName        String
   originalFileName String
-  filePath        String
+  storageKey      String    @map("storage_key")  // Storage key for file in object storage
   fileSize        Int
   mimeType        String
 
@@ -1587,7 +1587,7 @@ model DocumentPage {
 
   // Rendered image for UI highlights
   renderDpi             Int                 @default(200) @map("render_dpi") // e.g., 200
-  imagePath             String              @map("image_path") // stored image for consistent UI rendering
+  storageKey            String              @map("storage_key") // Storage key for page image in object storage
   imageFingerprint      String?             @map("image_fingerprint") // sha256 of rendered image bytes
 
   // Geometry
@@ -1942,7 +1942,7 @@ model DocumentDerivedFile {
   companyId             String              @map("company_id")
 
   kind                  DerivedFileKind
-  path                  String
+  storageKey            String              @map("storage_key")  // Storage key in object storage
   mimeType              String              @map("mime_type")
   sizeBytes             Int?                @map("size_bytes")
   fingerprint           String?             // hash for cache/evidence compatibility

@@ -15,7 +15,7 @@ import type {
   DuplicateStatus,
   RevisionStatus,
   DocumentCategory,
-} from '@prisma/client';
+} from '@/generated/prisma';
 
 // Types
 export interface ProcessingDocumentListItem {
@@ -283,8 +283,9 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
       params.sortOrder,
     ],
     queryFn: () => fetchProcessingDocuments(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
+    staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 

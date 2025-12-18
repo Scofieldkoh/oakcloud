@@ -24,7 +24,8 @@ import {
   DEFAULT_COMMENT_RATE_LIMIT,
   COMMENT_RATE_LIMIT_WINDOW_MS,
 } from '@/lib/constants/application';
-import type { DocumentComment, DocumentCommentStatus, Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
+import type { DocumentComment, DocumentCommentStatus } from '@/generated/prisma';
 
 const log = createLogger('document-comment');
 

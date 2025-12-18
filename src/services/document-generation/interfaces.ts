@@ -23,7 +23,7 @@ import type {
   DocumentForSignature,
   Signatory,
 } from './types';
-import type { GeneratedDocument, DocumentShare } from '@prisma/client';
+import type { GeneratedDocument, DocumentShare } from '@/generated/prisma';
 
 // ============================================================================
 // IDocumentGenerator Interface

@@ -46,7 +46,7 @@ import {
   DuplicateComparisonModal,
 } from '@/components/processing';
 import type { FieldValue } from '@/components/processing/document-page-viewer';
-import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory } from '@prisma/client';
+import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 
 // Status display configs

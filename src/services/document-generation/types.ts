@@ -5,7 +5,7 @@
  * These types are designed for clean integration with workflow modules.
  */
 
-import type { GeneratedDocument, DocumentShare } from '@prisma/client';
+import type { GeneratedDocument, DocumentShare } from '@/generated/prisma';
 
 // ============================================================================
 // Document Generator Types
