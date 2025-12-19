@@ -5,6 +5,7 @@
  */
 
 export { DocumentPageViewer, PageThumbnailStrip } from './document-page-viewer';
+export type { BoundingBox, FieldValue, TextLayerItem } from './document-page-viewer';
 export { LineItemEditor } from './line-item-editor';
 export { BulkActionsToolbar } from './bulk-actions-toolbar';
 export { ConfidenceDot, ConfidenceBadge } from './confidence-dot';

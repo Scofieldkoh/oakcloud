@@ -68,7 +68,8 @@
       "Bash(npm i:*)",
       "Bash(del \"prisma\\prisma.config.ts\")",
       "Bash(done)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(del \"c:\\Users\\Scotfield\\oakcloud\\src\\components\\processing\\pdf-page-viewer.tsx\")"
     ],
     "deny": [],
     "ask": []

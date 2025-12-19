@@ -4,6 +4,16 @@ import {
   getShareByToken,
   verifySharePassword,
 } from '@/services/document-generator.service';
+import {
+  checkRateLimit,
+  recordFailure,
+  recordSuccess,
+  getClientIp,
+  createRateLimitHeaders,
+  getRateLimitKey,
+  RATE_LIMIT_CONFIGS,
+} from '@/lib/rate-limit';
+import { HTTP_STATUS } from '@/lib/constants/application';
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -18,21 +28,42 @@ const verifyPasswordSchema = z.object({
  * POST /api/share/[token]/verify
  * Verify password for a password-protected shared document
  *
- * Security: Password is submitted via POST body instead of query string
- * to prevent exposure in server logs, browser history, and referrer headers.
+ * Security:
+ * - Password is submitted via POST body instead of query string
+ *   to prevent exposure in server logs, browser history, and referrer headers.
+ * - Rate limited to prevent brute-force attacks (5 attempts per 15 minutes)
+ * - Lockout after 10 failed attempts (30 minute lockout)
  *
  * Returns a verification token that can be used for subsequent requests.
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { token } = await params;
+    const clientIp = getClientIp(request);
+
+    // Rate limit key combines IP and share token for granular control
+    const rateLimitKey = getRateLimitKey('share_password', `${clientIp}:${token}`);
+    const rateLimitResult = checkRateLimit(rateLimitKey, RATE_LIMIT_CONFIGS.SHARE_PASSWORD);
+
+    // Check rate limit before processing
+    if (!rateLimitResult.allowed) {
+      const headers = createRateLimitHeaders(rateLimitResult);
+      const errorMessage = rateLimitResult.isLockedOut
+        ? 'Too many failed attempts. Please try again later.'
+        : 'Rate limit exceeded. Please wait before trying again.';
+
+      return NextResponse.json(
+        { error: errorMessage, verified: false },
+        { status: HTTP_STATUS.TOO_MANY_REQUESTS, headers }
+      );
+    }
 
     const share = await getShareByToken(token);
 
     if (!share) {
       return NextResponse.json(
         { error: 'Share link not found, expired, or revoked' },
-        { status: 404 }
+        { status: HTTP_STATUS.NOT_FOUND }
       );
     }
 
@@ -52,11 +83,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const valid = await verifySharePassword(share.id, password);
 
     if (!valid) {
+      // Record failure for lockout tracking
+      recordFailure(rateLimitKey, RATE_LIMIT_CONFIGS.SHARE_PASSWORD);
+
+      const headers = createRateLimitHeaders(rateLimitResult);
       return NextResponse.json(
         { error: 'Invalid password', verified: false },
-        { status: 401 }
+        { status: HTTP_STATUS.UNAUTHORIZED, headers }
       );
     }
+
+    // Record success - resets failure count
+    recordSuccess(rateLimitKey);
 
     // Generate a session token for this share access
     // This token is stored in memory/session and used for subsequent requests

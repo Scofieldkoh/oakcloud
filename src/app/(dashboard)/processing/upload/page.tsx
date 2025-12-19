@@ -15,12 +15,14 @@ import {
   Building2,
   Files,
   RotateCcw,
+  Sparkles,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
 import { useCompanies } from '@/hooks/use-companies';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { useToast } from '@/components/ui/toast';
+import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 
 type UploadStatus = 'pending' | 'uploading' | 'success' | 'error';
 
@@ -54,6 +56,12 @@ export default function ProcessingUploadPage() {
   const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  // AI model selection and context (consistent with BizFile upload)
+  const [selectedModelId, setSelectedModelId] = useState('');
+  const [companyContext, setCompanyContext] = useState(''); // Auto-populated from company
+  const [aiContext, setAiContext] = useState(''); // User's additional context
+  const [selectedStandardContexts, setSelectedStandardContexts] = useState<string[]>([]);
+
   // Update selected company when activeCompanyId changes or companies load
   useEffect(() => {
     if (activeCompanyId && companies.some(c => c.id === activeCompanyId)) {
@@ -63,6 +71,33 @@ export default function ProcessingUploadPage() {
       setSelectedCompanyId(companies[0].id);
     }
   }, [activeCompanyId, companies]);
+
+  // Auto-populate company context when company is selected (separate from user's additional context)
+  useEffect(() => {
+    if (selectedCompanyId) {
+      const company = companies.find(c => c.id === selectedCompanyId);
+      if (company) {
+        const contextParts: string[] = [];
+
+        // Company name
+        contextParts.push(`Company: ${company.name}`);
+
+        // Business nature from SSIC description
+        if (company.primarySsicDescription) {
+          contextParts.push(`Business Nature: ${company.primarySsicDescription}`);
+        }
+
+        // Home currency
+        if (company.homeCurrency) {
+          contextParts.push(`Home Currency: ${company.homeCurrency}`);
+        }
+
+        setCompanyContext(contextParts.join('\n'));
+      }
+    } else {
+      setCompanyContext('');
+    }
+  }, [selectedCompanyId, companies]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles: QueuedFile[] = acceptedFiles.map((file) => ({
@@ -139,6 +174,18 @@ export default function ProcessingUploadPage() {
     let successCount = 0;
     let errorCount = 0;
 
+    // Build AI context from standard contexts and user's additional text
+    const standardAndUserContext = buildFullContext(selectedStandardContexts, aiContext);
+    // Combine company context with standard/user context (both fed to AI)
+    const combinedContextParts: string[] = [];
+    if (companyContext) {
+      combinedContextParts.push(companyContext);
+    }
+    if (standardAndUserContext) {
+      combinedContextParts.push(standardAndUserContext);
+    }
+    const fullContext = combinedContextParts.join('\n\n');
+
     for (const queuedFile of queuedFiles) {
       if (queuedFile.status === 'success') {
         successCount++;
@@ -158,6 +205,13 @@ export default function ProcessingUploadPage() {
         formData.append('companyId', selectedCompanyId);
         formData.append('priority', 'NORMAL');
         formData.append('uploadSource', 'WEB');
+        // Pass AI model and context if specified
+        if (selectedModelId) {
+          formData.append('modelId', selectedModelId);
+        }
+        if (fullContext) {
+          formData.append('additionalContext', fullContext);
+        }
 
         const response = await fetch('/api/processing-documents', {
           method: 'POST',
@@ -263,7 +317,7 @@ export default function ProcessingUploadPage() {
               value={selectedCompanyId}
               onChange={(e) => setSelectedCompanyId(e.target.value)}
               disabled={isUploading || companies.length === 0}
-              className={`input w-full max-w-md ${!selectedCompanyId && 'border-status-warning'}`}
+              className={`input input-sm w-full max-w-md ${!selectedCompanyId && 'border-status-warning'}`}
             >
               <option value="">Select a company...</option>
               {companies.map((company) => (
@@ -290,10 +344,10 @@ export default function ProcessingUploadPage() {
         )}
       </div>
 
-      {/* Dropzone */}
+      {/* Dropzone - consistent with BizFile upload styling */}
       <div
         {...getRootProps()}
-        className={`card p-8 text-center border-2 border-dashed cursor-pointer transition-colors mb-6 ${
+        className={`card p-12 text-center border-2 border-dashed cursor-pointer transition-colors mb-6 ${
           isDragActive
             ? 'border-oak-primary bg-oak-primary/5'
             : isUploading
@@ -302,14 +356,14 @@ export default function ProcessingUploadPage() {
         }`}
       >
         <input {...getInputProps()} />
-        <FileUp className="w-10 h-10 text-text-muted mx-auto mb-3" />
-        <h3 className="text-base font-medium text-text-primary mb-1">
-          {isDragActive ? 'Drop files here' : 'Drag & drop documents'}
+        <FileUp className="w-12 h-12 text-text-muted mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-text-primary mb-2">
+          {isDragActive ? 'Drop the files here' : 'Drag & drop your documents'}
         </h3>
-        <p className="text-text-secondary text-sm mb-2">
+        <p className="text-text-secondary mb-4">
           or click to browse your files
         </p>
-        <p className="text-xs text-text-tertiary">
+        <p className="text-sm text-text-tertiary">
           PDF, PNG, JPG, TIFF • Max {MAX_FILE_SIZE / 1024 / 1024}MB per file • Up to {MAX_FILES} files
         </p>
       </div>
@@ -408,6 +462,47 @@ export default function ProcessingUploadPage() {
           </div>
         </div>
       )}
+
+      {/* Company Context - Auto-populated, always visible */}
+      <div className="card p-4 mb-4">
+        <div className="flex items-start gap-3">
+          <Building2 className="w-4 h-4 text-text-tertiary mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <label className="label mb-1 text-sm">Company Context</label>
+            <textarea
+              value={companyContext}
+              readOnly
+              disabled
+              rows={3}
+              placeholder="Select a company to auto-populate context..."
+              className="input w-full text-sm resize-none mt-2 px-3 py-2.5 bg-background-tertiary cursor-default"
+            />
+            <p className="text-xs text-text-muted mt-2.5 leading-relaxed">
+              Auto-populated from the selected company. This information helps the AI understand the business context.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Model Selector - consistent with BizFile upload */}
+      <AIModelSelector
+        value={selectedModelId}
+        onChange={setSelectedModelId}
+        label="AI Model for Extraction"
+        helpText="Select the AI model to use for extracting invoice/receipt data."
+        jsonModeOnly
+        showContextInput
+        contextValue={aiContext}
+        onContextChange={setAiContext}
+        contextLabel="Additional Context (Optional)"
+        contextPlaceholder="E.g., 'Focus on line items and totals' or 'This is a foreign currency invoice'"
+        contextHelpText="Provide your own hints to help the AI extract data more accurately."
+        showStandardContexts
+        selectedStandardContexts={selectedStandardContexts}
+        onStandardContextsChange={setSelectedStandardContexts}
+        tenantId={activeTenantId || undefined}
+        className="mb-6"
+      />
 
       {/* Actions */}
       <div className="flex items-center justify-between">

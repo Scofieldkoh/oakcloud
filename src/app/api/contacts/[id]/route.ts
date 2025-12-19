@@ -25,19 +25,38 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { searchParams } = new URL(request.url);
     const full = searchParams.get('full') === 'true';
 
-    // Determine tenant scope
+    // Determine tenant scope - SUPER_ADMIN can specify tenantId, others use session tenant
     const tenantIdParam = searchParams.get('tenantId');
-    const effectiveTenantId = session.isSuperAdmin && tenantIdParam
-      ? tenantIdParam
-      : session.tenantId;
+    let effectiveTenantId: string;
+
+    if (session.isSuperAdmin && tenantIdParam) {
+      // SUPER_ADMIN can specify any tenant
+      effectiveTenantId = tenantIdParam;
+    } else if (session.tenantId) {
+      // Use session tenant
+      effectiveTenantId = session.tenantId;
+    } else if (session.isSuperAdmin) {
+      // SUPER_ADMIN without tenant context - need to look up contact directly via prisma
+      const { prisma } = await import('@/lib/prisma');
+      const contact = await prisma.contact.findUnique({
+        where: { id, deletedAt: null },
+        select: { tenantId: true },
+      });
+      if (!contact) {
+        return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+      }
+      effectiveTenantId = contact.tenantId;
+    } else {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
 
     // For company-scoped users, filter company relationships by accessible companies
     const isCompanyScoped = !session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess;
     const companyIds = isCompanyScoped ? session.companyIds : undefined;
 
     const contact = full
-      ? await getContactWithRelationships(id, { tenantId: effectiveTenantId || undefined, companyIds })
-      : await getContactById(id, effectiveTenantId || undefined);
+      ? await getContactWithRelationships(id, { tenantId: effectiveTenantId, companyIds })
+      : await getContactById(id, effectiveTenantId);
 
     if (!contact) {
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
@@ -74,7 +93,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // For SUPER_ADMIN, we need to get the contact to determine its tenant
     let tenantId = session.tenantId;
     if (session.isSuperAdmin && !tenantId) {
-      const existingContact = await getContactById(id);
+      const { prisma } = await import('@/lib/prisma');
+      const existingContact = await prisma.contact.findUnique({
+        where: { id, deletedAt: null },
+        select: { tenantId: true },
+      });
       if (!existingContact) {
         return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
       }
@@ -122,7 +145,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // For SUPER_ADMIN, we need to get the contact to determine its tenant
     let tenantId = session.tenantId;
     if (session.isSuperAdmin && !tenantId) {
-      const existingContact = await getContactById(id);
+      const { prisma } = await import('@/lib/prisma');
+      const existingContact = await prisma.contact.findUnique({
+        where: { id, deletedAt: null },
+        select: { tenantId: true },
+      });
       if (!existingContact) {
         return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
       }
@@ -198,7 +225,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       // For SUPER_ADMIN without tenant context, get tenant from the contact
       let tenantId = session.tenantId;
       if (!tenantId && session.isSuperAdmin) {
-        const existingContact = await getContactById(id);
+        const { prisma } = await import('@/lib/prisma');
+        const existingContact = await prisma.contact.findUnique({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
         if (!existingContact) {
           return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
         }
@@ -234,7 +265,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       // For SUPER_ADMIN without tenant context, get tenant from the contact
       let tenantId = session.tenantId;
       if (!tenantId && session.isSuperAdmin) {
-        const existingContact = await getContactById(id);
+        const { prisma } = await import('@/lib/prisma');
+        const existingContact = await prisma.contact.findUnique({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
         if (!existingContact) {
           return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
         }
@@ -261,9 +296,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
 
       // For SUPER_ADMIN without tenant context, get tenant from the contact
+      const { prisma } = await import('@/lib/prisma');
       let tenantId = session.tenantId;
       if (!tenantId && session.isSuperAdmin) {
-        const existingContact = await getContactById(id);
+        const existingContact = await prisma.contact.findUnique({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
         if (!existingContact) {
           return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
         }
@@ -273,8 +312,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (!tenantId) {
         return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
       }
-
-      const { prisma } = await import('@/lib/prisma');
 
       // Verify the officer belongs to this contact and tenant
       const officer = await prisma.companyOfficer.findFirst({
@@ -326,9 +363,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
 
       // For SUPER_ADMIN without tenant context, get tenant from the contact
+      const { prisma } = await import('@/lib/prisma');
       let tenantId = session.tenantId;
       if (!tenantId && session.isSuperAdmin) {
-        const existingContact = await getContactById(id);
+        const existingContact = await prisma.contact.findUnique({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
         if (!existingContact) {
           return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
         }
@@ -338,8 +379,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (!tenantId) {
         return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
       }
-
-      const { prisma } = await import('@/lib/prisma');
 
       // Verify the shareholder belongs to this contact and tenant
       const shareholder = await prisma.companyShareholder.findFirst({
@@ -390,9 +429,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
 
       // For SUPER_ADMIN without tenant context, get tenant from the contact
+      const { prisma } = await import('@/lib/prisma');
       let tenantId = session.tenantId;
       if (!tenantId && session.isSuperAdmin) {
-        const existingContact = await getContactById(id);
+        const existingContact = await prisma.contact.findUnique({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
         if (!existingContact) {
           return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
         }
@@ -402,8 +445,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (!tenantId) {
         return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
       }
-
-      const { prisma } = await import('@/lib/prisma');
 
       // Verify the officer belongs to this contact and tenant
       const officer = await prisma.companyOfficer.findFirst({
@@ -440,9 +481,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
 
       // For SUPER_ADMIN without tenant context, get tenant from the contact
+      const { prisma } = await import('@/lib/prisma');
       let tenantId = session.tenantId;
       if (!tenantId && session.isSuperAdmin) {
-        const existingContact = await getContactById(id);
+        const existingContact = await prisma.contact.findUnique({
+          where: { id, deletedAt: null },
+          select: { tenantId: true },
+        });
         if (!existingContact) {
           return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
         }
@@ -452,8 +497,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (!tenantId) {
         return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
       }
-
-      const { prisma } = await import('@/lib/prisma');
 
       // Verify the shareholder belongs to this contact and tenant
       const shareholder = await prisma.companyShareholder.findFirst({

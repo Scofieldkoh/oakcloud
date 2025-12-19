@@ -3380,7 +3380,7 @@ PDFs are rendered **client-side** using `pdfjs-dist` for optimal coordinate accu
 - **Benefits**: Better bounding box accuracy, no storage overhead, vector quality at any zoom
 
 **Key Components:**
-- `PdfPageViewer` - Client-side PDF renderer with highlight support
+- `DocumentPageViewer` - Consolidated client-side PDF renderer with highlight support (supports both `documentId` and direct `pdfUrl` props)
 - `/api/processing-documents/:id/pdf` - Streams original PDF file
 - `/api/processing-documents/:id/pages` - Returns page metadata with `isPdf` flag
 

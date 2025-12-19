@@ -196,6 +196,9 @@ export async function POST(request: NextRequest) {
     const uploadSource = (formData.get('uploadSource') as UploadSource) || 'WEB';
     const metadataStr = formData.get('metadata') as string | null;
     const idempotencyKey = request.headers.get('Idempotency-Key');
+    // AI model selection (optional - consistent with BizFile upload)
+    const modelId = formData.get('modelId') as string | null;
+    const additionalContext = formData.get('additionalContext') as string | null;
 
     // Validate required fields
     if (!file) {
@@ -365,7 +368,16 @@ export async function POST(request: NextRequest) {
 
     // Auto-trigger extraction immediately after upload (async, don't block response)
     // This runs in the background so users don't have to manually trigger extraction
-    extractFields(processingDocument.id, company.tenantId, companyId, session.id)
+    // Pass model and context if specified by user
+    const extractionConfig: { model?: string; additionalContext?: string } = {};
+    if (modelId) {
+      extractionConfig.model = modelId;
+    }
+    if (additionalContext) {
+      extractionConfig.additionalContext = additionalContext;
+    }
+
+    extractFields(processingDocument.id, company.tenantId, companyId, session.id, extractionConfig)
       .then((result) => {
         if (result.success) {
           console.log(`Auto-extraction completed for document ${processingDocument.id}`);

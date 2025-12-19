@@ -3,6 +3,8 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { updateCompanySchema, deleteCompanySchema } from '@/lib/validations/company';
+import { parseIdParams } from '@/lib/validations/params';
+import { HTTP_STATUS } from '@/lib/constants/application';
 import {
   getCompanyById,
   getCompanyFullDetails,
@@ -17,7 +19,8 @@ export async function GET(
 ) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    // SECURITY: Validate ID format before any database operations
+    const { id } = await parseIdParams(params);
 
     // Check permission - RBAC will handle SUPER_ADMIN bypass
     await requirePermission(session, 'company', 'read', id);
@@ -60,7 +63,8 @@ export async function PATCH(
 ) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    // SECURITY: Validate ID format before any database operations
+    const { id } = await parseIdParams(params);
 
     // Check permission - allows SUPER_ADMIN, TENANT_ADMIN, and COMPANY_ADMIN (for their company)
     await requirePermission(session, 'company', 'update', id);
@@ -118,7 +122,8 @@ export async function DELETE(
 ) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    // SECURITY: Validate ID format before any database operations
+    const { id } = await parseIdParams(params);
 
     // Check permission - allows SUPER_ADMIN and TENANT_ADMIN
     await requirePermission(session, 'company', 'delete', id);
@@ -171,7 +176,8 @@ export async function PUT(
 ) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    // SECURITY: Validate ID format before any database operations
+    const { id } = await parseIdParams(params);
 
     // Check permission for restore (treated as update)
     await requirePermission(session, 'company', 'update', id);

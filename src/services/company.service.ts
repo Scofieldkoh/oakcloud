@@ -1559,6 +1559,7 @@ export async function unlinkShareholderFromContact(
 
 /**
  * Remove a shareholder (mark as former)
+ * SECURITY: Uses transaction to prevent race conditions in percentage recalculation
  */
 export async function removeShareholder(
   shareholderId: string,
@@ -1576,33 +1577,39 @@ export async function removeShareholder(
     throw new Error('Shareholder not found');
   }
 
-  // Mark as former (not current)
-  await prisma.companyShareholder.update({
-    where: { id: shareholderId },
-    data: {
-      isCurrent: false,
-    },
-  });
+  // Use transaction to ensure atomicity of removal and percentage recalculation
+  await prisma.$transaction(async (tx) => {
+    // Mark as former (not current)
+    await tx.companyShareholder.update({
+      where: { id: shareholderId },
+      data: {
+        isCurrent: false,
+      },
+    });
 
-  // Recalculate percentages for remaining current shareholders
-  const remainingShareholders = await prisma.companyShareholder.findMany({
-    where: { companyId, isCurrent: true },
-    select: { id: true, numberOfShares: true },
-  });
+    // Recalculate percentages for remaining current shareholders
+    const remainingShareholders = await tx.companyShareholder.findMany({
+      where: { companyId, isCurrent: true },
+      select: { id: true, numberOfShares: true },
+    });
 
-  const totalShares = remainingShareholders.reduce((sum, sh) => sum + sh.numberOfShares, 0);
+    const totalShares = remainingShareholders.reduce((sum, sh) => sum + sh.numberOfShares, 0);
 
-  if (totalShares > 0) {
-    for (const sh of remainingShareholders) {
-      const percentage = (sh.numberOfShares / totalShares) * 100;
-      await prisma.companyShareholder.update({
-        where: { id: sh.id },
-        data: { percentageHeld: percentage },
-      });
+    if (totalShares > 0) {
+      // Update all percentages within the same transaction
+      await Promise.all(
+        remainingShareholders.map((sh) => {
+          const percentage = (sh.numberOfShares / totalShares) * 100;
+          return tx.companyShareholder.update({
+            where: { id: sh.id },
+            data: { percentageHeld: percentage },
+          });
+        })
+      );
     }
-  }
+  });
 
-  // Log the action
+  // Log the action (outside transaction - non-critical)
   await createAuditLog({
     tenantId,
     userId,

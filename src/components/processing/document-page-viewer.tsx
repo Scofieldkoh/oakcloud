@@ -4,65 +4,314 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   ZoomIn,
   ZoomOut,
-  RotateCw,
   ChevronLeft,
   ChevronRight,
   Maximize2,
   Minimize2,
   RefreshCw,
-  Image as ImageIcon,
+  FileText,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
-import { useDocumentPages, type DocumentPageInfo } from '@/hooks/use-processing-documents';
+import { useDocumentPages } from '@/hooks/use-processing-documents';
 import { cn } from '@/lib/utils';
-import { PdfPageViewer, type BoundingBox, type FieldValue, type TextLayerItem } from './pdf-page-viewer';
 
-export type { BoundingBox, FieldValue, TextLayerItem };
+// Import pdfjs-dist types
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
+import type { TextItem } from 'pdfjs-dist/types/src/display/api';
+
+// =============================================================================
+// Types
+// =============================================================================
+
+export interface BoundingBox {
+  pageNumber: number;
+  x: number; // 0-1 normalized (left edge)
+  y: number; // 0-1 normalized (top edge)
+  width: number; // 0-1 normalized
+  height: number; // 0-1 normalized
+  label?: string;
+  color?: string;
+}
+
+export interface TextLayerItem {
+  text: string;
+  x: number; // normalized 0-1
+  y: number; // normalized 0-1
+  width: number; // normalized 0-1
+  height: number; // normalized 0-1
+}
+
+export interface FieldValue {
+  label: string;
+  value: string;
+  color?: string;
+}
+
+interface CanvasDimensions {
+  width: number;
+  height: number;
+}
 
 interface DocumentPageViewerProps {
-  documentId: string;
+  /** Document ID to fetch PDF from (used with useDocumentPages hook) */
+  documentId?: string;
+  /** Direct PDF URL (alternative to documentId - skips data fetching) */
+  pdfUrl?: string;
   initialPage?: number;
   highlights?: BoundingBox[];
-  fieldValues?: FieldValue[]; // Values to find in PDF text layer
+  fieldValues?: FieldValue[];
   onPageChange?: (pageNumber: number) => void;
+  onPageCountChange?: (pageCount: number) => void;
   onTextLayerReady?: (textItems: TextLayerItem[], pageNumber: number) => void;
+  showHighlights?: boolean;
+  onShowHighlightsChange?: (show: boolean) => void;
   className?: string;
 }
+
+// =============================================================================
+// Constants
+// =============================================================================
 
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const DEFAULT_ZOOM_INDEX = 2; // 100%
 
+// Fixed padding for bounding boxes (normalized 0-1 coordinates)
+const BBOX_HORIZONTAL_PADDING = 0.008;
+const BBOX_VERTICAL_PADDING = 0.003;
+
+// Empty arrays to avoid creating new references on each render
+const EMPTY_HIGHLIGHTS: BoundingBox[] = [];
+const EMPTY_FIELD_VALUES: FieldValue[] = [];
+
+// =============================================================================
+// PDF.js Initialization
+// =============================================================================
+
+let pdfjsLib: typeof import('pdfjs-dist') | null = null;
+let workerInitialized = false;
+
+async function getPdfJs() {
+  if (pdfjsLib && workerInitialized) return pdfjsLib;
+
+  const pdfjs = await import('pdfjs-dist');
+
+  if (!workerInitialized) {
+    pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+    workerInitialized = true;
+  }
+
+  pdfjsLib = pdfjs;
+  return pdfjs;
+}
+
+// =============================================================================
+// Text Layer Extraction
+// =============================================================================
+
+/**
+ * Extract text layer from PDF page and convert to normalized coordinates
+ */
+async function extractTextLayer(page: PDFPageProxy): Promise<TextLayerItem[]> {
+  const textContent = await page.getTextContent();
+  const viewport = page.getViewport({ scale: 1 });
+  const pageWidth = viewport.width;
+  const pageHeight = viewport.height;
+
+  const items: TextLayerItem[] = [];
+
+  for (const item of textContent.items) {
+    if (!('str' in item) || !(item as TextItem).str) continue;
+
+    const textItem = item as TextItem;
+    const text = textItem.str.trim();
+    if (!text) continue;
+
+    const transform = textItem.transform;
+    const fontSize = Math.sqrt(transform[0] * transform[0] + transform[1] * transform[1]);
+
+    const pdfX = transform[4];
+    const pdfY = transform[5];
+    const textWidth = textItem.width;
+    const textHeight = textItem.height || fontSize;
+
+    const x = pdfX / pageWidth;
+    const width = textWidth / pageWidth;
+    const y = 1 - (pdfY / pageHeight) - (textHeight / pageHeight);
+    const height = textHeight / pageHeight;
+
+    items.push({
+      text,
+      x: Math.max(0, Math.min(1, x)),
+      y: Math.max(0, Math.min(1, y)),
+      width: Math.max(0, Math.min(1, width)),
+      height: Math.max(0, Math.min(1, height)),
+    });
+  }
+
+  return items;
+}
+
+// =============================================================================
+// Text Matching
+// =============================================================================
+
+function addBboxPadding(
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): { x: number; y: number; width: number; height: number } {
+  const paddedX = Math.max(0, x - BBOX_HORIZONTAL_PADDING);
+  const paddedY = Math.max(0, y - BBOX_VERTICAL_PADDING);
+  const paddedWidth = Math.min(1 - paddedX, width + BBOX_HORIZONTAL_PADDING * 2);
+  const paddedHeight = Math.min(1 - paddedY, height + BBOX_VERTICAL_PADDING * 2);
+
+  return { x: paddedX, y: paddedY, width: paddedWidth, height: paddedHeight };
+}
+
+function findTextInLayer(
+  textItems: TextLayerItem[],
+  searchValue: string,
+  pageNumber: number,
+  color?: string
+): BoundingBox | null {
+  if (!searchValue || searchValue.trim().length === 0) return null;
+
+  const normalizedSearch = searchValue.trim().toLowerCase();
+
+  const createBbox = (x: number, y: number, w: number, h: number): BoundingBox => {
+    const padded = addBboxPadding(x, y, w, h);
+    return {
+      pageNumber,
+      x: padded.x,
+      y: padded.y,
+      width: padded.width,
+      height: padded.height,
+      color,
+    };
+  };
+
+  // Strategy 1: Exact match
+  for (const item of textItems) {
+    if (item.text.toLowerCase() === normalizedSearch) {
+      return createBbox(item.x, item.y, item.width, item.height);
+    }
+  }
+
+  // Strategy 2: Contains match
+  for (const item of textItems) {
+    if (item.text.toLowerCase().includes(normalizedSearch)) {
+      return createBbox(item.x, item.y, item.width, item.height);
+    }
+  }
+
+  // Strategy 3: Multi-item spanning match
+  const fullText = textItems.map(i => i.text).join(' ').toLowerCase();
+  if (fullText.includes(normalizedSearch)) {
+    let accumulated = '';
+    let startIdx = -1;
+    let endIdx = -1;
+
+    for (let i = 0; i < textItems.length; i++) {
+      accumulated += (accumulated ? ' ' : '') + textItems[i].text.toLowerCase();
+
+      if (startIdx === -1 && accumulated.includes(normalizedSearch.split(' ')[0])) {
+        startIdx = i;
+      }
+
+      if (startIdx !== -1 && accumulated.includes(normalizedSearch)) {
+        endIdx = i;
+        break;
+      }
+    }
+
+    if (startIdx !== -1 && endIdx !== -1) {
+      const relevantItems = textItems.slice(startIdx, endIdx + 1);
+      const minX = Math.min(...relevantItems.map(i => i.x));
+      const minY = Math.min(...relevantItems.map(i => i.y));
+      const maxX = Math.max(...relevantItems.map(i => i.x + i.width));
+      const maxY = Math.max(...relevantItems.map(i => i.y + i.height));
+
+      return createBbox(minX, minY, maxX - minX, maxY - minY);
+    }
+  }
+
+  // Strategy 4: Fuzzy match for numbers
+  const numericSearch = searchValue.replace(/[,$\s]/g, '');
+  if (/^[\d.]+$/.test(numericSearch)) {
+    for (const item of textItems) {
+      const numericItem = item.text.replace(/[,$\s]/g, '');
+      if (numericItem === numericSearch || numericItem.includes(numericSearch)) {
+        return createBbox(item.x, item.y, item.width, item.height);
+      }
+    }
+  }
+
+  return null;
+}
+
+// =============================================================================
+// Main Component
+// =============================================================================
+
 export function DocumentPageViewer({
   documentId,
+  pdfUrl: pdfUrlProp,
   initialPage = 1,
-  highlights = [],
-  fieldValues = [],
+  highlights,
+  fieldValues,
   onPageChange,
+  onPageCountChange,
   onTextLayerReady,
+  showHighlights: showHighlightsProp,
+  onShowHighlightsChange,
   className,
 }: DocumentPageViewerProps) {
-  // All hooks must be called unconditionally at the top
-  const { data, isLoading, error, refetch } = useDocumentPages(documentId);
+  // Stable references
+  const stableHighlights = highlights ?? EMPTY_HIGHLIGHTS;
+  const stableFieldValues = fieldValues ?? EMPTY_FIELD_VALUES;
+
+  // Data fetching (only if documentId is provided, skip if using pdfUrl directly)
+  const { data, isLoading: isDataLoading, error: dataError, refetch } = useDocumentPages(documentId || '');
+
+  // Determine which PDF URL to use (prop takes precedence)
+  const effectivePdfUrl = pdfUrlProp || data?.pdfUrl;
+  const skipDataFetch = !!pdfUrlProp;
+
+  // State
   const [currentPage, setCurrentPage] = useState(initialPage);
+  const [pageCount, setPageCount] = useState(0);
   const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
-  const [imageError, setImageError] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
+  const [isPdfLoading, setIsPdfLoading] = useState(true);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({ width: 0, height: 0 });
+  const [textLayerItems, setTextLayerItems] = useState<TextLayerItem[]>([]);
+  const [textLayerHighlights, setTextLayerHighlights] = useState<BoundingBox[]>([]);
+  const [showHighlightsInternal, setShowHighlightsInternal] = useState(true);
 
+  const showHighlights = showHighlightsProp ?? showHighlightsInternal;
   const zoom = ZOOM_LEVELS[zoomIndex];
-  const pageCount = data?.pageCount ?? 0;
-  const currentPageData = data?.pages.find((p) => p.pageNumber === currentPage);
 
-  // Reset to initial page when document changes
-  useEffect(() => {
-    setCurrentPage(initialPage);
-  }, [documentId, initialPage]);
+  // Refs
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
+  const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
 
-  // Notify parent of page changes
-  useEffect(() => {
-    onPageChange?.(currentPage);
-  }, [currentPage, onPageChange]);
+  // ==========================================================================
+  // Handlers
+  // ==========================================================================
+
+  const handleToggleHighlights = useCallback(() => {
+    const newValue = !showHighlights;
+    if (onShowHighlightsChange) {
+      onShowHighlightsChange(newValue);
+    } else {
+      setShowHighlightsInternal(newValue);
+    }
+  }, [showHighlights, onShowHighlightsChange]);
 
   const handlePrevPage = useCallback(() => {
     setCurrentPage((prev) => Math.max(1, prev - 1));
@@ -97,7 +346,6 @@ export function DocumentPageViewer({
       containerRef.current.requestFullscreen?.();
       setIsFullscreen(true);
     } else {
-      // Only exit fullscreen if we're actually in fullscreen mode
       if (document.fullscreenElement) {
         document.exitFullscreen?.();
       }
@@ -105,7 +353,158 @@ export function DocumentPageViewer({
     }
   }, [isFullscreen]);
 
-  // Handle keyboard navigation
+  // ==========================================================================
+  // PDF Rendering
+  // ==========================================================================
+
+  async function renderPage(pdf: PDFDocumentProxy, pageNum: number) {
+    if (!canvasRef.current) return;
+
+    try {
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
+      }
+
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: zoom });
+
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      setCanvasDimensions({
+        width: viewport.width,
+        height: viewport.height,
+      });
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+        canvas: canvas,
+      };
+
+      const renderTask = page.render(renderContext as Parameters<typeof page.render>[0]);
+      renderTaskRef.current = renderTask;
+
+      await renderTask.promise;
+      renderTaskRef.current = null;
+
+      // Extract text layer
+      try {
+        const textItems = await extractTextLayer(page);
+        setTextLayerItems(textItems);
+        onTextLayerReady?.(textItems, pageNum);
+      } catch (textErr) {
+        console.warn('Failed to extract text layer:', textErr);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'RenderingCancelledException') {
+        return;
+      }
+      console.error('Error rendering page:', err);
+    }
+  }
+
+  // ==========================================================================
+  // Effects
+  // ==========================================================================
+
+  // Load PDF when URL is available
+  useEffect(() => {
+    if (!effectivePdfUrl) return;
+
+    // Capture URL in const for TypeScript narrowing inside async function
+    const pdfUrlToLoad = effectivePdfUrl;
+    let cancelled = false;
+
+    async function loadPdf() {
+      try {
+        setIsPdfLoading(true);
+        setPdfError(null);
+
+        const pdfjs = await getPdfJs();
+
+        if (pdfDocRef.current) {
+          pdfDocRef.current.destroy();
+          pdfDocRef.current = null;
+        }
+
+        const loadingTask = pdfjs.getDocument(pdfUrlToLoad);
+        const pdf = await loadingTask.promise;
+
+        if (cancelled) {
+          pdf.destroy();
+          return;
+        }
+
+        pdfDocRef.current = pdf;
+        setPageCount(pdf.numPages);
+        onPageCountChange?.(pdf.numPages);
+
+        await renderPage(pdf, currentPage);
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Error loading PDF:', err);
+          setPdfError(err instanceof Error ? err.message : 'Failed to load PDF');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsPdfLoading(false);
+        }
+      }
+    }
+
+    loadPdf();
+
+    return () => {
+      cancelled = true;
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+      }
+    };
+  }, [effectivePdfUrl]);
+
+  // Re-render page on page/zoom change
+  useEffect(() => {
+    if (pdfDocRef.current && !isPdfLoading) {
+      renderPage(pdfDocRef.current, currentPage);
+    }
+  }, [currentPage, zoom]);
+
+  // Notify parent of page changes
+  useEffect(() => {
+    onPageChange?.(currentPage);
+  }, [currentPage, onPageChange]);
+
+  // Reset page when document changes
+  useEffect(() => {
+    setCurrentPage(initialPage);
+  }, [documentId, initialPage]);
+
+  // Generate highlights from fieldValues
+  useEffect(() => {
+    if (textLayerItems.length === 0 || stableFieldValues.length === 0) {
+      setTextLayerHighlights((prev) => (prev.length === 0 ? prev : EMPTY_HIGHLIGHTS));
+      return;
+    }
+
+    const newHighlights: BoundingBox[] = [];
+
+    for (const field of stableFieldValues) {
+      const match = findTextInLayer(textLayerItems, field.value, currentPage, field.color);
+      if (match) {
+        newHighlights.push(match);
+      }
+    }
+
+    setTextLayerHighlights(newHighlights);
+  }, [textLayerItems, stableFieldValues, currentPage]);
+
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
@@ -131,50 +530,63 @@ export function DocumentPageViewer({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handlePrevPage, handleNextPage, handleZoomIn, handleZoomOut]);
 
-  // Get highlights for current page
-  const currentHighlights = highlights.filter((h) => h.pageNumber === currentPage);
+  // Ctrl+scroll wheel zoom
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-  // If this is a PDF, use the PDF viewer (must be after all hooks)
-  if (data?.isPdf && data.pdfUrl) {
-    return (
-      <PdfPageViewer
-        pdfUrl={data.pdfUrl}
-        initialPage={initialPage}
-        highlights={highlights}
-        fieldValues={fieldValues}
-        onPageChange={onPageChange}
-        onTextLayerReady={onTextLayerReady}
-        className={className}
-      />
-    );
-  }
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
 
-  if (isLoading) {
-    return (
-      <div className={cn('flex items-center justify-center h-96 bg-background-secondary rounded-lg', className)}>
-        <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
-        <span className="ml-3 text-text-secondary">Loading pages...</span>
-      </div>
-    );
-  }
+      if (e.deltaY < 0) {
+        handleZoomIn();
+      } else if (e.deltaY > 0) {
+        handleZoomOut();
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [handleZoomIn, handleZoomOut]);
+
+  // ==========================================================================
+  // Computed values
+  // ==========================================================================
+
+  const currentHighlights = [
+    ...textLayerHighlights,
+    ...stableHighlights.filter((h) => h.pageNumber === currentPage),
+  ];
+
+  // When using pdfUrl directly, skip data loading state
+  const isLoading = skipDataFetch ? isPdfLoading : (isDataLoading || isPdfLoading);
+  const error = skipDataFetch ? pdfError : (dataError || pdfError);
+
+  // ==========================================================================
+  // Render
+  // ==========================================================================
 
   if (error) {
     return (
       <div className={cn('flex flex-col items-center justify-center h-96 bg-background-secondary rounded-lg', className)}>
-        <ImageIcon className="w-12 h-12 text-text-muted mb-4" />
-        <p className="text-text-secondary mb-4">Failed to load document pages</p>
-        <button onClick={() => refetch()} className="btn-secondary btn-sm">
-          Retry
-        </button>
+        <FileText className="w-12 h-12 text-text-muted mb-4" />
+        <p className="text-text-secondary mb-4">Failed to load document</p>
+        {!skipDataFetch && (
+          <button onClick={() => refetch()} className="btn-secondary btn-sm">
+            Retry
+          </button>
+        )}
       </div>
     );
   }
 
-  if (pageCount === 0) {
+  // Only show data loading state if fetching via documentId
+  if (!skipDataFetch && isDataLoading) {
     return (
-      <div className={cn('flex flex-col items-center justify-center h-96 bg-background-secondary rounded-lg', className)}>
-        <ImageIcon className="w-12 h-12 text-text-muted mb-4" />
-        <p className="text-text-secondary">No pages available</p>
+      <div className={cn('flex items-center justify-center h-96 bg-background-secondary rounded-lg', className)}>
+        <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
+        <span className="ml-3 text-text-secondary">Loading document...</span>
       </div>
     );
   }
@@ -194,7 +606,7 @@ export function DocumentPageViewer({
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrevPage}
-            disabled={currentPage <= 1}
+            disabled={currentPage <= 1 || isLoading}
             className="btn-ghost btn-xs p-1.5"
             title="Previous page (←)"
           >
@@ -208,14 +620,15 @@ export function DocumentPageViewer({
               onChange={handlePageInput}
               min={1}
               max={pageCount}
+              disabled={isLoading}
               className="w-12 px-2 py-1 text-center text-sm bg-background-primary border border-border-primary rounded"
             />
-            <span className="text-text-muted">/ {pageCount}</span>
+            <span className="text-text-muted">/ {pageCount || '?'}</span>
           </div>
 
           <button
             onClick={handleNextPage}
-            disabled={currentPage >= pageCount}
+            disabled={currentPage >= pageCount || isLoading}
             className="btn-ghost btn-xs p-1.5"
             title="Next page (→)"
           >
@@ -249,6 +662,25 @@ export function DocumentPageViewer({
 
           <div className="w-px h-4 bg-border-primary mx-1" />
 
+          {/* Bounding box toggle */}
+          <button
+            onClick={handleToggleHighlights}
+            className={cn(
+              'btn-ghost btn-xs p-1.5 flex items-center gap-1',
+              showHighlights && 'text-oak-primary'
+            )}
+            title={showHighlights ? 'Hide bounding boxes' : 'Show bounding boxes'}
+          >
+            {showHighlights ? (
+              <ToggleRight className="w-4 h-4" />
+            ) : (
+              <ToggleLeft className="w-4 h-4" />
+            )}
+            <span className="text-xs hidden sm:inline">Boxes</span>
+          </button>
+
+          <div className="w-px h-4 bg-border-primary mx-1" />
+
           <button
             onClick={toggleFullscreen}
             className="btn-ghost btn-xs p-1.5"
@@ -263,96 +695,70 @@ export function DocumentPageViewer({
         </div>
       </div>
 
-      {/* Page viewer */}
-      <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-background-secondary">
-        <div
-          className="relative"
-          style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: 'center center',
-            transition: 'transform 0.2s ease',
-          }}
-        >
-          {/* Page image */}
-          {currentPageData && (
-            <>
-              {imageLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary">
-                  <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
-                </div>
-              )}
-              {imageError ? (
-                <div className="flex flex-col items-center justify-center w-[600px] h-[800px] bg-background-tertiary border border-border-primary rounded">
-                  <ImageIcon className="w-12 h-12 text-text-muted mb-2" />
-                  <p className="text-sm text-text-muted">Failed to load image</p>
-                </div>
-              ) : (
-                <img
-                  ref={imageRef}
-                  src={currentPageData.imageUrl}
-                  alt={`Page ${currentPage}`}
-                  className={cn(
-                    'max-w-none shadow-lg rounded border border-border-primary',
-                    imageLoading && 'opacity-0'
-                  )}
-                  style={{
-                    transform: `rotate(${currentPageData.rotation}deg)`,
-                  }}
-                  onLoad={() => {
-                    setImageLoading(false);
-                    setImageError(false);
-                  }}
-                  onError={() => {
-                    setImageLoading(false);
-                    setImageError(true);
-                  }}
-                />
-              )}
+      {/* PDF viewer */}
+      <div className="flex-1 overflow-auto p-4 bg-background-secondary">
+        <div className="min-h-full flex items-center justify-center">
+          <div className="relative">
+            {isPdfLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary rounded z-10 min-w-[600px] min-h-[800px]">
+                <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
+                <span className="ml-3 text-text-secondary">Loading PDF...</span>
+              </div>
+            )}
 
-              {/* Highlight overlays */}
-              {!imageLoading && !imageError && imageRef.current && currentHighlights.length > 0 && (
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    width: imageRef.current.naturalWidth,
-                    height: imageRef.current.naturalHeight,
-                  }}
-                >
-                  {currentHighlights.map((highlight, idx) => (
-                    <div
-                      key={idx}
-                      className="absolute border-2 rounded-sm"
-                      style={{
-                        left: `${highlight.x * 100}%`,
-                        top: `${highlight.y * 100}%`,
-                        width: `${highlight.width * 100}%`,
-                        height: `${highlight.height * 100}%`,
-                        borderColor: highlight.color || '#3B82F6',
-                        backgroundColor: `${highlight.color || '#3B82F6'}20`,
-                      }}
-                    >
-                      {highlight.label && (
-                        <span
-                          className="absolute -top-5 left-0 text-xs px-1 rounded text-white whitespace-nowrap"
-                          style={{ backgroundColor: highlight.color || '#3B82F6' }}
-                        >
-                          {highlight.label}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+            <canvas
+              ref={canvasRef}
+              className={cn(
+                'shadow-lg rounded border border-border-primary',
+                isPdfLoading && 'opacity-0'
               )}
-            </>
-          )}
+            />
+
+            {/* SVG overlay for highlights */}
+            {showHighlights && !isPdfLoading && currentHighlights.length > 0 && canvasDimensions.width > 0 && (
+              <svg
+                className="absolute top-0 left-0 pointer-events-none"
+                style={{
+                  width: canvasDimensions.width,
+                  height: canvasDimensions.height,
+                }}
+                viewBox={`0 0 ${canvasDimensions.width} ${canvasDimensions.height}`}
+                preserveAspectRatio="none"
+              >
+                {currentHighlights.map((highlight, idx) => {
+                  const x = highlight.x * canvasDimensions.width;
+                  const y = highlight.y * canvasDimensions.height;
+                  const w = highlight.width * canvasDimensions.width;
+                  const h = highlight.height * canvasDimensions.height;
+                  const color = highlight.color || '#93C5FD';
+
+                  return (
+                    <rect
+                      key={idx}
+                      x={x}
+                      y={y}
+                      width={w}
+                      height={h}
+                      fill={`${color}30`}
+                      stroke={color}
+                      strokeWidth="1.5"
+                      rx="4"
+                    />
+                  );
+                })}
+              </svg>
+            )}
+          </div>
         </div>
       </div>
-
     </div>
   );
 }
 
-// Thumbnail strip component for multi-page navigation
+// =============================================================================
+// Thumbnail Strip (kept for multi-page navigation)
+// =============================================================================
+
 export function PageThumbnailStrip({
   documentId,
   currentPage,

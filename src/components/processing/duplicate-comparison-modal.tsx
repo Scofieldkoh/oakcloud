@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AlertTriangle, Check, X, GitBranch, FileText, Calendar, Building2, Hash, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PdfPageViewer } from './pdf-page-viewer';
+import { DocumentPageViewer } from './document-page-viewer';
 
 // Local formatting utilities
 function formatDate(dateValue: string | Date | null): string {
@@ -231,7 +231,7 @@ function DocumentPanel({
       {/* Document Preview - Takes up most space */}
       <div className="flex-1 min-h-0 border-b border-border-primary bg-background-primary">
         {document.pdfUrl ? (
-          <PdfPageViewer
+          <DocumentPageViewer
             pdfUrl={document.pdfUrl}
             className="h-full"
           />

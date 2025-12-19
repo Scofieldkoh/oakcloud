@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
+import { validateFileContent, ALLOWED_FILE_TYPES } from '@/lib/file-validation';
+import { HTTP_STATUS } from '@/lib/constants/application';
 
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '10485760'); // 10MB
 
-// Supported file types for BizFile extraction
+// Supported file types for BizFile extraction (used for client-side MIME check as first pass)
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'image/png',
@@ -16,13 +17,12 @@ const ALLOWED_MIME_TYPES = [
   'image/webp',
 ] as const;
 
-// Map MIME types to file extensions
-const MIME_TO_EXT: Record<string, string> = {
-  'application/pdf': '.pdf',
-  'image/png': '.png',
-  'image/jpeg': '.jpg',
-  'image/jpg': '.jpg',
-  'image/webp': '.webp',
+// Map detected file types to extensions
+const EXT_TO_FILE_EXT: Record<string, string> = {
+  'pdf': '.pdf',
+  'png': '.png',
+  'jpg': '.jpg',
+  'webp': '.webp',
 };
 
 /**
@@ -52,11 +52,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
+    // First pass: Check client-provided MIME type
     if (!ALLOWED_MIME_TYPES.includes(file.type as (typeof ALLOWED_MIME_TYPES)[number])) {
       return NextResponse.json(
         { error: 'Only PDF and image files (PNG, JPG, WebP) are allowed' },
-        { status: 400 }
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
+    }
+
+    // Read file content for server-side validation
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // SECURITY: Server-side content validation to prevent MIME type spoofing
+    const contentValidation = validateFileContent(buffer, ALLOWED_FILE_TYPES.BIZFILE, file.type);
+    if (!contentValidation.valid) {
+      return NextResponse.json(
+        { error: contentValidation.error || 'Invalid file content' },
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
@@ -87,18 +100,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate unique document ID and filename
+    // Use detected file extension from content validation (more reliable than client MIME)
     const documentId = uuidv4();
-    const fileExt = MIME_TO_EXT[file.type] || extname(file.name) || '.pdf';
+    const fileExt = EXT_TO_FILE_EXT[contentValidation.ext || 'pdf'] || '.pdf';
     const fileName = `${documentId}${fileExt}`;
 
     // Generate storage key for pending document
     const storageKey = StorageKeys.pendingDocument(tenantId, documentId, fileName);
 
-    // Upload file to storage
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Upload file to storage (reuse buffer from content validation)
+    // Use detected MIME type (more reliable than client-provided)
+    const detectedMimeType = contentValidation.mime || file.type;
     await storage.upload(storageKey, buffer, {
-      contentType: file.type,
+      contentType: detectedMimeType,
       metadata: {
         originalFileName: file.name,
         uploadedBy: session.id,
@@ -117,7 +131,7 @@ export async function POST(request: NextRequest) {
         originalFileName: file.name,
         storageKey,
         fileSize: file.size,
-        mimeType: file.type,
+        mimeType: detectedMimeType,
         version: 1,
         extractionStatus: 'PENDING',
       },

@@ -183,9 +183,15 @@ export async function findOrCreateContact(
   return { contact, isNew: true };
 }
 
+/**
+ * Search contacts with pagination
+ * @param params - Search parameters
+ * @param tenantId - Required tenant ID for security - all queries must be tenant-scoped
+ * @throws Error if tenantId is not provided
+ */
 export async function searchContacts(
   params: ContactSearchInput,
-  tenantId?: string
+  tenantId: string
 ): Promise<{
   contacts: Contact[];
   total: number;
@@ -193,14 +199,15 @@ export async function searchContacts(
   limit: number;
   totalPages: number;
 }> {
+  // SECURITY: Tenant ID is required to prevent cross-tenant data access
+  if (!tenantId) {
+    throw new Error('Tenant ID is required for contact search');
+  }
+
   const where: Prisma.ContactWhereInput = {
     deletedAt: null,
+    tenantId, // Always filter by tenant
   };
-
-  // Apply tenant filter if provided
-  if (tenantId) {
-    where.tenantId = tenantId;
-  }
 
   if (params.query) {
     const searchTerm = params.query.trim();
@@ -249,15 +256,24 @@ export async function searchContacts(
   };
 }
 
+/**
+ * Get a contact by ID
+ * @param id - Contact ID
+ * @param tenantId - Required tenant ID for security - all queries must be tenant-scoped
+ * @throws Error if tenantId is not provided
+ */
 export async function getContactById(
   id: string,
-  tenantId?: string
+  tenantId: string
 ): Promise<Contact | null> {
-  const where: Prisma.ContactWhereInput = { id, deletedAt: null };
-  if (tenantId) {
-    where.tenantId = tenantId;
+  // SECURITY: Tenant ID is required to prevent cross-tenant data access
+  if (!tenantId) {
+    throw new Error('Tenant ID is required for contact lookup');
   }
-  return prisma.contact.findFirst({ where });
+
+  return prisma.contact.findFirst({
+    where: { id, tenantId, deletedAt: null },
+  });
 }
 
 // ============================================================================
@@ -734,20 +750,28 @@ export interface ContactWithRelationships extends Contact {
 }
 
 interface ContactWithRelationshipsOptions {
-  tenantId?: string;
+  tenantId: string;  // Required for security
   companyIds?: string[];  // If provided, filter relationships to only these companies
 }
 
+/**
+ * Get a contact with all its relationships (companies, officers, shareholders)
+ * @param id - Contact ID
+ * @param options - Options including required tenantId and optional companyIds filter
+ * @throws Error if tenantId is not provided
+ */
 export async function getContactWithRelationships(
   id: string,
-  options: ContactWithRelationshipsOptions = {}
+  options: ContactWithRelationshipsOptions
 ): Promise<(ContactWithRelationships & { hiddenCompanyCount?: number }) | null> {
   const { tenantId, companyIds } = options;
 
-  const where: Prisma.ContactWhereInput = { id, deletedAt: null };
-  if (tenantId) {
-    where.tenantId = tenantId;
+  // SECURITY: Tenant ID is required to prevent cross-tenant data access
+  if (!tenantId) {
+    throw new Error('Tenant ID is required for contact lookup');
   }
+
+  const where: Prisma.ContactWhereInput = { id, tenantId, deletedAt: null };
 
   const contact = await prisma.contact.findFirst({
     where,
@@ -854,9 +878,16 @@ export async function getContactWithRelationships(
   };
 }
 
+/**
+ * Search contacts with company relation counts
+ * @param params - Search parameters
+ * @param tenantId - Required tenant ID for security - all queries must be tenant-scoped
+ * @param companyIds - Optional array of company IDs to filter by (for company-scoped users)
+ * @throws Error if tenantId is not provided
+ */
 export async function searchContactsWithCounts(
   params: ContactSearchInput,
-  tenantId?: string,
+  tenantId: string,
   companyIds?: string[]
 ): Promise<{
   contacts: Array<Contact & { _count: { companyRelations: number } }>;
@@ -865,6 +896,11 @@ export async function searchContactsWithCounts(
   limit: number;
   totalPages: number;
 }> {
+  // SECURITY: Tenant ID is required to prevent cross-tenant data access
+  if (!tenantId) {
+    throw new Error('Tenant ID is required for contact search');
+  }
+
   // For company-scoped users with no assignments, return empty result early
   if (companyIds && companyIds.length === 0) {
     return {
@@ -876,11 +912,10 @@ export async function searchContactsWithCounts(
     };
   }
 
-  const andConditions: Prisma.ContactWhereInput[] = [{ deletedAt: null }];
-
-  if (tenantId) {
-    andConditions.push({ tenantId });
-  }
+  const andConditions: Prisma.ContactWhereInput[] = [
+    { deletedAt: null },
+    { tenantId }, // Always filter by tenant
+  ];
 
   if (params.query) {
     const searchTerm = params.query.trim();

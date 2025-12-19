@@ -39,13 +39,17 @@ export async function PATCH(
     }
 
     // Get tenant from company for SUPER_ADMIN (who has null tenantId)
+    // SECURITY: Only SUPER_ADMIN can skip tenant filter - verified by canAccessCompany check above
     let tenantId = session.tenantId;
-    if (!tenantId) {
+    if (!tenantId && session.isSuperAdmin) {
       const company = await getCompanyById(companyId, null, { skipTenantFilter: true });
       if (!company) {
         return NextResponse.json({ error: 'Company not found' }, { status: 404 });
       }
       tenantId = company.tenantId;
+    } else if (!tenantId) {
+      // Non-SUPER_ADMIN without tenantId should not reach here, but guard anyway
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -110,13 +114,17 @@ export async function DELETE(
     }
 
     // Get tenant from company for SUPER_ADMIN (who has null tenantId)
+    // SECURITY: Only SUPER_ADMIN can skip tenant filter - verified by canAccessCompany check above
     let tenantId = session.tenantId;
-    if (!tenantId) {
+    if (!tenantId && session.isSuperAdmin) {
       const company = await getCompanyById(companyId, null, { skipTenantFilter: true });
       if (!company) {
         return NextResponse.json({ error: 'Company not found' }, { status: 404 });
       }
       tenantId = company.tenantId;
+    } else if (!tenantId) {
+      // Non-SUPER_ADMIN without tenantId should not reach here, but guard anyway
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 403 });
     }
 
     await removeShareholder(shareholderId, companyId, tenantId, session.id);

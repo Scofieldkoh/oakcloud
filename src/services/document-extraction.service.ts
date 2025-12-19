@@ -30,6 +30,8 @@ export interface ExtractionConfig {
   model: string;
   promptVersion: string;
   schemaVersion: string;
+  /** Additional context to help AI extraction (e.g., "Focus on line items") */
+  additionalContext?: string;
 }
 
 export interface EvidenceBbox {
@@ -300,7 +302,12 @@ export async function extractFields(
       documentDate: extractionResult.documentDate?.value
         ? new Date(extractionResult.documentDate.value)
         : undefined,
-      dueDate: extractionResult.dueDate?.value ? new Date(extractionResult.dueDate.value) : undefined,
+      // Fallback: if dueDate is not provided, use documentDate
+      dueDate: extractionResult.dueDate?.value
+        ? new Date(extractionResult.dueDate.value)
+        : extractionResult.documentDate?.value
+          ? new Date(extractionResult.documentDate.value)
+          : undefined,
       currency: extractionResult.currency.value,
       subtotal: extractionResult.subtotal?.value,
       taxAmount: extractionResult.taxAmount?.value,
@@ -388,8 +395,10 @@ async function performAIExtraction(
   userId: string,
   config: ExtractionConfig
 ): Promise<AIExtractionResult> {
-  // Get the best available model for this tenant
-  const modelId = await getBestAvailableModelForTenant(tenantId);
+  // Use config.model if provided and valid, otherwise get best available for tenant
+  let modelId = config.model && config.model !== 'gpt-4-vision'
+    ? config.model
+    : await getBestAvailableModelForTenant(tenantId);
 
   if (!modelId) {
     log.warn('No AI model available, falling back to simulation');
@@ -438,7 +447,8 @@ async function performAIExtraction(
     };
   }
 
-  const extractionPrompt = `You are a document data extraction AI. Analyze this document image and extract all relevant business document information.
+  // Build extraction prompt with optional additional context
+  let extractionPrompt = `You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
 
 ## Response Schema (JSON)
 {
@@ -490,19 +500,67 @@ async function performAIExtraction(
       "unitPrice": { "value": "decimal string", "confidence": number } | null,
       "amount": { "value": "decimal string", "confidence": number },
       "gstAmount": { "value": "decimal string", "confidence": number } | null,
-      "taxCode": { "value": "string (e.g., SR, ZR, ES, OP)", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, OP, TX, etc.)", "confidence": number },
       "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
     }
   ],
   "overallConfidence": number between 0 and 1
 }
 
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. If supplier has GST registration number, default to SR.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **OP (Out of Scope)**: Non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+Determination logic:
+1. If GST/tax amount is shown on line item → SR (9% GST)
+2. If explicitly marked as "0% GST" or "Zero-rated" → ZR
+3. If no GST registration on document and local supplier → OP
+4. If foreign supplier/service → ZR or OP depending on nature
+5. When in doubt for taxable business expenses → SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity × unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount × 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" → "-17.50"
+- Extract as negative decimal: "(17.50)" → "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
 ## Important Rules
-- All monetary values should be decimal numbers as strings (e.g., "1234.56")
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
 - Dates should be in YYYY-MM-DD format
 - If a field is not visible or cannot be determined, use null
 - The totalAmount field is required - estimate if necessary
-- Be precise with numbers - don't round unless clearly appropriate`;
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified`;
+
+  // Append additional context if provided
+  if (config.additionalContext) {
+    extractionPrompt += `\n\n## Additional Context\n${config.additionalContext}`;
+  }
 
   try {
     const response = await callAIWithConnector({
@@ -579,6 +637,10 @@ function extractFieldValue(field: unknown): { value: string; confidence: number 
   // Object format: { value, confidence }
   if (typeof field === 'object' && 'value' in (field as object)) {
     const f = field as AIFieldValue;
+    // Handle null/undefined values - return null if value is actually null
+    if (f.value === null || f.value === undefined || f.value === 'null') {
+      return null;
+    }
     return {
       value: String(f.value),
       confidence: typeof f.confidence === 'number' ? f.confidence : 0.8,
@@ -617,7 +679,10 @@ function mapAIResponseToResult(
   const totalAmountField = extractFieldValue(data.totalAmount);
   const supplierGstNoField = extractFieldValue(data.supplierGstNo);
 
-  // Map line items with bbox support
+  // Determine if document has GST registration (to infer default tax code)
+  const hasGstRegistration = !!supplierGstNoField?.value;
+
+  // Map line items with bbox support and GST code assignment
   const rawLineItems = data.lineItems as Array<Record<string, unknown>> || [];
   const lineItems = rawLineItems.map((item, idx) => {
     const descField = extractFieldValue(item.description);
@@ -627,6 +692,40 @@ function mapAIResponseToResult(
     const gstAmountField = extractFieldValue(item.gstAmount);
     const taxCodeField = extractFieldValue(item.taxCode);
     const accountCodeField = extractFieldValue(item.accountCode);
+
+    // Determine tax code with intelligent fallback
+    let taxCode = taxCodeField?.value;
+    let taxCodeConfidence = taxCodeField?.confidence || 0.7;
+
+    if (!taxCode) {
+      // Apply fallback logic based on document context
+      if (gstAmountField?.value && parseFloat(gstAmountField.value) > 0) {
+        // Has GST amount → Standard-Rated
+        taxCode = 'SR';
+        taxCodeConfidence = 0.85;
+      } else if (hasGstRegistration) {
+        // Supplier is GST registered → default to Standard-Rated
+        taxCode = 'SR';
+        taxCodeConfidence = 0.75;
+      } else {
+        // No GST registration → Out of Scope
+        taxCode = 'OP';
+        taxCodeConfidence = 0.6;
+      }
+    }
+
+    // Calculate GST amount if not provided but tax code is SR
+    let gstAmount = gstAmountField?.value;
+    let gstAmountConfidence = gstAmountField?.confidence || 0.8;
+
+    if (!gstAmount && taxCode === 'SR' && amountField?.value) {
+      // Calculate 9% GST for standard-rated items
+      const amount = parseFloat(amountField.value);
+      if (!isNaN(amount) && amount > 0) {
+        gstAmount = (amount * 0.09).toFixed(2);
+        gstAmountConfidence = 0.7; // Lower confidence for calculated values
+      }
+    }
 
     return {
       lineNo: (item.lineNo as number) || idx + 1,
@@ -642,8 +741,8 @@ function mapAIResponseToResult(
         confidence: amountField?.confidence || 0.9,
         evidence: amountField ? createFieldEvidence(amountField.value, amountField.confidence || 0.9, pageNum, fingerprint) : undefined,
       },
-      gstAmount: gstAmountField ? { value: gstAmountField.value, confidence: gstAmountField.confidence } : undefined,
-      taxCode: taxCodeField ? { value: taxCodeField.value, confidence: taxCodeField.confidence } : undefined,
+      gstAmount: gstAmount ? { value: gstAmount, confidence: gstAmountConfidence } : undefined,
+      taxCode: { value: taxCode, confidence: taxCodeConfidence },
       accountCode: accountCodeField ? { value: accountCodeField.value, confidence: accountCodeField.confidence } : undefined,
     };
   });

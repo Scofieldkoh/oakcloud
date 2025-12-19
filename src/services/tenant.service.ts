@@ -129,8 +129,8 @@ export async function createTenant(
 
     return tenant;
   } catch (error) {
-    // Handle database unique constraint violation (race condition case)
-    if (error instanceof Error && error.message.includes('Unique constraint')) {
+    // Handle database unique constraint violation using Prisma error codes
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       throw new Error('Tenant slug already exists');
     }
     throw error;

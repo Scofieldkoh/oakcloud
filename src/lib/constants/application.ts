@@ -21,7 +21,7 @@ export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 /** Cookie configuration options */
 export const COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: 'lax' as const,
+  sameSite: 'strict' as const, // SECURITY: Use strict to prevent CSRF attacks
   path: '/',
 };
 

@@ -23,6 +23,7 @@ import {
   Trash2,
   Pencil,
   XCircle,
+  Sparkles,
 } from 'lucide-react';
 import {
   useProcessingDocument,
@@ -43,6 +44,7 @@ import {
   DocumentPageViewer,
   ResizableSplitView,
   ConfidenceDot,
+  ConfidenceBadge,
   DuplicateComparisonModal,
 } from '@/components/processing';
 import type { FieldValue } from '@/components/processing/document-page-viewer';
@@ -773,6 +775,19 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 Cancel
               </button>
               <button
+                onClick={handleTriggerExtraction}
+                disabled={triggerExtraction.isPending}
+                className="btn-secondary btn-sm"
+                title="Re-run AI extraction to replace current data"
+              >
+                {triggerExtraction.isPending ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                Re-extract
+              </button>
+              <button
                 onClick={handleSaveEdit}
                 disabled={updateRevision.isPending}
                 className="btn-primary btn-sm"
@@ -886,9 +901,6 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                     onAdd={handleAddLineItem}
                     onRemove={handleRemoveLineItem}
                     onChange={handleLineItemChange}
-                    subtotal={revisionWithLineItems?.subtotal}
-                    taxAmount={revisionWithLineItems?.taxAmount}
-                    totalAmount={revisionWithLineItems?.totalAmount}
                   />
                 </div>
               )}
@@ -1016,15 +1028,15 @@ function NoExtractionPlaceholder({
           : 'Extraction is not available for this document status.'}
       </p>
       {canTrigger && (
-        <button onClick={onTrigger} disabled={isPending} className="btn-primary">
+        <button onClick={onTrigger} disabled={isPending} className="btn-primary btn-sm">
           {isPending ? (
             <>
-              <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+              <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
               Extracting...
             </>
           ) : (
             <>
-              <Play className="w-4 h-4 mr-2" />
+              <Play className="w-3.5 h-3.5 mr-1.5" />
               Trigger Extraction
             </>
           )}
@@ -1390,6 +1402,20 @@ function ValidationStatusSection({
   );
 }
 
+// Helper to extract confidence from line item evidence
+function getLineItemConfidence(evidenceJson: Record<string, unknown> | null): number | undefined {
+  if (!evidenceJson) return undefined;
+  // Check for description confidence (main confidence indicator)
+  const descEvidence = evidenceJson.description as { confidence?: number } | undefined;
+  const amountEvidence = evidenceJson.amount as { confidence?: number } | undefined;
+  // Return average of available confidences
+  const confidences: number[] = [];
+  if (descEvidence?.confidence !== undefined) confidences.push(descEvidence.confidence);
+  if (amountEvidence?.confidence !== undefined) confidences.push(amountEvidence.confidence);
+  if (confidences.length === 0) return undefined;
+  return confidences.reduce((a, b) => a + b, 0) / confidences.length;
+}
+
 function LineItemsSection({
   lineItems,
   isEditing,
@@ -1399,9 +1425,6 @@ function LineItemsSection({
   onAdd,
   onRemove,
   onChange,
-  subtotal,
-  taxAmount,
-  totalAmount,
 }: {
   lineItems?: Array<{
     id?: string;
@@ -1413,6 +1436,7 @@ function LineItemsSection({
     gstAmount?: string | null;
     taxCode?: string | null;
     accountCode?: string | null;
+    evidenceJson?: Record<string, unknown> | null;
   }>;
   isEditing: boolean;
   isLoading: boolean;
@@ -1421,10 +1445,20 @@ function LineItemsSection({
   onAdd: () => void;
   onRemove: (index: number) => void;
   onChange: (index: number, field: string, value: string) => void;
-  subtotal?: string | null;
-  taxAmount?: string | null;
-  totalAmount?: string;
 }) {
+  // Calculate totals from line items (authoritative source)
+  const calculatedSubtotal = lineItems?.reduce((sum, item) => {
+    const amount = parseFloat(item.amount) || 0;
+    return sum + amount;
+  }, 0) ?? 0;
+
+  const calculatedTax = lineItems?.reduce((sum, item) => {
+    const gstAmount = parseFloat(item.gstAmount || '0') || 0;
+    return sum + gstAmount;
+  }, 0) ?? 0;
+
+  const calculatedTotal = calculatedSubtotal + calculatedTax;
+
   if (isLoading) {
     return (
       <div className="card p-8 flex items-center justify-center">
@@ -1472,9 +1506,17 @@ function LineItemsSection({
               {lineItems.map((item, index) => {
                 const account = chartOfAccounts.find((a) => a.code === item.accountCode);
                 const gstCode = gstTaxCodes.find((g) => g.code === item.taxCode);
+                const lineConfidence = getLineItemConfidence(item.evidenceJson || null);
                 return (
                   <tr key={item.id || `new-${index}`} className="hover:bg-background-tertiary/50">
-                    <td className="px-4 py-2.5 text-text-muted">{item.lineNo}</td>
+                    <td className="px-4 py-2.5 text-text-muted">
+                      <span className="flex items-center gap-1.5">
+                        {item.lineNo}
+                        {lineConfidence !== undefined && !isEditing && (
+                          <ConfidenceDot confidence={lineConfidence} size="sm" />
+                        )}
+                      </span>
+                    </td>
                     <td className="px-4 py-2.5 text-text-primary">
                       {isEditing ? (
                         <input
@@ -1606,7 +1648,7 @@ function LineItemsSection({
                   Subtotal
                 </td>
                 <td className="px-4 py-2 text-right text-text-primary">
-                  {formatCurrency(subtotal || '0', currency)}
+                  {formatCurrency(calculatedSubtotal.toFixed(2), currency)}
                 </td>
                 <td colSpan={isEditing ? 3 : 2}></td>
               </tr>
@@ -1615,7 +1657,7 @@ function LineItemsSection({
                   Tax
                 </td>
                 <td className="px-4 py-2 text-right text-text-primary">
-                  {formatCurrency(taxAmount || '0', currency)}
+                  {formatCurrency(calculatedTax.toFixed(2), currency)}
                 </td>
                 <td colSpan={isEditing ? 3 : 2}></td>
               </tr>
@@ -1624,7 +1666,7 @@ function LineItemsSection({
                   Total
                 </td>
                 <td className="px-4 py-2 text-right text-text-primary">
-                  {formatCurrency(totalAmount || '0', currency)}
+                  {formatCurrency(calculatedTotal.toFixed(2), currency)}
                 </td>
                 <td colSpan={isEditing ? 3 : 2}></td>
               </tr>
