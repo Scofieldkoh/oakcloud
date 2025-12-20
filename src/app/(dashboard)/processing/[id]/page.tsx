@@ -36,6 +36,8 @@ import {
   useUpdateRevision,
   useDocumentNavigation,
   useDuplicateComparison,
+  useUpdatePageRotation,
+  useBulkOperation,
 } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/components/ui/toast';
@@ -258,9 +260,12 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const approveRevision = useApproveRevision();
   const recordDuplicateDecision = useRecordDuplicateDecision();
   const updateRevision = useUpdateRevision();
+  const updatePageRotation = useUpdatePageRotation();
+  const bulkOperation = useBulkOperation();
 
   // UI State
   const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -514,6 +519,21 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     }
   };
 
+  const handleDeleteDocument = async () => {
+    try {
+      await bulkOperation.mutateAsync({
+        operation: 'DELETE',
+        documentIds: [id],
+      });
+      success('Document deleted');
+      setShowDeleteDialog(false);
+      // Navigate back to list
+      router.push('/processing');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to delete document');
+    }
+  };
+
   const handleDuplicateDecision = async (decision: 'REJECT_DUPLICATE' | 'CONFIRM_DUPLICATE' | 'MARK_AS_NEW_VERSION') => {
     if (!duplicateData?.duplicateDocument?.id) {
       toastError('No duplicate document found');
@@ -532,6 +552,19 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       toastError(err instanceof Error ? err.message : 'Failed to record decision');
     }
   };
+
+  const handleRotationChange = useCallback(async (rotation: number, pageNumber: number) => {
+    try {
+      await updatePageRotation.mutateAsync({
+        documentId: id,
+        pageNumber,
+        rotation,
+      });
+      // No need to show success toast for rotation - it's a quick action
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to save rotation');
+    }
+  }, [id, updatePageRotation, toastError]);
 
   const handleStartEdit = () => {
     if (revisionWithLineItems) {
@@ -816,6 +849,15 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               )}
             </>
           )}
+          {can.deleteDocument && (
+            <button
+              onClick={() => setShowDeleteDialog(true)}
+              className="btn-ghost btn-sm text-status-error hover:bg-status-error/10"
+              title="Delete document"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
           <button onClick={() => refetch()} className="btn-ghost btn-sm p-2" title="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -855,6 +897,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 highlights={highlights}
                 fieldValues={fieldValues}
                 className="h-full"
+                onRotationChange={handleRotationChange}
               />
             )
           }
@@ -965,6 +1008,18 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         confirmLabel="Approve"
         variant="info"
         isLoading={approveRevision.isPending}
+      />
+
+      {/* Delete Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDeleteDocument}
+        title="Delete Document"
+        description={`Are you sure you want to delete "${doc.fileName}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={bulkOperation.isPending}
       />
 
       {/* Duplicate Comparison Modal */}

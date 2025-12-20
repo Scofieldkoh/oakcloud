@@ -24,8 +24,18 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { BulkActionsToolbar } from '@/components/processing/bulk-actions-toolbar';
-import type { PipelineStatus, DuplicateStatus } from '@/generated/prisma';
+import type { PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
+
+// Revision status display config
+const revisionStatusConfig: Record<
+  RevisionStatus,
+  { label: string; color: string }
+> = {
+  DRAFT: { label: 'Pending Review', color: 'text-status-warning bg-status-warning/10' },
+  APPROVED: { label: 'Approved', color: 'text-oak-primary bg-oak-primary/10' },
+  SUPERSEDED: { label: 'Superseded', color: 'text-text-muted bg-background-tertiary' },
+};
 
 // Pipeline status display config
 const pipelineStatusConfig: Record<
@@ -108,6 +118,7 @@ export default function ProcessingDocumentsPage() {
       sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc',
       pipelineStatus: (searchParams.get('pipelineStatus') || undefined) as PipelineStatus | undefined,
       duplicateStatus: (searchParams.get('duplicateStatus') || undefined) as DuplicateStatus | undefined,
+      revisionStatus: (searchParams.get('revisionStatus') || undefined) as RevisionStatus | undefined,
       isContainer: searchParams.get('isContainer') === 'true' ? true :
                    searchParams.get('isContainer') === 'false' ? false : undefined,
     };
@@ -171,6 +182,7 @@ export default function ProcessingDocumentsPage() {
     if (params.sortOrder && params.sortOrder !== 'desc') urlParams.set('sortOrder', params.sortOrder);
     if (params.pipelineStatus) urlParams.set('pipelineStatus', params.pipelineStatus);
     if (params.duplicateStatus) urlParams.set('duplicateStatus', params.duplicateStatus);
+    if (params.revisionStatus) urlParams.set('revisionStatus', params.revisionStatus);
     if (params.isContainer !== undefined) urlParams.set('isContainer', params.isContainer.toString());
 
     const queryString = urlParams.toString();
@@ -200,7 +212,11 @@ export default function ProcessingDocumentsPage() {
       total: data.total,
       queued: docs.filter((d) => d.pipelineStatus === 'QUEUED').length,
       processing: docs.filter((d) => d.pipelineStatus === 'PROCESSING').length,
-      extracted: docs.filter((d) => d.pipelineStatus === 'EXTRACTION_DONE').length,
+      pendingReview: docs.filter((d) =>
+        d.currentRevision?.status === 'DRAFT' &&
+        d.pipelineStatus === 'EXTRACTION_DONE'
+      ).length,
+      approved: docs.filter((d) => d.currentRevision?.status === 'APPROVED').length,
       failed: docs.filter((d) =>
         d.pipelineStatus === 'FAILED_RETRYABLE' ||
         d.pipelineStatus === 'FAILED_PERMANENT' ||
@@ -239,7 +255,7 @@ export default function ProcessingDocumentsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
           <div className="card p-3 sm:p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded bg-oak-primary/10">
@@ -278,12 +294,24 @@ export default function ProcessingDocumentsPage() {
 
           <div className="card p-3 sm:p-4">
             <div className="flex items-center gap-3">
+              <div className="p-2 rounded bg-status-warning/10">
+                <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
+              </div>
+              <div>
+                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.pendingReview}</p>
+                <p className="text-xs sm:text-sm text-text-tertiary">Pending Review</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-3 sm:p-4">
+            <div className="flex items-center gap-3">
               <div className="p-2 rounded bg-status-success/10">
                 <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-status-success" />
               </div>
               <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.extracted}</p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Extracted</p>
+                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.approved}</p>
+                <p className="text-xs sm:text-sm text-text-tertiary">Approved</p>
               </div>
             </div>
           </div>
@@ -318,6 +346,19 @@ export default function ProcessingDocumentsPage() {
                   {config.label}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">Review Status</label>
+            <select
+              value={params.revisionStatus || ''}
+              onChange={(e) => handleFilterChange('revisionStatus', e.target.value || undefined)}
+              className="input input-sm w-40"
+            >
+              <option value="">All</option>
+              <option value="DRAFT">Pending Review</option>
+              <option value="APPROVED">Approved</option>
             </select>
           </div>
 
@@ -409,6 +450,7 @@ export default function ProcessingDocumentsPage() {
                   </th>
                   <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Document</th>
                   <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Pipeline</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Status</th>
                   <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Duplicate</th>
                   <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Vendor</th>
                   <th className="text-right text-xs font-medium text-text-secondary px-4 py-3">Amount</th>
@@ -471,6 +513,18 @@ export default function ProcessingDocumentsPage() {
                         />
                       </td>
                       <td className="px-4 py-3">
+                        {doc.currentRevision ? (
+                          <span className={cn(
+                            'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
+                            revisionStatusConfig[doc.currentRevision.status].color
+                          )}>
+                            {revisionStatusConfig[doc.currentRevision.status].label}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-text-muted">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
                         <StatusBadge
                           status={doc.duplicateStatus}
                           config={duplicateStatusConfig[doc.duplicateStatus]}
@@ -482,7 +536,7 @@ export default function ProcessingDocumentsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="text-sm font-mono text-text-primary">
+                        <span className="text-sm text-text-primary">
                           {doc.currentRevision
                             ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
                             : '-'}

@@ -101,6 +101,7 @@ export interface RevisionSummary {
 export interface ProcessingDocumentSearchParams {
   pipelineStatus?: PipelineStatus;
   duplicateStatus?: DuplicateStatus;
+  revisionStatus?: RevisionStatus; // Filter by revision status (DRAFT = pending review, APPROVED)
   isContainer?: boolean;
   companyId?: string;
   tenantId?: string; // For SUPER_ADMIN to filter by specific tenant
@@ -274,6 +275,7 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
       'processing-documents',
       params.pipelineStatus,
       params.duplicateStatus,
+      params.revisionStatus,
       params.isContainer,
       params.companyId,
       params.tenantId,
@@ -792,3 +794,49 @@ export function useDuplicateComparison(documentId: string, enabled = true) {
     retry: false, // Don't retry if no duplicate exists
   });
 }
+
+// ============================================================================
+// Page Rotation
+// ============================================================================
+
+async function updatePageRotation(
+  documentId: string,
+  pageNumber: number,
+  rotation: number
+): Promise<{ id: string; pageNumber: number; rotation: number }> {
+  const response = await fetch(`/api/processing-documents/${documentId}/pages/${pageNumber}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rotation }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to update page rotation');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Hook for updating page rotation
+ */
+export function useUpdatePageRotation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      documentId,
+      pageNumber,
+      rotation,
+    }: {
+      documentId: string;
+      pageNumber: number;
+      rotation: number;
+    }) => updatePageRotation(documentId, pageNumber, rotation),
+    onSuccess: (_, { documentId }) => {
+      // Invalidate document pages to reflect the new rotation
+      queryClient.invalidateQueries({ queryKey: ['document-pages', documentId] });
+    },
+  });
+}
+

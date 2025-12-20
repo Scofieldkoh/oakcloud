@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
@@ -15,7 +15,10 @@ import {
   Building2,
   Files,
   RotateCcw,
-  Sparkles,
+  Merge,
+  ClipboardPaste,
+  Image,
+  FileText,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
 import { useCompanies } from '@/hooks/use-companies';
@@ -23,8 +26,11 @@ import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { useToast } from '@/components/ui/toast';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
+import { FileMergeModal } from '@/components/processing/file-merge-modal';
+import { processFileForUpload, isSupportedFileType } from '@/lib/pdf-utils';
+import { cn } from '@/lib/utils';
 
-type UploadStatus = 'pending' | 'uploading' | 'success' | 'error';
+type UploadStatus = 'pending' | 'processing' | 'uploading' | 'success' | 'error';
 
 interface QueuedFile {
   file: File;
@@ -32,6 +38,7 @@ interface QueuedFile {
   status: UploadStatus;
   error?: string;
   processingDocumentId?: string;
+  originalFile?: File; // Keep reference to original file before processing
 }
 
 const MAX_FILES = 20;
@@ -40,7 +47,8 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB to match API
 export default function ProcessingUploadPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { success, error: toastError } = useToast();
+  const { success, error: toastError, info } = useToast();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Get active tenant and company
   const isSuperAdmin = session?.isSuperAdmin ?? false;
@@ -55,6 +63,7 @@ export default function ProcessingUploadPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
 
   // AI model selection and context (consistent with BizFile upload)
   const [selectedModelId, setSelectedModelId] = useState('');
@@ -99,11 +108,47 @@ export default function ProcessingUploadPage() {
     }
   }, [selectedCompanyId, companies]);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  // Handle paste event for the entire page
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Don't handle if merge modal is open (it has its own paste handler)
+      if (isMergeModalOpen) return;
+
+      // Don't intercept paste in input/textarea elements
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const pastedFiles: File[] = [];
+      for (const item of items) {
+        if (item.kind === 'file') {
+          const file = item.getAsFile();
+          if (file && isSupportedFileType(file)) {
+            pastedFiles.push(file);
+          }
+        }
+      }
+
+      if (pastedFiles.length > 0) {
+        e.preventDefault();
+        info(`Pasted ${pastedFiles.length} file${pastedFiles.length > 1 ? 's' : ''}`);
+        addFilesToQueue(pastedFiles);
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [isMergeModalOpen]);
+
+  const addFilesToQueue = useCallback((acceptedFiles: File[]) => {
     const newFiles: QueuedFile[] = acceptedFiles.map((file) => ({
       file,
       id: `${file.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       status: 'pending' as UploadStatus,
+      originalFile: file,
     }));
 
     setQueuedFiles((prev) => {
@@ -115,6 +160,10 @@ export default function ProcessingUploadPage() {
       return combined;
     });
   }, [toastError]);
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    addFilesToQueue(acceptedFiles);
+  }, [addFilesToQueue]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -159,6 +208,16 @@ export default function ProcessingUploadPage() {
     );
   };
 
+  const handleMergeComplete = (mergedFile: File) => {
+    // Add the merged file to the queue
+    addFilesToQueue([mergedFile]);
+    success('Files merged successfully');
+  };
+
+  const openMergeModal = () => {
+    setIsMergeModalOpen(true);
+  };
+
   const uploadFiles = async () => {
     if (!selectedCompanyId) {
       toastError('Please select a company');
@@ -192,7 +251,48 @@ export default function ProcessingUploadPage() {
         continue;
       }
 
-      // Update status to uploading
+      // Step 1: Process file (convert images to PDF, compress large PDFs)
+      setQueuedFiles((prev) =>
+        prev.map((f) =>
+          f.id === queuedFile.id ? { ...f, status: 'processing' as UploadStatus } : f
+        )
+      );
+
+      let processedFile: File;
+      try {
+        processedFile = await processFileForUpload(queuedFile.file);
+
+        // Log if file was converted or compressed
+        if (processedFile !== queuedFile.file) {
+          const wasImage = queuedFile.file.type.startsWith('image/');
+          const sizeReduced = processedFile.size < queuedFile.file.size;
+          if (wasImage) {
+            console.log(`Converted ${queuedFile.file.name} to PDF`);
+          }
+          if (sizeReduced) {
+            const before = (queuedFile.file.size / 1024 / 1024).toFixed(2);
+            const after = (processedFile.size / 1024 / 1024).toFixed(2);
+            console.log(`Compressed ${queuedFile.file.name}: ${before}MB -> ${after}MB`);
+          }
+        }
+      } catch (err) {
+        console.error('File processing failed:', err);
+        setQueuedFiles((prev) =>
+          prev.map((f) =>
+            f.id === queuedFile.id
+              ? {
+                  ...f,
+                  status: 'error' as UploadStatus,
+                  error: err instanceof Error ? err.message : 'File processing failed',
+                }
+              : f
+          )
+        );
+        errorCount++;
+        continue;
+      }
+
+      // Step 2: Upload the processed file
       setQueuedFiles((prev) =>
         prev.map((f) =>
           f.id === queuedFile.id ? { ...f, status: 'uploading' as UploadStatus } : f
@@ -201,7 +301,7 @@ export default function ProcessingUploadPage() {
 
       try {
         const formData = new FormData();
-        formData.append('file', queuedFile.file);
+        formData.append('file', processedFile);
         formData.append('companyId', selectedCompanyId);
         formData.append('priority', 'NORMAL');
         formData.append('uploadSource', 'WEB');
@@ -233,6 +333,7 @@ export default function ProcessingUploadPage() {
                   ...f,
                   status: 'success' as UploadStatus,
                   processingDocumentId: result.data?.document?.id,
+                  file: processedFile, // Update to processed file
                 }
               : f
           )
@@ -267,12 +368,51 @@ export default function ProcessingUploadPage() {
   };
 
   const completedCount = queuedFiles.filter((f) => f.status === 'success').length;
-  const pendingCount = queuedFiles.filter((f) => f.status === 'pending').length;
+  const pendingCount = queuedFiles.filter((f) => ['pending', 'processing'].includes(f.status)).length;
   const errorCount = queuedFiles.filter((f) => f.status === 'error').length;
   const allComplete = queuedFiles.length > 0 && completedCount === queuedFiles.length;
 
+  // Get file icon based on type
+  const getFileIcon = (file: File) => {
+    if (file.type === 'application/pdf') {
+      return <FileText className="w-5 h-5 text-status-error" />;
+    }
+    if (file.type.startsWith('image/')) {
+      return <Image className="w-5 h-5 text-oak-primary" />;
+    }
+    return <File className="w-5 h-5 text-text-muted" />;
+  };
+
+  // Get status icon
+  const getStatusIcon = (qf: QueuedFile) => {
+    switch (qf.status) {
+      case 'pending':
+        return getFileIcon(qf.file);
+      case 'processing':
+        return <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />;
+      case 'uploading':
+        return <Loader2 className="w-5 h-5 text-oak-primary animate-spin" />;
+      case 'success':
+        return <CheckCircle className="w-5 h-5 text-status-success" />;
+      case 'error':
+        return <AlertCircle className="w-5 h-5 text-status-error" />;
+    }
+  };
+
+  // Get status text
+  const getStatusText = (qf: QueuedFile) => {
+    switch (qf.status) {
+      case 'processing':
+        return <span className="text-amber-600 ml-2">• Converting...</span>;
+      case 'uploading':
+        return <span className="text-oak-primary ml-2">• Uploading...</span>;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="p-4 sm:p-6 max-w-4xl">
+    <div ref={containerRef} className="p-4 sm:p-6 max-w-4xl">
       {/* Header */}
       <div className="mb-6">
         <Link
@@ -344,27 +484,53 @@ export default function ProcessingUploadPage() {
         )}
       </div>
 
-      {/* Dropzone - consistent with BizFile upload styling */}
+      {/* Dropzone with paste hint */}
       <div
         {...getRootProps()}
-        className={`card p-12 text-center border-2 border-dashed cursor-pointer transition-colors mb-6 ${
+        className={cn(
+          'card p-12 text-center border-2 border-dashed cursor-pointer transition-colors mb-4',
           isDragActive
             ? 'border-oak-primary bg-oak-primary/5'
             : isUploading
             ? 'border-border-secondary bg-background-tertiary cursor-not-allowed'
             : 'border-border-secondary hover:border-oak-primary/50'
-        }`}
+        )}
       >
         <input {...getInputProps()} />
         <FileUp className="w-12 h-12 text-text-muted mx-auto mb-4" />
         <h3 className="text-lg font-medium text-text-primary mb-2">
           {isDragActive ? 'Drop the files here' : 'Drag & drop your documents'}
         </h3>
-        <p className="text-text-secondary mb-4">
+        <p className="text-text-secondary mb-2">
           or click to browse your files
         </p>
-        <p className="text-sm text-text-tertiary">
+        <p className="text-sm text-text-tertiary mb-3">
           PDF, PNG, JPG, TIFF • Max {MAX_FILE_SIZE / 1024 / 1024}MB per file • Up to {MAX_FILES} files
+        </p>
+        <div className="flex items-center justify-center gap-4 text-xs text-text-muted">
+          <span className="flex items-center gap-1.5">
+            <ClipboardPaste className="w-3.5 h-3.5" />
+            <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded">Ctrl+V</kbd> to paste
+          </span>
+          <span className="text-border-secondary">•</span>
+          <span>Images auto-convert to PDF</span>
+          <span className="text-border-secondary">•</span>
+          <span>Large PDFs auto-compress</span>
+        </div>
+      </div>
+
+      {/* Merge Files Button */}
+      <div className="mb-6">
+        <button
+          onClick={openMergeModal}
+          disabled={isUploading}
+          className="btn-secondary btn-sm flex items-center gap-2"
+        >
+          <Merge className="w-4 h-4" />
+          Merge Multiple Files
+        </button>
+        <p className="text-xs text-text-muted mt-1.5">
+          Combine multiple files/images into a single PDF document
         </p>
       </div>
 
@@ -405,25 +571,25 @@ export default function ProcessingUploadPage() {
             {queuedFiles.map((qf) => (
               <div key={qf.id} className="p-3 flex items-center gap-3">
                 <div className="flex-shrink-0">
-                  {qf.status === 'pending' && (
-                    <File className="w-5 h-5 text-text-muted" />
-                  )}
-                  {qf.status === 'uploading' && (
-                    <Loader2 className="w-5 h-5 text-oak-primary animate-spin" />
-                  )}
-                  {qf.status === 'success' && (
-                    <CheckCircle className="w-5 h-5 text-status-success" />
-                  )}
-                  {qf.status === 'error' && (
-                    <AlertCircle className="w-5 h-5 text-status-error" />
-                  )}
+                  {getStatusIcon(qf)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-text-primary truncate">{qf.file.name}</p>
+                  <p className="text-sm text-text-primary truncate">
+                    {qf.file.name}
+                    {qf.originalFile && qf.file.name !== qf.originalFile.name && (
+                      <span className="text-text-muted ml-1">
+                        (from {qf.originalFile.name})
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-text-tertiary">
                     {qf.file.size >= 1024 * 1024
                       ? `${(qf.file.size / 1024 / 1024).toFixed(1)} MB`
                       : `${(qf.file.size / 1024).toFixed(1)} KB`}
+                    {qf.file.type.startsWith('image/') && qf.status === 'pending' && (
+                      <span className="text-amber-600 ml-2">• Will convert to PDF</span>
+                    )}
+                    {getStatusText(qf)}
                     {qf.error && (
                       <span className="text-status-error ml-2">• {qf.error}</span>
                     )}
@@ -536,6 +702,13 @@ export default function ProcessingUploadPage() {
           )}
         </div>
       </div>
+
+      {/* Merge Modal */}
+      <FileMergeModal
+        isOpen={isMergeModalOpen}
+        onClose={() => setIsMergeModalOpen(false)}
+        onMergeComplete={handleMergeComplete}
+      />
     </div>
   );
 }

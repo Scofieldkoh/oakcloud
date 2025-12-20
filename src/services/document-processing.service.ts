@@ -875,6 +875,7 @@ export async function listProcessingDocumentsPaged(options: {
   companyIds?: string[];
   pipelineStatus?: PipelineStatus;
   duplicateStatus?: DuplicateStatus;
+  revisionStatus?: RevisionStatus;
   isContainer?: boolean;
   page?: number;
   limit?: number;
@@ -892,6 +893,7 @@ export async function listProcessingDocumentsPaged(options: {
     companyIds,
     pipelineStatus,
     duplicateStatus,
+    revisionStatus,
     isContainer,
     page = 1,
     limit = 20,
@@ -919,6 +921,12 @@ export async function listProcessingDocumentsPaged(options: {
 
   if (duplicateStatus) {
     where.duplicateStatus = duplicateStatus;
+  }
+
+  if (revisionStatus) {
+    where.currentRevision = {
+      status: revisionStatus,
+    };
   }
 
   if (isContainer !== undefined) {

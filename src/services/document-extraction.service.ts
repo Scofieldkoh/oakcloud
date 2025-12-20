@@ -12,6 +12,7 @@ import type { DocumentExtraction } from '@/generated/prisma';
 import type { ExtractionType, DocumentCategory } from '@/generated/prisma';
 import { createRevision, type LineItemInput } from './document-revision.service';
 import { transitionPipelineStatus, recordProcessingAttempt } from './document-processing.service';
+import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection.service';
 import { callAIWithConnector, getBestAvailableModelForTenant, extractJSON } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai/types';
 import crypto from 'crypto';
@@ -339,6 +340,22 @@ export async function extractFields(
       providerLatencyMs: latencyMs,
     });
 
+    // Re-run duplicate check now that extraction data is available
+    // This is critical for image PDFs where content-based matching wasn't possible at upload time
+    try {
+      const duplicateResult = await checkForDuplicates(processingDocumentId, tenantId, companyId);
+      if (duplicateResult.hasPotentialDuplicate) {
+        await updateDuplicateStatus(processingDocumentId, duplicateResult);
+        log.info(
+          `Post-extraction duplicate check found ${duplicateResult.candidates.length} candidates ` +
+            `for ${processingDocumentId}`
+        );
+      }
+    } catch (dupError) {
+      // Log but don't fail extraction if duplicate check fails
+      log.warn(`Post-extraction duplicate check failed for ${processingDocumentId}:`, dupError);
+    }
+
     log.info(`Field extraction completed for ${processingDocumentId}, revision ${revision.id} created`);
 
     return {
@@ -401,12 +418,8 @@ async function performAIExtraction(
     : await getBestAvailableModelForTenant(tenantId);
 
   if (!modelId) {
-    log.warn('No AI model available, falling back to simulation');
-    return {
-      result: simulateFallbackExtraction(pages),
-      modelUsed: 'simulation',
-      providerUsed: 'none',
-    };
+    log.warn('No AI model available for extraction');
+    throw new Error('No AI model configured. Please configure an AI provider (OpenAI, Anthropic, or Google) to enable document extraction.');
   }
 
   // Read and encode the first page image
@@ -440,11 +453,7 @@ async function performAIExtraction(
     }
   } catch (error) {
     log.error(`Failed to read image from storage: ${firstPage.storageKey}`, error);
-    return {
-      result: simulateFallbackExtraction(pages),
-      modelUsed: 'simulation',
-      providerUsed: 'none',
-    };
+    throw new Error(`Failed to read document image from storage. Please ensure the document was uploaded correctly.`);
   }
 
   // Build extraction prompt with optional additional context
@@ -500,7 +509,7 @@ async function performAIExtraction(
       "unitPrice": { "value": "decimal string", "confidence": number } | null,
       "amount": { "value": "decimal string", "confidence": number },
       "gstAmount": { "value": "decimal string", "confidence": number } | null,
-      "taxCode": { "value": "string (SR, ZR, ES, OP, TX, etc.)", "confidence": number },
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
       "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
     }
   ],
@@ -512,15 +521,15 @@ You MUST assign a taxCode to EVERY line item based on these rules:
 - **SR (Standard-Rated 9%)**: Most goods and services in Singapore. If supplier has GST registration number, default to SR.
 - **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
 - **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
-- **OP (Out of Scope)**: Non-business transactions, private expenses, government fees/fines
+- **NA (Not Applicable)**: Non-business transactions, private expenses, government fees/fines, no GST registration
 - **TX (Taxable Purchases)**: Standard input tax claimable purchases
 - **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
 
 Determination logic:
 1. If GST/tax amount is shown on line item → SR (9% GST)
 2. If explicitly marked as "0% GST" or "Zero-rated" → ZR
-3. If no GST registration on document and local supplier → OP
-4. If foreign supplier/service → ZR or OP depending on nature
+3. If no GST registration on document and local supplier → NA
+4. If foreign supplier/service → ZR or NA depending on nature
 5. When in doubt for taxable business expenses → SR
 
 ## Amount Validation Rules (CRITICAL)
@@ -591,12 +600,9 @@ Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
       providerUsed: providerFromModel,
     };
   } catch (error) {
-    log.error('AI extraction failed, falling back to simulation', error);
-    return {
-      result: simulateFallbackExtraction(pages),
-      modelUsed: 'simulation',
-      providerUsed: 'none',
-    };
+    log.error('AI extraction failed', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`AI extraction failed: ${errorMessage}. Please try again or use a different AI model.`);
   }
 }
 
@@ -708,8 +714,8 @@ function mapAIResponseToResult(
         taxCode = 'SR';
         taxCodeConfidence = 0.75;
       } else {
-        // No GST registration → Out of Scope
-        taxCode = 'OP';
+        // No GST registration → Not Applicable
+        taxCode = 'NA';
         taxCodeConfidence = 0.6;
       }
     }
@@ -798,52 +804,6 @@ function mapAIResponseToResult(
     } : undefined,
     lineItems: lineItems.length > 0 ? lineItems : undefined,
     overallConfidence,
-  };
-}
-
-/**
- * Fallback simulation when AI is not available
- */
-function simulateFallbackExtraction(
-  pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[]
-): FieldExtractionResult {
-  const now = new Date();
-  const pageNum = pages[0]?.pageNumber ?? 1;
-  const fingerprint = pages[0]?.imageFingerprint ?? '';
-
-  log.info('Using fallback simulation for extraction (no AI available)');
-
-  return {
-    documentCategory: {
-      value: 'INVOICE',
-      confidence: 0.95,
-    },
-    vendorName: {
-      value: 'Sample Vendor Pte Ltd',
-      confidence: 0.5,
-      evidence: createFieldEvidence('Sample Vendor Pte Ltd', 0.5, pageNum, fingerprint),
-    },
-    documentNumber: {
-      value: `INV-${now.getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
-      confidence: 0.5,
-      evidence: createFieldEvidence('Invoice Number', 0.5, pageNum, fingerprint),
-    },
-    documentDate: {
-      value: now.toISOString().split('T')[0],
-      confidence: 0.5,
-      evidence: createFieldEvidence(now.toISOString().split('T')[0], 0.5, pageNum, fingerprint),
-    },
-    currency: {
-      value: 'SGD',
-      confidence: 0.9,
-    },
-    totalAmount: {
-      value: '0.00',
-      confidence: 0.5,
-      evidence: createFieldEvidence('AMOUNT DUE SGD 0.00', 0.5, pageNum, fingerprint),
-    },
-    lineItems: [],
-    overallConfidence: 0.5,
   };
 }
 

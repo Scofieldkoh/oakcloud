@@ -24,7 +24,7 @@ import {
 } from '@/services/duplicate-detection.service';
 import { extractFields } from '@/services/document-extraction.service';
 import { storage, StorageKeys } from '@/lib/storage';
-import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus } from '@/generated/prisma';
+import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 
 /**
  * GET /api/processing-documents
@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
     const pipelineStatus = searchParams.get('pipelineStatus') as PipelineStatus | null;
     const duplicateStatus = searchParams.get('duplicateStatus') as DuplicateStatus | null;
+    const revisionStatus = searchParams.get('revisionStatus') as RevisionStatus | null;
     const isContainerStr = searchParams.get('isContainer');
     const companyId = searchParams.get('companyId');
 
@@ -118,6 +119,7 @@ export async function GET(request: NextRequest) {
       companyIds,
       pipelineStatus: pipelineStatus ?? undefined,
       duplicateStatus: duplicateStatus ?? undefined,
+      revisionStatus: revisionStatus ?? undefined,
       isContainer,
       page,
       limit,

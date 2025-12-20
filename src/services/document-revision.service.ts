@@ -24,6 +24,51 @@ type Decimal = Prisma.Decimal;
 
 const log = createLogger('document-revision');
 
+/**
+ * Sanitize a value for Decimal conversion
+ * Removes thousands separators (commas) and handles parentheses for negative values
+ */
+function sanitizeDecimalValue(value: Decimal | number | string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+
+  let str = value.toString().trim();
+
+  // Handle parentheses notation for negative values: (123.45) -> -123.45
+  if (str.startsWith('(') && str.endsWith(')')) {
+    str = '-' + str.slice(1, -1);
+  }
+
+  // Remove currency symbols and whitespace
+  str = str.replace(/[$€£¥\s]/g, '');
+
+  // Remove thousands separators (commas)
+  str = str.replace(/,/g, '');
+
+  return str || null;
+}
+
+/**
+ * Create a PrismaDecimal from a value, handling formatting issues
+ */
+function toDecimal(value: Decimal | number | string | null | undefined): PrismaDecimal | null {
+  const sanitized = sanitizeDecimalValue(value);
+  if (!sanitized) return null;
+
+  try {
+    return new PrismaDecimal(sanitized);
+  } catch (error) {
+    log.warn(`Failed to parse decimal value: "${value}" -> "${sanitized}"`, error);
+    return null;
+  }
+}
+
+/**
+ * Create a PrismaDecimal from a value, with fallback to zero
+ */
+function toDecimalOrZero(value: Decimal | number | string | null | undefined): PrismaDecimal {
+  return toDecimal(value) || new PrismaDecimal(0);
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -216,9 +261,9 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
         documentDate,
         dueDate,
         currency,
-        subtotal: subtotal ? new PrismaDecimal(subtotal.toString()) : null,
-        taxAmount: taxAmount ? new PrismaDecimal(taxAmount.toString()) : null,
-        totalAmount: new PrismaDecimal(totalAmount.toString()),
+        subtotal: toDecimal(subtotal),
+        taxAmount: toDecimal(taxAmount),
+        totalAmount: toDecimalOrZero(totalAmount),
         gstTreatment,
         supplierGstNo,
         headerEvidenceJson: headerEvidenceJson as Prisma.InputJsonValue,
@@ -237,10 +282,10 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
           revisionId: rev.id,
           lineNo: item.lineNo,
           description: item.description,
-          quantity: item.quantity ? new PrismaDecimal(item.quantity.toString()) : null,
-          unitPrice: item.unitPrice ? new PrismaDecimal(item.unitPrice.toString()) : null,
-          amount: new PrismaDecimal(item.amount.toString()),
-          gstAmount: item.gstAmount ? new PrismaDecimal(item.gstAmount.toString()) : null,
+          quantity: toDecimal(item.quantity),
+          unitPrice: toDecimal(item.unitPrice),
+          amount: toDecimalOrZero(item.amount),
+          gstAmount: toDecimal(item.gstAmount),
           taxCode: item.taxCode,
           evidenceJson: item.evidenceJson as Prisma.InputJsonValue,
         })),
@@ -320,10 +365,10 @@ export async function createRevisionFromEdit(
         items[existingIndex] = {
           ...items[existingIndex],
           description: upsertItem.description,
-          quantity: upsertItem.quantity ? new PrismaDecimal(upsertItem.quantity.toString()) : null,
-          unitPrice: upsertItem.unitPrice ? new PrismaDecimal(upsertItem.unitPrice.toString()) : null,
-          amount: new PrismaDecimal(upsertItem.amount.toString()),
-          gstAmount: upsertItem.gstAmount ? new PrismaDecimal(upsertItem.gstAmount.toString()) : null,
+          quantity: toDecimal(upsertItem.quantity),
+          unitPrice: toDecimal(upsertItem.unitPrice),
+          amount: toDecimalOrZero(upsertItem.amount),
+          gstAmount: toDecimal(upsertItem.gstAmount),
           taxCode: upsertItem.taxCode ?? null,
         } as DocumentRevisionLineItem;
       } else {
@@ -333,10 +378,10 @@ export async function createRevisionFromEdit(
           revisionId: '',
           lineNo: upsertItem.lineNo,
           description: upsertItem.description,
-          quantity: upsertItem.quantity ? new PrismaDecimal(upsertItem.quantity.toString()) : null,
-          unitPrice: upsertItem.unitPrice ? new PrismaDecimal(upsertItem.unitPrice.toString()) : null,
-          amount: new PrismaDecimal(upsertItem.amount.toString()),
-          gstAmount: upsertItem.gstAmount ? new PrismaDecimal(upsertItem.gstAmount.toString()) : null,
+          quantity: toDecimal(upsertItem.quantity),
+          unitPrice: toDecimal(upsertItem.unitPrice),
+          amount: toDecimalOrZero(upsertItem.amount),
+          gstAmount: toDecimal(upsertItem.gstAmount),
           taxCode: upsertItem.taxCode ?? null,
           evidenceJson: upsertItem.evidenceJson as Prisma.JsonValue,
         } as DocumentRevisionLineItem);
@@ -398,7 +443,8 @@ export async function approveRevision(
   // Calculate home currency equivalent if needed
   let homeEquivalent: Decimal | null = null;
   if (homeCurrency && homeCurrency !== revision.currency && exchangeRate) {
-    homeEquivalent = new PrismaDecimal(revision.totalAmount.toString()).mul(new PrismaDecimal(exchangeRate.toString()));
+    const rate = toDecimal(exchangeRate);
+    homeEquivalent = rate ? new PrismaDecimal(revision.totalAmount.toString()).mul(rate) : null;
   } else if (!homeCurrency || homeCurrency === revision.currency) {
     homeEquivalent = revision.totalAmount;
   }
@@ -423,7 +469,7 @@ export async function approveRevision(
       approvedById: userId,
       approvedAt: new Date(),
       homeCurrency: homeCurrency ?? revision.currency,
-      homeExchangeRate: exchangeRate ? new PrismaDecimal(exchangeRate.toString()) : null,
+      homeExchangeRate: toDecimal(exchangeRate),
       homeExchangeRateSource: exchangeRateSource,
       exchangeRateDate,
       homeEquivalent,

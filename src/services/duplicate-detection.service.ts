@@ -124,26 +124,53 @@ export async function checkForDuplicates(
     }
   }
 
-  // 2. Content-based duplicate detection using current revision
-  if (!processingDoc.currentRevisionId) {
-    // No revision yet, can't do content-based matching
-    return result;
+  // 2. Content-based duplicate detection using current or latest revision
+  // First try currentRevisionId (approved), then fall back to latest revision (including drafts)
+  // This is needed because duplicate check runs after extraction when revision is still DRAFT
+  let currentRevision: {
+    vendorName: string | null;
+    documentNumber: string | null;
+    documentDate: Date | null;
+    totalAmount: Decimal;
+    currency: string;
+    homeEquivalent: Decimal | null;
+    homeCurrency: string | null;
+  } | null = null;
+
+  if (processingDoc.currentRevisionId) {
+    currentRevision = await prisma.documentRevision.findUnique({
+      where: { id: processingDoc.currentRevisionId },
+      select: {
+        vendorName: true,
+        documentNumber: true,
+        documentDate: true,
+        totalAmount: true,
+        currency: true,
+        homeEquivalent: true,
+        homeCurrency: true,
+      },
+    });
   }
 
-  const currentRevision = await prisma.documentRevision.findUnique({
-    where: { id: processingDoc.currentRevisionId },
-    select: {
-      vendorName: true,
-      documentNumber: true,
-      documentDate: true,
-      totalAmount: true,
-      currency: true,
-      homeEquivalent: true,
-      homeCurrency: true,
-    },
-  });
+  // Fall back to latest revision if no currentRevisionId (e.g., just after extraction)
+  if (!currentRevision) {
+    currentRevision = await prisma.documentRevision.findFirst({
+      where: { processingDocumentId },
+      orderBy: { revisionNumber: 'desc' },
+      select: {
+        vendorName: true,
+        documentNumber: true,
+        documentDate: true,
+        totalAmount: true,
+        currency: true,
+        homeEquivalent: true,
+        homeCurrency: true,
+      },
+    });
+  }
 
   if (!currentRevision) {
+    // No revision yet, can't do content-based matching
     return result;
   }
 

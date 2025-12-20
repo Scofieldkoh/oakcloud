@@ -46,6 +46,14 @@ you can read "README.md" inside of docs, it contains the latest information on t
   - Uses Microsoft OAuth client credentials flow
   - Requires: `clientId`, `clientSecret`, `tenantId` (Azure AD)
 
+### Document Processing
+- [x] Duplicate detection not working for image PDFs
+  - **Resolved**: Added post-extraction duplicate check in `document-extraction.service.ts`
+  - Problem: Duplicate check only ran at upload time, before OCR/extraction for image PDFs
+  - Fix: Added `checkForDuplicates()` call after extraction completes
+  - Also updated `duplicate-detection.service.ts` to fall back to latest draft revision when `currentRevisionId` is null
+  - Detection layers: 100% (hash), weighted scoring (vendor 25%, doc# 30%, date 20%, amount 25%)
+
 ### Documents
 - [ ] Document should be encrypted with 512SHA/AES-512
   - **Note**: Current encryption uses AES-256-GCM (industry standard). AES-512 doesn't exist; consider AES-256 with SHA-512 for key derivation if stronger hashing is needed.
@@ -68,5 +76,3 @@ you can read "README.md" inside of docs, it contains the latest information on t
 - [ ] Salesrooms
 
 - checkbox selector consistency
-- arhive and delete options/ data purge
-- all extracted data should have bounding box, and the indicator for AI extraction confidence

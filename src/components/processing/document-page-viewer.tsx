@@ -12,6 +12,8 @@ import {
   FileText,
   ToggleLeft,
   ToggleRight,
+  RotateCw,
+  RotateCcw,
 } from 'lucide-react';
 import { useDocumentPages } from '@/hooks/use-processing-documents';
 import { cn } from '@/lib/utils';
@@ -59,11 +61,13 @@ interface DocumentPageViewerProps {
   /** Direct PDF URL (alternative to documentId - skips data fetching) */
   pdfUrl?: string;
   initialPage?: number;
+  initialRotation?: number;
   highlights?: BoundingBox[];
   fieldValues?: FieldValue[];
   onPageChange?: (pageNumber: number) => void;
   onPageCountChange?: (pageCount: number) => void;
   onTextLayerReady?: (textItems: TextLayerItem[], pageNumber: number) => void;
+  onRotationChange?: (rotation: number, pageNumber: number) => void;
   showHighlights?: boolean;
   onShowHighlightsChange?: (show: boolean) => void;
   className?: string;
@@ -73,8 +77,8 @@ interface DocumentPageViewerProps {
 // Constants
 // =============================================================================
 
-const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
-const DEFAULT_ZOOM_INDEX = 2; // 100%
+const ZOOM_LEVELS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+const DEFAULT_ZOOM_INDEX = 4; // 100%
 
 // Fixed padding for bounding boxes (normalized 0-1 coordinates)
 const BBOX_HORIZONTAL_PADDING = 0.008;
@@ -259,11 +263,13 @@ export function DocumentPageViewer({
   documentId,
   pdfUrl: pdfUrlProp,
   initialPage = 1,
+  initialRotation = 0,
   highlights,
   fieldValues,
   onPageChange,
   onPageCountChange,
   onTextLayerReady,
+  onRotationChange,
   showHighlights: showHighlightsProp,
   onShowHighlightsChange,
   className,
@@ -283,6 +289,7 @@ export function DocumentPageViewer({
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [pageCount, setPageCount] = useState(0);
   const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
+  const [rotation, setRotation] = useState(initialRotation); // 0, 90, 180, 270 degrees
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPdfLoading, setIsPdfLoading] = useState(true);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -329,6 +336,22 @@ export function DocumentPageViewer({
     setZoomIndex((prev) => Math.max(0, prev - 1));
   }, []);
 
+  const handleRotateCW = useCallback(() => {
+    setRotation((prev) => {
+      const newRotation = (prev + 90) % 360;
+      onRotationChange?.(newRotation, currentPage);
+      return newRotation;
+    });
+  }, [currentPage, onRotationChange]);
+
+  const handleRotateCCW = useCallback(() => {
+    setRotation((prev) => {
+      const newRotation = (prev - 90 + 360) % 360;
+      onRotationChange?.(newRotation, currentPage);
+      return newRotation;
+    });
+  }, [currentPage, onRotationChange]);
+
   const handlePageInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = parseInt(e.target.value, 10);
@@ -357,7 +380,7 @@ export function DocumentPageViewer({
   // PDF Rendering
   // ==========================================================================
 
-  async function renderPage(pdf: PDFDocumentProxy, pageNum: number) {
+  async function renderPage(pdf: PDFDocumentProxy, pageNum: number, pageRotation: number = 0) {
     if (!canvasRef.current) return;
 
     try {
@@ -367,7 +390,8 @@ export function DocumentPageViewer({
       }
 
       const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: zoom });
+      // PDF.js viewport supports rotation in degrees
+      const viewport = page.getViewport({ scale: zoom, rotation: pageRotation });
 
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
@@ -393,13 +417,14 @@ export function DocumentPageViewer({
       await renderTask.promise;
       renderTaskRef.current = null;
 
-      // Extract text layer
+      // Extract text layer for highlighting
       try {
         const textItems = await extractTextLayer(page);
         setTextLayerItems(textItems);
         onTextLayerReady?.(textItems, pageNum);
       } catch (textErr) {
         console.warn('Failed to extract text layer:', textErr);
+        setTextLayerItems([]);
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'RenderingCancelledException') {
@@ -445,7 +470,16 @@ export function DocumentPageViewer({
         setPageCount(pdf.numPages);
         onPageCountChange?.(pdf.numPages);
 
-        await renderPage(pdf, currentPage);
+        // Get saved rotation from pages data if available
+        const pageInfo = data?.pages?.find((p) => p.pageNumber === currentPage);
+        const savedRotation = pageInfo?.rotation ?? rotation;
+
+        // Update rotation state if different from saved value
+        if (pageInfo?.rotation !== undefined && pageInfo.rotation !== rotation) {
+          setRotation(pageInfo.rotation);
+        }
+
+        await renderPage(pdf, currentPage, savedRotation);
       } catch (err) {
         if (!cancelled) {
           console.error('Error loading PDF:', err);
@@ -468,12 +502,12 @@ export function DocumentPageViewer({
     };
   }, [effectivePdfUrl]);
 
-  // Re-render page on page/zoom change
+  // Re-render page on page/zoom/rotation change (also when loading completes)
   useEffect(() => {
     if (pdfDocRef.current && !isPdfLoading) {
-      renderPage(pdfDocRef.current, currentPage);
+      renderPage(pdfDocRef.current, currentPage, rotation);
     }
-  }, [currentPage, zoom]);
+  }, [currentPage, zoom, rotation, isPdfLoading]);
 
   // Notify parent of page changes
   useEffect(() => {
@@ -484,6 +518,17 @@ export function DocumentPageViewer({
   useEffect(() => {
     setCurrentPage(initialPage);
   }, [documentId, initialPage]);
+
+  // Load saved rotation from pages data when page changes or data loads
+  useEffect(() => {
+    if (data?.pages && data.pages.length > 0) {
+      const pageInfo = data.pages.find((p) => p.pageNumber === currentPage);
+      if (pageInfo && pageInfo.rotation !== undefined) {
+        // Only update if different to avoid unnecessary re-renders
+        setRotation((prev) => (prev !== pageInfo.rotation ? pageInfo.rotation : prev));
+      }
+    }
+  }, [data?.pages, currentPage]);
 
   // Generate highlights from fieldValues
   useEffect(() => {
@@ -601,7 +646,7 @@ export function DocumentPageViewer({
       )}
     >
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-background-tertiary border-b border-border-primary">
+      <div className="flex items-center justify-between px-3 py-2 bg-background-tertiary border-b border-border-primary flex-wrap gap-2">
         {/* Navigation */}
         <div className="flex items-center gap-2">
           <button
@@ -637,7 +682,7 @@ export function DocumentPageViewer({
         </div>
 
         {/* Zoom controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
           <button
             onClick={handleZoomOut}
             disabled={zoomIndex === 0}
@@ -658,6 +703,24 @@ export function DocumentPageViewer({
             title="Zoom in (+)"
           >
             <ZoomIn className="w-4 h-4" />
+          </button>
+
+          <div className="w-px h-4 bg-border-primary mx-1" />
+
+          {/* Rotation controls */}
+          <button
+            onClick={handleRotateCCW}
+            className="btn-ghost btn-xs p-1.5"
+            title="Rotate counter-clockwise"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleRotateCW}
+            className="btn-ghost btn-xs p-1.5"
+            title="Rotate clockwise"
+          >
+            <RotateCw className="w-4 h-4" />
           </button>
 
           <div className="w-px h-4 bg-border-primary mx-1" />
