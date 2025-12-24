@@ -35,8 +35,30 @@ export const MIN_PASSWORD_LENGTH = 8;
 /** Password reset token expiry in hours */
 export const PASSWORD_RESET_EXPIRY_HOURS = 24;
 
-/** Bcrypt salt rounds for password hashing */
+/** Bcrypt salt rounds for password hashing (legacy, for migration) */
 export const BCRYPT_SALT_ROUNDS = 10;
+
+/**
+ * Argon2id configuration (OWASP recommended for password hashing)
+ * See: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+ *
+ * These parameters balance security with performance:
+ * - t (iterations): 3 - time cost
+ * - m (memory): 65536 KB (64 MB) - memory cost
+ * - p (parallelism): 4 - thread count
+ */
+export const ARGON2_CONFIG = {
+  /** Time cost (iterations) */
+  t: 3,
+  /** Memory cost in KB (64 MB) */
+  m: 65536,
+  /** Parallelism (threads) */
+  p: 4,
+  /** Output hash length in bytes */
+  dkLen: 32,
+  /** Salt length in bytes */
+  saltLen: 16,
+};
 
 /** Enumeration protection delay range in milliseconds */
 export const ENUMERATION_PROTECTION_DELAY = {

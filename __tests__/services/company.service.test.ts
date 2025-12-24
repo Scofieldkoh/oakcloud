@@ -42,6 +42,7 @@ import {
   searchCompanies,
   createCompany,
 } from '@/services/company.service';
+import type { CreateCompanyInput } from '@/lib/validations/company';
 
 describe('Company Service', () => {
   beforeEach(() => {
@@ -157,13 +158,21 @@ describe('Company Service', () => {
     });
   });
 
+  // Default search params for tests
+  const defaultSearchParams = {
+    page: 1,
+    limit: 20,
+    sortBy: 'updatedAt' as const,
+    sortOrder: 'desc' as const,
+  };
+
   describe('searchCompanies', () => {
     it('should filter by tenantId', async () => {
       vi.mocked(prisma.company.findMany).mockResolvedValue([]);
       vi.mocked(prisma.company.count).mockResolvedValue(0);
 
       // searchCompanies(params, tenantId, options)
-      await searchCompanies({}, 'tenant-1');
+      await searchCompanies(defaultSearchParams, 'tenant-1');
 
       expect(prisma.company.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -178,7 +187,7 @@ describe('Company Service', () => {
       vi.mocked(prisma.company.findMany).mockResolvedValue([]);
       vi.mocked(prisma.company.count).mockResolvedValue(0);
 
-      await searchCompanies({ query: 'test' }, 'tenant-1');
+      await searchCompanies({ ...defaultSearchParams, query: 'test' }, 'tenant-1');
 
       expect(prisma.company.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -196,7 +205,7 @@ describe('Company Service', () => {
       vi.mocked(prisma.company.findMany).mockResolvedValue([]);
       vi.mocked(prisma.company.count).mockResolvedValue(0);
 
-      await searchCompanies({ entityType: 'PRIVATE_LIMITED' }, 'tenant-1');
+      await searchCompanies({ ...defaultSearchParams, entityType: 'PRIVATE_LIMITED' }, 'tenant-1');
 
       expect(prisma.company.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -211,7 +220,7 @@ describe('Company Service', () => {
       vi.mocked(prisma.company.findMany).mockResolvedValue([]);
       vi.mocked(prisma.company.count).mockResolvedValue(0);
 
-      await searchCompanies({ status: 'LIVE' }, 'tenant-1');
+      await searchCompanies({ ...defaultSearchParams, status: 'LIVE' }, 'tenant-1');
 
       expect(prisma.company.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -226,7 +235,7 @@ describe('Company Service', () => {
       vi.mocked(prisma.company.findMany).mockResolvedValue([]);
       vi.mocked(prisma.company.count).mockResolvedValue(100);
 
-      const result = await searchCompanies({ page: 2, limit: 20 }, 'tenant-1');
+      const result = await searchCompanies({ ...defaultSearchParams, page: 2, limit: 20 }, 'tenant-1');
 
       expect(prisma.company.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -243,7 +252,7 @@ describe('Company Service', () => {
       vi.mocked(prisma.company.findMany).mockResolvedValue([]);
       vi.mocked(prisma.company.count).mockResolvedValue(0);
 
-      await searchCompanies({}, 'tenant-1', { companyIds: ['company-1', 'company-2'] });
+      await searchCompanies(defaultSearchParams, 'tenant-1', { companyIds: ['company-1', 'company-2'] });
 
       expect(prisma.company.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -254,6 +263,25 @@ describe('Company Service', () => {
       );
     });
   });
+
+  // Default company data for tests - cast to CreateCompanyInput since Zod transforms are complex
+  const defaultCompanyData = {
+    name: 'New Company Pte Ltd',
+    uen: '202400001A',
+    entityType: 'PRIVATE_LIMITED',
+    status: 'LIVE',
+    dateOfNameChange: null,
+    statusDate: null,
+    incorporationDate: null,
+    registrationDate: null,
+    dateOfAddress: null,
+    primarySsicCode: null,
+    primarySsicDescription: null,
+    secondarySsicCode: null,
+    secondarySsicDescription: null,
+    fyeAsAtLastAr: null,
+    gstRegistrationDate: null,
+  } as CreateCompanyInput;
 
   describe('createCompany', () => {
     it('should create company with tenantId', async () => {
@@ -270,12 +298,7 @@ describe('Company Service', () => {
       vi.mocked(prisma.company.create).mockResolvedValue(mockCompany as never);
 
       const result = await createCompany(
-        {
-          name: 'New Company Pte Ltd',
-          uen: '202400001A',
-          entityType: 'PRIVATE_LIMITED',
-          status: 'LIVE',
-        },
+        defaultCompanyData,
         { tenantId: 'tenant-1', userId: 'user-1' }
       );
 
@@ -295,12 +318,7 @@ describe('Company Service', () => {
 
       await expect(
         createCompany(
-          {
-            name: 'Duplicate Company',
-            uen: '202400001A',
-            entityType: 'PRIVATE_LIMITED',
-            status: 'LIVE',
-          },
+          { ...defaultCompanyData, name: 'Duplicate Company' },
           { tenantId: 'tenant-1', userId: 'user-1' }
         )
       ).rejects.toThrow('already exists');

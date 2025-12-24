@@ -146,6 +146,16 @@ enum AuditAction {
   COMMENT_CREATED
   COMMENT_RESOLVED
   COMMENT_HIDDEN
+
+  // Backup Operations
+  BACKUP_CREATED
+  BACKUP_COMPLETED
+  BACKUP_FAILED
+  BACKUP_DELETED
+  BACKUP_RESTORE_STARTED
+  BACKUP_RESTORE_COMPLETED
+  BACKUP_RESTORE_FAILED
+  BACKUP_SCHEDULE_UPDATED
 }
 
 enum ChangeSource {
@@ -153,6 +163,25 @@ enum ChangeSource {
   BIZFILE_UPLOAD
   API
   SYSTEM
+}
+
+// ============================================================================
+// BACKUP SYSTEM
+// ============================================================================
+
+enum BackupStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  RESTORING
+  RESTORED
+  DELETED
+}
+
+enum BackupType {
+  MANUAL
+  SCHEDULED
 }
 
 // ============================================================================
@@ -223,6 +252,10 @@ model Tenant {
   letterhead           TenantLetterhead?
   templatePartials     TemplatePartial[]
   aiConversations      AiConversation[]
+
+  // Backup & Restore
+  backups              TenantBackup[]
+  backupSchedule       BackupSchedule?
 
   @@index([slug])
   @@index([status])
@@ -2524,4 +2557,96 @@ model FieldMapping {
   @@unique([integrationId, sourceField, targetField])
   @@index([integrationId])
   @@map("field_mappings")
+}
+
+// ============================================================================
+// TENANT BACKUP SYSTEM
+// ============================================================================
+
+// Tenant Backup - Stores backup metadata and tracks backup operations
+model TenantBackup {
+  id                String        @id @default(uuid())
+  tenantId          String        @map("tenant_id")
+
+  // Backup metadata
+  name              String?       // Optional user-friendly name
+  backupType        BackupType    @default(MANUAL) @map("backup_type")
+  status            BackupStatus  @default(PENDING)
+
+  // Storage location
+  storageKey        String        @map("storage_key") // e.g., "backups/{backupId}/"
+
+  // Content tracking
+  manifestJson      Json?         @map("manifest_json") // Cached manifest for quick access
+
+  // Size tracking
+  databaseSizeBytes BigInt        @default(0) @map("database_size_bytes")
+  filesSizeBytes    BigInt        @default(0) @map("files_size_bytes")
+  totalSizeBytes    BigInt        @default(0) @map("total_size_bytes")
+  filesCount        Int           @default(0) @map("files_count")
+
+  // Progress tracking
+  progress          Int           @default(0) // 0-100
+  currentStep       String?       @map("current_step") // Human-readable status
+
+  // Error tracking
+  errorMessage      String?       @map("error_message")
+  errorDetails      Json?         @map("error_details")
+
+  // Restoration tracking
+  restoredAt        DateTime?     @map("restored_at")
+  restoredById      String?       @map("restored_by_id")
+
+  // Scheduling (for retention policy)
+  retentionDays     Int?          @map("retention_days") // Auto-delete after N days
+  expiresAt         DateTime?     @map("expires_at")
+
+  // Audit
+  createdById       String?       @map("created_by_id") // Nullable for scheduled backups
+  createdAt         DateTime      @default(now()) @map("created_at")
+  completedAt       DateTime?     @map("completed_at")
+  deletedAt         DateTime?     @map("deleted_at")
+
+  // Relation
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([tenantId, createdAt])
+  @@index([expiresAt])
+  @@map("tenant_backups")
+}
+
+// Backup Schedule - Configuration for automated backups (future use)
+model BackupSchedule {
+  id                String    @id @default(uuid())
+  tenantId          String    @unique @map("tenant_id") // One schedule per tenant
+
+  // Cron configuration
+  cronPattern       String    @map("cron_pattern") // e.g., "0 2 * * *" for daily at 2 AM
+  isEnabled         Boolean   @default(false) @map("is_enabled")
+  timezone          String    @default("UTC")
+
+  // Retention policy
+  retentionDays     Int       @default(30) @map("retention_days")
+  maxBackups        Int       @default(10) @map("max_backups")
+
+  // Last run tracking
+  lastRunAt         DateTime? @map("last_run_at")
+  lastBackupId      String?   @map("last_backup_id")
+  nextRunAt         DateTime? @map("next_run_at")
+
+  // Error tracking
+  lastError         String?   @map("last_error")
+  consecutiveFailures Int     @default(0) @map("consecutive_failures")
+
+  // Audit
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relation
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("backup_schedules")
 }

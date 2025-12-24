@@ -441,7 +441,9 @@ export const ModelName = {
   Communication: 'Communication',
   AccountingIntegration: 'AccountingIntegration',
   ExternalPosting: 'ExternalPosting',
-  FieldMapping: 'FieldMapping'
+  FieldMapping: 'FieldMapping',
+  TenantBackup: 'TenantBackup',
+  BackupSchedule: 'BackupSchedule'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -457,7 +459,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -4753,6 +4755,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    TenantBackup: {
+      payload: Prisma.$TenantBackupPayload<ExtArgs>
+      fields: Prisma.TenantBackupFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TenantBackupFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TenantBackupFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+        }
+        findFirst: {
+          args: Prisma.TenantBackupFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TenantBackupFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+        }
+        findMany: {
+          args: Prisma.TenantBackupFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>[]
+        }
+        create: {
+          args: Prisma.TenantBackupCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+        }
+        createMany: {
+          args: Prisma.TenantBackupCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TenantBackupCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>[]
+        }
+        delete: {
+          args: Prisma.TenantBackupDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+        }
+        update: {
+          args: Prisma.TenantBackupUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+        }
+        deleteMany: {
+          args: Prisma.TenantBackupDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TenantBackupUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TenantBackupUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>[]
+        }
+        upsert: {
+          args: Prisma.TenantBackupUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+        }
+        aggregate: {
+          args: Prisma.TenantBackupAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTenantBackup>
+        }
+        groupBy: {
+          args: Prisma.TenantBackupGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TenantBackupGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TenantBackupCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TenantBackupCountAggregateOutputType> | number
+        }
+      }
+    }
+    BackupSchedule: {
+      payload: Prisma.$BackupSchedulePayload<ExtArgs>
+      fields: Prisma.BackupScheduleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BackupScheduleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BackupScheduleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload>
+        }
+        findFirst: {
+          args: Prisma.BackupScheduleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BackupScheduleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload>
+        }
+        findMany: {
+          args: Prisma.BackupScheduleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload>[]
+        }
+        create: {
+          args: Prisma.BackupScheduleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload>
+        }
+        createMany: {
+          args: Prisma.BackupScheduleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BackupScheduleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload>[]
+        }
+        delete: {
+          args: Prisma.BackupScheduleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload>
+        }
+        update: {
+          args: Prisma.BackupScheduleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload>
+        }
+        deleteMany: {
+          args: Prisma.BackupScheduleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BackupScheduleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BackupScheduleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload>[]
+        }
+        upsert: {
+          args: Prisma.BackupScheduleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSchedulePayload>
+        }
+        aggregate: {
+          args: Prisma.BackupScheduleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBackupSchedule>
+        }
+        groupBy: {
+          args: Prisma.BackupScheduleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BackupScheduleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BackupScheduleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BackupScheduleCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -5924,6 +6074,55 @@ export const FieldMappingScalarFieldEnum = {
 export type FieldMappingScalarFieldEnum = (typeof FieldMappingScalarFieldEnum)[keyof typeof FieldMappingScalarFieldEnum]
 
 
+export const TenantBackupScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  backupType: 'backupType',
+  status: 'status',
+  storageKey: 'storageKey',
+  manifestJson: 'manifestJson',
+  databaseSizeBytes: 'databaseSizeBytes',
+  filesSizeBytes: 'filesSizeBytes',
+  totalSizeBytes: 'totalSizeBytes',
+  filesCount: 'filesCount',
+  progress: 'progress',
+  currentStep: 'currentStep',
+  errorMessage: 'errorMessage',
+  errorDetails: 'errorDetails',
+  restoredAt: 'restoredAt',
+  restoredById: 'restoredById',
+  retentionDays: 'retentionDays',
+  expiresAt: 'expiresAt',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  completedAt: 'completedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type TenantBackupScalarFieldEnum = (typeof TenantBackupScalarFieldEnum)[keyof typeof TenantBackupScalarFieldEnum]
+
+
+export const BackupScheduleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  cronPattern: 'cronPattern',
+  isEnabled: 'isEnabled',
+  timezone: 'timezone',
+  retentionDays: 'retentionDays',
+  maxBackups: 'maxBackups',
+  lastRunAt: 'lastRunAt',
+  lastBackupId: 'lastBackupId',
+  nextRunAt: 'nextRunAt',
+  lastError: 'lastError',
+  consecutiveFailures: 'consecutiveFailures',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BackupScheduleScalarFieldEnum = (typeof BackupScheduleScalarFieldEnum)[keyof typeof BackupScheduleScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -6740,6 +6939,48 @@ export type EnumPostingStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
 export type ListEnumPostingStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PostingStatus[]'>
     
 
+
+/**
+ * Reference to a field of type 'BackupType'
+ */
+export type EnumBackupTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BackupType'>
+    
+
+
+/**
+ * Reference to a field of type 'BackupType[]'
+ */
+export type ListEnumBackupTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BackupType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'BackupStatus'
+ */
+export type EnumBackupStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BackupStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'BackupStatus[]'
+ */
+export type ListEnumBackupStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BackupStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt[]'
+ */
+export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -6893,6 +7134,8 @@ export type GlobalOmitConfig = {
   accountingIntegration?: Prisma.AccountingIntegrationOmit
   externalPosting?: Prisma.ExternalPostingOmit
   fieldMapping?: Prisma.FieldMappingOmit
+  tenantBackup?: Prisma.TenantBackupOmit
+  backupSchedule?: Prisma.BackupScheduleOmit
 }
 
 /* Types for Logging */

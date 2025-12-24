@@ -9,12 +9,15 @@ import { createAuditLog } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
 import { sendEmail, isEmailConfigured, getAppBaseUrl } from '@/lib/email';
 import { passwordResetEmail, passwordChangedEmail } from '@/lib/email-templates';
-import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import {
+  hashPassword,
+  verifyPassword,
+  hashSha256,
+} from '@/lib/encryption';
 import {
   MIN_PASSWORD_LENGTH,
   PASSWORD_RESET_EXPIRY_HOURS,
-  BCRYPT_SALT_ROUNDS,
   ENUMERATION_PROTECTION_DELAY,
 } from '@/lib/constants/application';
 
@@ -95,7 +98,7 @@ export async function requestPasswordReset(email: string): Promise<RequestResetR
 
   // Generate secure reset token
   const resetToken = crypto.randomBytes(32).toString('hex');
-  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  const hashedToken = hashSha256(resetToken);
 
   // Set expiry time
   const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_HOURS * 60 * 60 * 1000);
@@ -179,7 +182,7 @@ export async function resetPasswordWithToken(
   }
 
   // Hash the provided token to compare with stored hash
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const hashedToken = hashSha256(token);
 
   // Find user with valid token
   const user = await prisma.user.findFirst({
@@ -197,8 +200,8 @@ export async function resetPasswordWithToken(
     };
   }
 
-  // Hash new password
-  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+  // Hash new password with Argon2id
+  const passwordHash = hashPassword(newPassword);
 
   // Update user
   await prisma.user.update({
@@ -266,9 +269,9 @@ export async function changePassword(
     };
   }
 
-  // Verify current password
-  const isValidPassword = await bcrypt.compare(currentPassword, user.passwordHash);
-  if (!isValidPassword) {
+  // Verify current password (supports both Argon2id and legacy bcrypt)
+  const verification = await verifyPassword(currentPassword, user.passwordHash);
+  if (!verification.isValid) {
     return {
       success: false,
       message: 'Current password is incorrect.',
@@ -285,16 +288,16 @@ export async function changePassword(
   }
 
   // Ensure new password is different from current
-  const isSamePassword = await bcrypt.compare(newPassword, user.passwordHash);
-  if (isSamePassword) {
+  const sameCheck = await verifyPassword(newPassword, user.passwordHash);
+  if (sameCheck.isValid) {
     return {
       success: false,
       message: 'New password must be different from current password.',
     };
   }
 
-  // Hash new password
-  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+  // Hash new password with Argon2id
+  const passwordHash = hashPassword(newPassword);
 
   // Update user
   await prisma.user.update({

@@ -15,8 +15,8 @@ import { transitionPipelineStatus, recordProcessingAttempt } from './document-pr
 import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection.service';
 import { callAIWithConnector, getBestAvailableModelForTenant, extractJSON } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai/types';
-import crypto from 'crypto';
 import { storage } from '@/lib/storage';
+import { hashBlake3 } from '@/lib/encryption';
 
 type Decimal = Prisma.Decimal;
 
@@ -904,9 +904,7 @@ export async function getDocumentPages(processingDocumentId: string) {
  * Generate input fingerprint for reproducibility
  */
 function generateInputFingerprint(pageIds: string[], config: ExtractionConfig): string {
-  const hash = crypto.createHash('sha256');
-  hash.update(JSON.stringify({ pageIds, config }));
-  return hash.digest('hex');
+  return hashBlake3(JSON.stringify({ pageIds, config }));
 }
 
 /**

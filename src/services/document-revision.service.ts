@@ -17,8 +17,8 @@ import type {
   ExchangeRateSource,
   ValidationStatus,
 } from '@/generated/prisma';
-import crypto from 'crypto';
 import { Decimal as PrismaDecimal } from '@prisma/client/runtime/client';
+import { hashBlake3 } from '@/lib/encryption';
 
 type Decimal = Prisma.Decimal;
 
@@ -693,9 +693,7 @@ function generateDocumentKey(input: {
     input.currency,
   ].filter(Boolean);
 
-  const hash = crypto.createHash('sha256');
-  hash.update(components.join('|'));
-  return hash.digest('hex');
+  return hashBlake3(components.join('|'));
 }
 
 /**

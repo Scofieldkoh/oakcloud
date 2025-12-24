@@ -22,6 +22,7 @@ import {
   Plug,
   Share2,
   ScanText,
+  HardDrive,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -57,6 +58,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Templates', href: '/admin/template-partials', icon: FileText, adminOnly: true },
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: Activity, adminOnly: true },
+  { name: 'Backup & Restore', href: '/admin/backup', icon: HardDrive, superAdminOnly: true },
   { name: 'Data Purge', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
 ];
 

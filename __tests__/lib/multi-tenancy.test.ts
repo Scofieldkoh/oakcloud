@@ -78,13 +78,13 @@ describe('Multi-Tenancy Isolation', () => {
       };
 
       // Query from tenant-1 should not find it
-      vi.mocked(prisma.company.findFirst).mockImplementation(async (args) => {
-        const where = args?.where as { tenantId?: string };
+      vi.mocked(prisma.company.findFirst).mockImplementation(((args: { where?: { tenantId?: string } }) => {
+        const where = args?.where;
         if (where?.tenantId === 'tenant-1') {
-          return null; // Not found in tenant-1
+          return Promise.resolve(null); // Not found in tenant-1
         }
-        return companyInTenant2 as never;
-      });
+        return Promise.resolve(companyInTenant2 as never);
+      }) as unknown as typeof prisma.company.findFirst);
 
       const result = await prisma.company.findFirst({
         where: { id: 'company-1', tenantId: 'tenant-1' },
@@ -130,13 +130,13 @@ describe('Multi-Tenancy Isolation', () => {
     });
 
     it('should not allow access to contacts from other tenants', async () => {
-      vi.mocked(prisma.contact.findFirst).mockImplementation(async (args) => {
-        const where = args?.where as { tenantId?: string };
+      vi.mocked(prisma.contact.findFirst).mockImplementation(((args: { where?: { tenantId?: string } }) => {
+        const where = args?.where;
         if (where?.tenantId !== 'tenant-1') {
-          return null;
+          return Promise.resolve(null);
         }
-        return { id: 'contact-1', tenantId: 'tenant-1' } as never;
-      });
+        return Promise.resolve({ id: 'contact-1', tenantId: 'tenant-1' } as never);
+      }) as unknown as typeof prisma.contact.findFirst);
 
       // Try to access contact with wrong tenant
       const result = await prisma.contact.findFirst({
@@ -219,13 +219,13 @@ describe('Multi-Tenancy Isolation', () => {
         { id: 'log-1', tenantId: 'tenant-1', action: 'CREATE' },
       ];
 
-      vi.mocked(prisma.auditLog.findMany).mockImplementation(async (args) => {
-        const where = args?.where as { tenantId?: string };
+      vi.mocked(prisma.auditLog.findMany).mockImplementation(((args: { where?: { tenantId?: string } }) => {
+        const where = args?.where;
         if (where?.tenantId === 'tenant-1') {
-          return tenant1Logs as never;
+          return Promise.resolve(tenant1Logs as never);
         }
-        return [];
-      });
+        return Promise.resolve([]);
+      }) as typeof prisma.auditLog.findMany);
 
       // Query for tenant-2 should return empty
       const logs = await prisma.auditLog.findMany({
@@ -309,16 +309,16 @@ describe('Multi-Tenancy Isolation', () => {
     });
 
     it('should not return unassigned companies', async () => {
-      vi.mocked(prisma.company.findFirst).mockImplementation(async (args) => {
-        const where = args?.where as { id?: { in?: string[] } };
+      vi.mocked(prisma.company.findFirst).mockImplementation(((args: { where?: { id?: { in?: string[] } } }) => {
+        const where = args?.where;
         const allowedIds = where?.id?.in || [];
 
         // Company-3 is not in allowed list
         if (!allowedIds.includes('company-3')) {
-          return null;
+          return Promise.resolve(null);
         }
-        return { id: 'company-3' } as never;
-      });
+        return Promise.resolve({ id: 'company-3' } as never);
+      }) as unknown as typeof prisma.company.findFirst);
 
       const result = await prisma.company.findFirst({
         where: {

@@ -147,7 +147,15 @@ export const AuditAction = {
   LETTERHEAD_UPDATED: 'LETTERHEAD_UPDATED',
   COMMENT_CREATED: 'COMMENT_CREATED',
   COMMENT_RESOLVED: 'COMMENT_RESOLVED',
-  COMMENT_HIDDEN: 'COMMENT_HIDDEN'
+  COMMENT_HIDDEN: 'COMMENT_HIDDEN',
+  BACKUP_CREATED: 'BACKUP_CREATED',
+  BACKUP_COMPLETED: 'BACKUP_COMPLETED',
+  BACKUP_FAILED: 'BACKUP_FAILED',
+  BACKUP_DELETED: 'BACKUP_DELETED',
+  BACKUP_RESTORE_STARTED: 'BACKUP_RESTORE_STARTED',
+  BACKUP_RESTORE_COMPLETED: 'BACKUP_RESTORE_COMPLETED',
+  BACKUP_RESTORE_FAILED: 'BACKUP_RESTORE_FAILED',
+  BACKUP_SCHEDULE_UPDATED: 'BACKUP_SCHEDULE_UPDATED'
 } as const
 
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction]
@@ -161,6 +169,27 @@ export const ChangeSource = {
 } as const
 
 export type ChangeSource = (typeof ChangeSource)[keyof typeof ChangeSource]
+
+
+export const BackupStatus = {
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  RESTORING: 'RESTORING',
+  RESTORED: 'RESTORED',
+  DELETED: 'DELETED'
+} as const
+
+export type BackupStatus = (typeof BackupStatus)[keyof typeof BackupStatus]
+
+
+export const BackupType = {
+  MANUAL: 'MANUAL',
+  SCHEDULED: 'SCHEDULED'
+} as const
+
+export type BackupType = (typeof BackupType)[keyof typeof BackupType]
 
 
 export const ConnectorType = {

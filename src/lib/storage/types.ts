@@ -162,6 +162,11 @@ export type StorageProvider = 's3' | 'local';
 /**
  * Storage configuration
  */
+/**
+ * Server-side encryption types for S3
+ */
+export type S3EncryptionType = 'none' | 'AES256' | 'aws:kms';
+
 export interface StorageConfig {
   provider: StorageProvider;
 
@@ -176,4 +181,8 @@ export interface StorageConfig {
   s3SecretKey?: string;
   s3ForcePathStyle?: boolean;
   s3UseSsl?: boolean;
+
+  // S3 Encryption config
+  s3Encryption?: S3EncryptionType;
+  s3KmsKeyId?: string; // Required when s3Encryption is 'aws:kms'
 }

@@ -226,6 +226,83 @@ Based on a 4px grid system:
 .badge-neutral  /* Gray - inactive, default */
 ```
 
+### Toggle Switch
+
+Use toggle switches for binary on/off settings. Prefer toggle switches over checkboxes for:
+- Feature enable/disable settings
+- Active/inactive status toggles
+- Boolean preferences with descriptive labels
+
+**When to use Toggle Switch vs Checkbox:**
+
+| Use Toggle Switch | Use Checkbox |
+|-------------------|--------------|
+| Enable/disable a feature | Multi-select in tables |
+| Active/inactive status | Boolean form fields |
+| Settings with clear on/off state | Inline filter toggles |
+| Has descriptive subtitle | Simple yes/no without description |
+
+**Standard Toggle Switch Pattern:**
+
+```tsx
+// Full toggle switch with card container, title, and description
+<div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-background-secondary">
+  <div className="flex flex-col">
+    <span className="text-sm font-medium text-text-primary">Setting Name</span>
+    <span className="text-xs text-text-tertiary">
+      {isEnabled ? 'Description when enabled' : 'Description when disabled'}
+    </span>
+  </div>
+  <button
+    type="button"
+    role="switch"
+    aria-checked={isEnabled}
+    onClick={() => setIsEnabled(!isEnabled)}
+    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
+      isEnabled ? 'bg-status-success' : 'bg-background-tertiary'
+    }`}
+  >
+    <span
+      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+        isEnabled ? 'translate-x-5' : 'translate-x-0'
+      }`}
+    />
+  </button>
+</div>
+```
+
+**Compact Toggle Switch (inline):**
+
+```tsx
+// Inline toggle without card container
+<label className="flex items-center gap-3 cursor-pointer">
+  <button
+    type="button"
+    role="switch"
+    aria-checked={isEnabled}
+    onClick={() => setIsEnabled(!isEnabled)}
+    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
+      isEnabled ? 'bg-status-success' : 'bg-background-tertiary'
+    }`}
+  >
+    <span
+      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+        isEnabled ? 'translate-x-4' : 'translate-x-0'
+      }`}
+    />
+  </button>
+  <span className="text-sm text-text-primary">Setting label</span>
+</label>
+```
+
+**Key Features:**
+- iOS-style sliding toggle animation
+- Green (`bg-status-success`) when enabled
+- Gray (`bg-background-tertiary`) when disabled
+- Proper accessibility with `role="switch"` and `aria-checked`
+- Focus ring for keyboard navigation
+- Smooth 200ms transition
+
 ### Tables
 
 ```css

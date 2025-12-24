@@ -5,13 +5,28 @@
  * and provides a centralized config object.
  */
 
-import type { StorageConfig, StorageProvider } from './types';
+import type { StorageConfig, StorageProvider, S3EncryptionType } from './types';
 
 /**
  * Get storage configuration from environment variables
  */
 export function getStorageConfig(): StorageConfig {
   const provider = (process.env.STORAGE_PROVIDER || 'local') as StorageProvider;
+
+  // Parse encryption type (default to AES256 for SSE-S3)
+  const encryptionEnv = process.env.S3_ENCRYPTION?.trim();
+  let s3Encryption: S3EncryptionType = 'AES256'; // Default: SSE-S3
+
+  if (encryptionEnv) {
+    const lowerEnc = encryptionEnv.toLowerCase();
+    if (lowerEnc === 'none' || lowerEnc === 'disabled') {
+      s3Encryption = 'none';
+    } else if (lowerEnc === 'kms' || lowerEnc === 'aws:kms') {
+      s3Encryption = 'aws:kms';
+    } else if (lowerEnc === 'aes256' || lowerEnc === 'sse-s3') {
+      s3Encryption = 'AES256';
+    }
+  }
 
   return {
     provider,
@@ -27,6 +42,10 @@ export function getStorageConfig(): StorageConfig {
     s3SecretKey: process.env.S3_SECRET_KEY || 'oakcloud_minio_secret',
     s3ForcePathStyle: process.env.S3_FORCE_PATH_STYLE !== 'false', // Default true for MinIO
     s3UseSsl: process.env.S3_USE_SSL === 'true',
+
+    // S3 Encryption config
+    s3Encryption,
+    s3KmsKeyId: process.env.S3_KMS_KEY_ID,
   };
 }
 
@@ -121,6 +140,45 @@ export const StorageKeys = {
    */
   pendingPrefix(tenantId: string): string {
     return `${tenantId}/pending/`;
+  },
+
+  // ============================================================================
+  // BACKUP STORAGE KEYS
+  // ============================================================================
+
+  /**
+   * Generate storage key prefix for a backup
+   */
+  backupPrefix(backupId: string): string {
+    return `backups/${backupId}/`;
+  },
+
+  /**
+   * Generate storage key for backup manifest
+   */
+  backupManifest(backupId: string): string {
+    return `backups/${backupId}/manifest.json`;
+  },
+
+  /**
+   * Generate storage key for backup database data
+   */
+  backupData(backupId: string): string {
+    return `backups/${backupId}/data.json`;
+  },
+
+  /**
+   * Generate storage key for a backed-up file (preserves original path structure)
+   */
+  backupFile(backupId: string, originalKey: string): string {
+    return `backups/${backupId}/files/${originalKey}`;
+  },
+
+  /**
+   * Get prefix for all backup files
+   */
+  backupsPrefix(): string {
+    return 'backups/';
   },
 
   /**

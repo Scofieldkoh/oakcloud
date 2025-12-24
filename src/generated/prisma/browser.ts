@@ -307,3 +307,13 @@ export type ExternalPosting = Prisma.ExternalPostingModel
  * 
  */
 export type FieldMapping = Prisma.FieldMappingModel
+/**
+ * Model TenantBackup
+ * 
+ */
+export type TenantBackup = Prisma.TenantBackupModel
+/**
+ * Model BackupSchedule
+ * 
+ */
+export type BackupSchedule = Prisma.BackupScheduleModel

@@ -537,22 +537,29 @@ function CustomDataForm({
         <h4 className="text-sm font-medium text-text-primary mb-3">Options</h4>
         <div className="space-y-3">
           {/* Letterhead toggle */}
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={useLetterhead}
-              onChange={(e) => onLetterheadChange(e.target.checked)}
-              className="w-4 h-4 rounded border-border-primary text-accent-primary focus:ring-accent-primary"
-            />
-            <div>
-              <span className="text-sm text-text-primary">
-                Include letterhead in PDF export
+          <div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-background-secondary">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-text-primary">Include Letterhead</span>
+              <span className="text-xs text-text-tertiary">
+                {useLetterhead ? 'Letterhead will be added to PDF export' : 'PDF will be exported without letterhead'}
               </span>
-              <p className="text-xs text-text-muted">
-                Uses your tenant&apos;s configured letterhead
-              </p>
             </div>
-          </label>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={useLetterhead}
+              onClick={() => onLetterheadChange(!useLetterhead)}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
+                useLetterhead ? 'bg-status-success' : 'bg-background-tertiary'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  useLetterhead ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
         </div>
       </div>
     </div>

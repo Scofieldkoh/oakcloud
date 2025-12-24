@@ -25,6 +25,7 @@ import type {
   FileMetadata,
   FileInfo,
   StorageConfig,
+  S3EncryptionType,
 } from './types';
 import { createLogger } from '@/lib/logger';
 
@@ -35,6 +36,8 @@ export class S3StorageAdapter implements StorageAdapter {
   private bucket: string;
   private endpoint: string;
   private bucketEnsured: boolean = false;
+  private encryption: S3EncryptionType;
+  private kmsKeyId?: string;
 
   constructor(config: StorageConfig) {
     if (!config.s3Endpoint || !config.s3Bucket || !config.s3AccessKey || !config.s3SecretKey) {
@@ -43,6 +46,13 @@ export class S3StorageAdapter implements StorageAdapter {
 
     this.bucket = config.s3Bucket;
     this.endpoint = config.s3Endpoint;
+    this.encryption = config.s3Encryption || 'AES256'; // Default to SSE-S3
+    this.kmsKeyId = config.s3KmsKeyId;
+
+    // Validate KMS configuration
+    if (this.encryption === 'aws:kms' && !this.kmsKeyId) {
+      log.warn('S3 KMS encryption enabled but no KMS key ID provided');
+    }
 
     // Create S3 client
     this.client = new S3Client({
@@ -55,7 +65,8 @@ export class S3StorageAdapter implements StorageAdapter {
       forcePathStyle: config.s3ForcePathStyle !== false, // Default true for MinIO
     });
 
-    log.info(`S3 storage adapter initialized with endpoint: ${config.s3Endpoint}, bucket: ${config.s3Bucket}`);
+    const encryptionInfo = this.encryption === 'none' ? 'disabled' : this.encryption;
+    log.info(`S3 storage adapter initialized with endpoint: ${config.s3Endpoint}, bucket: ${config.s3Bucket}, encryption: ${encryptionInfo} (env: ${process.env.S3_ENCRYPTION || 'not set'})`);
   }
 
   /**
@@ -84,18 +95,33 @@ export class S3StorageAdapter implements StorageAdapter {
   async upload(key: string, content: Buffer, options: UploadOptions): Promise<StorageResult> {
     await this.ensureBucket();
 
-    const command = new PutObjectCommand({
+    // Build command with encryption parameters
+    const commandInput: ConstructorParameters<typeof PutObjectCommand>[0] = {
       Bucket: this.bucket,
       Key: key,
       Body: content,
       ContentType: options.contentType,
       Metadata: options.metadata,
       CacheControl: options.cacheControl,
-    });
+    };
 
+    // Add server-side encryption
+    // Note: MinIO may not support all encryption types. For local dev, consider S3_ENCRYPTION=none
+    if (this.encryption !== 'none') {
+      // Only add encryption header if not using MinIO (localhost)
+      const isMinIO = this.endpoint.includes('localhost') || this.endpoint.includes('127.0.0.1');
+      if (!isMinIO) {
+        commandInput.ServerSideEncryption = this.encryption;
+        if (this.encryption === 'aws:kms' && this.kmsKeyId) {
+          commandInput.SSEKMSKeyId = this.kmsKeyId;
+        }
+      }
+    }
+
+    const command = new PutObjectCommand(commandInput);
     const response = await this.client.send(command);
 
-    log.debug(`Uploaded file to ${key} (${content.length} bytes)`);
+    log.debug(`Uploaded file to ${key} (${content.length} bytes, encryption: ${this.encryption})`);
 
     return {
       key,
@@ -277,12 +303,26 @@ export class S3StorageAdapter implements StorageAdapter {
   }
 
   async copy(sourceKey: string, destinationKey: string): Promise<void> {
-    const command = new CopyObjectCommand({
+    // Build command with encryption parameters for the destination
+    const commandInput: ConstructorParameters<typeof CopyObjectCommand>[0] = {
       Bucket: this.bucket,
       Key: destinationKey,
       CopySource: `${this.bucket}/${sourceKey}`,
-    });
+    };
 
+    // Apply encryption to the copied object
+    // Note: MinIO may not support all encryption types
+    if (this.encryption !== 'none') {
+      const isMinIO = this.endpoint.includes('localhost') || this.endpoint.includes('127.0.0.1');
+      if (!isMinIO) {
+        commandInput.ServerSideEncryption = this.encryption;
+        if (this.encryption === 'aws:kms' && this.kmsKeyId) {
+          commandInput.SSEKMSKeyId = this.kmsKeyId;
+        }
+      }
+    }
+
+    const command = new CopyObjectCommand(commandInput);
     await this.client.send(command);
     log.debug(`Copied file from ${sourceKey} to ${destinationKey}`);
   }

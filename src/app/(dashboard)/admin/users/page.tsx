@@ -757,28 +757,38 @@ export default function UsersPage() {
                 leftIcon={<Mail className="w-4 h-4" />}
               />
 
-              {/* Tenant Admin Checkbox - Only for SUPER_ADMIN */}
+              {/* Tenant Admin Toggle - Only for SUPER_ADMIN */}
               {isSuperAdmin && (
                 <div className="border-t border-border-primary pt-4">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isTenantAdminInvite}
-                      onChange={(e) => {
-                        setIsTenantAdminInvite(e.target.checked);
-                        if (e.target.checked) {
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-background-secondary">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-text-primary">Tenant Admin</span>
+                      <span className="text-xs text-text-tertiary">
+                        {isTenantAdminInvite ? 'Full administrative access to this tenant' : 'Standard user with role-based access'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isTenantAdminInvite}
+                      onClick={() => {
+                        const newValue = !isTenantAdminInvite;
+                        setIsTenantAdminInvite(newValue);
+                        if (newValue) {
                           setInviteRoleAssignments([]); // Clear role assignments when becoming tenant admin
                         }
                       }}
-                      className="w-4 h-4 rounded border-border-primary text-oak-primary focus:ring-oak-primary"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-text-primary">Make Tenant Admin</span>
-                      <p className="text-xs text-text-muted">
-                        Grant full administrative access to this tenant
-                      </p>
-                    </div>
-                  </label>
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
+                        isTenantAdminInvite ? 'bg-status-success' : 'bg-background-tertiary'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          isTenantAdminInvite ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               )}
 

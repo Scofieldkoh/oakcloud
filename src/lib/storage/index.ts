@@ -33,15 +33,35 @@ const log = createLogger('storage');
 
 // Singleton storage adapter
 let storageAdapter: StorageAdapter | null = null;
+let lastEncryptionConfig: string | undefined = undefined;
+
+/**
+ * Reset the storage adapter singleton
+ * Forces re-initialization on next getStorage() call
+ * Useful when environment variables change during development
+ */
+export function resetStorage(): void {
+  storageAdapter = null;
+  log.info('Storage adapter reset - will reinitialize on next access');
+}
 
 /**
  * Get the storage adapter instance
  * Creates adapter lazily on first access
+ * In development, automatically resets if S3_ENCRYPTION env var changes
  */
 export function getStorage(): StorageAdapter {
+  // In development, check if encryption config changed and reset if needed
+  const currentEncryption = process.env.S3_ENCRYPTION;
+  if (storageAdapter && lastEncryptionConfig !== currentEncryption) {
+    log.warn(`S3_ENCRYPTION changed from "${lastEncryptionConfig}" to "${currentEncryption}" - resetting adapter`);
+    storageAdapter = null;
+  }
+
   if (!storageAdapter) {
     const config = getStorageConfig();
     validateStorageConfig(config);
+    lastEncryptionConfig = currentEncryption;
 
     if (config.provider === 's3') {
       log.info('Initializing S3 storage adapter');

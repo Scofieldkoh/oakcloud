@@ -108,7 +108,9 @@ export const ModelName = {
   Communication: 'Communication',
   AccountingIntegration: 'AccountingIntegration',
   ExternalPosting: 'ExternalPosting',
-  FieldMapping: 'FieldMapping'
+  FieldMapping: 'FieldMapping',
+  TenantBackup: 'TenantBackup',
+  BackupSchedule: 'BackupSchedule'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1257,6 +1259,55 @@ export const FieldMappingScalarFieldEnum = {
 } as const
 
 export type FieldMappingScalarFieldEnum = (typeof FieldMappingScalarFieldEnum)[keyof typeof FieldMappingScalarFieldEnum]
+
+
+export const TenantBackupScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  backupType: 'backupType',
+  status: 'status',
+  storageKey: 'storageKey',
+  manifestJson: 'manifestJson',
+  databaseSizeBytes: 'databaseSizeBytes',
+  filesSizeBytes: 'filesSizeBytes',
+  totalSizeBytes: 'totalSizeBytes',
+  filesCount: 'filesCount',
+  progress: 'progress',
+  currentStep: 'currentStep',
+  errorMessage: 'errorMessage',
+  errorDetails: 'errorDetails',
+  restoredAt: 'restoredAt',
+  restoredById: 'restoredById',
+  retentionDays: 'retentionDays',
+  expiresAt: 'expiresAt',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  completedAt: 'completedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type TenantBackupScalarFieldEnum = (typeof TenantBackupScalarFieldEnum)[keyof typeof TenantBackupScalarFieldEnum]
+
+
+export const BackupScheduleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  cronPattern: 'cronPattern',
+  isEnabled: 'isEnabled',
+  timezone: 'timezone',
+  retentionDays: 'retentionDays',
+  maxBackups: 'maxBackups',
+  lastRunAt: 'lastRunAt',
+  lastBackupId: 'lastBackupId',
+  nextRunAt: 'nextRunAt',
+  lastError: 'lastError',
+  consecutiveFailures: 'consecutiveFailures',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BackupScheduleScalarFieldEnum = (typeof BackupScheduleScalarFieldEnum)[keyof typeof BackupScheduleScalarFieldEnum]
 
 
 export const SortOrder = {

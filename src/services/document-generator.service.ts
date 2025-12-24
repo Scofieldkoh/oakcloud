@@ -34,7 +34,7 @@ import type {
   GeneratedDocumentStatus,
 } from '@/generated/prisma';
 import { randomBytes } from 'crypto';
-import bcrypt from 'bcryptjs';
+import { hashPassword, verifyPassword } from '@/lib/encryption';
 import type { TenantAwareParams } from '@/lib/types';
 
 // ============================================================================
@@ -835,10 +835,10 @@ export async function createDocumentShare(
     throw new Error('Document not found');
   }
 
-  // Hash password if provided
-  let passwordHash: string | null = null;
+  // Hash password if provided (using Argon2id)
+  let sharePasswordHash: string | null = null;
   if (data.password) {
-    passwordHash = await bcrypt.hash(data.password, 10);
+    sharePasswordHash = hashPassword(data.password);
   }
 
   const share = await prisma.documentShare.create({
@@ -846,7 +846,7 @@ export async function createDocumentShare(
       documentId: data.documentId,
       shareToken: generateShareToken(),
       expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-      passwordHash,
+      passwordHash: sharePasswordHash,
       allowedActions: data.allowedActions,
       allowComments: data.allowComments,
       commentRateLimit: data.commentRateLimit,
@@ -943,7 +943,7 @@ export async function getShareByToken(
 }
 
 /**
- * Verify share password
+ * Verify share password (supports both Argon2id and legacy bcrypt)
  */
 export async function verifySharePassword(shareId: string, password: string): Promise<boolean> {
   const share = await prisma.documentShare.findUnique({
@@ -952,7 +952,9 @@ export async function verifySharePassword(shareId: string, password: string): Pr
   });
 
   if (!share?.passwordHash) return true; // No password required
-  return bcrypt.compare(password, share.passwordHash);
+
+  const verification = await verifyPassword(password, share.passwordHash);
+  return verification.isValid;
 }
 
 /**

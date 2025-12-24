@@ -19,9 +19,9 @@ import type {
   RevisionStatus,
   DocumentCategory,
 } from '@/generated/prisma';
-import crypto from 'crypto';
 import { PDFDocument } from 'pdf-lib';
 import { storage, StorageKeys } from '@/lib/storage';
+import { hashBlake3, generateFingerprint } from '@/lib/encryption';
 
 type Decimal = Prisma.Decimal;
 
@@ -377,7 +377,7 @@ export async function prepareDocumentPages(
         widthPx: 0, // Will be updated when image is processed
         heightPx: 0,
         renderDpi: 200,
-        imageFingerprint: crypto.createHash('sha256').update(storageKey).digest('hex').substring(0, 16),
+        imageFingerprint: generateFingerprint(storageKey),
       },
     });
 
@@ -407,7 +407,7 @@ export async function prepareDocumentPages(
             widthPx: page.width,
             heightPx: page.height,
             renderDpi: 72, // PDF points are 72 DPI
-            imageFingerprint: crypto.createHash('sha256').update(`${storageKey}:${page.pageNumber}`).digest('hex').substring(0, 16),
+            imageFingerprint: generateFingerprint(`${storageKey}:${page.pageNumber}`),
           },
         });
       }
@@ -432,7 +432,7 @@ export async function prepareDocumentPages(
           widthPx: 612, // Default US Letter width in points
           heightPx: 792, // Default US Letter height in points
           renderDpi: 72,
-          imageFingerprint: crypto.createHash('sha256').update(storageKey).digest('hex').substring(0, 16),
+          imageFingerprint: generateFingerprint(storageKey),
         },
       });
 
@@ -1235,20 +1235,19 @@ async function createStateEvent(input: {
 }
 
 /**
- * Calculate SHA-256 hash of file for duplicate detection
+ * Calculate BLAKE3 hash of file for duplicate detection
+ *
+ * BLAKE3 is 3-10x faster than SHA-256 while maintaining
+ * cryptographic security. Ideal for large file deduplication.
  */
 async function calculateFileHash(storageKey: string): Promise<string> {
   try {
     const fileBuffer = await storage.download(storageKey);
-    const hash = crypto.createHash('sha256');
-    hash.update(fileBuffer);
-    return hash.digest('hex');
+    return hashBlake3(fileBuffer);
   } catch (error) {
     log.error(`Failed to read file for hash calculation: ${storageKey}`, error);
     // Fallback: use key-based hash if file read fails
-    const hash = crypto.createHash('sha256');
-    hash.update(storageKey);
-    return hash.digest('hex');
+    return hashBlake3(storageKey);
   }
 }
 

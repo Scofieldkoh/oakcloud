@@ -9,6 +9,7 @@ A modular internal management system designed for accounting practices. Clean, e
 - [Getting Started](#getting-started)
 - [Database Schema](#database-schema)
 - [API Reference](#api-reference)
+- [Security](#security)
 - [Module: Company Management](#module-company-management)
 - [Module: Contact Management](#module-contact-management)
 - [Module: Document Generation](#module-document-generation)
@@ -42,7 +43,8 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 7. ✅ **User Management** - User accounts, invitations, multi-company assignments
 8. ✅ **Password Management** - Secure reset flow, force change on first login
 9. ✅ **Data Purge** - Permanent deletion of soft-deleted records (SUPER_ADMIN)
-10. ✅ **Email Notifications** - SMTP-based transactional emails (invitations, password reset)
+10. ✅ **Backup & Restore** - Per-tenant backup of database and files (SUPER_ADMIN)
+11. ✅ **Email Notifications** - SMTP-based transactional emails (invitations, password reset)
 11. ✅ **Connectors Hub** - External service integrations (AI providers, storage)
 12. ✅ **Document Generation** - Templates, PDF export, sharing, comments, workflow integration
 13. ✅ **Document Processing** - AI-powered ingestion, extraction, revisions, duplicate detection
@@ -81,6 +83,8 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 | @prisma/adapter-pg | 7.x | PostgreSQL driver adapter with connection pooling |
 | Next.js API Routes | 15.x | Backend API |
 | JWT (jose) | 6.x | Authentication |
+| @noble/hashes | 2.x | Cryptography (Argon2id, BLAKE3, SHA-512) |
+| bcryptjs | 2.x | Legacy password hashing (migration support) |
 | Nodemailer | 6.x | Email sending (SMTP) |
 | OpenAI | 4.x | AI extraction - GPT models (lazy loaded) |
 | Anthropic | 0.x | AI extraction - Claude models (lazy loaded) |
@@ -1758,6 +1762,238 @@ Notes:
 - Deleting a tenant also removes all related data (users, companies, documents, audit logs)
 - All purge actions are logged in the audit trail
 
+### Backup & Restore (SUPER_ADMIN Only)
+
+Full per-tenant backup and restore functionality including database data (as JSON) and all S3/MinIO files.
+
+#### List Backups
+```
+GET /api/admin/backup
+```
+
+Query Parameters:
+- `tenantId` - Filter by tenant
+- `status` - Filter by status (PENDING, IN_PROGRESS, COMPLETED, FAILED, RESTORING, RESTORED, DELETED)
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20)
+
+#### Create Backup
+```
+POST /api/admin/backup
+```
+
+Request:
+```json
+{
+  "tenantId": "uuid",
+  "name": "Monthly Backup - Dec 2024",
+  "retentionDays": 30
+}
+```
+
+Notes:
+- Backup runs asynchronously - returns immediately with backupId
+- Poll for progress via GET /api/admin/backup/{id}
+- If `retentionDays` is set, backup will auto-delete after expiration
+
+#### Get Backup Details
+```
+GET /api/admin/backup/{id}
+GET /api/admin/backup/{id}?download=true
+```
+
+With `download=true`, returns a signed URL for downloading the backup data file.
+
+#### Restore Backup
+```
+POST /api/admin/backup/{id}/restore
+```
+
+Request:
+```json
+{
+  "dryRun": false,
+  "overwriteExisting": false
+}
+```
+
+**Restore Modes:**
+- **Merge Mode** (`overwriteExisting: false`) - Adds missing records only. Existing data remains unchanged. Safe for partial restores.
+- **Clean Restore** (`overwriteExisting: true`) - Deletes ALL existing tenant data (database records and S3 files), then restores from backup. Use when you need an exact point-in-time restore.
+
+Notes:
+- `dryRun: true` validates the backup without restoring
+- Clean restore permanently deletes data created after the backup
+- Both modes support restoring backups in COMPLETED or RESTORED status
+
+#### Delete Backup
+```
+DELETE /api/admin/backup/{id}
+```
+
+#### Cleanup Expired Backups
+```
+POST /api/admin/backup/cleanup
+GET /api/admin/backup/cleanup (preview mode)
+```
+
+Query Parameters:
+- `dryRun=true` - Preview what would be cleaned up without deleting
+
+Headers (for cron jobs):
+- `x-cron-secret` - Must match CRON_SECRET environment variable
+
+Response:
+```json
+{
+  "success": true,
+  "triggeredBy": "cron",
+  "staleBackups": {
+    "staleCount": 2,
+    "markedFailedCount": 2
+  },
+  "expiredBackups": {
+    "scannedCount": 5,
+    "expiredCount": 5,
+    "deletedCount": 5,
+    "failedCount": 0,
+    "errors": []
+  }
+}
+```
+
+Cleanup handles:
+1. **Stale backups**: Marks PENDING/IN_PROGRESS backups as FAILED if stuck for >60 minutes
+2. **Expired backups**: Deletes backups past their `expiresAt` date
+
+**Environment Variables:**
+- `CRON_SECRET` - Required for cron job authentication
+- `BACKUP_CLEANUP_ENABLED` - Set to `true` to enable cleanup via cron jobs
+- `BACKUP_STALE_THRESHOLD_MINUTES` - Minutes before in-progress backups are considered stale (default: 60)
+
+To enable scheduled cleanup:
+1. Set `CRON_SECRET` environment variable
+2. Set `BACKUP_CLEANUP_ENABLED=true`
+3. Configure external cron job to POST to `/api/admin/backup/cleanup` with `x-cron-secret` header
+
+#### Scheduled Backups
+```
+POST /api/admin/backup/scheduled
+GET /api/admin/backup/scheduled (status)
+```
+
+Process all due scheduled backups for tenants with enabled backup schedules.
+
+Headers (for cron jobs):
+- `x-cron-secret` - Must match CRON_SECRET environment variable
+
+Response:
+```json
+{
+  "success": true,
+  "triggeredBy": "cron",
+  "enabled": true,
+  "processed": 3,
+  "succeeded": 3,
+  "failed": 0,
+  "results": [
+    { "scheduleId": "uuid", "tenantId": "uuid", "backupId": "uuid" }
+  ]
+}
+```
+
+**Backup Schedule Configuration (per tenant):**
+- `cronPattern` - Cron expression (e.g., "0 2 * * *" for daily at 2 AM)
+- `timezone` - Timezone for schedule (default: UTC)
+- `retentionDays` - How long to keep scheduled backups (default: 30)
+- `maxBackups` - Maximum number of scheduled backups to retain (default: 10)
+
+**Environment Variables:**
+- `CRON_SECRET` - Required for cron job authentication
+- `BACKUP_SCHEDULE_ENABLED` - Set to `true` to enable scheduled backups via cron jobs
+- `BACKUP_DEFAULT_RETENTION_DAYS` - Default retention days for new schedules (default: 30)
+- `BACKUP_DEFAULT_MAX_BACKUPS` - Default max backups for new schedules (default: 10)
+- `BACKUP_DEFAULT_CRON` - Default cron pattern for new schedules (default: "0 2 * * *")
+
+To enable scheduled backups:
+1. Set `CRON_SECRET` environment variable
+2. Set `BACKUP_SCHEDULE_ENABLED=true`
+3. Configure backup schedules for tenants via the Admin UI or Schedule API
+4. Configure external cron job to POST to `/api/admin/backup/scheduled` with `x-cron-secret` header
+   - Recommended: Run every minute or every 5 minutes
+
+#### Backup Schedule Management API
+
+**List All Schedules:**
+```
+GET /api/admin/backup/schedule
+```
+
+Query Parameters:
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20)
+
+**Create Schedule:**
+```
+POST /api/admin/backup/schedule
+```
+
+Request:
+```json
+{
+  "tenantId": "uuid",
+  "cronPattern": "0 2 * * *",
+  "isEnabled": true,
+  "timezone": "UTC",
+  "retentionDays": 30,
+  "maxBackups": 10
+}
+```
+
+**Get Schedule by Tenant:**
+```
+GET /api/admin/backup/schedule/{tenantId}
+```
+
+**Update Schedule:**
+```
+PUT /api/admin/backup/schedule/{tenantId}
+```
+
+Request (all fields optional):
+```json
+{
+  "cronPattern": "0 3 * * *",
+  "isEnabled": false,
+  "timezone": "Asia/Singapore",
+  "retentionDays": 60,
+  "maxBackups": 5
+}
+```
+
+**Delete Schedule:**
+```
+DELETE /api/admin/backup/schedule/{tenantId}
+```
+
+#### Backup Schedule Admin UI
+
+The Backup & Restore page (`/admin/backup`) includes a **Schedules** tab for managing backup schedules:
+
+**Features:**
+- **Tab Navigation** - Switch between "Backups" (list/create/restore) and "Schedules" (manage schedules)
+- **Schedule List** - View all configured backup schedules with tenant name, cron pattern (with human-readable description), status, retention settings, and run history
+- **Create Schedule** - Add backup schedules for tenants (each tenant can have one schedule)
+- **Edit Schedule** - Modify cron pattern, retention, timezone, and enable/disable
+- **Toggle Enable/Disable** - Quick toggle to pause or resume scheduled backups
+- **Run Now** - Manually trigger the scheduled backup processor to run all due backups immediately
+- **Delete Schedule** - Remove a backup schedule
+
+**Cron Pattern Examples:**
+- `0 2 * * *` - Daily at 2:00 AM
+- `0 0 * * 0` - Weekly on Sunday at midnight
+- `0 3 1 * *` - Monthly on the 1st at 3:00 AM
+
 #### Get Audit Statistics
 ```
 GET /api/audit-logs/stats
@@ -2831,6 +3067,78 @@ npm run docker:logs      # View container logs
 | EMAIL_FROM_NAME | Default sender name | Oakcloud |
 
 > **Note:** *At least one AI provider API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY) is required for AI-powered features like BizFile extraction. Alternatively, configure AI connectors via the Connectors Hub for tenant-aware credential management.
+
+---
+
+## Security
+
+### Cryptographic Standards
+
+Oakcloud uses industry-standard cryptographic algorithms:
+
+| Component | Algorithm | Purpose |
+|-----------|-----------|---------|
+| **Password Hashing** | Argon2id | Memory-hard, OWASP recommended |
+| **File Hashing** | BLAKE3 | 3-10x faster than SHA-256, cryptographically secure |
+| **Credential Encryption** | AES-256-GCM | Authenticated encryption for API keys |
+| **Token Hashing** | SHA-256 | Password reset tokens, share tokens |
+| **Storage Encryption** | SSE-S3 (AES256) | Server-side encryption for S3/MinIO |
+
+### Password Security (Argon2id)
+
+All user passwords are hashed using Argon2id with OWASP-recommended parameters:
+- **Memory**: 64 MB
+- **Iterations**: 3
+- **Parallelism**: 4 threads
+- **Output**: 32 bytes
+
+Legacy bcrypt hashes are automatically migrated to Argon2id on successful login.
+
+### File Integrity (BLAKE3)
+
+Document file hashes use BLAKE3 for:
+- **Duplicate detection** across the document processing pipeline
+- **File integrity verification** during storage operations
+- **Fingerprint generation** for images and PDFs
+
+BLAKE3 provides:
+- Cryptographic security equivalent to SHA-256
+- 3-10x faster performance
+- Parallel processing support
+
+### Storage Encryption (S3)
+
+Documents stored in S3/MinIO are encrypted at rest:
+
+| Option | Environment Variable | Description |
+|--------|---------------------|-------------|
+| SSE-S3 | `S3_ENCRYPTION=AES256` | Amazon-managed keys (default) |
+| SSE-KMS | `S3_ENCRYPTION=aws:kms` | AWS Key Management Service |
+| None | `S3_ENCRYPTION=none` | No encryption (not recommended) |
+
+### Credential Encryption (AES-256-GCM)
+
+Connector credentials (API keys, OAuth tokens) are encrypted before storage:
+- **Algorithm**: AES-256-GCM (authenticated encryption)
+- **IV**: Random 16-byte initialization vector per encryption
+- **Auth Tag**: 16-byte authentication tag for integrity
+- **Format**: `iv:tag:ciphertext` (hex-encoded)
+
+Requires `ENCRYPTION_KEY` environment variable (32+ characters).
+
+### Production Security Checklist
+
+```bash
+# Generate secure keys
+JWT_SECRET=$(openssl rand -base64 48)
+ENCRYPTION_KEY=$(openssl rand -hex 32)
+
+# Required settings
+NODE_ENV=production
+S3_USE_SSL=true
+S3_ENCRYPTION=AES256
+DATABASE_URL="postgresql://...?sslmode=require"
+```
 
 ---
 

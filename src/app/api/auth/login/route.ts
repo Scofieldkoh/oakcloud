@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { createToken } from '@/lib/auth';
 import { logAuthEvent } from '@/lib/audit';
 import { createLogger, safeErrorMessage } from '@/lib/logger';
+import { verifyPassword, hashPassword } from '@/lib/encryption';
 import {
   AUTH_COOKIE_NAME,
   COOKIE_MAX_AGE_SECONDS,
@@ -107,9 +107,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-    if (!isValidPassword) {
+    // Verify password (supports both Argon2id and legacy bcrypt)
+    const verification = await verifyPassword(password, user.passwordHash);
+    if (!verification.isValid) {
       await logAuthEvent('LOGIN_FAILED', user.id, {
         email: user.email,
         userName: `${user.firstName} ${user.lastName}`,
@@ -121,15 +121,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update last login - non-critical, don't fail login if this fails
+    // Update last login and migrate password hash if needed
     try {
+      const updateData: { lastLoginAt: Date; passwordHash?: string } = {
+        lastLoginAt: new Date(),
+      };
+
+      // Automatically upgrade bcrypt hashes to Argon2id on successful login
+      if (verification.needsRehash) {
+        updateData.passwordHash = hashPassword(password);
+        log.info(`Migrated password hash for user ${user.id} from bcrypt to Argon2id`);
+      }
+
       await prisma.user.update({
         where: { id: user.id },
-        data: { lastLoginAt: new Date() },
+        data: updateData,
       });
     } catch (updateError) {
-      console.error('Failed to update lastLoginAt:', updateError);
-      // Continue with login - this is non-critical metadata
+      console.error('Failed to update user on login:', updateError);
+      // Continue with login - this is non-critical
     }
 
     // Log successful login

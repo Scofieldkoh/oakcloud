@@ -369,7 +369,7 @@ describe('Audit Logging', () => {
       const bizfileContext = await createAuditContext({
         tenantId: 'tenant-1',
         userId: 'user-1',
-        changeSource: 'BIZFILE',
+        changeSource: 'BIZFILE_UPLOAD',
       });
 
       const apiContext = await createAuditContext({
@@ -379,7 +379,7 @@ describe('Audit Logging', () => {
       });
 
       expect(manualContext.changeSource).toBe('MANUAL');
-      expect(bizfileContext.changeSource).toBe('BIZFILE');
+      expect(bizfileContext.changeSource).toBe('BIZFILE_UPLOAD');
       expect(apiContext.changeSource).toBe('API');
     });
   });
@@ -545,7 +545,7 @@ describe('Audit Logging', () => {
         entityId: 'company-1',
         userId: 'user-1',
         tenantId: 'tenant-1',
-        changes: null,
+        changes: undefined,
       });
 
       expect(prisma.auditLog.create).toHaveBeenCalled();

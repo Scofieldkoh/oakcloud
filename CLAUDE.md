@@ -156,12 +156,38 @@ Documents are stored in S3-compatible object storage (MinIO in development):
 - Key pattern: `{tenantId}/companies/{companyId}/documents/{docId}/...`
 - Pending uploads: `{tenantId}/pending/{docId}/original.{ext}`
 - Environment: `STORAGE_PROVIDER=s3`, `S3_ENDPOINT`, `S3_BUCKET`, etc.
+- Server-side encryption: `S3_ENCRYPTION=AES256` (default), `aws:kms`, or `none`
+
+### Security & Cryptography
+
+All security utilities are in `src/lib/encryption.ts`:
+
+**Password Hashing (Argon2id)**:
+```typescript
+import { hashPassword, verifyPassword } from '@/lib/encryption';
+const hash = hashPassword('password');  // Returns $argon2id$...
+const { isValid, needsRehash } = await verifyPassword('password', hash);
+```
+
+**File Hashing (BLAKE3)**:
+```typescript
+import { hashBlake3, hashFile, generateFingerprint } from '@/lib/encryption';
+const hash = hashBlake3(buffer);           // 64-char hex
+const fingerprint = generateFingerprint(data, 16);  // 16-char hex
+```
+
+**Credential Encryption (AES-256-GCM)**:
+```typescript
+import { encrypt, decrypt, encryptJson, decryptJson } from '@/lib/encryption';
+const encrypted = encrypt('sensitive');    // iv:tag:ciphertext
+const plain = decrypt(encrypted);
+```
 
 ### Environment Variables
 
-Required: `DATABASE_URL`, `JWT_SECRET`
+Required: `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY` (32+ chars)
 Optional: `OPENAI_API_KEY` (for BizFile extraction), `LOG_LEVEL` (silent|error|warn|info|debug|trace)
-Storage: `STORAGE_PROVIDER` (s3|local), `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`
+Storage: `STORAGE_PROVIDER` (s3|local), `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_ENCRYPTION`
 
 ### Logging
 
