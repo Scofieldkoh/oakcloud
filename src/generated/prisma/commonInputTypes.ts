@@ -691,6 +691,23 @@ export type EnumUploadSourceWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumUploadSourceFilter<$PrismaModel>
 }
 
+export type EnumDocumentLinkTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentLinkType | Prisma.EnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentLinkType[] | Prisma.ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentLinkType[] | Prisma.ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentLinkTypeFilter<$PrismaModel> | $Enums.DocumentLinkType
+}
+
+export type EnumDocumentLinkTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentLinkType | Prisma.EnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentLinkType[] | Prisma.ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentLinkType[] | Prisma.ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentLinkTypeWithAggregatesFilter<$PrismaModel> | $Enums.DocumentLinkType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDocumentLinkTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDocumentLinkTypeFilter<$PrismaModel>
+}
+
 export type EnumExtractionTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.ExtractionType | Prisma.EnumExtractionTypeFieldRefInput<$PrismaModel>
   in?: $Enums.ExtractionType[] | Prisma.ListEnumExtractionTypeFieldRefInput<$PrismaModel>
@@ -1834,6 +1851,23 @@ export type NestedEnumUploadSourceWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumUploadSourceFilter<$PrismaModel>
   _max?: Prisma.NestedEnumUploadSourceFilter<$PrismaModel>
+}
+
+export type NestedEnumDocumentLinkTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentLinkType | Prisma.EnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentLinkType[] | Prisma.ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentLinkType[] | Prisma.ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentLinkTypeFilter<$PrismaModel> | $Enums.DocumentLinkType
+}
+
+export type NestedEnumDocumentLinkTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentLinkType | Prisma.EnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentLinkType[] | Prisma.ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentLinkType[] | Prisma.ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentLinkTypeWithAggregatesFilter<$PrismaModel> | $Enums.DocumentLinkType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDocumentLinkTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDocumentLinkTypeFilter<$PrismaModel>
 }
 
 export type NestedEnumExtractionTypeFilter<$PrismaModel = never> = {

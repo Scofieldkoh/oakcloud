@@ -1,44 +1,15 @@
 Instruction (Do not remove)
-Remember to keep the code clean, efficient, modular and reusable. Ensure documentations are kept up to date, updating where applicable (README.md under docs; database-schema, RBAC_GUIDELINE, DESIGN_GUIDELINE under docs) instead of creating new documentation every time.
+This web app is in development and testing stage, all data are dummy, and it's ok to refactor and redesign, no backward compatibility required. Remember to keep the code clean, efficient, modular, reusable and consistent. Ensure documentations are kept up to date, updating where applicable (under docs) instead of creating new documentation every time. 
 
-you can read "README.md" inside of docs, it contains the latest information on the codebase, RBAC_GUIDELINE and DESIGN_GUIDELINE before implementing.
+You can read the MD files of the docs for information; they are documented and contain the latest information on the codebase. If you encounter error or any potential improvement, raise it up to user.
 
 ----
 ## EXISTING ISSUES:
 
-### Roles/Users
-- [x] Role permission granularity still has issues
-  - **Resolved**: Added `connector` resource to RBAC system. TENANT_ADMIN now has full connector permissions.
-  - RBAC system supports: tenant, user, role, company, contact, document, officer, shareholder, audit_log, connector
-
 ### System-wide
 - [ ] Backup of database
   - **Note**: Configure PostgreSQL automated backups (pg_dump, WAL archiving) or use managed database service
-- [x] Look out for const that should be centrally managed for good practises
-  - **Resolved**: Comment constants (MAX_COMMENT_LENGTH, DEFAULT_COMMENT_RATE_LIMIT, COMMENT_RATE_LIMIT_WINDOW_MS) moved to `src/lib/constants/application.ts`
 
-### Infrastructure (Updated 2025-12-19)
-- [x] Prisma 7.x Migration
-  - **Completed**: Migrated from Prisma 6.19.1 to 7.2.0
-  - Uses `@prisma/adapter-pg` driver adapter with connection pooling
-  - Generated client at `src/generated/prisma/` (import from `@/generated/prisma`)
-  - Configuration via `prisma.config.ts` at project root
-  - 302 tests passing with comprehensive Prisma 7 test coverage
-- [x] MinIO Object Storage
-  - **Completed**: Implemented S3-compatible storage abstraction
-  - `StorageKeys` utility for tenant-isolated paths
-  - `S3StorageAdapter` with full operation support (upload, download, delete, list, copy, move)
-  - Docker Compose includes MinIO container (ports 9000/9001)
-  - 42 storage tests passing with 91%+ coverage
-
-### Companies
-- [x] Where are uploaded bizfile saved?
-  - **Resolved**: BizFile documents are stored in MinIO (S3-compatible object storage):
-    - Path: `{tenantId}/pending/{documentId}/original.{ext}`
-    - Storage adapter: MinIO/S3 with centralized `StorageKeys` utility
-    - Max file size: 10MB (configurable via `MAX_FILE_SIZE` env var)
-    - Supported formats: PDF, PNG, JPG, WebP
-    - MinIO Console: http://localhost:9001 (oakcloud / oakcloud_minio_secret)
 
 ### Connectors
 - [ ] Ensure connector for OneDrive is working
@@ -47,12 +18,7 @@ you can read "README.md" inside of docs, it contains the latest information on t
   - Requires: `clientId`, `clientSecret`, `tenantId` (Azure AD)
 
 ### Document Processing
-- [x] Duplicate detection not working for image PDFs
-  - **Resolved**: Added post-extraction duplicate check in `document-extraction.service.ts`
-  - Problem: Duplicate check only ran at upload time, before OCR/extraction for image PDFs
-  - Fix: Added `checkForDuplicates()` call after extraction completes
-  - Also updated `duplicate-detection.service.ts` to fall back to latest draft revision when `currentRevisionId` is null
-  - Detection layers: 100% (hash), weighted scoring (vendor 25%, doc# 30%, date 20%, amount 25%)
+- 
 
 ### Documents
 - [ ] Document should be encrypted with 512SHA/AES-512

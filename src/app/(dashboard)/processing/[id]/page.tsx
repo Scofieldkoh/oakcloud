@@ -38,6 +38,7 @@ import {
   useDuplicateComparison,
   useUpdatePageRotation,
   useBulkOperation,
+  useCreateRevision,
 } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/components/ui/toast';
@@ -48,6 +49,7 @@ import {
   ConfidenceDot,
   ConfidenceBadge,
   DuplicateComparisonModal,
+  DocumentLinks,
 } from '@/components/processing';
 import type { FieldValue } from '@/components/processing/document-page-viewer';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory } from '@/generated/prisma';
@@ -247,7 +249,16 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
   // Current revision data
   const currentRevisionId = data?.currentRevision?.id || null;
-  const { data: revisionWithLineItems, isLoading: lineItemsLoading, refetch: refetchLineItems } = useRevisionWithLineItems(id, currentRevisionId);
+
+  // Snapshot viewing state - when viewing a historical revision
+  const [viewingSnapshotId, setViewingSnapshotId] = useState<string | null>(null);
+  const [viewingSnapshotNumber, setViewingSnapshotNumber] = useState<number | null>(null);
+
+  // Determine which revision to display - snapshot or current
+  const displayRevisionId = viewingSnapshotId || currentRevisionId;
+  const isViewingSnapshot = viewingSnapshotId !== null;
+
+  const { data: revisionWithLineItems, isLoading: lineItemsLoading, refetch: refetchLineItems } = useRevisionWithLineItems(id, displayRevisionId);
 
   // Duplicate comparison (only fetch when needed)
   const { data: duplicateData } = useDuplicateComparison(
@@ -262,6 +273,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const updateRevision = useUpdateRevision();
   const updatePageRotation = useUpdatePageRotation();
   const bulkOperation = useBulkOperation();
+  const createRevision = useCreateRevision();
 
   // UI State
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -269,6 +281,19 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  // Handler to view a historical revision snapshot
+  const handleViewSnapshot = useCallback((revisionId: string, revisionNumber: number) => {
+    setViewingSnapshotId(revisionId);
+    setViewingSnapshotNumber(revisionNumber);
+    setShowHistoryDropdown(false);
+  }, []);
+
+  // Handler to return to current revision
+  const handleExitSnapshot = useCallback(() => {
+    setViewingSnapshotId(null);
+    setViewingSnapshotNumber(null);
+  }, []);
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
@@ -566,6 +591,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     }
   }, [id, updatePageRotation, toastError]);
 
+  // Start editing a draft revision directly
   const handleStartEdit = () => {
     if (revisionWithLineItems) {
       setEditFormData({
@@ -596,6 +622,32 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       setDeletedLineItemIds([]); // Reset deleted items when starting edit
     }
     setIsEditing(true);
+  };
+
+  // Create a new draft revision from an approved one, then enter edit mode
+  const handleEditApproved = async () => {
+    if (!data?.document || !currentRevisionId) return;
+    try {
+      // Create a new revision based on the approved one (with no changes initially)
+      const result = await createRevision.mutateAsync({
+        documentId: id,
+        lockVersion: data.document.lockVersion,
+        input: {
+          basedOnRevisionId: currentRevisionId,
+          reason: 'Edit approved document',
+        },
+      });
+      success(`Created new draft revision #${result.revision.revisionNumber}`);
+      // Refetch to get the new revision data
+      await refetch();
+      await refetchLineItems();
+      // Enter edit mode after data is refreshed
+      setTimeout(() => {
+        setIsEditing(true);
+      }, 100);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to create new revision');
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -788,7 +840,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2">
-          {canTriggerExtraction && can.updateDocument && (
+          {/* Hide action buttons when viewing snapshot - only show Exit Snapshot in banner */}
+          {!isViewingSnapshot && canTriggerExtraction && can.updateDocument && (
             <button
               onClick={handleTriggerExtraction}
               disabled={triggerExtraction.isPending}
@@ -802,7 +855,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               Extract
             </button>
           )}
-          {isEditing ? (
+          {!isViewingSnapshot && isEditing ? (
             <>
               <button onClick={() => { setIsEditing(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm">
                 Cancel
@@ -833,11 +886,28 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 Save
               </button>
             </>
-          ) : (
+          ) : !isViewingSnapshot ? (
             <>
+              {/* Edit button for DRAFT revisions - edits directly */}
               {currentRevision?.status === 'DRAFT' && can.updateDocument && (
                 <button onClick={handleStartEdit} className="btn-secondary btn-sm">
                   <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                  Edit
+                </button>
+              )}
+              {/* Edit button for APPROVED revisions - creates new draft revision */}
+              {currentRevision?.status === 'APPROVED' && can.updateDocument && (
+                <button
+                  onClick={handleEditApproved}
+                  disabled={createRevision.isPending}
+                  className="btn-secondary btn-sm"
+                  title="Create a new draft revision from the approved document"
+                >
+                  {createRevision.isPending ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                  ) : (
+                    <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                  )}
                   Edit
                 </button>
               )}
@@ -848,8 +918,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 </button>
               )}
             </>
-          )}
-          {can.deleteDocument && (
+          ) : null}
+          {!isViewingSnapshot && can.deleteDocument && (
             <button
               onClick={() => setShowDeleteDialog(true)}
               className="btn-ghost btn-sm text-status-error hover:bg-status-error/10"
@@ -865,7 +935,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       </div>
 
       {/* Duplicate Warning Banner */}
-      {needsDuplicateDecision && (
+      {needsDuplicateDecision && !isViewingSnapshot && (
         <div className="flex items-center justify-between px-4 py-2.5 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 flex-shrink-0">
           <div className="flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
@@ -879,6 +949,28 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           >
             <Copy className="w-3.5 h-3.5 mr-1.5" />
             Compare
+          </button>
+        </div>
+      )}
+
+      {/* Snapshot Viewing Banner */}
+      {isViewingSnapshot && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <History className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              Viewing Historical Snapshot: Revision #{viewingSnapshotNumber}
+            </span>
+            <span className="text-xs text-blue-600 dark:text-blue-400">
+              (Read-only)
+            </span>
+          </div>
+          <button
+            onClick={handleExitSnapshot}
+            className="btn-secondary btn-sm border-blue-500 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+          >
+            <XCircle className="w-3.5 h-3.5 mr-1.5" />
+            Exit Snapshot
           </button>
         </div>
       )}
@@ -945,6 +1037,14 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                     onRemove={handleRemoveLineItem}
                     onChange={handleLineItemChange}
                   />
+
+                  {/* Document Links - Only show when not viewing a snapshot */}
+                  {!isViewingSnapshot && (
+                    <DocumentLinks
+                      documentId={id}
+                      canUpdate={can.updateDocument}
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -993,6 +1093,10 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               isLoading={revisionsLoading}
               onClose={() => setShowHistoryDropdown(false)}
               categoryLabels={categoryLabels}
+              currentRevisionId={currentRevisionId}
+              viewingSnapshotId={viewingSnapshotId}
+              onViewSnapshot={handleViewSnapshot}
+              onExitSnapshot={handleExitSnapshot}
             />
           )}
         </div>
@@ -1743,6 +1847,10 @@ function HistoryDropdown({
   isLoading,
   onClose,
   categoryLabels,
+  currentRevisionId,
+  viewingSnapshotId,
+  onViewSnapshot,
+  onExitSnapshot,
 }: {
   revisions?: Array<{
     id: string;
@@ -1759,6 +1867,10 @@ function HistoryDropdown({
   isLoading: boolean;
   onClose: () => void;
   categoryLabels: Record<DocumentCategory, string>;
+  currentRevisionId: string | null;
+  viewingSnapshotId: string | null;
+  onViewSnapshot: (revisionId: string, revisionNumber: number) => void;
+  onExitSnapshot: () => void;
 }) {
   useEffect(() => {
     const handleClickOutside = () => onClose();
@@ -1781,31 +1893,67 @@ function HistoryDropdown({
           </div>
         ) : revisions && revisions.length > 0 ? (
           <div className="p-2 space-y-2">
-            {revisions.map((rev) => (
-              <div
-                key={rev.id}
-                className={cn(
-                  'p-3 rounded-lg border',
-                  rev.status === 'APPROVED'
-                    ? 'border-status-success/30 bg-status-success/5'
-                    : rev.status === 'DRAFT'
-                    ? 'border-status-warning/30 bg-status-warning/5'
-                    : 'border-border-primary bg-background-tertiary'
-                )}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-text-primary">#{rev.revisionNumber}</span>
-                  <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', revisionStatusConfig[rev.status].bgColor, revisionStatusConfig[rev.status].color)}>
-                    {revisionStatusConfig[rev.status].label}
-                  </span>
+            {revisions.map((rev) => {
+              const isCurrentRevision = rev.id === currentRevisionId;
+              const isViewingThis = viewingSnapshotId === rev.id;
+              return (
+                <div
+                  key={rev.id}
+                  className={cn(
+                    'p-3 rounded-lg border cursor-pointer transition-all group relative',
+                    isViewingThis
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/30'
+                      : isCurrentRevision
+                      ? 'border-oak-primary/50 bg-oak-primary/5'
+                      : rev.status === 'APPROVED'
+                      ? 'border-status-success/30 bg-status-success/5 hover:border-status-success/50'
+                      : rev.status === 'DRAFT'
+                      ? 'border-status-warning/30 bg-status-warning/5 hover:border-status-warning/50'
+                      : 'border-border-primary bg-background-tertiary hover:border-border-secondary'
+                  )}
+                  onClick={() => {
+                    if (isCurrentRevision) {
+                      onExitSnapshot();
+                    } else {
+                      onViewSnapshot(rev.id, rev.revisionNumber);
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-text-primary">#{rev.revisionNumber}</span>
+                      {isCurrentRevision && (
+                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-oak-primary/20 text-oak-primary">
+                          Current
+                        </span>
+                      )}
+                      {isViewingThis && (
+                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                          Viewing
+                        </span>
+                      )}
+                    </div>
+                    <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium', revisionStatusConfig[rev.status].bgColor, revisionStatusConfig[rev.status].color)}>
+                      {revisionStatusConfig[rev.status].label}
+                    </span>
+                  </div>
+                  <div className="text-xs text-text-secondary space-y-0.5">
+                    <div>{rev.documentCategory ? categoryLabels[rev.documentCategory] : '-'}</div>
+                    <div>{formatCurrency(rev.totalAmount, rev.currency)}</div>
+                    <div className="text-text-muted">{formatDateTime(rev.createdAt)}</div>
+                  </div>
+                  {/* Hover hint */}
+                  {!isCurrentRevision && !isViewingThis && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background-primary/80 rounded-lg">
+                      <span className="text-xs font-medium text-text-secondary flex items-center gap-1">
+                        <History className="w-3 h-3" />
+                        View Snapshot
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="text-xs text-text-secondary space-y-0.5">
-                  <div>{rev.documentCategory ? categoryLabels[rev.documentCategory] : '-'}</div>
-                  <div>{formatCurrency(rev.totalAmount, rev.currency)}</div>
-                  <div className="text-text-muted">{formatDateTime(rev.createdAt)}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="p-4 text-center text-text-muted text-sm">

@@ -200,6 +200,11 @@ export type AiConversation = Prisma.AiConversationModel
  */
 export type ProcessingDocument = Prisma.ProcessingDocumentModel
 /**
+ * Model DocumentLink
+ * 
+ */
+export type DocumentLink = Prisma.DocumentLinkModel
+/**
  * Model DocumentPage
  * 
  */

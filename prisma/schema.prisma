@@ -1564,6 +1564,10 @@ model ProcessingDocument {
   derivedFiles          DocumentDerivedFile[]
   splitPlans            SplitPlan[]
 
+  // Document links (for PO->DN->Invoice chains)
+  linkedFrom            DocumentLink[]      @relation("DocumentLinkSource")
+  linkedTo              DocumentLink[]      @relation("DocumentLinkTarget")
+
   @@index([documentId])
   @@index([pipelineStatus])
   @@index([parentProcessingDocId])
@@ -1572,6 +1576,50 @@ model ProcessingDocument {
   @@index([pipelineStatus, nextRetryAt])
   @@index([duplicateOfId])
   @@map("processing_documents")
+}
+
+// ============================================================================
+// DOCUMENT LINK - Links related documents in a transaction chain
+// ============================================================================
+
+// Link type for document relationships
+enum DocumentLinkType {
+  PO_TO_DN          // Purchase Order -> Delivery Note
+  PO_TO_INVOICE     // Purchase Order -> Invoice
+  DN_TO_INVOICE     // Delivery Note -> Invoice
+  INVOICE_TO_CN     // Invoice -> Credit Note
+  INVOICE_TO_DN_ADJ // Invoice -> Debit Note
+  QUOTE_TO_PO       // Quotation -> Purchase Order
+  CONTRACT_TO_PO    // Contract -> Purchase Order
+  RELATED           // Generic related document
+}
+
+model DocumentLink {
+  id                String              @id @default(uuid())
+
+  // Source document (e.g., PO)
+  sourceDocumentId  String              @map("source_document_id")
+  sourceDocument    ProcessingDocument  @relation("DocumentLinkSource", fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+
+  // Target document (e.g., Invoice)
+  targetDocumentId  String              @map("target_document_id")
+  targetDocument    ProcessingDocument  @relation("DocumentLinkTarget", fields: [targetDocumentId], references: [id], onDelete: Cascade)
+
+  // Link metadata
+  linkType          DocumentLinkType    @map("link_type")
+  notes             String?             // Optional notes about the link
+  linkedById        String              @map("linked_by_id")
+  linkedAt          DateTime            @default(now()) @map("linked_at")
+
+  // Timestamps
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  // Prevent duplicate links
+  @@unique([sourceDocumentId, targetDocumentId, linkType])
+  @@index([sourceDocumentId])
+  @@index([targetDocumentId])
+  @@map("document_links")
 }
 
 // ============================================================================

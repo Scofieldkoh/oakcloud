@@ -83,6 +83,7 @@ export const ModelName = {
   TemplatePartial: 'TemplatePartial',
   AiConversation: 'AiConversation',
   ProcessingDocument: 'ProcessingDocument',
+  DocumentLink: 'DocumentLink',
   DocumentPage: 'DocumentPage',
   DocumentExtraction: 'DocumentExtraction',
   DocumentRevision: 'DocumentRevision',
@@ -770,6 +771,21 @@ export const ProcessingDocumentScalarFieldEnum = {
 } as const
 
 export type ProcessingDocumentScalarFieldEnum = (typeof ProcessingDocumentScalarFieldEnum)[keyof typeof ProcessingDocumentScalarFieldEnum]
+
+
+export const DocumentLinkScalarFieldEnum = {
+  id: 'id',
+  sourceDocumentId: 'sourceDocumentId',
+  targetDocumentId: 'targetDocumentId',
+  linkType: 'linkType',
+  notes: 'notes',
+  linkedById: 'linkedById',
+  linkedAt: 'linkedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentLinkScalarFieldEnum = (typeof DocumentLinkScalarFieldEnum)[keyof typeof DocumentLinkScalarFieldEnum]
 
 
 export const DocumentPageScalarFieldEnum = {

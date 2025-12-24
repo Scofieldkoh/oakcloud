@@ -416,6 +416,7 @@ export const ModelName = {
   TemplatePartial: 'TemplatePartial',
   AiConversation: 'AiConversation',
   ProcessingDocument: 'ProcessingDocument',
+  DocumentLink: 'DocumentLink',
   DocumentPage: 'DocumentPage',
   DocumentExtraction: 'DocumentExtraction',
   DocumentRevision: 'DocumentRevision',
@@ -456,7 +457,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2825,6 +2826,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ProcessingDocumentCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ProcessingDocumentCountAggregateOutputType> | number
+        }
+      }
+    }
+    DocumentLink: {
+      payload: Prisma.$DocumentLinkPayload<ExtArgs>
+      fields: Prisma.DocumentLinkFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DocumentLinkFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DocumentLinkFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload>
+        }
+        findFirst: {
+          args: Prisma.DocumentLinkFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DocumentLinkFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload>
+        }
+        findMany: {
+          args: Prisma.DocumentLinkFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload>[]
+        }
+        create: {
+          args: Prisma.DocumentLinkCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload>
+        }
+        createMany: {
+          args: Prisma.DocumentLinkCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DocumentLinkCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload>[]
+        }
+        delete: {
+          args: Prisma.DocumentLinkDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload>
+        }
+        update: {
+          args: Prisma.DocumentLinkUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload>
+        }
+        deleteMany: {
+          args: Prisma.DocumentLinkDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DocumentLinkUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DocumentLinkUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload>[]
+        }
+        upsert: {
+          args: Prisma.DocumentLinkUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentLinkPayload>
+        }
+        aggregate: {
+          args: Prisma.DocumentLinkAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDocumentLink>
+        }
+        groupBy: {
+          args: Prisma.DocumentLinkGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentLinkGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DocumentLinkCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentLinkCountAggregateOutputType> | number
         }
       }
     }
@@ -5363,6 +5438,21 @@ export const ProcessingDocumentScalarFieldEnum = {
 export type ProcessingDocumentScalarFieldEnum = (typeof ProcessingDocumentScalarFieldEnum)[keyof typeof ProcessingDocumentScalarFieldEnum]
 
 
+export const DocumentLinkScalarFieldEnum = {
+  id: 'id',
+  sourceDocumentId: 'sourceDocumentId',
+  targetDocumentId: 'targetDocumentId',
+  linkType: 'linkType',
+  notes: 'notes',
+  linkedById: 'linkedById',
+  linkedAt: 'linkedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentLinkScalarFieldEnum = (typeof DocumentLinkScalarFieldEnum)[keyof typeof DocumentLinkScalarFieldEnum]
+
+
 export const DocumentPageScalarFieldEnum = {
   id: 'id',
   processingDocumentId: 'processingDocumentId',
@@ -6232,6 +6322,20 @@ export type ListEnumUploadSourceFieldRefInput<$PrismaModel> = FieldRefInputType<
 
 
 /**
+ * Reference to a field of type 'DocumentLinkType'
+ */
+export type EnumDocumentLinkTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentLinkType'>
+    
+
+
+/**
+ * Reference to a field of type 'DocumentLinkType[]'
+ */
+export type ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentLinkType[]'>
+    
+
+
+/**
  * Reference to a field of type 'ExtractionType'
  */
 export type EnumExtractionTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ExtractionType'>
@@ -6763,6 +6867,7 @@ export type GlobalOmitConfig = {
   templatePartial?: Prisma.TemplatePartialOmit
   aiConversation?: Prisma.AiConversationOmit
   processingDocument?: Prisma.ProcessingDocumentOmit
+  documentLink?: Prisma.DocumentLinkOmit
   documentPage?: Prisma.DocumentPageOmit
   documentExtraction?: Prisma.DocumentExtractionOmit
   documentRevision?: Prisma.DocumentRevisionOmit

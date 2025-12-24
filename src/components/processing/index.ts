@@ -12,3 +12,4 @@ export { ConfidenceDot, ConfidenceBadge } from './confidence-dot';
 export { ResizableSplitView, SplitViewHandle } from './resizable-split-view';
 export { DuplicateComparisonModal } from './duplicate-comparison-modal';
 export { FileMergeModal } from './file-merge-modal';
+export { DocumentLinks } from './document-links';

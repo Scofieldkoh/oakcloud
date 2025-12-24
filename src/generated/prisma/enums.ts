@@ -418,6 +418,20 @@ export const CheckpointStatus = {
 export type CheckpointStatus = (typeof CheckpointStatus)[keyof typeof CheckpointStatus]
 
 
+export const DocumentLinkType = {
+  PO_TO_DN: 'PO_TO_DN',
+  PO_TO_INVOICE: 'PO_TO_INVOICE',
+  DN_TO_INVOICE: 'DN_TO_INVOICE',
+  INVOICE_TO_CN: 'INVOICE_TO_CN',
+  INVOICE_TO_DN_ADJ: 'INVOICE_TO_DN_ADJ',
+  QUOTE_TO_PO: 'QUOTE_TO_PO',
+  CONTRACT_TO_PO: 'CONTRACT_TO_PO',
+  RELATED: 'RELATED'
+} as const
+
+export type DocumentLinkType = (typeof DocumentLinkType)[keyof typeof DocumentLinkType]
+
+
 export const ExchangeRateType = {
   MAS_DAILY_RATE: 'MAS_DAILY_RATE',
   IRAS_MONTHLY_AVG_RATE: 'IRAS_MONTHLY_AVG_RATE',

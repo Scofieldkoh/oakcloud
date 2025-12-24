@@ -1,8 +1,8 @@
 /**
- * Document Revisions API
+ * Document Links API
  *
- * GET /api/processing-documents/:documentId/revisions - Get revision history
- * POST /api/processing-documents/:documentId/revisions - Create new revision
+ * GET /api/processing-documents/:documentId/links - Get all linked documents
+ * POST /api/processing-documents/:documentId/links - Create a new link
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,17 +12,20 @@ import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { getProcessingDocument } from '@/services/document-processing.service';
 import {
-  createRevisionFromEdit,
-  getRevisionHistory,
-  type RevisionPatchInput,
-} from '@/services/document-revision.service';
+  getDocumentLinks,
+  createDocumentLink,
+  searchLinkableDocuments,
+  linkTypeLabels,
+  reverseLinkTypeLabels,
+} from '@/services/document-link.service';
 import { createAuditLog } from '@/lib/audit';
+import type { DocumentLinkType } from '@/generated/prisma';
 
 type Params = { documentId: string };
 
 /**
- * GET /api/processing-documents/:documentId/revisions
- * Get revision history
+ * GET /api/processing-documents/:documentId/links
+ * Get all linked documents
  */
 export async function GET(
   request: NextRequest,
@@ -31,6 +34,7 @@ export async function GET(
   try {
     const session = await requireAuth();
     const { documentId } = await params;
+    const searchQuery = request.nextUrl.searchParams.get('search');
 
     const processingDoc = await getProcessingDocument(documentId);
 
@@ -47,7 +51,7 @@ export async function GET(
     // Get the base document for company context
     const document = await prisma.document.findUnique({
       where: { id: processingDoc.documentId },
-      select: { companyId: true },
+      select: { companyId: true, tenantId: true },
     });
 
     if (!document || !document.companyId) {
@@ -73,23 +77,38 @@ export async function GET(
       );
     }
 
-    const revisions = await getRevisionHistory(documentId);
+    // If search query provided, return linkable documents
+    if (searchQuery !== null) {
+      const linkableDocuments = await searchLinkableDocuments(
+        documentId,
+        document.tenantId,
+        document.companyId,
+        searchQuery || undefined
+      );
+
+      return NextResponse.json({
+        success: true,
+        data: { documents: linkableDocuments },
+        meta: {
+          requestId: uuidv4(),
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    // Otherwise, return existing links
+    const links = await getDocumentLinks(documentId);
 
     return NextResponse.json({
       success: true,
       data: {
-        revisions: revisions.map((rev) => ({
-          id: rev.id,
-          revisionNumber: rev.revisionNumber,
-          status: rev.status,
-          revisionType: rev.revisionType,
-          documentCategory: rev.documentCategory,
-          vendorName: rev.vendorName,
-          totalAmount: rev.totalAmount.toString(),
-          currency: rev.currency,
-          createdAt: rev.createdAt,
-          approvedAt: rev.approvedAt,
-          supersededAt: rev.supersededAt,
+        links: links.map((link) => ({
+          ...link,
+          linkTypeLabel:
+            link.linkDirection === 'target'
+              ? linkTypeLabels[link.linkType]
+              : reverseLinkTypeLabels[link.linkType],
+          linkedAt: link.linkedAt.toISOString(),
         })),
       },
       meta: {
@@ -103,8 +122,8 @@ export async function GET(
 }
 
 /**
- * POST /api/processing-documents/:documentId/revisions
- * Create new revision (edit)
+ * POST /api/processing-documents/:documentId/links
+ * Create a new link
  */
 export async function POST(
   request: NextRequest,
@@ -113,8 +132,6 @@ export async function POST(
   try {
     const session = await requireAuth();
     const { documentId } = await params;
-    const idempotencyKey = request.headers.get('Idempotency-Key');
-    const ifMatch = request.headers.get('If-Match');
 
     const processingDoc = await getProcessingDocument(documentId);
 
@@ -157,76 +174,47 @@ export async function POST(
       );
     }
 
-    // Check lock version (optimistic concurrency)
-    if (ifMatch) {
-      const expectedVersion = parseInt(ifMatch, 10);
-      if (processingDoc.lockVersion !== expectedVersion) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: 'CONCURRENT_MODIFICATION',
-              message: 'Document has been modified by another user',
-            },
-          },
-          { status: 409 }
-        );
-      }
-    }
-
-    // Check idempotency
-    if (idempotencyKey) {
-      const existing = await prisma.idempotencyRecord.findUnique({
-        where: { key: idempotencyKey },
-      });
-
-      if (existing && existing.expiresAt > new Date()) {
-        return NextResponse.json(existing.response, {
-          status: existing.statusCode,
-        });
-      }
-    }
-
     const body = await request.json();
-    const { basedOnRevisionId, reason, patch } = body as {
-      basedOnRevisionId: string;
-      reason?: string;
-      patch?: RevisionPatchInput;
+    const { targetDocumentId, linkType, notes } = body as {
+      targetDocumentId: string;
+      linkType: DocumentLinkType;
+      notes?: string;
     };
 
-    if (!basedOnRevisionId) {
+    if (!targetDocumentId) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'basedOnRevisionId is required',
+            message: 'targetDocumentId is required',
           },
         },
         { status: 400 }
       );
     }
 
-    // Create revision - use empty patch if none provided (copies base revision as-is)
-    const revision = await createRevisionFromEdit(
-      documentId,
-      basedOnRevisionId,
-      patch || {},
-      session.id,
-      reason || 'user_edit'
-    );
+    if (!linkType) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'linkType is required',
+          },
+        },
+        { status: 400 }
+      );
+    }
 
-    // Update document to point to the new draft revision and increment lock version
-    await prisma.processingDocument.update({
-      where: { id: documentId },
-      data: {
-        currentRevisionId: revision.id,
-        lockVersion: { increment: 1 },
-      },
+    // Create the link
+    const link = await createDocumentLink({
+      sourceDocumentId: documentId,
+      targetDocumentId,
+      linkType,
+      notes,
+      linkedById: session.id,
     });
-
-    // Get updated lock version
-    const updatedDoc = await getProcessingDocument(documentId);
 
     // Create audit log
     await createAuditLog({
@@ -234,61 +222,45 @@ export async function POST(
       userId: session.id,
       companyId: document.companyId,
       action: 'CREATE',
-      entityType: 'DocumentRevision',
-      entityId: revision.id,
-      summary: `Created revision #${revision.revisionNumber} for document`,
+      entityType: 'DocumentLink',
+      entityId: link.id,
+      summary: `Linked document to ${targetDocumentId} (${linkType})`,
       changeSource: 'MANUAL',
       metadata: {
-        revisionNumber: revision.revisionNumber,
-        revisionType: revision.revisionType,
-        basedOnRevisionId,
+        sourceDocumentId: documentId,
+        targetDocumentId,
+        linkType,
       },
     });
 
-    const response = {
-      success: true,
-      data: {
-        revision: {
-          id: revision.id,
-          revisionNumber: revision.revisionNumber,
-          status: revision.status,
-          revisionType: revision.revisionType,
-          basedOnRevisionId,
-        },
-        document: {
-          lockVersion: updatedDoc?.lockVersion ?? processingDoc.lockVersion + 1,
-        },
-      },
-      meta: {
-        requestId: uuidv4(),
-        timestamp: new Date().toISOString(),
-      },
-    };
-
-    // Store idempotency record
-    if (idempotencyKey) {
-      await prisma.idempotencyRecord.create({
+    return NextResponse.json(
+      {
+        success: true,
         data: {
-          key: idempotencyKey,
-          tenantId: document.tenantId,
-          endpoint: `/api/processing-documents/${documentId}/revisions`,
-          method: 'POST',
-          requestHash: '',
-          response: response as object,
-          statusCode: 201,
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+          link: {
+            id: link.id,
+            sourceDocumentId: link.sourceDocumentId,
+            targetDocumentId: link.targetDocumentId,
+            linkType: link.linkType,
+            linkTypeLabel: linkTypeLabels[link.linkType],
+            notes: link.notes,
+            linkedAt: link.linkedAt.toISOString(),
+          },
         },
-      });
-    }
-
-    return NextResponse.json(response, { status: 201 });
+        meta: {
+          requestId: uuidv4(),
+          timestamp: new Date().toISOString(),
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     return handleError(error);
   }
 }
 
 function handleError(error: unknown): NextResponse {
-  console.error('Revisions API error:', error);
+  console.error('Document Links API error:', error);
 
   if (error instanceof Error) {
     if (error.message === 'Unauthorized') {
@@ -307,6 +279,19 @@ function handleError(error: unknown): NextResponse {
           error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
         },
         { status: 403 }
+      );
+    }
+    if (
+      error.message.includes('not found') ||
+      error.message.includes('already exists') ||
+      error.message.includes('Cannot link')
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: error.message },
+        },
+        { status: 400 }
       );
     }
   }

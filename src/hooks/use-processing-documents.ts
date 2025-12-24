@@ -840,3 +840,261 @@ export function useUpdatePageRotation() {
   });
 }
 
+// ============================================================================
+// Create New Revision (for editing approved documents)
+// ============================================================================
+
+interface CreateRevisionInput {
+  basedOnRevisionId: string;
+  reason?: string;
+  patch?: {
+    set?: Partial<{
+      documentCategory: string;
+      vendorName: string;
+      documentNumber: string;
+      documentDate: string;
+      dueDate: string;
+      currency: string;
+      subtotal: string;
+      taxAmount: string;
+      totalAmount: string;
+      gstTreatment: string;
+      supplierGstNo: string;
+    }>;
+    itemsToUpsert?: Array<{
+      lineNo: number;
+      description: string;
+      quantity?: string;
+      unitPrice?: string;
+      amount: string;
+      gstAmount?: string;
+      taxCode?: string;
+      accountCode?: string;
+    }>;
+    itemsToDelete?: number[];
+  };
+}
+
+interface CreateRevisionResult {
+  revision: {
+    id: string;
+    revisionNumber: number;
+    status: string;
+    revisionType: string;
+    basedOnRevisionId: string;
+  };
+  document: {
+    lockVersion: number;
+  };
+}
+
+async function createRevision(
+  documentId: string,
+  lockVersion: number,
+  input: CreateRevisionInput
+): Promise<CreateRevisionResult> {
+  const response = await fetch(`/api/processing-documents/${documentId}/revisions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'If-Match': lockVersion.toString(),
+    },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to create revision');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Hook for creating a new revision from an existing one (for editing approved documents)
+ */
+export function useCreateRevision() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      documentId,
+      lockVersion,
+      input,
+    }: {
+      documentId: string;
+      lockVersion: number;
+      input: CreateRevisionInput;
+    }) => createRevision(documentId, lockVersion, input),
+    onSuccess: (data, { documentId }) => {
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['revision-history', documentId] });
+      queryClient.invalidateQueries({
+        queryKey: ['revision-line-items', documentId, data.revision.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
+    },
+  });
+}
+
+// ============================================================================
+// Document Links
+// ============================================================================
+
+export interface DocumentLink {
+  id: string;
+  documentId: string;
+  fileName: string;
+  pipelineStatus: string;
+  documentCategory: string | null;
+  vendorName: string | null;
+  documentNumber: string | null;
+  totalAmount: string | null;
+  currency: string | null;
+  revisionStatus: string | null;
+  linkId: string;
+  linkType: string;
+  linkTypeLabel: string;
+  linkDirection: 'source' | 'target';
+  notes: string | null;
+  linkedAt: string;
+}
+
+export interface LinkableDocument {
+  id: string;
+  fileName: string;
+  documentCategory: string | null;
+  vendorName: string | null;
+  documentNumber: string | null;
+  totalAmount: string | null;
+  currency: string | null;
+  createdAt: string;
+}
+
+async function fetchDocumentLinks(documentId: string): Promise<DocumentLink[]> {
+  const response = await fetch(`/api/processing-documents/${documentId}/links`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch document links');
+  }
+  const result = await response.json();
+  return result.data.links;
+}
+
+async function searchLinkableDocuments(
+  documentId: string,
+  searchQuery: string
+): Promise<LinkableDocument[]> {
+  const response = await fetch(
+    `/api/processing-documents/${documentId}/links?search=${encodeURIComponent(searchQuery)}`
+  );
+  if (!response.ok) {
+    throw new Error('Failed to search linkable documents');
+  }
+  const result = await response.json();
+  return result.data.documents;
+}
+
+async function createDocumentLink(
+  documentId: string,
+  targetDocumentId: string,
+  linkType: string,
+  notes?: string
+): Promise<{ link: DocumentLink }> {
+  const response = await fetch(`/api/processing-documents/${documentId}/links`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetDocumentId, linkType, notes }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to create link');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+async function deleteDocumentLink(
+  documentId: string,
+  linkId: string
+): Promise<void> {
+  const response = await fetch(
+    `/api/processing-documents/${documentId}/links/${linkId}`,
+    { method: 'DELETE' }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to delete link');
+  }
+}
+
+/**
+ * Hook to fetch document links
+ */
+export function useDocumentLinks(documentId: string | null) {
+  return useQuery({
+    queryKey: ['document-links', documentId],
+    queryFn: () => fetchDocumentLinks(documentId!),
+    enabled: !!documentId,
+  });
+}
+
+/**
+ * Hook to search for linkable documents
+ */
+export function useLinkableDocuments(documentId: string | null, searchQuery: string) {
+  return useQuery({
+    queryKey: ['linkable-documents', documentId, searchQuery],
+    queryFn: () => searchLinkableDocuments(documentId!, searchQuery),
+    enabled: !!documentId && searchQuery.length >= 0, // Always enabled when documentId exists
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+/**
+ * Hook to create a document link
+ */
+export function useCreateDocumentLink() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      documentId,
+      targetDocumentId,
+      linkType,
+      notes,
+    }: {
+      documentId: string;
+      targetDocumentId: string;
+      linkType: string;
+      notes?: string;
+    }) => createDocumentLink(documentId, targetDocumentId, linkType, notes),
+    onSuccess: (_, { documentId, targetDocumentId }) => {
+      // Invalidate links for both documents
+      queryClient.invalidateQueries({ queryKey: ['document-links', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['document-links', targetDocumentId] });
+      queryClient.invalidateQueries({ queryKey: ['linkable-documents', documentId] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a document link
+ */
+export function useDeleteDocumentLink() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      documentId,
+      linkId,
+    }: {
+      documentId: string;
+      linkId: string;
+    }) => deleteDocumentLink(documentId, linkId),
+    onSuccess: (_, { documentId }) => {
+      queryClient.invalidateQueries({ queryKey: ['document-links', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['linkable-documents', documentId] });
+    },
+  });
+}
+
