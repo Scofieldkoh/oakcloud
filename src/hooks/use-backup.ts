@@ -229,25 +229,6 @@ export function useDeleteBackup() {
   });
 }
 
-/**
- * Get backup download URL
- */
-export function useBackupDownloadUrl(id: string | undefined) {
-  return useQuery<{ downloadUrl: string }>({
-    queryKey: ['backup-download', id],
-    queryFn: async () => {
-      if (!id) throw new Error('Backup ID required');
-      const res = await fetch(`/api/admin/backup/${id}?download=true`);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to get download URL');
-      }
-      return res.json();
-    },
-    enabled: false, // Only fetch when explicitly requested
-  });
-}
-
 // ============================================================================
 // Helper Functions
 // ============================================================================

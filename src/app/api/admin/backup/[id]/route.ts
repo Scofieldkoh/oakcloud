@@ -18,11 +18,8 @@ type RouteParams = { params: Promise<{ id: string }> };
 
 /**
  * GET /api/admin/backup/[id] - Get backup details
- *
- * Query params:
- * - download=true: Return signed URL for downloading backup data
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     if (!session.isSuperAdmin) {
@@ -30,14 +27,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const download = searchParams.get('download') === 'true';
-
-    if (download) {
-      // Return signed URL for download
-      const url = await backupService.getBackupDownloadUrl(id);
-      return NextResponse.json({ downloadUrl: url });
-    }
 
     // Return backup details
     const backup = await backupService.getBackupDetails(id);

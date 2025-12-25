@@ -2,25 +2,29 @@
  * Backup Service
  *
  * Handles tenant backup and restore operations.
- * Supports exporting database data as JSON and copying S3 files.
+ * Supports exporting database data as gzip-compressed JSON and copying S3 files.
  */
 
+import { gzipSync, gunzipSync } from 'zlib';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage/config';
 import { createAuditLog } from '@/lib/audit';
 import { hashBlake3 } from '@/lib/encryption';
 import { createLogger } from '@/lib/logger';
-import type { BackupStatus, BackupType, Prisma } from '@/generated/prisma';
+import type { BackupStatus, Prisma } from '@/generated/prisma';
 
 const log = createLogger('backup-service');
+
+// Compression settings
+const COMPRESSION_LEVEL = 6; // Default gzip level (1-9, higher = better compression but slower)
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface BackupManifest {
-  version: '1.0';
+  version: '1.1';
   backupId: string;
   tenantId: string;
   tenantName: string;
@@ -34,6 +38,15 @@ export interface BackupManifest {
   // Statistics
   stats: Record<string, number>;
 
+  // Compression info
+  compression: {
+    algorithm: 'gzip';
+    level: number;
+    uncompressedSize: number;
+    compressedSize: number;
+    ratio: number; // Compression ratio (e.g., 0.15 = 85% reduction)
+  };
+
   // File manifest
   files: {
     key: string;
@@ -41,9 +54,9 @@ export interface BackupManifest {
     originalStorageKey: string;
   }[];
 
-  // Data checksums
+  // Data checksums (hash of UNCOMPRESSED data for integrity verification)
   checksums: {
-    dataJson: string; // BLAKE3 hash of data.json
+    dataJson: string;
   };
 }
 
@@ -180,18 +193,25 @@ class BackupService {
       // Update status to IN_PROGRESS
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 0, 'Starting backup...');
 
-      // 1. Export database data (30% of progress)
+      // 1. Export database data and compress (30% of progress)
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 5, 'Exporting database...');
       const { data, stats } = await this.exportTenantData(tenantId, options);
-      const dataJson = JSON.stringify(data, null, 2);
+      const dataJson = JSON.stringify(data); // No pretty-print to save space
       const dataBuffer = Buffer.from(dataJson, 'utf-8');
       const dataChecksum = hashBlake3(dataBuffer);
 
-      await storage.upload(StorageKeys.backupData(backupId), dataBuffer, {
-        contentType: 'application/json',
+      // Compress the data with gzip
+      await this.updateBackupProgress(backupId, 'IN_PROGRESS', 15, 'Compressing data...');
+      const compressedBuffer = gzipSync(dataBuffer, { level: COMPRESSION_LEVEL });
+      const compressionRatio = compressedBuffer.length / dataBuffer.length;
+
+      await storage.upload(StorageKeys.backupData(backupId), compressedBuffer, {
+        contentType: 'application/gzip',
       });
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 30, 'Database exported');
-      log.debug(`Backup ${backupId}: Database exported (${formatBytes(dataBuffer.length)})`);
+      log.debug(
+        `Backup ${backupId}: Database exported and compressed (${formatBytes(dataBuffer.length)} → ${formatBytes(compressedBuffer.length)}, ${Math.round((1 - compressionRatio) * 100)}% reduction)`
+      );
 
       // 2. Copy S3 files (60% of progress)
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 35, 'Copying files...');
@@ -210,7 +230,7 @@ class BackupService {
       // 3. Generate and upload manifest (10% of progress)
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 92, 'Generating manifest...');
       const manifest: BackupManifest = {
-        version: '1.0',
+        version: '1.1',
         backupId,
         tenantId,
         tenantName,
@@ -219,6 +239,13 @@ class BackupService {
         createdById: userId || 'system',
         schemaVersion: '1.0.0',
         stats,
+        compression: {
+          algorithm: 'gzip',
+          level: COMPRESSION_LEVEL,
+          uncompressedSize: dataBuffer.length,
+          compressedSize: compressedBuffer.length,
+          ratio: compressionRatio,
+        },
         files,
         checksums: {
           dataJson: dataChecksum,
@@ -230,9 +257,9 @@ class BackupService {
         contentType: 'application/json',
       });
 
-      // 4. Calculate total size and finalize
+      // 4. Calculate total size and finalize (use compressed size for storage)
       const filesSizeBytes = files.reduce((sum, f) => sum + f.size, 0);
-      const totalSizeBytes = dataBuffer.length + filesSizeBytes + manifestBuffer.length;
+      const totalSizeBytes = compressedBuffer.length + filesSizeBytes + manifestBuffer.length;
 
       await prisma.tenantBackup.update({
         where: { id: backupId },
@@ -241,7 +268,7 @@ class BackupService {
           progress: 100,
           currentStep: 'Completed',
           completedAt: new Date(),
-          databaseSizeBytes: BigInt(dataBuffer.length),
+          databaseSizeBytes: BigInt(compressedBuffer.length), // Compressed size
           filesSizeBytes: BigInt(filesSizeBytes),
           totalSizeBytes: BigInt(totalSizeBytes),
           filesCount: files.length,
@@ -563,15 +590,16 @@ class BackupService {
    * Validate backup integrity
    */
   async validateBackupIntegrity(backupId: string): Promise<BackupManifest> {
-    const backup = await this.getBackupDetails(backupId);
-
     // Try to download and parse manifest
     try {
       const manifestBuffer = await storage.download(StorageKeys.backupManifest(backupId));
       const manifest = JSON.parse(manifestBuffer.toString('utf-8')) as BackupManifest;
 
-      // Verify data.json checksum
-      const dataBuffer = await storage.download(StorageKeys.backupData(backupId));
+      // Download compressed data and decompress
+      const compressedBuffer = await storage.download(StorageKeys.backupData(backupId));
+      const dataBuffer = gunzipSync(compressedBuffer);
+
+      // Verify checksum against uncompressed data
       const dataChecksum = hashBlake3(dataBuffer);
 
       if (dataChecksum !== manifest.checksums.dataJson) {
@@ -638,8 +666,9 @@ class BackupService {
     });
 
     try {
-      // 1. Download and parse data.json
-      const dataBuffer = await storage.download(StorageKeys.backupData(backupId));
+      // 1. Download, decompress, and parse data.json.gz
+      const compressedBuffer = await storage.download(StorageKeys.backupData(backupId));
+      const dataBuffer = gunzipSync(compressedBuffer);
       const data = JSON.parse(dataBuffer.toString('utf-8')) as Record<string, unknown>;
 
       // 2. If overwriting, delete existing tenant data first
@@ -1210,21 +1239,6 @@ class BackupService {
     });
 
     log.info(`Backup ${backupId} deleted`);
-  }
-
-  /**
-   * Get download URL for backup data file
-   */
-  async getBackupDownloadUrl(backupId: string): Promise<string> {
-    const backup = await this.getBackupDetails(backupId);
-
-    if (backup.status !== 'COMPLETED' && backup.status !== 'RESTORED') {
-      throw new Error('Backup is not available for download');
-    }
-
-    // Generate signed URL for data.json (valid for 1 hour)
-    const url = await storage.getSignedUrl(StorageKeys.backupData(backupId), 3600);
-    return url;
   }
 
   // ============================================================================

@@ -2,7 +2,8 @@
  * Next.js Instrumentation
  *
  * This file runs once when the server starts.
- * Used to initialize the backup scheduler.
+ * Used to initialize the task scheduler for periodic jobs
+ * (backups, cleanup, etc.)
  *
  * @see https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */

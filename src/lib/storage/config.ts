@@ -161,10 +161,10 @@ export const StorageKeys = {
   },
 
   /**
-   * Generate storage key for backup database data
+   * Generate storage key for backup database data (gzip compressed)
    */
   backupData(backupId: string): string {
-    return `backups/${backupId}/data.json`;
+    return `backups/${backupId}/data.json.gz`;
   },
 
   /**

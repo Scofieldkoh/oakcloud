@@ -30,7 +30,6 @@ import { Pagination } from '@/components/companies/pagination';
 import {
   HardDrive,
   RefreshCw,
-  Download,
   Trash2,
   RotateCcw,
   Plus,
@@ -224,20 +223,6 @@ export default function BackupPage() {
       setSelectedBackup(null);
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to delete backup');
-    }
-  };
-
-  const handleDownload = async (backup: TenantBackup) => {
-    try {
-      const res = await fetch(`/api/admin/backup/${backup.id}?download=true`);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to get download URL');
-      }
-      const { downloadUrl } = await res.json();
-      window.open(downloadUrl, '_blank');
-    } catch (err) {
-      showError(err instanceof Error ? err.message : 'Failed to download backup');
     }
   };
 
@@ -691,27 +676,17 @@ export default function BackupPage() {
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-1">
                               {(backup.status === 'COMPLETED' || backup.status === 'RESTORED') && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDownload(backup)}
-                                    aria-label="Download backup"
-                                  >
-                                    <Download className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedBackup(backup);
-                                      setRestoreDialogOpen(true);
-                                    }}
-                                    aria-label="Restore backup"
-                                  >
-                                    <RotateCcw className="w-4 h-4" />
-                                  </Button>
-                                </>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedBackup(backup);
+                                    setRestoreDialogOpen(true);
+                                  }}
+                                  aria-label="Restore backup"
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                </Button>
                               )}
                               {backup.status !== 'IN_PROGRESS' &&
                                 backup.status !== 'RESTORING' &&

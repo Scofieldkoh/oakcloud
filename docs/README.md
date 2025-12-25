@@ -1764,7 +1764,13 @@ Notes:
 
 ### Backup & Restore (SUPER_ADMIN Only)
 
-Full per-tenant backup and restore functionality including database data (as JSON) and all S3/MinIO files.
+Full per-tenant backup and restore functionality including database data and all S3/MinIO files.
+
+**Storage Format:**
+- Database data is exported as JSON and **gzip compressed** (typically 75-85% size reduction)
+- Files are stored at `backups/{backupId}/data.json.gz`
+- Compression uses gzip level 6 (balanced speed/size)
+- BLAKE3 checksum verifies data integrity (hash of uncompressed data)
 
 #### List Backups
 ```
@@ -1799,10 +1805,7 @@ Notes:
 #### Get Backup Details
 ```
 GET /api/admin/backup/{id}
-GET /api/admin/backup/{id}?download=true
 ```
-
-With `download=true`, returns a signed URL for downloading the backup data file.
 
 #### Restore Backup
 ```
@@ -1909,18 +1912,25 @@ Response:
 - `maxBackups` - Maximum number of scheduled backups to retain (default: 10)
 
 **Environment Variables:**
-- `CRON_SECRET` - Required for cron job authentication
-- `BACKUP_SCHEDULE_ENABLED` - Set to `true` to enable scheduled backups via cron jobs
+- `SCHEDULER_ENABLED` - Master switch to enable the task scheduler (default: false)
+- `SCHEDULER_BACKUP_ENABLED` - Enable the backup task (default: false)
+- `SCHEDULER_BACKUP_CRON` - How often to check for due backups (default: "0,15,30,45 * * * *")
+- `SCHEDULER_CLEANUP_ENABLED` - Enable the cleanup task (default: false)
+- `SCHEDULER_CLEANUP_CRON` - When to run cleanup (default: "0 2 * * *")
 - `BACKUP_DEFAULT_RETENTION_DAYS` - Default retention days for new schedules (default: 30)
 - `BACKUP_DEFAULT_MAX_BACKUPS` - Default max backups for new schedules (default: 10)
-- `BACKUP_DEFAULT_CRON` - Default cron pattern for new schedules (default: "0 2 * * *")
+- `CRON_SECRET` - Optional: for external cron job authentication (if not using built-in scheduler)
 
-To enable scheduled backups:
-1. Set `CRON_SECRET` environment variable
-2. Set `BACKUP_SCHEDULE_ENABLED=true`
-3. Configure backup schedules for tenants via the Admin UI or Schedule API
-4. Configure external cron job to POST to `/api/admin/backup/scheduled` with `x-cron-secret` header
-   - Recommended: Run every minute or every 5 minutes
+To enable scheduled backups (built-in scheduler):
+1. Set `SCHEDULER_ENABLED=true`
+2. Set `SCHEDULER_BACKUP_ENABLED=true`
+3. Set `SCHEDULER_CLEANUP_ENABLED=true` (recommended)
+4. Configure backup schedules for tenants via the Admin UI or Schedule API
+
+Alternative: External cron job:
+1. Set `SCHEDULER_ENABLED=false`
+2. Set `CRON_SECRET` environment variable
+3. Configure external cron job to POST to `/api/admin/backup/scheduled` with `x-cron-secret` header
 
 #### Backup Schedule Management API
 
