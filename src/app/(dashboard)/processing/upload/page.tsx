@@ -88,8 +88,8 @@ export default function ProcessingUploadPage() {
       if (company) {
         const contextParts: string[] = [];
 
-        // Company name
-        contextParts.push(`Company: ${company.name}`);
+        // Company name (clearly labeled as uploading company)
+        contextParts.push(`Uploading Company: ${company.name}`);
 
         // Business nature from SSIC description
         if (company.primarySsicDescription) {
@@ -100,6 +100,13 @@ export default function ProcessingUploadPage() {
         if (company.homeCurrency) {
           contextParts.push(`Home Currency: ${company.homeCurrency}`);
         }
+
+        // Add explicit business relationship guidance for AI extraction
+        contextParts.push('');
+        contextParts.push('IMPORTANT BUSINESS CONTEXT:');
+        contextParts.push(`- "${company.name}" is uploading this document for processing`);
+        contextParts.push(`- For ACCOUNTS_PAYABLE (vendor invoices/bills): "${company.name}" is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company`);
+        contextParts.push(`- For ACCOUNTS_RECEIVABLE (sales invoices): "${company.name}" is the SELLER/ISSUER - extract the customer name as the other party`);
 
         setCompanyContext(contextParts.join('\n'));
       }
@@ -488,7 +495,7 @@ export default function ProcessingUploadPage() {
       <div
         {...getRootProps()}
         className={cn(
-          'card p-12 text-center border-2 border-dashed cursor-pointer transition-colors mb-4',
+          'card p-6 sm:p-12 text-center border-2 border-dashed cursor-pointer transition-colors mb-4',
           isDragActive
             ? 'border-oak-primary bg-oak-primary/5'
             : isUploading
@@ -497,24 +504,24 @@ export default function ProcessingUploadPage() {
         )}
       >
         <input {...getInputProps()} />
-        <FileUp className="w-12 h-12 text-text-muted mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-text-primary mb-2">
+        <FileUp className="w-8 h-8 sm:w-12 sm:h-12 text-text-muted mx-auto mb-3 sm:mb-4" />
+        <h3 className="text-base sm:text-lg font-medium text-text-primary mb-2">
           {isDragActive ? 'Drop the files here' : 'Drag & drop your documents'}
         </h3>
-        <p className="text-text-secondary mb-2">
+        <p className="text-sm sm:text-base text-text-secondary mb-2">
           or click to browse your files
         </p>
-        <p className="text-sm text-text-tertiary mb-3">
+        <p className="text-xs sm:text-sm text-text-tertiary mb-3">
           PDF, PNG, JPG, TIFF • Max {MAX_FILE_SIZE / 1024 / 1024}MB per file • Up to {MAX_FILES} files
         </p>
-        <div className="flex items-center justify-center gap-4 text-xs text-text-muted">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-4 text-xs text-text-muted">
           <span className="flex items-center gap-1.5">
             <ClipboardPaste className="w-3.5 h-3.5" />
             <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded">Ctrl+V</kbd> to paste
           </span>
-          <span className="text-border-secondary">•</span>
+          <span className="hidden sm:inline text-border-secondary">•</span>
           <span>Images auto-convert to PDF</span>
-          <span className="text-border-secondary">•</span>
+          <span className="hidden sm:inline text-border-secondary">•</span>
           <span>Large PDFs auto-compress</span>
         </div>
       </div>
@@ -537,9 +544,9 @@ export default function ProcessingUploadPage() {
       {/* File Queue */}
       {queuedFiles.length > 0 && (
         <div className="card mb-6">
-          <div className="p-4 border-b border-border-primary flex items-center justify-between">
+          <div className="p-3 sm:p-4 border-b border-border-primary flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="font-medium text-text-primary">
+              <h2 className="font-medium text-text-primary text-sm sm:text-base">
                 Queued Files ({queuedFiles.length})
               </h2>
               <p className="text-xs text-text-tertiary mt-0.5">
@@ -567,7 +574,7 @@ export default function ProcessingUploadPage() {
               )}
             </div>
           </div>
-          <div className="divide-y divide-border-primary max-h-80 overflow-y-auto">
+          <div className="divide-y divide-border-primary max-h-60 sm:max-h-80 overflow-y-auto">
             {queuedFiles.map((qf) => (
               <div key={qf.id} className="p-3 flex items-center gap-3">
                 <div className="flex-shrink-0">
@@ -671,13 +678,13 @@ export default function ProcessingUploadPage() {
       />
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <Link href="/processing" className="btn-secondary btn-sm">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <Link href="/processing" className="btn-secondary btn-sm text-center">
           Cancel
         </Link>
         <div className="flex items-center gap-3">
           {allComplete ? (
-            <Link href="/processing?pipelineStatus=QUEUED" className="btn-primary btn-sm flex items-center gap-2">
+            <Link href="/processing?pipelineStatus=QUEUED" className="btn-primary btn-sm flex items-center justify-center gap-2 w-full sm:w-auto">
               <CheckCircle className="w-4 h-4" />
               View Processing Queue
             </Link>
@@ -685,7 +692,7 @@ export default function ProcessingUploadPage() {
             <button
               onClick={uploadFiles}
               disabled={isUploading || queuedFiles.length === 0 || !selectedCompanyId}
-              className="btn-primary btn-sm flex items-center gap-2"
+              className="btn-primary btn-sm flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               {isUploading ? (
                 <>

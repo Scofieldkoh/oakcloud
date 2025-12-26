@@ -746,6 +746,13 @@ export type EnumDocumentCategoryFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumDocumentCategoryFilter<$PrismaModel> | $Enums.DocumentCategory
 }
 
+export type EnumDocumentSubCategoryNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentSubCategory | Prisma.EnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DocumentSubCategory[] | Prisma.ListEnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DocumentSubCategory[] | Prisma.ListEnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDocumentSubCategoryNullableFilter<$PrismaModel> | $Enums.DocumentSubCategory | null
+}
+
 export type EnumRoundingModeFilter<$PrismaModel = never> = {
   equals?: $Enums.RoundingMode | Prisma.EnumRoundingModeFieldRefInput<$PrismaModel>
   in?: $Enums.RoundingMode[] | Prisma.ListEnumRoundingModeFieldRefInput<$PrismaModel>
@@ -816,6 +823,16 @@ export type EnumDocumentCategoryWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumDocumentCategoryFilter<$PrismaModel>
   _max?: Prisma.NestedEnumDocumentCategoryFilter<$PrismaModel>
+}
+
+export type EnumDocumentSubCategoryNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentSubCategory | Prisma.EnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DocumentSubCategory[] | Prisma.ListEnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DocumentSubCategory[] | Prisma.ListEnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDocumentSubCategoryNullableWithAggregatesFilter<$PrismaModel> | $Enums.DocumentSubCategory | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDocumentSubCategoryNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDocumentSubCategoryNullableFilter<$PrismaModel>
 }
 
 export type EnumRoundingModeWithAggregatesFilter<$PrismaModel = never> = {
@@ -1969,6 +1986,13 @@ export type NestedEnumDocumentCategoryFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumDocumentCategoryFilter<$PrismaModel> | $Enums.DocumentCategory
 }
 
+export type NestedEnumDocumentSubCategoryNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentSubCategory | Prisma.EnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DocumentSubCategory[] | Prisma.ListEnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DocumentSubCategory[] | Prisma.ListEnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDocumentSubCategoryNullableFilter<$PrismaModel> | $Enums.DocumentSubCategory | null
+}
+
 export type NestedEnumRoundingModeFilter<$PrismaModel = never> = {
   equals?: $Enums.RoundingMode | Prisma.EnumRoundingModeFieldRefInput<$PrismaModel>
   in?: $Enums.RoundingMode[] | Prisma.ListEnumRoundingModeFieldRefInput<$PrismaModel>
@@ -2039,6 +2063,16 @@ export type NestedEnumDocumentCategoryWithAggregatesFilter<$PrismaModel = never>
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumDocumentCategoryFilter<$PrismaModel>
   _max?: Prisma.NestedEnumDocumentCategoryFilter<$PrismaModel>
+}
+
+export type NestedEnumDocumentSubCategoryNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentSubCategory | Prisma.EnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DocumentSubCategory[] | Prisma.ListEnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DocumentSubCategory[] | Prisma.ListEnumDocumentSubCategoryFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDocumentSubCategoryNullableWithAggregatesFilter<$PrismaModel> | $Enums.DocumentSubCategory | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDocumentSubCategoryNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDocumentSubCategoryNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumRoundingModeWithAggregatesFilter<$PrismaModel = never> = {

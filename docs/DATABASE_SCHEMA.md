@@ -1283,7 +1283,8 @@ Immutable snapshots of structured accounting data.
 | revisionNumber | Int | Revision number (1, 2, 3...) |
 | revisionType | RevisionType | EXTRACTION, USER_EDIT, REPROCESS |
 | status | RevisionStatus | DRAFT, APPROVED, SUPERSEDED |
-| documentCategory | DocumentCategory | INVOICE, RECEIPT, etc. |
+| documentCategory | DocumentCategory | ACCOUNTS_PAYABLE, TREASURY, etc. |
+| documentSubCategory | DocumentSubCategory? | VENDOR_INVOICE, BANK_STATEMENT, etc. |
 | vendorName | String? | Extracted vendor name |
 | documentNumber | String? | Invoice/receipt number |
 | documentDate | Date? | Document date |
@@ -1358,13 +1359,24 @@ enum RevisionStatus {
 }
 
 enum DocumentCategory {
-  INVOICE
-  RECEIPT
-  CREDIT_NOTE
-  DEBIT_NOTE
-  PURCHASE_ORDER
-  STATEMENT
-  OTHER
+  ACCOUNTS_PAYABLE      // Vendor/Purchase documents
+  ACCOUNTS_RECEIVABLE   // Customer/Sales documents
+  TREASURY              // Banking & Cash management
+  TAX_COMPLIANCE        // Tax & Regulatory
+  PAYROLL               // HR & Payroll
+  CORPORATE_SECRETARIAL // Corporate governance
+  CONTRACTS             // Legal agreements
+  FINANCIAL_REPORTS     // Reporting & Analysis
+  INSURANCE             // Risk management
+  CORRESPONDENCE        // General communications
+  OTHER                 // Uncategorized
+}
+
+enum DocumentSubCategory {
+  // See src/lib/document-categories.ts for full mapping
+  // Each category has 2-6 sub-categories, e.g.:
+  // ACCOUNTS_PAYABLE: VENDOR_INVOICE, VENDOR_CREDIT_NOTE, PURCHASE_ORDER, etc.
+  // TREASURY: BANK_STATEMENT, BANK_ADVICE, PAYMENT_VOUCHER, etc.
 }
 
 enum DuplicateStatus {

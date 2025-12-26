@@ -1398,15 +1398,99 @@ enum RevisionStatus {
   SUPERSEDED
 }
 
-// Document Category
+// Document Category (ordered by expected volume: high → low)
 enum DocumentCategory {
-  INVOICE
-  RECEIPT
-  CREDIT_NOTE
-  DEBIT_NOTE
-  PURCHASE_ORDER
-  STATEMENT
-  OTHER
+  ACCOUNTS_PAYABLE      // Vendor/Purchase documents
+  ACCOUNTS_RECEIVABLE   // Customer/Sales documents
+  TREASURY              // Banking & Cash management
+  TAX_COMPLIANCE        // Tax & Regulatory
+  PAYROLL               // HR & Payroll
+  CORPORATE_SECRETARIAL // Corporate governance
+  CONTRACTS             // Legal agreements
+  FINANCIAL_REPORTS     // Reporting & Analysis
+  INSURANCE             // Risk management
+  CORRESPONDENCE        // General communications
+  OTHER                 // Uncategorized
+}
+
+// Document Sub-Category
+// Maps to parent categories as follows:
+// ACCOUNTS_PAYABLE: VENDOR_INVOICE, VENDOR_CREDIT_NOTE, PURCHASE_ORDER, DELIVERY_NOTE, VENDOR_STATEMENT, VENDOR_QUOTATION
+// ACCOUNTS_RECEIVABLE: SALES_INVOICE, SALES_CREDIT_NOTE, SALES_ORDER, DELIVERY_ORDER, CUSTOMER_STATEMENT
+// TREASURY: BANK_STATEMENT, BANK_ADVICE, PAYMENT_VOUCHER, RECEIPT_VOUCHER, LOAN_DOCUMENT
+// TAX_COMPLIANCE: GST_RETURN, INCOME_TAX, WITHHOLDING_TAX, TAX_INVOICE
+// PAYROLL: PAYSLIP, CPF_SUBMISSION, IR8A, EXPENSE_CLAIM
+// CORPORATE_SECRETARIAL: BIZFILE, RESOLUTION, REGISTER, INCORPORATION, ANNUAL_RETURN, MEETING_MINUTES
+// CONTRACTS: VENDOR_CONTRACT, CUSTOMER_CONTRACT, EMPLOYMENT_CONTRACT, LEASE_AGREEMENT
+// FINANCIAL_REPORTS: FINANCIAL_STATEMENT, MANAGEMENT_REPORT, AUDIT_REPORT
+// INSURANCE: INSURANCE_POLICY, INSURANCE_CLAIM
+// CORRESPONDENCE: LETTER, EMAIL
+// OTHER: MISCELLANEOUS, SUPPORTING_DOCUMENT
+enum DocumentSubCategory {
+  // ACCOUNTS_PAYABLE
+  VENDOR_INVOICE        // Purchase invoices & debit notes from suppliers
+  VENDOR_CREDIT_NOTE    // Credit notes from suppliers
+  PURCHASE_ORDER        // Purchase orders issued
+  DELIVERY_NOTE         // Goods received notes, delivery receipts
+  VENDOR_STATEMENT      // Supplier statements of account
+  VENDOR_QUOTATION      // Quotations from suppliers
+
+  // ACCOUNTS_RECEIVABLE
+  SALES_INVOICE         // Invoices & debit notes to customers
+  SALES_CREDIT_NOTE     // Credit notes to customers
+  SALES_ORDER           // Sales orders & quotations
+  DELIVERY_ORDER        // Delivery orders issued
+  CUSTOMER_STATEMENT    // Customer statements of account
+
+  // TREASURY
+  BANK_STATEMENT        // Monthly/periodic bank statements
+  BANK_ADVICE           // Debit/credit advices, TT advices, FD advices
+  PAYMENT_VOUCHER       // Payment vouchers, cheques
+  RECEIPT_VOUCHER       // Receipt vouchers
+  LOAN_DOCUMENT         // Loan agreements, facility letters
+
+  // TAX_COMPLIANCE
+  GST_RETURN            // GST F5/F7 returns & assessments
+  INCOME_TAX            // Form C/C-S, tax assessments, computations
+  WITHHOLDING_TAX       // WHT certificates (Form IR37)
+  TAX_INVOICE           // Tax invoices & receipts
+
+  // PAYROLL
+  PAYSLIP               // Employee payslips
+  CPF_SUBMISSION        // CPF contribution records
+  IR8A                  // Annual IR8A/IR8S forms
+  EXPENSE_CLAIM         // Employee expense claims, timesheets
+
+  // CORPORATE_SECRETARIAL
+  BIZFILE               // ACRA BizFile extracts
+  RESOLUTION            // Board/shareholder resolutions
+  REGISTER              // Statutory registers (members, directors, charges)
+  INCORPORATION         // Constitution, incorporation cert, share certs
+  ANNUAL_RETURN         // Annual returns, statutory forms
+  MEETING_MINUTES       // AGM, EGM, board meeting minutes
+
+  // CONTRACTS
+  VENDOR_CONTRACT       // Supplier/service provider agreements, NDAs
+  CUSTOMER_CONTRACT     // Customer/client agreements
+  EMPLOYMENT_CONTRACT   // Employment agreements
+  LEASE_AGREEMENT       // Property/equipment leases, licenses
+
+  // FINANCIAL_REPORTS
+  FINANCIAL_STATEMENT   // Balance sheet, P&L, cash flow
+  MANAGEMENT_REPORT     // Trial balance, GL reports, management accounts
+  AUDIT_REPORT          // Auditor's report, supporting schedules
+
+  // INSURANCE
+  INSURANCE_POLICY      // Policies, certificates, renewals
+  INSURANCE_CLAIM       // Claim documents
+
+  // CORRESPONDENCE
+  LETTER                // Business letters, memos, notices
+  EMAIL                 // Email correspondence
+
+  // OTHER
+  MISCELLANEOUS         // Documents that don't fit other categories
+  SUPPORTING_DOCUMENT   // Supporting/backup documents
 }
 
 // GST Treatment
@@ -1765,6 +1849,7 @@ model DocumentRevision {
 
   // Classification
   documentCategory        DocumentCategory            @map("document_category")
+  documentSubCategory     DocumentSubCategory?        @map("document_sub_category")
 
   // Header fields
   vendorName              String?                     @map("vendor_name")

@@ -13,6 +13,7 @@ import type {
   RevisionType,
   RevisionStatus,
   DocumentCategory,
+  DocumentSubCategory,
   GstTreatment,
   ExchangeRateSource,
   ValidationStatus,
@@ -82,6 +83,7 @@ export interface CreateRevisionInput {
 
   // Classification
   documentCategory: DocumentCategory;
+  documentSubCategory?: DocumentSubCategory;
 
   // Header fields
   vendorName?: string;
@@ -135,6 +137,7 @@ export interface RevisionPatchInput {
     gstTreatment?: GstTreatment;
     supplierGstNo?: string;
     documentCategory?: DocumentCategory;
+    documentSubCategory?: DocumentSubCategory;
   };
   itemsToUpsert?: LineItemInput[];
   itemsToDelete?: number[];
@@ -200,6 +203,7 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
     extractionId,
     createdById,
     documentCategory,
+    documentSubCategory,
     vendorName,
     vendorId,
     documentNumber,
@@ -255,6 +259,7 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
         status: 'DRAFT',
         reason,
         documentCategory,
+        documentSubCategory,
         vendorName,
         vendorId,
         documentNumber,
@@ -335,6 +340,7 @@ export async function createRevisionFromEdit(
     createdById,
     reason,
     documentCategory: patch.set?.documentCategory ?? baseRevision.documentCategory,
+    documentSubCategory: patch.set?.documentSubCategory ?? baseRevision.documentSubCategory ?? undefined,
     vendorName: patch.set?.vendorName ?? baseRevision.vendorName ?? undefined,
     vendorId: patch.set?.vendorId ?? baseRevision.vendorId ?? undefined,
     documentNumber: patch.set?.documentNumber ?? baseRevision.documentNumber ?? undefined,
@@ -526,8 +532,11 @@ export async function validateRevision(revisionId: string): Promise<{
     });
   }
 
-  // Check credit note total is negative
-  if (revision.documentCategory === 'CREDIT_NOTE' && revision.totalAmount.greaterThan(0)) {
+  // Check credit note total is negative (credit notes are now sub-categories)
+  const isCreditNote =
+    revision.documentSubCategory === 'VENDOR_CREDIT_NOTE' ||
+    revision.documentSubCategory === 'SALES_CREDIT_NOTE';
+  if (isCreditNote && revision.totalAmount.greaterThan(0)) {
     issues.push({
       code: 'CREDIT_NOTE_TOTAL_NOT_NEGATIVE',
       ...VALIDATION_CODES.CREDIT_NOTE_TOTAL_NOT_NEGATIVE,

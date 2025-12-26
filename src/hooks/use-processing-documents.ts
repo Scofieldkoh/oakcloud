@@ -456,6 +456,7 @@ export interface RevisionWithLineItems {
   revisionNumber: number;
   status: RevisionStatus;
   documentCategory: DocumentCategory | null;
+  documentSubCategory: string | null;
   vendorName: string | null;
   documentNumber: string | null;
   documentDate: string | null;
@@ -503,6 +504,7 @@ async function updateRevision(
   data: {
     headerUpdates?: Partial<{
       documentCategory: string;
+      documentSubCategory: string | null;
       vendorName: string;
       documentNumber: string;
       documentDate: string;

@@ -52,8 +52,14 @@ import {
   DocumentLinks,
 } from '@/components/processing';
 import type { FieldValue } from '@/components/processing/document-page-viewer';
-import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory } from '@/generated/prisma';
+import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
+import {
+  CATEGORY_LABELS,
+  SUBCATEGORY_LABELS,
+  getSubCategoriesForCategory,
+  getSubCategoryOptions,
+} from '@/lib/document-categories';
 
 // Status display configs
 const pipelineStatusConfig: Record<
@@ -90,15 +96,8 @@ const revisionStatusConfig: Record<
   SUPERSEDED: { label: 'Superseded', color: 'text-text-muted', bgColor: 'bg-background-tertiary' },
 };
 
-const categoryLabels: Record<DocumentCategory, string> = {
-  INVOICE: 'Invoice',
-  RECEIPT: 'Receipt',
-  CREDIT_NOTE: 'Credit Note',
-  DEBIT_NOTE: 'Debit Note',
-  PURCHASE_ORDER: 'Purchase Order',
-  STATEMENT: 'Statement',
-  OTHER: 'Other',
-};
+// Use category labels from our utility
+const categoryLabels = CATEGORY_LABELS;
 
 const currencyOptions = ['SGD', 'USD', 'EUR', 'GBP', 'MYR', 'CNY', 'JPY', 'AUD', 'HKD', 'THB'];
 
@@ -299,6 +298,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<{
     documentCategory: string;
+    documentSubCategory: string;
     vendorName: string;
     documentNumber: string;
     documentDate: string;
@@ -310,6 +310,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     supplierGstNo: string;
   }>({
     documentCategory: '',
+    documentSubCategory: '',
     vendorName: '',
     documentNumber: '',
     documentDate: '',
@@ -347,6 +348,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     if (revisionWithLineItems && !isEditing) {
       setEditFormData({
         documentCategory: revisionWithLineItems.documentCategory || '',
+        documentSubCategory: revisionWithLineItems.documentSubCategory || '',
         vendorName: revisionWithLineItems.vendorName || '',
         documentNumber: revisionWithLineItems.documentNumber || '',
         documentDate: revisionWithLineItems.documentDate || '',
@@ -596,6 +598,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     if (revisionWithLineItems) {
       setEditFormData({
         documentCategory: revisionWithLineItems.documentCategory || '',
+        documentSubCategory: revisionWithLineItems.documentSubCategory || '',
         vendorName: revisionWithLineItems.vendorName || '',
         documentNumber: revisionWithLineItems.documentNumber || '',
         documentDate: revisionWithLineItems.documentDate || '',
@@ -660,6 +663,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         data: {
           headerUpdates: {
             documentCategory: editFormData.documentCategory || undefined,
+            documentSubCategory: editFormData.documentSubCategory || undefined,
             vendorName: editFormData.vendorName || undefined,
             documentNumber: editFormData.documentNumber || undefined,
             documentDate: editFormData.documentDate || undefined,
@@ -1218,6 +1222,7 @@ function ExtractedHeaderFields({
 }: {
   revision: {
     documentCategory: DocumentCategory | null;
+    documentSubCategory?: string | null;
     vendorName: string | null;
     documentNumber: string | null;
     documentDate: string | null;
@@ -1230,6 +1235,7 @@ function ExtractedHeaderFields({
   isEditing: boolean;
   editFormData: {
     documentCategory: string;
+    documentSubCategory: string;
     vendorName: string;
     documentNumber: string;
     documentDate: string;
@@ -1242,6 +1248,7 @@ function ExtractedHeaderFields({
   };
   setEditFormData: React.Dispatch<React.SetStateAction<{
     documentCategory: string;
+    documentSubCategory: string;
     vendorName: string;
     documentNumber: string;
     documentDate: string;
@@ -1273,13 +1280,33 @@ function ExtractedHeaderFields({
             <label className="block text-xs text-text-muted mb-1">Category</label>
             <select
               value={editFormData.documentCategory}
-              onChange={(e) => setEditFormData({ ...editFormData, documentCategory: e.target.value })}
+              onChange={(e) => setEditFormData({
+                ...editFormData,
+                documentCategory: e.target.value,
+                documentSubCategory: '', // Reset sub-category when category changes
+              })}
               className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
             >
               <option value="">Select...</option>
               {Object.entries(categoryLabels).map(([key, label]) => (
                 <option key={key} value={key}>{label}</option>
               ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Sub-Category</label>
+            <select
+              value={editFormData.documentSubCategory}
+              onChange={(e) => setEditFormData({ ...editFormData, documentSubCategory: e.target.value })}
+              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+              disabled={!editFormData.documentCategory}
+            >
+              <option value="">Select...</option>
+              {editFormData.documentCategory &&
+                getSubCategoryOptions(editFormData.documentCategory as DocumentCategory).map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))
+              }
             </select>
           </div>
           <div>
@@ -1381,6 +1408,14 @@ function ExtractedHeaderFields({
           label="Category"
           value={revision.documentCategory ? categoryLabels[revision.documentCategory] : '-'}
           fieldKey="documentCategory"
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+        />
+        <FieldDisplay
+          label="Sub-Category"
+          value={revision.documentSubCategory ? SUBCATEGORY_LABELS[revision.documentSubCategory as DocumentSubCategory] : '-'}
+          fieldKey="documentSubCategory"
           focusedField={focusedField}
           onFocus={handleFieldFocus}
           onBlur={handleFieldBlur}

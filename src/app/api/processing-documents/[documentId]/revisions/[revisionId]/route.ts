@@ -96,6 +96,7 @@ export async function GET(
         revisionNumber: revision.revisionNumber,
         status: revision.status,
         documentCategory: revision.documentCategory,
+        documentSubCategory: revision.documentSubCategory,
         vendorName: revision.vendorName,
         documentNumber: revision.documentNumber,
         documentDate: revision.documentDate?.toISOString().split('T')[0] || null,
@@ -245,6 +246,7 @@ export async function PATCH(
         gstTreatment?: string;
         supplierGstNo?: string;
         documentCategory?: string;
+        documentSubCategory?: string | null;
       };
       itemsToUpsert?: Array<{
         id?: string;
@@ -274,6 +276,7 @@ export async function PATCH(
       if (headerUpdates.gstTreatment !== undefined) headerData.gstTreatment = headerUpdates.gstTreatment || null;
       if (headerUpdates.supplierGstNo !== undefined) headerData.supplierGstNo = headerUpdates.supplierGstNo || null;
       if (headerUpdates.documentCategory !== undefined) headerData.documentCategory = headerUpdates.documentCategory;
+      if (headerUpdates.documentSubCategory !== undefined) headerData.documentSubCategory = headerUpdates.documentSubCategory;
     }
 
     // Start a transaction

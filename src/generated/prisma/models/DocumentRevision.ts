@@ -56,6 +56,7 @@ export type DocumentRevisionMinAggregateOutputType = {
   status: $Enums.RevisionStatus | null
   reason: string | null
   documentCategory: $Enums.DocumentCategory | null
+  documentSubCategory: $Enums.DocumentSubCategory | null
   vendorName: string | null
   vendorId: string | null
   documentNumber: string | null
@@ -99,6 +100,7 @@ export type DocumentRevisionMaxAggregateOutputType = {
   status: $Enums.RevisionStatus | null
   reason: string | null
   documentCategory: $Enums.DocumentCategory | null
+  documentSubCategory: $Enums.DocumentSubCategory | null
   vendorName: string | null
   vendorId: string | null
   documentNumber: string | null
@@ -142,6 +144,7 @@ export type DocumentRevisionCountAggregateOutputType = {
   status: number
   reason: number
   documentCategory: number
+  documentSubCategory: number
   vendorName: number
   vendorId: number
   documentNumber: number
@@ -209,6 +212,7 @@ export type DocumentRevisionMinAggregateInputType = {
   status?: true
   reason?: true
   documentCategory?: true
+  documentSubCategory?: true
   vendorName?: true
   vendorId?: true
   documentNumber?: true
@@ -252,6 +256,7 @@ export type DocumentRevisionMaxAggregateInputType = {
   status?: true
   reason?: true
   documentCategory?: true
+  documentSubCategory?: true
   vendorName?: true
   vendorId?: true
   documentNumber?: true
@@ -295,6 +300,7 @@ export type DocumentRevisionCountAggregateInputType = {
   status?: true
   reason?: true
   documentCategory?: true
+  documentSubCategory?: true
   vendorName?: true
   vendorId?: true
   documentNumber?: true
@@ -427,6 +433,7 @@ export type DocumentRevisionGroupByOutputType = {
   status: $Enums.RevisionStatus
   reason: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory: $Enums.DocumentSubCategory | null
   vendorName: string | null
   vendorId: string | null
   documentNumber: string | null
@@ -495,6 +502,7 @@ export type DocumentRevisionWhereInput = {
   status?: Prisma.EnumRevisionStatusFilter<"DocumentRevision"> | $Enums.RevisionStatus
   reason?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFilter<"DocumentRevision"> | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.EnumDocumentSubCategoryNullableFilter<"DocumentRevision"> | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   vendorId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentNumber?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
@@ -548,6 +556,7 @@ export type DocumentRevisionOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   reason?: Prisma.SortOrderInput | Prisma.SortOrder
   documentCategory?: Prisma.SortOrder
+  documentSubCategory?: Prisma.SortOrderInput | Prisma.SortOrder
   vendorName?: Prisma.SortOrderInput | Prisma.SortOrder
   vendorId?: Prisma.SortOrderInput | Prisma.SortOrder
   documentNumber?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -605,6 +614,7 @@ export type DocumentRevisionWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumRevisionStatusFilter<"DocumentRevision"> | $Enums.RevisionStatus
   reason?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFilter<"DocumentRevision"> | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.EnumDocumentSubCategoryNullableFilter<"DocumentRevision"> | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   vendorId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentNumber?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
@@ -658,6 +668,7 @@ export type DocumentRevisionOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   reason?: Prisma.SortOrderInput | Prisma.SortOrder
   documentCategory?: Prisma.SortOrder
+  documentSubCategory?: Prisma.SortOrderInput | Prisma.SortOrder
   vendorName?: Prisma.SortOrderInput | Prisma.SortOrder
   vendorId?: Prisma.SortOrderInput | Prisma.SortOrder
   documentNumber?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -711,6 +722,7 @@ export type DocumentRevisionScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumRevisionStatusWithAggregatesFilter<"DocumentRevision"> | $Enums.RevisionStatus
   reason?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
   documentCategory?: Prisma.EnumDocumentCategoryWithAggregatesFilter<"DocumentRevision"> | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.EnumDocumentSubCategoryNullableWithAggregatesFilter<"DocumentRevision"> | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
   vendorId?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
   documentNumber?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
@@ -753,6 +765,7 @@ export type DocumentRevisionCreateInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -806,6 +819,7 @@ export type DocumentRevisionUncheckedCreateInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -853,6 +867,7 @@ export type DocumentRevisionUpdateInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -906,6 +921,7 @@ export type DocumentRevisionUncheckedUpdateInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -956,6 +972,7 @@ export type DocumentRevisionCreateManyInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -998,6 +1015,7 @@ export type DocumentRevisionUpdateManyMutationInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1043,6 +1061,7 @@ export type DocumentRevisionUncheckedUpdateManyInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1108,6 +1127,7 @@ export type DocumentRevisionCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   documentCategory?: Prisma.SortOrder
+  documentSubCategory?: Prisma.SortOrder
   vendorName?: Prisma.SortOrder
   vendorId?: Prisma.SortOrder
   documentNumber?: Prisma.SortOrder
@@ -1163,6 +1183,7 @@ export type DocumentRevisionMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   documentCategory?: Prisma.SortOrder
+  documentSubCategory?: Prisma.SortOrder
   vendorName?: Prisma.SortOrder
   vendorId?: Prisma.SortOrder
   documentNumber?: Prisma.SortOrder
@@ -1206,6 +1227,7 @@ export type DocumentRevisionMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   documentCategory?: Prisma.SortOrder
+  documentSubCategory?: Prisma.SortOrder
   vendorName?: Prisma.SortOrder
   vendorId?: Prisma.SortOrder
   documentNumber?: Prisma.SortOrder
@@ -1386,6 +1408,10 @@ export type EnumDocumentCategoryFieldUpdateOperationsInput = {
   set?: $Enums.DocumentCategory
 }
 
+export type NullableEnumDocumentSubCategoryFieldUpdateOperationsInput = {
+  set?: $Enums.DocumentSubCategory | null
+}
+
 export type EnumRoundingModeFieldUpdateOperationsInput = {
   set?: $Enums.RoundingMode
 }
@@ -1499,6 +1525,7 @@ export type DocumentRevisionCreateWithoutCurrentForDocumentInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -1551,6 +1578,7 @@ export type DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -1602,6 +1630,7 @@ export type DocumentRevisionCreateWithoutProcessingDocumentInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -1653,6 +1682,7 @@ export type DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -1721,6 +1751,7 @@ export type DocumentRevisionUpdateWithoutCurrentForDocumentInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1773,6 +1804,7 @@ export type DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1841,6 +1873,7 @@ export type DocumentRevisionScalarWhereInput = {
   status?: Prisma.EnumRevisionStatusFilter<"DocumentRevision"> | $Enums.RevisionStatus
   reason?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFilter<"DocumentRevision"> | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.EnumDocumentSubCategoryNullableFilter<"DocumentRevision"> | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   vendorId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentNumber?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
@@ -1883,6 +1916,7 @@ export type DocumentRevisionCreateWithoutExtractionInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -1934,6 +1968,7 @@ export type DocumentRevisionUncheckedCreateWithoutExtractionInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2007,6 +2042,7 @@ export type DocumentRevisionCreateWithoutDerivedRevisionsInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2059,6 +2095,7 @@ export type DocumentRevisionUncheckedCreateWithoutDerivedRevisionsInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2110,6 +2147,7 @@ export type DocumentRevisionCreateWithoutBasedOnRevisionInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2161,6 +2199,7 @@ export type DocumentRevisionUncheckedCreateWithoutBasedOnRevisionInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2229,6 +2268,7 @@ export type DocumentRevisionUpdateWithoutDerivedRevisionsInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2281,6 +2321,7 @@ export type DocumentRevisionUncheckedUpdateWithoutDerivedRevisionsInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2343,6 +2384,7 @@ export type DocumentRevisionCreateWithoutItemsInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2395,6 +2437,7 @@ export type DocumentRevisionUncheckedCreateWithoutItemsInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2457,6 +2500,7 @@ export type DocumentRevisionUpdateWithoutItemsInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2509,6 +2553,7 @@ export type DocumentRevisionUncheckedUpdateWithoutItemsInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2555,6 +2600,7 @@ export type DocumentRevisionCreateWithoutMatchGroupItemsInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2607,6 +2653,7 @@ export type DocumentRevisionUncheckedCreateWithoutMatchGroupItemsInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2669,6 +2716,7 @@ export type DocumentRevisionUpdateWithoutMatchGroupItemsInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2721,6 +2769,7 @@ export type DocumentRevisionUncheckedUpdateWithoutMatchGroupItemsInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2767,6 +2816,7 @@ export type DocumentRevisionCreateWithoutPostingsInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2819,6 +2869,7 @@ export type DocumentRevisionUncheckedCreateWithoutPostingsInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -2881,6 +2932,7 @@ export type DocumentRevisionUpdateWithoutPostingsInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2933,6 +2985,7 @@ export type DocumentRevisionUncheckedUpdateWithoutPostingsInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2981,6 +3034,7 @@ export type DocumentRevisionCreateManyProcessingDocumentInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -3023,6 +3077,7 @@ export type DocumentRevisionUpdateWithoutProcessingDocumentInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3074,6 +3129,7 @@ export type DocumentRevisionUncheckedUpdateWithoutProcessingDocumentInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3123,6 +3179,7 @@ export type DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentInput = 
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3167,6 +3224,7 @@ export type DocumentRevisionCreateManyExtractionInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -3209,6 +3267,7 @@ export type DocumentRevisionUpdateWithoutExtractionInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3260,6 +3319,7 @@ export type DocumentRevisionUncheckedUpdateWithoutExtractionInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3309,6 +3369,7 @@ export type DocumentRevisionUncheckedUpdateManyWithoutExtractionInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3353,6 +3414,7 @@ export type DocumentRevisionCreateManyBasedOnRevisionInput = {
   status?: $Enums.RevisionStatus
   reason?: string | null
   documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
   documentNumber?: string | null
@@ -3395,6 +3457,7 @@ export type DocumentRevisionUpdateWithoutBasedOnRevisionInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3446,6 +3509,7 @@ export type DocumentRevisionUncheckedUpdateWithoutBasedOnRevisionInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3495,6 +3559,7 @@ export type DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionInput = {
   status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3598,6 +3663,7 @@ export type DocumentRevisionSelect<ExtArgs extends runtime.Types.Extensions.Inte
   status?: boolean
   reason?: boolean
   documentCategory?: boolean
+  documentSubCategory?: boolean
   vendorName?: boolean
   vendorId?: boolean
   documentNumber?: boolean
@@ -3652,6 +3718,7 @@ export type DocumentRevisionSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   status?: boolean
   reason?: boolean
   documentCategory?: boolean
+  documentSubCategory?: boolean
   vendorName?: boolean
   vendorId?: boolean
   documentNumber?: boolean
@@ -3700,6 +3767,7 @@ export type DocumentRevisionSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   status?: boolean
   reason?: boolean
   documentCategory?: boolean
+  documentSubCategory?: boolean
   vendorName?: boolean
   vendorId?: boolean
   documentNumber?: boolean
@@ -3748,6 +3816,7 @@ export type DocumentRevisionSelectScalar = {
   status?: boolean
   reason?: boolean
   documentCategory?: boolean
+  documentSubCategory?: boolean
   vendorName?: boolean
   vendorId?: boolean
   documentNumber?: boolean
@@ -3783,7 +3852,7 @@ export type DocumentRevisionSelectScalar = {
   supersededAt?: boolean
 }
 
-export type DocumentRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "processingDocumentId" | "basedOnRevisionId" | "extractionId" | "revisionNumber" | "revisionType" | "status" | "reason" | "documentCategory" | "vendorName" | "vendorId" | "documentNumber" | "documentDate" | "dueDate" | "currency" | "subtotal" | "taxAmount" | "totalAmount" | "roundingMode" | "gstTreatment" | "supplierGstNo" | "homeCurrency" | "homeExchangeRateSource" | "homeExchangeRate" | "exchangeRateDate" | "homeEquivalent" | "validationStatus" | "validationIssues" | "documentKey" | "documentKeyVersion" | "documentKeyConfidence" | "headerEvidenceJson" | "postingStatus" | "postedAt" | "postingLock" | "reconciliationStatus" | "searchText" | "createdById" | "createdAt" | "approvedById" | "approvedAt" | "supersededAt", ExtArgs["result"]["documentRevision"]>
+export type DocumentRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "processingDocumentId" | "basedOnRevisionId" | "extractionId" | "revisionNumber" | "revisionType" | "status" | "reason" | "documentCategory" | "documentSubCategory" | "vendorName" | "vendorId" | "documentNumber" | "documentDate" | "dueDate" | "currency" | "subtotal" | "taxAmount" | "totalAmount" | "roundingMode" | "gstTreatment" | "supplierGstNo" | "homeCurrency" | "homeExchangeRateSource" | "homeExchangeRate" | "exchangeRateDate" | "homeEquivalent" | "validationStatus" | "validationIssues" | "documentKey" | "documentKeyVersion" | "documentKeyConfidence" | "headerEvidenceJson" | "postingStatus" | "postedAt" | "postingLock" | "reconciliationStatus" | "searchText" | "createdById" | "createdAt" | "approvedById" | "approvedAt" | "supersededAt", ExtArgs["result"]["documentRevision"]>
 export type DocumentRevisionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
@@ -3828,6 +3897,7 @@ export type $DocumentRevisionPayload<ExtArgs extends runtime.Types.Extensions.In
     status: $Enums.RevisionStatus
     reason: string | null
     documentCategory: $Enums.DocumentCategory
+    documentSubCategory: $Enums.DocumentSubCategory | null
     vendorName: string | null
     vendorId: string | null
     documentNumber: string | null
@@ -4301,6 +4371,7 @@ export interface DocumentRevisionFieldRefs {
   readonly status: Prisma.FieldRef<"DocumentRevision", 'RevisionStatus'>
   readonly reason: Prisma.FieldRef<"DocumentRevision", 'String'>
   readonly documentCategory: Prisma.FieldRef<"DocumentRevision", 'DocumentCategory'>
+  readonly documentSubCategory: Prisma.FieldRef<"DocumentRevision", 'DocumentSubCategory'>
   readonly vendorName: Prisma.FieldRef<"DocumentRevision", 'String'>
   readonly vendorId: Prisma.FieldRef<"DocumentRevision", 'String'>
   readonly documentNumber: Prisma.FieldRef<"DocumentRevision", 'String'>

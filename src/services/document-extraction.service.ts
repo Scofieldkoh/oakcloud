@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import { Prisma } from '@/generated/prisma';
 import type { DocumentExtraction } from '@/generated/prisma';
-import type { ExtractionType, DocumentCategory } from '@/generated/prisma';
+import type { ExtractionType, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import { createRevision, type LineItemInput } from './document-revision.service';
 import { transitionPipelineStatus, recordProcessingAttempt } from './document-processing.service';
 import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection.service';
@@ -72,6 +72,7 @@ export interface SplitDetectionResult {
 
 export interface FieldExtractionResult {
   documentCategory: ExtractedField<DocumentCategory>;
+  documentSubCategory?: ExtractedField<DocumentSubCategory>;
   vendorName?: ExtractedField<string>;
   documentNumber?: ExtractedField<string>;
   documentDate?: ExtractedField<string>;
@@ -298,6 +299,7 @@ export async function extractFields(
       extractionId: extraction.id,
       createdById: userId,
       documentCategory: extractionResult.documentCategory.value,
+      documentSubCategory: extractionResult.documentSubCategory?.value,
       vendorName: extractionResult.vendorName?.value,
       documentNumber: extractionResult.documentNumber?.value,
       documentDate: extractionResult.documentDate?.value
@@ -462,9 +464,13 @@ async function performAIExtraction(
 ## Response Schema (JSON)
 {
   "documentCategory": {
-    "value": "INVOICE" | "RECEIPT" | "CREDIT_NOTE" | "DEBIT_NOTE" | "PURCHASE_ORDER" | "STATEMENT" | "OTHER",
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
     "confidence": number between 0 and 1
   },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
   "vendorName": {
     "value": "string",
     "confidence": number
@@ -556,6 +562,74 @@ Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
 - When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
 - The subtotal must be the algebraic SUM of all line items including negatives
 
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- WITHHOLDING_TAX: WHT certificates (Form IR37)
+- TAX_INVOICE: Tax invoices & receipts
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
 ## Important Rules
 - All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
 - Amounts in parentheses are NEGATIVE - convert (X) to -X
@@ -564,7 +638,8 @@ Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
 - The totalAmount field is required - estimate if necessary
 - taxCode is REQUIRED for every line item - never leave it null
 - Be precise with numbers - extract exactly as shown, don't round
-- When extracting from Singapore invoices, assume SGD unless otherwise specified`;
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible`;
 
   // Append additional context if provided
   if (config.additionalContext) {
@@ -674,6 +749,15 @@ function mapAIResponseToResult(
     confidence: docCategory?.confidence || 0.8,
   };
 
+  // Handle documentSubCategory (optional field)
+  const docSubCategory = extractFieldValue(data.documentSubCategory);
+  const documentSubCategory: ExtractedField<DocumentSubCategory> | undefined = docSubCategory
+    ? {
+        value: docSubCategory.value as DocumentSubCategory,
+        confidence: docSubCategory.confidence || 0.8,
+      }
+    : undefined;
+
   // Handle optional header fields with bbox
   const vendorNameField = extractFieldValue(data.vendorName);
   const documentNumberField = extractFieldValue(data.documentNumber);
@@ -758,6 +842,7 @@ function mapAIResponseToResult(
 
   return {
     documentCategory,
+    documentSubCategory,
     vendorName: vendorNameField ? {
       value: vendorNameField.value,
       confidence: vendorNameField.confidence,
@@ -952,6 +1037,7 @@ function buildConfidenceJson(result: FieldExtractionResult): Prisma.InputJsonVal
     overall: result.overallConfidence,
     fields: {
       documentCategory: result.documentCategory.confidence,
+      documentSubCategory: result.documentSubCategory?.confidence,
       vendorName: result.vendorName?.confidence,
       documentNumber: result.documentNumber?.confidence,
       documentDate: result.documentDate?.confidence,

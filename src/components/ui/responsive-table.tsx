@@ -245,15 +245,20 @@ export function CardDetailsGrid({ children, className }: CardDetailsGridProps) {
 interface CardDetailItemProps {
   label: string;
   value: ReactNode;
+  /** Optional icon to display before the value */
+  icon?: ReactNode;
   /** Span full width (2 columns) */
   fullWidth?: boolean;
 }
 
-export function CardDetailItem({ label, value, fullWidth = false }: CardDetailItemProps) {
+export function CardDetailItem({ label, value, icon, fullWidth = false }: CardDetailItemProps) {
   return (
     <div className={fullWidth ? 'col-span-2' : ''}>
       <span className="text-text-muted text-xs">{label}</span>
-      <div className="text-text-secondary truncate">{value}</div>
+      <div className="text-text-secondary truncate flex items-center gap-1">
+        {icon}
+        {value}
+      </div>
     </div>
   );
 }

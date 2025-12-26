@@ -849,6 +849,7 @@ export const DocumentRevisionScalarFieldEnum = {
   status: 'status',
   reason: 'reason',
   documentCategory: 'documentCategory',
+  documentSubCategory: 'documentSubCategory',
   vendorName: 'vendorName',
   vendorId: 'vendorId',
   documentNumber: 'documentNumber',

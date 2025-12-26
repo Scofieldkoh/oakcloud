@@ -231,19 +231,19 @@ export function FileMergeModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
       <div
         ref={containerRef}
-        className="bg-background-primary rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+        className="bg-background-primary rounded-lg shadow-xl w-full max-w-lg sm:max-w-3xl max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border-primary">
           <div>
-            <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-              <Merge className="w-5 h-5 text-oak-primary" />
+            <h2 className="text-base sm:text-lg font-semibold text-text-primary flex items-center gap-2">
+              <Merge className="w-4 h-4 sm:w-5 sm:h-5 text-oak-primary" />
               Merge Files into PDF
             </h2>
-            <p className="text-sm text-text-secondary mt-0.5">
+            <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
               Combine multiple files into a single PDF document
             </p>
           </div>
@@ -258,20 +258,20 @@ export function FileMergeModal({
         </div>
 
         {/* Drop zone for adding more files */}
-        <div className="px-6 pt-4">
+        <div className="px-4 sm:px-6 pt-3 sm:pt-4">
           <div
             {...getRootProps()}
             className={cn(
-              'border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors',
+              'border-2 border-dashed rounded-lg p-3 sm:p-4 text-center cursor-pointer transition-colors',
               isDragActive
                 ? 'border-oak-primary bg-oak-primary/5'
                 : 'border-border-secondary hover:border-oak-primary/50'
             )}
           >
             <input {...getInputProps()} />
-            <div className="flex items-center justify-center gap-3 text-text-secondary">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 text-text-secondary">
               <FileUp className="w-5 h-5" />
-              <span className="text-sm">
+              <span className="text-xs sm:text-sm text-center">
                 Drop files here, click to browse, or <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-xs">Ctrl+V</kbd> to paste
               </span>
             </div>
@@ -279,12 +279,12 @@ export function FileMergeModal({
         </div>
 
         {/* File list */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">
           {files.length === 0 ? (
-            <div className="text-center py-12 text-text-muted">
-              <ClipboardPaste className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No files added yet</p>
-              <p className="text-sm mt-1">Drag files here, browse, or paste from clipboard</p>
+            <div className="text-center py-8 sm:py-12 text-text-muted">
+              <ClipboardPaste className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 opacity-50" />
+              <p className="text-sm sm:text-base">No files added yet</p>
+              <p className="text-xs sm:text-sm mt-1">Drag files here, browse, or paste from clipboard</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -311,7 +311,7 @@ export function FileMergeModal({
                   onDrop={(e) => handleDrop(e, index)}
                   onDragEnd={handleDragEnd}
                   className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border transition-all',
+                    'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border transition-all',
                     draggedIndex === index
                       ? 'opacity-50 border-oak-primary bg-oak-primary/5'
                       : dragOverIndex === index
@@ -326,12 +326,12 @@ export function FileMergeModal({
                   </div>
 
                   {/* Order number */}
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-background-tertiary text-text-secondary text-xs font-medium flex items-center justify-center">
+                  <span className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-background-tertiary text-text-secondary text-xs font-medium flex items-center justify-center">
                     {index + 1}
                   </span>
 
                   {/* Thumbnail or icon */}
-                  <div className="flex-shrink-0 w-10 h-10 rounded bg-background-tertiary flex items-center justify-center overflow-hidden">
+                  <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded bg-background-tertiary flex items-center justify-center overflow-hidden">
                     {mergeFile.preview ? (
                       <img
                         src={mergeFile.preview}
@@ -339,15 +339,15 @@ export function FileMergeModal({
                         className="w-full h-full object-cover"
                       />
                     ) : mergeFile.file.type === 'application/pdf' ? (
-                      <FileText className="w-5 h-5 text-status-error" />
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-status-error" />
                     ) : (
-                      <Image className="w-5 h-5 text-oak-primary" />
+                      <Image className="w-4 h-4 sm:w-5 sm:h-5 text-oak-primary" />
                     )}
                   </div>
 
                   {/* File info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-text-primary truncate">{mergeFile.file.name}</p>
+                    <p className="text-xs sm:text-sm text-text-primary truncate">{mergeFile.file.name}</p>
                     <p className="text-xs text-text-muted">
                       {mergeFile.file.size >= 1024 * 1024
                         ? `${(mergeFile.file.size / 1024 / 1024).toFixed(1)} MB`
@@ -371,22 +371,22 @@ export function FileMergeModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border-primary bg-background-secondary">
-          <p className="text-xs text-text-muted">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-border-primary bg-background-secondary">
+          <p className="text-xs text-text-muted text-center sm:text-left">
             Files will be merged in the order shown above
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <button
               onClick={onClose}
               disabled={isMerging}
-              className="btn-secondary btn-sm"
+              className="btn-secondary btn-sm text-center"
             >
               Cancel
             </button>
             <button
               onClick={handleMerge}
               disabled={isMerging || files.length < 2}
-              className="btn-primary btn-sm flex items-center gap-2"
+              className="btn-primary btn-sm flex items-center justify-center gap-2"
             >
               {isMerging ? (
                 <>

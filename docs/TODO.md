@@ -6,16 +6,20 @@ Ensure all new pages or model windows are in compliance with the DESIGN_GUIDELIN
 You can read the MD files of the docs for information; they are documented and contain the latest information on the codebase.
 
 ----
+## RECENTLY COMPLETED:
+
+### Document Processing (Dec 2024)
+- [x] Implemented comprehensive document category/sub-category system
+  - 11 main categories: ACCOUNTS_PAYABLE, ACCOUNTS_RECEIVABLE, TREASURY, TAX_COMPLIANCE, PAYROLL, CORPORATE_SECRETARIAL, CONTRACTS, FINANCIAL_REPORTS, INSURANCE, CORRESPONDENCE, OTHER
+  - 43 sub-categories (e.g., VENDOR_INVOICE, BANK_STATEMENT, BIZFILE, etc.)
+  - Category mapping utility at `src/lib/document-categories.ts`
+  - Updated AI extraction prompts to detect both category and sub-category
+
+----
 ## EXISTING ISSUES:
 
-### Connectors
-- [ ] Ensure connector for OneDrive is working
-  - **Status**: OneDrive connector test function implemented in `connector.service.ts`
-  - Uses Microsoft OAuth client credentials flow
-  - Requires: `clientId`, `clientSecret`, `tenantId` (Azure AD)
-
 ### Document Processing
-- 
+- [ ] Add sub-category dropdown to document editing UI
 
 ### Documents
 - [ ] Mobile friendliness

@@ -5662,6 +5662,7 @@ export const DocumentRevisionScalarFieldEnum = {
   status: 'status',
   reason: 'reason',
   documentCategory: 'documentCategory',
+  documentSubCategory: 'documentSubCategory',
   vendorName: 'vendorName',
   vendorId: 'vendorId',
   documentNumber: 'documentNumber',
@@ -6587,6 +6588,20 @@ export type EnumDocumentCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<
  * Reference to a field of type 'DocumentCategory[]'
  */
 export type ListEnumDocumentCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentCategory[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DocumentSubCategory'
+ */
+export type EnumDocumentSubCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentSubCategory'>
+    
+
+
+/**
+ * Reference to a field of type 'DocumentSubCategory[]'
+ */
+export type ListEnumDocumentSubCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentSubCategory[]'>
     
 
 
