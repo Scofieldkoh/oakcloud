@@ -19,11 +19,13 @@ import {
   CheckSquare,
   MinusSquare,
 } from 'lucide-react';
+import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { useProcessingDocuments, type ProcessingDocumentSearchParams } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { BulkActionsToolbar } from '@/components/processing/bulk-actions-toolbar';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 
@@ -255,79 +257,81 @@ export default function ProcessingDocumentsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-oak-primary/10">
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-oak-light" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.total}</p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Total</p>
+        <MobileCollapsibleSection title="Statistics" count={6} className="mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-oak-primary/10">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-oak-light" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.total}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Total</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-status-info/10">
-                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.queued}</p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Queued</p>
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-info/10">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.queued}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Queued</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-status-info/10">
-                <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.processing}</p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Processing</p>
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-info/10">
+                  <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.processing}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Processing</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-status-warning/10">
-                <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.pendingReview}</p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Pending Review</p>
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-warning/10">
+                  <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.pendingReview}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Pending Review</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-status-success/10">
-                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-status-success" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.approved}</p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Approved</p>
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-success/10">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-status-success" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.approved}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Approved</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-status-error/10">
-                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-status-error" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.failed}</p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Failed</p>
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-error/10">
+                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-status-error" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.failed}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Failed</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </MobileCollapsibleSection>
       )}
 
       {/* Filters */}
@@ -426,9 +430,132 @@ export default function ProcessingDocumentsPage() {
         </div>
       )}
 
-      {/* Document Table */}
+      {/* Document Cards - Mobile View */}
       {!isLoading && !error && data && data.documents.length > 0 && (
-        <div className="card overflow-hidden">
+        <div className="md:hidden space-y-3 mb-6">
+          {data.documents.map((doc) => {
+            const isSelected = selectedIds.includes(doc.id);
+            return (
+              <MobileCard
+                key={doc.id}
+                isSelected={isSelected}
+                selectable
+                onToggle={() => toggleSelect(doc.id)}
+                title={doc.document.fileName}
+                subtitle={
+                  <span className="text-text-muted">
+                    {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
+                    {doc.document.company && ` • ${doc.document.company.name}`}
+                  </span>
+                }
+                badge={
+                  <StatusBadge
+                    status={doc.pipelineStatus}
+                    config={pipelineStatusConfig[doc.pipelineStatus]}
+                  />
+                }
+                details={
+                  <div className="space-y-3">
+                    {/* Status Badges Row */}
+                    <div className="flex flex-wrap gap-2">
+                      {doc.currentRevision && (
+                        <span className={cn(
+                          'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
+                          revisionStatusConfig[doc.currentRevision.status].color
+                        )}>
+                          {revisionStatusConfig[doc.currentRevision.status].label}
+                        </span>
+                      )}
+                      {doc.duplicateStatus !== 'NONE' && (
+                        <StatusBadge
+                          status={doc.duplicateStatus}
+                          config={duplicateStatusConfig[doc.duplicateStatus]}
+                        />
+                      )}
+                    </div>
+
+                    <CardDetailsGrid>
+                      <CardDetailItem
+                        label="Vendor"
+                        value={doc.currentRevision?.vendorName || '-'}
+                      />
+                      <CardDetailItem
+                        label="Amount"
+                        value={doc.currentRevision
+                          ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
+                          : '-'}
+                      />
+                      <CardDetailItem
+                        label="Uploaded"
+                        value={formatDate(doc.createdAt)}
+                      />
+                      {doc.currentRevision?.documentNumber && (
+                        <CardDetailItem
+                          label="Doc #"
+                          value={doc.currentRevision.documentNumber}
+                        />
+                      )}
+                    </CardDetailsGrid>
+                  </div>
+                }
+                actions={
+                  <div className="flex items-center gap-2">
+                    {doc.duplicateStatus === 'SUSPECTED' && (
+                      <Link
+                        href={`/processing/${doc.id}?compare=true`}
+                        className="btn-ghost btn-xs inline-flex items-center gap-1 text-status-warning min-h-[44px]"
+                        title="Compare with suspected duplicate"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Compare
+                      </Link>
+                    )}
+                    <Link
+                      href={`/processing/${doc.id}`}
+                      className="btn-secondary btn-xs inline-flex items-center gap-1 min-h-[44px]"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View
+                    </Link>
+                  </div>
+                }
+              />
+            );
+          })}
+
+          {/* Mobile Pagination */}
+          {data.totalPages > 1 && (
+            <div className="flex items-center justify-between px-2 py-3">
+              <p className="text-xs text-text-secondary">
+                {(data.page - 1) * data.limit + 1}-{Math.min(data.page * data.limit, data.total)} of {data.total}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(data.page - 1)}
+                  disabled={data.page === 1}
+                  className="btn-ghost btn-xs min-h-[44px]"
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-text-secondary">
+                  {data.page}/{data.totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(data.page + 1)}
+                  disabled={data.page === data.totalPages}
+                  className="btn-ghost btn-xs min-h-[44px]"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Document Table - Desktop View */}
+      {!isLoading && !error && data && data.documents.length > 0 && (
+        <div className="hidden md:block card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-background-tertiary border-b border-border-primary">

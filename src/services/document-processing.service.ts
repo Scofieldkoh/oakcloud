@@ -871,7 +871,7 @@ export async function listProcessingDocuments(options: {
  * since ProcessingDocument inherits these from its associated Document
  */
 export async function listProcessingDocumentsPaged(options: {
-  tenantId: string;
+  tenantId: string | null;
   companyIds?: string[];
   pipelineStatus?: PipelineStatus;
   duplicateStatus?: DuplicateStatus;
@@ -881,6 +881,11 @@ export async function listProcessingDocumentsPaged(options: {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  /**
+   * Skip tenant filter - ONLY for SUPER_ADMIN operations that require
+   * cross-tenant access. Regular operations MUST always provide tenantId.
+   */
+  skipTenantFilter?: boolean;
 }): Promise<{
   documents: ProcessingDocumentWithDocument[];
   total: number;
@@ -899,12 +904,22 @@ export async function listProcessingDocumentsPaged(options: {
     limit = 20,
     sortBy = 'createdAt',
     sortOrder = 'desc',
+    skipTenantFilter = false,
   } = options;
 
-  // Build document filter - tenant is required, companyIds is optional
-  const documentFilter: Prisma.DocumentWhereInput = {
-    tenantId,
-  };
+  // SECURITY: Tenant ID is required to prevent cross-tenant data access unless explicitly skipped for SUPER_ADMIN
+  if (!tenantId && !skipTenantFilter) {
+    throw new Error('Tenant ID is required for processing documents list');
+  }
+
+  // Build document filter - companyIds is optional
+  const documentFilter: Prisma.DocumentWhereInput = {};
+
+  // Tenant scope (skip for SUPER_ADMIN cross-tenant operations)
+  if (tenantId && !skipTenantFilter) {
+    documentFilter.tenantId = tenantId;
+  }
+
   if (companyIds && companyIds.length > 0) {
     documentFilter.companyId = { in: companyIds };
   }

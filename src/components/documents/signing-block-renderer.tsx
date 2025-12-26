@@ -294,6 +294,18 @@ export function SigningBlock({
   className,
   variant = 'default',
 }: SigningBlockProps) {
+  // useMemo must be called unconditionally (before any early returns)
+  const containerClass = useMemo(() => {
+    switch (layout) {
+      case 'horizontal':
+        return 'flex flex-wrap gap-8';
+      case 'grid':
+        return `grid gap-6 grid-cols-${columns}`;
+      default:
+        return 'space-y-8';
+    }
+  }, [layout, columns]);
+
   if (signatories.length === 0) {
     return (
       <div
@@ -307,17 +319,6 @@ export function SigningBlock({
       </div>
     );
   }
-
-  const containerClass = useMemo(() => {
-    switch (layout) {
-      case 'horizontal':
-        return 'flex flex-wrap gap-8';
-      case 'grid':
-        return `grid gap-6 grid-cols-${columns}`;
-      default:
-        return 'space-y-8';
-    }
-  }, [layout, columns]);
 
   return (
     <div className={cn('signing-block-container', className)}>

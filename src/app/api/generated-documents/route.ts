@@ -37,16 +37,20 @@ export async function GET(request: NextRequest) {
       sortOrder: searchParams.get('sortOrder') || undefined,
     });
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param
+    // For SUPER_ADMIN, allow specifying tenantId via query param or viewing all documents
     const tenantIdParam = searchParams.get('tenantId');
-    const effectiveTenantId =
-      session.isSuperAdmin && tenantIdParam ? tenantIdParam : session.tenantId;
+    let effectiveTenantId: string | null = session.tenantId;
 
-    if (!effectiveTenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    if (session.isSuperAdmin && tenantIdParam) {
+      effectiveTenantId = tenantIdParam;
+    } else if (session.isSuperAdmin && !session.tenantId) {
+      // SUPER_ADMIN without tenant context - will show all documents across tenants
+      effectiveTenantId = null;
     }
 
-    const result = await searchGeneratedDocuments(params, effectiveTenantId);
+    const result = await searchGeneratedDocuments(params, effectiveTenantId, {
+      skipTenantFilter: session.isSuperAdmin && !effectiveTenantId,
+    });
 
     return NextResponse.json(result);
   } catch (error) {

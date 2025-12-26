@@ -58,6 +58,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 
 // ============================================================================
 // Types
@@ -393,6 +394,104 @@ export default function ConnectorsPage() {
     setShowCredentials((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Render mobile connector card
+  const renderConnectorCard = (connector: Connector) => {
+    const isSystem = connector.tenantId === null;
+    const canEdit = isSuperAdmin || (!isSystem && connector.tenantId === session?.tenantId);
+    const canDelete = canEdit;
+    const isTesting = testMutation.isPending && testMutation.variables === connector.id;
+
+    return (
+      <MobileCard
+        key={connector.id}
+        title={
+          <div className="flex items-center gap-2">
+            <ProviderIcon provider={connector.provider} />
+            <span className="font-medium text-text-primary">{connector.name}</span>
+          </div>
+        }
+        subtitle={getProviderDisplayName(connector.provider)}
+        badge={<StatusBadge isEnabled={connector.isEnabled} />}
+        actions={
+          <div className="flex items-center gap-1">
+            <Button
+              variant="secondary"
+              size="xs"
+              onClick={() => handleTest(connector)}
+              isLoading={isTesting}
+              disabled={isTesting}
+            >
+              <RefreshCw className="w-3 h-3" />
+            </Button>
+            {(canEdit || canDelete || (isSuperAdmin && isSystem)) && (
+              <Dropdown>
+                <DropdownTrigger asChild>
+                  <Button variant="ghost" size="xs" iconOnly leftIcon={<MoreVertical className="w-4 h-4" />} aria-label="More options" />
+                </DropdownTrigger>
+                <DropdownMenu align="right">
+                  {canEdit && (
+                    <DropdownItem onClick={() => openEditModal(connector)}>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Edit
+                    </DropdownItem>
+                  )}
+                  {canEdit && (
+                    <DropdownItem onClick={() => handleToggle(connector)}>
+                      {connector.isEnabled ? (
+                        <>
+                          <X className="w-4 h-4 mr-2" />
+                          Disable
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4 mr-2" />
+                          Enable
+                        </>
+                      )}
+                    </DropdownItem>
+                  )}
+                  <DropdownItem onClick={() => {
+                    setUsageConnector(connector);
+                    setUsagePage(1);
+                  }}>
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    View Usage
+                  </DropdownItem>
+                  {isSuperAdmin && isSystem && (
+                    <DropdownItem onClick={() => setAccessConnector(connector)}>
+                      <Shield className="w-4 h-4 mr-2" />
+                      Tenant Access
+                    </DropdownItem>
+                  )}
+                  {canDelete && (
+                    <DropdownItem
+                      destructive
+                      onClick={() => setDeletingConnector(connector)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownItem>
+                  )}
+                </DropdownMenu>
+              </Dropdown>
+            )}
+          </div>
+        }
+        details={
+          <CardDetailsGrid>
+            <CardDetailItem label="Scope" value={<ScopeBadge isSystem={isSystem} />} />
+            <CardDetailItem label="Test" value={<TestResultBadge result={connector.lastTestResult} />} />
+            <CardDetailItem label="Calls" value={connector.callCount.toLocaleString()} />
+            <CardDetailItem
+              label="Last Used"
+              value={connector.lastUsedAt ? new Date(connector.lastUsedAt).toLocaleDateString() : 'Never'}
+            />
+          </CardDetailsGrid>
+        }
+      />
+    );
+  };
+
   // Render connector row
   const renderConnectorRow = (connector: Connector) => {
     const isSystem = connector.tenantId === null;
@@ -578,7 +677,12 @@ export default function ConnectorsPage() {
                   AI Providers
                 </h2>
               </div>
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+              <div className="md:hidden p-4 space-y-3">
+                {connectorsByType['AI_PROVIDER']?.map(renderConnectorCard)}
+              </div>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="border-b border-border-primary bg-bg-tertiary">
@@ -622,7 +726,12 @@ export default function ConnectorsPage() {
                   Storage
                 </h2>
               </div>
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+              <div className="md:hidden p-4 space-y-3">
+                {connectorsByType['STORAGE']?.map(renderConnectorCard)}
+              </div>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="border-b border-border-primary bg-bg-tertiary">
@@ -1099,7 +1208,7 @@ export default function ConnectorsPage() {
           <ModalBody>
             {/* Stats Summary */}
             {usageData?.stats && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                 <div className="bg-bg-tertiary rounded-lg p-3">
                   <div className="text-xs text-text-muted uppercase tracking-wide">Total Calls</div>
                   <div className="text-xl font-semibold text-text-primary mt-1">

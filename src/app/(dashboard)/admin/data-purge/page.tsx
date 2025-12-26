@@ -33,6 +33,8 @@ import {
   FileText,
   FileStack,
 } from 'lucide-react';
+import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -179,36 +181,38 @@ export default function DataPurgePage() {
 
       {/* Stats Cards */}
       {data && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {TABS.map((tab) => {
-            const count = data.stats[tab.id as keyof typeof data.stats];
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={cn(
-                  'card p-4 text-left transition-all hover:shadow-md',
-                  activeTab === tab.id && 'ring-2 ring-oak-primary'
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      'p-2 rounded-lg',
-                      count > 0 ? 'bg-status-error/10 text-status-error' : 'bg-background-tertiary text-text-muted'
-                    )}
-                  >
-                    {tab.icon}
+        <MobileCollapsibleSection title="Statistics" count={TABS.length} className="mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {TABS.map((tab) => {
+              const count = data.stats[tab.id as keyof typeof data.stats];
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    'card p-4 text-left transition-all hover:shadow-md',
+                    activeTab === tab.id && 'ring-2 ring-oak-primary'
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'p-2 rounded-lg',
+                        count > 0 ? 'bg-status-error/10 text-status-error' : 'bg-background-tertiary text-text-muted'
+                      )}
+                    >
+                      {tab.icon}
+                    </div>
+                    <div>
+                      <p className="text-2xl font-semibold text-text-primary">{count}</p>
+                      <p className="text-sm text-text-secondary">{tab.label}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-text-primary">{count}</p>
-                    <p className="text-sm text-text-secondary">{tab.label}</p>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                </button>
+              );
+            })}
+          </div>
+        </MobileCollapsibleSection>
       )}
 
       {/* Error State */}
@@ -223,9 +227,147 @@ export default function DataPurgePage() {
         <div className="text-center py-12 text-text-secondary">Loading soft-deleted records...</div>
       )}
 
-      {/* Records Table */}
+      {/* Records - Mobile Card View */}
       {data && (
-        <div className="card overflow-hidden">
+        <div className="md:hidden space-y-3">
+          {/* Select All */}
+          {currentRecords.length > 0 && (
+            <div className="flex items-center gap-2 px-1">
+              <Checkbox
+                size="sm"
+                checked={isAllSelected}
+                indeterminate={isIndeterminate}
+                onChange={toggleSelectAll}
+                aria-label="Select all records"
+              />
+              <span className="text-sm text-text-secondary">
+                {isAllSelected ? 'Deselect all' : 'Select all'}
+              </span>
+            </div>
+          )}
+
+          {currentRecords.length === 0 ? (
+            <div className="card p-8 text-center text-text-secondary">
+              No soft-deleted {activeTab === 'processingDocuments' ? 'processing documents' : activeTab === 'generatedDocuments' ? 'documents' : activeTab} found
+            </div>
+          ) : (
+            currentRecords.map((record) => {
+              const isSelected = selectedIds.has(record.id);
+              return (
+                <MobileCard
+                  key={record.id}
+                  isSelected={isSelected}
+                  selectable
+                  onToggle={() => toggleSelection(record.id)}
+                  title={
+                    activeTab === 'tenants' ? (record as PurgeableTenant).name :
+                    activeTab === 'users' ? `${(record as PurgeableUser).firstName} ${(record as PurgeableUser).lastName}` :
+                    activeTab === 'companies' ? (record as PurgeableCompany).name :
+                    activeTab === 'contacts' ? (record as PurgeableContact).fullName :
+                    activeTab === 'generatedDocuments' ? (record as PurgeableGeneratedDocument).title :
+                    (record as PurgeableProcessingDocument).document?.fileName || 'Unnamed'
+                  }
+                  subtitle={
+                    <span className="text-xs text-text-tertiary">
+                      Deleted {format(new Date(record.deletedAt), 'MMM d, yyyy HH:mm')}
+                    </span>
+                  }
+                  badge={
+                    activeTab === 'users' ? (
+                      <span className="badge bg-background-tertiary text-text-secondary text-xs">
+                        {(record as PurgeableUser).role}
+                      </span>
+                    ) : activeTab === 'processingDocuments' ? (
+                      <span className="badge bg-background-tertiary text-text-secondary text-xs">
+                        {(record as PurgeableProcessingDocument).pipelineStatus}
+                      </span>
+                    ) : null
+                  }
+                  details={
+                    <CardDetailsGrid>
+                      {activeTab === 'tenants' && (
+                        <>
+                          <CardDetailItem label="Slug" value={(record as PurgeableTenant).slug} />
+                          <CardDetailItem
+                            label="Related"
+                            value={`${(record as PurgeableTenant)._count.users} users, ${(record as PurgeableTenant)._count.companies} companies`}
+                          />
+                          {(record as PurgeableTenant).deletedReason && (
+                            <CardDetailItem label="Reason" value={(record as PurgeableTenant).deletedReason} fullWidth />
+                          )}
+                        </>
+                      )}
+                      {activeTab === 'users' && (
+                        <>
+                          <CardDetailItem label="Email" value={(record as PurgeableUser).email} fullWidth />
+                          <CardDetailItem label="Tenant" value={(record as PurgeableUser).tenant?.name || '—'} />
+                        </>
+                      )}
+                      {activeTab === 'companies' && (
+                        <>
+                          <CardDetailItem label="UEN" value={(record as PurgeableCompany).uen} />
+                          <CardDetailItem label="Tenant" value={(record as PurgeableCompany).tenant?.name || '—'} />
+                          <CardDetailItem
+                            label="Related"
+                            value={`${(record as PurgeableCompany)._count.documents} docs, ${(record as PurgeableCompany)._count.officers} officers`}
+                            fullWidth
+                          />
+                        </>
+                      )}
+                      {activeTab === 'contacts' && (
+                        <>
+                          <CardDetailItem label="Email" value={(record as PurgeableContact).email || '—'} fullWidth />
+                          <CardDetailItem label="Tenant" value={(record as PurgeableContact).tenant?.name || '—'} />
+                        </>
+                      )}
+                      {activeTab === 'generatedDocuments' && (
+                        <>
+                          <CardDetailItem label="Template" value={(record as PurgeableGeneratedDocument).template?.name || '—'} />
+                          <CardDetailItem label="Company" value={(record as PurgeableGeneratedDocument).company?.name || '—'} />
+                          <CardDetailItem
+                            label="Created By"
+                            value={`${(record as PurgeableGeneratedDocument).createdBy.firstName} ${(record as PurgeableGeneratedDocument).createdBy.lastName}`}
+                          />
+                          <CardDetailItem label="Tenant" value={(record as PurgeableGeneratedDocument).tenant?.name || '—'} />
+                        </>
+                      )}
+                      {activeTab === 'processingDocuments' && (
+                        <>
+                          <CardDetailItem label="Vendor" value={(record as PurgeableProcessingDocument).currentRevision?.vendorName || '—'} />
+                          <CardDetailItem label="Doc #" value={(record as PurgeableProcessingDocument).currentRevision?.documentNumber || '—'} />
+                          <CardDetailItem label="Category" value={(record as PurgeableProcessingDocument).currentRevision?.documentCategory || '—'} />
+                          <CardDetailItem label="Company" value={(record as PurgeableProcessingDocument).document?.company?.name || '—'} />
+                        </>
+                      )}
+                    </CardDetailsGrid>
+                  }
+                />
+              );
+            })
+          )}
+
+          {/* Mobile Pagination */}
+          {totalRecords > 0 && (
+            <div className="p-4">
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={totalRecords}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Records - Desktop Table */}
+      {data && (
+        <div className="hidden md:block card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="table">
               <thead>

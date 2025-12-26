@@ -48,12 +48,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     return (
       <label
         className={cn(
-          'inline-flex items-start gap-2',
+          'inline-flex items-start gap-2 min-h-[44px] sm:min-h-0 py-2 sm:py-0',
           disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
           className
         )}
       >
-        <div className="relative flex items-center">
+        <div className="relative flex items-center min-w-[44px] sm:min-w-0 min-h-[44px] sm:min-h-0 -m-2 sm:m-0 p-2 sm:p-0">
           <input
             type="checkbox"
             ref={ref}

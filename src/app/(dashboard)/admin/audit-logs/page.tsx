@@ -18,6 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -77,6 +79,102 @@ function ExpandedChanges({ changes }: { changes: Record<string, { old: unknown; 
   );
 }
 
+function AuditLogCard({ log }: { log: AuditLog }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasDetails = (log.changes && Object.keys(log.changes).length > 0) || log.reason || log.metadata;
+
+  return (
+    <div className="card p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={cn('badge text-xs', getActionColor(log.action))}>
+              {log.action.replace(/_/g, ' ')}
+            </span>
+            <span className="text-xs text-text-muted">
+              {format(new Date(log.createdAt), 'MMM d, HH:mm')}
+            </span>
+          </div>
+          <div className="mt-2">
+            {log.summary ? (
+              <span className="text-sm text-text-primary">{log.summary}</span>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-text-secondary">{log.entityType}</span>
+                {log.entityName && (
+                  <span className="text-sm text-text-primary truncate">&quot;{log.entityName}&quot;</span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        {hasDetails && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="p-2 hover:bg-background-tertiary rounded flex-shrink-0"
+          >
+            {expanded ? (
+              <ChevronUp className="w-4 h-4 text-text-muted" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-text-muted" />
+            )}
+          </button>
+        )}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-border-primary">
+        <CardDetailsGrid>
+          <CardDetailItem
+            label="User"
+            value={
+              log.user ? (
+                <div className="flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-text-muted" />
+                  <span>{log.user.firstName} {log.user.lastName}</span>
+                </div>
+              ) : 'System'
+            }
+          />
+          <CardDetailItem label="Source" value={log.changeSource} />
+        </CardDetailsGrid>
+      </div>
+
+      {expanded && hasDetails && (
+        <div className="mt-3 pt-3 border-t border-border-primary space-y-3">
+          {log.reason && (
+            <div>
+              <span className="text-xs font-medium text-text-muted uppercase">Reason:</span>
+              <p className="text-sm text-text-primary mt-1">{log.reason}</p>
+            </div>
+          )}
+          {log.changes && Object.keys(log.changes).length > 0 && (
+            <div>
+              <span className="text-xs font-medium text-text-muted uppercase">Changes:</span>
+              <div className="mt-2 p-3 bg-background-secondary rounded-md border border-border-primary">
+                <ExpandedChanges changes={log.changes} />
+              </div>
+            </div>
+          )}
+          {log.metadata && Object.keys(log.metadata).length > 0 && (
+            <div>
+              <span className="text-xs font-medium text-text-muted uppercase">Details:</span>
+              <div className="mt-2 p-3 bg-background-secondary rounded-md border border-border-primary text-sm">
+                <pre className="whitespace-pre-wrap text-text-secondary text-xs overflow-x-auto">
+                  {JSON.stringify(log.metadata, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2 text-xs text-text-muted">
+            {log.entityId && <span className="truncate">ID: {log.entityId.slice(0, 8)}...</span>}
+            {log.ipAddress && <span>IP: {log.ipAddress}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AuditLogRow({ log }: { log: AuditLog }) {
   const [expanded, setExpanded] = useState(false);
   const hasDetails = (log.changes && Object.keys(log.changes).length > 0) || log.reason || log.metadata;
@@ -110,7 +208,7 @@ function AuditLogRow({ log }: { log: AuditLog }) {
             <div className="flex items-center gap-2">
               <span className="text-sm text-text-secondary">{log.entityType}</span>
               {log.entityName && (
-                <span className="text-sm text-text-primary">"{log.entityName}"</span>
+                <span className="text-sm text-text-primary">&quot;{log.entityName}&quot;</span>
               )}
             </div>
           )}
@@ -243,24 +341,26 @@ export default function AuditLogsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="card p-4">
-            <div className="text-2xl font-semibold text-text-primary">
-              {stats.totalLogs?.toLocaleString() || 0}
-            </div>
-            <div className="text-xs text-text-secondary mt-1">Total Events</div>
-          </div>
-          {stats.actionCounts?.slice(0, 3).map((stat: { action: string; count: number }) => (
-            <div key={stat.action} className="card p-4">
+        <MobileCollapsibleSection title="Statistics" count={4} className="mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="card p-4">
               <div className="text-2xl font-semibold text-text-primary">
-                {stat.count.toLocaleString()}
+                {stats.totalLogs?.toLocaleString() || 0}
               </div>
-              <div className="text-xs text-text-secondary mt-1">
-                {stat.action.replace(/_/g, ' ')}
-              </div>
+              <div className="text-xs text-text-secondary mt-1">Total Events</div>
             </div>
-          ))}
-        </div>
+            {stats.actionCounts?.slice(0, 3).map((stat: { action: string; count: number }) => (
+              <div key={stat.action} className="card p-4">
+                <div className="text-2xl font-semibold text-text-primary">
+                  {stat.count.toLocaleString()}
+                </div>
+                <div className="text-xs text-text-secondary mt-1">
+                  {stat.action.replace(/_/g, ' ')}
+                </div>
+              </div>
+            ))}
+          </div>
+        </MobileCollapsibleSection>
       )}
 
       {/* Filters Toggle */}
@@ -356,9 +456,42 @@ export default function AuditLogsPage() {
         <div className="text-center py-12 text-text-secondary">Loading audit logs...</div>
       )}
 
-      {/* Audit Logs Table */}
+      {/* Audit Logs - Mobile Card View */}
       {data && (
-        <>
+        <div className="md:hidden space-y-3">
+          {data.logs.length === 0 ? (
+            <div className="card p-8 text-center text-text-secondary">
+              <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              No audit logs found
+            </div>
+          ) : (
+            data.logs.map((log: AuditLog) => (
+              <AuditLogCard key={log.id} log={log} />
+            ))
+          )}
+
+          {/* Mobile Pagination */}
+          {data.totalPages > 0 && (
+            <div className="mt-4">
+              <Pagination
+                page={data.page}
+                totalPages={data.totalPages}
+                total={data.totalCount}
+                limit={data.limit}
+                onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Audit Logs - Desktop Table */}
+      {data && (
+        <div className="hidden md:block">
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="table">
@@ -389,7 +522,7 @@ export default function AuditLogsPage() {
             </div>
           </div>
 
-          {/* Pagination */}
+          {/* Desktop Pagination */}
           {data.totalPages > 0 && (
             <div className="mt-4">
               <Pagination
@@ -405,7 +538,7 @@ export default function AuditLogsPage() {
               />
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

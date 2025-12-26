@@ -66,28 +66,28 @@ function CalendarPicker({
   return (
     <div
       ref={calendarRef}
-      className="absolute top-full left-0 mt-1 z-50 bg-background-primary dark:bg-background-secondary border border-border-primary rounded-lg shadow-lg p-3 min-w-[260px]"
+      className="absolute top-full left-0 mt-1 z-50 bg-background-primary dark:bg-background-secondary border border-border-primary rounded-lg shadow-lg p-3 w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[260px] max-w-[300px]"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <button
           type="button"
           onClick={() => setViewDate(subMonths(viewDate, 1))}
-          className="p-1 hover:bg-background-tertiary rounded transition-colors"
+          className="p-2 sm:p-1 hover:bg-background-tertiary rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
         >
           <ChevronLeft className="w-4 h-4 text-text-secondary" />
         </button>
         <button
           type="button"
           onClick={() => setShowYearMonth(!showYearMonth)}
-          className="text-sm font-medium text-text-primary hover:text-oak-light transition-colors px-2 py-1 rounded hover:bg-background-tertiary"
+          className="text-sm font-medium text-text-primary hover:text-oak-light transition-colors px-2 py-2 sm:py-1 rounded hover:bg-background-tertiary min-h-[44px] sm:min-h-0"
         >
           {format(viewDate, 'MMMM yyyy')}
         </button>
         <button
           type="button"
           onClick={() => setViewDate(addMonths(viewDate, 1))}
-          className="p-1 hover:bg-background-tertiary rounded transition-colors"
+          className="p-2 sm:p-1 hover:bg-background-tertiary rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
         >
           <ChevronRight className="w-4 h-4 text-text-secondary" />
         </button>
@@ -130,7 +130,7 @@ function CalendarPicker({
       <div className="grid grid-cols-7 gap-1">
         {paddedDays.map((day, i) => {
           if (!day) {
-            return <div key={`empty-${i}`} className="w-8 h-8" />;
+            return <div key={`empty-${i}`} className="w-8 h-8 sm:w-8 sm:h-8" />;
           }
 
           const isSelected = selectedDate && isSameDay(day, selectedDate);
@@ -146,7 +146,7 @@ function CalendarPicker({
                 onClose();
               }}
               className={`
-                w-8 h-8 text-xs rounded transition-colors
+                w-full aspect-square min-h-[36px] sm:w-8 sm:h-8 sm:min-h-0 text-xs rounded transition-colors
                 ${isSelected
                   ? 'bg-oak-primary text-white'
                   : isToday

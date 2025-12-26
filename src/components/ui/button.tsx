@@ -38,9 +38,9 @@ const variantMap = {
 };
 
 const sizeMap = {
-  xs: { h: '7', px: '3.5', fontSize: 'xs' },
-  sm: { h: '8', px: '4', fontSize: 'sm' },
-  md: { h: '9', px: '5', fontSize: 'sm' },
+  xs: { h: '7', minH: { base: '10', sm: '7' }, px: '3.5', fontSize: 'xs' },
+  sm: { h: '8', minH: { base: '10', sm: '8' }, px: '4', fontSize: 'sm' },
+  md: { h: '9', minH: { base: '10', sm: '9' }, px: '5', fontSize: 'sm' },
   lg: { h: '11', px: '6', fontSize: 'md' },
 };
 

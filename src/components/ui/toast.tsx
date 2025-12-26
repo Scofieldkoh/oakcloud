@@ -101,7 +101,7 @@ function ToastContainer({
   if (typeof window === 'undefined' || toasts.length === 0) return null;
 
   return createPortal(
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+    <div className="fixed bottom-2 sm:bottom-4 left-2 right-2 sm:left-auto sm:right-4 z-[100] flex flex-col gap-2 sm:max-w-sm sm:w-full pointer-events-none">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
@@ -129,7 +129,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
       <p className="flex-1 text-sm text-text-primary">{toast.message}</p>
       <button
         onClick={() => onRemove(toast.id)}
-        className="p-1 -m-1 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
+        className="p-2 sm:p-1 -m-1 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
         aria-label="Dismiss"
       >
         <X className="w-4 h-4" />

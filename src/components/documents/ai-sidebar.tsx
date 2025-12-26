@@ -381,47 +381,55 @@ export function AISidebar({
   if (!isOpen) return null;
 
   return (
-    <div
-      className={cn(
-        'w-80 flex flex-col bg-background-secondary border-l border-border-primary',
-        className
-      )}
-    >
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-border-primary">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-accent-primary" />
-            <span className="font-medium text-text-primary">AI Assistant</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setShowModelSelector(!showModelSelector)}
-              className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
-              title="Select AI Model"
-            >
-              <Wand2 className="w-4 h-4" />
-            </button>
-            {messages.length > 0 && (
+    <>
+      {/* Mobile: Full-screen overlay */}
+      <div className="md:hidden fixed inset-0 z-50 bg-black/50" onClick={onClose} />
+
+      <div
+        className={cn(
+          // Mobile: Full-screen modal from right
+          'fixed md:relative inset-y-0 right-0 z-50 md:z-auto',
+          'w-full sm:w-[320px] md:w-80',
+          'flex flex-col bg-background-secondary border-l border-border-primary',
+          'animate-in slide-in-from-right md:animate-none',
+          className
+        )}
+      >
+        {/* Header */}
+        <div className="flex-shrink-0 px-3 sm:px-4 py-2 sm:py-3 border-b border-border-primary">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-accent-primary" />
+              <span className="font-medium text-text-primary">AI Assistant</span>
+            </div>
+            <div className="flex items-center gap-0.5 sm:gap-1">
               <button
                 type="button"
-                onClick={handleClear}
-                className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
-                title="Clear conversation"
+                onClick={() => setShowModelSelector(!showModelSelector)}
+                className="p-2 sm:p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
+                title="Select AI Model"
               >
-                <Trash2 className="w-4 h-4" />
+                <Wand2 className="w-4 h-4" />
               </button>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="p-2 sm:p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
+                  title="Clear conversation"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 sm:p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
 
         {/* Model selector (collapsible) */}
         {showModelSelector && (
@@ -677,7 +685,8 @@ export function AISidebar({
           Press Enter to send, Shift+Enter for new line
         </p>
       </form>
-    </div>
+      </div>
+    </>
   );
 }
 

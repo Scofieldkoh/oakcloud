@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { formatDate } from '@/lib/utils';
+import { formatDate, cn } from '@/lib/utils';
 import {
   FileText,
   Eye,
@@ -12,8 +12,11 @@ import {
   Clock,
   CheckCircle,
   Archive,
+  Building2,
+  User,
 } from 'lucide-react';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 
 // ============================================================================
 // Types
@@ -221,74 +224,174 @@ export function DocumentTable({
   }
 
   return (
-    <div className="table-container">
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Document</th>
-            <th>Company</th>
-            <th>Status</th>
-            <th>Created By</th>
-            <th>Updated</th>
-            <th className="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {documents.map((doc) => {
-            const status = statusConfig[doc.status] || statusConfig.DRAFT;
-            const StatusIcon = status.icon;
+    <>
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {documents.map((doc) => {
+          const status = statusConfig[doc.status] || statusConfig.DRAFT;
+          const StatusIcon = status.icon;
 
-            return (
-              <tr key={doc.id}>
-                <td>
-                  <PrefetchLink
-                    href={`/generated-documents/${doc.id}`}
-                    className="font-medium text-text-primary hover:text-oak-light transition-colors"
-                  >
-                    {doc.title}
-                  </PrefetchLink>
-                  {doc.template && (
-                    <p className="text-xs text-text-tertiary mt-0.5 truncate max-w-xs">
-                      {doc.template.name}
-                    </p>
-                  )}
-                </td>
-                <td className="text-text-secondary">
-                  {doc.company ? (
-                    <span className="truncate max-w-[200px] block">{doc.company.name}</span>
-                  ) : (
-                    <span className="text-text-muted">—</span>
-                  )}
-                </td>
-                <td>
-                  <span className={`badge ${status.color} inline-flex items-center gap-1`}>
-                    <StatusIcon className="w-3 h-3" />
-                    {status.label}
-                  </span>
-                </td>
-                <td className="text-text-secondary">
-                  {doc.createdBy.firstName} {doc.createdBy.lastName}
-                </td>
-                <td className="text-text-secondary">
-                  {formatDate(doc.updatedAt)}
-                </td>
-                <td className="text-right">
-                  <DocumentActions
-                    documentId={doc.id}
-                    status={doc.status}
-                    onDelete={onDelete}
-                    onExport={onExport}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    canExport={canExport}
-                    canShare={canShare}
+          return (
+            <MobileCard
+              key={doc.id}
+              title={doc.title}
+              subtitle={doc.template?.name}
+              badge={
+                <span className={cn('badge inline-flex items-center gap-1', status.color)}>
+                  <StatusIcon className="w-3 h-3" />
+                  {status.label}
+                </span>
+              }
+              details={
+                <CardDetailsGrid>
+                  <CardDetailItem
+                    label="Company"
+                    value={doc.company?.name || '—'}
+                    icon={<Building2 className="w-3 h-3" />}
                   />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                  <CardDetailItem
+                    label="Created By"
+                    value={`${doc.createdBy.firstName} ${doc.createdBy.lastName}`}
+                    icon={<User className="w-3 h-3" />}
+                  />
+                  <CardDetailItem
+                    label="Updated"
+                    value={formatDate(doc.updatedAt)}
+                    icon={<Clock className="w-3 h-3" />}
+                  />
+                  {doc._count && doc._count.shares > 0 && (
+                    <CardDetailItem
+                      label="Shares"
+                      value={doc._count.shares.toString()}
+                      icon={<Share2 className="w-3 h-3" />}
+                    />
+                  )}
+                </CardDetailsGrid>
+              }
+              actions={
+                <div className="flex items-center gap-1">
+                  <Link
+                    href={`/generated-documents/${doc.id}`}
+                    className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    title="View"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Link>
+                  {canEdit && doc.status === 'DRAFT' && (
+                    <Link
+                      href={`/generated-documents/${doc.id}/edit`}
+                      className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Edit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Link>
+                  )}
+                  {canExport && (
+                    <button
+                      type="button"
+                      onClick={() => onExport?.(doc.id)}
+                      className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Export PDF"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  )}
+                  {canShare && (
+                    <Link
+                      href={`/generated-documents/${doc.id}/share`}
+                      className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Share"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Link>
+                  )}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete?.(doc.id)}
+                      className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              }
+            />
+          );
+        })}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block table-container">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Document</th>
+              <th>Company</th>
+              <th>Status</th>
+              <th>Created By</th>
+              <th>Updated</th>
+              <th className="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {documents.map((doc) => {
+              const status = statusConfig[doc.status] || statusConfig.DRAFT;
+              const StatusIcon = status.icon;
+
+              return (
+                <tr key={doc.id}>
+                  <td>
+                    <PrefetchLink
+                      href={`/generated-documents/${doc.id}`}
+                      className="font-medium text-text-primary hover:text-oak-light transition-colors"
+                    >
+                      {doc.title}
+                    </PrefetchLink>
+                    {doc.template && (
+                      <p className="text-xs text-text-tertiary mt-0.5 truncate max-w-xs">
+                        {doc.template.name}
+                      </p>
+                    )}
+                  </td>
+                  <td className="text-text-secondary">
+                    {doc.company ? (
+                      <span className="truncate max-w-[200px] block">{doc.company.name}</span>
+                    ) : (
+                      <span className="text-text-muted">—</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={`badge ${status.color} inline-flex items-center gap-1`}>
+                      <StatusIcon className="w-3 h-3" />
+                      {status.label}
+                    </span>
+                  </td>
+                  <td className="text-text-secondary">
+                    {doc.createdBy.firstName} {doc.createdBy.lastName}
+                  </td>
+                  <td className="text-text-secondary">
+                    {formatDate(doc.updatedAt)}
+                  </td>
+                  <td className="text-right">
+                    <DocumentActions
+                      documentId={doc.id}
+                      status={doc.status}
+                      onDelete={onDelete}
+                      onExport={onExport}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      canExport={canExport}
+                      canShare={canShare}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

@@ -37,7 +37,7 @@ export function Stepper({ steps, currentStep, onStepClick, className }: StepperP
                   onClick={() => isClickable && onStepClick(index)}
                   disabled={!isClickable}
                   className={cn(
-                    'relative flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all',
+                    'relative flex h-10 w-10 sm:h-8 sm:w-8 items-center justify-center rounded-full text-sm font-medium transition-all',
                     isCompleted && 'bg-oak-primary text-white',
                     isCurrent && 'border-2 border-oak-primary bg-background-primary text-oak-primary',
                     !isCompleted && !isCurrent && 'border-2 border-border-secondary bg-background-primary text-text-muted',
@@ -53,10 +53,10 @@ export function Stepper({ steps, currentStep, onStepClick, className }: StepperP
                 </button>
 
                 {/* Step label - centered below indicator */}
-                <div className="mt-2 text-center w-20">
+                <div className="mt-2 text-center w-16 sm:w-20">
                   <span
                     className={cn(
-                      'text-xs font-medium leading-tight block',
+                      'text-2xs sm:text-xs font-medium leading-tight block',
                       isCurrent && 'text-oak-primary',
                       isCompleted && 'text-text-primary',
                       !isCompleted && !isCurrent && 'text-text-muted'
@@ -65,7 +65,7 @@ export function Stepper({ steps, currentStep, onStepClick, className }: StepperP
                     {step.label}
                   </span>
                   {step.isOptional && (
-                    <span className="block text-xs text-text-muted">(Optional)</span>
+                    <span className="block text-2xs sm:text-xs text-text-muted">(Optional)</span>
                   )}
                 </div>
               </div>
@@ -74,7 +74,7 @@ export function Stepper({ steps, currentStep, onStepClick, className }: StepperP
               {!isLast && (
                 <div
                   className={cn(
-                    'w-8 sm:w-12 md:w-16 h-0.5 mt-4 transition-colors',
+                    'w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 mt-5 sm:mt-4 transition-colors',
                     isCompleted ? 'bg-oak-primary' : 'bg-border-secondary'
                   )}
                 />

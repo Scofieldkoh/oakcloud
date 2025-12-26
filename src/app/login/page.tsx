@@ -91,12 +91,12 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-sm space-y-6">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center">
             <Link href="/" className="inline-flex items-center gap-2.5">
-              <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
+              <img src="/falcon.svg" alt="Oakcloud" className="w-16 h-16 sm:w-[5.25rem] sm:h-[5.25rem]" />
             </Link>
           </div>
 

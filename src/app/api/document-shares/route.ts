@@ -16,14 +16,18 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param
+    // For SUPER_ADMIN, allow specifying tenantId via query param or viewing all shares
     const tenantIdParam = searchParams.get('tenantId');
-    const effectiveTenantId =
-      session.isSuperAdmin && tenantIdParam ? tenantIdParam : session.tenantId;
+    let effectiveTenantId: string | null = session.tenantId;
 
-    if (!effectiveTenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    if (session.isSuperAdmin && tenantIdParam) {
+      effectiveTenantId = tenantIdParam;
+    } else if (session.isSuperAdmin && !session.tenantId) {
+      // SUPER_ADMIN without tenant context - will show all shares across tenants
+      effectiveTenantId = null;
     }
+
+    const skipTenantFilter = session.isSuperAdmin && !effectiveTenantId;
 
     // Pagination
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -36,11 +40,17 @@ export async function GET(request: NextRequest) {
     const documentId = searchParams.get('documentId');
 
     // Build where clause
+    const documentFilter: Record<string, unknown> = {
+      deletedAt: null,
+    };
+
+    // Tenant scope (skip for SUPER_ADMIN cross-tenant operations)
+    if (effectiveTenantId && !skipTenantFilter) {
+      documentFilter.tenantId = effectiveTenantId;
+    }
+
     const where: Record<string, unknown> = {
-      document: {
-        tenantId: effectiveTenantId,
-        deletedAt: null,
-      },
+      document: documentFilter,
     };
 
     // Status filter

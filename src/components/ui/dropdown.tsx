@@ -106,7 +106,7 @@ export function DropdownTrigger({ children, className, asChild }: DropdownTrigge
         type="button"
         onClick={handleClick}
         className={cn(
-          'inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md',
+          'inline-flex items-center gap-2 px-3 py-2.5 sm:py-2 text-sm rounded-md min-h-[44px] sm:min-h-0',
           'bg-background-elevated border border-border-primary',
           'hover:bg-background-tertiary text-text-primary',
           'transition-colors',
@@ -239,7 +239,7 @@ export function DropdownItem({
       onClick={handleClick}
       disabled={disabled}
       className={cn(
-        'w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-left',
+        'w-full flex items-center gap-2.5 px-3.5 py-2.5 sm:py-2 text-sm text-left min-h-[44px] sm:min-h-0',
         'hover:bg-background-tertiary transition-colors',
         disabled && 'opacity-50 cursor-not-allowed',
         destructive ? 'text-status-error' : 'text-text-primary',

@@ -102,8 +102,8 @@ function NewCommentForm({ onSubmit, selectedText, onClearSelection, isLoading }:
       {selectedText && (
         <div className="mb-2 flex items-start gap-2">
           <div className="flex-1 px-2 py-1 text-xs bg-accent-primary/10 text-accent-primary rounded border-l-2 border-accent-primary italic">
-            "{selectedText.text.slice(0, 100)}
-            {selectedText.text.length > 100 ? '...' : ''}"
+            &quot;{selectedText.text.slice(0, 100)}
+            {selectedText.text.length > 100 ? '...' : ''}&quot;
           </div>
           <button
             type="button"

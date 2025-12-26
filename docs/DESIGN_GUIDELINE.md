@@ -1150,25 +1150,324 @@ const handleSubmit = () => {
 
 ---
 
+## Mobile Responsiveness
+
+The application is designed mobile-first with responsive breakpoints. All components and pages should work seamlessly from 320px to desktop widths.
+
+### Breakpoints
+
+| Breakpoint | Width | Usage |
+|------------|-------|-------|
+| Base (mobile) | < 640px | Single column, stacked layouts |
+| `sm:` | 640px+ | Minor adjustments, 2-column grids |
+| `md:` | 768px+ | Switch from cards to tables |
+| `lg:` | 1024px+ | Full desktop layouts, 4-column grids |
+
+### Touch Targets
+
+All interactive elements must have a minimum touch target of **44x44px** on mobile for accessibility:
+
+```tsx
+// Mobile touch target pattern
+className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0"
+```
+
+### Responsive Grid Patterns
+
+Always use mobile-first grid definitions:
+
+```tsx
+// Stats cards - single column on mobile, expand on larger screens
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+// Form fields - stack on mobile, side-by-side on desktop
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+// Three-column content
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+```
+
+### Responsive Padding
+
+Reduce padding on mobile to maximize content area:
+
+```tsx
+// Page padding
+className="p-4 sm:p-6"
+
+// Card padding
+className="p-3 sm:p-4"
+
+// Large padding areas
+className="p-6 sm:p-12"
+```
+
+### Mobile Card View for Tables
+
+Tables with many columns should show a **card view on mobile** and table on desktop. Use the reusable components:
+
+```tsx
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+
+// Pattern: Cards on mobile, table on desktop
+return (
+  <>
+    {/* Mobile Card View */}
+    <div className="md:hidden space-y-3">
+      {items.map((item) => (
+        <MobileCard
+          key={item.id}
+          title={<Link href={`/items/${item.id}`}>{item.name}</Link>}
+          subtitle={item.code}
+          badge={<span className="badge badge-success">{item.status}</span>}
+          actions={<ActionsDropdown itemId={item.id} />}
+          details={
+            <CardDetailsGrid>
+              <CardDetailItem label="Type" value={item.type} />
+              <CardDetailItem label="Date" value={formatDate(item.date)} />
+              <CardDetailItem label="Description" value={item.description} fullWidth />
+            </CardDetailsGrid>
+          }
+        />
+      ))}
+    </div>
+
+    {/* Desktop Table View */}
+    <div className="hidden md:block table-container">
+      <table className="table">...</table>
+    </div>
+  </>
+);
+```
+
+### Modal Responsiveness
+
+Modals automatically adjust width on mobile using `max-w-[calc(100vw-2rem)]`:
+
+```tsx
+// Modal sizes are mobile-responsive by default
+<Modal size="lg">  // Full width on mobile, 512px on sm+
+<Modal size="2xl"> // Full width on mobile, 672px on sm+
+```
+
+### Component-Specific Patterns
+
+| Component | Mobile Pattern |
+|-----------|----------------|
+| Sidebar | Drawer overlay with hamburger menu |
+| Toast | Full width, bottom positioned |
+| Date picker | Responsive calendar popup |
+| Dropdown | Touch-friendly item heights |
+| Checkbox | 44px touch target wrapper |
+| Stepper | Smaller labels, shorter connectors |
+| Stats sections | Collapsible by default (MobileCollapsibleSection) |
+| Data tables | Card view with MobileCard component |
+
+### Empty State Padding
+
+Reduce empty state padding on mobile:
+
+```tsx
+<div className="card p-6 sm:p-12 text-center">
+  <Icon className="w-12 h-12 text-text-muted mx-auto mb-4" />
+  <h3>No items found</h3>
+</div>
+```
+
+### Collapsible Sections for Mobile
+
+Dashboard pages often have statistics cards that take up valuable screen real estate on mobile. Use `MobileCollapsibleSection` to collapse these by default on mobile while keeping them always visible on desktop.
+
+```tsx
+import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
+
+// Stats are collapsed by default on mobile, always visible on desktop
+<MobileCollapsibleSection title="Statistics" count={4} className="mb-6">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div className="card p-3 sm:p-4">...</div>
+    <div className="card p-3 sm:p-4">...</div>
+    <div className="card p-3 sm:p-4">...</div>
+    <div className="card p-3 sm:p-4">...</div>
+  </div>
+</MobileCollapsibleSection>
+```
+
+**Props:**
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `title` | `string` | required | Section header text |
+| `count` | `number` | - | Optional badge showing item count |
+| `defaultCollapsed` | `boolean` | `true` | Initial collapsed state on mobile |
+| `className` | `string` | - | Container class (e.g., `mb-6`) |
+| `contentClassName` | `string` | - | Content wrapper class |
+
+**Behavior:**
+- **Mobile**: Shows toggle header with Show/Hide button; collapsed by default
+- **Desktop**: Toggle header hidden; content always visible
+
+For sections that need full collapse/expand control on all screen sizes, use `CollapsibleSection` instead:
+
+```tsx
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
+
+<CollapsibleSection
+  title="Advanced Options"
+  defaultCollapsedMobile={true}
+  defaultCollapsedDesktop={false}
+>
+  {/* Content */}
+</CollapsibleSection>
+```
+
+### Mobile Card View Components
+
+For tables with many columns, display cards on mobile and tables on desktop. Use the reusable components from `responsive-table.tsx`:
+
+#### MobileCard
+
+A card component for displaying list items on mobile:
+
+```tsx
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+
+<MobileCard
+  title={<Link href={`/items/${item.id}`}>{item.name}</Link>}
+  subtitle={item.code}
+  badge={<span className="badge badge-success">{item.status}</span>}
+  actions={<ActionsDropdown itemId={item.id} />}
+  selectable={true}
+  isSelected={selectedIds.has(item.id)}
+  onToggle={() => toggleSelection(item.id)}
+  details={
+    <CardDetailsGrid>
+      <CardDetailItem label="Type" value={item.type} />
+      <CardDetailItem label="Date" value={formatDate(item.date)} />
+      <CardDetailItem label="Description" value={item.description} fullWidth />
+    </CardDetailsGrid>
+  }
+/>
+```
+
+**MobileCard Props:**
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `title` | `ReactNode` | Primary content (usually a link) |
+| `subtitle` | `ReactNode` | Secondary text below title |
+| `badge` | `ReactNode` | Status badge (top right) |
+| `actions` | `ReactNode` | Action menu (top right, after badge) |
+| `details` | `ReactNode` | Additional content below header |
+| `selectable` | `boolean` | Show selection checkbox |
+| `isSelected` | `boolean` | Current selection state |
+| `onToggle` | `() => void` | Selection toggle handler |
+
+#### CardDetailsGrid & CardDetailItem
+
+Grid layout for additional card details:
+
+```tsx
+<CardDetailsGrid>
+  <CardDetailItem label="Email" value={contact.email} fullWidth />
+  <CardDetailItem label="Phone" value={contact.phone} />
+  <CardDetailItem
+    label="Companies"
+    value={
+      <div className="flex items-center gap-1.5">
+        <Building2 className="w-3.5 h-3.5" />
+        <span>{count}</span>
+      </div>
+    }
+  />
+</CardDetailsGrid>
+```
+
+**CardDetailItem Props:**
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `label` | `string` | Field label (muted text) |
+| `value` | `ReactNode` | Field value |
+| `fullWidth` | `boolean` | Span both columns |
+
+#### Complete Table/Card Pattern
+
+```tsx
+return (
+  <>
+    {/* Mobile Card View */}
+    <div className="md:hidden space-y-3">
+      {selectable && (
+        <div className="flex items-center gap-2 px-1">
+          <button onClick={onToggleAll} className="p-2 ...">
+            {isAllSelected ? <CheckSquare /> : <Square />}
+            <span>{isAllSelected ? 'Deselect all' : 'Select all'}</span>
+          </button>
+        </div>
+      )}
+      {items.map((item) => (
+        <MobileCard
+          key={item.id}
+          title={...}
+          subtitle={...}
+          badge={...}
+          actions={...}
+          details={...}
+          selectable={selectable}
+          isSelected={selectedIds.has(item.id)}
+          onToggle={() => onToggleOne(item.id)}
+        />
+      ))}
+    </div>
+
+    {/* Desktop Table View */}
+    <div className="hidden md:block table-container">
+      <table className="table">
+        <thead>...</thead>
+        <tbody>...</tbody>
+      </table>
+    </div>
+  </>
+);
+```
+
+### File Reference
+
+Mobile-responsive components are located at:
+
+```
+src/components/ui/
+├── collapsible-section.tsx # MobileCollapsibleSection, CollapsibleSection
+├── responsive-table.tsx    # MobileCard, CardDetailsGrid, CardDetailItem
+├── Sidebar.tsx             # Mobile drawer with hamburger menu
+├── modal.tsx               # Mobile-responsive sizing
+├── toast.tsx               # Mobile-positioned toasts
+└── ...
+```
+
+---
+
 ## File Structure
 
 ```
 src/components/ui/
-├── alert.tsx              # Alert/notification component
-├── ai-model-selector.tsx  # AI model selection with context
-├── button.tsx             # Button component with variants
-├── checkbox.tsx           # Checkbox with indeterminate state
-├── confirm-dialog.tsx     # Confirmation dialog with reason
-├── date-input.tsx         # Segmented date input with calendar picker
-├── dropdown.tsx           # Portal-rendered dropdown menu
-├── form-input.tsx         # Form input with validation
-├── modal.tsx              # Accessible modal dialog
-├── pagination.tsx         # Table pagination component
-├── sidebar.tsx            # Responsive navigation sidebar
-├── stepper.tsx            # Multi-step wizard component
-├── tenant-selector.tsx    # Tenant selection (SidebarTenantButton, hooks, modal)
-├── theme-toggle.tsx       # Theme switcher component
-└── toast.tsx              # Toast notification system
+├── alert.tsx               # Alert/notification component
+├── ai-model-selector.tsx   # AI model selection with context
+├── button.tsx              # Button component with variants
+├── checkbox.tsx            # Checkbox with indeterminate state
+├── collapsible-section.tsx # Collapsible sections (MobileCollapsibleSection, CollapsibleSection)
+├── confirm-dialog.tsx      # Confirmation dialog with reason
+├── date-input.tsx          # Segmented date input with calendar picker
+├── dropdown.tsx            # Portal-rendered dropdown menu
+├── form-input.tsx          # Form input with validation
+├── modal.tsx               # Accessible modal dialog
+├── pagination.tsx          # Table pagination component
+├── responsive-table.tsx    # Mobile card view components (MobileCard, CardDetailsGrid)
+├── Sidebar.tsx             # Responsive navigation sidebar with mobile drawer
+├── stepper.tsx             # Multi-step wizard component
+├── tenant-selector.tsx     # Tenant selection (SidebarTenantButton, hooks, modal)
+├── theme-toggle.tsx        # Theme switcher component
+└── toast.tsx               # Toast notification system
 
 src/stores/
 ├── ui-store.ts            # Zustand UI state (sidebar, theme)

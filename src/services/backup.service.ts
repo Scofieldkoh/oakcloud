@@ -1595,7 +1595,7 @@ class BackupService {
 
     // Simple implementation: calculate next occurrence based on hour and minute
     // For a more robust solution, use a cron parser library
-    let nextRun = new Date(now);
+    const nextRun = new Date(now);
 
     // Parse minute and hour (handle wildcards as "every hour/minute")
     const targetMinute = minute === '*' ? 0 : parseInt(minute, 10);

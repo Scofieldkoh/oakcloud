@@ -47,6 +47,7 @@ import {
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 
 // System roles that are always available for selection
 const SYSTEM_ROLES = [
@@ -508,7 +509,150 @@ export default function UsersPage() {
       {/* Users Table */}
       {data && (!isSuperAdmin || selectedTenantId) && (
         <>
-          <div className="card overflow-hidden">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {data.users.length === 0 ? (
+              <div className="card p-6 text-center text-text-secondary">
+                No users found
+              </div>
+            ) : (
+              data.users.map((user: TenantUser) => {
+                const filteredAssignments = getFilteredRoleAssignments(user);
+                const totalAssignments = user.roleAssignments?.length || 0;
+
+                return (
+                  <MobileCard
+                    key={user.id}
+                    title={
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-oak-primary/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-oak-light text-xs font-medium">
+                            {user.firstName[0]}{user.lastName[0]}
+                          </span>
+                        </div>
+                        <span className="font-medium text-text-primary truncate">
+                          {user.firstName} {user.lastName}
+                        </span>
+                      </div>
+                    }
+                    subtitle={
+                      <div className="flex items-center gap-1 text-xs">
+                        <Mail className="w-3 h-3" />
+                        {user.email}
+                      </div>
+                    }
+                    badge={
+                      <span
+                        className={cn(
+                          'badge',
+                          user.isActive
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                        )}
+                      >
+                        {user.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    }
+                    actions={
+                      <Dropdown>
+                        <DropdownTrigger asChild className="p-1.5 hover:bg-background-tertiary rounded">
+                          <MoreVertical className="w-4 h-4 text-text-muted" />
+                        </DropdownTrigger>
+                        <DropdownMenu>
+                          <DropdownItem
+                            icon={<Edit className="w-4 h-4" />}
+                            onClick={() => setEditingUser(user)}
+                          >
+                            Edit User
+                          </DropdownItem>
+                          <DropdownItem
+                            icon={<Building2 className="w-4 h-4" />}
+                            onClick={() => setManagingUserId(user.id)}
+                          >
+                            Manage Companies
+                          </DropdownItem>
+                          <DropdownItem
+                            icon={<KeyRound className="w-4 h-4" />}
+                            onClick={() => setResetPasswordUser(user)}
+                          >
+                            Send Password Reset
+                          </DropdownItem>
+                          <DropdownSeparator />
+                          <DropdownItem
+                            icon={<UserX className="w-4 h-4" />}
+                            onClick={() => setDeletingUser(user)}
+                            className="text-status-error"
+                          >
+                            Remove User
+                          </DropdownItem>
+                        </DropdownMenu>
+                      </Dropdown>
+                    }
+                    details={
+                      <CardDetailsGrid>
+                        <CardDetailItem
+                          label="Roles"
+                          value={
+                            <button
+                              onClick={() => setManagingUserId(user.id)}
+                              className="text-left"
+                            >
+                              {filteredAssignments.length > 0 ? (
+                                <div className="space-y-1">
+                                  {filteredAssignments.slice(0, 2).map((ra) => (
+                                    <div key={ra.id} className="flex items-center gap-1">
+                                      <span
+                                        className={cn(
+                                          'badge text-xs',
+                                          ra.role.systemRoleType === 'TENANT_ADMIN'
+                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                            : 'bg-oak-primary/10 text-oak-primary dark:bg-oak-primary/20'
+                                        )}
+                                      >
+                                        {ra.role.name}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {filteredAssignments.length > 2 && (
+                                    <span className="text-xs text-text-muted">
+                                      +{filteredAssignments.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              ) : totalAssignments > 0 ? (
+                                <span className="text-text-muted text-sm">
+                                  {totalAssignments} role{totalAssignments > 1 ? 's' : ''} (filtered)
+                                </span>
+                              ) : (
+                                <span className="text-text-muted text-sm">No roles</span>
+                              )}
+                            </button>
+                          }
+                          fullWidth
+                        />
+                        <CardDetailItem
+                          label="Last Login"
+                          value={
+                            user.lastLoginAt ? (
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {format(new Date(user.lastLoginAt), 'MMM d, yyyy')}
+                              </div>
+                            ) : (
+                              <span className="text-text-muted">Never</span>
+                            )
+                          }
+                        />
+                      </CardDetailsGrid>
+                    }
+                  />
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="table">
                 <thead>
@@ -727,7 +871,7 @@ export default function UsersPage() {
             )}
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormInput
                   label="First Name"
                   value={inviteFormData.firstName}
@@ -932,7 +1076,7 @@ export default function UsersPage() {
         <form onSubmit={handleEditUser}>
           <ModalBody>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormInput
                   label="First Name"
                   value={editFormData.firstName}
@@ -1088,7 +1232,7 @@ export default function UsersPage() {
           <div className="border-t border-border-primary pt-4">
             <h4 className="text-sm font-medium text-text-primary mb-3">Add Role Assignment</h4>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label text-xs mb-1">Company</label>
                   <select

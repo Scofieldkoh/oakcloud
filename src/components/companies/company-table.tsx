@@ -7,6 +7,7 @@ import { getEntityTypeLabel } from '@/lib/constants';
 import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2, Square, CheckSquare, MinusSquare } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import type { Company, CompanyStatus } from '@/generated/prisma';
 
 interface CompanyWithRelations extends Company {
@@ -174,7 +175,7 @@ export function CompanyTable({
 
   if (companies.length === 0) {
     return (
-      <div className="card p-12 text-center">
+      <div className="card p-6 sm:p-12 text-center">
         <Building2 className="w-12 h-12 text-text-muted mx-auto mb-4" />
         <h3 className="text-lg font-medium text-text-primary mb-2">No companies found</h3>
         <p className="text-text-secondary mb-4">
@@ -192,108 +193,179 @@ export function CompanyTable({
   }
 
   return (
-    <div className="table-container">
-      <table className="table">
-        <thead>
-          <tr>
-            {selectable && (
-              <th className="w-10">
-                <button
-                  onClick={onToggleAll}
-                  className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                  title={isAllSelected ? 'Deselect all' : 'Select all'}
-                >
-                  {isAllSelected ? (
-                    <CheckSquare className="w-4 h-4 text-oak-primary" />
-                  ) : isIndeterminate ? (
-                    <MinusSquare className="w-4 h-4 text-oak-light" />
-                  ) : (
-                    <Square className="w-4 h-4 text-text-muted" />
-                  )}
-                </button>
-              </th>
-            )}
-            <th>Company</th>
-            <th>UEN</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Incorporated</th>
-            <th>Officers</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {companies.map((company) => {
-            const isSelected = selectedIds.has(company.id);
-            return (
-            <tr
-              key={company.id}
-              className={cn(
-                'transition-colors',
-                isSelected
-                  ? 'bg-oak-primary/5 hover:bg-oak-primary/10'
-                  : 'hover:bg-background-tertiary/50'
-              )}
+    <>
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {selectable && (
+          <div className="flex items-center gap-2 px-1">
+            <button
+              onClick={onToggleAll}
+              className="p-2 hover:bg-background-secondary rounded transition-colors flex items-center gap-2"
+              title={isAllSelected ? 'Deselect all' : 'Select all'}
             >
-              {selectable && (
-                <td>
-                  <button
-                    onClick={() => onToggleOne?.(company.id)}
-                    className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                  >
-                    {isSelected ? (
-                      <CheckSquare className="w-4 h-4 text-oak-primary" />
-                    ) : (
-                      <Square className="w-4 h-4 text-text-muted" />
-                    )}
-                  </button>
-                </td>
+              {isAllSelected ? (
+                <CheckSquare className="w-5 h-5 text-oak-primary" />
+              ) : isIndeterminate ? (
+                <MinusSquare className="w-5 h-5 text-oak-light" />
+              ) : (
+                <Square className="w-5 h-5 text-text-muted" />
               )}
-              <td>
+              <span className="text-sm text-text-secondary">
+                {isAllSelected ? 'Deselect all' : 'Select all'}
+              </span>
+            </button>
+          </div>
+        )}
+        {companies.map((company) => {
+          const isSelected = selectedIds.has(company.id);
+          return (
+            <MobileCard
+              key={company.id}
+              isSelected={isSelected}
+              selectable={selectable}
+              onToggle={() => onToggleOne?.(company.id)}
+              title={
                 <PrefetchLink
                   href={`/companies/${company.id}`}
                   prefetchType="company"
                   prefetchId={company.id}
-                  className="font-medium text-text-primary hover:text-oak-light transition-colors"
+                  className="font-medium text-text-primary hover:text-oak-light transition-colors block truncate"
                 >
                   {company.name}
                 </PrefetchLink>
-                {company.addresses?.[0] && (
-                  <p className="text-xs text-text-tertiary mt-0.5 truncate max-w-xs">
-                    {company.addresses[0].fullAddress}
-                  </p>
-                )}
-              </td>
-              <td className="text-text-secondary">
-                {company.uen}
-              </td>
-              <td className="text-text-secondary">
-                {getEntityTypeLabel(company.entityType, true)}
-              </td>
-              <td>
+              }
+              subtitle={company.uen}
+              badge={
                 <span className={`badge ${statusConfig[company.status].color}`}>
                   {statusConfig[company.status].label}
                 </span>
-              </td>
-              <td className="text-text-secondary">
-                {formatDate(company.incorporationDate)}
-              </td>
-              <td className="text-text-secondary">
-                {company._count?.officers || 0}
-              </td>
-              <td>
+              }
+              actions={
                 <CompanyActionsDropdown
                   companyId={company.id}
                   onDelete={onDelete}
                   canEdit={checkCanEdit(company.id)}
                   canDelete={checkCanDelete(company.id)}
                 />
-              </td>
+              }
+              details={
+                <CardDetailsGrid>
+                  <CardDetailItem label="Type" value={getEntityTypeLabel(company.entityType, true)} />
+                  <CardDetailItem label="Incorporated" value={formatDate(company.incorporationDate)} />
+                  {company.addresses?.[0] && (
+                    <CardDetailItem label="Address" value={company.addresses[0].fullAddress} fullWidth />
+                  )}
+                </CardDetailsGrid>
+              }
+            />
+          );
+        })}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block table-container">
+        <table className="table">
+          <thead>
+            <tr>
+              {selectable && (
+                <th className="w-10">
+                  <button
+                    onClick={onToggleAll}
+                    className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                    title={isAllSelected ? 'Deselect all' : 'Select all'}
+                  >
+                    {isAllSelected ? (
+                      <CheckSquare className="w-4 h-4 text-oak-primary" />
+                    ) : isIndeterminate ? (
+                      <MinusSquare className="w-4 h-4 text-oak-light" />
+                    ) : (
+                      <Square className="w-4 h-4 text-text-muted" />
+                    )}
+                  </button>
+                </th>
+              )}
+              <th>Company</th>
+              <th>UEN</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Incorporated</th>
+              <th>Officers</th>
+              <th></th>
             </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {companies.map((company) => {
+              const isSelected = selectedIds.has(company.id);
+              return (
+              <tr
+                key={company.id}
+                className={cn(
+                  'transition-colors',
+                  isSelected
+                    ? 'bg-oak-primary/5 hover:bg-oak-primary/10'
+                    : 'hover:bg-background-tertiary/50'
+                )}
+              >
+                {selectable && (
+                  <td>
+                    <button
+                      onClick={() => onToggleOne?.(company.id)}
+                      className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                    >
+                      {isSelected ? (
+                        <CheckSquare className="w-4 h-4 text-oak-primary" />
+                      ) : (
+                        <Square className="w-4 h-4 text-text-muted" />
+                      )}
+                    </button>
+                  </td>
+                )}
+                <td>
+                  <PrefetchLink
+                    href={`/companies/${company.id}`}
+                    prefetchType="company"
+                    prefetchId={company.id}
+                    className="font-medium text-text-primary hover:text-oak-light transition-colors"
+                  >
+                    {company.name}
+                  </PrefetchLink>
+                  {company.addresses?.[0] && (
+                    <p className="text-xs text-text-tertiary mt-0.5 truncate max-w-xs">
+                      {company.addresses[0].fullAddress}
+                    </p>
+                  )}
+                </td>
+                <td className="text-text-secondary">
+                  {company.uen}
+                </td>
+                <td className="text-text-secondary">
+                  {getEntityTypeLabel(company.entityType, true)}
+                </td>
+                <td>
+                  <span className={`badge ${statusConfig[company.status].color}`}>
+                    {statusConfig[company.status].label}
+                  </span>
+                </td>
+                <td className="text-text-secondary">
+                  {formatDate(company.incorporationDate)}
+                </td>
+                <td className="text-text-secondary">
+                  {company._count?.officers || 0}
+                </td>
+                <td>
+                  <CompanyActionsDropdown
+                    companyId={company.id}
+                    onDelete={onDelete}
+                    canEdit={checkCanEdit(company.id)}
+                    canDelete={checkCanDelete(company.id)}
+                  />
+                </td>
+              </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

@@ -454,8 +454,8 @@ function SingleComment({
               }}
               className="mt-1 px-2 py-1 text-xs bg-accent-primary/10 text-accent-primary rounded border-l-2 border-accent-primary italic truncate max-w-full text-left hover:bg-accent-primary/20 transition-colors"
             >
-              "{comment.selectedText.slice(0, 100)}
-              {comment.selectedText.length > 100 ? '...' : ''}"
+              &quot;{comment.selectedText.slice(0, 100)}
+              {comment.selectedText.length > 100 ? '...' : ''}&quot;
             </button>
           )}
 

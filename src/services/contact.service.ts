@@ -878,17 +878,29 @@ export async function getContactWithRelationships(
   };
 }
 
+export interface SearchContactsOptions {
+  /**
+   * Optional array of company IDs to filter by (for company-scoped users)
+   */
+  companyIds?: string[];
+  /**
+   * Skip tenant filter - ONLY for SUPER_ADMIN operations that require
+   * cross-tenant access. Regular operations MUST always provide tenantId.
+   */
+  skipTenantFilter?: boolean;
+}
+
 /**
  * Search contacts with company relation counts
  * @param params - Search parameters
- * @param tenantId - Required tenant ID for security - all queries must be tenant-scoped
- * @param companyIds - Optional array of company IDs to filter by (for company-scoped users)
- * @throws Error if tenantId is not provided
+ * @param tenantId - Tenant ID for security (required unless skipTenantFilter is true)
+ * @param options - Optional search options including companyIds and skipTenantFilter
+ * @throws Error if tenantId is not provided and skipTenantFilter is false
  */
 export async function searchContactsWithCounts(
   params: ContactSearchInput,
-  tenantId: string,
-  companyIds?: string[]
+  tenantId: string | null,
+  options: SearchContactsOptions = {}
 ): Promise<{
   contacts: Array<Contact & { _count: { companyRelations: number } }>;
   total: number;
@@ -896,8 +908,10 @@ export async function searchContactsWithCounts(
   limit: number;
   totalPages: number;
 }> {
-  // SECURITY: Tenant ID is required to prevent cross-tenant data access
-  if (!tenantId) {
+  const { companyIds, skipTenantFilter = false } = options;
+
+  // SECURITY: Tenant ID is required to prevent cross-tenant data access unless explicitly skipped for SUPER_ADMIN
+  if (!tenantId && !skipTenantFilter) {
     throw new Error('Tenant ID is required for contact search');
   }
 
@@ -914,8 +928,12 @@ export async function searchContactsWithCounts(
 
   const andConditions: Prisma.ContactWhereInput[] = [
     { deletedAt: null },
-    { tenantId }, // Always filter by tenant
   ];
+
+  // Tenant scope (skip for SUPER_ADMIN cross-tenant operations)
+  if (tenantId && !skipTenantFilter) {
+    andConditions.push({ tenantId });
+  }
 
   if (params.query) {
     const searchTerm = params.query.trim();

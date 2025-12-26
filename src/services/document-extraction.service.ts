@@ -413,7 +413,7 @@ async function performAIExtraction(
   config: ExtractionConfig
 ): Promise<AIExtractionResult> {
   // Use config.model if provided and valid, otherwise get best available for tenant
-  let modelId = config.model && config.model !== 'gpt-4-vision'
+  const modelId = config.model && config.model !== 'gpt-4-vision'
     ? config.model
     : await getBestAvailableModelForTenant(tenantId);
 

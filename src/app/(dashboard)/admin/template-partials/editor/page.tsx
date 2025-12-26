@@ -2338,7 +2338,7 @@ function TemplateEditorContent() {
       const PAGE_BREAK_MARKER = '<!-- PAGE_BREAK -->';
 
       // Normalize page breaks to a consistent marker for splitting
-      let normalizedPreview = preview.replace(/<div[^>]*class\s*=\s*["'][^"']*page-break[^"']*["'][^>]*>(?:<\/div>)?/gi, PAGE_BREAK_MARKER);
+      const normalizedPreview = preview.replace(/<div[^>]*class\s*=\s*["'][^"']*page-break[^"']*["'][^>]*>(?:<\/div>)?/gi, PAGE_BREAK_MARKER);
 
       // Split into pages
       const pages = normalizedPreview.split(PAGE_BREAK_MARKER);

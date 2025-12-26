@@ -89,7 +89,7 @@ export function StepCreateCompany({
             <div className="flex items-start gap-2">
               <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <p>
-                Enter the company's Unique Entity Number (UEN) and basic details.
+                Enter the company&apos;s Unique Entity Number (UEN) and basic details.
                 Additional information can be added later.
               </p>
             </div>

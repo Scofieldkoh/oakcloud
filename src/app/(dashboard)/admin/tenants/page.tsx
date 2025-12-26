@@ -32,6 +32,7 @@ import { TenantSetupWizard } from '@/components/admin/tenant-setup-wizard';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 
 const TENANT_STATUSES = [
   { value: 'ACTIVE', label: 'Active', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
@@ -307,9 +308,178 @@ export default function TenantsPage() {
         <div className="text-center py-12 text-text-secondary">Loading tenants...</div>
       )}
 
-      {/* Tenants Table */}
+      {/* Tenants - Mobile Card View */}
       {data && (
-        <>
+        <div className="md:hidden space-y-3">
+          {data.tenants.length === 0 ? (
+            <div className="card p-8 text-center text-text-secondary">
+              No tenants found
+            </div>
+          ) : (
+            data.tenants.map((tenant: Tenant) => {
+              const userCount = tenant._count?.users || 0;
+              const companyCount = tenant._count?.companies || 0;
+              const userPercent = Math.min((userCount / tenant.maxUsers) * 100, 100);
+              const companyPercent = Math.min((companyCount / tenant.maxCompanies) * 100, 100);
+
+              return (
+                <MobileCard
+                  key={tenant.id}
+                  title={tenant.name}
+                  subtitle={tenant.slug}
+                  badge={
+                    <span className={cn('badge text-xs', getStatusColor(tenant.status))}>
+                      {getStatusLabel(tenant.status)}
+                    </span>
+                  }
+                  details={
+                    <div className="space-y-3">
+                      {/* Contact Info */}
+                      {(tenant.contactEmail || tenant.contactPhone) && (
+                        <div className="text-xs space-y-1">
+                          {tenant.contactEmail && (
+                            <div className="flex items-center gap-1.5 text-text-secondary">
+                              <Mail className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">{tenant.contactEmail}</span>
+                            </div>
+                          )}
+                          {tenant.contactPhone && (
+                            <div className="flex items-center gap-1.5 text-text-secondary">
+                              <Phone className="w-3 h-3 flex-shrink-0" />
+                              <span>{tenant.contactPhone}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Usage Bars */}
+                      <div className="space-y-2">
+                        {/* Users */}
+                        <div>
+                          <div className="flex items-center justify-between text-xs mb-0.5">
+                            <span className="text-text-muted flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              Users
+                            </span>
+                            <span className="text-text-secondary font-medium">
+                              {userCount}/{tenant.maxUsers}
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                'h-full rounded-full transition-all',
+                                userPercent >= 90 ? 'bg-red-500' : userPercent >= 70 ? 'bg-amber-500' : 'bg-oak-primary'
+                              )}
+                              style={{ width: `${userPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                        {/* Companies */}
+                        <div>
+                          <div className="flex items-center justify-between text-xs mb-0.5">
+                            <span className="text-text-muted flex items-center gap-1">
+                              <Building2 className="w-3 h-3" />
+                              Companies
+                            </span>
+                            <span className="text-text-secondary font-medium">
+                              {companyCount}/{tenant.maxCompanies}
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                'h-full rounded-full transition-all',
+                                companyPercent >= 90 ? 'bg-red-500' : companyPercent >= 70 ? 'bg-amber-500' : 'bg-oak-primary'
+                              )}
+                              style={{ width: `${companyPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <CardDetailsGrid>
+                        <CardDetailItem
+                          label="Storage"
+                          value={`${Math.round(tenant.maxStorageMb / 1024)}GB`}
+                          icon={<HardDrive className="w-3 h-3" />}
+                        />
+                        <CardDetailItem
+                          label="Created"
+                          value={format(new Date(tenant.createdAt), 'MMM d, yyyy')}
+                          icon={<Calendar className="w-3 h-3" />}
+                        />
+                      </CardDetailsGrid>
+                    </div>
+                  }
+                  actions={
+                    <Dropdown>
+                      <DropdownTrigger asChild className="p-2 hover:bg-background-tertiary rounded min-h-[44px] min-w-[44px] flex items-center justify-center">
+                        <MoreVertical className="w-4 h-4 text-text-muted" />
+                      </DropdownTrigger>
+                      <DropdownMenu>
+                        <DropdownItem
+                          icon={<Edit className="w-4 h-4" />}
+                          onClick={() => openEditModal(tenant)}
+                        >
+                          Edit
+                        </DropdownItem>
+                        {tenant.status === 'PENDING_SETUP' && (
+                          <>
+                            <DropdownItem
+                              icon={<Settings className="w-4 h-4" />}
+                              onClick={() => setSetupWizardTenant(tenant)}
+                            >
+                              Complete Setup
+                            </DropdownItem>
+                            <DropdownItem
+                              icon={<Trash2 className="w-4 h-4" />}
+                              onClick={() => setDeletingTenant(tenant)}
+                              destructive
+                            >
+                              Delete
+                            </DropdownItem>
+                          </>
+                        )}
+                        {tenant.status === 'ACTIVE' && (
+                          <DropdownItem
+                            icon={<Pause className="w-4 h-4" />}
+                            onClick={() => handleStatusChange(tenant, 'SUSPENDED')}
+                            destructive
+                          >
+                            Suspend
+                          </DropdownItem>
+                        )}
+                        {tenant.status === 'SUSPENDED' && (
+                          <>
+                            <DropdownItem
+                              icon={<Play className="w-4 h-4" />}
+                              onClick={() => handleStatusChange(tenant, 'ACTIVE')}
+                            >
+                              Activate
+                            </DropdownItem>
+                            <DropdownItem
+                              icon={<Trash2 className="w-4 h-4" />}
+                              onClick={() => setDeletingTenant(tenant)}
+                              destructive
+                            >
+                              Delete
+                            </DropdownItem>
+                          </>
+                        )}
+                      </DropdownMenu>
+                    </Dropdown>
+                  }
+                />
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* Tenants Table - Desktop */}
+      {data && (
+        <div className="hidden md:block">
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="table">
@@ -491,24 +661,24 @@ export default function TenantsPage() {
               </table>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Pagination */}
-          {data.totalPages > 0 && (
-            <div className="mt-4">
-              <Pagination
-                page={data.page}
-                totalPages={data.totalPages}
-                total={data.totalCount}
-                limit={data.limit}
-                onPageChange={setPage}
-                onLimitChange={(newLimit) => {
-                  setLimit(newLimit);
-                  setPage(1);
-                }}
-              />
-            </div>
-          )}
-        </>
+      {/* Pagination - Shared between mobile and desktop */}
+      {data && data.totalPages > 0 && (
+        <div className="mt-4">
+          <Pagination
+            page={data.page}
+            totalPages={data.totalPages}
+            total={data.totalCount}
+            limit={data.limit}
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+          />
+        </div>
       )}
 
       {/* Create Tenant Modal */}

@@ -47,6 +47,8 @@ import {
   Settings,
   Edit2,
 } from 'lucide-react';
+import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -482,36 +484,38 @@ export default function BackupPage() {
       {activeTab === 'backups' && (
         <>
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <div className="bg-background-secondary rounded-lg p-3 border border-border-primary">
-              <div className="flex items-center gap-2 text-text-secondary text-xs mb-1">
-                <Archive className="w-3.5 h-3.5" />
-                Total Backups
+          <MobileCollapsibleSection title="Statistics" count={4} className="mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-background-secondary rounded-lg p-3 border border-border-primary">
+                <div className="flex items-center gap-2 text-text-secondary text-xs mb-1">
+                  <Archive className="w-3.5 h-3.5" />
+                  Total Backups
+                </div>
+                <div className="text-xl font-semibold text-text-primary">{totalCount}</div>
               </div>
-              <div className="text-xl font-semibold text-text-primary">{totalCount}</div>
-            </div>
-            <div className="bg-background-secondary rounded-lg p-3 border border-border-primary">
-              <div className="flex items-center gap-2 text-status-success text-xs mb-1">
-                <CheckCircle className="w-3.5 h-3.5" />
-                Completed
+              <div className="bg-background-secondary rounded-lg p-3 border border-border-primary">
+                <div className="flex items-center gap-2 text-status-success text-xs mb-1">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Completed
+                </div>
+                <div className="text-xl font-semibold text-status-success">{stats.completed}</div>
               </div>
-              <div className="text-xl font-semibold text-status-success">{stats.completed}</div>
-            </div>
-            <div className="bg-background-secondary rounded-lg p-3 border border-border-primary">
-              <div className="flex items-center gap-2 text-accent-primary text-xs mb-1">
-                <Loader2 className="w-3.5 h-3.5" />
-                In Progress
+              <div className="bg-background-secondary rounded-lg p-3 border border-border-primary">
+                <div className="flex items-center gap-2 text-accent-primary text-xs mb-1">
+                  <Loader2 className="w-3.5 h-3.5" />
+                  In Progress
+                </div>
+                <div className="text-xl font-semibold text-accent-primary">{stats.inProgress}</div>
               </div>
-              <div className="text-xl font-semibold text-accent-primary">{stats.inProgress}</div>
-            </div>
-            <div className="bg-background-secondary rounded-lg p-3 border border-border-primary">
-              <div className="flex items-center gap-2 text-status-error text-xs mb-1">
-                <XCircle className="w-3.5 h-3.5" />
-                Failed
+              <div className="bg-background-secondary rounded-lg p-3 border border-border-primary">
+                <div className="flex items-center gap-2 text-status-error text-xs mb-1">
+                  <XCircle className="w-3.5 h-3.5" />
+                  Failed
+                </div>
+                <div className="text-xl font-semibold text-status-error">{stats.failed}</div>
               </div>
-              <div className="text-xl font-semibold text-status-error">{stats.failed}</div>
             </div>
-          </div>
+          </MobileCollapsibleSection>
 
           {/* Filters */}
           <div className="flex flex-wrap gap-3 mb-4">
@@ -555,8 +559,155 @@ export default function BackupPage() {
             </Alert>
           )}
 
-          {/* Backups Table */}
-          <div className="bg-background-secondary rounded-lg border border-border-primary overflow-hidden">
+          {/* Mobile Card View for Backups */}
+          <div className="md:hidden space-y-3">
+            {backupsLoading ? (
+              <div className="card p-8 text-center text-text-secondary">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                Loading backups...
+              </div>
+            ) : backups.length === 0 ? (
+              <div className="card p-8 text-center text-text-secondary">
+                <FileArchive className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                No backups found
+              </div>
+            ) : (
+              backups.map((backup) => {
+                const tenant = tenantsData?.tenants.find((t) => t.id === backup.tenantId);
+                return (
+                  <MobileCard
+                    key={backup.id}
+                    title={
+                      <span className="font-medium text-text-primary">
+                        {backup.name || 'Unnamed Backup'}
+                      </span>
+                    }
+                    subtitle={
+                      <span className="text-xs text-text-tertiary font-mono">
+                        {backup.id.slice(0, 8)}...
+                      </span>
+                    }
+                    badge={
+                      <div className="flex items-center gap-1.5">
+                        {getStatusIcon(backup.status)}
+                        <span
+                          className={cn(
+                            'text-xs font-medium',
+                            backup.status === 'COMPLETED' || backup.status === 'RESTORED'
+                              ? 'text-status-success'
+                              : backup.status === 'FAILED'
+                                ? 'text-status-error'
+                                : backup.status === 'PENDING' ||
+                                    backup.status === 'IN_PROGRESS' ||
+                                    backup.status === 'RESTORING'
+                                  ? 'text-accent-primary'
+                                  : 'text-text-secondary'
+                          )}
+                        >
+                          {getBackupStatusLabel(backup.status)}
+                        </span>
+                      </div>
+                    }
+                    actions={
+                      <div className="flex items-center gap-1">
+                        {(backup.status === 'COMPLETED' || backup.status === 'RESTORED') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedBackup(backup);
+                              setRestoreDialogOpen(true);
+                            }}
+                            aria-label="Restore backup"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {backup.status !== 'IN_PROGRESS' &&
+                          backup.status !== 'RESTORING' &&
+                          backup.status !== 'DELETED' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedBackup(backup);
+                                setDeleteDialogOpen(true);
+                              }}
+                              aria-label="Delete backup"
+                              className="text-status-error hover:text-status-error"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                      </div>
+                    }
+                    details={
+                      <>
+                        {(backup.status === 'IN_PROGRESS' || backup.status === 'RESTORING') && (
+                          <div className="mb-3">
+                            <div className="w-full h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-accent-primary transition-all duration-300"
+                                style={{ width: `${backup.progress}%` }}
+                              />
+                            </div>
+                            <div className="text-xs text-text-tertiary mt-0.5">
+                              {backup.currentStep || `${backup.progress}%`}
+                            </div>
+                          </div>
+                        )}
+                        {backup.status === 'FAILED' && backup.errorMessage && (
+                          <div className="text-xs text-status-error mb-3 line-clamp-2">
+                            {backup.errorMessage}
+                          </div>
+                        )}
+                        <CardDetailsGrid>
+                          <CardDetailItem
+                            label="Tenant"
+                            value={
+                              <div className="flex items-center gap-1.5">
+                                <Building className="w-3.5 h-3.5 text-text-tertiary" />
+                                <span className="truncate">{tenant?.name || backup.tenantId.slice(0, 8) + '...'}</span>
+                              </div>
+                            }
+                          />
+                          <CardDetailItem label="Size" value={formatBytes(backup.totalSizeBytes)} />
+                          <CardDetailItem label="Files" value={backup.filesCount.toLocaleString()} />
+                          <CardDetailItem
+                            label="Created"
+                            value={format(new Date(backup.createdAt), 'dd MMM yyyy HH:mm')}
+                          />
+                          <CardDetailItem
+                            label="Expiry"
+                            value={
+                              backup.expiresAt ? (
+                                <span
+                                  className={cn(
+                                    new Date(backup.expiresAt) < new Date()
+                                      ? 'text-status-error'
+                                      : new Date(backup.expiresAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                        ? 'text-status-warning'
+                                        : 'text-text-secondary'
+                                  )}
+                                >
+                                  {format(new Date(backup.expiresAt), 'dd MMM yyyy')}
+                                </span>
+                              ) : (
+                                <span className="text-text-tertiary">Never</span>
+                              )
+                            }
+                          />
+                        </CardDetailsGrid>
+                      </>
+                    }
+                  />
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Backups Table */}
+          <div className="hidden md:block bg-background-secondary rounded-lg border border-border-primary overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[800px]">
                 <thead>
@@ -762,8 +913,129 @@ export default function BackupPage() {
             </Alert>
           )}
 
-          {/* Schedules Table */}
-          <div className="bg-background-secondary rounded-lg border border-border-primary overflow-hidden">
+          {/* Mobile Card View for Schedules */}
+          <div className="md:hidden space-y-3">
+            {schedulesLoading ? (
+              <div className="card p-8 text-center text-text-secondary">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                Loading schedules...
+              </div>
+            ) : schedules.length === 0 ? (
+              <div className="card p-8 text-center text-text-secondary">
+                <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                No backup schedules configured
+              </div>
+            ) : (
+              schedules.map((schedule) => (
+                <MobileCard
+                  key={schedule.id}
+                  title={
+                    <div className="flex items-center gap-2">
+                      <Building className="w-4 h-4 text-text-tertiary" />
+                      <span className="font-medium text-text-primary">
+                        {schedule.tenant?.name || schedule.tenantId.slice(0, 8) + '...'}
+                      </span>
+                    </div>
+                  }
+                  subtitle={
+                    <span className="text-xs text-text-tertiary font-mono">
+                      {schedule.cronPattern}
+                    </span>
+                  }
+                  badge={
+                    <div className="flex items-center gap-1.5">
+                      {schedule.isEnabled ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 text-status-success" />
+                          <span className="text-xs font-medium text-status-success">Enabled</span>
+                        </>
+                      ) : (
+                        <>
+                          <Pause className="w-4 h-4 text-text-tertiary" />
+                          <span className="text-xs text-text-tertiary">Disabled</span>
+                        </>
+                      )}
+                    </div>
+                  }
+                  actions={
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggleSchedule(schedule)}
+                        aria-label={schedule.isEnabled ? 'Disable schedule' : 'Enable schedule'}
+                      >
+                        {schedule.isEnabled ? (
+                          <Pause className="w-4 h-4" />
+                        ) : (
+                          <Play className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openScheduleModal(schedule)}
+                        aria-label="Edit schedule"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedSchedule(schedule);
+                          setDeleteScheduleDialogOpen(true);
+                        }}
+                        aria-label="Delete schedule"
+                        className="text-status-error hover:text-status-error"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  }
+                  details={
+                    <>
+                      {schedule.lastError && (
+                        <div className="text-xs text-status-error mb-3 line-clamp-2">
+                          {schedule.lastError}
+                        </div>
+                      )}
+                      <CardDetailsGrid>
+                        <CardDetailItem
+                          label="Schedule"
+                          value={describeCronPattern(schedule.cronPattern)}
+                          fullWidth
+                        />
+                        <CardDetailItem
+                          label="Retention"
+                          value={`${schedule.retentionDays} days / ${schedule.maxBackups} max`}
+                        />
+                        <CardDetailItem
+                          label="Next Run"
+                          value={
+                            schedule.nextRunAt
+                              ? format(new Date(schedule.nextRunAt), 'dd MMM yyyy, HH:mm')
+                              : '-'
+                          }
+                        />
+                        <CardDetailItem
+                          label="Last Run"
+                          value={
+                            schedule.lastRunAt
+                              ? format(new Date(schedule.lastRunAt), 'dd MMM yyyy, HH:mm')
+                              : 'Never'
+                          }
+                        />
+                      </CardDetailsGrid>
+                    </>
+                  }
+                />
+              ))
+            )}
+          </div>
+
+          {/* Desktop Schedules Table */}
+          <div className="hidden md:block bg-background-secondary rounded-lg border border-border-primary overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px]">
                 <thead>
@@ -853,12 +1125,12 @@ export default function BackupPage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-text-secondary">
                           {schedule.nextRunAt
-                            ? format(new Date(schedule.nextRunAt), 'dd MMM, HH:mm')
+                            ? format(new Date(schedule.nextRunAt), 'dd MMM yyyy, HH:mm')
                             : '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-text-secondary">
                           {schedule.lastRunAt
-                            ? format(new Date(schedule.lastRunAt), 'dd MMM, HH:mm')
+                            ? format(new Date(schedule.lastRunAt), 'dd MMM yyyy, HH:mm')
                             : 'Never'}
                         </td>
                         <td className="px-4 py-3">

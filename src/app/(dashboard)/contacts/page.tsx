@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Users, AlertCircle, Building2, User, Trash2 } from 'lucide-react';
+import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { useContacts, useDeleteContact, useBulkDeleteContacts } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
@@ -20,7 +21,7 @@ import type { ContactType } from '@/generated/prisma';
 export default function ContactsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { success, error: toastError } = useToast();
+  const { success, error: showError } = useToast();
   const { can } = usePermissions();
   const { data: session } = useSession();
 
@@ -145,7 +146,7 @@ export default function ContactsPage() {
       setDeleteDialogOpen(false);
       setContactToDelete(null);
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to delete contact');
+      showError(err instanceof Error ? err.message : 'Failed to delete contact');
     }
   };
 
@@ -172,7 +173,7 @@ export default function ContactsPage() {
       setBulkDeleteDialogOpen(false);
       clearSelection();
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to delete contacts');
+      showError(err instanceof Error ? err.message : 'Failed to delete contacts');
     }
   };
 
@@ -203,61 +204,63 @@ export default function ContactsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-oak-primary/10">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-oak-light" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.total}</p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Total</p>
+        <MobileCollapsibleSection title="Statistics" count={4} className="mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-oak-primary/10">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-oak-light" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">{stats.total}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Total</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-status-info/10">
-                <User className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">
-                  {stats.individuals}
-                </p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Individuals</p>
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-info/10">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">
+                    {stats.individuals}
+                  </p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Individuals</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-status-success/10">
-                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-status-success" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">
-                  {stats.corporates}
-                </p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Corporates</p>
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-success/10">
+                  <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-status-success" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">
+                    {stats.corporates}
+                  </p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Corporates</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="card p-3 sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-status-warning/10">
-                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-semibold text-text-primary">
-                  {stats.withCompanies}
-                </p>
-                <p className="text-xs sm:text-sm text-text-tertiary">Linked</p>
+            <div className="card p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-warning/10">
+                  <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">
+                    {stats.withCompanies}
+                  </p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Linked</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </MobileCollapsibleSection>
       )}
 
       {/* Filters */}

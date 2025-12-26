@@ -518,7 +518,7 @@ export default function SharedDocumentPage() {
                           </div>
                           {comment.selectedText && (
                             <div className="mb-2 px-2 py-1 bg-status-warning/10 border-l-2 border-status-warning rounded-r text-2xs text-text-secondary italic">
-                              "{comment.selectedText}"
+                              &quot;{comment.selectedText}&quot;
                             </div>
                           )}
                           <p className="text-sm text-text-primary">{comment.content}</p>

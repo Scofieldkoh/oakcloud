@@ -18,16 +18,17 @@ export interface ModalProps {
   className?: string;
 }
 
+// Mobile-first sizing: smaller screens use more width, larger screens use fixed max-width
 const sizeClasses = {
-  sm: 'max-w-sm',      // 384px
-  md: 'max-w-md',      // 448px
-  lg: 'max-w-lg',      // 512px
-  xl: 'max-w-xl',      // 576px
-  '2xl': 'max-w-2xl',  // 672px
-  '4xl': 'max-w-4xl',  // 896px
-  '5xl': 'max-w-5xl',  // 1024px
-  '6xl': 'max-w-6xl',  // 1152px
-  full: 'max-w-[90vw]', // 90% viewport width
+  sm: 'max-w-[calc(100vw-2rem)] sm:max-w-sm',      // Mobile: full width - padding, SM+: 384px
+  md: 'max-w-[calc(100vw-2rem)] sm:max-w-md',      // Mobile: full width - padding, SM+: 448px
+  lg: 'max-w-[calc(100vw-2rem)] sm:max-w-lg',      // Mobile: full width - padding, SM+: 512px
+  xl: 'max-w-[calc(100vw-2rem)] sm:max-w-xl',      // Mobile: full width - padding, SM+: 576px
+  '2xl': 'max-w-[calc(100vw-2rem)] sm:max-w-2xl',  // Mobile: full width - padding, SM+: 672px
+  '4xl': 'max-w-[calc(100vw-2rem)] md:max-w-4xl',  // Mobile: full width - padding, MD+: 896px
+  '5xl': 'max-w-[calc(100vw-2rem)] md:max-w-5xl',  // Mobile: full width - padding, MD+: 1024px
+  '6xl': 'max-w-[calc(100vw-2rem)] lg:max-w-6xl',  // Mobile: full width - padding, LG+: 1152px
+  full: 'max-w-[calc(100vw-2rem)] sm:max-w-[90vw]', // Always responsive
 };
 
 export function Modal({
@@ -130,7 +131,7 @@ export function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1 rounded hover:bg-background-elevated text-text-muted hover:text-text-primary transition-colors"
+                className="p-2 sm:p-1 -m-1 rounded hover:bg-background-elevated text-text-muted hover:text-text-primary transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />

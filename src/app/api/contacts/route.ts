@@ -23,17 +23,15 @@ export async function GET(request: NextRequest) {
       sortOrder: searchParams.get('sortOrder') || undefined,
     });
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param
+    // For SUPER_ADMIN, allow specifying tenantId via query param or viewing all contacts
     const tenantIdParam = searchParams.get('tenantId');
-    let effectiveTenantId: string;
+    let effectiveTenantId: string | null = session.tenantId;
 
     if (session.isSuperAdmin && tenantIdParam) {
       effectiveTenantId = tenantIdParam;
-    } else if (session.tenantId) {
-      effectiveTenantId = session.tenantId;
-    } else {
-      // SUPER_ADMIN without tenant context cannot list contacts without specifying a tenant
-      return NextResponse.json({ error: 'Tenant context required. SUPER_ADMIN must specify tenantId query parameter.' }, { status: 400 });
+    } else if (session.isSuperAdmin && !session.tenantId) {
+      // SUPER_ADMIN without tenant context - will show all contacts across tenants
+      effectiveTenantId = null;
     }
 
     // For company-scoped users, filter by their assigned companies
@@ -42,7 +40,10 @@ export async function GET(request: NextRequest) {
       ? session.companyIds
       : undefined;
 
-    const result = await searchContactsWithCounts(params, effectiveTenantId, companyIds);
+    const result = await searchContactsWithCounts(params, effectiveTenantId, {
+      companyIds,
+      skipTenantFilter: session.isSuperAdmin && !effectiveTenantId,
+    });
 
     return NextResponse.json(result);
   } catch (error) {

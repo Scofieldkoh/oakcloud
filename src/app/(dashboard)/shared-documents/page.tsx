@@ -26,6 +26,7 @@ import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-se
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
 import { Pagination } from '@/components/companies/pagination';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { cn, formatDate } from '@/lib/utils';
 
 // ============================================================================
@@ -353,150 +354,281 @@ export default function SharedDocumentsPage() {
           </Link>
         </div>
       ) : (
-        <div className="table-container mb-6">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Document</th>
-                <th>Company</th>
-                <th>Status</th>
-                <th>Permissions</th>
-                <th>Views</th>
-                <th>Created</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shares.map((share) => (
-                <tr key={share.id}>
-                  <td>
-                    <Link
-                      href={`/generated-documents/${share.document.id}`}
-                      className="font-medium text-text-primary hover:text-oak-light transition-colors"
-                    >
-                      {share.document.title}
-                    </Link>
-                    {share.expiresAt && (
-                      <p className="text-xs text-text-tertiary mt-0.5 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        Expires {formatDate(share.expiresAt)}
-                      </p>
-                    )}
-                  </td>
-                  <td className="text-text-secondary">
-                    {share.document.company ? (
-                      <span className="flex items-center gap-1">
-                        <Building2 className="w-3 h-3 text-text-muted" />
-                        {share.document.company.name}
-                      </span>
-                    ) : (
-                      <span className="text-text-muted">—</span>
-                    )}
-                  </td>
-                  <td>
-                    <ShareStatusBadge status={share.effectiveStatus} />
-                  </td>
-                  <td>
+        <>
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3 mb-6">
+            {shares.map((share) => (
+              <MobileCard
+                key={share.id}
+                title={share.document.title}
+                subtitle={
+                  share.expiresAt && (
+                    <span className="flex items-center gap-1 text-text-tertiary">
+                      <Calendar className="w-3 h-3" />
+                      Expires {formatDate(share.expiresAt)}
+                    </span>
+                  )
+                }
+                badge={<ShareStatusBadge status={share.effectiveStatus} />}
+                details={
+                  <div className="space-y-3">
+                    {/* Permissions */}
                     <div className="flex flex-wrap items-center gap-1">
                       {share.allowedActions.includes('view') && (
                         <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-background-tertiary rounded text-xs text-text-muted">
                           <Eye className="w-3 h-3" />
+                          View
                         </span>
                       )}
                       {share.allowedActions.includes('download') && (
                         <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-background-tertiary rounded text-xs text-text-muted">
                           <Download className="w-3 h-3" />
+                          Download
                         </span>
                       )}
                       {share.allowComments && (
                         <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-background-tertiary rounded text-xs text-text-muted">
                           <MessageSquare className="w-3 h-3" />
+                          Comments
                         </span>
                       )}
                       {share.passwordHash && (
                         <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950 rounded text-xs text-amber-700 dark:text-amber-400">
                           <Lock className="w-3 h-3" />
+                          Protected
                         </span>
                       )}
                     </div>
-                  </td>
-                  <td className="text-text-secondary">
-                    {share.viewCount}
-                    {share._count.comments > 0 && (
-                      <span className="text-text-muted ml-1">
-                        ({share._count.comments} comments)
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-text-secondary">
-                    <div>
-                      <p className="text-sm">{formatDate(share.createdAt)}</p>
-                      <p className="text-xs text-text-tertiary">
-                        by {share.createdBy.firstName} {share.createdBy.lastName}
-                      </p>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex items-center justify-end gap-1">
-                      {/* Copy link */}
+
+                    <CardDetailsGrid>
+                      <CardDetailItem
+                        label="Company"
+                        value={share.document.company?.name || '—'}
+                        icon={<Building2 className="w-3 h-3" />}
+                      />
+                      <CardDetailItem
+                        label="Views"
+                        value={`${share.viewCount}${share._count.comments > 0 ? ` (${share._count.comments} comments)` : ''}`}
+                        icon={<Eye className="w-3 h-3" />}
+                      />
+                      <CardDetailItem
+                        label="Created"
+                        value={formatDate(share.createdAt)}
+                        icon={<Calendar className="w-3 h-3" />}
+                      />
+                      <CardDetailItem
+                        label="By"
+                        value={`${share.createdBy.firstName} ${share.createdBy.lastName}`}
+                      />
+                    </CardDetailsGrid>
+                  </div>
+                }
+                actions={
+                  <div className="flex items-center gap-1">
+                    {/* Copy link */}
+                    <button
+                      type="button"
+                      onClick={() => handleCopyLink(share)}
+                      className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Copy link"
+                      disabled={share.effectiveStatus !== 'active'}
+                    >
+                      {copiedId === share.id ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
+
+                    {/* Open link */}
+                    <a
+                      href={getShareUrl(share.shareToken)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        'p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center',
+                        share.effectiveStatus !== 'active' && 'opacity-50 pointer-events-none'
+                      )}
+                      title="Open in new tab"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+
+                    {/* Manage shares */}
+                    <Link
+                      href={`/generated-documents/${share.document.id}/share`}
+                      className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Manage shares"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </Link>
+
+                    {/* Revoke */}
+                    {share.effectiveStatus === 'active' && (
                       <button
                         type="button"
-                        onClick={() => handleCopyLink(share)}
-                        className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
-                        title="Copy link"
-                        disabled={share.effectiveStatus !== 'active'}
+                        onClick={() => {
+                          setShareToRevoke(share);
+                          setRevokeDialogOpen(true);
+                        }}
+                        className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Revoke"
                       >
-                        {copiedId === share.id ? (
-                          <Check className="w-4 h-4 text-green-500" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
+                        <Trash2 className="w-4 h-4" />
                       </button>
+                    )}
+                  </div>
+                }
+              />
+            ))}
+          </div>
 
-                      {/* Open link */}
-                      <a
-                        href={getShareUrl(share.shareToken)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(
-                          'p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors',
-                          share.effectiveStatus !== 'active' && 'opacity-50 pointer-events-none'
-                        )}
-                        title="Open in new tab"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-
-                      {/* Manage shares */}
+          {/* Desktop Table View */}
+          <div className="hidden md:block table-container mb-6">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Document</th>
+                  <th>Company</th>
+                  <th>Status</th>
+                  <th>Permissions</th>
+                  <th>Views</th>
+                  <th>Created</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shares.map((share) => (
+                  <tr key={share.id}>
+                    <td>
                       <Link
-                        href={`/generated-documents/${share.document.id}/share`}
-                        className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
-                        title="Manage shares"
+                        href={`/generated-documents/${share.document.id}`}
+                        className="font-medium text-text-primary hover:text-oak-light transition-colors"
                       >
-                        <FileText className="w-4 h-4" />
+                        {share.document.title}
                       </Link>
-
-                      {/* Revoke */}
-                      {share.effectiveStatus === 'active' && (
+                      {share.expiresAt && (
+                        <p className="text-xs text-text-tertiary mt-0.5 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          Expires {formatDate(share.expiresAt)}
+                        </p>
+                      )}
+                    </td>
+                    <td className="text-text-secondary">
+                      {share.document.company ? (
+                        <span className="flex items-center gap-1">
+                          <Building2 className="w-3 h-3 text-text-muted" />
+                          {share.document.company.name}
+                        </span>
+                      ) : (
+                        <span className="text-text-muted">—</span>
+                      )}
+                    </td>
+                    <td>
+                      <ShareStatusBadge status={share.effectiveStatus} />
+                    </td>
+                    <td>
+                      <div className="flex flex-wrap items-center gap-1">
+                        {share.allowedActions.includes('view') && (
+                          <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-background-tertiary rounded text-xs text-text-muted">
+                            <Eye className="w-3 h-3" />
+                          </span>
+                        )}
+                        {share.allowedActions.includes('download') && (
+                          <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-background-tertiary rounded text-xs text-text-muted">
+                            <Download className="w-3 h-3" />
+                          </span>
+                        )}
+                        {share.allowComments && (
+                          <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-background-tertiary rounded text-xs text-text-muted">
+                            <MessageSquare className="w-3 h-3" />
+                          </span>
+                        )}
+                        {share.passwordHash && (
+                          <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950 rounded text-xs text-amber-700 dark:text-amber-400">
+                            <Lock className="w-3 h-3" />
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="text-text-secondary">
+                      {share.viewCount}
+                      {share._count.comments > 0 && (
+                        <span className="text-text-muted ml-1">
+                          ({share._count.comments} comments)
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-text-secondary">
+                      <div>
+                        <p className="text-sm">{formatDate(share.createdAt)}</p>
+                        <p className="text-xs text-text-tertiary">
+                          by {share.createdBy.firstName} {share.createdBy.lastName}
+                        </p>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Copy link */}
                         <button
                           type="button"
-                          onClick={() => {
-                            setShareToRevoke(share);
-                            setRevokeDialogOpen(true);
-                          }}
-                          className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                          title="Revoke"
+                          onClick={() => handleCopyLink(share)}
+                          className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
+                          title="Copy link"
+                          disabled={share.effectiveStatus !== 'active'}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {copiedId === share.id ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+
+                        {/* Open link */}
+                        <a
+                          href={getShareUrl(share.shareToken)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(
+                            'p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors',
+                            share.effectiveStatus !== 'active' && 'opacity-50 pointer-events-none'
+                          )}
+                          title="Open in new tab"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+
+                        {/* Manage shares */}
+                        <Link
+                          href={`/generated-documents/${share.document.id}/share`}
+                          className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
+                          title="Manage shares"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </Link>
+
+                        {/* Revoke */}
+                        {share.effectiveStatus === 'active' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShareToRevoke(share);
+                              setRevokeDialogOpen(true);
+                            }}
+                            className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            title="Revoke"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* Pagination */}

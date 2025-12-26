@@ -80,18 +80,6 @@ export async function GET(request: NextRequest) {
       effectiveTenantId = tenantIdParam;
     }
 
-    // SUPER_ADMIN without tenant selection sees no documents (must select a tenant first)
-    if (!effectiveTenantId) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          documents: [],
-          pagination: { total: 0, page: 1, limit, totalPages: 0, hasMore: false },
-        },
-        meta: { requestId: uuidv4(), timestamp: new Date().toISOString() },
-      });
-    }
-
     // Determine accessible company IDs
     let companyIds: string[] | undefined;
 
@@ -125,6 +113,7 @@ export async function GET(request: NextRequest) {
       limit,
       sortBy,
       sortOrder,
+      skipTenantFilter: session.isSuperAdmin && !effectiveTenantId,
     });
 
     // Transform for API response (convert Decimal to string, Date to ISO string)

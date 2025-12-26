@@ -110,31 +110,30 @@ export function DuplicateComparisonModal({
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm animate-fade-in">
       <div className="flex flex-col h-full">
         {/* Header - compact single line */}
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-border-primary bg-yellow-50 dark:bg-yellow-900/20">
+        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-border-primary bg-yellow-50 dark:bg-yellow-900/20">
           <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-          <h2 className="text-sm font-semibold text-text-primary">
-            Potential Duplicate Detected
+          <h2 className="text-xs sm:text-sm font-semibold text-text-primary flex-1 min-w-0">
+            <span className="truncate">Potential Duplicate Detected</span>
             {duplicateScore !== undefined && (
               <span className="ml-1.5 text-yellow-600 dark:text-yellow-500">
-                ({scorePercentage}% match)
+                ({scorePercentage}%)
               </span>
             )}
             {duplicateReason && (
-              <span className="ml-2 font-normal text-text-secondary">— {duplicateReason}</span>
+              <span className="hidden sm:inline ml-2 font-normal text-text-secondary">— {duplicateReason}</span>
             )}
           </h2>
-          <div className="flex-1" />
           <button
             onClick={onClose}
-            className="btn-ghost btn-xs btn-icon flex-shrink-0"
+            className="btn-ghost btn-xs btn-icon flex-shrink-0 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Main content - side by side */}
-        <div className="flex-1 flex overflow-hidden">
+        {/* Main content - stacked on mobile, side by side on desktop */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Current Document Panel */}
           <DocumentPanel
             title="This Document (New)"
@@ -144,8 +143,8 @@ export function DuplicateComparisonModal({
             isCurrentDoc={true}
           />
 
-          {/* Divider */}
-          <div className="w-px bg-border-secondary flex-shrink-0" />
+          {/* Divider - horizontal on mobile, vertical on desktop */}
+          <div className="h-px md:h-auto md:w-px bg-border-secondary flex-shrink-0" />
 
           {/* Duplicate Document Panel */}
           <DocumentPanel
@@ -157,44 +156,44 @@ export function DuplicateComparisonModal({
           />
         </div>
 
-        {/* Footer with actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border-primary bg-background-tertiary">
-          <p className="text-sm text-text-secondary">
-            Please review both documents and make a decision
+        {/* Footer with actions - stacked on mobile */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-border-primary bg-background-tertiary">
+          <p className="text-xs sm:text-sm text-text-secondary text-center sm:text-left">
+            Review both documents and make a decision
           </p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3">
             <button
               onClick={() => handleDecision('REJECT_DUPLICATE')}
               disabled={isSubmitting}
               className={cn(
-                'btn-secondary btn-sm',
+                'btn-secondary btn-sm min-h-[40px] sm:min-h-0 flex-1 sm:flex-none',
                 selectedDecision === 'REJECT_DUPLICATE' && 'ring-2 ring-status-success'
               )}
             >
               <X className="w-4 h-4" />
-              Not a Duplicate
+              <span className="hidden xs:inline">Not a </span>Duplicate
             </button>
             <button
               onClick={() => handleDecision('CONFIRM_DUPLICATE')}
               disabled={isSubmitting}
               className={cn(
-                'btn-danger btn-sm',
+                'btn-danger btn-sm min-h-[40px] sm:min-h-0 flex-1 sm:flex-none',
                 selectedDecision === 'CONFIRM_DUPLICATE' && 'ring-2 ring-status-error'
               )}
             >
               <Check className="w-4 h-4" />
-              Is a Duplicate
+              <span className="hidden xs:inline">Is a </span>Duplicate
             </button>
             <button
               onClick={() => handleDecision('MARK_AS_NEW_VERSION')}
               disabled={isSubmitting}
               className={cn(
-                'btn-primary btn-sm',
+                'btn-primary btn-sm min-h-[40px] sm:min-h-0 flex-1 sm:flex-none',
                 selectedDecision === 'MARK_AS_NEW_VERSION' && 'ring-2 ring-oak-light'
               )}
             >
               <GitBranch className="w-4 h-4" />
-              Mark as New Version
+              New Version
             </button>
           </div>
         </div>
@@ -220,16 +219,16 @@ function DocumentPanel({
   isCurrentDoc: boolean;
 }) {
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background-secondary min-w-0">
+    <div className="flex-1 flex flex-col overflow-hidden bg-background-secondary min-w-0 min-h-0 md:min-h-[200px]">
       {/* Panel Header - compact single line */}
       <div className="px-3 py-1.5 bg-background-tertiary border-b border-border-primary flex-shrink-0 flex items-center gap-2">
         <h3 className="text-xs font-medium text-text-primary">{title}</h3>
         <span className="text-xs text-text-muted">·</span>
-        <p className="text-xs text-text-secondary">{subtitle}</p>
+        <p className="text-xs text-text-secondary truncate">{subtitle}</p>
       </div>
 
-      {/* Document Preview - Takes up most space */}
-      <div className="flex-1 min-h-0 border-b border-border-primary bg-background-primary">
+      {/* Document Preview - Takes up most space (smaller on mobile) */}
+      <div className="flex-1 min-h-[150px] md:min-h-0 border-b border-border-primary bg-background-primary">
         {document.pdfUrl ? (
           <DocumentPageViewer
             pdfUrl={document.pdfUrl}
@@ -238,16 +237,16 @@ function DocumentPanel({
         ) : (
           <div className="flex items-center justify-center h-full text-text-muted">
             <div className="text-center">
-              <FileText className="w-16 h-16 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">No preview available</p>
+              <FileText className="w-12 md:w-16 h-12 md:h-16 mx-auto mb-2 md:mb-3 opacity-50" />
+              <p className="text-xs sm:text-sm">No preview available</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Extracted Fields - Scrollable */}
-      <div className="flex-shrink-0 max-h-[200px] overflow-auto p-3">
-        <div className="space-y-1">
+      {/* Extracted Fields - Scrollable (collapsed on mobile) */}
+      <div className="flex-shrink-0 max-h-[120px] md:max-h-[200px] overflow-auto p-2 md:p-3">
+        <div className="space-y-0.5 md:space-y-1">
           {fieldComparison.map((field) => (
             <FieldRow
               key={field.field}
@@ -260,8 +259,8 @@ function DocumentPanel({
         </div>
 
         {/* File Info */}
-        <div className="mt-4 pt-3 border-t border-border-primary">
-          <div className="text-xs text-text-muted space-y-1">
+        <div className="mt-2 md:mt-4 pt-2 md:pt-3 border-t border-border-primary">
+          <div className="text-xs text-text-muted space-y-0.5 md:space-y-1">
             <div className="truncate">
               <span className="text-text-secondary">File:</span>{' '}
               {document.fileName || 'Unknown'}

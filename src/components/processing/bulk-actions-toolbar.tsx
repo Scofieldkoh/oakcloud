@@ -172,21 +172,23 @@ export function BulkActionsToolbar({
     <>
       <div
         className={cn(
-          'fixed bottom-6 left-1/2 -translate-x-1/2 z-40',
+          'fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40',
           'bg-background-primary border border-border-primary rounded-lg shadow-xl',
-          'flex items-center gap-2 px-4 py-3',
+          'flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3',
+          'max-w-[calc(100%-2rem)] sm:max-w-none',
           'animate-in slide-in-from-bottom-4',
           className
         )}
       >
         {/* Selection count */}
-        <div className="flex items-center gap-2 pr-3 border-r border-border-primary">
-          <span className="text-sm text-text-secondary">
-            <span className="font-medium text-text-primary">{selectedIds.length}</span> selected
+        <div className="flex items-center gap-1 sm:gap-2 pr-2 sm:pr-3 border-r border-border-primary">
+          <span className="text-xs sm:text-sm text-text-secondary whitespace-nowrap">
+            <span className="font-medium text-text-primary">{selectedIds.length}</span>
+            <span className="hidden xs:inline"> selected</span>
           </span>
           <button
             onClick={onClearSelection}
-            className="btn-ghost btn-xs p-1"
+            className="btn-ghost btn-xs p-1 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0"
             title="Clear selection"
           >
             <X className="w-4 h-4" />
@@ -194,7 +196,7 @@ export function BulkActionsToolbar({
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           {operations.map((op) => {
             const Icon = op.icon;
             const isLoading =
@@ -208,7 +210,8 @@ export function BulkActionsToolbar({
                 onClick={() => handleOperation(op.id)}
                 disabled={isDisabled}
                 className={cn(
-                  'btn-sm flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors',
+                  'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-1.5 rounded-md transition-colors',
+                  'min-h-[40px] sm:min-h-0',
                   op.variant === 'danger'
                     ? 'hover:bg-status-error/10 hover:text-status-error text-text-secondary'
                     : op.variant === 'warning'
@@ -223,7 +226,7 @@ export function BulkActionsToolbar({
                 ) : (
                   <Icon className="w-4 h-4" />
                 )}
-                <span className="text-sm">{op.label}</span>
+                <span className="text-xs sm:text-sm hidden sm:inline">{op.label}</span>
               </button>
             );
           })}

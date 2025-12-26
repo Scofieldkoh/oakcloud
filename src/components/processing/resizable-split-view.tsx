@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, ReactNode } from 'react';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, GripHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ResizableSplitViewProps {
@@ -102,21 +102,26 @@ export function ResizableSplitView({
         className
       )}
     >
-      {/* Left Panel */}
+      {/* Left Panel - Full width on mobile, resizable width on desktop */}
       <div
         className={cn(
           'flex-shrink-0 overflow-auto',
-          'md:h-full h-1/2',
+          'h-1/2 md:h-full',
+          // On mobile: full width. On desktop: controlled by inline style
+          'max-md:!w-full',
           leftPanelClassName
         )}
-        style={{
-          width: `${leftWidth}%`,
-        }}
+        style={{ width: `${leftWidth}%` }}
       >
         {leftPanel}
       </div>
 
-      {/* Resize Handle */}
+      {/* Mobile Separator (horizontal divider) */}
+      <div className="md:hidden flex items-center justify-center h-3 bg-background-tertiary border-y border-border-primary">
+        <GripHorizontal className="w-4 h-4 text-text-muted" />
+      </div>
+
+      {/* Desktop Resize Handle (vertical) */}
       <div
         role="separator"
         aria-valuenow={leftWidth}
