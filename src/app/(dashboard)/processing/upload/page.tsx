@@ -13,7 +13,6 @@ import {
   CheckCircle,
   Loader2,
   Building2,
-  Files,
   RotateCcw,
   Merge,
   ClipboardPaste,
@@ -429,8 +428,7 @@ export default function ProcessingUploadPage() {
           <ArrowLeft className="w-4 h-4" />
           Back to Processing
         </Link>
-        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary flex items-center gap-3">
-          <Files className="w-6 h-6 text-oak-primary" />
+        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
           Upload Documents for Processing
         </h1>
         <p className="text-sm text-text-secondary mt-1">

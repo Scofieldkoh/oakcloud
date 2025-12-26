@@ -80,8 +80,7 @@ export default function CompanyAuditPage({
           <ArrowLeft className="w-4 h-4" />
           Back to Company
         </Link>
-        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary flex items-center gap-3">
-          <History className="w-5 h-5 sm:w-6 sm:h-6 text-text-tertiary" />
+        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
           Audit History
         </h1>
         <p className="text-sm text-text-secondary mt-1">

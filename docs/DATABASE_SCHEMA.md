@@ -1395,6 +1395,68 @@ enum DuplicateAction {
 
 ---
 
+## Exchange Rate Module Tables
+
+### exchange_rates
+
+Exchange rates for multi-currency document processing. Supports MAS (Monetary Authority of Singapore) daily rates and manual tenant overrides.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | Yes | FK to tenants (null = system-wide rate, non-null = tenant override) |
+| source_currency | VARCHAR | No | Source currency ISO 4217 code (e.g., USD, EUR) |
+| target_currency | VARCHAR | No | Target currency (default: SGD) |
+| rate | DECIMAL(18,8) | No | Exchange rate (source → target) |
+| inverse_rate | DECIMAL(18,8) | Yes | Inverse rate (1/rate) for convenience |
+| rate_date | DATE | No | Effective date of the rate |
+| rate_type | ENUM | No | Rate source type (see ExchangeRateType enum) |
+| is_manual_override | BOOLEAN | No | Whether this is a manual override |
+| manual_reason | TEXT | Yes | Reason for manual rate (required for overrides) |
+| created_by_id | UUID | Yes | FK to users who created (for manual rates) |
+| fetched_at | TIMESTAMP | No | When rate was fetched/created |
+| source_ref | VARCHAR | Yes | Source URL or dataset identifier |
+| source_hash | VARCHAR | Yes | Checksum for audit |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Rate Lookup Priority:**
+1. Tenant-specific override (if tenantId matches)
+2. System rate for exact date
+3. Fallback to most recent system rate
+
+**Indexes:**
+- `exchange_rates_tenant_id_source_currency_target_currency_rate_date_rate_type_key` UNIQUE
+- `exchange_rates_tenant_id_idx` on tenant_id
+- `exchange_rates_source_currency_target_currency_rate_date_idx`
+- `exchange_rates_rate_date_idx` on rate_date
+- `exchange_rates_source_currency_rate_date_idx`
+
+---
+
+## Exchange Rate Module Enums
+
+### ExchangeRateType
+```sql
+MAS_DAILY_RATE           -- MAS (Monetary Authority of Singapore) daily rates
+IRAS_MONTHLY_AVG_RATE    -- IRAS monthly average rates (future)
+ECB_DAILY_RATE           -- European Central Bank daily rates (future)
+MANUAL_RATE              -- Manually entered rates
+```
+
+---
+
+## Exchange Rate Audit Actions
+
+```sql
+EXCHANGE_RATE_SYNCED     -- Batch sync from external source (MAS API)
+EXCHANGE_RATE_CREATED    -- Manual rate created
+EXCHANGE_RATE_UPDATED    -- Rate updated
+EXCHANGE_RATE_DELETED    -- Rate deleted
+```
+
+---
+
 ## Migration Notes
 
 ### Multi-Tenancy

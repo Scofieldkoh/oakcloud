@@ -330,8 +330,7 @@ export default function AuditLogsPage() {
     <div className="p-4 sm:p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary flex items-center gap-2">
-          <Activity className="w-6 h-6" />
+        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
           Audit Logs
         </h1>
         <p className="text-sm text-text-secondary mt-1">

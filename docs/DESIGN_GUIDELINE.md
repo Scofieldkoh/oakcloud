@@ -536,9 +536,9 @@ All pages follow these consistency standards for a unified look and feel:
 
 The application uses three distinct page patterns:
 
-#### 1. Main List Pages (Companies, Contacts, Documents)
+#### 1. List Pages (All Dashboard Pages)
 
-These are top-level navigation pages that display lists of items.
+All list pages follow the same pattern - no icons in page headers. This applies to both main navigation pages (Companies, Contacts, Documents) and admin pages (Tenants, Users, Roles, etc.).
 
 ```tsx
 <div className="p-4 sm:p-6">
@@ -569,51 +569,14 @@ These are top-level navigation pages that display lists of items.
 </div>
 ```
 
-#### 2. Admin List Pages (Tenants, Roles, Users, Templates)
+**Note:** Icons should NOT be placed next to page headers/titles. Icons are reserved for:
+- Buttons (via `leftIcon` prop)
+- Sidebar navigation items
+- Stats cards and badges
+- Table cells and inline indicators
+- Section headers within pages (not the main page title)
 
-These are admin-specific pages under `/admin/*` that manage system resources.
-
-```tsx
-<div className="p-4 sm:p-6">
-  {/* Header - WITH icon in title */}
-  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-    <div>
-      <h1 className="text-xl sm:text-2xl font-semibold text-text-primary flex items-center gap-2">
-        <IconName className="w-6 h-6" />
-        Page Title
-      </h1>
-      <p className="text-sm text-text-secondary mt-1">
-        Description text here
-      </p>
-    </div>
-    <Button variant="primary" size="sm" leftIcon={<Plus />} onClick={...}>
-      Add Item
-    </Button>
-  </div>
-
-  {/* TenantSelector for SUPER_ADMIN (after header) */}
-  {session?.isSuperAdmin && (
-    <div className="mb-6">
-      <TenantSelector value={...} onChange={...} />
-    </div>
-  )}
-
-  {/* Filters */}
-  {/* Content */}
-</div>
-```
-
-**Admin page icons:**
-| Page | Icon |
-|------|------|
-| Tenants | `Building` |
-| Roles | `Shield` |
-| Users | `UserCog` (in sidebar) |
-| Templates | `FileText` (combined page with Document Templates and Partials tabs) |
-| Audit Logs | `Activity` |
-| Connectors | `Plug` |
-
-#### 3. Detail/Form/Wizard Pages
+#### 2. Detail/Form/Wizard Pages
 
 These are pages accessed via ID or for specific actions (view, edit, create).
 
@@ -650,7 +613,7 @@ These are pages accessed via ID or for specific actions (view, edit, create).
 </div>
 ```
 
-#### 4. Full-Page Editor with Sidebars (e.g., Template Editor)
+#### 3. Full-Page Editor with Sidebars (e.g., Template Editor)
 
 Complex editors with resizable sidebars and multiple tool panels.
 

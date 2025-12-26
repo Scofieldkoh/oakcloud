@@ -14,6 +14,7 @@ A modular internal management system designed for accounting practices. Clean, e
 - [Module: Contact Management](#module-contact-management)
 - [Module: Document Generation](#module-document-generation)
 - [Module: Document Processing](#module-document-processing)
+- [Module: Exchange Rate Maintenance](#module-exchange-rate-maintenance)
 - [Version History](#version-history) | [Full Changelog](./CHANGELOG.md)
 
 **Related Documentation:**
@@ -48,12 +49,13 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 11. ✅ **Connectors Hub** - External service integrations (AI providers, storage)
 12. ✅ **Document Generation** - Templates, PDF export, sharing, comments, workflow integration
 13. ✅ **Document Processing** - AI-powered ingestion, extraction, revisions, duplicate detection
-14. 🔜 **Bank Reconciliation** - Bank transaction matching, multi-currency support
-15. 🔜 **Client Portal** - Client access, document requests, communications
-16. 🔜 **Accounting Integration** - Xero, QuickBooks, MYOB connectors
-17. 🔜 **Module Marketplace** - Browse and install modules
-18. 🔜 **Module Linking** - Configure module relationships
-19. 🔜 **SuperAdmin Dashboard** - System administration
+14. ✅ **Exchange Rate Maintenance** - MAS API integration, manual overrides, scheduled sync
+15. 🔜 **Bank Reconciliation** - Bank transaction matching, multi-currency support
+16. 🔜 **Client Portal** - Client access, document requests, communications
+17. 🔜 **Accounting Integration** - Xero, QuickBooks, MYOB connectors
+18. 🔜 **Module Marketplace** - Browse and install modules
+19. 🔜 **Module Linking** - Configure module relationships
+20. 🔜 **SuperAdmin Dashboard** - System administration
 
 ---
 
@@ -3704,10 +3706,63 @@ PDFs are rendered **client-side** using `pdfjs-dist` for optimal coordinate accu
 
 ### Future Phases
 
-- **Phase 1B**: Multi-currency, GST validation, exchange rates
+- **Phase 1B**: GST validation, home currency conversion
 - **Phase 2**: Bank reconciliation, transaction matching
 - **Phase 3**: Client portal, communications
 - **Phase 4**: Accounting software integration (Xero, QuickBooks)
+
+---
+
+## Module: Exchange Rate Maintenance
+
+The Exchange Rate Maintenance module provides automated and manual exchange rate management for multi-currency document processing. Integrates with MAS (Monetary Authority of Singapore) API for daily rates.
+
+For detailed specifications, see [EXCHANGE_RATE_SPEC.md](./EXCHANGE_RATE_SPEC.md).
+
+### Features
+
+- **Automated Sync**: Daily sync from MAS API at 6am SGT via scheduled task
+- **Manual Rates**: Create tenant-specific overrides with audit trail
+- **Rate Lookup**: Smart fallback (tenant override → system rate → latest available)
+- **Admin UI**: Full management interface at `/admin/exchange-rates`
+- **21 Currencies**: USD, EUR, GBP, JPY, AUD, CNY, HKD, INR, IDR, KRW, MYR, NZD, PHP, QAR, SAR, CHF, TWD, THB, AED, VND, SGD
+
+### API Endpoints
+
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| `GET` | `/api/admin/exchange-rates` | List rates with filters | ADMIN |
+| `POST` | `/api/admin/exchange-rates` | Create manual rate | ADMIN |
+| `GET` | `/api/admin/exchange-rates/:id` | Get rate details | ADMIN |
+| `PATCH` | `/api/admin/exchange-rates/:id` | Update rate | ADMIN |
+| `DELETE` | `/api/admin/exchange-rates/:id` | Delete rate | ADMIN |
+| `POST` | `/api/admin/exchange-rates/sync` | Trigger MAS sync | SUPER_ADMIN |
+| `GET` | `/api/admin/exchange-rates/lookup` | Lookup rate by currency/date | Authenticated |
+
+### Rate Types
+
+| Type | Description |
+|------|-------------|
+| `MAS_DAILY_RATE` | MAS (Monetary Authority of Singapore) daily rates |
+| `IRAS_MONTHLY_AVG_RATE` | IRAS monthly average rates (future) |
+| `ECB_DAILY_RATE` | European Central Bank daily rates (future) |
+| `MANUAL_RATE` | Manually entered rates |
+
+### Services
+
+| Service | Purpose |
+|---------|---------|
+| `exchange-rate.service.ts` | Rate CRUD, sync, lookup with fallback |
+| `mas-api.ts` | MAS API client for fetching daily rates |
+| `exchange-rate-sync.task.ts` | Scheduled task for daily sync |
+
+### Environment Variables
+
+```bash
+# Exchange Rate Sync (Scheduler)
+SCHEDULER_EXCHANGE_RATE_SYNC_ENABLED=true
+SCHEDULER_EXCHANGE_RATE_SYNC_CRON="0 6 * * *"  # Daily at 6am SGT
+```
 
 ---
 

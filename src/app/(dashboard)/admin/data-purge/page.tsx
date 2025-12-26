@@ -146,8 +146,7 @@ export default function DataPurgePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary flex items-center gap-2">
-            <Trash2 className="w-6 h-6 text-status-error" />
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
             Data Purge
           </h1>
           <p className="text-sm text-text-secondary mt-1">

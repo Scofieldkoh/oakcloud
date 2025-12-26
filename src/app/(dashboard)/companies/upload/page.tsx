@@ -389,15 +389,8 @@ export default function UploadBizFilePage() {
           <ArrowLeft className="w-4 h-4" />
           {isUpdateMode ? 'Back to Company' : 'Back to Companies'}
         </Link>
-        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary flex items-center gap-3">
-          {isUpdateMode ? (
-            <>
-              <RefreshCw className="w-6 h-6 text-oak-primary" />
-              Update via BizFile
-            </>
-          ) : (
-            'Upload BizFile'
-          )}
+        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
+          {isUpdateMode ? 'Update via BizFile' : 'Upload BizFile'}
         </h1>
         <p className="text-sm text-text-secondary mt-1">
           {isUpdateMode ? (

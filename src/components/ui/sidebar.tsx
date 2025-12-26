@@ -23,6 +23,7 @@ import {
   Share2,
   ScanText,
   HardDrive,
+  DollarSign,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -57,6 +58,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Roles', href: '/admin/roles', icon: Shield, adminOnly: true },
   { name: 'Templates', href: '/admin/template-partials', icon: FileText, adminOnly: true },
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
+  { name: 'Exchange Rates', href: '/admin/exchange-rates', icon: DollarSign, adminOnly: true },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: Activity, adminOnly: true },
   { name: 'Backup & Restore', href: '/admin/backup', icon: HardDrive, superAdminOnly: true },
   { name: 'Data Purge', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
@@ -217,7 +219,7 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
 
   return (
     <div className={cn(
-      "border-t border-border-primary",
+      "border-t border-border-primary bg-background-tertiary",
       // Desktop: absolute positioned at bottom
       // Mobile: relative positioned, stays in flow
       isMobile ? "relative mt-auto" : "absolute bottom-0 left-0 right-0"
@@ -245,7 +247,7 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
       <div className="p-2.5">
         <div
           className={cn(
-            'flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-background-tertiary',
+            'flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-background-secondary',
             collapsed && 'justify-center'
           )}
         >
@@ -263,7 +265,7 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
           {!collapsed && (
             <button
               onClick={handleLogout}
-              className="p-1.5 rounded hover:bg-background-secondary text-text-muted hover:text-status-error transition-colors"
+              className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-status-error transition-colors"
               title="Sign out"
             >
               <LogOut className="w-4 h-4" />
@@ -273,7 +275,7 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
         {collapsed && (
           <button
             onClick={handleLogout}
-            className="w-full mt-1.5 p-2 rounded hover:bg-background-secondary text-text-muted hover:text-status-error transition-colors flex items-center justify-center"
+            className="w-full mt-1.5 p-2 rounded hover:bg-background-tertiary text-text-muted hover:text-status-error transition-colors flex items-center justify-center"
             title="Sign out"
           >
             <LogOut className="w-4 h-4" />
@@ -331,7 +333,7 @@ function DesktopSidebar() {
       </div>
 
       {/* User section at bottom */}
-      <UserSection collapsed={sidebarCollapsed} isMobile={true} />
+      <UserSection collapsed={sidebarCollapsed} isMobile={false} />
     </aside>
   );
 }

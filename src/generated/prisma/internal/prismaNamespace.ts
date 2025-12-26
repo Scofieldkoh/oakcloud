@@ -5860,14 +5860,21 @@ export type WebhookSubscriptionScalarFieldEnum = (typeof WebhookSubscriptionScal
 
 export const ExchangeRateScalarFieldEnum = {
   id: 'id',
+  tenantId: 'tenantId',
   sourceCurrency: 'sourceCurrency',
   targetCurrency: 'targetCurrency',
   rate: 'rate',
+  inverseRate: 'inverseRate',
   rateDate: 'rateDate',
   rateType: 'rateType',
+  isManualOverride: 'isManualOverride',
+  manualReason: 'manualReason',
+  createdById: 'createdById',
   fetchedAt: 'fetchedAt',
   sourceRef: 'sourceRef',
-  sourceHash: 'sourceHash'
+  sourceHash: 'sourceHash',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type ExchangeRateScalarFieldEnum = (typeof ExchangeRateScalarFieldEnum)[keyof typeof ExchangeRateScalarFieldEnum]

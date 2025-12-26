@@ -60,6 +60,7 @@ import {
   getSubCategoriesForCategory,
   getSubCategoryOptions,
 } from '@/lib/document-categories';
+import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
 
 // Status display configs
 const pipelineStatusConfig: Record<
@@ -99,7 +100,8 @@ const revisionStatusConfig: Record<
 // Use category labels from our utility
 const categoryLabels = CATEGORY_LABELS;
 
-const currencyOptions = ['SGD', 'USD', 'EUR', 'GBP', 'MYR', 'CNY', 'JPY', 'AUD', 'HKD', 'THB'];
+// Use all supported currencies from exchange rate validation (spread to convert readonly to mutable array)
+const currencyOptions = [...SUPPORTED_CURRENCIES];
 
 // GST tax codes with their rates
 const gstTaxCodes = [

@@ -53,7 +53,7 @@
  */
 
 import { scheduler } from './scheduler';
-import { backupTask, cleanupTask } from './tasks';
+import { backupTask, cleanupTask, exchangeRateSyncTask } from './tasks';
 
 /**
  * Initialize the scheduler with all registered tasks
@@ -64,9 +64,7 @@ export async function initializeScheduler(): Promise<void> {
   // Register all tasks
   scheduler.registerTask(backupTask);
   scheduler.registerTask(cleanupTask);
-
-  // Add more tasks here as needed:
-  // scheduler.registerTask(myNewTask);
+  scheduler.registerTask(exchangeRateSyncTask);
 
   // Initialize and start the scheduler
   await scheduler.initialize();

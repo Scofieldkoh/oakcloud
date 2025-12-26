@@ -28,7 +28,6 @@ import { FormInput } from '@/components/ui/form-input';
 import { useToast } from '@/components/ui/toast';
 import { Pagination } from '@/components/companies/pagination';
 import {
-  HardDrive,
   RefreshCw,
   Trash2,
   RotateCcw,
@@ -383,8 +382,7 @@ export default function BackupPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary flex items-center gap-2">
-            <HardDrive className="w-6 h-6 text-accent-primary" />
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
             Backup & Restore
           </h1>
           <p className="text-sm text-text-secondary mt-1">

@@ -7,3 +7,4 @@
 
 export { backupTask } from './backup.task';
 export { cleanupTask } from './cleanup.task';
+export { exchangeRateSyncTask } from './exchange-rate-sync.task';

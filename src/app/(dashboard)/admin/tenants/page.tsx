@@ -247,8 +247,7 @@ export default function TenantsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary flex items-center gap-2">
-            <Building className="w-6 h-6" />
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
             Tenants
           </h1>
           <p className="text-sm text-text-secondary mt-1">
