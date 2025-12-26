@@ -4,14 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
-import { useForm, Controller, type FieldErrors } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createContactSchema, type CreateContactInput } from '@/lib/validations/contact';
 import { useCreateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
-import { DateInput } from '@/components/ui/date-input';
 import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 
@@ -49,7 +48,6 @@ export default function NewContactPage() {
   const {
     register,
     handleSubmit,
-    control,
     watch,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<CreateContactInput>({
@@ -247,18 +245,14 @@ export default function NewContactPage() {
                       className="input input-sm"
                     />
                   </div>
-                  <Controller
-                    name="dateOfBirth"
-                    control={control}
-                    render={({ field }) => (
-                      <DateInput
-                        label="Date of Birth"
-                        value={field.value || ''}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                      />
-                    )}
-                  />
+                  <div>
+                    <label className="label">Date of Birth</label>
+                    <input
+                      type="date"
+                      {...register('dateOfBirth')}
+                      className="input input-sm"
+                    />
+                  </div>
                 </div>
               </>
             ) : (

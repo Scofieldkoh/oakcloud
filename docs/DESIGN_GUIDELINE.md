@@ -742,8 +742,7 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | Component | Props | Description |
 |-----------|-------|-------------|
 | `Button` | `variant`, `size`, `isLoading`, `iconOnly`, `leftIcon`, `rightIcon` | Chakra-based button with oak theme |
-| `FormInput` | `label`, `error`, `hint`, `inputSize`, `leftIcon`, `rightIcon` | Chakra Input with validation |
-| `DateInput` | `label`, `value`, `onChange`, `error`, `hint`, `size`, `disabled` | Segmented date input (DD/MM/YYYY) with calendar picker |
+| `FormInput` | `label`, `error`, `hint`, `inputSize`, `leftIcon`, `rightIcon`, `type` | Chakra Input with validation (supports type="date") |
 | `Alert` | `variant`, `title`, `compact`, `onClose` | Chakra Box-based notifications |
 | `Modal` | `isOpen`, `onClose`, `title`, `size`, `closeOnEscape` | Accessible modal dialog |
 | `ConfirmDialog` | `title`, `description`, `variant`, `requireReason` | Confirmation dialog with optional reason input |
@@ -909,43 +908,50 @@ import { FormInput } from '@/components/ui/form-input';
 />
 ```
 
-### DateInput
+### Date Input
+
+Use native HTML5 date inputs for date fields. These provide a consistent browser-native date picker experience.
 
 ```tsx
-import { DateInput } from '@/components/ui/date-input';
+// Basic date input with label
+<div>
+  <label className="label">Date of Birth</label>
+  <input
+    type="date"
+    value={dateValue}  // YYYY-MM-DD format
+    onChange={(e) => setDateValue(e.target.value)}
+    className="input input-sm"
+  />
+</div>
 
-// Basic date input
-<DateInput
-  label="Date of Birth"
-  value={dateValue}  // YYYY-MM-DD format
-  onChange={(val) => setDateValue(val)}
-/>
+// With react-hook-form
+<div>
+  <label className="label">Incorporation Date</label>
+  <input
+    type="date"
+    {...register('incorporationDate')}
+    className="input input-sm"
+  />
+</div>
 
-// Compact size with hint
-<DateInput
-  label="Appointment Date"
-  value={appointmentDate}
-  onChange={setAppointmentDate}
-  size="sm"
-  hint="Leave empty if not applicable"
-/>
-
-// With error
-<DateInput
-  label="Start Date"
-  value={startDate}
-  onChange={setStartDate}
-  error="Start date is required"
-  required
-/>
+// With hint text
+<div>
+  <label className="label">Date of Cessation</label>
+  <input
+    type="date"
+    value={cessationDate}
+    onChange={(e) => setCessationDate(e.target.value)}
+    className="input input-sm w-full"
+  />
+  <p className="text-xs text-text-muted mt-1">Leave empty if still active</p>
+</div>
 ```
 
-**Features:**
-- Segmented DD/MM/YYYY input with auto-advance between fields
-- Calendar picker popup (click calendar icon)
-- Month/year quick selection in calendar
-- Keyboard navigation (Tab, /, -, Backspace)
-- Sizes: `sm` (compact) and `md` (default)
+**Key Points:**
+- Use `type="date"` for browser-native date picker
+- Value format is always `YYYY-MM-DD` (ISO format)
+- Use `input input-sm` classes for consistent styling
+- Add `w-full` when in a flex/grid container for full width
 
 ### Alert
 
@@ -1225,6 +1231,7 @@ Modals automatically adjust width on mobile using `max-w-[calc(100vw-2rem)]`:
 | Stepper | Smaller labels, shorter connectors |
 | Stats sections | Collapsible by default (MobileCollapsibleSection) |
 | Data tables | Card view with MobileCard component |
+| Date inputs | Browser-native date picker |
 
 ### Empty State Padding
 
@@ -1420,7 +1427,6 @@ src/components/ui/
 ├── checkbox.tsx            # Checkbox with indeterminate state
 ├── collapsible-section.tsx # Collapsible sections (MobileCollapsibleSection, CollapsibleSection)
 ├── confirm-dialog.tsx      # Confirmation dialog with reason
-├── date-input.tsx          # Segmented date input with calendar picker
 ├── dropdown.tsx            # Portal-rendered dropdown menu
 ├── form-input.tsx          # Form input with validation
 ├── modal.tsx               # Accessible modal dialog

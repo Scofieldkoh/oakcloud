@@ -3715,17 +3715,22 @@ PDFs are rendered **client-side** using `pdfjs-dist` for optimal coordinate accu
 
 ## Module: Exchange Rate Maintenance
 
-The Exchange Rate Maintenance module provides automated and manual exchange rate management for multi-currency document processing. Integrates with MAS (Monetary Authority of Singapore) API for daily rates.
+The Exchange Rate Maintenance module provides automated and manual exchange rate management for multi-currency document processing. Integrates with MAS (Monetary Authority of Singapore) APIMG Gateway API for both daily and monthly rates, plus IRAS monthly average rates from Data.gov.sg.
 
 For detailed specifications, see [EXCHANGE_RATE_SPEC.md](./EXCHANGE_RATE_SPEC.md).
 
 ### Features
 
 - **Automated Sync**: Daily sync from MAS API at 6am SGT via scheduled task
+- **MAS Daily Rates**: End-of-day exchange rates from MAS
+- **MAS Monthly Rates**: End-of-period monthly rates from MAS
+- **IRAS Monthly Rates**: Monthly average rates from Data.gov.sg (recommended for tax)
 - **Manual Rates**: Create tenant-specific overrides with audit trail
-- **Rate Lookup**: Smart fallback (tenant override → system rate → latest available)
+- **Rate Lookup**: Smart fallback (tenant override → preferred type → system rate → latest)
+- **Tenant Preferences**: Choose between monthly (IRAS) or daily (MAS) as default
 - **Admin UI**: Full management interface at `/admin/exchange-rates`
-- **21 Currencies**: USD, EUR, GBP, JPY, AUD, CNY, HKD, INR, IDR, KRW, MYR, NZD, PHP, QAR, SAR, CHF, TWD, THB, AED, VND, SGD
+- **21 Currencies**: SGD, USD, EUR, GBP, JPY, AUD, CAD, CNY, HKD, INR, IDR, KRW, MYR, NZD, PHP, QAR, SAR, CHF, TWD, THB, AED, VND
+- **API Key Expiry Warning**: System warns SUPER_ADMIN 30 days before MAS API keys expire
 
 ### API Endpoints
 
@@ -3736,15 +3741,17 @@ For detailed specifications, see [EXCHANGE_RATE_SPEC.md](./EXCHANGE_RATE_SPEC.md
 | `GET` | `/api/admin/exchange-rates/:id` | Get rate details | ADMIN |
 | `PATCH` | `/api/admin/exchange-rates/:id` | Update rate | ADMIN |
 | `DELETE` | `/api/admin/exchange-rates/:id` | Delete rate | ADMIN |
-| `POST` | `/api/admin/exchange-rates/sync` | Trigger MAS sync | SUPER_ADMIN |
+| `POST` | `/api/admin/exchange-rates/sync` | Trigger sync (MAS/IRAS) | SUPER_ADMIN |
 | `GET` | `/api/admin/exchange-rates/lookup` | Lookup rate by currency/date | Authenticated |
+| `GET` | `/api/admin/exchange-rates/tenant-preference` | Get tenant rate preference | TENANT_ADMIN |
+| `PATCH` | `/api/admin/exchange-rates/tenant-preference` | Update tenant preference | TENANT_ADMIN |
 
 ### Rate Types
 
 | Type | Description |
 |------|-------------|
-| `MAS_DAILY_RATE` | MAS (Monetary Authority of Singapore) daily rates |
-| `IRAS_MONTHLY_AVG_RATE` | IRAS monthly average rates (future) |
+| `MAS_DAILY_RATE` | MAS daily end-of-day rates |
+| `IRAS_MONTHLY_AVG_RATE` | IRAS monthly average rates (from Data.gov.sg) |
 | `ECB_DAILY_RATE` | European Central Bank daily rates (future) |
 | `MANUAL_RATE` | Manually entered rates |
 
@@ -3753,16 +3760,25 @@ For detailed specifications, see [EXCHANGE_RATE_SPEC.md](./EXCHANGE_RATE_SPEC.md
 | Service | Purpose |
 |---------|---------|
 | `exchange-rate.service.ts` | Rate CRUD, sync, lookup with fallback |
-| `mas-api.ts` | MAS API client for fetching daily rates |
+| `mas-api.ts` | MAS APIMG Gateway API client (daily + monthly) |
+| `datagov-api.ts` | Data.gov.sg API client for IRAS monthly rates |
 | `exchange-rate-sync.task.ts` | Scheduled task for daily sync |
 
 ### Environment Variables
 
 ```bash
+# MAS APIMG Gateway API Keys (required for MAS rate sync)
+MAS_MONTHLY_API_KEY=your-monthly-api-key    # For monthly end-of-period rates
+MAS_DAILY_API_KEY=your-daily-api-key        # For daily end-of-day rates
+
 # Exchange Rate Sync (Scheduler)
-SCHEDULER_EXCHANGE_RATE_SYNC_ENABLED=true
-SCHEDULER_EXCHANGE_RATE_SYNC_CRON="0 6 * * *"  # Daily at 6am SGT
+SCHEDULER_EXCHANGE_RATE_SYNC_ENABLED=true              # Enable scheduled sync
+SCHEDULER_EXCHANGE_RATE_SYNC_CRON="0 6 * * *"          # Daily at 6am SGT
+SCHEDULER_EXCHANGE_RATE_MAS_DAILY_ENABLED=true         # Enable MAS daily sync (default: true)
+SCHEDULER_EXCHANGE_RATE_IRAS_MONTHLY_ENABLED=true      # Enable IRAS monthly sync (default: true)
 ```
+
+> **Note:** MAS API keys expire annually and must be renewed from MAS APIMG Gateway portal. The system displays a warning to SUPER_ADMIN users 30 days before expiry.
 
 ---
 

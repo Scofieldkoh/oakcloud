@@ -4,13 +4,12 @@ import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
-import { useForm, Controller, type FieldErrors } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateContactSchema, type UpdateContactInput } from '@/lib/validations/contact';
 import { useContact, useUpdateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
-import { DateInput } from '@/components/ui/date-input';
 import { useToast } from '@/components/ui/toast';
 
 const contactTypes = [
@@ -47,7 +46,6 @@ export default function EditContactPage({
   const {
     register,
     handleSubmit,
-    control,
     watch,
     reset,
     formState: { errors, isSubmitting, isDirty },
@@ -271,18 +269,14 @@ export default function EditContactPage({
                       className="input input-sm"
                     />
                   </div>
-                  <Controller
-                    name="dateOfBirth"
-                    control={control}
-                    render={({ field }) => (
-                      <DateInput
-                        label="Date of Birth"
-                        value={field.value || ''}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                      />
-                    )}
-                  />
+                  <div>
+                    <label className="label">Date of Birth</label>
+                    <input
+                      type="date"
+                      {...register('dateOfBirth')}
+                      className="input input-sm"
+                    />
+                  </div>
                 </div>
               </>
             ) : (

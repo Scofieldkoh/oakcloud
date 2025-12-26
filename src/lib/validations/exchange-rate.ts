@@ -22,6 +22,7 @@ export const SUPPORTED_CURRENCIES = [
   'GBP', // British Pound
   'JPY', // Japanese Yen
   'AUD', // Australian Dollar
+  'CAD', // Canadian Dollar
   'CNY', // Chinese Yuan
   'HKD', // Hong Kong Dollar
   'INR', // Indian Rupee
@@ -51,6 +52,7 @@ export const CURRENCY_NAMES: Record<SupportedCurrency, string> = {
   GBP: 'British Pound',
   JPY: 'Japanese Yen',
   AUD: 'Australian Dollar',
+  CAD: 'Canadian Dollar',
   CNY: 'Chinese Yuan',
   HKD: 'Hong Kong Dollar',
   INR: 'Indian Rupee',
@@ -78,6 +80,7 @@ export const CURRENCY_SYMBOLS: Partial<Record<SupportedCurrency, string>> = {
   GBP: '£',
   JPY: '¥',
   AUD: 'A$',
+  CAD: 'C$',
   CNY: '¥',
   HKD: 'HK$',
   INR: '₹',
@@ -109,19 +112,29 @@ export const currencySchema = z.enum(SUPPORTED_CURRENCIES);
 
 /**
  * Exchange rate type schema matching Prisma ExchangeRateType enum.
- * Supports: MAS_DAILY_RATE, IRAS_MONTHLY_AVG_RATE, ECB_DAILY_RATE, MANUAL_RATE
+ * Supports: MAS_DAILY_RATE, MAS_MONTHLY_RATE, ECB_DAILY_RATE, MANUAL_RATE
  */
 export const exchangeRateTypeSchema = z.enum([
   'MAS_DAILY_RATE',
-  'IRAS_MONTHLY_AVG_RATE',
+  'MAS_MONTHLY_RATE',
   'ECB_DAILY_RATE',
   'MANUAL_RATE',
 ]);
 export type ExchangeRateTypeValue = z.infer<typeof exchangeRateTypeSchema>;
 
-// Legacy alias for backward compatibility with API filters
-export const exchangeRateSourceSchema = z.enum(['MAS_DAILY', 'MANUAL', 'ALL']);
+// Source filter for API queries
+export const exchangeRateSourceSchema = z.enum(['MAS_DAILY', 'MAS_MONTHLY', 'MANUAL', 'ALL']);
 export type ExchangeRateSourceType = z.infer<typeof exchangeRateSourceSchema>;
+
+/**
+ * Rate preference options for tenant settings.
+ * MONTHLY = Use MAS monthly end-of-period rates (default)
+ * DAILY = Use MAS daily rates
+ */
+export const RATE_PREFERENCES = ['MONTHLY', 'DAILY'] as const;
+export type RatePreference = (typeof RATE_PREFERENCES)[number];
+
+export const ratePreferenceSchema = z.enum(RATE_PREFERENCES);
 
 /**
  * Schema for creating a manual exchange rate override.
@@ -163,7 +176,7 @@ export const rateSearchSchema = z.object({
   sourceCurrency: currencySchema.optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
-  source: z.enum(['MAS_DAILY', 'MANUAL', 'ALL']).default('ALL'),
+  source: exchangeRateSourceSchema.default('ALL'),
   includeSystem: z.coerce.boolean().default(true),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(200).default(50),
@@ -190,6 +203,61 @@ export const syncRequestSchema = z.object({
 });
 
 export type SyncRequestInput = z.infer<typeof syncRequestSchema>;
+
+/**
+ * Schema for MAS daily sync request with optional date range.
+ */
+export const masSyncSchema = z
+  .object({
+    startDate: z.coerce.date().optional(),
+    endDate: z.coerce.date().optional(),
+  })
+  .refine(
+    (data) => {
+      // If one date is provided, both must be provided
+      if (data.startDate || data.endDate) {
+        return data.startDate && data.endDate;
+      }
+      return true;
+    },
+    {
+      message: 'Both startDate and endDate must be provided for date range sync',
+    }
+  );
+
+export type MASSyncInput = z.infer<typeof masSyncSchema>;
+
+/**
+ * Schema for MAS monthly sync request.
+ */
+export const masMonthlySyncSchema = z.object({
+  month: z.string().optional(), // Format: "2024-11"
+});
+
+export type MASMonthlySyncInput = z.infer<typeof masMonthlySyncSchema>;
+
+/**
+ * Schema for exchange rate sync with source selection.
+ */
+export const exchangeRateSyncSchema = z.object({
+  source: z.enum(['MAS_DAILY', 'MAS_MONTHLY']),
+  // MAS daily specific fields
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+  // MAS monthly specific fields
+  month: z.string().optional(),
+});
+
+export type ExchangeRateSyncInput = z.infer<typeof exchangeRateSyncSchema>;
+
+/**
+ * Schema for tenant rate preference update.
+ */
+export const tenantRatePreferenceSchema = z.object({
+  preferredRateType: ratePreferenceSchema,
+});
+
+export type TenantRatePreferenceInput = z.infer<typeof tenantRatePreferenceSchema>;
 
 // ============================================================================
 // HELPER FUNCTIONS

@@ -31,7 +31,7 @@ export interface ExchangeRateSearchParams {
   sourceCurrency?: string;
   startDate?: string;
   endDate?: string;
-  source?: 'MAS_DAILY' | 'MANUAL' | 'ALL';
+  source?: 'MAS_DAILY' | 'MAS_MONTHLY' | 'MANUAL' | 'ALL';
   includeSystem?: boolean;
   page?: number;
   limit?: number;
@@ -65,6 +65,18 @@ export interface SyncResult {
   ratesUpdated: number;
   errors: string[];
   syncedAt: string;
+  source?: 'MAS_DAILY' | 'MAS_MONTHLY';
+}
+
+export interface SyncParams {
+  source: 'MAS_DAILY' | 'MAS_MONTHLY';
+  startDate?: string; // For MAS date range sync
+  endDate?: string; // For MAS date range sync
+  month?: string; // For MAS monthly specific month sync (e.g., "2024-11")
+}
+
+export interface TenantRatePreference {
+  preferredRateType: 'MONTHLY' | 'DAILY';
 }
 
 export interface RateLookupResult {
@@ -106,14 +118,44 @@ async function fetchExchangeRates(
   return response.json();
 }
 
-async function triggerSync(): Promise<SyncResult> {
+async function triggerSync(params?: SyncParams): Promise<SyncResult> {
   const response = await fetch('/api/admin/exchange-rates/sync', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params || { source: 'MAS_DAILY' }),
   });
 
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to sync exchange rates');
+  }
+
+  return response.json();
+}
+
+async function fetchTenantRatePreference(): Promise<TenantRatePreference> {
+  const response = await fetch('/api/admin/exchange-rates/tenant-preference');
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch rate preference');
+  }
+
+  return response.json();
+}
+
+async function updateTenantRatePreference(
+  preference: 'MONTHLY' | 'DAILY'
+): Promise<TenantRatePreference> {
+  const response = await fetch('/api/admin/exchange-rates/tenant-preference', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ preferredRateType: preference }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update rate preference');
   }
 
   return response.json();
@@ -214,15 +256,70 @@ export function useRateLookup(currency: string, date: string, tenantId?: string)
 // ============================================================================
 
 /**
- * Trigger manual sync from MAS API.
+ * Trigger manual sync from MAS.
  */
 export function useSyncExchangeRates() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: triggerSync,
+    mutationFn: (params?: SyncParams) => triggerSync(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exchange-rates'] });
+    },
+  });
+}
+
+/**
+ * Sync MAS daily rates (with optional date range).
+ */
+export function useSyncMASDaily() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: { startDate?: string; endDate?: string } | void) =>
+      triggerSync({ source: 'MAS_DAILY', ...((params || {}) as object) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exchange-rates'] });
+    },
+  });
+}
+
+/**
+ * Sync MAS monthly rates (with optional specific month).
+ */
+export function useSyncMASMonthly() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (month: string | void) =>
+      triggerSync({ source: 'MAS_MONTHLY', month: month || undefined }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exchange-rates'] });
+    },
+  });
+}
+
+/**
+ * Get tenant's rate preference.
+ */
+export function useTenantRatePreference() {
+  return useQuery({
+    queryKey: ['tenant-rate-preference'],
+    queryFn: fetchTenantRatePreference,
+    retry: false,
+  });
+}
+
+/**
+ * Update tenant's rate preference.
+ */
+export function useUpdateTenantRatePreference() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateTenantRatePreference,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-rate-preference'] });
     },
   });
 }

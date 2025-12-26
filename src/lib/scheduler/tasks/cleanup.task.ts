@@ -13,6 +13,29 @@ import type { TaskRegistration, TaskResult } from '../types';
 
 const log = createLogger('cleanup-task');
 
+// Lazy-loaded backup service reference
+let backupServiceInstance: typeof import('@/services/backup.service').backupService | null = null;
+
+/**
+ * Get backup service (lazy-loaded to avoid chunking issues in instrumentation context)
+ */
+async function getBackupService(): Promise<typeof import('@/services/backup.service').backupService> {
+  if (!backupServiceInstance) {
+    // Use dynamic import which works correctly with Next.js path aliases
+    const module = await import('@/services/backup.service');
+    backupServiceInstance = module.backupService;
+
+    // Validate the service was loaded correctly
+    if (!backupServiceInstance || typeof backupServiceInstance.runCleanup !== 'function') {
+      throw new Error(
+        'Failed to load backup service: runCleanup method not found. ' +
+        `Module exports: ${Object.keys(module).join(', ')}`
+      );
+    }
+  }
+  return backupServiceInstance;
+}
+
 /**
  * Execute cleanup task
  *
@@ -22,9 +45,7 @@ async function executeCleanupTask(): Promise<TaskResult> {
   log.info('Running backup cleanup...');
 
   try {
-    // Dynamic import to avoid circular dependencies
-    const { backupService } = await import('@/services/backup.service');
-
+    const backupService = await getBackupService();
     const result = await backupService.runCleanup();
 
     const message = [

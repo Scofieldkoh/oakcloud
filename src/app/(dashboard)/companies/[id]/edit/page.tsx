@@ -4,13 +4,12 @@ import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateCompanySchema, type UpdateCompanyInput } from '@/lib/validations/company';
 import { useCompany, useUpdateCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
-import { DateInput } from '@/components/ui/date-input';
 import { ENTITY_TYPES } from '@/lib/constants';
 
 const statuses = [
@@ -57,7 +56,6 @@ export default function EditCompanyPage({
     register,
     handleSubmit,
     reset,
-    control,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<UpdateCompanyInput>({
     resolver: zodResolver(updateCompanySchema),
@@ -271,32 +269,20 @@ export default function EditCompanyPage({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Controller
-                  name="incorporationDate"
-                  control={control}
-                  render={({ field }) => (
-                    <DateInput
-                      label="Incorporation Date"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                    />
-                  )}
+                <label className="label">Incorporation Date</label>
+                <input
+                  type="date"
+                  {...register('incorporationDate')}
+                  className="input input-sm"
                 />
               </div>
 
               <div>
-                <Controller
-                  name="statusDate"
-                  control={control}
-                  render={({ field }) => (
-                    <DateInput
-                      label="Status Date"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                    />
-                  )}
+                <label className="label">Status Date</label>
+                <input
+                  type="date"
+                  {...register('statusDate')}
+                  className="input input-sm"
                 />
               </div>
             </div>
@@ -313,17 +299,11 @@ export default function EditCompanyPage({
               </div>
 
               <div>
-                <Controller
-                  name="dateOfNameChange"
-                  control={control}
-                  render={({ field }) => (
-                    <DateInput
-                      label="Date of Name Change"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                    />
-                  )}
+                <label className="label">Date of Name Change</label>
+                <input
+                  type="date"
+                  {...register('dateOfNameChange')}
+                  className="input input-sm"
                 />
               </div>
             </div>
@@ -408,17 +388,11 @@ export default function EditCompanyPage({
                 />
               </div>
               <div>
-                <Controller
-                  name="dateOfAddress"
-                  control={control}
-                  render={({ field }) => (
-                    <DateInput
-                      label="Date of Address"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                    />
-                  )}
+                <label className="label">Date of Address</label>
+                <input
+                  type="date"
+                  {...register('dateOfAddress')}
+                  className="input input-sm"
                 />
               </div>
             </div>
@@ -512,17 +486,11 @@ export default function EditCompanyPage({
             </div>
 
             <div>
-              <Controller
-                name="fyeAsAtLastAr"
-                control={control}
-                render={({ field }) => (
-                  <DateInput
-                    label="FYE as at Last AR"
-                    value={field.value || ''}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                  />
-                )}
+              <label className="label">FYE as at Last AR</label>
+              <input
+                type="date"
+                {...register('fyeAsAtLastAr')}
+                className="input input-sm"
               />
             </div>
 

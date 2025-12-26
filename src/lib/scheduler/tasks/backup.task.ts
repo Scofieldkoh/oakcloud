@@ -14,6 +14,29 @@ import type { TaskRegistration, TaskResult } from '../types';
 
 const log = createLogger('backup-task');
 
+// Lazy-loaded backup service reference
+let backupServiceInstance: typeof import('@/services/backup.service').backupService | null = null;
+
+/**
+ * Get backup service (lazy-loaded to avoid chunking issues in instrumentation context)
+ */
+async function getBackupService(): Promise<typeof import('@/services/backup.service').backupService> {
+  if (!backupServiceInstance) {
+    // Use dynamic import which works correctly with Next.js path aliases
+    const module = await import('@/services/backup.service');
+    backupServiceInstance = module.backupService;
+
+    // Validate the service was loaded correctly
+    if (!backupServiceInstance || typeof backupServiceInstance.processScheduledBackups !== 'function') {
+      throw new Error(
+        'Failed to load backup service: processScheduledBackups method not found. ' +
+        `Module exports: ${Object.keys(module).join(', ')}`
+      );
+    }
+  }
+  return backupServiceInstance;
+}
+
 /**
  * Execute backup task
  *
@@ -23,9 +46,7 @@ async function executeBackupTask(): Promise<TaskResult> {
   log.info('Checking for due scheduled backups...');
 
   try {
-    // Dynamic import to avoid circular dependencies
-    const { backupService } = await import('@/services/backup.service');
-
+    const backupService = await getBackupService();
     const result = await backupService.processScheduledBackups();
 
     if (result.processed === 0) {

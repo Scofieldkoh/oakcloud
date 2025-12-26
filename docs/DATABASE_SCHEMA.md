@@ -1438,11 +1438,32 @@ Exchange rates for multi-currency document processing. Supports MAS (Monetary Au
 
 ### ExchangeRateType
 ```sql
-MAS_DAILY_RATE           -- MAS (Monetary Authority of Singapore) daily rates
-IRAS_MONTHLY_AVG_RATE    -- IRAS monthly average rates (future)
+MAS_DAILY_RATE           -- MAS (Monetary Authority of Singapore) daily end-of-day rates
+MAS_MONTHLY_RATE         -- MAS monthly end-of-period rates
 ECB_DAILY_RATE           -- European Central Bank daily rates (future)
 MANUAL_RATE              -- Manually entered rates
 ```
+
+### Rate Preference (Tenant Settings)
+
+Tenants can choose their preferred rate type for currency conversion. This is stored in the `Tenant.settings` JSON field:
+
+```json
+{
+  "exchangeRate": {
+    "preferredRateType": "MONTHLY"  // "MONTHLY" or "DAILY"
+  }
+}
+```
+
+- **MONTHLY** (default): Uses MAS monthly end-of-period rates
+- **DAILY**: Uses MAS daily rates for more precise day-to-day conversion
+
+**Rate Lookup Priority with Preferences:**
+1. Tenant-specific manual override for exact date
+2. Tenant's preferred rate type (MAS_MONTHLY_RATE or MAS_DAILY_RATE)
+3. System rate of preferred type
+4. Fallback to any available system rate (most recent)
 
 ---
 
@@ -1453,6 +1474,48 @@ EXCHANGE_RATE_SYNCED     -- Batch sync from external source (MAS API)
 EXCHANGE_RATE_CREATED    -- Manual rate created
 EXCHANGE_RATE_UPDATED    -- Rate updated
 EXCHANGE_RATE_DELETED    -- Rate deleted
+```
+
+## Exchange Rate Data Sources
+
+### MAS APIMG Gateway API
+
+The system uses MAS's (Monetary Authority of Singapore) APIMG Gateway API which requires API key authentication. Both daily and monthly rates are sourced from MAS.
+
+**Monthly End-of-Period Rates:**
+- **Endpoint**: `https://eservices.mas.gov.sg/apimg-gw/server/monthly_statistical_bulletin_non610ora/exchange_rates_end_of_period_monthly/views/exchange_rates_end_of_period_monthly`
+- **Authentication**: API Key via `KeyId` header
+- **Update Frequency**: Monthly (end-of-month rates)
+- **Currencies**: USD, EUR, GBP, JPY, AUD, CAD, CNY, HKD, INR, IDR, KRW, MYR, NZD, PHP, QAR, SAR, CHF, TWD, THB, AED, VND (21 currencies)
+
+**Daily End-of-Period Rates:**
+- **Endpoint**: `https://eservices.mas.gov.sg/apimg-gw/server/monthly_statistical_bulletin_non610ora/exchange_rates_end_of_period_daily/views/exchange_rates_end_of_period_daily`
+- **Authentication**: API Key via `KeyId` header
+- **Update Frequency**: Daily (end-of-day rates, typically updated around 6 PM SGT)
+- **Currencies**: Same as monthly
+
+**API Key Management:**
+- API keys expire annually and must be renewed
+- Current expiry: December 26, 2026
+- System warns SUPER_ADMIN 30 days before expiry
+- Keys configured via environment variables: `MAS_MONTHLY_API_KEY`, `MAS_DAILY_API_KEY`
+
+### Scheduled Sync
+The system automatically syncs exchange rates daily at 6 AM SGT:
+1. **MAS Daily Rates**: Always synced (if enabled via `SCHEDULER_EXCHANGE_RATE_MAS_DAILY_ENABLED`)
+2. **MAS Monthly Rates**: Synced on days 1-5 of each month for previous month's data (if enabled via `SCHEDULER_EXCHANGE_RATE_MAS_MONTHLY_ENABLED`)
+
+### Environment Variables
+```bash
+# Enable/disable scheduled sync (both default to true)
+SCHEDULER_EXCHANGE_RATE_SYNC_ENABLED=true
+SCHEDULER_EXCHANGE_RATE_MAS_DAILY_ENABLED=true
+SCHEDULER_EXCHANGE_RATE_MAS_MONTHLY_ENABLED=true
+
+# API Keys (required for sync)
+MAS_MONTHLY_API_KEY=your-monthly-api-key
+MAS_DAILY_API_KEY=your-daily-api-key
+MAS_API_KEY_EXPIRY=2026-12-26  # For expiry warnings
 ```
 
 ---

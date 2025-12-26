@@ -521,7 +521,7 @@ export type DocumentLinkType = (typeof DocumentLinkType)[keyof typeof DocumentLi
 
 export const ExchangeRateType = {
   MAS_DAILY_RATE: 'MAS_DAILY_RATE',
-  IRAS_MONTHLY_AVG_RATE: 'IRAS_MONTHLY_AVG_RATE',
+  MAS_MONTHLY_RATE: 'MAS_MONTHLY_RATE',
   ECB_DAILY_RATE: 'ECB_DAILY_RATE',
   MANUAL_RATE: 'MANUAL_RATE'
 } as const

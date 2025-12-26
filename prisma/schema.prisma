@@ -2185,7 +2185,7 @@ model WebhookSubscription {
 // Exchange Rate Type
 enum ExchangeRateType {
   MAS_DAILY_RATE
-  IRAS_MONTHLY_AVG_RATE
+  MAS_MONTHLY_RATE
   ECB_DAILY_RATE
   MANUAL_RATE
 }

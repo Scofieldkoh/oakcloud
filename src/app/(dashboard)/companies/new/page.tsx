@@ -4,14 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createCompanySchema, type CreateCompanyInput } from '@/lib/validations/company';
 import { useCreateCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
-import { DateInput } from '@/components/ui/date-input';
 import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { ENTITY_TYPES } from '@/lib/constants';
 
@@ -57,7 +56,6 @@ export default function NewCompanyPage() {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<CreateCompanyInput>({
     resolver: zodResolver(createCompanySchema),
@@ -218,17 +216,11 @@ export default function NewCompanyPage() {
             </div>
 
             <div>
-              <Controller
-                name="incorporationDate"
-                control={control}
-                render={({ field }) => (
-                  <DateInput
-                    label="Incorporation Date"
-                    value={field.value || ''}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                  />
-                )}
+              <label className="label">Incorporation Date</label>
+              <input
+                type="date"
+                {...register('incorporationDate')}
+                className="input input-sm"
               />
             </div>
           </div>
