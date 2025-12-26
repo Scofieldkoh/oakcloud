@@ -71,7 +71,9 @@
       "Bash(head:*)",
       "Bash(del \"c:\\Users\\Scotfield\\oakcloud\\src\\components\\processing\\pdf-page-viewer.tsx\")",
       "Bash(npx eslint:*)",
-      "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\src\\\\lib\\\\scheduler.ts\")"
+      "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\src\\\\lib\\\\scheduler.ts\")",
+      "Bash(xargs cat:*)",
+      "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\test-sharepoint.js\")"
     ],
     "deny": [],
     "ask": []

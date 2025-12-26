@@ -13,7 +13,7 @@ import { z } from 'zod';
 export const connectorTypeEnum = z.enum(['AI_PROVIDER', 'STORAGE']);
 export type ConnectorType = z.infer<typeof connectorTypeEnum>;
 
-export const connectorProviderEnum = z.enum(['OPENAI', 'ANTHROPIC', 'GOOGLE', 'ONEDRIVE']);
+export const connectorProviderEnum = z.enum(['OPENAI', 'ANTHROPIC', 'GOOGLE', 'ONEDRIVE', 'SHAREPOINT']);
 export type ConnectorProvider = z.infer<typeof connectorProviderEnum>;
 
 // ============================================================================
@@ -39,17 +39,27 @@ export const onedriveCredentialsSchema = z.object({
   tenantId: z.string().min(1, 'Microsoft Tenant ID is required'),
 });
 
+export const sharepointCredentialsSchema = z.object({
+  clientId: z.string().min(1, 'Client ID is required'),
+  clientSecret: z.string().min(1, 'Client Secret is required'),
+  tenantId: z.string().min(1, 'Microsoft Tenant ID is required'),
+  siteId: z.string().min(1, 'SharePoint Site ID is required'),
+  driveId: z.string().optional(), // Optional - defaults to root document library
+});
+
 export type OpenAICredentials = z.infer<typeof openaiCredentialsSchema>;
 export type AnthropicCredentials = z.infer<typeof anthropicCredentialsSchema>;
 export type GoogleCredentials = z.infer<typeof googleCredentialsSchema>;
 export type OneDriveCredentials = z.infer<typeof onedriveCredentialsSchema>;
+export type SharePointCredentials = z.infer<typeof sharepointCredentialsSchema>;
 
 // Union type for all credentials
 export type ConnectorCredentials =
   | OpenAICredentials
   | AnthropicCredentials
   | GoogleCredentials
-  | OneDriveCredentials;
+  | OneDriveCredentials
+  | SharePointCredentials;
 
 // ============================================================================
 // Provider-Specific Settings Schemas
@@ -67,6 +77,14 @@ export const onedriveSettingsSchema = z
   .object({
     rootFolder: z.string().optional(), // Default folder path
     syncEnabled: z.boolean().optional(),
+  })
+  .optional();
+
+export const sharepointSettingsSchema = z
+  .object({
+    rootFolder: z.string().optional(), // Default folder path within the library
+    syncEnabled: z.boolean().optional(),
+    documentLibraryName: z.string().optional(), // For display purposes
   })
   .optional();
 
@@ -181,6 +199,13 @@ export function validateCredentials(
       }
       break;
     }
+    case 'SHAREPOINT': {
+      const result = sharepointCredentialsSchema.safeParse(credentials);
+      if (!result.success) {
+        errors.push(...result.error.issues.map((i) => i.message));
+      }
+      break;
+    }
     default:
       errors.push(`Unknown provider: ${provider}`);
   }
@@ -198,6 +223,7 @@ export function getProviderType(provider: ConnectorProvider): ConnectorType {
     case 'GOOGLE':
       return 'AI_PROVIDER';
     case 'ONEDRIVE':
+    case 'SHAREPOINT':
       return 'STORAGE';
     default:
       throw new Error(`Unknown provider: ${provider}`);
@@ -212,7 +238,7 @@ export function getProvidersForType(type: ConnectorType): ConnectorProvider[] {
     case 'AI_PROVIDER':
       return ['OPENAI', 'ANTHROPIC', 'GOOGLE'];
     case 'STORAGE':
-      return ['ONEDRIVE'];
+      return ['ONEDRIVE', 'SHAREPOINT'];
     default:
       return [];
   }
@@ -227,6 +253,7 @@ export function getProviderDisplayName(provider: ConnectorProvider): string {
     ANTHROPIC: 'Anthropic',
     GOOGLE: 'Google AI',
     ONEDRIVE: 'OneDrive',
+    SHAREPOINT: 'SharePoint',
   };
   return names[provider] || provider;
 }

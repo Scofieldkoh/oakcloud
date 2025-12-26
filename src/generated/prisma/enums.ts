@@ -204,7 +204,8 @@ export const ConnectorProvider = {
   OPENAI: 'OPENAI',
   ANTHROPIC: 'ANTHROPIC',
   GOOGLE: 'GOOGLE',
-  ONEDRIVE: 'ONEDRIVE'
+  ONEDRIVE: 'ONEDRIVE',
+  SHAREPOINT: 'SHAREPOINT'
 } as const
 
 export type ConnectorProvider = (typeof ConnectorProvider)[keyof typeof ConnectorProvider]

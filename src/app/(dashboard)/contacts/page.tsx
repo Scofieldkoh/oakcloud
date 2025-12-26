@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Users, AlertCircle, Building2, User, Trash2, X } from 'lucide-react';
+import { Plus, Users, AlertCircle, Building2, User, Trash2 } from 'lucide-react';
 import { useContacts, useDeleteContact, useBulkDeleteContacts } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
@@ -13,6 +13,7 @@ import { ContactTable } from '@/components/contacts/contact-table';
 import { ContactFilters, type FilterValues } from '@/components/contacts/contact-filters';
 import { Pagination } from '@/components/companies/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { useToast } from '@/components/ui/toast';
 import type { ContactType } from '@/generated/prisma';
 
@@ -281,34 +282,6 @@ export default function ContactsPage() {
         </div>
       )}
 
-      {/* Bulk Action Toolbar */}
-      {selectedCount > 0 && (
-        <div className="mb-4 card p-3 bg-oak-primary/5 border-oak-primary/30 flex items-center justify-between animate-fade-in">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-text-primary">
-              {selectedCount} contact{selectedCount > 1 ? 's' : ''} selected
-            </span>
-            <button
-              onClick={clearSelection}
-              className="btn-ghost btn-xs flex items-center gap-1 text-text-secondary hover:text-text-primary"
-            >
-              <X className="w-3.5 h-3.5" />
-              Clear
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            {can.deleteContact && (
-              <button
-                onClick={handleBulkDeleteClick}
-                className="btn-danger btn-sm flex items-center gap-1.5"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Selected
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Table */}
       <div className="mb-6">
@@ -337,6 +310,30 @@ export default function ContactsPage() {
           limit={data.limit}
           onPageChange={handlePageChange}
           onLimitChange={handleLimitChange}
+        />
+      )}
+
+      {/* Floating Bulk Actions Toolbar */}
+      {can.deleteContact && (
+        <BulkActionsToolbar
+          selectedCount={selectedCount}
+          onClearSelection={clearSelection}
+          itemLabel="contact"
+          actions={[
+            {
+              id: 'delete',
+              label: 'Delete',
+              icon: Trash2,
+              description: 'Delete selected contacts',
+              variant: 'danger',
+              isLoading: bulkDeleteContacts.isPending,
+            },
+          ]}
+          onAction={(actionId) => {
+            if (actionId === 'delete') {
+              handleBulkDeleteClick();
+            }
+          }}
         />
       )}
 

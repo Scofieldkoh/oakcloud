@@ -246,10 +246,10 @@ Use toggle switches for binary on/off settings. Prefer toggle switches over chec
 
 ```tsx
 // Full toggle switch with card container, title, and description
-<div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-background-secondary">
+<div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-bg-tertiary">
   <div className="flex flex-col">
     <span className="text-sm font-medium text-text-primary">Setting Name</span>
-    <span className="text-xs text-text-tertiary">
+    <span className="text-xs text-text-muted">
       {isEnabled ? 'Description when enabled' : 'Description when disabled'}
     </span>
   </div>
@@ -258,14 +258,16 @@ Use toggle switches for binary on/off settings. Prefer toggle switches over chec
     role="switch"
     aria-checked={isEnabled}
     onClick={() => setIsEnabled(!isEnabled)}
-    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
-      isEnabled ? 'bg-status-success' : 'bg-background-tertiary'
-    }`}
+    className={cn(
+      'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2',
+      isEnabled ? 'bg-oak-primary border-oak-primary' : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
+    )}
   >
     <span
-      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+      className={cn(
+        'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
         isEnabled ? 'translate-x-5' : 'translate-x-0'
-      }`}
+      )}
     />
   </button>
 </div>
@@ -281,14 +283,16 @@ Use toggle switches for binary on/off settings. Prefer toggle switches over chec
     role="switch"
     aria-checked={isEnabled}
     onClick={() => setIsEnabled(!isEnabled)}
-    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
-      isEnabled ? 'bg-status-success' : 'bg-background-tertiary'
-    }`}
+    className={cn(
+      'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2',
+      isEnabled ? 'bg-oak-primary border-oak-primary' : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
+    )}
   >
     <span
-      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+      className={cn(
+        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
         isEnabled ? 'translate-x-4' : 'translate-x-0'
-      }`}
+      )}
     />
   </button>
   <span className="text-sm text-text-primary">Setting label</span>
@@ -297,8 +301,9 @@ Use toggle switches for binary on/off settings. Prefer toggle switches over chec
 
 **Key Features:**
 - iOS-style sliding toggle animation
-- Green (`bg-status-success`) when enabled
-- Gray (`bg-background-tertiary`) when disabled
+- Oak primary (`bg-oak-primary` / `#294d44`) when enabled
+- Gray (`bg-gray-300` light / `bg-gray-600` dark) when disabled
+- White knob with shadow (`shadow-md`) for visibility
 - Proper accessibility with `role="switch"` and `aria-checked`
 - Focus ring for keyboard navigation
 - Smooth 200ms transition
@@ -362,6 +367,137 @@ const isIndeterminate = selectedIds.size > 0 && selectedIds.size < items.length;
 - Support `indeterminate` state for partial selection
 - Highlight selected rows with `bg-oak-primary/5`
 - Show bulk action buttons conditionally when items are selected
+
+### Floating Bulk Actions Toolbar
+
+When items are selected via checkboxes in a table, display a **floating action bar** at the bottom of the screen. This provides a consistent, prominent way to perform bulk operations across all list views.
+
+**Key Features:**
+- Fixed position at bottom center of the viewport
+- Slides in with animation when items are selected
+- Shows selection count with clear button
+- Action buttons with icons and labels
+- Color-coded actions (default, warning, danger)
+- Confirmation dialogs for destructive actions
+
+**Standard Pattern:**
+
+```tsx
+import { X, Download, CheckCircle, Trash2, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface BulkActionsToolbarProps {
+  selectedIds: string[];
+  onClearSelection: () => void;
+  className?: string;
+}
+
+// Define operations with configuration
+const operations = [
+  { id: 'DOWNLOAD', label: 'Download', icon: Download, variant: 'default', requiresConfirmation: false },
+  { id: 'APPROVE', label: 'Approve', icon: CheckCircle, variant: 'default', requiresConfirmation: true },
+  { id: 'DELETE', label: 'Delete', icon: Trash2, variant: 'danger', requiresConfirmation: true },
+];
+
+function BulkActionsToolbar({ selectedIds, onClearSelection, className }: BulkActionsToolbarProps) {
+  if (selectedIds.length === 0) return null;
+
+  return (
+    <div
+      className={cn(
+        'fixed bottom-6 left-1/2 -translate-x-1/2 z-40',
+        'bg-background-primary border border-border-primary rounded-lg shadow-xl',
+        'flex items-center gap-2 px-4 py-3',
+        'animate-in slide-in-from-bottom-4',
+        className
+      )}
+    >
+      {/* Selection count */}
+      <div className="flex items-center gap-2 pr-3 border-r border-border-primary">
+        <span className="text-sm text-text-secondary">
+          <span className="font-medium text-text-primary">{selectedIds.length}</span> selected
+        </span>
+        <button
+          onClick={onClearSelection}
+          className="btn-ghost btn-xs p-1"
+          title="Clear selection"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex items-center gap-1">
+        {operations.map((op) => {
+          const Icon = op.icon;
+          return (
+            <button
+              key={op.id}
+              onClick={() => handleOperation(op.id)}
+              className={cn(
+                'btn-sm flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors',
+                op.variant === 'danger'
+                  ? 'hover:bg-status-error/10 hover:text-status-error text-text-secondary'
+                  : op.variant === 'warning'
+                  ? 'hover:bg-status-warning/10 hover:text-status-warning text-text-secondary'
+                  : 'hover:bg-oak-light/10 hover:text-oak-primary text-text-secondary'
+              )}
+              title={op.description}
+            >
+              <Icon className="w-4 h-4" />
+              <span className="text-sm">{op.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+```
+
+**Usage in Pages:**
+
+```tsx
+// State management
+const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+const clearSelection = useCallback(() => {
+  setSelectedIds([]);
+}, []);
+
+// Clear selection when filters/page changes
+useEffect(() => {
+  setSelectedIds([]);
+}, [params]);
+
+// Render at the bottom of the page (outside any scrollable container)
+return (
+  <div className="p-4 sm:p-6">
+    {/* ... table with checkboxes ... */}
+
+    {/* Floating bulk actions - always at root level */}
+    <BulkActionsToolbar
+      selectedIds={selectedIds}
+      onClearSelection={clearSelection}
+    />
+  </div>
+);
+```
+
+**When to Use:**
+| Use Floating Toolbar | Use Inline Actions |
+|---------------------|-------------------|
+| Multiple bulk actions available | Single action only |
+| Actions require prominent visibility | Actions are secondary |
+| Table has pagination | Short, non-paginated lists |
+| User may scroll while selecting | Content fits on screen |
+
+**Styling Guidelines:**
+- Background: `bg-background-primary` with `border-border-primary`
+- Shadow: `shadow-xl` for elevation
+- Animation: `animate-in slide-in-from-bottom-4`
+- Z-index: `z-40` (above content, below modals)
+- Position: `fixed bottom-6 left-1/2 -translate-x-1/2`
 
 ### Navigation
 

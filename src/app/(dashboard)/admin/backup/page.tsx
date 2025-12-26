@@ -579,6 +579,9 @@ export default function BackupPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Created
                     </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Expiry
+                    </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Actions
                     </th>
@@ -587,14 +590,14 @@ export default function BackupPage() {
                 <tbody className="divide-y divide-border-primary">
                   {backupsLoading ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                      <td colSpan={8} className="px-4 py-8 text-center text-text-secondary">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
                         Loading backups...
                       </td>
                     </tr>
                   ) : backups.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                      <td colSpan={8} className="px-4 py-8 text-center text-text-secondary">
                         <FileArchive className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         No backups found
                       </td>
@@ -671,7 +674,24 @@ export default function BackupPage() {
                             {backup.filesCount.toLocaleString()}
                           </td>
                           <td className="px-4 py-3 text-sm text-text-secondary">
-                            {format(new Date(backup.createdAt), 'MMM d, yyyy HH:mm')}
+                            {format(new Date(backup.createdAt), 'dd MMM yyyy HH:mm')}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {backup.expiresAt ? (
+                              <span
+                                className={cn(
+                                  new Date(backup.expiresAt) < new Date()
+                                    ? 'text-status-error'
+                                    : new Date(backup.expiresAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                      ? 'text-status-warning'
+                                      : 'text-text-secondary'
+                                )}
+                              >
+                                {format(new Date(backup.expiresAt), 'dd MMM yyyy')}
+                              </span>
+                            ) : (
+                              <span className="text-text-tertiary">Never</span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-1">
@@ -833,12 +853,12 @@ export default function BackupPage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-text-secondary">
                           {schedule.nextRunAt
-                            ? format(new Date(schedule.nextRunAt), 'MMM d, HH:mm')
+                            ? format(new Date(schedule.nextRunAt), 'dd MMM, HH:mm')
                             : '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-text-secondary">
                           {schedule.lastRunAt
-                            ? format(new Date(schedule.lastRunAt), 'MMM d, HH:mm')
+                            ? format(new Date(schedule.lastRunAt), 'dd MMM, HH:mm')
                             : 'Never'}
                         </td>
                         <td className="px-4 py-3">
@@ -1147,10 +1167,10 @@ export default function BackupPage() {
 
             {/* Enable/Disable toggle - only show when editing */}
             {editingSchedule && (
-              <div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-background-secondary">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-bg-tertiary">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-text-primary">Schedule Status</span>
-                  <span className="text-xs text-text-tertiary">
+                  <span className="text-xs text-text-muted">
                     {scheduleEnabled ? 'Backups will run automatically' : 'Backups are paused'}
                   </span>
                 </div>
@@ -1159,14 +1179,16 @@ export default function BackupPage() {
                   role="switch"
                   aria-checked={scheduleEnabled}
                   onClick={() => setScheduleEnabled(!scheduleEnabled)}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
-                    scheduleEnabled ? 'bg-status-success' : 'bg-background-tertiary'
-                  }`}
+                  className={cn(
+                    'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2',
+                    scheduleEnabled ? 'bg-oak-primary border-oak-primary' : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
+                  )}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    className={cn(
+                      'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
                       scheduleEnabled ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    )}
                   />
                 </button>
               </div>

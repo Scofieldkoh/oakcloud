@@ -179,15 +179,26 @@ export async function updateConnector(
 
   // Handle credentials update
   if (data.credentials !== undefined) {
-    // Validate new credentials
+    // Get existing credentials and merge with new values
+    const existingCredentials = JSON.parse(decrypt(existing.credentials)) as Record<string, unknown>;
+
+    // Only merge non-empty values from the update
+    const mergedCredentials = { ...existingCredentials };
+    for (const [key, value] of Object.entries(data.credentials)) {
+      if (value !== undefined && value !== null && value !== '') {
+        mergedCredentials[key] = value;
+      }
+    }
+
+    // Validate merged credentials
     const credentialValidation = validateCredentials(
       existing.provider,
-      data.credentials
+      mergedCredentials
     );
     if (!credentialValidation.valid) {
       throw new Error(`Invalid credentials: ${credentialValidation.errors.join(', ')}`);
     }
-    updateData.credentials = encrypt(JSON.stringify(data.credentials));
+    updateData.credentials = encrypt(JSON.stringify(mergedCredentials));
   }
 
   // Handle default flag
@@ -567,7 +578,7 @@ export async function getAvailableConnectors(
   // Define all providers per type
   const providersPerType: Record<ConnectorType, ConnectorProvider[]> = {
     AI_PROVIDER: ['OPENAI', 'ANTHROPIC', 'GOOGLE'],
-    STORAGE: ['ONEDRIVE'],
+    STORAGE: ['ONEDRIVE', 'SHAREPOINT'],
   };
 
   // Check each provider individually
@@ -615,6 +626,17 @@ export async function testConnector(
       case 'ONEDRIVE':
         await testOneDrive(
           connector.credentials as { clientId: string; clientSecret: string; tenantId: string }
+        );
+        break;
+      case 'SHAREPOINT':
+        await testSharePoint(
+          connector.credentials as {
+            clientId: string;
+            clientSecret: string;
+            tenantId: string;
+            siteId: string;
+            driveId?: string;
+          }
         );
         break;
       default:
@@ -699,6 +721,62 @@ async function testOneDrive(credentials: {
     throw new Error(
       errorData.error_description || errorData.error || 'Failed to acquire access token'
     );
+  }
+}
+
+async function testSharePoint(credentials: {
+  clientId: string;
+  clientSecret: string;
+  tenantId: string;
+  siteId: string;
+  driveId?: string;
+}): Promise<void> {
+  // Step 1: Acquire OAuth token using client credentials flow
+  const tokenUrl = `https://login.microsoftonline.com/${credentials.tenantId}/oauth2/v2.0/token`;
+  const tokenResponse = await fetch(tokenUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: credentials.clientId,
+      client_secret: credentials.clientSecret,
+      scope: 'https://graph.microsoft.com/.default',
+      grant_type: 'client_credentials',
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    const errorData = await tokenResponse.json().catch(() => ({}));
+    throw new Error(
+      errorData.error_description || errorData.error || 'Failed to acquire access token'
+    );
+  }
+
+  const tokenData = await tokenResponse.json();
+  const accessToken = tokenData.access_token;
+
+  // Step 2: Verify SharePoint site access
+  const siteUrl = `https://graph.microsoft.com/v1.0/sites/${credentials.siteId}`;
+  const siteResponse = await fetch(siteUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!siteResponse.ok) {
+    const errorData = await siteResponse.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || 'Failed to access SharePoint site');
+  }
+
+  // Step 3: Verify drive access (optional driveId or default)
+  const driveUrl = credentials.driveId
+    ? `https://graph.microsoft.com/v1.0/sites/${credentials.siteId}/drives/${credentials.driveId}`
+    : `https://graph.microsoft.com/v1.0/sites/${credentials.siteId}/drive`;
+
+  const driveResponse = await fetch(driveUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!driveResponse.ok) {
+    const errorData = await driveResponse.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || 'Failed to access document library');
   }
 }
 

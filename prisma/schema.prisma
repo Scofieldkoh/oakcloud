@@ -200,6 +200,7 @@ enum ConnectorProvider {
   GOOGLE
   // Storage Providers
   ONEDRIVE
+  SHAREPOINT
 }
 
 // ============================================================================

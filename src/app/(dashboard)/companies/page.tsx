@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Building2, AlertCircle, FileUp, Trash2, X } from 'lucide-react';
+import { Plus, Building2, AlertCircle, FileUp, Trash2 } from 'lucide-react';
 import { useCompanies, useCompanyStats, useDeleteCompany, useBulkDeleteCompanies } from '@/hooks/use-companies';
 import { usePermissions, useCompanyPermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
@@ -13,6 +13,7 @@ import { CompanyTable } from '@/components/companies/company-table';
 import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
 import { Pagination } from '@/components/companies/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { BulkActionsToolbar, type BulkAction } from '@/components/ui/bulk-actions-toolbar';
 import { useToast } from '@/components/ui/toast';
 import type { EntityType, CompanyStatus } from '@/generated/prisma';
 
@@ -290,34 +291,6 @@ export default function CompaniesPage() {
         </div>
       )}
 
-      {/* Bulk Action Toolbar */}
-      {selectedCount > 0 && (
-        <div className="mb-4 card p-3 bg-oak-primary/5 border-oak-primary/30 flex items-center justify-between animate-fade-in">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-text-primary">
-              {selectedCount} {selectedCount > 1 ? 'companies' : 'company'} selected
-            </span>
-            <button
-              onClick={clearSelection}
-              className="btn-ghost btn-xs flex items-center gap-1 text-text-secondary hover:text-text-primary"
-            >
-              <X className="w-3.5 h-3.5" />
-              Clear
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            {can.deleteCompany && (
-              <button
-                onClick={handleBulkDeleteClick}
-                className="btn-danger btn-sm flex items-center gap-1.5"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Selected
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Table */}
       <div className="mb-6">
@@ -346,6 +319,30 @@ export default function CompaniesPage() {
           limit={data.limit}
           onPageChange={handlePageChange}
           onLimitChange={handleLimitChange}
+        />
+      )}
+
+      {/* Floating Bulk Actions Toolbar */}
+      {can.deleteCompany && (
+        <BulkActionsToolbar
+          selectedCount={selectedCount}
+          onClearSelection={clearSelection}
+          itemLabel="company"
+          actions={[
+            {
+              id: 'delete',
+              label: 'Delete',
+              icon: Trash2,
+              description: 'Delete selected companies',
+              variant: 'danger',
+              isLoading: bulkDeleteCompanies.isPending,
+            },
+          ]}
+          onAction={(actionId) => {
+            if (actionId === 'delete') {
+              handleBulkDeleteClick();
+            }
+          }}
         />
       )}
 

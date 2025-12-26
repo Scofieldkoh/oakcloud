@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { useToast } from '@/components/ui/toast';
 import { Pagination } from '@/components/companies/pagination';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -225,34 +226,6 @@ export default function DataPurgePage() {
       {/* Records Table */}
       {data && (
         <div className="card overflow-hidden">
-          {/* Table Header with Actions */}
-          {selectedIds.size > 0 && (
-            <div className="flex items-center justify-between p-4 border-b border-border-primary bg-background-secondary">
-              <span className="text-sm text-text-secondary">
-                {selectedIds.size} selected
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  leftIcon={<RotateCcw className="w-4 h-4" />}
-                  onClick={handleRestore}
-                  isLoading={restoreMutation.isPending}
-                >
-                  Restore ({selectedIds.size})
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  leftIcon={<Trash2 className="w-4 h-4" />}
-                  onClick={() => setConfirmDialogOpen(true)}
-                >
-                  Purge ({selectedIds.size})
-                </Button>
-              </div>
-            </div>
-          )}
-
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
@@ -503,6 +476,38 @@ export default function DataPurgePage() {
           )}
         </div>
       )}
+
+      {/* Floating Bulk Actions Toolbar */}
+      <BulkActionsToolbar
+        selectedCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        itemLabel="record"
+        actions={[
+          {
+            id: 'restore',
+            label: 'Restore',
+            icon: RotateCcw,
+            description: 'Restore selected records',
+            variant: 'default',
+            isLoading: restoreMutation.isPending,
+          },
+          {
+            id: 'purge',
+            label: 'Purge',
+            icon: Trash2,
+            description: 'Permanently delete selected records',
+            variant: 'danger',
+            isLoading: purgeMutation.isPending,
+          },
+        ]}
+        onAction={(actionId) => {
+          if (actionId === 'restore') {
+            handleRestore();
+          } else if (actionId === 'purge') {
+            setConfirmDialogOpen(true);
+          }
+        }}
+      />
 
       {/* Confirm Dialog */}
       <ConfirmDialog

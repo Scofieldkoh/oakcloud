@@ -200,7 +200,7 @@ function ThemeToggleButton({ collapsed }: { collapsed: boolean }) {
 }
 
 // User section
-function UserSection({ collapsed }: { collapsed: boolean }) {
+function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMobile?: boolean }) {
   const { data: user } = useSession();
   const logout = useLogout();
 
@@ -216,7 +216,12 @@ function UserSection({ collapsed }: { collapsed: boolean }) {
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 border-t border-border-primary">
+    <div className={cn(
+      "border-t border-border-primary",
+      // Desktop: absolute positioned at bottom
+      // Mobile: relative positioned, stays in flow
+      isMobile ? "relative mt-auto" : "absolute bottom-0 left-0 right-0"
+    )}>
       {/* Tenant selector for SUPER_ADMIN */}
       {user?.isSuperAdmin && (
         <div className="p-2.5 pb-0">
@@ -229,10 +234,12 @@ function UserSection({ collapsed }: { collapsed: boolean }) {
         <SidebarCompanyButton collapsed={collapsed} />
       </div>
 
-      {/* Theme toggle */}
-      <div className="p-2.5 pb-0">
-        <ThemeToggleButton collapsed={collapsed} />
-      </div>
+      {/* Theme toggle - hidden on mobile since it's in the header */}
+      {!isMobile && (
+        <div className="p-2.5 pb-0">
+          <ThemeToggleButton collapsed={collapsed} />
+        </div>
+      )}
 
       {/* User info */}
       <div className="p-2.5">
@@ -284,13 +291,13 @@ function DesktopSidebar() {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 h-screen bg-background-secondary border-r border-border-primary transition-all duration-200 z-40 hidden lg:block',
+        'fixed left-0 top-0 h-screen bg-background-secondary border-r border-border-primary transition-all duration-200 z-40 hidden lg:flex lg:flex-col',
         sidebarCollapsed ? 'w-14' : 'w-56'
       )}
     >
       {/* Logo */}
       <div className={cn(
-        "h-12 flex items-center border-b border-border-primary",
+        "h-12 flex items-center border-b border-border-primary flex-shrink-0",
         sidebarCollapsed ? "justify-center px-2" : "justify-between px-3"
       )}>
         {sidebarCollapsed ? (
@@ -318,8 +325,13 @@ function DesktopSidebar() {
         )}
       </div>
 
-      <NavigationContent collapsed={sidebarCollapsed} />
-      <UserSection collapsed={sidebarCollapsed} />
+      {/* Scrollable navigation area */}
+      <div className="flex-1 overflow-y-auto">
+        <NavigationContent collapsed={sidebarCollapsed} />
+      </div>
+
+      {/* User section at bottom */}
+      <UserSection collapsed={sidebarCollapsed} isMobile={true} />
     </aside>
   );
 }
@@ -392,9 +404,9 @@ function MobileDrawer() {
       />
 
       {/* Drawer */}
-      <aside className="absolute left-0 top-0 h-full w-64 bg-background-secondary border-r border-border-primary animate-slide-in-left">
+      <aside className="absolute left-0 top-0 h-full w-64 bg-background-secondary border-r border-border-primary animate-slide-in-left flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         {/* Header */}
-        <div className="h-12 flex items-center justify-between px-3 border-b border-border-primary">
+        <div className="h-12 flex items-center justify-between px-3 border-b border-border-primary flex-shrink-0">
           <Link href="/" className="flex items-center gap-2.5" onClick={() => setMobileSidebarOpen(false)}>
             <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem]" />
             <span className="text-sm font-semibold text-text-primary">Oakcloud</span>
@@ -408,8 +420,13 @@ function MobileDrawer() {
           </button>
         </div>
 
-        <NavigationContent collapsed={false} onNavigate={() => setMobileSidebarOpen(false)} />
-        <UserSection collapsed={false} />
+        {/* Scrollable navigation area */}
+        <div className="flex-1 overflow-y-auto">
+          <NavigationContent collapsed={false} onNavigate={() => setMobileSidebarOpen(false)} />
+        </div>
+
+        {/* User section at bottom */}
+        <UserSection collapsed={false} isMobile={true} />
       </aside>
     </div>
   );

@@ -8,32 +8,6 @@ You can read the MD files of the docs for information; they are documented and c
 ----
 ## EXISTING ISSUES:
 
-### System-wide
-- [x] Backup of database and files
-  - **Status**: Fully implemented with cleanup and scheduling support
-  - **Location**: `/admin/backup` (Super Admin only)
-  - **Features**:
-    - Create backups, restore from backups, download, delete
-    - Automatic cleanup of expired backups
-    - Scheduled backup support (per-tenant configuration)
-    - Stale backup detection and marking
-  - **Storage**: Backups stored in S3/MinIO under `backups/{backupId}/` prefix
-  - **Retention policy**: Set retention days when creating backup, auto-deletes when expired
-  - **API Endpoints**:
-    - `POST /api/admin/backup/cleanup` - Clean up expired/stale backups
-    - `POST /api/admin/backup/scheduled` - Process due scheduled backups
-  - **Environment Variables** (`.env`):
-    - `CRON_SECRET` - For cron job authentication
-    - `BACKUP_CLEANUP_ENABLED` - Enable cleanup via cron (default: false)
-    - `BACKUP_SCHEDULE_ENABLED` - Enable scheduled backups via cron (default: false)
-    - `BACKUP_STALE_THRESHOLD_MINUTES` - Stale detection threshold (default: 60)
-    - `BACKUP_DEFAULT_RETENTION_DAYS` - Default retention (default: 30)
-    - `BACKUP_DEFAULT_MAX_BACKUPS` - Max scheduled backups per tenant (default: 10)
-    - `BACKUP_DEFAULT_CRON` - Default cron pattern (default: "0 2 * * *")
-  - **Not yet implemented**:
-    - Scheduled backup UI (schedules can be managed via service API)
-
-
 ### Connectors
 - [ ] Ensure connector for OneDrive is working
   - **Status**: OneDrive connector test function implemented in `connector.service.ts`
@@ -60,4 +34,3 @@ You can read the MD files of the docs for information; they are documented and c
 - [ ] E-signature
 - [ ] Salesrooms
 
-- checkbox selector consistency
