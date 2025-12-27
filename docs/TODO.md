@@ -41,16 +41,3 @@ You can read the MD files of the docs for information; they are documented and c
 
 - Selection of tenant preference for exchange rate sync/ usage?
 
-- Error on scheduled task:
-[2025-12-26T10:15:00.030Z] ERROR [backup-task] Failed to process scheduled backups: TypeError: Cannot read properties of undefined (reading 'processScheduledBackups')
-    at Object.executeBackupTask [as execute] (src\lib\scheduler\tasks\backup.task.ts:50:40)
-    at async TaskScheduler.executeTask (src\lib\scheduler\scheduler.ts:147:22)
-    at async (src\lib\scheduler\scheduler.ts:116:9)
-  48 |   try {
-  49 |     const backupService = await getBackupService();
-> 50 |     const result = await backupService.processScheduledBackups();
-     |                                        ^
-  51 |
-  52 |     if (result.processed === 0) {
-  53 |       return {
-[2025-12-26T10:15:00.037Z] WARN [scheduler] Task "Scheduled Backups" failed in 8ms: Cannot read properties of undefined (reading 'processScheduledBackups')

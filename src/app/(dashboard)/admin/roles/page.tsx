@@ -10,7 +10,6 @@ import {
   useDeleteRole,
   useDuplicateRole,
   type Role,
-  type Permission,
 } from '@/hooks/use-admin';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
@@ -32,7 +31,6 @@ import {
   Pencil,
   Trash2,
   Copy,
-  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   MessageSquare,
-  Filter,
   Plus,
   Loader2,
   RefreshCw,

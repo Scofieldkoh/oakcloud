@@ -15,7 +15,6 @@ import {
   useCurrentTenantRoles,
   useTenantRoles,
   type TenantUser,
-  type UserCompanyAssignment,
   type Role,
 } from '@/hooks/use-admin';
 import { useCompanies } from '@/hooks/use-companies';
@@ -37,12 +36,14 @@ import {
   User,
   MoreVertical,
   Trash2,
-  Star,
   Edit,
   KeyRound,
   UserX,
   Check,
   X,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -63,6 +64,53 @@ interface RoleAssignment {
   companyName?: string;
 }
 
+/** Sortable column header component */
+function SortableHeader({
+  label,
+  field,
+  sortBy,
+  sortOrder,
+  onSort,
+}: {
+  label: string;
+  field: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
+}) {
+  const isActive = sortBy === field;
+
+  if (!onSort) {
+    return <th>{label}</th>;
+  }
+
+  return (
+    <th className="cursor-pointer select-none">
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className={cn(
+          'inline-flex items-center gap-1 hover:text-text-primary transition-colors',
+          isActive ? 'text-text-primary' : ''
+        )}
+      >
+        <span>{label}</span>
+        <span className="flex-shrink-0">
+          {isActive ? (
+            sortOrder === 'asc' ? (
+              <ArrowUp className="w-3.5 h-3.5" />
+            ) : (
+              <ArrowDown className="w-3.5 h-3.5" />
+            )
+          ) : (
+            <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
+          )}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 export default function UsersPage() {
   const { data: session } = useSession();
   const { success, error: showError } = useToast();
@@ -73,6 +121,18 @@ export default function UsersPage() {
   const [companyFilter, setCompanyFilter] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    setPage(1);
+  };
 
   // Modal states
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -138,6 +198,8 @@ export default function UsersPage() {
       company: companyFilter || undefined,
       page,
       limit,
+      sortBy,
+      sortOrder,
     }
   );
 
@@ -151,6 +213,8 @@ export default function UsersPage() {
     company: companyFilter || undefined,
     page,
     limit,
+    sortBy,
+    sortOrder,
   });
 
   // Use the appropriate data based on role
@@ -173,11 +237,11 @@ export default function UsersPage() {
   const deleteUser = useDeleteUser(activeTenantId || undefined);
 
   // Company management hooks
-  const { data: assignmentsData, isLoading: assignmentsLoading } = useUserCompanyAssignments(
+  const { data: assignmentsData } = useUserCompanyAssignments(
     managingUserId || undefined
   );
   const assignCompany = useAssignUserToCompany(managingUserId || undefined);
-  const removeAssignment = useRemoveCompanyAssignment(managingUserId || undefined);
+  const _removeAssignment = useRemoveCompanyAssignment(managingUserId || undefined);
   const removeUserRole = useRemoveUserRoleAssignment(activeTenantId || undefined);
 
   // Initialize edit form when editing user changes
@@ -657,10 +721,10 @@ export default function UsersPage() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>User</th>
+                    <SortableHeader label="User" field="firstName" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
                     <th>Roles & Companies</th>
-                    <th>Status</th>
-                    <th>Last Login</th>
+                    <SortableHeader label="Status" field="isActive" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
+                    <SortableHeader label="Last Login" field="lastLoginAt" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
                     <th className="w-10"></th>
                   </tr>
                 </thead>

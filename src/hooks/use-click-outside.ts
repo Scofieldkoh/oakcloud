@@ -92,7 +92,6 @@ export function useClickOutsideMultiple<T extends HTMLElement = HTMLElement>(
 
   // Initialize refs array if empty or count changed
   if (refsContainer.current.length !== count) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     refsContainer.current = Array.from({ length: count }, () => ({ current: null }));
   }
 

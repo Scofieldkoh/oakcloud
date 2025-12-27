@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -44,7 +43,6 @@ const MAX_FILES = 20;
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB to match API
 
 export default function ProcessingUploadPage() {
-  const router = useRouter();
   const { data: session } = useSession();
   const { success, error: toastError, info } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);

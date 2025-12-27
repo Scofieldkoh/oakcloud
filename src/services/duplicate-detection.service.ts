@@ -8,9 +8,8 @@
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import { Prisma } from '@/generated/prisma';
-import type { DuplicateAction, ProcessingDocument } from '@/generated/prisma';
+import type { DuplicateAction } from '@/generated/prisma';
 import { normalizeVendorName } from './document-revision.service';
-import crypto from 'crypto';
 
 type Decimal = Prisma.Decimal;
 
@@ -77,8 +76,8 @@ const THRESHOLDS = {
  */
 export async function checkForDuplicates(
   processingDocumentId: string,
-  tenantId: string,
-  companyId: string
+  _tenantId: string,
+  _companyId: string
 ): Promise<DuplicateCheckResult> {
   log.info(`Checking for duplicates of document ${processingDocumentId}`);
 

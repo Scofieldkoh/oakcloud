@@ -8,7 +8,7 @@ interface ThemeToggleProps {
   showLabel?: boolean;
 }
 
-export function ThemeToggle({ variant = 'button', showLabel = false }: ThemeToggleProps) {
+export function ThemeToggle({ variant = 'button' }: ThemeToggleProps) {
   const { theme, setTheme, toggleTheme } = useUIStore();
 
   if (variant === 'button') {

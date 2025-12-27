@@ -40,6 +40,8 @@ export async function GET(request: NextRequest) {
       includeSystem: searchParams.get('includeSystem') !== 'false',
       page: searchParams.get('page') || 1,
       limit: searchParams.get('limit') || 50,
+      sortBy: searchParams.get('sortBy') || 'rateDate',
+      sortOrder: searchParams.get('sortOrder') || 'desc',
     });
 
     // Get rates with tenant context

@@ -180,6 +180,8 @@ export const rateSearchSchema = z.object({
   includeSystem: z.coerce.boolean().default(true),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(200).default(50),
+  sortBy: z.enum(['sourceCurrency', 'rate', 'rateDate', 'rateType', 'createdAt']).optional().default('rateDate'),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
 export type RateSearchInput = z.infer<typeof rateSearchSchema>;

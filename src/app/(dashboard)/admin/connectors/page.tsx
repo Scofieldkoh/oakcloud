@@ -14,7 +14,6 @@ import {
   useConnectorUsage,
   useExportUsage,
   getProviderDisplayName,
-  getTypeDisplayName,
   getCredentialFields,
   getProvidersForType,
   parseTestResult,
@@ -234,7 +233,7 @@ export default function ConnectorsPage() {
   const updateMutation = useUpdateConnector(editingConnector?.id);
   const deleteMutation = useDeleteConnector();
   const testMutation = useTestConnector();
-  const toggleMutation = useToggleConnector(undefined);
+  const _toggleMutation = useToggleConnector(undefined);
 
   // Usage query
   const usageParams: UsageSearchParams | null = usageConnector

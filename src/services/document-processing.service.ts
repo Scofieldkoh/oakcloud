@@ -20,7 +20,7 @@ import type {
   DocumentCategory,
 } from '@/generated/prisma';
 import { PDFDocument } from 'pdf-lib';
-import { storage, StorageKeys } from '@/lib/storage';
+import { storage } from '@/lib/storage';
 import { hashBlake3, generateFingerprint } from '@/lib/encryption';
 
 type Decimal = Prisma.Decimal;

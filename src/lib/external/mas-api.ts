@@ -378,7 +378,7 @@ export async function fetchLatestRates(): Promise<ParsedExchangeRate[]> {
     if (rates.length > 0) {
       return rates;
     }
-  } catch (error) {
+  } catch {
     log.warn(`Failed to fetch rates for yesterday, trying earlier dates`);
   }
 
@@ -390,7 +390,7 @@ export async function fetchLatestRates(): Promise<ParsedExchangeRate[]> {
     if (rates.length > 0) {
       return rates;
     }
-  } catch (error) {
+  } catch {
     log.warn(`Failed to fetch rates for 2 days ago`);
   }
 
@@ -420,7 +420,7 @@ export async function fetchRatesForDateRange(
     try {
       const rates = await fetchDailyRates(currentDate);
       allRates.push(...rates);
-    } catch (error) {
+    } catch {
       // Skip dates with no data (weekends/holidays)
       log.debug(`No rates for ${formatDateForMAS(currentDate)}, skipping`);
     }

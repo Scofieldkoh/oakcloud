@@ -28,7 +28,6 @@ import type {
   WorkflowContext,
   DocumentForSignature,
   Signatory,
-  SectionDefinition,
 } from './types';
 import type { GeneratedDocument, DocumentShare } from '@/generated/prisma';
 

@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { createAuditLog, computeChanges, type AuditContext } from '@/lib/audit';
+import { createAuditLog, computeChanges } from '@/lib/audit';
 import { canAddCompany } from '@/lib/tenant';
 import type {
   CreateCompanyInput,
@@ -1370,7 +1370,7 @@ export async function updateShareholder(
   // Wrap update and percentage recalculation in transaction to prevent race conditions
   const finalUpdated = await prisma.$transaction(async (tx) => {
     // Update shareholder
-    const updated = await tx.companyShareholder.update({
+    await tx.companyShareholder.update({
       where: { id: shareholderId },
       data: {
         numberOfShares: data.numberOfShares !== undefined ? data.numberOfShares : undefined,

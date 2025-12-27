@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertCircle, Clock, FileText, X, Loader2 } from 'lucide-react';
+import { AlertCircle, Clock, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 

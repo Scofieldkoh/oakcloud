@@ -176,6 +176,8 @@ export const listQuerySchema = paginationSchema.merge(querySearchSchema);
 export const tenantUsersQuerySchema = paginationSchema.merge(querySearchSchema).extend({
   role: z.string().optional(),
   company: z.string().optional(),
+  sortBy: z.enum(['firstName', 'lastName', 'email', 'isActive', 'lastLoginAt', 'createdAt']).optional().default('createdAt'),
+  sortOrder: sortOrderSchema,
 });
 
 /**

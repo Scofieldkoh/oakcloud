@@ -67,7 +67,6 @@ const duplicateStatusConfig: Record<
 };
 
 function StatusBadge({
-  status,
   config,
 }: {
   status: string;

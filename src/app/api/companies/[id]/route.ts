@@ -4,7 +4,6 @@ import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { updateCompanySchema, deleteCompanySchema } from '@/lib/validations/company';
 import { parseIdParams } from '@/lib/validations/params';
-import { HTTP_STATUS } from '@/lib/constants/application';
 import {
   getCompanyById,
   getCompanyFullDetails,

@@ -190,7 +190,7 @@ export interface UpdateUserData {
 
 export function useTenantUsers(
   tenantId: string | undefined,
-  params?: { query?: string; role?: string; company?: string; page?: number; limit?: number }
+  params?: { query?: string; role?: string; company?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }
 ) {
   return useQuery<TenantUsersResponse>({
     queryKey: ['tenant-users', tenantId, params],
@@ -203,6 +203,8 @@ export function useTenantUsers(
       if (params?.company) searchParams.set('company', params.company);
       if (params?.page) searchParams.set('page', params.page.toString());
       if (params?.limit) searchParams.set('limit', params.limit.toString());
+      if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
+      if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder);
 
       const res = await fetch(`/api/tenants/${tenantId}/users?${searchParams}`);
       if (!res.ok) {
@@ -215,7 +217,7 @@ export function useTenantUsers(
   });
 }
 
-export function useCurrentTenantUsers(params?: { query?: string; role?: string; company?: string; page?: number; limit?: number }) {
+export function useCurrentTenantUsers(params?: { query?: string; role?: string; company?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }) {
   const { data: session } = useSession();
   return useTenantUsers(session?.tenantId || undefined, params);
 }

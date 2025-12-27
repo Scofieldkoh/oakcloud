@@ -531,8 +531,8 @@ function buildPDFHtml(
     content: string;
     status: string;
   },
-  letterhead: Awaited<ReturnType<typeof getLetterhead>>,
-  margins: PageMargins
+  _letterhead: Awaited<ReturnType<typeof getLetterhead>>,
+  _margins: PageMargins
 ): string {
   // Parse content into pages
   const pages = parsePages(document.content);
@@ -667,9 +667,11 @@ export async function generatePreviewHtml(
     ? await getLetterhead(tenantId)
     : null;
 
-  const margins = letterhead?.pageMargins
+  // Parse margins for future use (currently not used in preview)
+  const _margins = letterhead?.pageMargins
     ? parseMargins(letterhead.pageMargins)
     : DEFAULT_MARGINS;
+  void _margins; // Reserved for future use
 
   // Build preview HTML (includes header/footer inline)
   const headerHtml = buildHeaderHtml(letterhead);

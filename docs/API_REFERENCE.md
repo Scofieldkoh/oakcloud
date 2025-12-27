@@ -31,7 +31,8 @@ Most endpoints require authentication via JWT token stored in an `auth-token` ht
 10. [Connectors (AI)](#connector-endpoints)
 11. [AI Features](#ai-endpoints)
 12. [Audit Logs](#audit-log-endpoints)
-13. [Admin](#admin-endpoints)
+13. [Exchange Rates](#exchange-rate-endpoints)
+14. [Admin](#admin-endpoints)
 
 ---
 
@@ -248,6 +249,8 @@ List users in a tenant. **TENANT_ADMIN or SUPER_ADMIN.**
 - `query` (string, optional)
 - `role` (string, optional)
 - `company` (string, optional)
+- `sortBy` (string, optional) - One of: `firstName`, `lastName`, `email`, `isActive`, `lastLoginAt`, `createdAt` (default: `createdAt`)
+- `sortOrder` ('asc' | 'desc', default: 'desc')
 
 ---
 
@@ -894,6 +897,54 @@ Get audit log statistics.
 
 ---
 
+## Exchange Rate Endpoints
+
+### GET /api/admin/exchange-rates
+List exchange rates with filters. **TENANT_ADMIN or SUPER_ADMIN.**
+
+**Query Parameters:**
+- `page` (number, default: 1)
+- `limit` (number, default: 50)
+- `tenantId` (string, optional) - Filter by tenant
+- `sourceCurrency` (string, optional) - Filter by source currency code
+- `startDate` (string, optional) - Filter from date (ISO format)
+- `endDate` (string, optional) - Filter to date (ISO format)
+- `source` (string, optional) - One of: `ALL`, `SYSTEM`, `MANUAL` (default: `ALL`)
+- `includeSystem` (boolean, default: true) - Include system-level rates
+- `sortBy` (string, optional) - One of: `sourceCurrency`, `rate`, `rateDate`, `rateType`, `createdAt` (default: `rateDate`)
+- `sortOrder` ('asc' | 'desc', default: 'desc')
+
+**Response:** `200 OK`
+```json
+{
+  "rates": [...],
+  "total": "number",
+  "page": "number",
+  "limit": "number",
+  "totalPages": "number"
+}
+```
+
+---
+
+### POST /api/admin/exchange-rates
+Create a manual rate override. **TENANT_ADMIN or SUPER_ADMIN.**
+
+**Request Body:**
+```json
+{
+  "sourceCurrency": "string",
+  "targetCurrency": "string (default: SGD)",
+  "rate": "number",
+  "rateDate": "string (ISO date)",
+  "tenantId": "string (optional, SUPER_ADMIN only)"
+}
+```
+
+**Response:** `201 Created`
+
+---
+
 ## Admin Endpoints
 
 ### POST /api/admin/purge
@@ -998,3 +1049,9 @@ Paginated endpoints return:
 ---
 
 *Last updated: December 2024*
+
+---
+
+**Changelog:**
+- Added sorting parameters (`sortBy`, `sortOrder`) to Users endpoint
+- Added Exchange Rates endpoints with sorting support

@@ -8,7 +8,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, isSuperAdmin } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { auditLogQuerySchema } from '@/lib/validations/audit';
-import { getTenantAuditHistory, getUserAuditHistory } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma';
 import type { AuditAction } from '@/generated/prisma';

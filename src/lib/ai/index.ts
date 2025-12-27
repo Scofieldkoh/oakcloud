@@ -17,7 +17,6 @@ import type {
   AIProvider,
   AIRequestOptions,
   AIResponse,
-  AICredentials,
   ModelAvailability,
   ProviderStatus,
 } from './types';

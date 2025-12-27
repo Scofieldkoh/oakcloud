@@ -22,15 +22,15 @@ let backupServiceInstance: typeof import('@/services/backup.service').backupServ
  */
 async function getBackupService(): Promise<typeof import('@/services/backup.service').backupService> {
   if (!backupServiceInstance) {
-    // Use dynamic import which works correctly with Next.js path aliases
-    const module = await import('@/services/backup.service');
-    backupServiceInstance = module.backupService;
+    // Use relative path - path aliases don't work in instrumentation context with Turbopack
+    const backupModule = await import('../../../services/backup.service');
+    backupServiceInstance = backupModule.backupService;
 
     // Validate the service was loaded correctly
     if (!backupServiceInstance || typeof backupServiceInstance.processScheduledBackups !== 'function') {
       throw new Error(
         'Failed to load backup service: processScheduledBackups method not found. ' +
-        `Module exports: ${Object.keys(module).join(', ')}`
+        `Module exports: ${Object.keys(backupModule).join(', ')}`
       );
     }
   }

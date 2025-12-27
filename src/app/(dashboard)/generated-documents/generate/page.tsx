@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
 import {
@@ -35,11 +35,10 @@ interface Company {
 
 export default function GenerateDocumentPage() {
   const router = useRouter();
-  const { success, error: toastError } = useToast();
+  const { success } = useToast();
   const { data: session } = useSession();
 
   // Tenant selection (from centralized store for SUPER_ADMIN)
-  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
     session?.tenantId

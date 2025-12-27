@@ -4,6 +4,9 @@
  * GET  /api/admin/exchange-rates/tenant-preference - Get current tenant's rate preference
  * PATCH /api/admin/exchange-rates/tenant-preference - Update rate preference
  *
+ * Query params:
+ *   tenantId - Optional tenant ID (SUPER_ADMIN only, for managing other tenants)
+ *
  * Access: TENANT_ADMIN or SUPER_ADMIN
  */
 
@@ -12,6 +15,12 @@ import { getSession } from '@/lib/auth';
 import * as exchangeRateService from '@/services/exchange-rate.service';
 import { tenantRatePreferenceSchema } from '@/lib/validations/exchange-rate';
 import { ZodError } from 'zod';
+import { z } from 'zod';
+
+// Extended schema that allows tenantId for SUPER_ADMINs
+const updatePreferenceSchema = tenantRatePreferenceSchema.extend({
+  tenantId: z.string().uuid().optional(),
+});
 
 // ============================================================================
 // GET - Get tenant's rate preference
@@ -29,15 +38,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Must have a tenant context
-    if (!session.tenantId) {
+    // Get tenantId from query params (for SUPER_ADMIN) or session
+    const { searchParams } = new URL(request.url);
+    const queryTenantId = searchParams.get('tenantId');
+
+    // Determine the target tenant
+    let targetTenantId: string | null = null;
+
+    if (queryTenantId && session.isSuperAdmin) {
+      // SUPER_ADMIN can specify a tenant
+      targetTenantId = queryTenantId;
+    } else if (session.tenantId) {
+      // Use session tenant for tenant admins
+      targetTenantId = session.tenantId;
+    }
+
+    if (!targetTenantId) {
       return NextResponse.json(
-        { error: 'Tenant context required' },
+        { error: 'Tenant context required. Please select a tenant.' },
         { status: 400 }
       );
     }
 
-    const preference = await exchangeRateService.getTenantRatePreference(session.tenantId);
+    const preference = await exchangeRateService.getTenantRatePreference(targetTenantId);
 
     return NextResponse.json({
       preferredRateType: preference,
@@ -70,19 +93,29 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Must have a tenant context
-    if (!session.tenantId) {
+    const body = await request.json();
+    const data = updatePreferenceSchema.parse(body);
+
+    // Determine the target tenant
+    let targetTenantId: string | null = null;
+
+    if (data.tenantId && session.isSuperAdmin) {
+      // SUPER_ADMIN can specify a tenant
+      targetTenantId = data.tenantId;
+    } else if (session.tenantId) {
+      // Use session tenant for tenant admins
+      targetTenantId = session.tenantId;
+    }
+
+    if (!targetTenantId) {
       return NextResponse.json(
-        { error: 'Tenant context required' },
+        { error: 'Tenant context required. Please select a tenant.' },
         { status: 400 }
       );
     }
 
-    const body = await request.json();
-    const data = tenantRatePreferenceSchema.parse(body);
-
     await exchangeRateService.updateTenantRatePreference(
-      session.tenantId,
+      targetTenantId,
       data.preferredRateType
     );
 

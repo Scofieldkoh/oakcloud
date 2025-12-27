@@ -2186,7 +2186,6 @@ model WebhookSubscription {
 enum ExchangeRateType {
   MAS_DAILY_RATE
   MAS_MONTHLY_RATE
-  ECB_DAILY_RATE
   MANUAL_RATE
 }
 

@@ -205,7 +205,7 @@ function isAlreadyProperCase(str: string): boolean {
 /**
  * Check if a word is all uppercase
  */
-function isAllCaps(word: string): boolean {
+function _isAllCaps(word: string): boolean {
   return word === word.toUpperCase() && /[A-Z]/.test(word);
 }
 

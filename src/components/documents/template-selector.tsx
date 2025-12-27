@@ -5,7 +5,6 @@ import {
   FileText,
   Search,
   FolderOpen,
-  Star,
   Clock,
   Eye,
 } from 'lucide-react';

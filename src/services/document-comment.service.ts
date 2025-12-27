@@ -25,7 +25,7 @@ import {
   COMMENT_RATE_LIMIT_WINDOW_MS,
 } from '@/lib/constants/application';
 import { Prisma } from '@/generated/prisma';
-import type { DocumentComment, DocumentCommentStatus } from '@/generated/prisma';
+import type { DocumentComment } from '@/generated/prisma';
 
 const log = createLogger('document-comment');
 

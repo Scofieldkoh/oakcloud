@@ -5,7 +5,6 @@ import {
   ChevronDown,
   ChevronRight,
   List,
-  FileText,
   Hash,
   Eye,
   EyeOff,
@@ -155,7 +154,7 @@ export function SectionNavigator({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Group sections by level for hierarchical display
-  const sectionsByLevel = useMemo(() => {
+  const _sectionsByLevel = useMemo(() => {
     const grouped: Map<number, DocumentSection[]> = new Map();
     sections.forEach((section) => {
       const level = section.level || 1;

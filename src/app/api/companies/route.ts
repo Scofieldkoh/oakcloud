@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createCompanySchema, companySearchSchema } from '@/lib/validations/company';
-import { createCompany, searchCompanies, getCompanyByUen, getCompanyById } from '@/services/company.service';
+import { createCompany, searchCompanies, getCompanyByUen } from '@/services/company.service';
 import { getTenantById } from '@/services/tenant.service';
 
 export async function GET(request: NextRequest) {

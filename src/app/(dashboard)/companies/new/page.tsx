@@ -11,7 +11,7 @@ import { useCreateCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { ENTITY_TYPES } from '@/lib/constants';
 
 const statuses = [
@@ -50,7 +50,6 @@ export default function NewCompanyPage() {
 
   // SUPER_ADMIN tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
 
   const {

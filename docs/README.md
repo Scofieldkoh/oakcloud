@@ -2906,7 +2906,11 @@ src/components/documents/
 └── index.ts                         # Barrel exports
 
 src/components/ui/
-└── rich-text-editor.tsx             # Reusable TipTap rich text editor
+├── rich-text-editor.tsx             # Reusable TipTap rich text editor
+├── date-picker.tsx                  # Date/range picker with presets (oak design system)
+├── searchable-select.tsx            # Searchable dropdown with keyboard navigation
+├── filter-pill.tsx                  # FilterPillGroup, FilterPillToggle for multi-select filters
+└── filter-chip.tsx                  # Active filter indicator with remove button
 ```
 
 ### Admin Pages
@@ -3728,7 +3732,7 @@ For detailed specifications, see [EXCHANGE_RATE_SPEC.md](./EXCHANGE_RATE_SPEC.md
 - **Manual Rates**: Create tenant-specific overrides with audit trail
 - **Rate Lookup**: Smart fallback (tenant override → preferred type → system rate → latest)
 - **Tenant Preferences**: Choose between monthly (IRAS) or daily (MAS) as default
-- **Admin UI**: Full management interface at `/admin/exchange-rates`
+- **Admin UI**: Full management interface at `/admin/exchange-rates` with filter pills, searchable currency select, and date range picker
 - **21 Currencies**: SGD, USD, EUR, GBP, JPY, AUD, CAD, CNY, HKD, INR, IDR, KRW, MYR, NZD, PHP, QAR, SAR, CHF, TWD, THB, AED, VND
 - **API Key Expiry Warning**: System warns SUPER_ADMIN 30 days before MAS API keys expire
 

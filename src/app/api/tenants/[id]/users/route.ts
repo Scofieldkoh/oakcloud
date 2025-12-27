@@ -39,7 +39,7 @@ export async function GET(
       return NextResponse.json(createValidationErrorResponse(validation.error), { status: 400 });
     }
 
-    const { page, limit, query, role, company } = validation.data;
+    const { page, limit, query, role, company, sortBy, sortOrder } = validation.data;
 
     const where = {
       tenantId,
@@ -125,7 +125,7 @@ export async function GET(
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortBy]: sortOrder },
         skip: (page - 1) * limit,
         take: limit,
       }),

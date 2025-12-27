@@ -1461,9 +1461,11 @@ Tenants can choose their preferred rate type for currency conversion. This is st
 
 **Rate Lookup Priority with Preferences:**
 1. Tenant-specific manual override for exact date
-2. Tenant's preferred rate type (MAS_MONTHLY_RATE or MAS_DAILY_RATE)
+2. Tenant's preferred rate type:
+   - **MONTHLY**: Looks up `MAS_MONTHLY_RATE` for the **first day of the document's month** (e.g., doc dated Nov 19 → Nov 1 rate)
+   - **DAILY**: Looks up `MAS_DAILY_RATE` for the **exact document date**
 3. System rate of preferred type
-4. Fallback to any available system rate (most recent)
+4. Fallback to most recent available system rate
 
 ---
 
@@ -1487,6 +1489,7 @@ The system uses MAS's (Monetary Authority of Singapore) APIMG Gateway API which 
 - **Authentication**: API Key via `KeyId` header
 - **Update Frequency**: Monthly (end-of-month rates)
 - **Currencies**: USD, EUR, GBP, JPY, AUD, CAD, CNY, HKD, INR, IDR, KRW, MYR, NZD, PHP, QAR, SAR, CHF, TWD, THB, AED, VND (21 currencies)
+- **Date Storage**: MAS returns rates for the last day of the month (e.g., Nov 30). These are stored with `rateDate` as the **first day of the following month** (e.g., Dec 1). This simplifies lookup: a document dated Nov 19 uses the Nov 1 rate (which represents October's end-of-month rate).
 
 **Daily End-of-Period Rates:**
 - **Endpoint**: `https://eservices.mas.gov.sg/apimg-gw/server/monthly_statistical_bulletin_non610ora/exchange_rates_end_of_period_daily/views/exchange_rates_end_of_period_daily`

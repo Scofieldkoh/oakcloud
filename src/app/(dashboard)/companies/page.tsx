@@ -14,7 +14,7 @@ import { CompanyTable } from '@/components/companies/company-table';
 import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
 import { Pagination } from '@/components/companies/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { BulkActionsToolbar, type BulkAction } from '@/components/ui/bulk-actions-toolbar';
+import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { useToast } from '@/components/ui/toast';
 import type { EntityType, CompanyStatus } from '@/generated/prisma';
 
@@ -66,7 +66,6 @@ export default function CompaniesPage() {
   const {
     selectedIds,
     selectedCount,
-    isSelected,
     isAllSelected,
     isIndeterminate,
     toggleOne,
@@ -130,6 +129,17 @@ export default function CompaniesPage() {
 
   const handleLimitChange = (limit: number) => {
     setParams((prev) => ({ ...prev, limit, page: 1 }));
+  };
+
+  const handleSort = (field: string) => {
+    setParams((prev) => {
+      if (prev.sortBy === field) {
+        // Toggle order if same field
+        return { ...prev, sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' };
+      }
+      // New field, default to ascending
+      return { ...prev, sortBy: field, sortOrder: 'asc' };
+    });
   };
 
   const handleDeleteClick = (id: string) => {
@@ -310,6 +320,9 @@ export default function CompaniesPage() {
           onToggleAll={toggleAll}
           isAllSelected={isAllSelected}
           isIndeterminate={isIndeterminate}
+          sortBy={params.sortBy}
+          sortOrder={params.sortOrder}
+          onSort={handleSort}
         />
       </div>
 

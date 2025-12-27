@@ -288,7 +288,7 @@ function validateCompanyData(
 function validateOfficerData(
   company: CompanyData | null,
   requirements: PlaceholderRequirement[],
-  companyId: string | undefined
+  _companyId: string | undefined
 ): { errors: ValidationError[]; warnings: ValidationWarning[] } {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
@@ -440,7 +440,7 @@ export async function validateForGeneration(
   tenantId: string,
   input: ValidateForGenerationInput
 ): Promise<ValidationResult> {
-  const { templateId, companyId, contactIds, customData } = input;
+  const { templateId, companyId, customData } = input;
 
   // Fetch template
   const template = await prisma.documentTemplate.findFirst({

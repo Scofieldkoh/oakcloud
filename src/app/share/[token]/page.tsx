@@ -13,8 +13,6 @@ import {
   AlertCircle,
   Calendar,
   User,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';

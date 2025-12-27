@@ -11,7 +11,6 @@ import { Prisma } from '@/generated/prisma';
 import type { DocumentRevision, DocumentRevisionLineItem } from '@/generated/prisma';
 import type {
   RevisionType,
-  RevisionStatus,
   DocumentCategory,
   DocumentSubCategory,
   GstTreatment,

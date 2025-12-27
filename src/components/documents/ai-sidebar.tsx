@@ -16,9 +16,7 @@ import {
   Braces,
   ClipboardCheck,
   Trash2,
-  ChevronUp,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { AIModelSelector, useAIModels } from '@/components/ui/ai-model-selector';
 import { cn } from '@/lib/utils';
 

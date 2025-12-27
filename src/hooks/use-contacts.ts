@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Contact, ContactType, IdentificationType } from '@/generated/prisma';
+import type { Contact, ContactType } from '@/generated/prisma';
 import type { CreateContactInput, UpdateContactInput } from '@/lib/validations/contact';
 
 interface ContactWithCount extends Contact {
@@ -381,7 +381,7 @@ export function useRemoveOfficerPosition() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ contactId, officerId, companyId }: { contactId: string; officerId: string; companyId: string }) =>
+    mutationFn: ({ officerId, companyId }: { contactId: string; officerId: string; companyId: string }) =>
       removeOfficerPosition(companyId, officerId),
     onSuccess: (_, { contactId, companyId }) => {
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
@@ -410,7 +410,7 @@ export function useRemoveShareholding() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ contactId, shareholderId, companyId }: { contactId: string; shareholderId: string; companyId: string }) =>
+    mutationFn: ({ shareholderId, companyId }: { contactId: string; shareholderId: string; companyId: string }) =>
       removeShareholding(companyId, shareholderId),
     onSuccess: (_, { contactId, companyId }) => {
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
@@ -445,7 +445,6 @@ export function useUpdateOfficerPosition() {
     mutationFn: ({
       contactId,
       officerId,
-      companyId,
       data,
     }: {
       contactId: string;
@@ -486,7 +485,6 @@ export function useUpdateShareholding() {
     mutationFn: ({
       contactId,
       shareholderId,
-      companyId,
       data,
     }: {
       contactId: string;

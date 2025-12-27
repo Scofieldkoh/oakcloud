@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { RESOURCES, ACTIONS, type Resource, type Action } from '@/lib/rbac';
+import { RESOURCES, ACTIONS } from '@/lib/rbac';
 
 // ============================================================================
 // Types

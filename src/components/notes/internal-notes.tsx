@@ -78,7 +78,7 @@ export function InternalNotes({
       setActiveTabId(newTab.id);
       setEditingTitle(newTab.id);
       setTitleInput(newTab.title);
-    } catch (err) {
+    } catch {
       toast.error('Failed to create tab');
     }
   };
@@ -96,7 +96,7 @@ export function InternalNotes({
         data: { title: trimmedTitle },
       });
       setEditingTitle(null);
-    } catch (err) {
+    } catch {
       toast.error('Failed to rename tab');
     }
   };
@@ -122,7 +122,7 @@ export function InternalNotes({
       await deleteMutation.mutateAsync(deleteConfirm.id);
       toast.success('Tab deleted');
       setDeleteConfirm(null);
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete tab');
     }
   };
@@ -143,7 +143,7 @@ export function InternalNotes({
       });
       setIsEditing(false);
       toast.success('Notes saved');
-    } catch (err) {
+    } catch {
       toast.error('Failed to save notes');
     }
   };

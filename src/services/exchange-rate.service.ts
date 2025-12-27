@@ -341,13 +341,18 @@ export async function syncMASMonthly(targetMonth?: string): Promise<SyncResult> 
 
 /**
  * Upsert a monthly rate from MAS APIMG Gateway API.
- * Stored as MAS_MONTHLY_RATE type with the last day of the month as rateDate.
+ * MAS returns rates for the last day of the month (e.g., Nov 30).
+ * We store them with the first day of the NEXT month (e.g., Dec 1) to make
+ * lookups simpler: a document dated Nov 19 uses Nov 1 rate (which represents Oct's end-of-month rate).
  */
 async function upsertMASMonthlyRate(
   rate: ParsedExchangeRate
 ): Promise<{ created: boolean }> {
-  const rateDate = new Date(rate.rateDate);
-  // Normalize to start of day in UTC (last day of month from parsing)
+  const originalDate = new Date(rate.rateDate);
+  // Add 1 day to convert last day of month to first day of next month
+  // e.g., Nov 30 → Dec 1, Oct 31 → Nov 1
+  const rateDate = new Date(originalDate);
+  rateDate.setUTCDate(rateDate.getUTCDate() + 1);
   rateDate.setUTCHours(0, 0, 0, 0);
 
   // Check if rate already exists
@@ -387,7 +392,7 @@ async function upsertMASMonthlyRate(
       rateType: 'MAS_MONTHLY_RATE',
       rateDate: rateDate,
       isManualOverride: false,
-      sourceRef: `mas-monthly:${rate.rateDate.toISOString().slice(0, 7)}`,
+      sourceRef: `mas-monthly:${originalDate.toISOString().slice(0, 7)}`,
     },
   });
 
@@ -594,16 +599,19 @@ export async function getRateWithPreference(
     ? await getTenantRatePreference(tenantId)
     : 'MONTHLY'; // Default to monthly
 
-  // Both daily and monthly rates are now MAS_DAILY_RATE type
-  // Monthly rates are stored with month-end date, daily with exact date
-  const preferredRateType: ExchangeRateType = 'MAS_DAILY_RATE';
-
-  // For monthly preference, we look for rates on the last day of the month
-  // For daily preference, we look for exact date
+  // Determine lookup date and rate type based on preference
   let lookupDate = rateDate;
+  let preferredRateType: ExchangeRateType;
+
   if (preference === 'MONTHLY') {
-    // Get last day of the month for the given date
-    lookupDate = new Date(Date.UTC(rateDate.getFullYear(), rateDate.getMonth() + 1, 0));
+    // For monthly preference, use first day of the document's month
+    // Monthly rates are stored as first day of month (e.g., Dec 1 for Nov's end-of-month rate)
+    // A document dated Nov 19 → look for Nov 1 rate
+    lookupDate = new Date(Date.UTC(rateDate.getFullYear(), rateDate.getMonth(), 1));
+    preferredRateType = 'MAS_MONTHLY_RATE';
+  } else {
+    // For daily preference, use exact date
+    preferredRateType = 'MAS_DAILY_RATE';
   }
 
   // 3. Look for system rate of preferred type
@@ -833,7 +841,7 @@ export async function searchRates(
   params: RateSearchInput,
   tenantContext?: { tenantId?: string; isSuperAdmin?: boolean }
 ): Promise<PaginatedRates> {
-  const { page, limit, sourceCurrency, startDate, endDate, source, includeSystem, tenantId } =
+  const { page, limit, sourceCurrency, startDate, endDate, source, includeSystem, tenantId, sortBy, sortOrder } =
     params;
   const skip = (page - 1) * limit;
 
@@ -875,10 +883,20 @@ export async function searchRates(
     // Map to ExchangeRateType enum values
     const typeMap: Record<string, ExchangeRateType> = {
       'MAS_DAILY': 'MAS_DAILY_RATE',
-      'IRAS_MONTHLY': 'IRAS_MONTHLY_AVG_RATE',
+      'MAS_MONTHLY': 'MAS_MONTHLY_RATE',
       'MANUAL': 'MANUAL_RATE',
     };
     where.rateType = typeMap[source] || (source as ExchangeRateType);
+  }
+
+  // Build orderBy clause
+  const orderBy: Prisma.ExchangeRateOrderByWithRelationInput[] = [];
+  if (sortBy) {
+    orderBy.push({ [sortBy]: sortOrder || 'desc' });
+  }
+  // Secondary sort by sourceCurrency for consistency
+  if (sortBy !== 'sourceCurrency') {
+    orderBy.push({ sourceCurrency: 'asc' });
   }
 
   // Execute query
@@ -887,7 +905,7 @@ export async function searchRates(
       where,
       skip,
       take: limit,
-      orderBy: [{ rateDate: 'desc' }, { sourceCurrency: 'asc' }],
+      orderBy,
     }),
     prisma.exchangeRate.count({ where }),
   ]);

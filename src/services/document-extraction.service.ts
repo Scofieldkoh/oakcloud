@@ -13,12 +13,12 @@ import type { ExtractionType, DocumentCategory, DocumentSubCategory } from '@/ge
 import { createRevision, type LineItemInput } from './document-revision.service';
 import { transitionPipelineStatus, recordProcessingAttempt } from './document-processing.service';
 import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection.service';
-import { callAIWithConnector, getBestAvailableModelForTenant, extractJSON } from '@/lib/ai';
+import { callAIWithConnector, getBestAvailableModelForTenant } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai/types';
 import { storage } from '@/lib/storage';
 import { hashBlake3 } from '@/lib/encryption';
 
-type Decimal = Prisma.Decimal;
+type _Decimal = Prisma.Decimal;
 
 const log = createLogger('document-extraction');
 

@@ -7,7 +7,6 @@ import {
   Printer,
   ZoomIn,
   ZoomOut,
-  RotateCw,
   ChevronLeft,
   ChevronRight,
   Maximize2,
@@ -16,9 +15,7 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Settings,
   RefreshCw,
-  ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -420,8 +417,6 @@ export function PDFPreviewPanel({
   error = null,
   className,
   showToolbar = true,
-  showPageNavigation = true,
-  showZoomControls = true,
   showPageBreaks = false,
   defaultZoom = DEFAULT_ZOOM,
   maxPages = 100,

@@ -11,7 +11,7 @@ import { useCreateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 
 const contactTypes = [
@@ -42,7 +42,6 @@ export default function NewContactPage() {
 
   // SUPER_ADMIN tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
 
   const {

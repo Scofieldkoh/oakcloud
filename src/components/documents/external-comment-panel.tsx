@@ -221,61 +221,6 @@ function ExternalCommentForm({
 }
 
 // ============================================================================
-// External Reply Form Component
-// ============================================================================
-
-function ExternalReplyForm({
-  onSubmit,
-  onCancel,
-  isLoading,
-  guestInfo,
-}: {
-  onSubmit: (content: string) => void;
-  onCancel: () => void;
-  isLoading: boolean;
-  guestInfo: GuestInfo;
-}) {
-  const [content, setContent] = useState('');
-
-  const handleSubmit = () => {
-    if (content.trim()) {
-      onSubmit(content.trim());
-      setContent('');
-    }
-  };
-
-  return (
-    <div className="mt-3 pl-10">
-      <div className="text-xs text-text-muted mb-1 flex items-center gap-1">
-        <User className="w-3 h-3" />
-        Replying as {guestInfo.name}
-      </div>
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Write a reply..."
-        rows={2}
-        disabled={isLoading}
-        className="w-full px-3 py-2 text-sm border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary/50 disabled:opacity-50"
-      />
-      <div className="flex items-center justify-end gap-2 mt-2">
-        <Button variant="ghost" size="xs" onClick={onCancel} disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          size="xs"
-          onClick={handleSubmit}
-          disabled={!content.trim() || isLoading}
-        >
-          Reply
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
 // Main External Comment Panel Component
 // ============================================================================
 

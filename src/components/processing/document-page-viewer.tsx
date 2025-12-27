@@ -78,7 +78,7 @@ interface DocumentPageViewerProps {
 // =============================================================================
 
 const ZOOM_LEVELS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
-const DEFAULT_ZOOM_INDEX = 4; // 100%
+const DEFAULT_ZOOM_INDEX = 6; // 150%
 
 // Fixed padding for bounding boxes (normalized 0-1 coordinates)
 const BBOX_HORIZONTAL_PADDING = 0.008;

@@ -87,7 +87,7 @@ export default function BackupPage() {
 
   // Schedule form state
   const [scheduleTenantId, setScheduleTenantId] = useState('');
-  const [scheduleCron, setScheduleCron] = useState('0 2 * * *');
+  const [_scheduleCron, setScheduleCron] = useState('0 2 * * *');
   const [scheduleEnabled, setScheduleEnabled] = useState(true);
   const [scheduleTimezone, setScheduleTimezone] = useState('Asia/Singapore');
   const [scheduleRetention, setScheduleRetention] = useState('30');

@@ -13,15 +13,12 @@ import {
   computeChanges,
   logTenantOperation,
   logUserMembership,
-  logRoleChange,
   type AuditContext,
 } from '@/lib/audit';
 import { generateTenantSlug, getTenantLimits } from '@/lib/tenant';
 import {
   createSystemRolesForTenant,
   getSystemRoleId,
-  assignRoleToUser,
-  type SystemRoleName,
 } from '@/lib/rbac';
 import { sendEmail } from '@/lib/email';
 import { createLogger } from '@/lib/logger';
@@ -933,9 +930,8 @@ export async function completeTenantSetup(
   // Execute all operations in a transaction
   const result = await prisma.$transaction(async (tx) => {
     // 1. Update tenant info if provided
-    let updatedTenant = tenant;
     if (data.tenantInfo && Object.keys(data.tenantInfo).some(k => data.tenantInfo![k as keyof typeof data.tenantInfo] !== undefined)) {
-      updatedTenant = await tx.tenant.update({
+      await tx.tenant.update({
         where: { id: tenantId },
         data: {
           name: data.tenantInfo.name ?? tenant.name,

@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import Link from 'next/link';
-import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2, Square, CheckSquare, MinusSquare } from 'lucide-react';
+import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2, Square, CheckSquare, MinusSquare, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
@@ -34,6 +34,59 @@ interface ContactTableProps {
   isAllSelected?: boolean;
   /** Whether some items are selected */
   isIndeterminate?: boolean;
+  /** Current sort field */
+  sortBy?: string;
+  /** Current sort direction */
+  sortOrder?: 'asc' | 'desc';
+  /** Handler for sorting */
+  onSort?: (field: string) => void;
+}
+
+/** Sortable column header component */
+function SortableHeader({
+  label,
+  field,
+  sortBy,
+  sortOrder,
+  onSort,
+}: {
+  label: string;
+  field: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
+}) {
+  const isActive = sortBy === field;
+
+  if (!onSort) {
+    return <th>{label}</th>;
+  }
+
+  return (
+    <th className="cursor-pointer select-none">
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className={cn(
+          'inline-flex items-center gap-1 hover:text-text-primary transition-colors',
+          isActive ? 'text-text-primary' : ''
+        )}
+      >
+        <span>{label}</span>
+        <span className="flex-shrink-0">
+          {isActive ? (
+            sortOrder === 'asc' ? (
+              <ArrowUp className="w-3.5 h-3.5" />
+            ) : (
+              <ArrowDown className="w-3.5 h-3.5" />
+            )
+          ) : (
+            <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
+          )}
+        </span>
+      </button>
+    </th>
+  );
 }
 
 const contactTypeConfig: Record<ContactType, { color: string; label: string }> = {
@@ -114,6 +167,9 @@ export function ContactTable({
   onToggleAll,
   isAllSelected = false,
   isIndeterminate = false,
+  sortBy,
+  sortOrder,
+  onSort,
 }: ContactTableProps) {
   const checkCanEdit = (contactId: string): boolean => {
     if (typeof canEdit === 'function') return canEdit(contactId);
@@ -311,10 +367,10 @@ export function ContactTable({
                   </button>
                 </th>
               )}
-              <th>Name</th>
+              <SortableHeader label="Name" field="fullName" sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
               <th>Type</th>
               <th>ID Number</th>
-              <th>Email</th>
+              <SortableHeader label="Email" field="email" sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
               <th>Phone</th>
               <th>Companies</th>
               <th></th>

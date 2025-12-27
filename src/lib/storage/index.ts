@@ -24,7 +24,7 @@
  */
 
 import type { StorageAdapter } from './types';
-import { getStorageConfig, validateStorageConfig, StorageKeys } from './config';
+import { getStorageConfig, validateStorageConfig } from './config';
 import { LocalStorageAdapter } from './local.adapter';
 import { S3StorageAdapter } from './s3.adapter';
 import { createLogger } from '@/lib/logger';

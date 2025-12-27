@@ -4,22 +4,20 @@ import { useState } from 'react';
 import { useSession } from '@/hooks/use-auth';
 import { useAuditLogs, useAuditLogStats, type AuditLog } from '@/hooks/use-admin';
 import { Alert } from '@/components/ui/alert';
-import { FormInput } from '@/components/ui/form-input';
 import { Pagination } from '@/components/companies/pagination';
 import {
-  Search,
   Activity,
   User,
-  Building2,
-  Calendar,
-  FileText,
   Clock,
   Filter,
   ChevronDown,
   ChevronUp,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
-import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+import { CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +45,56 @@ const ENTITY_TYPES = [
 function getActionColor(action: string) {
   const found = AUDIT_ACTIONS.find((a) => a.value === action);
   return found?.color || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+}
+
+/** Sortable column header component */
+function SortableHeader({
+  label,
+  field,
+  sortBy,
+  sortOrder,
+  onSort,
+}: {
+  label: string;
+  field: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
+}) {
+  const isActive = sortBy === field;
+
+  if (!onSort) {
+    return <th>{label}</th>;
+  }
+
+  return (
+    <th className="cursor-pointer select-none">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onSort(field);
+        }}
+        className={cn(
+          'inline-flex items-center gap-1 hover:text-text-primary transition-colors',
+          isActive ? 'text-text-primary' : ''
+        )}
+      >
+        <span>{label}</span>
+        <span className="flex-shrink-0">
+          {isActive ? (
+            sortOrder === 'asc' ? (
+              <ArrowUp className="w-3.5 h-3.5" />
+            ) : (
+              <ArrowDown className="w-3.5 h-3.5" />
+            )
+          ) : (
+            <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
+          )}
+        </span>
+      </button>
+    </th>
+  );
 }
 
 function ExpandedChanges({ changes }: { changes: Record<string, { old: unknown; new: unknown }> | null }) {
@@ -298,6 +346,18 @@ export default function AuditLogsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    setPage(1);
+  };
 
   const { data, isLoading, error } = useAuditLogs({
     action: actionFilter || undefined,
@@ -306,7 +366,8 @@ export default function AuditLogsPage() {
     endDate: endDate ? new Date(endDate + 'T23:59:59').toISOString() : undefined,
     page,
     limit,
-    sortOrder: 'desc',
+    sortBy,
+    sortOrder,
   });
 
   const { data: stats } = useAuditLogStats({
@@ -496,8 +557,8 @@ export default function AuditLogsPage() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Timestamp</th>
-                    <th>Action</th>
+                    <SortableHeader label="Timestamp" field="createdAt" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
+                    <SortableHeader label="Action" field="action" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
                     <th>Description</th>
                     <th>User</th>
                     <th>Source</th>

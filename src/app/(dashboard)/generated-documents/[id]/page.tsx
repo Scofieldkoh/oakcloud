@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -26,9 +26,8 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/hooks/use-auth';
@@ -174,7 +173,6 @@ export default function DocumentViewPage() {
   const { data: session } = useSession();
 
   // Tenant selection for SUPER_ADMIN
-  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
     session?.tenantId

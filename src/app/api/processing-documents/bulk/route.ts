@@ -7,10 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
-import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
-import type { PipelineStatus, DuplicateStatus } from '@/generated/prisma';
+import type { PipelineStatus } from '@/generated/prisma';
 
 type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE';
 

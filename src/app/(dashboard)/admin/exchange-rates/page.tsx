@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useSession } from '@/hooks/use-auth';
 import {
   useExchangeRates,
@@ -10,7 +10,6 @@ import {
   useDeleteRate,
   useTenantRatePreference,
   useUpdateTenantRatePreference,
-  type ExchangeRate,
   type ExchangeRateSearchParams,
 } from '@/hooks/use-exchange-rates';
 import {
@@ -26,6 +25,11 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Pagination } from '@/components/companies/pagination';
 import { useToast } from '@/components/ui/toast';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
+import { FilterChip } from '@/components/ui/filter-chip';
+import { FilterPillGroup } from '@/components/ui/filter-pill';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { format } from 'date-fns';
 import {
   DollarSign,
   RefreshCw,
@@ -34,16 +38,19 @@ import {
   Globe,
   Building,
   Pencil,
-  Filter,
   ArrowRightLeft,
   Calendar,
   Loader2,
   Settings,
   Check,
   AlertTriangle,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from 'lucide-react';
 import { isMASApiKeyExpiringSoon, getDaysUntilMASApiKeyExpiry } from '@/lib/external/mas-api';
 import { cn } from '@/lib/utils';
+import { useTenantStore } from '@/stores/tenant-store';
 
 // ============================================================================
 // Helper Components
@@ -108,6 +115,53 @@ function formatDate(dateStr: string): string {
     month: 'short',
     year: 'numeric',
   });
+}
+
+/** Sortable column header component */
+function SortableHeader({
+  label,
+  field,
+  sortBy,
+  sortOrder,
+  onSort,
+}: {
+  label: string;
+  field: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
+}) {
+  const isActive = sortBy === field;
+
+  if (!onSort) {
+    return <th>{label}</th>;
+  }
+
+  return (
+    <th className="cursor-pointer select-none">
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className={cn(
+          'inline-flex items-center gap-1 hover:text-text-primary transition-colors',
+          isActive ? 'text-text-primary' : ''
+        )}
+      >
+        <span>{label}</span>
+        <span className="flex-shrink-0">
+          {isActive ? (
+            sortOrder === 'asc' ? (
+              <ArrowUp className="w-3.5 h-3.5" />
+            ) : (
+              <ArrowDown className="w-3.5 h-3.5" />
+            )
+          ) : (
+            <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
+          )}
+        </span>
+      </button>
+    </th>
+  );
 }
 
 // ============================================================================
@@ -186,15 +240,24 @@ function APIKeyExpiryWarning({ isSuperAdmin }: { isSuperAdmin: boolean }) {
 // ============================================================================
 
 function RatePreferenceCard({
+  isSuperAdmin,
   isTenantAdmin,
   tenantId,
 }: {
+  isSuperAdmin: boolean;
   isTenantAdmin: boolean;
   tenantId?: string;
 }) {
   const { success, error } = useToast();
-  const { data: preference, isLoading } = useTenantRatePreference();
-  const updateMutation = useUpdateTenantRatePreference();
+
+  // For SUPER_ADMINs, use the central tenant selector
+  const { selectedTenantId, selectedTenantName } = useTenantStore();
+
+  // Effective tenant ID: session tenantId for tenant admins, selected tenant for super admins
+  const effectiveTenantId = tenantId || (isSuperAdmin ? selectedTenantId : undefined);
+
+  const { data: preference, isLoading } = useTenantRatePreference(effectiveTenantId);
+  const updateMutation = useUpdateTenantRatePreference(effectiveTenantId);
 
   const handlePreferenceChange = async (newPref: 'MONTHLY' | 'DAILY') => {
     try {
@@ -205,7 +268,28 @@ function RatePreferenceCard({
     }
   };
 
-  if (!isTenantAdmin || !tenantId) {
+  // Must be an admin to see this card
+  if (!isTenantAdmin && !isSuperAdmin) {
+    return null;
+  }
+
+  // For SUPER_ADMINs without a selected tenant, show a prompt
+  if (isSuperAdmin && !tenantId && !selectedTenantId) {
+    return (
+      <div className="mb-6 p-4 bg-background-secondary border border-border-primary rounded-lg">
+        <div className="flex items-center gap-2 mb-3">
+          <Settings className="w-5 h-5 text-text-secondary" />
+          <h2 className="text-sm font-semibold text-text-primary">Exchange Rate Preference</h2>
+        </div>
+        <p className="text-xs text-text-muted">
+          Select a tenant from the tenant selector to manage their exchange rate preference.
+        </p>
+      </div>
+    );
+  }
+
+  // For tenant admins without tenant context
+  if (isTenantAdmin && !tenantId) {
     return null;
   }
 
@@ -216,6 +300,11 @@ function RatePreferenceCard({
       <div className="flex items-center gap-2 mb-3">
         <Settings className="w-5 h-5 text-text-secondary" />
         <h2 className="text-sm font-semibold text-text-primary">Exchange Rate Preference</h2>
+        {isSuperAdmin && selectedTenantName && (
+          <span className="text-xs text-text-muted">
+            — {selectedTenantName}
+          </span>
+        )}
       </div>
       <p className="text-xs text-text-muted mb-4">
         Choose the default exchange rate source used for home currency conversion
@@ -304,10 +393,37 @@ export default function ExchangeRatesPage() {
     limit: 50,
     source: 'ALL',
     includeSystem: true,
+    sortBy: 'rateDate',
+    sortOrder: 'desc',
   });
-  const [showFilters, setShowFilters] = useState(false);
   const [currencyFilter, setCurrencyFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [datePickerValue, setDatePickerValue] = useState<DatePickerValue | undefined>();
+  // Sources filter - all selected by default
+  const [sourcesFilter, setSourcesFilter] = useState<string[]>(['MAS_MONTHLY', 'MAS_DAILY', 'MANUAL']);
+  // Scope filter - both selected by default
+  const [scopeFilter, setScopeFilter] = useState<string[]>(['SYSTEM', 'TENANT']);
+
+  const handleSort = useCallback((field: string) => {
+    setFilters((prev) => {
+      if (prev.sortBy === field) {
+        return { ...prev, sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc', page: 1 };
+      }
+      return { ...prev, sortBy: field, sortOrder: 'asc', page: 1 };
+    });
+  }, []);
+
+  // Source options for filter pills
+  const SOURCE_OPTIONS = [
+    { value: 'MAS_MONTHLY', label: 'MAS Monthly', icon: <Globe className="w-3.5 h-3.5" /> },
+    { value: 'MAS_DAILY', label: 'MAS Daily', icon: <Globe className="w-3.5 h-3.5" /> },
+    { value: 'MANUAL', label: 'Manual', icon: <Pencil className="w-3.5 h-3.5" /> },
+  ];
+
+  // Scope options for filter pills
+  const SCOPE_OPTIONS = [
+    { value: 'SYSTEM', label: 'System Rates', icon: <Globe className="w-3.5 h-3.5" /> },
+    { value: 'TENANT', label: 'Tenant Rates', icon: <Building className="w-3.5 h-3.5" /> },
+  ];
 
   // Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -316,36 +432,124 @@ export default function ExchangeRatesPage() {
   const [isMasMonthlySyncModalOpen, setIsMasMonthlySyncModalOpen] = useState(false);
 
   // Queries
-  const { data, isLoading, refetch } = useExchangeRates(filters);
+  const { data, isLoading } = useExchangeRates(filters);
   const syncMASMutation = useSyncMASDaily();
   const syncMASMonthlyMutation = useSyncMASMonthly();
-  const createMutation = useCreateManualRate();
+  const _createMutation = useCreateManualRate();
   const deleteMutation = useDeleteRate();
 
   // Handlers - now open modals instead of syncing directly
   const openMasSyncModal = useCallback(() => setIsMasSyncModalOpen(true), []);
   const openMasMonthlySyncModal = useCallback(() => setIsMasMonthlySyncModalOpen(true), []);
 
-  const handleApplyFilters = useCallback(() => {
-    setFilters((prev) => ({
-      ...prev,
-      page: 1,
-      sourceCurrency: currencyFilter || undefined,
-      startDate: dateFilter || undefined,
-      endDate: dateFilter || undefined,
-    }));
-  }, [currencyFilter, dateFilter]);
+  // Auto-apply filters with debounce when filter values change
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    // Skip the first render to avoid unnecessary API call
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
 
-  const handleClearFilters = useCallback(() => {
-    setCurrencyFilter('');
-    setDateFilter('');
-    setFilters({
-      page: 1,
-      limit: 50,
-      source: 'ALL',
-      includeSystem: true,
-    });
+    // Debounce the filter application
+    const timeoutId = setTimeout(() => {
+      // Get date values from date picker
+      let startDate: string | undefined;
+      let endDate: string | undefined;
+
+      if (datePickerValue) {
+        if (datePickerValue.mode === 'single' && datePickerValue.date) {
+          startDate = format(datePickerValue.date, 'yyyy-MM-dd');
+          endDate = startDate;
+        } else if (datePickerValue.mode === 'range' && datePickerValue.range) {
+          if (datePickerValue.range.from) {
+            startDate = format(datePickerValue.range.from, 'yyyy-MM-dd');
+          }
+          if (datePickerValue.range.to) {
+            endDate = format(datePickerValue.range.to, 'yyyy-MM-dd');
+          }
+        }
+      }
+
+      // Determine source filter - if all 3 selected or none, use ALL
+      const allSourcesSelected = sourcesFilter.length === 3;
+      const source = allSourcesSelected || sourcesFilter.length === 0
+        ? 'ALL'
+        : sourcesFilter.length === 1
+          ? (sourcesFilter[0] as 'MAS_DAILY' | 'MAS_MONTHLY' | 'MANUAL')
+          : 'ALL'; // Multiple but not all - API doesn't support multi-select, so use ALL and filter client-side
+
+      // Determine scope filter
+      const includeSystem = scopeFilter.includes('SYSTEM');
+      const includeTenant = scopeFilter.includes('TENANT');
+      // If both or neither selected, include system rates (show all)
+      const shouldIncludeSystem = (includeSystem && includeTenant) || (!includeSystem && !includeTenant) ? true : includeSystem;
+
+      setFilters((prev) => ({
+        ...prev,
+        page: 1,
+        sourceCurrency: currencyFilter || undefined,
+        startDate,
+        endDate,
+        source,
+        includeSystem: shouldIncludeSystem,
+      }));
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [currencyFilter, datePickerValue, sourcesFilter, scopeFilter]);
+
+  // Handle individual filter removal
+  const handleRemoveFilter = useCallback((key: string) => {
+    switch (key) {
+      case 'currency':
+        setCurrencyFilter('');
+        setFilters((prev) => ({ ...prev, sourceCurrency: undefined, page: 1 }));
+        break;
+      case 'date':
+        setDatePickerValue(undefined);
+        setFilters((prev) => ({ ...prev, startDate: undefined, endDate: undefined, page: 1 }));
+        break;
+      case 'sources':
+        setSourcesFilter(['MAS_MONTHLY', 'MAS_DAILY', 'MANUAL']);
+        setFilters((prev) => ({ ...prev, source: 'ALL', page: 1 }));
+        break;
+      case 'scope':
+        setScopeFilter(['SYSTEM', 'TENANT']);
+        setFilters((prev) => ({ ...prev, includeSystem: true, page: 1 }));
+        break;
+    }
   }, []);
+
+  // Check if any filters are active
+  const allSourcesSelected = sourcesFilter.length === 3;
+  const allScopesSelected = scopeFilter.length === 2;
+  const hasActiveFilters = useMemo(() => {
+    return !!(
+      currencyFilter ||
+      datePickerValue ||
+      !allSourcesSelected ||
+      !allScopesSelected
+    );
+  }, [currencyFilter, datePickerValue, allSourcesSelected, allScopesSelected]);
+
+  // Get display value for active date filter
+  const getDateDisplayValue = useCallback(() => {
+    if (!datePickerValue) return '';
+    if (datePickerValue.mode === 'single' && datePickerValue.date) {
+      return format(datePickerValue.date, 'd MMM yyyy');
+    }
+    if (datePickerValue.mode === 'range' && datePickerValue.range) {
+      const { from, to } = datePickerValue.range;
+      if (from && to) {
+        return `${format(from, 'd MMM yyyy')} - ${format(to, 'd MMM yyyy')}`;
+      }
+      if (from) {
+        return `From ${format(from, 'd MMM yyyy')}`;
+      }
+    }
+    return '';
+  }, [datePickerValue]);
 
   const handleDelete = useCallback(
     async (reason?: string) => {
@@ -413,82 +617,98 @@ export default function ExchangeRatesPage() {
       {/* API Key Expiry Warning (for super admins) */}
       <APIKeyExpiryWarning isSuperAdmin={isSuperAdmin} />
 
-      {/* Rate Preference Card (for tenant admins) */}
+      {/* Rate Preference Card (for tenant admins and super admins) */}
       <RatePreferenceCard
-        isTenantAdmin={isTenantAdmin || isSuperAdmin}
+        isSuperAdmin={isSuperAdmin}
+        isTenantAdmin={isTenantAdmin}
         tenantId={session?.tenantId ?? undefined}
       />
 
       {/* Filters */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            leftIcon={<Filter className="w-4 h-4" />}
-          >
-            {showFilters ? 'Hide Filters' : 'Show Filters'}
-          </Button>
-          {(currencyFilter || dateFilter) && (
-            <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-              Clear Filters
-            </Button>
-          )}
-        </div>
-
-        {showFilters && (
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 bg-background-secondary border border-border-primary rounded-lg">
-            <div>
+        <div className="p-4 bg-background-secondary border border-border-primary rounded-lg space-y-4">
+          {/* Main filter row - filters auto-apply on change */}
+          <div className="flex flex-wrap gap-4 items-end">
+            {/* Currency Filter */}
+            <div className="w-96">
               <label className="label">Currency</label>
-              <select
+              <SearchableSelect
+                options={SUPPORTED_CURRENCIES.filter((c) => c !== 'SGD').map((code) => ({
+                  value: code,
+                  label: `${code} - ${CURRENCY_NAMES[code]}`,
+                }))}
                 value={currencyFilter}
-                onChange={(e) => setCurrencyFilter(e.target.value)}
-                className="input input-sm w-full"
-              >
-                <option value="">All Currencies</option>
-                {SUPPORTED_CURRENCIES.filter((c) => c !== 'SGD').map((code) => (
-                  <option key={code} value={code}>
-                    {code} - {CURRENCY_NAMES[code]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Source</label>
-              <select
-                value={filters.source}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    source: e.target.value as 'ALL' | 'MAS_DAILY' | 'MAS_MONTHLY' | 'MANUAL',
-                    page: 1,
-                  }))
-                }
-                className="input input-sm w-full"
-              >
-                <option value="ALL">All Sources</option>
-                <option value="MAS_MONTHLY">MAS Monthly</option>
-                <option value="MAS_DAILY">MAS Daily</option>
-                <option value="MANUAL">Manual</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Rate Date</label>
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="input input-sm w-full"
+                onChange={setCurrencyFilter}
+                placeholder="All Currencies"
+                size="sm"
               />
             </div>
-            <div className="flex items-end">
-              <Button variant="primary" size="sm" onClick={handleApplyFilters}>
-                Apply
-              </Button>
+
+            {/* Date Picker */}
+            <div className="w-80">
+              <label className="label">Rate Date</label>
+              <DatePicker
+                value={datePickerValue}
+                onChange={setDatePickerValue}
+                placeholder="Select date or range"
+                size="sm"
+              />
             </div>
+
+            {/* Sources Filter Pills */}
+            <FilterPillGroup
+              label="Sources"
+              options={SOURCE_OPTIONS}
+              value={sourcesFilter}
+              onChange={setSourcesFilter}
+              allowSelectAll={false}
+            />
+
+            {/* Scope Filter Pills */}
+            <FilterPillGroup
+              label="Scope"
+              options={SCOPE_OPTIONS}
+              value={scopeFilter}
+              onChange={setScopeFilter}
+              allowSelectAll={false}
+            />
           </div>
-        )}
+
+          {/* Active Filter Chips */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-border-primary">
+              <span className="text-xs text-text-muted">Active filters:</span>
+              {currencyFilter && (
+                <FilterChip
+                  label="Currency"
+                  value={`${currencyFilter} - ${CURRENCY_NAMES[currencyFilter as SupportedCurrency] || currencyFilter}`}
+                  onRemove={() => handleRemoveFilter('currency')}
+                />
+              )}
+              {datePickerValue && (
+                <FilterChip
+                  label="Date"
+                  value={getDateDisplayValue()}
+                  onRemove={() => handleRemoveFilter('date')}
+                />
+              )}
+              {!allSourcesSelected && sourcesFilter.length > 0 && (
+                <FilterChip
+                  label="Sources"
+                  value={sourcesFilter.map(s => SOURCE_OPTIONS.find(o => o.value === s)?.label || s).join(', ')}
+                  onRemove={() => handleRemoveFilter('sources')}
+                />
+              )}
+              {!allScopesSelected && scopeFilter.length > 0 && (
+                <FilterChip
+                  label="Scope"
+                  value={scopeFilter.map(s => SCOPE_OPTIONS.find(o => o.value === s)?.label || s).join(', ')}
+                  onRemove={() => handleRemoveFilter('scope')}
+                />
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Loading State */}
@@ -516,12 +736,12 @@ export default function ExchangeRatesPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Currency</th>
-                  <th>Rate (→ SGD)</th>
+                  <SortableHeader label="Currency" field="sourceCurrency" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={handleSort} />
+                  <SortableHeader label="Rate (→ SGD)" field="rate" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={handleSort} />
                   <th>Inverse (SGD →)</th>
-                  <th>Source</th>
+                  <SortableHeader label="Source" field="rateType" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={handleSort} />
                   <th>Scope</th>
-                  <th>Rate Date</th>
+                  <SortableHeader label="Rate Date" field="rateDate" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={handleSort} />
                   <th className="w-16">Actions</th>
                 </tr>
               </thead>

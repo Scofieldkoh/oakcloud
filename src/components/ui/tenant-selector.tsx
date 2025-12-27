@@ -154,7 +154,7 @@ export function TenantSelectorModal({ isOpen, onClose }: TenantSelectorModalProp
       tenant.slug.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const handleSelect = (tenantId: string, tenantName: string) => {
+  const handleSelect = (tenantId: string) => {
     setTempSelectedId(tenantId);
   };
 
@@ -205,7 +205,7 @@ export function TenantSelectorModal({ isOpen, onClose }: TenantSelectorModalProp
             filteredTenants.map((tenant) => (
               <button
                 key={tenant.id}
-                onClick={() => handleSelect(tenant.id, tenant.name)}
+                onClick={() => handleSelect(tenant.id)}
                 className={cn(
                   'w-full flex items-center gap-3 p-3 text-left transition-colors',
                   tempSelectedId === tenant.id

@@ -35,6 +35,8 @@ export interface ExchangeRateSearchParams {
   includeSystem?: boolean;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface PaginatedRatesResponse {
@@ -107,6 +109,8 @@ async function fetchExchangeRates(
     searchParams.set('includeSystem', String(params.includeSystem));
   if (params.page) searchParams.set('page', String(params.page));
   if (params.limit) searchParams.set('limit', String(params.limit));
+  if (params.sortBy) searchParams.set('sortBy', params.sortBy);
+  if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
 
   const response = await fetch(`/api/admin/exchange-rates?${searchParams}`);
 
@@ -133,8 +137,11 @@ async function triggerSync(params?: SyncParams): Promise<SyncResult> {
   return response.json();
 }
 
-async function fetchTenantRatePreference(): Promise<TenantRatePreference> {
-  const response = await fetch('/api/admin/exchange-rates/tenant-preference');
+async function fetchTenantRatePreference(tenantId?: string): Promise<TenantRatePreference> {
+  const url = tenantId
+    ? `/api/admin/exchange-rates/tenant-preference?tenantId=${tenantId}`
+    : '/api/admin/exchange-rates/tenant-preference';
+  const response = await fetch(url);
 
   if (!response.ok) {
     const error = await response.json();
@@ -145,12 +152,13 @@ async function fetchTenantRatePreference(): Promise<TenantRatePreference> {
 }
 
 async function updateTenantRatePreference(
-  preference: 'MONTHLY' | 'DAILY'
+  preference: 'MONTHLY' | 'DAILY',
+  tenantId?: string
 ): Promise<TenantRatePreference> {
   const response = await fetch('/api/admin/exchange-rates/tenant-preference', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ preferredRateType: preference }),
+    body: JSON.stringify({ preferredRateType: preference, tenantId }),
   });
 
   if (!response.ok) {
@@ -301,25 +309,29 @@ export function useSyncMASMonthly() {
 
 /**
  * Get tenant's rate preference.
+ * @param tenantId - Optional tenant ID (for SUPER_ADMIN using tenant selector)
  */
-export function useTenantRatePreference() {
+export function useTenantRatePreference(tenantId?: string) {
   return useQuery({
-    queryKey: ['tenant-rate-preference'],
-    queryFn: fetchTenantRatePreference,
+    queryKey: ['tenant-rate-preference', tenantId],
+    queryFn: () => fetchTenantRatePreference(tenantId),
     retry: false,
+    enabled: tenantId !== undefined ? !!tenantId : true, // Only fetch if we have a tenant context
   });
 }
 
 /**
  * Update tenant's rate preference.
+ * @param tenantId - Optional tenant ID (for SUPER_ADMIN using tenant selector)
  */
-export function useUpdateTenantRatePreference() {
+export function useUpdateTenantRatePreference(tenantId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: updateTenantRatePreference,
+    mutationFn: (preference: 'MONTHLY' | 'DAILY') =>
+      updateTenantRatePreference(preference, tenantId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-rate-preference'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-rate-preference', tenantId] });
     },
   });
 }

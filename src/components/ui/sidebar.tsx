@@ -8,7 +8,6 @@ import {
   FileText,
   Settings,
   ChevronLeft,
-  ChevronRight,
   LogOut,
   Menu,
   X,
@@ -30,7 +29,7 @@ import { useUIStore } from '@/stores/ui-store';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { getSidebarWidth as getSidebarWidthFn, SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from '@/lib/constants/layout';
+import { getSidebarWidth as getSidebarWidthFn } from '@/lib/constants/layout';
 import { SidebarTenantButton } from '@/components/ui/tenant-selector';
 import { SidebarCompanyButton } from '@/components/ui/company-selector';
 

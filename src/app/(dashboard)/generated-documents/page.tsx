@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Plus, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
@@ -32,11 +32,10 @@ interface DocumentListResponse {
 export default function GeneratedDocumentsPage() {
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
-  const { can, isLoading: permissionsLoading } = usePermissions();
+  const { can } = usePermissions();
   const { data: session } = useSession();
 
   // Tenant selection (from centralized store for SUPER_ADMIN)
-  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
@@ -44,7 +43,6 @@ export default function GeneratedDocumentsPage() {
 
   // Permission checks
   const canCreate = can.createDocument;
-  const canRead = can.readDocument;
   const canUpdate = can.updateDocument;
   const canDelete = can.deleteDocument;
   const canExport = can.exportDocument;
@@ -297,7 +295,7 @@ export default function GeneratedDocumentsPage() {
           total={total}
           limit={limit}
           onPageChange={setPage}
-          onLimitChange={(newLimit) => {
+          onLimitChange={() => {
             setPage(1);
             // Note: limit is a const, so we need to refetch with new limit
             // For now, we'll keep the current behavior

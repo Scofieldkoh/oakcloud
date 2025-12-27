@@ -62,7 +62,6 @@ export default function ContactsPage() {
   const {
     selectedIds,
     selectedCount,
-    isSelected,
     isAllSelected,
     isIndeterminate,
     toggleOne,
@@ -130,6 +129,17 @@ export default function ContactsPage() {
 
   const handleLimitChange = (limit: number) => {
     setParams((prev) => ({ ...prev, limit, page: 1 }));
+  };
+
+  const handleSort = (field: string) => {
+    setParams((prev) => {
+      if (prev.sortBy === field) {
+        // Toggle order if same field
+        return { ...prev, sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' };
+      }
+      // New field, default to ascending
+      return { ...prev, sortBy: field as 'fullName' | 'createdAt' | 'updatedAt', sortOrder: 'asc' };
+    });
   };
 
   const handleDeleteClick = (id: string) => {
@@ -301,6 +311,9 @@ export default function ContactsPage() {
           onToggleAll={toggleAll}
           isAllSelected={isAllSelected}
           isIndeterminate={isIndeterminate}
+          sortBy={params.sortBy}
+          sortOrder={params.sortOrder}
+          onSort={handleSort}
         />
       </div>
 

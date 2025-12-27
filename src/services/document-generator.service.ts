@@ -1217,7 +1217,7 @@ export async function unhideComment(
   commentId: string,
   params: TenantAwareParams
 ): Promise<DocumentComment> {
-  const { tenantId, userId } = params;
+  const { tenantId } = params;
 
   const comment = await prisma.documentComment.findFirst({
     where: { id: commentId },

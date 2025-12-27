@@ -4,7 +4,6 @@ import { use, useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  FileText,
   ArrowLeft,
   RefreshCw,
   Play,
@@ -47,7 +46,6 @@ import {
   DocumentPageViewer,
   ResizableSplitView,
   ConfidenceDot,
-  ConfidenceBadge,
   DuplicateComparisonModal,
   DocumentLinks,
 } from '@/components/processing';
@@ -57,7 +55,6 @@ import { cn } from '@/lib/utils';
 import {
   CATEGORY_LABELS,
   SUBCATEGORY_LABELS,
-  getSubCategoriesForCategory,
   getSubCategoryOptions,
 } from '@/lib/document-categories';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
@@ -245,7 +242,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Data fetching
   const { data, isLoading, error, refetch } = useProcessingDocument(id);
   const { data: revisions, isLoading: revisionsLoading } = useRevisionHistory(id);
-  const { data: pagesData, isLoading: pagesLoading } = useDocumentPages(id);
+  const { isLoading: pagesLoading } = useDocumentPages(id);
   const { data: navData } = useDocumentNavigation(id);
 
   // Current revision data
@@ -298,6 +295,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
+  // Track if we're editing an approved document (need to create revision on save)
+  const [isEditingApproved, setIsEditingApproved] = useState(false);
   const [editFormData, setEditFormData] = useState<{
     documentCategory: string;
     documentSubCategory: string;
@@ -629,39 +628,69 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     setIsEditing(true);
   };
 
-  // Create a new draft revision from an approved one, then enter edit mode
-  const handleEditApproved = async () => {
-    if (!data?.document || !currentRevisionId) return;
-    try {
-      // Create a new revision based on the approved one (with no changes initially)
-      const result = await createRevision.mutateAsync({
-        documentId: id,
-        lockVersion: data.document.lockVersion,
-        input: {
-          basedOnRevisionId: currentRevisionId,
-          reason: 'Edit approved document',
-        },
-      });
-      success(`Created new draft revision #${result.revision.revisionNumber}`);
-      // Refetch to get the new revision data
-      await refetch();
-      await refetchLineItems();
-      // Enter edit mode after data is refreshed
-      setTimeout(() => {
-        setIsEditing(true);
-      }, 100);
-    } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to create new revision');
-    }
+  // Start editing an approved document - only enter edit mode, don't create revision yet
+  const handleEditApproved = () => {
+    if (!data?.document || !currentRevisionId || !revisionWithLineItems) return;
+    // Initialize form data from current revision
+    setEditFormData({
+      documentCategory: revisionWithLineItems.documentCategory || '',
+      documentSubCategory: revisionWithLineItems.documentSubCategory || '',
+      vendorName: revisionWithLineItems.vendorName || '',
+      documentNumber: revisionWithLineItems.documentNumber || '',
+      documentDate: revisionWithLineItems.documentDate || '',
+      dueDate: revisionWithLineItems.dueDate || '',
+      currency: revisionWithLineItems.currency || 'SGD',
+      subtotal: revisionWithLineItems.subtotal || '',
+      taxAmount: revisionWithLineItems.taxAmount || '',
+      totalAmount: revisionWithLineItems.totalAmount || '',
+      supplierGstNo: '',
+    });
+    setEditLineItems(
+      revisionWithLineItems.lineItems?.map((item) => ({
+        id: item.id,
+        lineNo: item.lineNo,
+        description: item.description,
+        quantity: item.quantity || '',
+        unitPrice: item.unitPrice || '',
+        amount: item.amount,
+        gstAmount: item.gstAmount || '',
+        taxCode: item.taxCode || '',
+        accountCode: item.accountCode || '',
+      })) || []
+    );
+    setDeletedLineItemIds([]);
+    // Mark that we're editing an approved document (revision will be created on save)
+    setIsEditingApproved(true);
+    setIsEditing(true);
   };
 
   const handleSaveEdit = async () => {
     if (!data?.document || !currentRevisionId) return;
     try {
+      let targetRevisionId = currentRevisionId;
+      let lockVersion = data.document.lockVersion;
+
+      // If editing an approved document, create a new revision first
+      if (isEditingApproved) {
+        const result = await createRevision.mutateAsync({
+          documentId: id,
+          lockVersion,
+          input: {
+            basedOnRevisionId: currentRevisionId,
+            reason: 'Edit approved document',
+          },
+        });
+        targetRevisionId = result.revision.id;
+        lockVersion = result.document.lockVersion;
+        success(`Created new draft revision #${result.revision.revisionNumber}`);
+      }
+
+      // Now update the revision with the changes
+      // For new revisions from approved docs, we need to exclude item IDs since they're new copies
       await updateRevision.mutateAsync({
         documentId: id,
-        revisionId: currentRevisionId,
-        lockVersion: data.document.lockVersion,
+        revisionId: targetRevisionId,
+        lockVersion,
         data: {
           headerUpdates: {
             documentCategory: editFormData.documentCategory || undefined,
@@ -676,7 +705,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
             totalAmount: editFormData.totalAmount || undefined,
           },
           itemsToUpsert: editLineItems.map((item) => ({
-            id: item.id,
+            // For new revisions from approved docs, don't pass old IDs
+            id: isEditingApproved ? undefined : item.id,
             lineNo: item.lineNo,
             description: item.description,
             quantity: item.quantity || undefined,
@@ -686,11 +716,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
             taxCode: item.taxCode || undefined,
             accountCode: item.accountCode || undefined,
           })),
-          itemsToDelete: deletedLineItemIds.length > 0 ? deletedLineItemIds : undefined,
+          // For new revisions, don't pass deleted items since they're fresh copies
+          itemsToDelete: isEditingApproved ? undefined : (deletedLineItemIds.length > 0 ? deletedLineItemIds : undefined),
         },
       });
       success('Changes saved successfully');
       setIsEditing(false);
+      setIsEditingApproved(false);
       setDeletedLineItemIds([]); // Reset deleted items tracking
       refetch();
       refetchLineItems();
@@ -863,7 +895,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           )}
           {!isViewingSnapshot && isEditing ? (
             <>
-              <button onClick={() => { setIsEditing(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm">
+              <button onClick={() => { setIsEditing(false); setIsEditingApproved(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm">
                 Cancel
               </button>
               <button

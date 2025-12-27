@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -24,9 +24,8 @@ import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
-import { cn } from '@/lib/utils';
 import { useSession } from '@/hooks/use-auth';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
@@ -66,14 +65,12 @@ interface DocumentInfo {
 // ============================================================================
 
 export default function ShareManagementPage() {
-  const router = useRouter();
   const params = useParams();
   const documentId = params.id as string;
   const { success, error: toastError } = useToast();
   const { data: session } = useSession();
 
   // Tenant selection for SUPER_ADMIN
-  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
@@ -155,7 +152,7 @@ export default function ShareManagementPage() {
       setCopiedId(shareId);
       success('Link copied to clipboard');
       setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
+    } catch {
       toastError('Failed to copy link');
     }
   };

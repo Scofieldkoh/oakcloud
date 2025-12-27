@@ -117,7 +117,7 @@ export async function POST(
 // PATCH - Update assignment
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _props: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireAuth();
@@ -160,7 +160,7 @@ export async function PATCH(
 // DELETE - Remove assignment
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _props: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireAuth();

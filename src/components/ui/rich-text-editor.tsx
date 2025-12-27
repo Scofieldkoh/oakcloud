@@ -456,7 +456,6 @@ export function RichTextEditor({
   value = '',
   onChange,
   readOnly = false,
-  placeholder = 'Enter text...',
   minHeight = 100,
   className = '',
   hideToolbar = false,

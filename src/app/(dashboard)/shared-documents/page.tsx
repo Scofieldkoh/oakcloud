@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
 import { Pagination } from '@/components/companies/pagination';
@@ -117,7 +117,6 @@ export default function SharedDocumentsPage() {
   const { data: session } = useSession();
 
   // Tenant selection for SUPER_ADMIN
-  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
@@ -197,7 +196,7 @@ export default function SharedDocumentsPage() {
       setCopiedId(share.id);
       success('Link copied to clipboard');
       setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
+    } catch {
       toastError('Failed to copy link');
     }
   };

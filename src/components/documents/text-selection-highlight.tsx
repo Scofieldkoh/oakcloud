@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { MessageSquare, X } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
@@ -51,7 +51,6 @@ interface HighlightedSegment {
 function SelectionTooltip({
   position,
   onAddComment,
-  onClose,
 }: {
   position: { x: number; y: number };
   onAddComment: () => void;

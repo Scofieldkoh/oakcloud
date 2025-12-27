@@ -17,6 +17,7 @@ This document outlines the design system, UI components, and styling standards f
   - [TenantSelector Placement](#tenantselector-placement)
   - [Empty States for SUPER_ADMIN](#empty-states-for-super_admin)
 - [Reusable Components](#reusable-components)
+  - [Filter Components](#filter-components)
 - [Layout Guidelines](#layout-guidelines)
 - [Component Examples](#component-examples)
 - [Best Practices](#best-practices)
@@ -315,6 +316,78 @@ Use toggle switches for binary on/off settings. Prefer toggle switches over chec
 .table            /* Full table styles */
 .table th         /* Uppercase, 10px, tertiary */
 .table td         /* 13px, primary text */
+```
+
+#### Sortable Table Headers
+
+All data tables should have sortable column headers (desktop only). Use the `SortableHeader` pattern:
+
+```tsx
+import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+
+interface SortableHeaderProps {
+  label: string;
+  field: string;
+  currentSortBy?: string;
+  currentSortOrder?: 'asc' | 'desc';
+  onSort: (field: string) => void;
+}
+
+function SortableHeader({ label, field, currentSortBy, currentSortOrder, onSort }: SortableHeaderProps) {
+  const isActive = currentSortBy === field;
+  return (
+    <th
+      onClick={() => onSort(field)}
+      className="cursor-pointer hover:bg-bg-tertiary transition-colors select-none"
+    >
+      <div className="flex items-center gap-1.5">
+        <span>{label}</span>
+        {isActive ? (
+          currentSortOrder === 'asc' ? (
+            <ArrowUp className="w-3.5 h-3.5 text-oak-light" />
+          ) : (
+            <ArrowDown className="w-3.5 h-3.5 text-oak-light" />
+          )
+        ) : (
+          <ArrowUpDown className="w-3.5 h-3.5 text-text-muted opacity-0 group-hover:opacity-100" />
+        )}
+      </div>
+    </th>
+  );
+}
+```
+
+**Sort Behavior:**
+- First click: Sort ascending
+- Second click: Sort descending
+- Visual indicator shows current sort state (ArrowUp/ArrowDown when active)
+- Inactive columns show ArrowUpDown on hover
+- URL params updated for shareability where applicable
+- Desktop only - mobile card views don't show column sorting
+
+**Usage in Tables:**
+```tsx
+<thead>
+  <tr>
+    {selectable && <th className="w-10">...</th>}
+    <SortableHeader label="Name" field="name" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={onSort} />
+    <SortableHeader label="Status" field="status" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={onSort} />
+    <SortableHeader label="Created" field="createdAt" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={onSort} />
+    <th>Actions</th> {/* Non-sortable */}
+  </tr>
+</thead>
+```
+
+**Page-level Handler:**
+```tsx
+const handleSort = (field: string) => {
+  setParams((prev) => {
+    if (prev.sortBy === field) {
+      return { ...prev, sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' };
+    }
+    return { ...prev, sortBy: field, sortOrder: 'asc' };
+  });
+};
 ```
 
 #### Table Selection Pattern
@@ -749,6 +822,11 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | `Dropdown` | Composable: `Trigger`, `Menu`, `Item`, `align` | Portal-rendered dropdown (prevents clipping in tables) |
 | `Pagination` | `page`, `totalPages`, `total`, `limit`, `onPageChange`, `onLimitChange` | Table pagination with page size selector |
 | `Checkbox` | `indeterminate`, `label`, `description`, `size` | Checkbox with indeterminate state for bulk selection |
+| `DatePicker` | `value`, `onChange`, `placeholder`, `size`, `label`, `disabled` | Date/range picker with presets (see Filter Components) |
+| `SearchableSelect` | `options`, `value`, `onChange`, `placeholder`, `clearable`, `size` | Searchable dropdown with keyboard navigation |
+| `FilterPillGroup` | `options`, `value`, `onChange`, `label`, `allowSelectAll`, `allowEmpty` | Multi-select filter pills (see Filter Components) |
+| `FilterPillToggle` | `label`, `active`, `onChange`, `icon` | Single toggleable filter pill |
+| `FilterChip` | `label`, `value`, `onRemove` | Active filter indicator with remove button |
 
 ### Form Utilities
 
@@ -844,6 +922,200 @@ const { data } = useData({ page, limit, ...filters });
 - Shows "Showing X to Y of Z results" with page size dropdown
 - Page numbers with ellipsis for large page counts
 - Previous/Next arrows disabled at boundaries
+
+### Filter Components
+
+Filter components for data tables. Located in `src/components/ui/`.
+
+#### FilterPillGroup
+
+Multi-select toggleable pills for filtering by categories. Pills use oak-primary (`#294d44`) when active.
+
+```tsx
+import { FilterPillGroup } from '@/components/ui/filter-pill';
+import { Globe, Pencil } from 'lucide-react';
+
+const SOURCE_OPTIONS = [
+  { value: 'API', label: 'API', icon: <Globe className="w-3.5 h-3.5" /> },
+  { value: 'MANUAL', label: 'Manual', icon: <Pencil className="w-3.5 h-3.5" /> },
+];
+
+const [sources, setSources] = useState(['API', 'MANUAL']); // All selected by default
+
+<FilterPillGroup
+  label="Sources"
+  options={SOURCE_OPTIONS}
+  value={sources}
+  onChange={setSources}
+  allowSelectAll={false}  // Hide "Select all" / "Deselect all" button
+  allowEmpty={false}      // Prevent deselecting all (at least one must be selected)
+/>
+```
+
+**Props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `options` | `FilterPillOption[]` | required | Array of `{ value, label, icon? }` |
+| `value` | `string[]` | required | Currently selected values |
+| `onChange` | `(value: string[]) => void` | required | Selection change handler |
+| `label` | `string` | - | Group label |
+| `allowSelectAll` | `boolean` | `true` | Show "Select all" button when >2 options |
+| `allowEmpty` | `boolean` | `false` | Allow deselecting all options |
+
+**Styling:**
+- Active: `bg-oak-primary text-white border-oak-primary`
+- Inactive: `bg-background-secondary text-text-secondary border-border-primary`
+- Pill shape: `rounded-full` with `px-3 py-1.5`
+
+#### FilterPillToggle
+
+Single toggleable filter pill for boolean filters.
+
+```tsx
+import { FilterPillToggle } from '@/components/ui/filter-pill';
+import { Star } from 'lucide-react';
+
+const [showFavorites, setShowFavorites] = useState(false);
+
+<FilterPillToggle
+  label="Favorites"
+  active={showFavorites}
+  onChange={setShowFavorites}
+  icon={<Star className="w-3.5 h-3.5" />}
+/>
+```
+
+#### FilterChip
+
+Displays active filters with a remove button. Used to show current filter state.
+
+```tsx
+import { FilterChip } from '@/components/ui/filter-chip';
+
+{currencyFilter && (
+  <FilterChip
+    label="Currency"
+    value={currencyFilter}
+    onRemove={() => setCurrencyFilter('')}
+  />
+)}
+```
+
+**Best Practice:** Show active filter chips inside a filter box with a border-top separator:
+```tsx
+{hasActiveFilters && (
+  <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-border-primary">
+    <span className="text-xs text-text-muted">Active filters:</span>
+    <FilterChip label="..." value="..." onRemove={() => {...}} />
+  </div>
+)}
+```
+
+#### DatePicker
+
+Feature-rich date and range picker with presets, single date, and date range modes.
+
+```tsx
+import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
+
+const [dateValue, setDateValue] = useState<DatePickerValue | undefined>();
+
+<DatePicker
+  value={dateValue}
+  onChange={setDateValue}
+  placeholder="Select date or range"
+  size="sm"
+/>
+```
+
+**Features:**
+- **Presets tab**: Quick options (Last 7/30/90 days, This month, Last month, This year)
+- **Custom presets**: Enter X days/months/years ago
+- **Single Date tab**: Calendar for single date selection
+- **Date Range tab**: Dual-month calendar with phase-based selection
+- **Oak design system colors**: Uses `#294d44` for selected states (not default blue)
+
+**DatePickerValue type:**
+```typescript
+type DatePickerValue =
+  | { mode: 'single'; date: Date }
+  | { mode: 'range'; range: { from?: Date; to?: Date } };
+```
+
+**Range Selection Behavior:**
+- Click once to set start date (shows "Click to select start date")
+- Click again to set end date (shows "Click to select end date")
+- Clicking after a complete range starts a new selection
+- Dates auto-swap if end date is before start date
+
+#### SearchableSelect
+
+Searchable dropdown with keyboard navigation and optional descriptions.
+
+```tsx
+import { SearchableSelect } from '@/components/ui/searchable-select';
+
+const OPTIONS = [
+  { value: 'USD', label: 'USD - US Dollar', description: 'United States' },
+  { value: 'EUR', label: 'EUR - Euro', description: 'European Union' },
+];
+
+const [currency, setCurrency] = useState('');
+
+<SearchableSelect
+  options={OPTIONS}
+  value={currency}
+  onChange={setCurrency}
+  placeholder="All Currencies"
+  clearable
+  size="sm"
+/>
+```
+
+**Features:**
+- Type-ahead search filtering
+- Keyboard navigation (↑↓ arrows, Enter to select, Esc to close)
+- Clear button (when `clearable={true}`)
+- Portal-rendered popover (avoids clipping)
+- Optional description line per option
+
+#### Filter Layout Pattern
+
+Standard filter layout for data tables:
+
+```tsx
+<div className="mb-6">
+  <div className="p-4 bg-background-secondary border border-border-primary rounded-lg space-y-4">
+    {/* Filter inputs row */}
+    <div className="flex flex-wrap gap-4 items-end">
+      <div className="w-96">
+        <label className="label">Currency</label>
+        <SearchableSelect ... />
+      </div>
+      <div className="w-80">
+        <label className="label">Date</label>
+        <DatePicker ... />
+      </div>
+      <FilterPillGroup label="Sources" ... />
+      <FilterPillGroup label="Scope" ... />
+    </div>
+
+    {/* Active filter chips */}
+    {hasActiveFilters && (
+      <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-border-primary">
+        <span className="text-xs text-text-muted">Active filters:</span>
+        {/* FilterChip components */}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+**Guidelines:**
+- Filters always visible by default (no "Show/Hide Filters" toggle)
+- No "Clear All Filters" button - users clear via individual filter chips
+- Auto-apply filters on change (no "Apply" button needed)
+- Use debounce (300ms) for text inputs to avoid excessive API calls
 
 ---
 

@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import {
-  MessageSquare,
   Reply,
   MoreVertical,
-  Check,
   CheckCheck,
   RotateCcw,
   EyeOff,
@@ -13,7 +11,6 @@ import {
   Trash2,
   Edit2,
   Clock,
-  User,
   ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,7 +75,6 @@ export interface CommentThreadProps {
 function CommentAvatar({
   user,
   guestName,
-  isExternal,
 }: {
   user?: CommentUser | null;
   guestName?: string | null;

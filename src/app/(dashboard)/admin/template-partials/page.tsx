@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -121,7 +121,7 @@ async function fetchTemplates(
   return response.json();
 }
 
-async function createTemplate(
+async function _createTemplate(
   data: {
     name: string;
     description?: string;

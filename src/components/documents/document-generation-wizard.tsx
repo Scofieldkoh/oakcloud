@@ -4,8 +4,6 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   FileText,
   Building2,
-  Settings,
-  Eye,
   ChevronLeft,
   ChevronRight,
   AlertCircle,
@@ -14,7 +12,6 @@ import {
   RefreshCw,
   Sparkles,
   Search,
-  Edit3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -834,7 +831,7 @@ export function DocumentGenerationWizard({
   };
 
   // Handle reset
-  const handleReset = () => {
+  const _handleReset = () => {
     setState({
       selectedTemplate: null,
       selectedCompany: null,

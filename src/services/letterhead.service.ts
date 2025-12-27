@@ -437,7 +437,7 @@ export function buildFooterHtml(letterhead: TenantLetterhead | null): string {
 export async function getOrCreateLetterhead(
   params: TenantAwareParams
 ): Promise<TenantLetterhead> {
-  const { tenantId, userId } = params;
+  const { tenantId } = params;
 
   const existing = await prisma.tenantLetterhead.findUnique({
     where: { tenantId },

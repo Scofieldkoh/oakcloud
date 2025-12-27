@@ -6,7 +6,6 @@ import { Link as TiptapLink } from '@tiptap/extension-link';
 import { Underline } from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
-import DOMPurify from 'dompurify';
 import { useEffect, useState, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import {
   Bold,
@@ -586,7 +585,6 @@ export const DocumentEditor = forwardRef<DocumentEditorRef, DocumentEditorProps>
       onChange,
       onAutoSave,
       readOnly = false,
-      placeholder = 'Start typing your document...',
       minHeight = 400,
       className = '',
       autoSaveInterval = 30000, // 30 seconds default

@@ -36,9 +36,7 @@ import type {
   AddressData,
   CustomPlaceholderDefinition,
   MergedPlaceholder,
-  TemplatePartialData,
   MockDataValues,
-  CustomData,
 } from '@/types/placeholders';
 
 // ============================================================================
@@ -1556,7 +1554,7 @@ function TemplateEditorContent() {
   const isPartialMode = editorType === 'partial';
 
   // Tenant selection (from centralized store for SUPER_ADMIN)
-  const { selectedTenantId, selectedTenantName } = useTenantSelection();
+  const { selectedTenantName } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
     session?.tenantId

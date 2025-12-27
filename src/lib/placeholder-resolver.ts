@@ -368,7 +368,7 @@ function processEachBlocks(
 function processIfBlocks(
   content: string,
   context: PlaceholderContext,
-  options: ResolveOptions
+  _options: ResolveOptions
 ): string {
   // Handle if-else blocks
   const ifElseRegex =

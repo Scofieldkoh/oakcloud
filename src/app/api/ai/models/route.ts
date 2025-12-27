@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import {
-  getAvailableModels,
-  getAllProviderStatuses,
-  getBestAvailableModel,
   getBestAvailableModelForTenant,
   getAvailableProvidersForTenant,
   PROVIDER_NAMES,

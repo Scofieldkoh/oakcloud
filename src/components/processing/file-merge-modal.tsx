@@ -5,7 +5,6 @@ import {
   X,
   GripVertical,
   Trash2,
-  Plus,
   FileUp,
   Image,
   FileText,

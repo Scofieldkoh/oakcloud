@@ -7,7 +7,7 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
-import { sendEmail, isEmailConfigured, getAppBaseUrl } from '@/lib/email';
+import { sendEmail, getAppBaseUrl } from '@/lib/email';
 import { passwordResetEmail, passwordChangedEmail } from '@/lib/email-templates';
 import crypto from 'crypto';
 import {

@@ -6,17 +6,13 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   User,
-  Building2,
   Mail,
-  Phone,
   MapPin,
   Calendar,
-  Briefcase,
   History,
   Pencil,
   Trash2,
   AlertCircle,
-  Link2,
 } from 'lucide-react';
 import { useContact, useDeleteContact, useLinkContactToCompany, useUnlinkContactFromCompany, useRemoveOfficerPosition, useRemoveShareholding, useUpdateOfficerPosition, useUpdateShareholding, useContactLinkInfo } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
@@ -56,7 +52,7 @@ const officerRoles = [...officerRoleLabels, ...additionalOfficerRoles];
 const generalRelationships = ['Nominee', 'Beneficial Owner', 'Other'];
 
 // All relationship options
-const relationshipOptions = [...officerRoles, 'Shareholder', ...generalRelationships];
+const _relationshipOptions = [...officerRoles, 'Shareholder', ...generalRelationships];
 
 export default function ContactDetailPage({
   params,
@@ -296,7 +292,7 @@ export default function ContactDetailPage({
   const currentTypeConfig = contactTypeConfig[contact.contactType];
 
   // Filter out companies that are already linked with the same relationship
-  const linkedCompanyIds = new Set(
+  const _linkedCompanyIds = new Set(
     contact.companyRelations?.map((r) => `${r.company.id}-${r.relationship}`) || []
   );
 

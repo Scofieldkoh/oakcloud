@@ -77,7 +77,8 @@
       "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\src\\\\components\\\\ui\\\\date-input.tsx\")",
       "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\src\\\\lib\\\\external\\\\datagov-api.ts\")",
       "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\test-mas-monthly.ts\")",
-      "Bash(PGPASSWORD=oakcloud_password psql:*)"
+      "Bash(PGPASSWORD=oakcloud_password psql:*)",
+      "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\src\\\\components\\\\ui\\\\sortable-header.tsx\")"
     ],
     "deny": [],
     "ask": []

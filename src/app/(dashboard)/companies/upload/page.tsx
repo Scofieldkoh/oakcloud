@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
 import { useCompany } from '@/hooks/use-companies';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
@@ -138,7 +138,7 @@ interface AIMetadata {
 }
 
 export default function UploadBizFilePage() {
-  const router = useRouter();
+  const _router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [file, setFile] = useState<File | null>(null);
@@ -163,7 +163,6 @@ export default function UploadBizFilePage() {
 
   // SUPER_ADMIN tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
 
   // AI model selection and context

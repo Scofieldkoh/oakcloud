@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/hooks/use-auth';
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
@@ -62,7 +62,6 @@ export default function DocumentEditPage() {
   const { data: session } = useSession();
 
   // Tenant selection for SUPER_ADMIN
-  const { selectedTenantId } = useTenantSelection();
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
@@ -150,7 +149,7 @@ export default function DocumentEditPage() {
   }, []);
 
   // Handle auto-save
-  const handleAutoSave = useCallback(
+  const _handleAutoSave = useCallback(
     async (html: string) => {
       try {
         const body: Record<string, unknown> = { content: html };
@@ -219,7 +218,7 @@ export default function DocumentEditPage() {
   }, [documentId, includeLetterhead, success, toastError, session?.isSuperAdmin, activeTenantId]);
 
   // Handle draft recovery
-  const handleRecoverDraft = useCallback(() => {
+  const _handleRecoverDraft = useCallback(() => {
     if (draft && editorRef.current) {
       editorRef.current.setContent(draft.content);
       setCurrentContent(draft.content);
@@ -228,7 +227,7 @@ export default function DocumentEditPage() {
     setShowDraftPrompt(false);
   }, [draft]);
 
-  const handleDiscardDraft = useCallback(async () => {
+  const _handleDiscardDraft = useCallback(async () => {
     try {
       const deleteParams = new URLSearchParams();
       if (session?.isSuperAdmin && activeTenantId) {

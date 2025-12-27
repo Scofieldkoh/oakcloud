@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
 // GET /api/ai/document-chat - Get available actions
 // ============================================================================
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     await requireAuth();
 

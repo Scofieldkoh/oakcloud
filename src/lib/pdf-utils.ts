@@ -7,7 +7,7 @@
  * - Compress large PDFs
  */
 
-import { PDFDocument, PDFImage } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 
 /**
  * Helper to create a File from pdf-lib's Uint8Array output
@@ -21,7 +21,7 @@ function createPdfFile(pdfBytes: Uint8Array, fileName: string): File {
 const COMPRESSION_THRESHOLD = 1 * 1024 * 1024;
 
 // Standard A4 page size in points (72 DPI)
-const A4_WIDTH = 595; // 210mm
+const _A4_WIDTH = 595; // 210mm
 const A4_HEIGHT = 842; // 297mm
 
 // Maximum page dimension to prevent overly large PDFs
@@ -54,7 +54,7 @@ export function getExifOrientation(arrayBuffer: ArrayBuffer): number {
 
     // Check for EXIF marker (APP1)
     if (marker === 0xFFE1) {
-      const length = view.getUint16(offset, false);
+      view.getUint16(offset, false); // Skip length
       offset += 2;
 
       // Check for "Exif\0\0"
@@ -247,7 +247,7 @@ export async function imageToPdf(imageFile: File): Promise<File> {
 /**
  * Convert TIFF to JPEG using canvas
  */
-async function convertTiffToJpeg(tiffFile: File): Promise<Blob> {
+async function _convertTiffToJpeg(tiffFile: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
