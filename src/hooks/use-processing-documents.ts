@@ -76,6 +76,8 @@ export interface ProcessingDocumentDetail {
   fileName?: string;
   mimeType?: string;
   fileSize?: number;
+  // Tenant info
+  tenantId: string;
   // Company info
   company?: {
     id: string;

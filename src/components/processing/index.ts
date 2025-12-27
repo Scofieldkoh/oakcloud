@@ -9,7 +9,7 @@ export type { BoundingBox, FieldValue, TextLayerItem } from './document-page-vie
 export { LineItemEditor } from './line-item-editor';
 export { BulkActionsToolbar } from './bulk-actions-toolbar';
 export { ConfidenceDot, ConfidenceBadge } from './confidence-dot';
-export { ResizableSplitView, SplitViewHandle } from './resizable-split-view';
+export { ResizableSplitView, SplitViewHandle, VerticalSplitView } from './resizable-split-view';
 export { DuplicateComparisonModal } from './duplicate-comparison-modal';
 export { FileMergeModal } from './file-merge-modal';
 export { DocumentLinks } from './document-links';

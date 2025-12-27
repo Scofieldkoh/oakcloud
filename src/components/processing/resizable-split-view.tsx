@@ -216,3 +216,140 @@ export function SplitViewHandle({
     </div>
   );
 }
+
+interface VerticalSplitViewProps {
+  topPanel: ReactNode;
+  bottomPanel: ReactNode;
+  defaultTopHeight?: number; // percentage (0-100)
+  minTopHeight?: number; // percentage
+  maxTopHeight?: number; // percentage
+  className?: string;
+  topPanelClassName?: string;
+  bottomPanelClassName?: string;
+}
+
+/**
+ * VerticalSplitView - A draggable vertical split panel layout
+ */
+export function VerticalSplitView({
+  topPanel,
+  bottomPanel,
+  defaultTopHeight = 60,
+  minTopHeight = 30,
+  maxTopHeight = 80,
+  className,
+  topPanelClassName,
+  bottomPanelClassName,
+}: VerticalSplitViewProps) {
+  const [topHeight, setTopHeight] = useState(defaultTopHeight);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !containerRef.current) return;
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newTopHeight = ((e.clientY - containerRect.top) / containerRect.height) * 100;
+
+      // Clamp to min/max
+      const clampedHeight = Math.min(Math.max(newTopHeight, minTopHeight), maxTopHeight);
+      setTopHeight(clampedHeight);
+    },
+    [isDragging, minTopHeight, maxTopHeight]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Handle keyboard resize
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const step = 2; // 2% per key press
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setTopHeight((prev) => Math.max(prev - step, minTopHeight));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setTopHeight((prev) => Math.min(prev + step, maxTopHeight));
+      }
+    },
+    [minTopHeight, maxTopHeight]
+  );
+
+  // Global mouse events for drag
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn(
+        'flex flex-col h-full w-full',
+        isDragging && 'select-none',
+        className
+      )}
+    >
+      {/* Top Panel */}
+      <div
+        className={cn(
+          'flex-shrink-0 overflow-auto',
+          topPanelClassName
+        )}
+        style={{ height: `${topHeight}%` }}
+      >
+        {topPanel}
+      </div>
+
+      {/* Resize Handle (horizontal) */}
+      <div
+        role="separator"
+        aria-valuenow={topHeight}
+        aria-valuemin={minTopHeight}
+        aria-valuemax={maxTopHeight}
+        aria-label="Resize panels vertically"
+        tabIndex={0}
+        className={cn(
+          'flex items-center justify-center',
+          'h-2 bg-background-tertiary border-y border-border-primary',
+          'cursor-row-resize hover:bg-oak-primary/10 transition-colors',
+          'focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-inset',
+          isDragging && 'bg-oak-primary/20'
+        )}
+        onMouseDown={handleMouseDown}
+        onKeyDown={handleKeyDown}
+      >
+        <GripHorizontal className="w-4 h-4 text-text-muted" />
+      </div>
+
+      {/* Bottom Panel */}
+      <div
+        className={cn(
+          'flex-1 overflow-auto',
+          bottomPanelClassName
+        )}
+      >
+        {bottomPanel}
+      </div>
+    </div>
+  );
+}

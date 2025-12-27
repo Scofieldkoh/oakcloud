@@ -3721,10 +3721,9 @@ PDFs are rendered **client-side** using `pdfjs-dist` for optimal coordinate accu
 
 The Exchange Rate Maintenance module provides automated and manual exchange rate management for multi-currency document processing. Integrates with MAS (Monetary Authority of Singapore) APIMG Gateway API for both daily and monthly rates, plus IRAS monthly average rates from Data.gov.sg.
 
-For detailed specifications, see [EXCHANGE_RATE_SPEC.md](./EXCHANGE_RATE_SPEC.md).
-
 ### Features
 
+#### Phase 1: Rate Maintenance
 - **Automated Sync**: Daily sync from MAS API at 6am SGT via scheduled task
 - **MAS Daily Rates**: End-of-day exchange rates from MAS
 - **MAS Monthly Rates**: End-of-period monthly rates from MAS
@@ -3735,6 +3734,16 @@ For detailed specifications, see [EXCHANGE_RATE_SPEC.md](./EXCHANGE_RATE_SPEC.md
 - **Admin UI**: Full management interface at `/admin/exchange-rates` with filter pills, searchable currency select, and date range picker
 - **21 Currencies**: SGD, USD, EUR, GBP, JPY, AUD, CAD, CNY, HKD, INR, IDR, KRW, MYR, NZD, PHP, QAR, SAR, CHF, TWD, THB, AED, VND
 - **API Key Expiry Warning**: System warns SUPER_ADMIN 30 days before MAS API keys expire
+
+#### Phase 2: Home Currency Conversion
+- **Line-item Level Conversion**: Convert amounts at line item level (not just header totals)
+- **2 Decimal Precision**: All converted amounts kept to 2 decimal places
+- **Silent Rounding Adjustment**: Rounding difference applied to first non-overridden line item
+- **Always Visible**: Home currency section always visible (greyed out when same as document currency)
+- **User Overrides**: All calculated home currency fields are overridable
+- **Document Extraction**: AI extracts home currency equivalents from invoices (e.g., SGD tax amounts on foreign invoices)
+- **Exchange Rate Sources**: MAS_DAILY, IRAS_MONTHLY_AVG, MANUAL, DOCUMENT (from invoice)
+- **Backward Rate Calculation**: When document shows home amounts but not rate, calculates rate from totals (6 decimal places)
 
 ### API Endpoints
 
@@ -3754,10 +3763,11 @@ For detailed specifications, see [EXCHANGE_RATE_SPEC.md](./EXCHANGE_RATE_SPEC.md
 
 | Type | Description |
 |------|-------------|
-| `MAS_DAILY_RATE` | MAS daily end-of-day rates |
-| `IRAS_MONTHLY_AVG_RATE` | IRAS monthly average rates (from Data.gov.sg) |
-| `ECB_DAILY_RATE` | European Central Bank daily rates (future) |
-| `MANUAL_RATE` | Manually entered rates |
+| `MAS_DAILY` | MAS daily end-of-day rates |
+| `IRAS_MONTHLY_AVG` | IRAS monthly average rates (from Data.gov.sg) |
+| `MANUAL` | Manually entered rates |
+| `PROVIDER_DEFAULT` | Default rate from AI provider |
+| `DOCUMENT` | Extracted from the document itself (e.g., invoice shows SGD equivalent) |
 
 ### Services
 
@@ -3767,6 +3777,7 @@ For detailed specifications, see [EXCHANGE_RATE_SPEC.md](./EXCHANGE_RATE_SPEC.md
 | `mas-api.ts` | MAS APIMG Gateway API client (daily + monthly) |
 | `datagov-api.ts` | Data.gov.sg API client for IRAS monthly rates |
 | `exchange-rate-sync.task.ts` | Scheduled task for daily sync |
+| `currency-conversion.ts` | Client-safe conversion utilities (2dp precision, rounding adjustment) |
 
 ### Environment Variables
 

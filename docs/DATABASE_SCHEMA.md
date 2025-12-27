@@ -1289,10 +1289,40 @@ Immutable snapshots of structured accounting data.
 | documentNumber | String? | Invoice/receipt number |
 | documentDate | Date? | Document date |
 | currency | String | ISO 4217 currency code |
+| subtotal | Decimal(18,4)? | Subtotal amount |
+| taxAmount | Decimal(18,4)? | Tax amount |
 | totalAmount | Decimal(18,4) | Total amount |
+| homeCurrency | String? | Home currency (company's currency) |
+| homeExchangeRate | Decimal(18,6)? | Exchange rate used for conversion |
+| homeExchangeRateSource | ExchangeRateSource? | MAS_DAILY, IRAS_MONTHLY_AVG, MANUAL, DOCUMENT |
+| exchangeRateDate | Date? | Date of the exchange rate |
+| homeSubtotal | Decimal(18,4)? | Subtotal in home currency |
+| homeTaxAmount | Decimal(18,4)? | Tax in home currency |
+| homeEquivalent | Decimal(18,4)? | Total in home currency |
+| isHomeExchangeRateOverride | Boolean | User overrode exchange rate (default: false) |
 | validationStatus | ValidationStatus | PENDING, VALID, WARNINGS, INVALID |
 | createdById | UUID | User who created |
 | approvedById | UUID? | User who approved |
+
+### DocumentRevisionLineItem
+
+Line items within a revision.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| revisionId | UUID | Parent revision |
+| lineNo | Int | Line number |
+| description | String | Line description |
+| quantity | Decimal(18,4)? | Quantity |
+| unitPrice | Decimal(18,4)? | Unit price |
+| amount | Decimal(18,4) | Line amount |
+| gstAmount | Decimal(18,4)? | GST amount |
+| taxCode | String? | Tax code |
+| homeAmount | Decimal(18,4)? | Line amount in home currency |
+| homeGstAmount | Decimal(18,4)? | Line GST in home currency |
+| isHomeAmountOverride | Boolean | User overrode home amount (default: false) |
+| isHomeGstOverride | Boolean | User overrode home GST (default: false) |
 
 ### DocumentExtraction
 
@@ -1436,12 +1466,13 @@ Exchange rates for multi-currency document processing. Supports MAS (Monetary Au
 
 ## Exchange Rate Module Enums
 
-### ExchangeRateType
+### ExchangeRateSource
 ```sql
-MAS_DAILY_RATE           -- MAS (Monetary Authority of Singapore) daily end-of-day rates
-MAS_MONTHLY_RATE         -- MAS monthly end-of-period rates
-ECB_DAILY_RATE           -- European Central Bank daily rates (future)
-MANUAL_RATE              -- Manually entered rates
+MAS_DAILY            -- MAS (Monetary Authority of Singapore) daily end-of-day rates
+IRAS_MONTHLY_AVG     -- IRAS monthly average rates from Data.gov.sg
+MANUAL               -- Manually entered rates
+PROVIDER_DEFAULT     -- Default rate from AI provider
+DOCUMENT             -- Extracted from the document itself (e.g., invoice shows SGD equivalent)
 ```
 
 ### Rate Preference (Tenant Settings)
