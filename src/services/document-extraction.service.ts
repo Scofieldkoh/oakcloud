@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import { Prisma } from '@/generated/prisma';
 import type { DocumentExtraction } from '@/generated/prisma';
-import type { ExtractionType, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
+import type { ExtractionType, DocumentCategory, DocumentSubCategory, ExchangeRateSource } from '@/generated/prisma';
 import { createRevision, type LineItemInput } from './document-revision.service';
 import { transitionPipelineStatus, recordProcessingAttempt } from './document-processing.service';
 import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection.service';
@@ -70,6 +70,15 @@ export interface SplitDetectionResult {
   overallConfidence: number;
 }
 
+export interface HomeCurrencyEquivalent {
+  currency: string;
+  exchangeRate: string;
+  subtotal?: string;
+  taxAmount?: string;
+  totalAmount: string;
+  confidence: number;
+}
+
 export interface FieldExtractionResult {
   documentCategory: ExtractedField<DocumentCategory>;
   documentSubCategory?: ExtractedField<DocumentSubCategory>;
@@ -82,6 +91,7 @@ export interface FieldExtractionResult {
   taxAmount?: ExtractedField<string>;
   totalAmount: ExtractedField<string>;
   supplierGstNo?: ExtractedField<string>;
+  homeCurrencyEquivalent?: HomeCurrencyEquivalent;
   lineItems?: Array<{
     lineNo: number;
     description: ExtractedField<string>;
@@ -292,6 +302,9 @@ export async function extractFields(
       },
     });
 
+    // Extract home currency equivalent if present (from invoice showing SGD tax equivalent)
+    const hce = extractionResult.homeCurrencyEquivalent;
+
     // Create revision from extraction
     const revision = await createRevision({
       processingDocumentId,
@@ -316,6 +329,13 @@ export async function extractFields(
       taxAmount: extractionResult.taxAmount?.value,
       totalAmount: extractionResult.totalAmount.value,
       supplierGstNo: extractionResult.supplierGstNo?.value,
+      // Home currency equivalent extracted from invoice (if present)
+      homeCurrency: hce?.currency,
+      homeExchangeRate: hce?.exchangeRate,
+      homeExchangeRateSource: hce ? ('DOCUMENT' as ExchangeRateSource) : undefined, // Mark as from document
+      homeSubtotal: hce?.subtotal,
+      homeTaxAmount: hce?.taxAmount,
+      homeEquivalent: hce?.totalAmount,
       headerEvidenceJson: evidenceJson,
       items: extractionResult.lineItems?.map((item) => ({
         lineNo: item.lineNo,
@@ -507,6 +527,14 @@ async function performAIExtraction(
     "value": "string",
     "confidence": number
   } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
   "lineItems": [
     {
       "lineNo": number,
@@ -630,6 +658,32 @@ Select the most appropriate category and sub-category based on document content:
 - MISCELLANEOUS: Documents that don't fit other categories
 - SUPPORTING_DOCUMENT: Supporting/backup documents
 
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
 ## Important Rules
 - All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
 - Amounts in parentheses are NEGATIVE - convert (X) to -X
@@ -639,7 +693,8 @@ Select the most appropriate category and sub-category based on document content:
 - taxCode is REQUIRED for every line item - never leave it null
 - Be precise with numbers - extract exactly as shown, don't round
 - When extracting from Singapore invoices, assume SGD unless otherwise specified
-- Always select both documentCategory AND documentSubCategory when possible`;
+- Always select both documentCategory AND documentSubCategory when possible
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices`;
 
   // Append additional context if provided
   if (config.additionalContext) {
@@ -887,8 +942,58 @@ function mapAIResponseToResult(
       confidence: supplierGstNoField.confidence,
       evidence: createFieldEvidence(supplierGstNoField.value, supplierGstNoField.confidence, pageNum, fingerprint),
     } : undefined,
+    homeCurrencyEquivalent: extractHomeCurrencyEquivalent(
+      data.homeCurrencyEquivalent,
+      totalAmountField?.value
+    ),
     lineItems: lineItems.length > 0 ? lineItems : undefined,
     overallConfidence,
+  };
+}
+
+/**
+ * Extract home currency equivalent from AI response
+ * If exchange rate is not provided, calculate it from document total / home total
+ * @param data - The homeCurrencyEquivalent object from AI response
+ * @param documentTotalAmount - The document's total amount (in document currency)
+ */
+function extractHomeCurrencyEquivalent(
+  data: unknown,
+  documentTotalAmount?: string
+): HomeCurrencyEquivalent | undefined {
+  if (!data || typeof data !== 'object') return undefined;
+
+  const hce = data as Record<string, unknown>;
+
+  // Check if we have required fields
+  if (!hce.currency || !hce.totalAmount) return undefined;
+
+  const homeTotalStr = String(hce.totalAmount);
+  let exchangeRate: string;
+
+  if (hce.exchangeRate) {
+    // Use the exchange rate from the document
+    exchangeRate = String(hce.exchangeRate);
+  } else if (documentTotalAmount) {
+    // Calculate exchange rate: homeTotal / documentTotal (to 6 decimal places)
+    const docTotal = parseFloat(documentTotalAmount);
+    const homeTotal = parseFloat(homeTotalStr);
+    if (docTotal > 0 && homeTotal > 0) {
+      exchangeRate = (homeTotal / docTotal).toFixed(6);
+    } else {
+      exchangeRate = '1';
+    }
+  } else {
+    exchangeRate = '1';
+  }
+
+  return {
+    currency: String(hce.currency),
+    exchangeRate,
+    subtotal: hce.subtotal ? String(hce.subtotal) : undefined,
+    taxAmount: hce.taxAmount ? String(hce.taxAmount) : undefined,
+    totalAmount: homeTotalStr,
+    confidence: typeof hce.confidence === 'number' ? hce.confidence : 0.8,
   };
 }
 

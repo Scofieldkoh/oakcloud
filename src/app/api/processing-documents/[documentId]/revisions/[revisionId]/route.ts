@@ -110,6 +110,15 @@ export async function GET(
         validationStatus: revision.validationStatus,
         validationIssues: revision.validationIssues,
         headerEvidenceJson: revision.headerEvidenceJson,
+        // Phase 2: Home currency fields
+        homeCurrency: revision.homeCurrency,
+        homeExchangeRate: revision.homeExchangeRate?.toString() || null,
+        homeExchangeRateSource: revision.homeExchangeRateSource,
+        exchangeRateDate: revision.exchangeRateDate?.toISOString().split('T')[0] || null,
+        homeSubtotal: revision.homeSubtotal?.toString() || null,
+        homeTaxAmount: revision.homeTaxAmount?.toString() || null,
+        homeEquivalent: revision.homeEquivalent?.toString() || null,
+        isHomeExchangeRateOverride: revision.isHomeExchangeRateOverride ?? false,
         lineItems: revision.items.map((item) => ({
           id: item.id,
           lineNo: item.lineNo,
@@ -121,6 +130,11 @@ export async function GET(
           taxCode: item.taxCode,
           accountCode: item.accountCode,
           evidenceJson: item.evidenceJson,
+          // Phase 2: Home currency line item fields
+          homeAmount: item.homeAmount?.toString() || null,
+          homeGstAmount: item.homeGstAmount?.toString() || null,
+          isHomeAmountOverride: item.isHomeAmountOverride ?? false,
+          isHomeGstOverride: item.isHomeGstOverride ?? false,
         })),
       },
       meta: {
@@ -247,6 +261,15 @@ export async function PATCH(
         supplierGstNo?: string;
         documentCategory?: string;
         documentSubCategory?: string | null;
+        // Phase 2: Home currency header fields
+        homeCurrency?: string;
+        homeExchangeRate?: string;
+        homeExchangeRateSource?: string;
+        exchangeRateDate?: string;
+        homeSubtotal?: string;
+        homeTaxAmount?: string;
+        homeEquivalent?: string;
+        isHomeExchangeRateOverride?: boolean;
       };
       itemsToUpsert?: Array<{
         id?: string;
@@ -258,6 +281,11 @@ export async function PATCH(
         gstAmount?: string;
         taxCode?: string;
         accountCode?: string;
+        // Phase 2: Home currency line item fields
+        homeAmount?: string;
+        homeGstAmount?: string;
+        isHomeAmountOverride?: boolean;
+        isHomeGstOverride?: boolean;
       }>;
       itemsToDelete?: string[];
     };
@@ -277,6 +305,15 @@ export async function PATCH(
       if (headerUpdates.supplierGstNo !== undefined) headerData.supplierGstNo = headerUpdates.supplierGstNo || null;
       if (headerUpdates.documentCategory !== undefined) headerData.documentCategory = headerUpdates.documentCategory;
       if (headerUpdates.documentSubCategory !== undefined) headerData.documentSubCategory = headerUpdates.documentSubCategory;
+      // Phase 2: Home currency header fields
+      if (headerUpdates.homeCurrency !== undefined) headerData.homeCurrency = headerUpdates.homeCurrency || null;
+      if (headerUpdates.homeExchangeRate !== undefined) headerData.homeExchangeRate = headerUpdates.homeExchangeRate ? parseFloat(headerUpdates.homeExchangeRate) : null;
+      if (headerUpdates.homeExchangeRateSource !== undefined) headerData.homeExchangeRateSource = headerUpdates.homeExchangeRateSource || null;
+      if (headerUpdates.exchangeRateDate !== undefined) headerData.exchangeRateDate = headerUpdates.exchangeRateDate ? new Date(headerUpdates.exchangeRateDate) : null;
+      if (headerUpdates.homeSubtotal !== undefined) headerData.homeSubtotal = headerUpdates.homeSubtotal ? parseFloat(headerUpdates.homeSubtotal) : null;
+      if (headerUpdates.homeTaxAmount !== undefined) headerData.homeTaxAmount = headerUpdates.homeTaxAmount ? parseFloat(headerUpdates.homeTaxAmount) : null;
+      if (headerUpdates.homeEquivalent !== undefined) headerData.homeEquivalent = headerUpdates.homeEquivalent ? parseFloat(headerUpdates.homeEquivalent) : null;
+      if (headerUpdates.isHomeExchangeRateOverride !== undefined) headerData.isHomeExchangeRateOverride = headerUpdates.isHomeExchangeRateOverride;
     }
 
     // Start a transaction
@@ -302,34 +339,34 @@ export async function PATCH(
       // Upsert items
       if (itemsToUpsert && itemsToUpsert.length > 0) {
         for (const item of itemsToUpsert) {
+          const itemData = {
+            lineNo: item.lineNo,
+            description: item.description,
+            quantity: item.quantity ? parseFloat(item.quantity) : null,
+            unitPrice: item.unitPrice ? parseFloat(item.unitPrice) : null,
+            amount: parseFloat(item.amount),
+            gstAmount: item.gstAmount ? parseFloat(item.gstAmount) : null,
+            taxCode: item.taxCode || null,
+            accountCode: item.accountCode || null,
+            // Phase 2: Home currency line item fields
+            homeAmount: item.homeAmount ? parseFloat(item.homeAmount) : null,
+            homeGstAmount: item.homeGstAmount ? parseFloat(item.homeGstAmount) : null,
+            isHomeAmountOverride: item.isHomeAmountOverride ?? false,
+            isHomeGstOverride: item.isHomeGstOverride ?? false,
+          };
+
           if (item.id) {
             // Update existing item
             await tx.documentRevisionLineItem.update({
               where: { id: item.id },
-              data: {
-                lineNo: item.lineNo,
-                description: item.description,
-                quantity: item.quantity ? parseFloat(item.quantity) : null,
-                unitPrice: item.unitPrice ? parseFloat(item.unitPrice) : null,
-                amount: parseFloat(item.amount),
-                gstAmount: item.gstAmount ? parseFloat(item.gstAmount) : null,
-                taxCode: item.taxCode || null,
-                accountCode: item.accountCode || null,
-              },
+              data: itemData,
             });
           } else {
             // Create new item
             await tx.documentRevisionLineItem.create({
               data: {
                 revisionId,
-                lineNo: item.lineNo,
-                description: item.description,
-                quantity: item.quantity ? parseFloat(item.quantity) : null,
-                unitPrice: item.unitPrice ? parseFloat(item.unitPrice) : null,
-                amount: parseFloat(item.amount),
-                gstAmount: item.gstAmount ? parseFloat(item.gstAmount) : null,
-                taxCode: item.taxCode || null,
-                accountCode: item.accountCode || null,
+                ...itemData,
               },
             });
           }

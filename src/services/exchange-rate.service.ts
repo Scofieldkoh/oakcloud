@@ -1155,3 +1155,116 @@ function mapToMetadata(rate: ExchangeRate): ExchangeRateWithMetadata {
     updatedAt: rate.updatedAt,
   };
 }
+
+// ============================================================================
+// Home Currency Conversion Helpers (Phase 2)
+// ============================================================================
+
+/**
+ * Convert an amount to home currency with 2 decimal place precision.
+ * Uses standard rounding (half-up).
+ */
+export function convertToHomeCurrency(amount: number, rate: number): number {
+  return Math.round(amount * rate * 100) / 100;
+}
+
+/**
+ * Input type for line item conversion
+ */
+export interface LineItemForConversion {
+  amount: number;
+  gstAmount: number | null;
+  isHomeAmountOverride?: boolean;
+  homeAmount?: number | null;
+  isHomeGstOverride?: boolean;
+  homeGstAmount?: number | null;
+}
+
+/**
+ * Result type for line item conversion
+ */
+export interface ConvertedLineItem {
+  homeAmount: number;
+  homeGstAmount: number | null;
+}
+
+/**
+ * Convert line items to home currency with rounding adjustment.
+ *
+ * The rounding adjustment ensures the sum of line item home amounts
+ * exactly equals the header home total. Any rounding difference
+ * is pushed to the first non-overridden line item.
+ *
+ * @param lineItems - Array of line items to convert
+ * @param rate - Exchange rate to apply
+ * @param headerHomeTotal - Expected home currency total (from header)
+ * @returns Array of converted line items with homeAmount and homeGstAmount
+ */
+export function convertLineItemsWithRounding(
+  lineItems: LineItemForConversion[],
+  rate: number,
+  headerHomeTotal: number
+): ConvertedLineItem[] {
+  if (lineItems.length === 0) {
+    return [];
+  }
+
+  // Step 1: Convert each line item (respecting manual overrides)
+  const converted = lineItems.map((item) => {
+    // If manually overridden, use existing value
+    const homeAmount = item.isHomeAmountOverride && item.homeAmount != null
+      ? item.homeAmount
+      : convertToHomeCurrency(item.amount, rate);
+
+    const homeGstAmount = item.isHomeGstOverride && item.homeGstAmount != null
+      ? item.homeGstAmount
+      : item.gstAmount != null
+        ? convertToHomeCurrency(item.gstAmount, rate)
+        : null;
+
+    return { homeAmount, homeGstAmount };
+  });
+
+  // Step 2: Calculate sum of converted line items (amount + gst)
+  const sumOfLines = converted.reduce((sum, item) => {
+    return sum + item.homeAmount + (item.homeGstAmount || 0);
+  }, 0);
+
+  // Step 3: Calculate rounding difference
+  const roundingDiff = Math.round((headerHomeTotal - sumOfLines) * 100) / 100;
+
+  // Step 4: Apply adjustment to first non-overridden line item
+  if (roundingDiff !== 0) {
+    // Find first line item that wasn't manually overridden
+    const firstNonOverrideIndex = lineItems.findIndex(
+      (item) => !item.isHomeAmountOverride
+    );
+
+    if (firstNonOverrideIndex >= 0) {
+      converted[firstNonOverrideIndex].homeAmount =
+        Math.round((converted[firstNonOverrideIndex].homeAmount + roundingDiff) * 100) / 100;
+    }
+  }
+
+  return converted;
+}
+
+/**
+ * Calculate home currency header amounts from document currency amounts.
+ */
+export function calculateHomeHeaderAmounts(
+  subtotal: number | null,
+  taxAmount: number | null,
+  totalAmount: number,
+  rate: number
+): {
+  homeSubtotal: number | null;
+  homeTaxAmount: number | null;
+  homeTotal: number;
+} {
+  return {
+    homeSubtotal: subtotal != null ? convertToHomeCurrency(subtotal, rate) : null,
+    homeTaxAmount: taxAmount != null ? convertToHomeCurrency(taxAmount, rate) : null,
+    homeTotal: convertToHomeCurrency(totalAmount, rate),
+  };
+}

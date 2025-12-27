@@ -407,9 +407,9 @@ export type ValidationStatus = (typeof ValidationStatus)[keyof typeof Validation
 export const ExchangeRateSource = {
   MAS_DAILY: 'MAS_DAILY',
   IRAS_MONTHLY_AVG: 'IRAS_MONTHLY_AVG',
-  ECB_DAILY: 'ECB_DAILY',
   MANUAL: 'MANUAL',
-  PROVIDER_DEFAULT: 'PROVIDER_DEFAULT'
+  PROVIDER_DEFAULT: 'PROVIDER_DEFAULT',
+  DOCUMENT: 'DOCUMENT'
 } as const
 
 export type ExchangeRateSource = (typeof ExchangeRateSource)[keyof typeof ExchangeRateSource]

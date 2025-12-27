@@ -58,6 +58,8 @@ import {
   getSubCategoryOptions,
 } from '@/lib/document-categories';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
+import { convertToHomeCurrency } from '@/lib/currency-conversion';
+import { useRateLookup } from '@/hooks/use-exchange-rates';
 
 // Status display configs
 const pipelineStatusConfig: Record<
@@ -264,6 +266,19 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     data?.document?.duplicateStatus === 'SUSPECTED'
   );
 
+  // Exchange rate lookup for home currency conversion
+  // Only lookup if document currency differs from home currency and no rate is stored
+  const docCurrency = revisionWithLineItems?.currency || 'SGD';
+  const homeCurrency = revisionWithLineItems?.homeCurrency || 'SGD';
+  const needsRateLookup = docCurrency !== homeCurrency && docCurrency !== 'SGD' && !revisionWithLineItems?.homeExchangeRate;
+  const rateDate = revisionWithLineItems?.documentDate || new Date().toISOString().split('T')[0];
+
+  const { data: rateLookupData } = useRateLookup(
+    needsRateLookup ? docCurrency : '',
+    needsRateLookup ? rateDate : '',
+    data?.document?.tenantId
+  );
+
   // Mutations
   const triggerExtraction = useTriggerExtraction();
   const approveRevision = useApproveRevision();
@@ -309,6 +324,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     taxAmount: string;
     totalAmount: string;
     supplierGstNo: string;
+    // Phase 2: Home currency fields
+    homeCurrency: string;
+    homeExchangeRate: string;
+    homeSubtotal: string;
+    homeTaxAmount: string;
+    homeTotal: string;
+    isHomeExchangeRateOverride: boolean;
   }>({
     documentCategory: '',
     documentSubCategory: '',
@@ -321,6 +343,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     taxAmount: '',
     totalAmount: '',
     supplierGstNo: '',
+    // Phase 2: Home currency defaults
+    homeCurrency: 'SGD',
+    homeExchangeRate: '1',
+    homeSubtotal: '',
+    homeTaxAmount: '',
+    homeTotal: '',
+    isHomeExchangeRateOverride: false,
   });
   const [editLineItems, setEditLineItems] = useState<Array<{
     id?: string;
@@ -332,6 +361,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     gstAmount: string;
     taxCode: string;
     accountCode: string;
+    // Phase 2: Home currency line item fields
+    homeAmount: string;
+    homeGstAmount: string;
+    isHomeAmountOverride: boolean;
+    isHomeGstOverride: boolean;
   }>>([]);
   const [deletedLineItemIds, setDeletedLineItemIds] = useState<string[]>([]);
 
@@ -344,24 +378,102 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     }
   }, [shouldAutoCompare, duplicateData, id, router, showDuplicateModal]);
 
-  // Initialize edit form when revision data changes
-  useEffect(() => {
-    if (revisionWithLineItems && !isEditing) {
-      setEditFormData({
-        documentCategory: revisionWithLineItems.documentCategory || '',
-        documentSubCategory: revisionWithLineItems.documentSubCategory || '',
-        vendorName: revisionWithLineItems.vendorName || '',
-        documentNumber: revisionWithLineItems.documentNumber || '',
-        documentDate: revisionWithLineItems.documentDate || '',
-        dueDate: revisionWithLineItems.dueDate || '',
-        currency: revisionWithLineItems.currency || 'SGD',
-        subtotal: revisionWithLineItems.subtotal || '',
-        taxAmount: revisionWithLineItems.taxAmount || '',
-        totalAmount: revisionWithLineItems.totalAmount || '',
-        supplierGstNo: '',
-      });
-      setEditLineItems(
-        revisionWithLineItems.lineItems?.map((item) => ({
+  // Helper function to initialize form data from revision with home currency calculation
+  const initializeFormDataFromRevision = useCallback((revision: typeof revisionWithLineItems, fetchedRate?: string) => {
+    if (!revision) return;
+
+    const docCurrency = revision.currency || 'SGD';
+    const homeCurrency = revision.homeCurrency || 'SGD';
+    const isSameCurrency = docCurrency === homeCurrency;
+
+    // Get exchange rate - use stored rate, fetched rate, or default to 1
+    // Priority: stored rate > fetched rate > default 1
+    const storedRate = revision.homeExchangeRate;
+    const rateToUse = isSameCurrency
+      ? '1'
+      : storedRate || fetchedRate || '1';
+    const exchangeRate = parseFloat(rateToUse) || 1;
+
+    // Calculate home currency amounts if not already provided
+    let homeSubtotal = revision.homeSubtotal || '';
+    let homeTaxAmount = revision.homeTaxAmount || '';
+    let homeTotal = revision.homeEquivalent || '';
+
+    // If home amounts are empty but we have document amounts, calculate them
+    if (!homeSubtotal && revision.subtotal) {
+      const subtotal = parseFloat(revision.subtotal);
+      if (!isNaN(subtotal)) {
+        homeSubtotal = isSameCurrency
+          ? revision.subtotal
+          : convertToHomeCurrency(subtotal, exchangeRate).toFixed(2);
+      }
+    }
+
+    if (!homeTaxAmount && revision.taxAmount) {
+      const taxAmount = parseFloat(revision.taxAmount);
+      if (!isNaN(taxAmount)) {
+        homeTaxAmount = isSameCurrency
+          ? revision.taxAmount
+          : convertToHomeCurrency(taxAmount, exchangeRate).toFixed(2);
+      }
+    }
+
+    if (!homeTotal && revision.totalAmount) {
+      const totalAmount = parseFloat(revision.totalAmount);
+      if (!isNaN(totalAmount)) {
+        homeTotal = isSameCurrency
+          ? revision.totalAmount
+          : convertToHomeCurrency(totalAmount, exchangeRate).toFixed(2);
+      }
+    }
+
+    setEditFormData({
+      documentCategory: revision.documentCategory || '',
+      documentSubCategory: revision.documentSubCategory || '',
+      vendorName: revision.vendorName || '',
+      documentNumber: revision.documentNumber || '',
+      documentDate: revision.documentDate || '',
+      dueDate: revision.dueDate || '',
+      currency: docCurrency,
+      subtotal: revision.subtotal || '',
+      taxAmount: revision.taxAmount || '',
+      totalAmount: revision.totalAmount || '',
+      supplierGstNo: '',
+      // Phase 2: Home currency fields
+      homeCurrency: homeCurrency,
+      homeExchangeRate: rateToUse,
+      homeSubtotal: homeSubtotal,
+      homeTaxAmount: homeTaxAmount,
+      homeTotal: homeTotal,
+      isHomeExchangeRateOverride: revision.isHomeExchangeRateOverride || false,
+    });
+
+    // Calculate line item home amounts if not provided
+    setEditLineItems(
+      revision.lineItems?.map((item) => {
+        let homeAmount = item.homeAmount || '';
+        let homeGstAmount = item.homeGstAmount || '';
+
+        // Calculate if not provided
+        if (!homeAmount && item.amount) {
+          const amount = parseFloat(item.amount);
+          if (!isNaN(amount)) {
+            homeAmount = isSameCurrency
+              ? item.amount
+              : convertToHomeCurrency(amount, exchangeRate).toFixed(2);
+          }
+        }
+
+        if (!homeGstAmount && item.gstAmount) {
+          const gstAmount = parseFloat(item.gstAmount);
+          if (!isNaN(gstAmount)) {
+            homeGstAmount = isSameCurrency
+              ? item.gstAmount
+              : convertToHomeCurrency(gstAmount, exchangeRate).toFixed(2);
+          }
+        }
+
+        return {
           id: item.id,
           lineNo: item.lineNo,
           description: item.description,
@@ -371,10 +483,24 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           gstAmount: item.gstAmount || '',
           taxCode: item.taxCode || '',
           accountCode: item.accountCode || '',
-        })) || []
-      );
+          // Phase 2: Home currency line item fields
+          homeAmount: homeAmount,
+          homeGstAmount: homeGstAmount,
+          isHomeAmountOverride: item.isHomeAmountOverride || false,
+          isHomeGstOverride: item.isHomeGstOverride || false,
+        };
+      }) || []
+    );
+  }, []);
+
+  // Initialize edit form when revision data changes or rate lookup completes
+  useEffect(() => {
+    if (revisionWithLineItems && !isEditing) {
+      // Pass the fetched rate if available
+      const fetchedRate = rateLookupData?.rate;
+      initializeFormDataFromRevision(revisionWithLineItems, fetchedRate);
     }
-  }, [revisionWithLineItems, isEditing]);
+  }, [revisionWithLineItems, isEditing, initializeFormDataFromRevision, rateLookupData]);
 
   // Convert evidence JSON to highlights for DocumentPageViewer
   const highlights = useMemo((): BoundingBox[] => {
@@ -597,32 +723,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Start editing a draft revision directly
   const handleStartEdit = () => {
     if (revisionWithLineItems) {
-      setEditFormData({
-        documentCategory: revisionWithLineItems.documentCategory || '',
-        documentSubCategory: revisionWithLineItems.documentSubCategory || '',
-        vendorName: revisionWithLineItems.vendorName || '',
-        documentNumber: revisionWithLineItems.documentNumber || '',
-        documentDate: revisionWithLineItems.documentDate || '',
-        dueDate: revisionWithLineItems.dueDate || '',
-        currency: revisionWithLineItems.currency || 'SGD',
-        subtotal: revisionWithLineItems.subtotal || '',
-        taxAmount: revisionWithLineItems.taxAmount || '',
-        totalAmount: revisionWithLineItems.totalAmount || '',
-        supplierGstNo: '',
-      });
-      setEditLineItems(
-        revisionWithLineItems.lineItems?.map((item) => ({
-          id: item.id,
-          lineNo: item.lineNo,
-          description: item.description,
-          quantity: item.quantity || '',
-          unitPrice: item.unitPrice || '',
-          amount: item.amount,
-          gstAmount: item.gstAmount || '',
-          taxCode: item.taxCode || '',
-          accountCode: item.accountCode || '',
-        })) || []
-      );
+      initializeFormDataFromRevision(revisionWithLineItems, rateLookupData?.rate);
       setDeletedLineItemIds([]); // Reset deleted items when starting edit
     }
     setIsEditing(true);
@@ -631,33 +732,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Start editing an approved document - only enter edit mode, don't create revision yet
   const handleEditApproved = () => {
     if (!data?.document || !currentRevisionId || !revisionWithLineItems) return;
-    // Initialize form data from current revision
-    setEditFormData({
-      documentCategory: revisionWithLineItems.documentCategory || '',
-      documentSubCategory: revisionWithLineItems.documentSubCategory || '',
-      vendorName: revisionWithLineItems.vendorName || '',
-      documentNumber: revisionWithLineItems.documentNumber || '',
-      documentDate: revisionWithLineItems.documentDate || '',
-      dueDate: revisionWithLineItems.dueDate || '',
-      currency: revisionWithLineItems.currency || 'SGD',
-      subtotal: revisionWithLineItems.subtotal || '',
-      taxAmount: revisionWithLineItems.taxAmount || '',
-      totalAmount: revisionWithLineItems.totalAmount || '',
-      supplierGstNo: '',
-    });
-    setEditLineItems(
-      revisionWithLineItems.lineItems?.map((item) => ({
-        id: item.id,
-        lineNo: item.lineNo,
-        description: item.description,
-        quantity: item.quantity || '',
-        unitPrice: item.unitPrice || '',
-        amount: item.amount,
-        gstAmount: item.gstAmount || '',
-        taxCode: item.taxCode || '',
-        accountCode: item.accountCode || '',
-      })) || []
-    );
+    // Initialize form data from current revision (with home currency calculation)
+    initializeFormDataFromRevision(revisionWithLineItems, rateLookupData?.rate);
     setDeletedLineItemIds([]);
     // Mark that we're editing an approved document (revision will be created on save)
     setIsEditingApproved(true);
@@ -703,6 +779,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
             subtotal: editFormData.subtotal || undefined,
             taxAmount: editFormData.taxAmount || undefined,
             totalAmount: editFormData.totalAmount || undefined,
+            // Phase 2: Home currency header fields
+            homeCurrency: editFormData.homeCurrency || undefined,
+            homeExchangeRate: editFormData.homeExchangeRate || undefined,
+            homeSubtotal: editFormData.homeSubtotal || undefined,
+            homeTaxAmount: editFormData.homeTaxAmount || undefined,
+            homeEquivalent: editFormData.homeTotal || undefined,
+            isHomeExchangeRateOverride: editFormData.isHomeExchangeRateOverride,
           },
           itemsToUpsert: editLineItems.map((item) => ({
             // For new revisions from approved docs, don't pass old IDs
@@ -715,6 +798,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
             gstAmount: item.gstAmount || undefined,
             taxCode: item.taxCode || undefined,
             accountCode: item.accountCode || undefined,
+            // Phase 2: Home currency line item fields
+            homeAmount: item.homeAmount || undefined,
+            homeGstAmount: item.homeGstAmount || undefined,
+            isHomeAmountOverride: item.isHomeAmountOverride,
+            isHomeGstOverride: item.isHomeGstOverride,
           })),
           // For new revisions, don't pass deleted items since they're fresh copies
           itemsToDelete: isEditingApproved ? undefined : (deletedLineItemIds.length > 0 ? deletedLineItemIds : undefined),
@@ -744,6 +832,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         gstAmount: '',
         taxCode: 'SR', // Default to 9% GST
         accountCode: '',
+        // Phase 2: Home currency defaults for new line items
+        homeAmount: '',
+        homeGstAmount: '',
+        isHomeAmountOverride: false,
+        isHomeGstOverride: false,
       },
     ]);
   };
@@ -1056,6 +1149,14 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                     currencyOptions={currencyOptions}
                   />
 
+                  {/* Home Currency Section (Phase 2) */}
+                  <HomeCurrencySection
+                    documentCurrency={revisionWithLineItems?.currency || currentRevision.currency}
+                    isEditing={isEditing}
+                    editFormData={editFormData}
+                    setEditFormData={setEditFormData}
+                  />
+
                   {/* Validation Status */}
                   {revisionWithLineItems?.validationStatus && revisionWithLineItems.validationStatus !== 'PENDING' && (
                     <ValidationStatusSection
@@ -1279,6 +1380,13 @@ function ExtractedHeaderFields({
     taxAmount: string;
     totalAmount: string;
     supplierGstNo: string;
+    // Phase 2: Home currency fields
+    homeCurrency: string;
+    homeExchangeRate: string;
+    homeSubtotal: string;
+    homeTaxAmount: string;
+    homeTotal: string;
+    isHomeExchangeRateOverride: boolean;
   };
   setEditFormData: React.Dispatch<React.SetStateAction<{
     documentCategory: string;
@@ -1292,6 +1400,13 @@ function ExtractedHeaderFields({
     taxAmount: string;
     totalAmount: string;
     supplierGstNo: string;
+    // Phase 2: Home currency fields
+    homeCurrency: string;
+    homeExchangeRate: string;
+    homeSubtotal: string;
+    homeTaxAmount: string;
+    homeTotal: string;
+    isHomeExchangeRateOverride: boolean;
   }>>;
   focusedField: string | null;
   setFocusedField: (field: string | null) => void;
@@ -1567,6 +1682,195 @@ function FieldDisplay({
       <dd className={cn('text-sm', highlight ? 'font-semibold text-text-primary' : 'text-text-primary')}>
         {value || '-'}
       </dd>
+    </div>
+  );
+}
+
+// ============================================================================
+// HomeCurrencySection Component (Phase 2)
+// ============================================================================
+
+interface HomeCurrencySectionProps {
+  documentCurrency: string;
+  isEditing: boolean;
+  editFormData: {
+    homeCurrency: string;
+    homeExchangeRate: string;
+    homeSubtotal: string;
+    homeTaxAmount: string;
+    homeTotal: string;
+    isHomeExchangeRateOverride: boolean;
+  };
+  setEditFormData: React.Dispatch<React.SetStateAction<{
+    documentCategory: string;
+    documentSubCategory: string;
+    vendorName: string;
+    documentNumber: string;
+    documentDate: string;
+    dueDate: string;
+    currency: string;
+    subtotal: string;
+    taxAmount: string;
+    totalAmount: string;
+    supplierGstNo: string;
+    homeCurrency: string;
+    homeExchangeRate: string;
+    homeSubtotal: string;
+    homeTaxAmount: string;
+    homeTotal: string;
+    isHomeExchangeRateOverride: boolean;
+  }>>;
+}
+
+function HomeCurrencySection({
+  documentCurrency,
+  isEditing,
+  editFormData,
+  setEditFormData,
+}: HomeCurrencySectionProps) {
+  // Check if document currency equals home currency
+  const isSameCurrency = documentCurrency === editFormData.homeCurrency;
+
+  // Format currency helper
+  const formatHomeCurrency = (value: string, currency: string): string => {
+    if (!value || value === '') return '-';
+    const num = parseFloat(value);
+    if (isNaN(num)) return value;
+    return new Intl.NumberFormat('en-SG', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  };
+
+  // Greyed out class for same currency
+  const greyedOutClass = isSameCurrency ? 'opacity-50 cursor-not-allowed' : '';
+
+  // Format exchange rate with 6 decimal places
+  const formatExchangeRate = (rate: string | null | undefined): string => {
+    if (!rate) return '-';
+    const num = parseFloat(rate);
+    if (isNaN(num)) return rate;
+    return num.toFixed(6);
+  };
+
+  if (isEditing) {
+    return (
+      <div className={cn('card p-4', greyedOutClass)}>
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-medium text-text-primary">Home Currency</h3>
+          <span className="text-xs text-text-muted px-1.5 py-0.5 bg-background-tertiary rounded">
+            {editFormData.homeCurrency}
+          </span>
+          {isSameCurrency && (
+            <span className="text-xs text-text-muted">(Same as document currency)</span>
+          )}
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Exchange Rate</label>
+            <input
+              type="number"
+              step="0.000001"
+              value={isSameCurrency ? '1.000000' : editFormData.homeExchangeRate}
+              onChange={(e) => setEditFormData((prev) => ({ ...prev, homeExchangeRate: e.target.value, isHomeExchangeRateOverride: true }))}
+              disabled={isSameCurrency}
+              className={cn(
+                'w-full px-2.5 py-1.5 text-sm font-mono bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none',
+                greyedOutClass
+              )}
+              placeholder="1.000000"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Home Subtotal</label>
+            <input
+              type="number"
+              step="0.01"
+              value={editFormData.homeSubtotal}
+              onChange={(e) => setEditFormData((prev) => ({ ...prev, homeSubtotal: e.target.value }))}
+              disabled={isSameCurrency}
+              className={cn(
+                'w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none',
+                greyedOutClass
+              )}
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Home Tax</label>
+            <input
+              type="number"
+              step="0.01"
+              value={editFormData.homeTaxAmount}
+              onChange={(e) => setEditFormData((prev) => ({ ...prev, homeTaxAmount: e.target.value }))}
+              disabled={isSameCurrency}
+              className={cn(
+                'w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none',
+                greyedOutClass
+              )}
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Home Total</label>
+            <input
+              type="number"
+              step="0.01"
+              value={editFormData.homeTotal}
+              onChange={(e) => setEditFormData((prev) => ({ ...prev, homeTotal: e.target.value }))}
+              disabled={isSameCurrency}
+              className={cn(
+                'w-full px-2.5 py-1.5 text-sm font-semibold bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none',
+                greyedOutClass
+              )}
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // View mode - show stored values
+  return (
+    <div className={cn('card p-4', greyedOutClass)}>
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="text-sm font-medium text-text-primary">Home Currency</h3>
+        <span className="text-xs text-text-muted px-1.5 py-0.5 bg-background-tertiary rounded">
+          {editFormData.homeCurrency}
+        </span>
+        {isSameCurrency && (
+          <span className="text-xs text-text-muted">(Same as document currency)</span>
+        )}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+          <span className="block text-xs text-text-muted mb-0.5">Exchange Rate</span>
+          <span className="text-text-primary font-mono">
+            {isSameCurrency ? '1.000000' : formatExchangeRate(editFormData.homeExchangeRate)}
+          </span>
+        </div>
+        <div>
+          <span className="block text-xs text-text-muted mb-0.5">Home Subtotal</span>
+          <span className="text-text-primary">
+            {formatHomeCurrency(editFormData.homeSubtotal, editFormData.homeCurrency)}
+          </span>
+        </div>
+        <div>
+          <span className="block text-xs text-text-muted mb-0.5">Home Tax</span>
+          <span className="text-text-primary">
+            {formatHomeCurrency(editFormData.homeTaxAmount, editFormData.homeCurrency)}
+          </span>
+        </div>
+        <div>
+          <span className="block text-xs text-text-muted mb-0.5">Home Total</span>
+          <span className="text-text-primary font-semibold">
+            {formatHomeCurrency(editFormData.homeTotal, editFormData.homeCurrency)}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

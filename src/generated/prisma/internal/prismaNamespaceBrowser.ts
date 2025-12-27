@@ -867,6 +867,9 @@ export const DocumentRevisionScalarFieldEnum = {
   homeExchangeRate: 'homeExchangeRate',
   exchangeRateDate: 'exchangeRateDate',
   homeEquivalent: 'homeEquivalent',
+  homeSubtotal: 'homeSubtotal',
+  homeTaxAmount: 'homeTaxAmount',
+  isHomeExchangeRateOverride: 'isHomeExchangeRateOverride',
   validationStatus: 'validationStatus',
   validationIssues: 'validationIssues',
   documentKey: 'documentKey',
@@ -899,7 +902,11 @@ export const DocumentRevisionLineItemScalarFieldEnum = {
   gstAmount: 'gstAmount',
   taxCode: 'taxCode',
   accountCode: 'accountCode',
-  evidenceJson: 'evidenceJson'
+  evidenceJson: 'evidenceJson',
+  homeAmount: 'homeAmount',
+  homeGstAmount: 'homeGstAmount',
+  isHomeAmountOverride: 'isHomeAmountOverride',
+  isHomeGstOverride: 'isHomeGstOverride'
 } as const
 
 export type DocumentRevisionLineItemScalarFieldEnum = (typeof DocumentRevisionLineItemScalarFieldEnum)[keyof typeof DocumentRevisionLineItemScalarFieldEnum]

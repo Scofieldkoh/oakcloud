@@ -109,6 +109,16 @@ export interface ProcessingDocumentSearchParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  // Date range filters
+  uploadDateFrom?: string; // ISO date string (createdAt filter)
+  uploadDateTo?: string;
+  documentDateFrom?: string; // ISO date string (revision.documentDate filter)
+  documentDateTo?: string;
+  // Text search filters
+  search?: string; // General search (fileName, vendorName, documentNumber)
+  vendorName?: string;
+  documentNumber?: string;
+  fileName?: string;
 }
 
 export interface ProcessingDocumentSearchResult {
@@ -283,6 +293,15 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
       params.limit,
       params.sortBy,
       params.sortOrder,
+      // New filter parameters
+      params.uploadDateFrom,
+      params.uploadDateTo,
+      params.documentDateFrom,
+      params.documentDateTo,
+      params.search,
+      params.vendorName,
+      params.documentNumber,
+      params.fileName,
     ],
     queryFn: () => fetchProcessingDocuments(params),
     staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
@@ -449,6 +468,11 @@ export interface LineItemData {
   taxCode: string | null;
   accountCode: string | null;
   evidenceJson: Record<string, unknown> | null;
+  // Phase 2: Home currency line item fields
+  homeAmount: string | null;
+  homeGstAmount: string | null;
+  isHomeAmountOverride: boolean;
+  isHomeGstOverride: boolean;
 }
 
 export interface RevisionWithLineItems {
@@ -469,6 +493,15 @@ export interface RevisionWithLineItems {
   validationStatus: string;
   validationIssues: Record<string, unknown> | null;
   headerEvidenceJson: Record<string, unknown> | null;
+  // Phase 2: Home currency header fields
+  homeCurrency: string | null;
+  homeExchangeRate: string | null;
+  homeExchangeRateSource: string | null;
+  exchangeRateDate: string | null;
+  homeSubtotal: string | null;
+  homeTaxAmount: string | null;
+  homeEquivalent: string | null;
+  isHomeExchangeRateOverride: boolean;
   lineItems: LineItemData[];
 }
 
@@ -515,6 +548,15 @@ async function updateRevision(
       totalAmount: string;
       gstTreatment: string;
       supplierGstNo: string;
+      // Phase 2: Home currency header fields
+      homeCurrency: string;
+      homeExchangeRate: string;
+      homeExchangeRateSource: string;
+      exchangeRateDate: string;
+      homeSubtotal: string;
+      homeTaxAmount: string;
+      homeEquivalent: string;
+      isHomeExchangeRateOverride: boolean;
     }>;
     itemsToUpsert?: Array<{
       id?: string;
@@ -526,6 +568,11 @@ async function updateRevision(
       gstAmount?: string;
       taxCode?: string;
       accountCode?: string;
+      // Phase 2: Home currency line item fields
+      homeAmount?: string;
+      homeGstAmount?: string;
+      isHomeAmountOverride?: boolean;
+      isHomeGstOverride?: boolean;
     }>;
     itemsToDelete?: string[];
   }

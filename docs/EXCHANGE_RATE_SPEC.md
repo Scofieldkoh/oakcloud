@@ -26,8 +26,8 @@ Enable multi-currency support for document processing by:
 
 | Phase | Feature | Status |
 |-------|---------|--------|
-| Phase 1 | Exchange Rate Maintenance | In Development |
-| Phase 2 | Home Currency Conversion | Planned |
+| Phase 1 | Exchange Rate Maintenance | ✅ Complete |
+| Phase 2 | Home Currency Conversion | ✅ Complete |
 
 ### Data Flow
 
@@ -199,90 +199,229 @@ model ExchangeRate {
 
 ## 3. Phase 2: Home Currency Conversion
 
-### 3.1 Document Processing Integration
+### 3.1 Overview
 
-When a document's currency differs from the company's home currency, automatically display converted amounts.
+Home currency conversion enables line-item level conversion with:
+- **2 decimal place precision** for all converted amounts
+- **Line item level conversion** (not just header totals)
+- **Silent rounding adjustment** applied to first non-overridden line item
+- **Always visible** home currency section (greyed out when same as document currency)
+- **User overrides** for all calculated home currency fields
 
-#### Fields Added to UI
+### 3.2 Database Schema
 
-| Field | Description |
-|-------|-------------|
-| Home Currency | Company's home currency (from Company.homeCurrency) |
-| Exchange Rate | Rate used for conversion |
-| Rate Source | Where the rate came from (MAS/Manual) |
-| Rate Date | Date of the exchange rate |
-| Home Subtotal | Subtotal converted to home currency |
-| Home Tax Amount | Tax amount converted to home currency |
-| Home Total Amount | Total amount converted to home currency |
+#### DocumentRevision (Header Level)
 
-#### Existing Schema Fields (DocumentRevision)
-
-These fields already exist in the schema:
 ```prisma
-homeCurrency       String?               // Company's home currency
-homeExchangeRate   Decimal?              // Rate used for conversion
-homeEquivalent     Decimal?              // Total in home currency
-exchangeRateSource String?               // "MAS_DAILY" or "MANUAL"
-exchangeRateDate   DateTime?             // Date of the rate
+// Home currency conversion fields
+homeCurrency               String?   // Company's home currency (e.g., "SGD")
+homeExchangeRate           Decimal?  @db.Decimal(18, 4) // Rate used for conversion
+homeExchangeRateSource     String?   // "MAS_DAILY" or "MANUAL"
+exchangeRateDate           DateTime? @db.Date           // Date of the rate
+homeSubtotal               Decimal?  @db.Decimal(18, 4) // Subtotal in home currency
+homeTaxAmount              Decimal?  @db.Decimal(18, 4) // Tax in home currency
+homeEquivalent             Decimal?  @db.Decimal(18, 4) // Total in home currency
+isHomeExchangeRateOverride Boolean   @default(false)    // User overrode exchange rate
 ```
 
-### 3.2 Conversion Logic
+#### DocumentRevisionLineItem (Line Level)
+
+```prisma
+// Home currency conversion fields
+homeAmount            Decimal?  @db.Decimal(18, 4) // Line amount in home currency
+homeGstAmount         Decimal?  @db.Decimal(18, 4) // Line GST in home currency
+isHomeAmountOverride  Boolean   @default(false)    // User overrode home amount
+isHomeGstOverride     Boolean   @default(false)    // User overrode home GST
+```
+
+### 3.3 Conversion Logic
+
+#### Helper Functions (`exchange-rate.service.ts`)
 
 ```typescript
-// When document currency !== company home currency
-if (documentCurrency !== company.homeCurrency) {
-  const rate = await getRate(
-    documentCurrency,
-    company.homeCurrency,
-    documentDate,
-    company.tenantId
-  );
+/**
+ * Convert amount to home currency (2 decimal places)
+ */
+export function convertToHomeCurrency(amount: number, rate: number): number {
+  return Math.round(amount * rate * 100) / 100;
+}
 
-  if (rate) {
-    revision.homeCurrency = company.homeCurrency;
-    revision.homeExchangeRate = rate.rate;
-    revision.homeEquivalent = subtotal * rate.rate;
-    revision.exchangeRateSource = rate.source;
-    revision.exchangeRateDate = rate.rateDate;
+/**
+ * Convert line items with rounding adjustment to first non-overridden line
+ * Ensures sum of line home amounts equals header home total exactly
+ */
+export function convertLineItemsWithRounding(
+  lineItems: LineItemForConversion[],
+  rate: number,
+  headerHomeTotal: number
+): ConvertedLineItem[] {
+  // 1. Convert each line item
+  const converted = lineItems.map((item) => ({
+    homeAmount: item.isOverride && item.homeAmount != null
+      ? item.homeAmount
+      : convertToHomeCurrency(item.amount, rate),
+    homeGstAmount: item.gstAmount != null
+      ? convertToHomeCurrency(item.gstAmount, rate)
+      : null,
+  }));
+
+  // 2. Calculate sum
+  const sum = converted.reduce((acc, item) =>
+    acc + item.homeAmount + (item.homeGstAmount || 0), 0);
+
+  // 3. Apply rounding difference to first non-overridden line
+  const diff = Math.round((headerHomeTotal - sum) * 100) / 100;
+  if (diff !== 0) {
+    const firstNonOverride = converted.findIndex((_, i) => !lineItems[i].isOverride);
+    if (firstNonOverride >= 0) {
+      converted[firstNonOverride].homeAmount += diff;
+    }
+  }
+
+  return converted;
+}
+
+/**
+ * Calculate header home amounts from document amounts
+ */
+export function calculateHomeHeaderAmounts(
+  subtotal: number | null,
+  taxAmount: number | null,
+  totalAmount: number,
+  rate: number
+): { homeSubtotal: number | null; homeTaxAmount: number | null; homeTotal: number } {
+  return {
+    homeSubtotal: subtotal != null ? convertToHomeCurrency(subtotal, rate) : null,
+    homeTaxAmount: taxAmount != null ? convertToHomeCurrency(taxAmount, rate) : null,
+    homeTotal: convertToHomeCurrency(totalAmount, rate),
+  };
+}
+```
+
+### 3.4 Validation Rules
+
+Added to `document-revision.service.ts`:
+
+| Code | Severity | Message |
+|------|----------|---------|
+| `MISSING_EXCHANGE_RATE` | WARN | Exchange rate required when currencies differ |
+| `INVALID_EXCHANGE_RATE` | ERROR | Exchange rate must be positive |
+| `HOME_AMOUNT_SUM_MISMATCH` | WARN | Line item home amounts don't match home subtotal |
+| `HOME_GST_SUM_MISMATCH` | WARN | Line item home GST doesn't match home tax |
+| `HOME_TOTAL_MISMATCH` | WARN | Home total doesn't match subtotal + tax |
+
+### 3.5 UI Behavior
+
+#### Same Currency (Document = Home)
+- Home currency section is **always visible** but **greyed out**
+- Exchange rate shows "1.0000" (1:1)
+- All fields are **not editable**
+- Values mirror document amounts exactly
+
+#### Different Currency
+- Home currency section is **fully editable** in edit mode
+- Exchange rate can be refreshed from MAS or manually overridden
+- All home amounts are **calculated** but **overridable**
+- Override flags track which fields were manually changed
+
+### 3.6 UI Mockup
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Document Details                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ Currency: USD                       Document Date: 2025-01-15   │
+│                                                                  │
+│ ┌───────────────────────────────────────────────────────────┐   │
+│ │ AMOUNTS (DOCUMENT CURRENCY)                                │   │
+│ ├───────────────────────────────────────────────────────────┤   │
+│ │ Subtotal:     USD 1,000.00                                │   │
+│ │ Tax Amount:   USD    90.00                                │   │
+│ │ Total:        USD 1,090.00                                │   │
+│ └───────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│ ┌───────────────────────────────────────────────────────────┐   │
+│ │ HOME CURRENCY                                   SGD        │   │
+│ │ Rate: 1.3456 (MAS Daily | 2025-01-15)          [Refresh]  │   │
+│ ├───────────────────────────────────────────────────────────┤   │
+│ │ Home Subtotal:     SGD 1,345.60                           │   │
+│ │ Home Tax:          SGD   121.10                           │   │
+│ │ Home Total:        SGD 1,466.70                           │   │
+│ └───────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│ ┌───────────────────────────────────────────────────────────┐   │
+│ │ LINE ITEMS                                                 │   │
+│ ├───────────────────────────────────────────────────────────┤   │
+│ │ # │ Description │ Qty │ Price │ Amount │ GST  │HomeAmt│HmGST│ │
+│ │───┼─────────────┼─────┼───────┼────────┼──────┼───────┼─────│ │
+│ │ 1 │ Item A      │  2  │ 250.00│ 500.00 │ 45.00│ 673.28│60.60│ │
+│ │ 2 │ Item B      │  1  │ 500.00│ 500.00 │ 45.00│ 673.00│60.50│ │
+│ ├───────────────────────────────────────────────────────────┤   │
+│ │ Total                        │1,000.00│ 90.00│1345.60│121.10│ │
+│ └───────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+
+Note: First line item (Item A) includes +0.28 rounding adjustment
+      so line totals (673.28+673.00=1346.28→rounds to 1345.60 header)
+```
+
+### 3.7 API Changes
+
+#### GET `/api/processing-documents/:documentId/revisions/:revisionId`
+
+Response includes:
+```json
+{
+  "data": {
+    // ... existing fields ...
+    "homeCurrency": "SGD",
+    "homeExchangeRate": "1.3456",
+    "homeExchangeRateSource": "MAS_DAILY",
+    "exchangeRateDate": "2025-01-15",
+    "homeSubtotal": "1345.60",
+    "homeTaxAmount": "121.10",
+    "homeEquivalent": "1466.70",
+    "isHomeExchangeRateOverride": false,
+    "lineItems": [
+      {
+        // ... existing fields ...
+        "homeAmount": "673.28",
+        "homeGstAmount": "60.60",
+        "isHomeAmountOverride": false,
+        "isHomeGstOverride": false
+      }
+    ]
   }
 }
 ```
 
-### 3.3 UI Mockup
+#### PATCH `/api/processing-documents/:documentId/revisions/:revisionId`
 
+Request body supports:
+```json
+{
+  "headerUpdates": {
+    // ... existing fields ...
+    "homeCurrency": "SGD",
+    "homeExchangeRate": "1.3456",
+    "homeExchangeRateSource": "MAS_DAILY",
+    "exchangeRateDate": "2025-01-15",
+    "homeSubtotal": "1345.60",
+    "homeTaxAmount": "121.10",
+    "homeEquivalent": "1466.70",
+    "isHomeExchangeRateOverride": true
+  },
+  "itemsToUpsert": [
+    {
+      // ... existing fields ...
+      "homeAmount": "673.28",
+      "homeGstAmount": "60.60",
+      "isHomeAmountOverride": false,
+      "isHomeGstOverride": false
+    }
+  ]
+}
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Document Details                                             │
-├─────────────────────────────────────────────────────────────┤
-│ Currency: USD                    Document Date: 2025-01-15  │
-│                                                              │
-│ ┌─────────────────────────────────────────────────────────┐ │
-│ │ AMOUNTS                                                  │ │
-│ ├─────────────────────────────────────────────────────────┤ │
-│ │ Subtotal:     USD 1,000.00                              │ │
-│ │ Tax Amount:   USD   90.00                               │ │
-│ │ Total:        USD 1,090.00                              │ │
-│ └─────────────────────────────────────────────────────────┘ │
-│                                                              │
-│ ┌─────────────────────────────────────────────────────────┐ │
-│ │ HOME CURRENCY (SGD)                    Rate: 1.3456     │ │
-│ │ Source: MAS Daily | Date: 2025-01-15                    │ │
-│ ├─────────────────────────────────────────────────────────┤ │
-│ │ Home Subtotal:     SGD 1,345.60                         │ │
-│ │ Home Tax Amount:   SGD   121.10                         │ │
-│ │ Home Total:        SGD 1,466.70                         │ │
-│ └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 3.4 Extraction Enhancement
-
-The AI extraction prompt will be updated to look for:
-- Exchange rate mentioned on document
-- Amounts in multiple currencies
-- Base currency indicators
-
-If the source document contains exchange rate information, it will be extracted and used instead of the system rate.
 
 ---
 

@@ -33,6 +33,8 @@ export type DocumentRevisionAvgAggregateOutputType = {
   totalAmount: runtime.Decimal | null
   homeExchangeRate: runtime.Decimal | null
   homeEquivalent: runtime.Decimal | null
+  homeSubtotal: runtime.Decimal | null
+  homeTaxAmount: runtime.Decimal | null
   documentKeyConfidence: number | null
 }
 
@@ -43,6 +45,8 @@ export type DocumentRevisionSumAggregateOutputType = {
   totalAmount: runtime.Decimal | null
   homeExchangeRate: runtime.Decimal | null
   homeEquivalent: runtime.Decimal | null
+  homeSubtotal: runtime.Decimal | null
+  homeTaxAmount: runtime.Decimal | null
   documentKeyConfidence: number | null
 }
 
@@ -74,6 +78,9 @@ export type DocumentRevisionMinAggregateOutputType = {
   homeExchangeRate: runtime.Decimal | null
   exchangeRateDate: Date | null
   homeEquivalent: runtime.Decimal | null
+  homeSubtotal: runtime.Decimal | null
+  homeTaxAmount: runtime.Decimal | null
+  isHomeExchangeRateOverride: boolean | null
   validationStatus: $Enums.ValidationStatus | null
   documentKey: string | null
   documentKeyVersion: string | null
@@ -118,6 +125,9 @@ export type DocumentRevisionMaxAggregateOutputType = {
   homeExchangeRate: runtime.Decimal | null
   exchangeRateDate: Date | null
   homeEquivalent: runtime.Decimal | null
+  homeSubtotal: runtime.Decimal | null
+  homeTaxAmount: runtime.Decimal | null
+  isHomeExchangeRateOverride: boolean | null
   validationStatus: $Enums.ValidationStatus | null
   documentKey: string | null
   documentKeyVersion: string | null
@@ -162,6 +172,9 @@ export type DocumentRevisionCountAggregateOutputType = {
   homeExchangeRate: number
   exchangeRateDate: number
   homeEquivalent: number
+  homeSubtotal: number
+  homeTaxAmount: number
+  isHomeExchangeRateOverride: number
   validationStatus: number
   validationIssues: number
   documentKey: number
@@ -189,6 +202,8 @@ export type DocumentRevisionAvgAggregateInputType = {
   totalAmount?: true
   homeExchangeRate?: true
   homeEquivalent?: true
+  homeSubtotal?: true
+  homeTaxAmount?: true
   documentKeyConfidence?: true
 }
 
@@ -199,6 +214,8 @@ export type DocumentRevisionSumAggregateInputType = {
   totalAmount?: true
   homeExchangeRate?: true
   homeEquivalent?: true
+  homeSubtotal?: true
+  homeTaxAmount?: true
   documentKeyConfidence?: true
 }
 
@@ -230,6 +247,9 @@ export type DocumentRevisionMinAggregateInputType = {
   homeExchangeRate?: true
   exchangeRateDate?: true
   homeEquivalent?: true
+  homeSubtotal?: true
+  homeTaxAmount?: true
+  isHomeExchangeRateOverride?: true
   validationStatus?: true
   documentKey?: true
   documentKeyVersion?: true
@@ -274,6 +294,9 @@ export type DocumentRevisionMaxAggregateInputType = {
   homeExchangeRate?: true
   exchangeRateDate?: true
   homeEquivalent?: true
+  homeSubtotal?: true
+  homeTaxAmount?: true
+  isHomeExchangeRateOverride?: true
   validationStatus?: true
   documentKey?: true
   documentKeyVersion?: true
@@ -318,6 +341,9 @@ export type DocumentRevisionCountAggregateInputType = {
   homeExchangeRate?: true
   exchangeRateDate?: true
   homeEquivalent?: true
+  homeSubtotal?: true
+  homeTaxAmount?: true
+  isHomeExchangeRateOverride?: true
   validationStatus?: true
   validationIssues?: true
   documentKey?: true
@@ -451,6 +477,9 @@ export type DocumentRevisionGroupByOutputType = {
   homeExchangeRate: runtime.Decimal | null
   exchangeRateDate: Date | null
   homeEquivalent: runtime.Decimal | null
+  homeSubtotal: runtime.Decimal | null
+  homeTaxAmount: runtime.Decimal | null
+  isHomeExchangeRateOverride: boolean
   validationStatus: $Enums.ValidationStatus
   validationIssues: runtime.JsonValue | null
   documentKey: string | null
@@ -520,6 +549,9 @@ export type DocumentRevisionWhereInput = {
   homeExchangeRate?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   homeEquivalent?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFilter<"DocumentRevision"> | boolean
   validationStatus?: Prisma.EnumValidationStatusFilter<"DocumentRevision"> | $Enums.ValidationStatus
   validationIssues?: Prisma.JsonNullableFilter<"DocumentRevision">
   documentKey?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
@@ -574,6 +606,9 @@ export type DocumentRevisionOrderByWithRelationInput = {
   homeExchangeRate?: Prisma.SortOrderInput | Prisma.SortOrder
   exchangeRateDate?: Prisma.SortOrderInput | Prisma.SortOrder
   homeEquivalent?: Prisma.SortOrderInput | Prisma.SortOrder
+  homeSubtotal?: Prisma.SortOrderInput | Prisma.SortOrder
+  homeTaxAmount?: Prisma.SortOrderInput | Prisma.SortOrder
+  isHomeExchangeRateOverride?: Prisma.SortOrder
   validationStatus?: Prisma.SortOrder
   validationIssues?: Prisma.SortOrderInput | Prisma.SortOrder
   documentKey?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -632,6 +667,9 @@ export type DocumentRevisionWhereUniqueInput = Prisma.AtLeast<{
   homeExchangeRate?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   homeEquivalent?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFilter<"DocumentRevision"> | boolean
   validationStatus?: Prisma.EnumValidationStatusFilter<"DocumentRevision"> | $Enums.ValidationStatus
   validationIssues?: Prisma.JsonNullableFilter<"DocumentRevision">
   documentKey?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
@@ -686,6 +724,9 @@ export type DocumentRevisionOrderByWithAggregationInput = {
   homeExchangeRate?: Prisma.SortOrderInput | Prisma.SortOrder
   exchangeRateDate?: Prisma.SortOrderInput | Prisma.SortOrder
   homeEquivalent?: Prisma.SortOrderInput | Prisma.SortOrder
+  homeSubtotal?: Prisma.SortOrderInput | Prisma.SortOrder
+  homeTaxAmount?: Prisma.SortOrderInput | Prisma.SortOrder
+  isHomeExchangeRateOverride?: Prisma.SortOrder
   validationStatus?: Prisma.SortOrder
   validationIssues?: Prisma.SortOrderInput | Prisma.SortOrder
   documentKey?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -740,6 +781,9 @@ export type DocumentRevisionScalarWhereWithAggregatesInput = {
   homeExchangeRate?: Prisma.DecimalNullableWithAggregatesFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.DateTimeNullableWithAggregatesFilter<"DocumentRevision"> | Date | string | null
   homeEquivalent?: Prisma.DecimalNullableWithAggregatesFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.DecimalNullableWithAggregatesFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.DecimalNullableWithAggregatesFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolWithAggregatesFilter<"DocumentRevision"> | boolean
   validationStatus?: Prisma.EnumValidationStatusWithAggregatesFilter<"DocumentRevision"> | $Enums.ValidationStatus
   validationIssues?: Prisma.JsonNullableWithAggregatesFilter<"DocumentRevision">
   documentKey?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
@@ -783,6 +827,9 @@ export type DocumentRevisionCreateInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -837,6 +884,9 @@ export type DocumentRevisionUncheckedCreateInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -885,6 +935,9 @@ export type DocumentRevisionUpdateInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -939,6 +992,9 @@ export type DocumentRevisionUncheckedUpdateInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -990,6 +1046,9 @@ export type DocumentRevisionCreateManyInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -1033,6 +1092,9 @@ export type DocumentRevisionUpdateManyMutationInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1079,6 +1141,9 @@ export type DocumentRevisionUncheckedUpdateManyInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1145,6 +1210,9 @@ export type DocumentRevisionCountOrderByAggregateInput = {
   homeExchangeRate?: Prisma.SortOrder
   exchangeRateDate?: Prisma.SortOrder
   homeEquivalent?: Prisma.SortOrder
+  homeSubtotal?: Prisma.SortOrder
+  homeTaxAmount?: Prisma.SortOrder
+  isHomeExchangeRateOverride?: Prisma.SortOrder
   validationStatus?: Prisma.SortOrder
   validationIssues?: Prisma.SortOrder
   documentKey?: Prisma.SortOrder
@@ -1170,6 +1238,8 @@ export type DocumentRevisionAvgOrderByAggregateInput = {
   totalAmount?: Prisma.SortOrder
   homeExchangeRate?: Prisma.SortOrder
   homeEquivalent?: Prisma.SortOrder
+  homeSubtotal?: Prisma.SortOrder
+  homeTaxAmount?: Prisma.SortOrder
   documentKeyConfidence?: Prisma.SortOrder
 }
 
@@ -1201,6 +1271,9 @@ export type DocumentRevisionMaxOrderByAggregateInput = {
   homeExchangeRate?: Prisma.SortOrder
   exchangeRateDate?: Prisma.SortOrder
   homeEquivalent?: Prisma.SortOrder
+  homeSubtotal?: Prisma.SortOrder
+  homeTaxAmount?: Prisma.SortOrder
+  isHomeExchangeRateOverride?: Prisma.SortOrder
   validationStatus?: Prisma.SortOrder
   documentKey?: Prisma.SortOrder
   documentKeyVersion?: Prisma.SortOrder
@@ -1245,6 +1318,9 @@ export type DocumentRevisionMinOrderByAggregateInput = {
   homeExchangeRate?: Prisma.SortOrder
   exchangeRateDate?: Prisma.SortOrder
   homeEquivalent?: Prisma.SortOrder
+  homeSubtotal?: Prisma.SortOrder
+  homeTaxAmount?: Prisma.SortOrder
+  isHomeExchangeRateOverride?: Prisma.SortOrder
   validationStatus?: Prisma.SortOrder
   documentKey?: Prisma.SortOrder
   documentKeyVersion?: Prisma.SortOrder
@@ -1268,6 +1344,8 @@ export type DocumentRevisionSumOrderByAggregateInput = {
   totalAmount?: Prisma.SortOrder
   homeExchangeRate?: Prisma.SortOrder
   homeEquivalent?: Prisma.SortOrder
+  homeSubtotal?: Prisma.SortOrder
+  homeTaxAmount?: Prisma.SortOrder
   documentKeyConfidence?: Prisma.SortOrder
 }
 
@@ -1543,6 +1621,9 @@ export type DocumentRevisionCreateWithoutCurrentForDocumentInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -1596,6 +1677,9 @@ export type DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -1648,6 +1732,9 @@ export type DocumentRevisionCreateWithoutProcessingDocumentInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -1700,6 +1787,9 @@ export type DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -1769,6 +1859,9 @@ export type DocumentRevisionUpdateWithoutCurrentForDocumentInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1822,6 +1915,9 @@ export type DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1891,6 +1987,9 @@ export type DocumentRevisionScalarWhereInput = {
   homeExchangeRate?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   homeEquivalent?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.DecimalNullableFilter<"DocumentRevision"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFilter<"DocumentRevision"> | boolean
   validationStatus?: Prisma.EnumValidationStatusFilter<"DocumentRevision"> | $Enums.ValidationStatus
   validationIssues?: Prisma.JsonNullableFilter<"DocumentRevision">
   documentKey?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
@@ -1934,6 +2033,9 @@ export type DocumentRevisionCreateWithoutExtractionInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -1986,6 +2088,9 @@ export type DocumentRevisionUncheckedCreateWithoutExtractionInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2060,6 +2165,9 @@ export type DocumentRevisionCreateWithoutDerivedRevisionsInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2113,6 +2221,9 @@ export type DocumentRevisionUncheckedCreateWithoutDerivedRevisionsInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2165,6 +2276,9 @@ export type DocumentRevisionCreateWithoutBasedOnRevisionInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2217,6 +2331,9 @@ export type DocumentRevisionUncheckedCreateWithoutBasedOnRevisionInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2286,6 +2403,9 @@ export type DocumentRevisionUpdateWithoutDerivedRevisionsInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2339,6 +2459,9 @@ export type DocumentRevisionUncheckedUpdateWithoutDerivedRevisionsInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2402,6 +2525,9 @@ export type DocumentRevisionCreateWithoutItemsInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2455,6 +2581,9 @@ export type DocumentRevisionUncheckedCreateWithoutItemsInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2518,6 +2647,9 @@ export type DocumentRevisionUpdateWithoutItemsInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2571,6 +2703,9 @@ export type DocumentRevisionUncheckedUpdateWithoutItemsInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2618,6 +2753,9 @@ export type DocumentRevisionCreateWithoutMatchGroupItemsInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2671,6 +2809,9 @@ export type DocumentRevisionUncheckedCreateWithoutMatchGroupItemsInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2734,6 +2875,9 @@ export type DocumentRevisionUpdateWithoutMatchGroupItemsInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2787,6 +2931,9 @@ export type DocumentRevisionUncheckedUpdateWithoutMatchGroupItemsInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2834,6 +2981,9 @@ export type DocumentRevisionCreateWithoutPostingsInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2887,6 +3037,9 @@ export type DocumentRevisionUncheckedCreateWithoutPostingsInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -2950,6 +3103,9 @@ export type DocumentRevisionUpdateWithoutPostingsInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3003,6 +3159,9 @@ export type DocumentRevisionUncheckedUpdateWithoutPostingsInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3052,6 +3211,9 @@ export type DocumentRevisionCreateManyProcessingDocumentInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -3095,6 +3257,9 @@ export type DocumentRevisionUpdateWithoutProcessingDocumentInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3147,6 +3312,9 @@ export type DocumentRevisionUncheckedUpdateWithoutProcessingDocumentInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3197,6 +3365,9 @@ export type DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentInput = 
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3242,6 +3413,9 @@ export type DocumentRevisionCreateManyExtractionInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -3285,6 +3459,9 @@ export type DocumentRevisionUpdateWithoutExtractionInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3337,6 +3514,9 @@ export type DocumentRevisionUncheckedUpdateWithoutExtractionInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3387,6 +3567,9 @@ export type DocumentRevisionUncheckedUpdateManyWithoutExtractionInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3432,6 +3615,9 @@ export type DocumentRevisionCreateManyBasedOnRevisionInput = {
   homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Date | string | null
   homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: string | null
@@ -3475,6 +3661,9 @@ export type DocumentRevisionUpdateWithoutBasedOnRevisionInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3527,6 +3716,9 @@ export type DocumentRevisionUncheckedUpdateWithoutBasedOnRevisionInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3577,6 +3769,9 @@ export type DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionInput = {
   homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
   validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3681,6 +3876,9 @@ export type DocumentRevisionSelect<ExtArgs extends runtime.Types.Extensions.Inte
   homeExchangeRate?: boolean
   exchangeRateDate?: boolean
   homeEquivalent?: boolean
+  homeSubtotal?: boolean
+  homeTaxAmount?: boolean
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: boolean
   validationIssues?: boolean
   documentKey?: boolean
@@ -3736,6 +3934,9 @@ export type DocumentRevisionSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   homeExchangeRate?: boolean
   exchangeRateDate?: boolean
   homeEquivalent?: boolean
+  homeSubtotal?: boolean
+  homeTaxAmount?: boolean
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: boolean
   validationIssues?: boolean
   documentKey?: boolean
@@ -3785,6 +3986,9 @@ export type DocumentRevisionSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   homeExchangeRate?: boolean
   exchangeRateDate?: boolean
   homeEquivalent?: boolean
+  homeSubtotal?: boolean
+  homeTaxAmount?: boolean
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: boolean
   validationIssues?: boolean
   documentKey?: boolean
@@ -3834,6 +4038,9 @@ export type DocumentRevisionSelectScalar = {
   homeExchangeRate?: boolean
   exchangeRateDate?: boolean
   homeEquivalent?: boolean
+  homeSubtotal?: boolean
+  homeTaxAmount?: boolean
+  isHomeExchangeRateOverride?: boolean
   validationStatus?: boolean
   validationIssues?: boolean
   documentKey?: boolean
@@ -3852,7 +4059,7 @@ export type DocumentRevisionSelectScalar = {
   supersededAt?: boolean
 }
 
-export type DocumentRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "processingDocumentId" | "basedOnRevisionId" | "extractionId" | "revisionNumber" | "revisionType" | "status" | "reason" | "documentCategory" | "documentSubCategory" | "vendorName" | "vendorId" | "documentNumber" | "documentDate" | "dueDate" | "currency" | "subtotal" | "taxAmount" | "totalAmount" | "roundingMode" | "gstTreatment" | "supplierGstNo" | "homeCurrency" | "homeExchangeRateSource" | "homeExchangeRate" | "exchangeRateDate" | "homeEquivalent" | "validationStatus" | "validationIssues" | "documentKey" | "documentKeyVersion" | "documentKeyConfidence" | "headerEvidenceJson" | "postingStatus" | "postedAt" | "postingLock" | "reconciliationStatus" | "searchText" | "createdById" | "createdAt" | "approvedById" | "approvedAt" | "supersededAt", ExtArgs["result"]["documentRevision"]>
+export type DocumentRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "processingDocumentId" | "basedOnRevisionId" | "extractionId" | "revisionNumber" | "revisionType" | "status" | "reason" | "documentCategory" | "documentSubCategory" | "vendorName" | "vendorId" | "documentNumber" | "documentDate" | "dueDate" | "currency" | "subtotal" | "taxAmount" | "totalAmount" | "roundingMode" | "gstTreatment" | "supplierGstNo" | "homeCurrency" | "homeExchangeRateSource" | "homeExchangeRate" | "exchangeRateDate" | "homeEquivalent" | "homeSubtotal" | "homeTaxAmount" | "isHomeExchangeRateOverride" | "validationStatus" | "validationIssues" | "documentKey" | "documentKeyVersion" | "documentKeyConfidence" | "headerEvidenceJson" | "postingStatus" | "postedAt" | "postingLock" | "reconciliationStatus" | "searchText" | "createdById" | "createdAt" | "approvedById" | "approvedAt" | "supersededAt", ExtArgs["result"]["documentRevision"]>
 export type DocumentRevisionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
@@ -3915,6 +4122,9 @@ export type $DocumentRevisionPayload<ExtArgs extends runtime.Types.Extensions.In
     homeExchangeRate: runtime.Decimal | null
     exchangeRateDate: Date | null
     homeEquivalent: runtime.Decimal | null
+    homeSubtotal: runtime.Decimal | null
+    homeTaxAmount: runtime.Decimal | null
+    isHomeExchangeRateOverride: boolean
     validationStatus: $Enums.ValidationStatus
     validationIssues: runtime.JsonValue | null
     documentKey: string | null
@@ -4389,6 +4599,9 @@ export interface DocumentRevisionFieldRefs {
   readonly homeExchangeRate: Prisma.FieldRef<"DocumentRevision", 'Decimal'>
   readonly exchangeRateDate: Prisma.FieldRef<"DocumentRevision", 'DateTime'>
   readonly homeEquivalent: Prisma.FieldRef<"DocumentRevision", 'Decimal'>
+  readonly homeSubtotal: Prisma.FieldRef<"DocumentRevision", 'Decimal'>
+  readonly homeTaxAmount: Prisma.FieldRef<"DocumentRevision", 'Decimal'>
+  readonly isHomeExchangeRateOverride: Prisma.FieldRef<"DocumentRevision", 'Boolean'>
   readonly validationStatus: Prisma.FieldRef<"DocumentRevision", 'ValidationStatus'>
   readonly validationIssues: Prisma.FieldRef<"DocumentRevision", 'Json'>
   readonly documentKey: Prisma.FieldRef<"DocumentRevision", 'String'>

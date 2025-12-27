@@ -760,7 +760,7 @@ export function DocumentPageViewer({
 
       {/* PDF viewer */}
       <div className="flex-1 overflow-auto p-4 bg-background-secondary">
-        <div className="min-h-full flex items-center justify-center">
+        <div className="inline-flex min-w-full min-h-full items-center justify-center">
           <div className="relative">
             {isPdfLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary rounded z-10 min-w-[600px] min-h-[800px]">

@@ -1523,9 +1523,9 @@ enum ValidationStatus {
 enum ExchangeRateSource {
   MAS_DAILY
   IRAS_MONTHLY_AVG
-  ECB_DAILY
   MANUAL
   PROVIDER_DEFAULT
+  DOCUMENT // Extracted from the document itself (e.g., invoice shows home currency equivalent)
 }
 
 // Rounding Mode
@@ -1886,6 +1886,10 @@ model DocumentRevision {
   homeExchangeRate        Decimal?                    @db.Decimal(18, 8) @map("home_exchange_rate")
   exchangeRateDate        DateTime?                   @db.Date @map("exchange_rate_date")
   homeEquivalent          Decimal?                    @db.Decimal(18, 4) @map("home_equivalent")
+  // Phase 2: Additional home currency fields
+  homeSubtotal            Decimal?                    @db.Decimal(18, 4) @map("home_subtotal")
+  homeTaxAmount           Decimal?                    @db.Decimal(18, 4) @map("home_tax_amount")
+  isHomeExchangeRateOverride Boolean                  @default(false) @map("is_home_exchange_rate_override")
 
   // Validation
   validationStatus        ValidationStatus            @default(PENDING) @map("validation_status")
@@ -1955,6 +1959,12 @@ model DocumentRevisionLineItem {
 
   // Evidence for this line item
   evidenceJson  Json?            @map("evidence_json")
+
+  // Phase 2: Home currency conversion
+  homeAmount            Decimal?  @db.Decimal(18, 4) @map("home_amount")
+  homeGstAmount         Decimal?  @db.Decimal(18, 4) @map("home_gst_amount")
+  isHomeAmountOverride  Boolean   @default(false) @map("is_home_amount_override")
+  isHomeGstOverride     Boolean   @default(false) @map("is_home_gst_override")
 
   @@unique([revisionId, lineNo])
   @@index([revisionId])

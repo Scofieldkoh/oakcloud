@@ -25,7 +25,9 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { BulkActionsToolbar } from '@/components/processing/bulk-actions-toolbar';
+import { ProcessingFilters, type ProcessingFilterValues } from '@/components/processing/processing-filters';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+import { useCompanies } from '@/hooks/use-companies';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 
@@ -122,6 +124,16 @@ export default function ProcessingDocumentsPage() {
       revisionStatus: (searchParams.get('revisionStatus') || undefined) as RevisionStatus | undefined,
       isContainer: searchParams.get('isContainer') === 'true' ? true :
                    searchParams.get('isContainer') === 'false' ? false : undefined,
+      // New filter parameters
+      companyId: searchParams.get('companyId') || undefined,
+      uploadDateFrom: searchParams.get('uploadDateFrom') || undefined,
+      uploadDateTo: searchParams.get('uploadDateTo') || undefined,
+      documentDateFrom: searchParams.get('documentDateFrom') || undefined,
+      documentDateTo: searchParams.get('documentDateTo') || undefined,
+      search: searchParams.get('search') || undefined,
+      vendorName: searchParams.get('vendorName') || undefined,
+      documentNumber: searchParams.get('documentNumber') || undefined,
+      fileName: searchParams.get('fileName') || undefined,
     };
   }, [searchParams]);
 
@@ -132,6 +144,12 @@ export default function ProcessingDocumentsPage() {
   const { data, isLoading, error, refetch } = useProcessingDocuments({
     ...params,
     tenantId: activeTenantId,
+  });
+
+  // Fetch companies for filter dropdown
+  const { data: companiesData } = useCompanies({
+    tenantId: activeTenantId || undefined,
+    limit: 200, // Fetch all companies for dropdown
   });
 
   // Reset page and selection when tenant changes
@@ -185,6 +203,16 @@ export default function ProcessingDocumentsPage() {
     if (params.duplicateStatus) urlParams.set('duplicateStatus', params.duplicateStatus);
     if (params.revisionStatus) urlParams.set('revisionStatus', params.revisionStatus);
     if (params.isContainer !== undefined) urlParams.set('isContainer', params.isContainer.toString());
+    // New filter parameters
+    if (params.companyId) urlParams.set('companyId', params.companyId);
+    if (params.uploadDateFrom) urlParams.set('uploadDateFrom', params.uploadDateFrom);
+    if (params.uploadDateTo) urlParams.set('uploadDateTo', params.uploadDateTo);
+    if (params.documentDateFrom) urlParams.set('documentDateFrom', params.documentDateFrom);
+    if (params.documentDateTo) urlParams.set('documentDateTo', params.documentDateTo);
+    if (params.search) urlParams.set('search', params.search);
+    if (params.vendorName) urlParams.set('vendorName', params.vendorName);
+    if (params.documentNumber) urlParams.set('documentNumber', params.documentNumber);
+    if (params.fileName) urlParams.set('fileName', params.fileName);
 
     const queryString = urlParams.toString();
     return queryString ? `/processing?${queryString}` : '/processing';
@@ -201,9 +229,39 @@ export default function ProcessingDocumentsPage() {
     setParams((prev) => ({ ...prev, page }));
   };
 
-  const handleFilterChange = (key: keyof ProcessingDocumentSearchParams, value: string | undefined) => {
-    setParams((prev) => ({ ...prev, [key]: value, page: 1 }));
-  };
+  // Handler for the new ProcessingFilters component
+  const handleFiltersChange = useCallback((filters: ProcessingFilterValues) => {
+    setParams((prev) => ({
+      // Keep pagination and sorting params
+      page: 1, // Reset to first page on filter change
+      limit: prev.limit,
+      sortBy: prev.sortBy,
+      sortOrder: prev.sortOrder,
+      // Replace all filter fields with the new values (undefined if cleared)
+      pipelineStatus: filters.pipelineStatus,
+      duplicateStatus: filters.duplicateStatus,
+      revisionStatus: filters.revisionStatus,
+      isContainer: filters.isContainer,
+      companyId: filters.companyId,
+      uploadDateFrom: filters.uploadDateFrom,
+      uploadDateTo: filters.uploadDateTo,
+      documentDateFrom: filters.documentDateFrom,
+      documentDateTo: filters.documentDateTo,
+      vendorName: filters.vendorName,
+      documentNumber: filters.documentNumber,
+      fileName: filters.fileName,
+      // Keep search separate (handled by handleSearchChange)
+      search: prev.search,
+    }));
+  }, []);
+
+  const handleSearchChange = useCallback((query: string) => {
+    setParams((prev) => ({
+      ...prev,
+      search: query || undefined,
+      page: 1,
+    }));
+  }, []);
 
   // Calculate stats from data
   const stats = useMemo(() => {
@@ -334,66 +392,27 @@ export default function ProcessingDocumentsPage() {
       )}
 
       {/* Filters */}
-      <div className="card p-4 mb-6">
-        <div className="flex flex-wrap gap-4">
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Pipeline Status</label>
-            <select
-              value={params.pipelineStatus || ''}
-              onChange={(e) => handleFilterChange('pipelineStatus', e.target.value || undefined)}
-              className="input input-sm w-40"
-            >
-              <option value="">All Statuses</option>
-              {Object.entries(pipelineStatusConfig).map(([key, config]) => (
-                <option key={key} value={key}>
-                  {config.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Review Status</label>
-            <select
-              value={params.revisionStatus || ''}
-              onChange={(e) => handleFilterChange('revisionStatus', e.target.value || undefined)}
-              className="input input-sm w-40"
-            >
-              <option value="">All</option>
-              <option value="DRAFT">Pending Review</option>
-              <option value="APPROVED">Approved</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Duplicate Status</label>
-            <select
-              value={params.duplicateStatus || ''}
-              onChange={(e) => handleFilterChange('duplicateStatus', e.target.value || undefined)}
-              className="input input-sm w-40"
-            >
-              <option value="">All</option>
-              {Object.entries(duplicateStatusConfig).map(([key, config]) => (
-                <option key={key} value={key}>
-                  {config.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Document Type</label>
-            <select
-              value={params.isContainer === undefined ? '' : params.isContainer ? 'true' : 'false'}
-              onChange={(e) => handleFilterChange('isContainer', e.target.value || undefined)}
-              className="input input-sm w-40"
-            >
-              <option value="">All Types</option>
-              <option value="true">Containers Only</option>
-              <option value="false">Children Only</option>
-            </select>
-          </div>
-        </div>
+      <div className="mb-6">
+        <ProcessingFilters
+          onFilterChange={handleFiltersChange}
+          initialFilters={{
+            pipelineStatus: params.pipelineStatus,
+            duplicateStatus: params.duplicateStatus,
+            revisionStatus: params.revisionStatus,
+            isContainer: params.isContainer,
+            companyId: params.companyId,
+            uploadDateFrom: params.uploadDateFrom,
+            uploadDateTo: params.uploadDateTo,
+            documentDateFrom: params.documentDateFrom,
+            documentDateTo: params.documentDateTo,
+            vendorName: params.vendorName,
+            documentNumber: params.documentNumber,
+            fileName: params.fileName,
+          }}
+          onSearchChange={handleSearchChange}
+          initialSearch={params.search || ''}
+          companies={companiesData?.companies.map(c => ({ id: c.id, name: c.name })) || []}
+        />
       </div>
 
       {/* Error State */}

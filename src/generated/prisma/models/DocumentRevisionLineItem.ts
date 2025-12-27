@@ -32,6 +32,8 @@ export type DocumentRevisionLineItemAvgAggregateOutputType = {
   unitPrice: runtime.Decimal | null
   amount: runtime.Decimal | null
   gstAmount: runtime.Decimal | null
+  homeAmount: runtime.Decimal | null
+  homeGstAmount: runtime.Decimal | null
 }
 
 export type DocumentRevisionLineItemSumAggregateOutputType = {
@@ -40,6 +42,8 @@ export type DocumentRevisionLineItemSumAggregateOutputType = {
   unitPrice: runtime.Decimal | null
   amount: runtime.Decimal | null
   gstAmount: runtime.Decimal | null
+  homeAmount: runtime.Decimal | null
+  homeGstAmount: runtime.Decimal | null
 }
 
 export type DocumentRevisionLineItemMinAggregateOutputType = {
@@ -53,6 +57,10 @@ export type DocumentRevisionLineItemMinAggregateOutputType = {
   gstAmount: runtime.Decimal | null
   taxCode: string | null
   accountCode: string | null
+  homeAmount: runtime.Decimal | null
+  homeGstAmount: runtime.Decimal | null
+  isHomeAmountOverride: boolean | null
+  isHomeGstOverride: boolean | null
 }
 
 export type DocumentRevisionLineItemMaxAggregateOutputType = {
@@ -66,6 +74,10 @@ export type DocumentRevisionLineItemMaxAggregateOutputType = {
   gstAmount: runtime.Decimal | null
   taxCode: string | null
   accountCode: string | null
+  homeAmount: runtime.Decimal | null
+  homeGstAmount: runtime.Decimal | null
+  isHomeAmountOverride: boolean | null
+  isHomeGstOverride: boolean | null
 }
 
 export type DocumentRevisionLineItemCountAggregateOutputType = {
@@ -80,6 +92,10 @@ export type DocumentRevisionLineItemCountAggregateOutputType = {
   taxCode: number
   accountCode: number
   evidenceJson: number
+  homeAmount: number
+  homeGstAmount: number
+  isHomeAmountOverride: number
+  isHomeGstOverride: number
   _all: number
 }
 
@@ -90,6 +106,8 @@ export type DocumentRevisionLineItemAvgAggregateInputType = {
   unitPrice?: true
   amount?: true
   gstAmount?: true
+  homeAmount?: true
+  homeGstAmount?: true
 }
 
 export type DocumentRevisionLineItemSumAggregateInputType = {
@@ -98,6 +116,8 @@ export type DocumentRevisionLineItemSumAggregateInputType = {
   unitPrice?: true
   amount?: true
   gstAmount?: true
+  homeAmount?: true
+  homeGstAmount?: true
 }
 
 export type DocumentRevisionLineItemMinAggregateInputType = {
@@ -111,6 +131,10 @@ export type DocumentRevisionLineItemMinAggregateInputType = {
   gstAmount?: true
   taxCode?: true
   accountCode?: true
+  homeAmount?: true
+  homeGstAmount?: true
+  isHomeAmountOverride?: true
+  isHomeGstOverride?: true
 }
 
 export type DocumentRevisionLineItemMaxAggregateInputType = {
@@ -124,6 +148,10 @@ export type DocumentRevisionLineItemMaxAggregateInputType = {
   gstAmount?: true
   taxCode?: true
   accountCode?: true
+  homeAmount?: true
+  homeGstAmount?: true
+  isHomeAmountOverride?: true
+  isHomeGstOverride?: true
 }
 
 export type DocumentRevisionLineItemCountAggregateInputType = {
@@ -138,6 +166,10 @@ export type DocumentRevisionLineItemCountAggregateInputType = {
   taxCode?: true
   accountCode?: true
   evidenceJson?: true
+  homeAmount?: true
+  homeGstAmount?: true
+  isHomeAmountOverride?: true
+  isHomeGstOverride?: true
   _all?: true
 }
 
@@ -239,6 +271,10 @@ export type DocumentRevisionLineItemGroupByOutputType = {
   taxCode: string | null
   accountCode: string | null
   evidenceJson: runtime.JsonValue | null
+  homeAmount: runtime.Decimal | null
+  homeGstAmount: runtime.Decimal | null
+  isHomeAmountOverride: boolean
+  isHomeGstOverride: boolean
   _count: DocumentRevisionLineItemCountAggregateOutputType | null
   _avg: DocumentRevisionLineItemAvgAggregateOutputType | null
   _sum: DocumentRevisionLineItemSumAggregateOutputType | null
@@ -276,6 +312,10 @@ export type DocumentRevisionLineItemWhereInput = {
   taxCode?: Prisma.StringNullableFilter<"DocumentRevisionLineItem"> | string | null
   accountCode?: Prisma.StringNullableFilter<"DocumentRevisionLineItem"> | string | null
   evidenceJson?: Prisma.JsonNullableFilter<"DocumentRevisionLineItem">
+  homeAmount?: Prisma.DecimalNullableFilter<"DocumentRevisionLineItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.DecimalNullableFilter<"DocumentRevisionLineItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFilter<"DocumentRevisionLineItem"> | boolean
+  isHomeGstOverride?: Prisma.BoolFilter<"DocumentRevisionLineItem"> | boolean
   revision?: Prisma.XOR<Prisma.DocumentRevisionScalarRelationFilter, Prisma.DocumentRevisionWhereInput>
 }
 
@@ -291,6 +331,10 @@ export type DocumentRevisionLineItemOrderByWithRelationInput = {
   taxCode?: Prisma.SortOrderInput | Prisma.SortOrder
   accountCode?: Prisma.SortOrderInput | Prisma.SortOrder
   evidenceJson?: Prisma.SortOrderInput | Prisma.SortOrder
+  homeAmount?: Prisma.SortOrderInput | Prisma.SortOrder
+  homeGstAmount?: Prisma.SortOrderInput | Prisma.SortOrder
+  isHomeAmountOverride?: Prisma.SortOrder
+  isHomeGstOverride?: Prisma.SortOrder
   revision?: Prisma.DocumentRevisionOrderByWithRelationInput
 }
 
@@ -310,6 +354,10 @@ export type DocumentRevisionLineItemWhereUniqueInput = Prisma.AtLeast<{
   taxCode?: Prisma.StringNullableFilter<"DocumentRevisionLineItem"> | string | null
   accountCode?: Prisma.StringNullableFilter<"DocumentRevisionLineItem"> | string | null
   evidenceJson?: Prisma.JsonNullableFilter<"DocumentRevisionLineItem">
+  homeAmount?: Prisma.DecimalNullableFilter<"DocumentRevisionLineItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.DecimalNullableFilter<"DocumentRevisionLineItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFilter<"DocumentRevisionLineItem"> | boolean
+  isHomeGstOverride?: Prisma.BoolFilter<"DocumentRevisionLineItem"> | boolean
   revision?: Prisma.XOR<Prisma.DocumentRevisionScalarRelationFilter, Prisma.DocumentRevisionWhereInput>
 }, "id" | "revisionId_lineNo">
 
@@ -325,6 +373,10 @@ export type DocumentRevisionLineItemOrderByWithAggregationInput = {
   taxCode?: Prisma.SortOrderInput | Prisma.SortOrder
   accountCode?: Prisma.SortOrderInput | Prisma.SortOrder
   evidenceJson?: Prisma.SortOrderInput | Prisma.SortOrder
+  homeAmount?: Prisma.SortOrderInput | Prisma.SortOrder
+  homeGstAmount?: Prisma.SortOrderInput | Prisma.SortOrder
+  isHomeAmountOverride?: Prisma.SortOrder
+  isHomeGstOverride?: Prisma.SortOrder
   _count?: Prisma.DocumentRevisionLineItemCountOrderByAggregateInput
   _avg?: Prisma.DocumentRevisionLineItemAvgOrderByAggregateInput
   _max?: Prisma.DocumentRevisionLineItemMaxOrderByAggregateInput
@@ -347,6 +399,10 @@ export type DocumentRevisionLineItemScalarWhereWithAggregatesInput = {
   taxCode?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevisionLineItem"> | string | null
   accountCode?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevisionLineItem"> | string | null
   evidenceJson?: Prisma.JsonNullableWithAggregatesFilter<"DocumentRevisionLineItem">
+  homeAmount?: Prisma.DecimalNullableWithAggregatesFilter<"DocumentRevisionLineItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.DecimalNullableWithAggregatesFilter<"DocumentRevisionLineItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolWithAggregatesFilter<"DocumentRevisionLineItem"> | boolean
+  isHomeGstOverride?: Prisma.BoolWithAggregatesFilter<"DocumentRevisionLineItem"> | boolean
 }
 
 export type DocumentRevisionLineItemCreateInput = {
@@ -360,6 +416,10 @@ export type DocumentRevisionLineItemCreateInput = {
   taxCode?: string | null
   accountCode?: string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
   revision: Prisma.DocumentRevisionCreateNestedOneWithoutItemsInput
 }
 
@@ -375,6 +435,10 @@ export type DocumentRevisionLineItemUncheckedCreateInput = {
   taxCode?: string | null
   accountCode?: string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
 }
 
 export type DocumentRevisionLineItemUpdateInput = {
@@ -388,6 +452,10 @@ export type DocumentRevisionLineItemUpdateInput = {
   taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accountCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHomeGstOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
   revision?: Prisma.DocumentRevisionUpdateOneRequiredWithoutItemsNestedInput
 }
 
@@ -403,6 +471,10 @@ export type DocumentRevisionLineItemUncheckedUpdateInput = {
   taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accountCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHomeGstOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DocumentRevisionLineItemCreateManyInput = {
@@ -417,6 +489,10 @@ export type DocumentRevisionLineItemCreateManyInput = {
   taxCode?: string | null
   accountCode?: string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
 }
 
 export type DocumentRevisionLineItemUpdateManyMutationInput = {
@@ -430,6 +506,10 @@ export type DocumentRevisionLineItemUpdateManyMutationInput = {
   taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accountCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHomeGstOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DocumentRevisionLineItemUncheckedUpdateManyInput = {
@@ -444,6 +524,10 @@ export type DocumentRevisionLineItemUncheckedUpdateManyInput = {
   taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accountCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHomeGstOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DocumentRevisionLineItemListRelationFilter = {
@@ -473,6 +557,10 @@ export type DocumentRevisionLineItemCountOrderByAggregateInput = {
   taxCode?: Prisma.SortOrder
   accountCode?: Prisma.SortOrder
   evidenceJson?: Prisma.SortOrder
+  homeAmount?: Prisma.SortOrder
+  homeGstAmount?: Prisma.SortOrder
+  isHomeAmountOverride?: Prisma.SortOrder
+  isHomeGstOverride?: Prisma.SortOrder
 }
 
 export type DocumentRevisionLineItemAvgOrderByAggregateInput = {
@@ -481,6 +569,8 @@ export type DocumentRevisionLineItemAvgOrderByAggregateInput = {
   unitPrice?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   gstAmount?: Prisma.SortOrder
+  homeAmount?: Prisma.SortOrder
+  homeGstAmount?: Prisma.SortOrder
 }
 
 export type DocumentRevisionLineItemMaxOrderByAggregateInput = {
@@ -494,6 +584,10 @@ export type DocumentRevisionLineItemMaxOrderByAggregateInput = {
   gstAmount?: Prisma.SortOrder
   taxCode?: Prisma.SortOrder
   accountCode?: Prisma.SortOrder
+  homeAmount?: Prisma.SortOrder
+  homeGstAmount?: Prisma.SortOrder
+  isHomeAmountOverride?: Prisma.SortOrder
+  isHomeGstOverride?: Prisma.SortOrder
 }
 
 export type DocumentRevisionLineItemMinOrderByAggregateInput = {
@@ -507,6 +601,10 @@ export type DocumentRevisionLineItemMinOrderByAggregateInput = {
   gstAmount?: Prisma.SortOrder
   taxCode?: Prisma.SortOrder
   accountCode?: Prisma.SortOrder
+  homeAmount?: Prisma.SortOrder
+  homeGstAmount?: Prisma.SortOrder
+  isHomeAmountOverride?: Prisma.SortOrder
+  isHomeGstOverride?: Prisma.SortOrder
 }
 
 export type DocumentRevisionLineItemSumOrderByAggregateInput = {
@@ -515,6 +613,8 @@ export type DocumentRevisionLineItemSumOrderByAggregateInput = {
   unitPrice?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   gstAmount?: Prisma.SortOrder
+  homeAmount?: Prisma.SortOrder
+  homeGstAmount?: Prisma.SortOrder
 }
 
 export type DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput = {
@@ -570,6 +670,10 @@ export type DocumentRevisionLineItemCreateWithoutRevisionInput = {
   taxCode?: string | null
   accountCode?: string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
 }
 
 export type DocumentRevisionLineItemUncheckedCreateWithoutRevisionInput = {
@@ -583,6 +687,10 @@ export type DocumentRevisionLineItemUncheckedCreateWithoutRevisionInput = {
   taxCode?: string | null
   accountCode?: string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
 }
 
 export type DocumentRevisionLineItemCreateOrConnectWithoutRevisionInput = {
@@ -626,6 +734,10 @@ export type DocumentRevisionLineItemScalarWhereInput = {
   taxCode?: Prisma.StringNullableFilter<"DocumentRevisionLineItem"> | string | null
   accountCode?: Prisma.StringNullableFilter<"DocumentRevisionLineItem"> | string | null
   evidenceJson?: Prisma.JsonNullableFilter<"DocumentRevisionLineItem">
+  homeAmount?: Prisma.DecimalNullableFilter<"DocumentRevisionLineItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.DecimalNullableFilter<"DocumentRevisionLineItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFilter<"DocumentRevisionLineItem"> | boolean
+  isHomeGstOverride?: Prisma.BoolFilter<"DocumentRevisionLineItem"> | boolean
 }
 
 export type DocumentRevisionLineItemCreateManyRevisionInput = {
@@ -639,6 +751,10 @@ export type DocumentRevisionLineItemCreateManyRevisionInput = {
   taxCode?: string | null
   accountCode?: string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
 }
 
 export type DocumentRevisionLineItemUpdateWithoutRevisionInput = {
@@ -652,6 +768,10 @@ export type DocumentRevisionLineItemUpdateWithoutRevisionInput = {
   taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accountCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHomeGstOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DocumentRevisionLineItemUncheckedUpdateWithoutRevisionInput = {
@@ -665,6 +785,10 @@ export type DocumentRevisionLineItemUncheckedUpdateWithoutRevisionInput = {
   taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accountCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHomeGstOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionInput = {
@@ -678,6 +802,10 @@ export type DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionInput = {
   taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accountCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  homeAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeGstAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeAmountOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHomeGstOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 
@@ -694,6 +822,10 @@ export type DocumentRevisionLineItemSelect<ExtArgs extends runtime.Types.Extensi
   taxCode?: boolean
   accountCode?: boolean
   evidenceJson?: boolean
+  homeAmount?: boolean
+  homeGstAmount?: boolean
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
   revision?: boolean | Prisma.DocumentRevisionDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentRevisionLineItem"]>
 
@@ -709,6 +841,10 @@ export type DocumentRevisionLineItemSelectCreateManyAndReturn<ExtArgs extends ru
   taxCode?: boolean
   accountCode?: boolean
   evidenceJson?: boolean
+  homeAmount?: boolean
+  homeGstAmount?: boolean
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
   revision?: boolean | Prisma.DocumentRevisionDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentRevisionLineItem"]>
 
@@ -724,6 +860,10 @@ export type DocumentRevisionLineItemSelectUpdateManyAndReturn<ExtArgs extends ru
   taxCode?: boolean
   accountCode?: boolean
   evidenceJson?: boolean
+  homeAmount?: boolean
+  homeGstAmount?: boolean
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
   revision?: boolean | Prisma.DocumentRevisionDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentRevisionLineItem"]>
 
@@ -739,9 +879,13 @@ export type DocumentRevisionLineItemSelectScalar = {
   taxCode?: boolean
   accountCode?: boolean
   evidenceJson?: boolean
+  homeAmount?: boolean
+  homeGstAmount?: boolean
+  isHomeAmountOverride?: boolean
+  isHomeGstOverride?: boolean
 }
 
-export type DocumentRevisionLineItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "revisionId" | "lineNo" | "description" | "quantity" | "unitPrice" | "amount" | "gstAmount" | "taxCode" | "accountCode" | "evidenceJson", ExtArgs["result"]["documentRevisionLineItem"]>
+export type DocumentRevisionLineItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "revisionId" | "lineNo" | "description" | "quantity" | "unitPrice" | "amount" | "gstAmount" | "taxCode" | "accountCode" | "evidenceJson" | "homeAmount" | "homeGstAmount" | "isHomeAmountOverride" | "isHomeGstOverride", ExtArgs["result"]["documentRevisionLineItem"]>
 export type DocumentRevisionLineItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   revision?: boolean | Prisma.DocumentRevisionDefaultArgs<ExtArgs>
 }
@@ -769,6 +913,10 @@ export type $DocumentRevisionLineItemPayload<ExtArgs extends runtime.Types.Exten
     taxCode: string | null
     accountCode: string | null
     evidenceJson: runtime.JsonValue | null
+    homeAmount: runtime.Decimal | null
+    homeGstAmount: runtime.Decimal | null
+    isHomeAmountOverride: boolean
+    isHomeGstOverride: boolean
   }, ExtArgs["result"]["documentRevisionLineItem"]>
   composites: {}
 }
@@ -1204,6 +1352,10 @@ export interface DocumentRevisionLineItemFieldRefs {
   readonly taxCode: Prisma.FieldRef<"DocumentRevisionLineItem", 'String'>
   readonly accountCode: Prisma.FieldRef<"DocumentRevisionLineItem", 'String'>
   readonly evidenceJson: Prisma.FieldRef<"DocumentRevisionLineItem", 'Json'>
+  readonly homeAmount: Prisma.FieldRef<"DocumentRevisionLineItem", 'Decimal'>
+  readonly homeGstAmount: Prisma.FieldRef<"DocumentRevisionLineItem", 'Decimal'>
+  readonly isHomeAmountOverride: Prisma.FieldRef<"DocumentRevisionLineItem", 'Boolean'>
+  readonly isHomeGstOverride: Prisma.FieldRef<"DocumentRevisionLineItem", 'Boolean'>
 }
     
 

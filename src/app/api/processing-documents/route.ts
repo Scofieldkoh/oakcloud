@@ -56,6 +56,16 @@ export async function GET(request: NextRequest) {
     const isContainerStr = searchParams.get('isContainer');
     const companyId = searchParams.get('companyId');
 
+    // New filter parameters
+    const uploadDateFrom = searchParams.get('uploadDateFrom');
+    const uploadDateTo = searchParams.get('uploadDateTo');
+    const documentDateFrom = searchParams.get('documentDateFrom');
+    const documentDateTo = searchParams.get('documentDateTo');
+    const search = searchParams.get('search');
+    const vendorName = searchParams.get('vendorName');
+    const documentNumber = searchParams.get('documentNumber');
+    const fileName = searchParams.get('fileName');
+
     const page = pageStr ? parseInt(pageStr, 10) : 1;
     const limit = Math.min(limitStr ? parseInt(limitStr, 10) : 20, 100);
     const isContainer =
@@ -114,6 +124,15 @@ export async function GET(request: NextRequest) {
       sortBy,
       sortOrder,
       skipTenantFilter: session.isSuperAdmin && !effectiveTenantId,
+      // New filter parameters
+      uploadDateFrom: uploadDateFrom ? new Date(uploadDateFrom) : undefined,
+      uploadDateTo: uploadDateTo ? new Date(uploadDateTo) : undefined,
+      documentDateFrom: documentDateFrom ? new Date(documentDateFrom) : undefined,
+      documentDateTo: documentDateTo ? new Date(documentDateTo) : undefined,
+      search: search ?? undefined,
+      vendorName: vendorName ?? undefined,
+      documentNumber: documentNumber ?? undefined,
+      fileName: fileName ?? undefined,
     });
 
     // Transform for API response (convert Decimal to string, Date to ISO string)

@@ -886,6 +886,16 @@ export async function listProcessingDocumentsPaged(options: {
    * cross-tenant access. Regular operations MUST always provide tenantId.
    */
   skipTenantFilter?: boolean;
+  // Date range filters
+  uploadDateFrom?: Date;
+  uploadDateTo?: Date;
+  documentDateFrom?: Date;
+  documentDateTo?: Date;
+  // Text search filters
+  search?: string;
+  vendorName?: string;
+  documentNumber?: string;
+  fileName?: string;
 }): Promise<{
   documents: ProcessingDocumentWithDocument[];
   total: number;
@@ -905,6 +915,15 @@ export async function listProcessingDocumentsPaged(options: {
     sortBy = 'createdAt',
     sortOrder = 'desc',
     skipTenantFilter = false,
+    // New filter parameters
+    uploadDateFrom,
+    uploadDateTo,
+    documentDateFrom,
+    documentDateTo,
+    search,
+    vendorName,
+    documentNumber,
+    fileName,
   } = options;
 
   // SECURITY: Tenant ID is required to prevent cross-tenant data access unless explicitly skipped for SUPER_ADMIN
@@ -946,6 +965,68 @@ export async function listProcessingDocumentsPaged(options: {
 
   if (isContainer !== undefined) {
     where.isContainer = isContainer;
+  }
+
+  // Upload date range filter (createdAt on ProcessingDocument)
+  if (uploadDateFrom || uploadDateTo) {
+    where.createdAt = {};
+    if (uploadDateFrom) {
+      where.createdAt.gte = uploadDateFrom;
+    }
+    if (uploadDateTo) {
+      // Set to end of day for inclusive filtering
+      const endOfDay = new Date(uploadDateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      where.createdAt.lte = endOfDay;
+    }
+  }
+
+  // Document date range filter (via currentRevision.documentDate)
+  if (documentDateFrom || documentDateTo) {
+    const revisionFilter: Prisma.DocumentRevisionWhereInput = where.currentRevision as Prisma.DocumentRevisionWhereInput || {};
+    revisionFilter.documentDate = {};
+    if (documentDateFrom) {
+      revisionFilter.documentDate.gte = documentDateFrom;
+    }
+    if (documentDateTo) {
+      // Set to end of day for inclusive filtering
+      const endOfDay = new Date(documentDateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      revisionFilter.documentDate.lte = endOfDay;
+    }
+    where.currentRevision = revisionFilter;
+  }
+
+  // General text search (OR across multiple fields)
+  if (search) {
+    where.OR = [
+      { document: { originalFileName: { contains: search, mode: 'insensitive' } } },
+      { document: { fileName: { contains: search, mode: 'insensitive' } } },
+      { currentRevision: { vendorName: { contains: search, mode: 'insensitive' } } },
+      { currentRevision: { documentNumber: { contains: search, mode: 'insensitive' } } },
+    ];
+  }
+
+  // Specific vendor name filter
+  if (vendorName) {
+    const revisionFilter: Prisma.DocumentRevisionWhereInput = where.currentRevision as Prisma.DocumentRevisionWhereInput || {};
+    revisionFilter.vendorName = { contains: vendorName, mode: 'insensitive' };
+    where.currentRevision = revisionFilter;
+  }
+
+  // Specific document number filter
+  if (documentNumber) {
+    const revisionFilter: Prisma.DocumentRevisionWhereInput = where.currentRevision as Prisma.DocumentRevisionWhereInput || {};
+    revisionFilter.documentNumber = { contains: documentNumber, mode: 'insensitive' };
+    where.currentRevision = revisionFilter;
+  }
+
+  // Specific file name filter
+  if (fileName) {
+    documentFilter.OR = [
+      { originalFileName: { contains: fileName, mode: 'insensitive' } },
+      { fileName: { contains: fileName, mode: 'insensitive' } },
+    ];
   }
 
   // Build orderBy based on sortBy field

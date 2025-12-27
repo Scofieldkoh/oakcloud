@@ -48,6 +48,8 @@ export interface DatePickerProps {
   size?: 'sm' | 'md';
   /** Label for the input */
   label?: string;
+  /** Default tab to show when opening the picker */
+  defaultTab?: 'presets' | 'single' | 'range';
 }
 
 // Format date for display: "1 Dec 2025"
@@ -275,6 +277,7 @@ export function DatePicker({
   disabled,
   size = 'sm',
   label,
+  defaultTab = 'presets',
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('presets');
@@ -309,13 +312,10 @@ export function DatePicker({
         // No selection or complete range - start fresh
         setSelectionPhase('start');
       }
-      if (value?.mode === 'single') {
-        setActiveTab('single');
-      } else if (value?.mode === 'range') {
-        setActiveTab('range');
-      }
+      // Use defaultTab prop instead of auto-detecting from value mode
+      setActiveTab(defaultTab);
     }
-  }, [isOpen, value]);
+  }, [isOpen, value, defaultTab]);
 
   // Calculate position
   useEffect(() => {

@@ -101,6 +101,14 @@ export interface CreateRevisionInput {
   gstTreatment?: GstTreatment;
   supplierGstNo?: string;
 
+  // Home currency conversion (extracted from document or calculated)
+  homeCurrency?: string;
+  homeExchangeRate?: Decimal | number | string;
+  homeExchangeRateSource?: ExchangeRateSource;
+  homeSubtotal?: Decimal | number | string;
+  homeTaxAmount?: Decimal | number | string;
+  homeEquivalent?: Decimal | number | string;
+
   // Evidence
   headerEvidenceJson?: Record<string, unknown>;
 
@@ -185,6 +193,27 @@ const VALIDATION_CODES = {
     severity: 'ERROR' as const,
     message: 'Credit note total must be negative',
   },
+  // Phase 2: Home currency validation codes
+  HOME_AMOUNT_SUM_MISMATCH: {
+    severity: 'WARN' as const,
+    message: 'Sum of line item home amounts does not match home subtotal',
+  },
+  HOME_GST_SUM_MISMATCH: {
+    severity: 'WARN' as const,
+    message: 'Sum of line item home GST does not match home tax amount',
+  },
+  HOME_TOTAL_MISMATCH: {
+    severity: 'WARN' as const,
+    message: 'Home currency total does not match subtotal + tax',
+  },
+  MISSING_EXCHANGE_RATE: {
+    severity: 'WARN' as const,
+    message: 'Exchange rate is required when document currency differs from home currency',
+  },
+  INVALID_EXCHANGE_RATE: {
+    severity: 'ERROR' as const,
+    message: 'Exchange rate must be a positive number',
+  },
 };
 
 // ============================================================================
@@ -214,6 +243,13 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
     totalAmount,
     gstTreatment,
     supplierGstNo,
+    // Home currency fields (extracted from document or provided)
+    homeCurrency,
+    homeExchangeRate,
+    homeExchangeRateSource,
+    homeSubtotal,
+    homeTaxAmount,
+    homeEquivalent,
     headerEvidenceJson,
     items = [],
     reason,
@@ -270,6 +306,13 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
         totalAmount: toDecimalOrZero(totalAmount),
         gstTreatment,
         supplierGstNo,
+        // Home currency fields (from document extraction or provided)
+        homeCurrency,
+        homeExchangeRate: toDecimal(homeExchangeRate),
+        homeExchangeRateSource,
+        homeSubtotal: toDecimal(homeSubtotal),
+        homeTaxAmount: toDecimal(homeTaxAmount),
+        homeEquivalent: toDecimal(homeEquivalent),
         headerEvidenceJson: headerEvidenceJson as Prisma.InputJsonValue,
         documentKey,
         documentKeyVersion: '1',
@@ -589,6 +632,72 @@ export async function validateRevision(revisionId: string): Promise<{
       issues.push({
         code: 'HEADER_ARITHMETIC_MISMATCH',
         ...VALIDATION_CODES.HEADER_ARITHMETIC_MISMATCH,
+      });
+    }
+  }
+
+  // ============ HOME CURRENCY VALIDATION (Phase 2) ============
+
+  // Check for exchange rate when currencies differ
+  if (revision.homeCurrency && revision.homeCurrency !== revision.currency) {
+    if (!revision.homeExchangeRate) {
+      issues.push({
+        code: 'MISSING_EXCHANGE_RATE',
+        ...VALIDATION_CODES.MISSING_EXCHANGE_RATE,
+        field: 'homeExchangeRate',
+      });
+    } else if (revision.homeExchangeRate.lessThanOrEqualTo(0)) {
+      issues.push({
+        code: 'INVALID_EXCHANGE_RATE',
+        ...VALIDATION_CODES.INVALID_EXCHANGE_RATE,
+        field: 'homeExchangeRate',
+      });
+    }
+  }
+
+  // Check home amount line item sum matches home subtotal
+  if (revision.homeSubtotal && revision.items.length > 0) {
+    const homeLineSum = revision.items.reduce(
+      (sum, item) => sum.add(item.homeAmount || new PrismaDecimal(0)),
+      new PrismaDecimal(0)
+    );
+    const homeDiff = homeLineSum.sub(revision.homeSubtotal).abs();
+    if (homeDiff.greaterThan(new PrismaDecimal('0.01'))) {
+      issues.push({
+        code: 'HOME_AMOUNT_SUM_MISMATCH',
+        ...VALIDATION_CODES.HOME_AMOUNT_SUM_MISMATCH,
+        field: 'homeSubtotal',
+      });
+    }
+  }
+
+  // Check home GST line item sum matches home tax amount
+  if (revision.homeTaxAmount && revision.items.length > 0) {
+    const homeGstSum = revision.items.reduce(
+      (sum, item) => sum.add(item.homeGstAmount || new PrismaDecimal(0)),
+      new PrismaDecimal(0)
+    );
+    const homeGstDiff = homeGstSum.sub(revision.homeTaxAmount).abs();
+    if (homeGstDiff.greaterThan(new PrismaDecimal('0.01'))) {
+      issues.push({
+        code: 'HOME_GST_SUM_MISMATCH',
+        ...VALIDATION_CODES.HOME_GST_SUM_MISMATCH,
+        field: 'homeTaxAmount',
+      });
+    }
+  }
+
+  // Check home currency header arithmetic: homeSubtotal + homeTax = homeTotal
+  if (revision.homeEquivalent && (revision.homeSubtotal || revision.homeTaxAmount)) {
+    const homeSubtotal = revision.homeSubtotal || new PrismaDecimal(0);
+    const homeTax = revision.homeTaxAmount || new PrismaDecimal(0);
+    const expectedHomeTotal = homeSubtotal.add(homeTax);
+    const homeTotalDiff = expectedHomeTotal.sub(revision.homeEquivalent).abs();
+    if (homeTotalDiff.greaterThan(new PrismaDecimal('0.01'))) {
+      issues.push({
+        code: 'HOME_TOTAL_MISMATCH',
+        ...VALIDATION_CODES.HOME_TOTAL_MISMATCH,
+        field: 'homeEquivalent',
       });
     }
   }

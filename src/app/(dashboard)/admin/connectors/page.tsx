@@ -33,6 +33,8 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/compone
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/toast';
 import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
+import { subDays } from 'date-fns';
 import {
   Plus,
   MoreVertical,
@@ -50,7 +52,6 @@ import {
   EyeOff,
   BarChart3,
   Download,
-  Calendar,
   ChevronLeft,
   ChevronRight,
   HelpCircle,
@@ -194,9 +195,12 @@ export default function ConnectorsPage() {
   const [usageConnector, setUsageConnector] = useState<Connector | null>(null);
 
   // Usage modal state
-  const [usageDateRange, setUsageDateRange] = useState<{ start: string; end: string }>({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
-    end: new Date().toISOString().split('T')[0], // today
+  const [usageDateFilter, setUsageDateFilter] = useState<DatePickerValue | undefined>({
+    mode: 'range',
+    range: {
+      from: subDays(new Date(), 30), // 30 days ago
+      to: new Date(), // today
+    },
   });
   const [usagePage, setUsagePage] = useState(1);
 
@@ -235,12 +239,33 @@ export default function ConnectorsPage() {
   const testMutation = useTestConnector();
   const _toggleMutation = useToggleConnector(undefined);
 
+  // Extract dates from DatePickerValue for API
+  const getUsageDates = () => {
+    if (!usageDateFilter) return { startDate: '', endDate: '' };
+
+    if (usageDateFilter.mode === 'range' && usageDateFilter.range) {
+      return {
+        startDate: usageDateFilter.range.from?.toISOString().split('T')[0] || '',
+        endDate: usageDateFilter.range.to?.toISOString().split('T')[0] || '',
+      };
+    }
+
+    if (usageDateFilter.mode === 'single' && usageDateFilter.date) {
+      const dateStr = usageDateFilter.date.toISOString().split('T')[0];
+      return { startDate: dateStr, endDate: dateStr };
+    }
+
+    return { startDate: '', endDate: '' };
+  };
+
+  const { startDate, endDate } = getUsageDates();
+
   // Usage query
-  const usageParams: UsageSearchParams | null = usageConnector
+  const usageParams: UsageSearchParams | null = usageConnector && startDate && endDate
     ? {
         connectorId: usageConnector.id,
-        startDate: usageDateRange.start,
-        endDate: usageDateRange.end,
+        startDate,
+        endDate,
         page: usagePage,
         limit: 20,
       }
@@ -1240,28 +1265,16 @@ export default function ConnectorsPage() {
 
             {/* Date Range Filter */}
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-text-muted" />
-                <input
-                  type="date"
-                  value={usageDateRange.start}
-                  onChange={(e) => {
-                    setUsageDateRange((prev) => ({ ...prev, start: e.target.value }));
-                    setUsagePage(1);
-                  }}
-                  className="input input-sm"
-                />
-                <span className="text-text-muted">to</span>
-                <input
-                  type="date"
-                  value={usageDateRange.end}
-                  onChange={(e) => {
-                    setUsageDateRange((prev) => ({ ...prev, end: e.target.value }));
-                    setUsagePage(1);
-                  }}
-                  className="input input-sm"
-                />
-              </div>
+              <DatePicker
+                value={usageDateFilter}
+                onChange={(value) => {
+                  setUsageDateFilter(value);
+                  setUsagePage(1);
+                }}
+                placeholder="Select date range"
+                size="sm"
+                className="w-64"
+              />
               <Button
                 variant="secondary"
                 size="xs"
