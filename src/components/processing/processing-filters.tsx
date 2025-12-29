@@ -1,12 +1,21 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Search, Filter, X, ChevronDown } from 'lucide-react';
+import { Search, Filter, X, ChevronDown, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
 import { FilterChip } from '@/components/ui/filter-chip';
-import type { PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
+import { TagChip, TagManager } from '@/components/processing/document-tags';
+import { TAG_COLORS } from '@/lib/validations/document-tag';
+import type { PipelineStatus, DuplicateStatus, RevisionStatus, TagColor } from '@/generated/prisma';
+
+// Tag info type for filter display
+export interface TagInfo {
+  id: string;
+  name: string;
+  color: TagColor;
+}
 
 // Filter value types
 export interface ProcessingFilterValues {
@@ -22,14 +31,18 @@ export interface ProcessingFilterValues {
   vendorName?: string;
   documentNumber?: string;
   fileName?: string;
+  tagIds?: string[];
 }
 
 interface ProcessingFiltersProps {
   onFilterChange: (filters: ProcessingFilterValues) => void;
   initialFilters?: ProcessingFilterValues;
   companies?: Array<{ id: string; name: string }>;
+  tags?: TagInfo[];
   onSearchChange?: (query: string) => void;
   initialSearch?: string;
+  /** Company ID for tag management (from sidebar or filter) */
+  activeCompanyId?: string;
 }
 
 // Status configurations
@@ -66,8 +79,10 @@ export function ProcessingFilters({
   onFilterChange,
   initialFilters = {},
   companies = [],
+  tags = [],
   onSearchChange,
   initialSearch = '',
+  activeCompanyId,
 }: ProcessingFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ProcessingFilterValues>(initialFilters);
@@ -116,6 +131,12 @@ export function ProcessingFilters({
     [companies]
   );
 
+  // Convert tags to SelectOption format
+  const tagOptions: SelectOption[] = useMemo(() =>
+    tags.map(t => ({ value: t.id, label: t.name })),
+    [tags]
+  );
+
   // Count active filters (excluding search which is separate)
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -129,6 +150,7 @@ export function ProcessingFilters({
     if (filters.vendorName) count++;
     if (filters.documentNumber) count++;
     if (filters.fileName) count++;
+    if (filters.tagIds && filters.tagIds.length > 0) count += filters.tagIds.length;
     return count;
   }, [filters]);
 
@@ -199,6 +221,27 @@ export function ProcessingFilters({
       newFilters.documentDateFrom = value.range.from?.toISOString();
       newFilters.documentDateTo = value.range.to?.toISOString();
     }
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  }, [filters, onFilterChange]);
+
+  // Handle tag filter toggle
+  const handleTagToggle = useCallback((tagId: string) => {
+    const currentTags = filters.tagIds || [];
+    const newTags = currentTags.includes(tagId)
+      ? currentTags.filter(id => id !== tagId)
+      : [...currentTags, tagId];
+
+    const newFilters = { ...filters, tagIds: newTags.length > 0 ? newTags : undefined };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  }, [filters, onFilterChange]);
+
+  // Remove a single tag from filter
+  const removeTagFilter = useCallback((tagId: string) => {
+    const currentTags = filters.tagIds || [];
+    const newTags = currentTags.filter(id => id !== tagId);
+    const newFilters = { ...filters, tagIds: newTags.length > 0 ? newTags : undefined };
     setFilters(newFilters);
     onFilterChange(newFilters);
   }, [filters, onFilterChange]);
@@ -386,6 +429,50 @@ export function ProcessingFilters({
             </div>
           </div>
 
+          {/* Tags Filter Section */}
+          <div className="pt-4 mt-4 border-t border-border-primary">
+            <div className="flex items-center justify-between mb-2">
+              <label className="label flex items-center gap-1.5 mb-0">
+                <Tag className="w-3.5 h-3.5" />
+                Filter by Tags
+              </label>
+              {activeCompanyId && (
+                <TagManager companyId={activeCompanyId} />
+              )}
+            </div>
+            {tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => {
+                  const isSelected = filters.tagIds?.includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => handleTagToggle(tag.id)}
+                      className={cn(
+                        'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                        TAG_COLORS[tag.color].bg,
+                        TAG_COLORS[tag.color].text,
+                        TAG_COLORS[tag.color].border,
+                        isSelected && 'ring-2 ring-oak-primary ring-offset-1',
+                        'hover:opacity-80'
+                      )}
+                    >
+                      <Tag className="w-3 h-3" />
+                      {tag.name}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-text-muted">
+                {activeCompanyId
+                  ? 'No tags created yet. Add tags to documents to create them.'
+                  : 'Select a company to see and manage tags.'}
+              </p>
+            )}
+          </div>
+
           {/* Active Filter Chips */}
           {activeFilterCount > 0 && (
             <div className="flex items-center gap-2 flex-wrap pt-4 mt-4 border-t border-border-primary">
@@ -473,6 +560,19 @@ export function ProcessingFilters({
                   onRemove={() => clearFilter('fileName')}
                 />
               )}
+              {filters.tagIds && filters.tagIds.map((tagId) => {
+                const tag = tags.find(t => t.id === tagId);
+                if (!tag) return null;
+                return (
+                  <TagChip
+                    key={tagId}
+                    name={tag.name}
+                    color={tag.color}
+                    size="sm"
+                    onRemove={() => removeTagFilter(tagId)}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

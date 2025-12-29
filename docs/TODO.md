@@ -8,6 +8,9 @@ You can read the MD files of the docs for information; they are documented and c
 ----
 ## EXISTING ISSUES:
 
+### Build Issues
+- [ ] Missing 'use-debounce' package in chart-of-accounts/page.tsx - install with `npm install use-debounce`
+
 ### Document Processing
 - [ ] Add sub-category dropdown to document editing UI
 

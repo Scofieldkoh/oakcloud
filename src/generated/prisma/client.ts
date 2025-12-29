@@ -205,6 +205,16 @@ export type ProcessingDocument = Prisma.ProcessingDocumentModel
  */
 export type DocumentLink = Prisma.DocumentLinkModel
 /**
+ * Model DocumentTag
+ * 
+ */
+export type DocumentTag = Prisma.DocumentTagModel
+/**
+ * Model ProcessingDocumentTag
+ * 
+ */
+export type ProcessingDocumentTag = Prisma.ProcessingDocumentTagModel
+/**
  * Model DocumentPage
  * 
  */
@@ -339,3 +349,13 @@ export type TenantBackup = Prisma.TenantBackupModel
  * 
  */
 export type BackupSchedule = Prisma.BackupScheduleModel
+/**
+ * Model ChartOfAccount
+ * 
+ */
+export type ChartOfAccount = Prisma.ChartOfAccountModel
+/**
+ * Model ChartOfAccountsMapping
+ * 
+ */
+export type ChartOfAccountsMapping = Prisma.ChartOfAccountsMappingModel

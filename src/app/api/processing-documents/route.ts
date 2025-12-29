@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
     const vendorName = searchParams.get('vendorName');
     const documentNumber = searchParams.get('documentNumber');
     const fileName = searchParams.get('fileName');
+    const tagIds = searchParams.get('tagIds')?.split(',').filter(Boolean) || undefined;
 
     const page = pageStr ? parseInt(pageStr, 10) : 1;
     const limit = Math.min(limitStr ? parseInt(limitStr, 10) : 20, 100);
@@ -133,6 +134,7 @@ export async function GET(request: NextRequest) {
       vendorName: vendorName ?? undefined,
       documentNumber: documentNumber ?? undefined,
       fileName: fileName ?? undefined,
+      tagIds,
     });
 
     // Transform for API response (convert Decimal to string, Date to ISO string)

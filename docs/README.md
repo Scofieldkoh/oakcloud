@@ -15,6 +15,7 @@ A modular internal management system designed for accounting practices. Clean, e
 - [Module: Document Generation](#module-document-generation)
 - [Module: Document Processing](#module-document-processing)
 - [Module: Exchange Rate Maintenance](#module-exchange-rate-maintenance)
+- [Module: Chart of Accounts](#module-chart-of-accounts)
 - [Version History](#version-history) | [Full Changelog](./CHANGELOG.md)
 
 **Related Documentation:**
@@ -50,7 +51,8 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 12. ✅ **Document Generation** - Templates, PDF export, sharing, comments, workflow integration
 13. ✅ **Document Processing** - AI-powered ingestion, extraction, revisions, duplicate detection
 14. ✅ **Exchange Rate Maintenance** - MAS API integration, manual overrides, scheduled sync
-15. 🔜 **Bank Reconciliation** - Bank transaction matching, multi-currency support
+15. ✅ **Chart of Accounts** - Hierarchical accounts, tenant/company scoping, external platform mapping
+16. 🔜 **Bank Reconciliation** - Bank transaction matching, multi-currency support
 16. 🔜 **Client Portal** - Client access, document requests, communications
 17. 🔜 **Accounting Integration** - Xero, QuickBooks, MYOB connectors
 18. 🔜 **Module Marketplace** - Browse and install modules
@@ -3794,6 +3796,66 @@ SCHEDULER_EXCHANGE_RATE_IRAS_MONTHLY_ENABLED=true      # Enable IRAS monthly syn
 ```
 
 > **Note:** MAS API keys expire annually and must be renewed from MAS APIMG Gateway portal. The system displays a warning to SUPER_ADMIN users 30 days before expiry.
+
+---
+
+## Module: Chart of Accounts
+
+Manage chart of accounts with hierarchical structure, multi-scope resolution, and external platform mapping.
+
+### Features
+
+- **Hierarchical Accounts**: Parent-child relationships for account grouping
+- **Multi-Scope Resolution**: System → Tenant → Company fallback hierarchy
+- **Account Types**: ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+- **External Mappings**: Map to Xero, Odoo, QuickBooks, MYOB codes (per company)
+- **Seeded Defaults**: 53 standard Singapore accounts (SFRS-aligned)
+- **Integration**: Used in document processing for line item assignment
+
+### Access Control
+
+| Role | Permissions |
+|------|-------------|
+| SUPER_ADMIN | Full access to all accounts across tenants |
+| TENANT_ADMIN | Create, read, update, delete, export, import |
+| COMPANY_ADMIN | Read, update (company-level customization) |
+| COMPANY_USER | Read only |
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/chart-of-accounts` | List accounts with filters |
+| POST | `/api/chart-of-accounts` | Create new account |
+| GET | `/api/chart-of-accounts/[id]` | Get single account |
+| PATCH | `/api/chart-of-accounts/[id]` | Update account |
+| DELETE | `/api/chart-of-accounts/[id]` | Soft delete account |
+| GET | `/api/chart-of-accounts/hierarchy` | Get hierarchical tree |
+| GET | `/api/chart-of-accounts/select` | Get simplified list for dropdowns |
+| GET | `/api/companies/[id]/account-mappings` | Get company mappings |
+| POST | `/api/companies/[id]/account-mappings` | Bulk upsert mappings |
+| PATCH | `/api/companies/[id]/account-mappings/[mappingId]` | Update mapping |
+| DELETE | `/api/companies/[id]/account-mappings/[mappingId]` | Delete mapping |
+
+### Admin Interface
+
+Access via **Admin > Chart of Accounts** in the sidebar.
+
+- Filter by account type, status, search text
+- Sort by code, name, type, sort order
+- Create/edit accounts with form modal
+- View scope (System/Tenant/Company) badges
+- Delete with required reason (audit trail)
+
+### Account Resolution
+
+When assigning accounts to document line items, the system resolves accounts in order:
+
+1. **Company-level**: Accounts specific to the document's company
+2. **Tenant-level**: Accounts for the tenant (if no company match)
+3. **System-level**: Default seeded accounts (fallback)
+
+This allows tenants to customize accounts while inheriting sensible defaults.
 
 ---
 

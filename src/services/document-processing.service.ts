@@ -896,6 +896,8 @@ export async function listProcessingDocumentsPaged(options: {
   vendorName?: string;
   documentNumber?: string;
   fileName?: string;
+  // Tag filter
+  tagIds?: string[];
 }): Promise<{
   documents: ProcessingDocumentWithDocument[];
   total: number;
@@ -924,6 +926,7 @@ export async function listProcessingDocumentsPaged(options: {
     vendorName,
     documentNumber,
     fileName,
+    tagIds,
   } = options;
 
   // SECURITY: Tenant ID is required to prevent cross-tenant data access unless explicitly skipped for SUPER_ADMIN
@@ -1027,6 +1030,15 @@ export async function listProcessingDocumentsPaged(options: {
       { originalFileName: { contains: fileName, mode: 'insensitive' } },
       { fileName: { contains: fileName, mode: 'insensitive' } },
     ];
+  }
+
+  // Tag filter - documents must have ALL specified tags
+  if (tagIds && tagIds.length > 0) {
+    where.documentTags = {
+      some: {
+        tagId: { in: tagIds },
+      },
+    };
   }
 
   // Build orderBy based on sortBy field

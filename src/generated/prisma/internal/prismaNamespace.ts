@@ -417,6 +417,8 @@ export const ModelName = {
   AiConversation: 'AiConversation',
   ProcessingDocument: 'ProcessingDocument',
   DocumentLink: 'DocumentLink',
+  DocumentTag: 'DocumentTag',
+  ProcessingDocumentTag: 'ProcessingDocumentTag',
   DocumentPage: 'DocumentPage',
   DocumentExtraction: 'DocumentExtraction',
   DocumentRevision: 'DocumentRevision',
@@ -443,7 +445,9 @@ export const ModelName = {
   ExternalPosting: 'ExternalPosting',
   FieldMapping: 'FieldMapping',
   TenantBackup: 'TenantBackup',
-  BackupSchedule: 'BackupSchedule'
+  BackupSchedule: 'BackupSchedule',
+  ChartOfAccount: 'ChartOfAccount',
+  ChartOfAccountsMapping: 'ChartOfAccountsMapping'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -459,7 +463,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2905,6 +2909,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DocumentTag: {
+      payload: Prisma.$DocumentTagPayload<ExtArgs>
+      fields: Prisma.DocumentTagFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DocumentTagFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DocumentTagFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload>
+        }
+        findFirst: {
+          args: Prisma.DocumentTagFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DocumentTagFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload>
+        }
+        findMany: {
+          args: Prisma.DocumentTagFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload>[]
+        }
+        create: {
+          args: Prisma.DocumentTagCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload>
+        }
+        createMany: {
+          args: Prisma.DocumentTagCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DocumentTagCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload>[]
+        }
+        delete: {
+          args: Prisma.DocumentTagDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload>
+        }
+        update: {
+          args: Prisma.DocumentTagUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload>
+        }
+        deleteMany: {
+          args: Prisma.DocumentTagDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DocumentTagUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DocumentTagUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload>[]
+        }
+        upsert: {
+          args: Prisma.DocumentTagUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTagPayload>
+        }
+        aggregate: {
+          args: Prisma.DocumentTagAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDocumentTag>
+        }
+        groupBy: {
+          args: Prisma.DocumentTagGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentTagGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DocumentTagCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentTagCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProcessingDocumentTag: {
+      payload: Prisma.$ProcessingDocumentTagPayload<ExtArgs>
+      fields: Prisma.ProcessingDocumentTagFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProcessingDocumentTagFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProcessingDocumentTagFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload>
+        }
+        findFirst: {
+          args: Prisma.ProcessingDocumentTagFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProcessingDocumentTagFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload>
+        }
+        findMany: {
+          args: Prisma.ProcessingDocumentTagFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload>[]
+        }
+        create: {
+          args: Prisma.ProcessingDocumentTagCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload>
+        }
+        createMany: {
+          args: Prisma.ProcessingDocumentTagCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProcessingDocumentTagCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload>[]
+        }
+        delete: {
+          args: Prisma.ProcessingDocumentTagDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload>
+        }
+        update: {
+          args: Prisma.ProcessingDocumentTagUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProcessingDocumentTagDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProcessingDocumentTagUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProcessingDocumentTagUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProcessingDocumentTagUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessingDocumentTagPayload>
+        }
+        aggregate: {
+          args: Prisma.ProcessingDocumentTagAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProcessingDocumentTag>
+        }
+        groupBy: {
+          args: Prisma.ProcessingDocumentTagGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessingDocumentTagGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProcessingDocumentTagCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessingDocumentTagCountAggregateOutputType> | number
+        }
+      }
+    }
     DocumentPage: {
       payload: Prisma.$DocumentPagePayload<ExtArgs>
       fields: Prisma.DocumentPageFieldRefs
@@ -4903,6 +5055,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ChartOfAccount: {
+      payload: Prisma.$ChartOfAccountPayload<ExtArgs>
+      fields: Prisma.ChartOfAccountFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ChartOfAccountFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ChartOfAccountFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload>
+        }
+        findFirst: {
+          args: Prisma.ChartOfAccountFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ChartOfAccountFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload>
+        }
+        findMany: {
+          args: Prisma.ChartOfAccountFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload>[]
+        }
+        create: {
+          args: Prisma.ChartOfAccountCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload>
+        }
+        createMany: {
+          args: Prisma.ChartOfAccountCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ChartOfAccountCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload>[]
+        }
+        delete: {
+          args: Prisma.ChartOfAccountDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload>
+        }
+        update: {
+          args: Prisma.ChartOfAccountUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload>
+        }
+        deleteMany: {
+          args: Prisma.ChartOfAccountDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ChartOfAccountUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ChartOfAccountUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload>[]
+        }
+        upsert: {
+          args: Prisma.ChartOfAccountUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountPayload>
+        }
+        aggregate: {
+          args: Prisma.ChartOfAccountAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChartOfAccount>
+        }
+        groupBy: {
+          args: Prisma.ChartOfAccountGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChartOfAccountGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ChartOfAccountCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChartOfAccountCountAggregateOutputType> | number
+        }
+      }
+    }
+    ChartOfAccountsMapping: {
+      payload: Prisma.$ChartOfAccountsMappingPayload<ExtArgs>
+      fields: Prisma.ChartOfAccountsMappingFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ChartOfAccountsMappingFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ChartOfAccountsMappingFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload>
+        }
+        findFirst: {
+          args: Prisma.ChartOfAccountsMappingFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ChartOfAccountsMappingFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload>
+        }
+        findMany: {
+          args: Prisma.ChartOfAccountsMappingFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload>[]
+        }
+        create: {
+          args: Prisma.ChartOfAccountsMappingCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload>
+        }
+        createMany: {
+          args: Prisma.ChartOfAccountsMappingCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ChartOfAccountsMappingCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload>[]
+        }
+        delete: {
+          args: Prisma.ChartOfAccountsMappingDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload>
+        }
+        update: {
+          args: Prisma.ChartOfAccountsMappingUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload>
+        }
+        deleteMany: {
+          args: Prisma.ChartOfAccountsMappingDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ChartOfAccountsMappingUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ChartOfAccountsMappingUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload>[]
+        }
+        upsert: {
+          args: Prisma.ChartOfAccountsMappingUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChartOfAccountsMappingPayload>
+        }
+        aggregate: {
+          args: Prisma.ChartOfAccountsMappingAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChartOfAccountsMapping>
+        }
+        groupBy: {
+          args: Prisma.ChartOfAccountsMappingGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChartOfAccountsMappingGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ChartOfAccountsMappingCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChartOfAccountsMappingCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -5603,6 +5903,35 @@ export const DocumentLinkScalarFieldEnum = {
 export type DocumentLinkScalarFieldEnum = (typeof DocumentLinkScalarFieldEnum)[keyof typeof DocumentLinkScalarFieldEnum]
 
 
+export const DocumentTagScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  name: 'name',
+  color: 'color',
+  description: 'description',
+  usageCount: 'usageCount',
+  lastUsedAt: 'lastUsedAt',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdById: 'createdById'
+} as const
+
+export type DocumentTagScalarFieldEnum = (typeof DocumentTagScalarFieldEnum)[keyof typeof DocumentTagScalarFieldEnum]
+
+
+export const ProcessingDocumentTagScalarFieldEnum = {
+  id: 'id',
+  processingDocumentId: 'processingDocumentId',
+  tagId: 'tagId',
+  addedAt: 'addedAt',
+  addedById: 'addedById'
+} as const
+
+export type ProcessingDocumentTagScalarFieldEnum = (typeof ProcessingDocumentTagScalarFieldEnum)[keyof typeof ProcessingDocumentTagScalarFieldEnum]
+
+
 export const DocumentPageScalarFieldEnum = {
   id: 'id',
   processingDocumentId: 'processingDocumentId',
@@ -6138,6 +6467,46 @@ export const BackupScheduleScalarFieldEnum = {
 export type BackupScheduleScalarFieldEnum = (typeof BackupScheduleScalarFieldEnum)[keyof typeof BackupScheduleScalarFieldEnum]
 
 
+export const ChartOfAccountScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  code: 'code',
+  name: 'name',
+  description: 'description',
+  accountType: 'accountType',
+  status: 'status',
+  parentId: 'parentId',
+  sortOrder: 'sortOrder',
+  isSystem: 'isSystem',
+  isTaxApplicable: 'isTaxApplicable',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type ChartOfAccountScalarFieldEnum = (typeof ChartOfAccountScalarFieldEnum)[keyof typeof ChartOfAccountScalarFieldEnum]
+
+
+export const ChartOfAccountsMappingScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  companyId: 'companyId',
+  provider: 'provider',
+  externalCode: 'externalCode',
+  externalId: 'externalId',
+  externalName: 'externalName',
+  lastSyncedAt: 'lastSyncedAt',
+  syncStatus: 'syncStatus',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ChartOfAccountsMappingScalarFieldEnum = (typeof ChartOfAccountsMappingScalarFieldEnum)[keyof typeof ChartOfAccountsMappingScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -6546,6 +6915,20 @@ export type EnumDocumentLinkTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
  * Reference to a field of type 'DocumentLinkType[]'
  */
 export type ListEnumDocumentLinkTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentLinkType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'TagColor'
+ */
+export type EnumTagColorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TagColor'>
+    
+
+
+/**
+ * Reference to a field of type 'TagColor[]'
+ */
+export type ListEnumTagColorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TagColor[]'>
     
 
 
@@ -7010,6 +7393,34 @@ export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 
 export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
     
 
+
+/**
+ * Reference to a field of type 'AccountType'
+ */
+export type EnumAccountTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountType'>
+    
+
+
+/**
+ * Reference to a field of type 'AccountType[]'
+ */
+export type ListEnumAccountTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'AccountStatus'
+ */
+export type EnumAccountStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'AccountStatus[]'
+ */
+export type ListEnumAccountStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountStatus[]'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -7138,6 +7549,8 @@ export type GlobalOmitConfig = {
   aiConversation?: Prisma.AiConversationOmit
   processingDocument?: Prisma.ProcessingDocumentOmit
   documentLink?: Prisma.DocumentLinkOmit
+  documentTag?: Prisma.DocumentTagOmit
+  processingDocumentTag?: Prisma.ProcessingDocumentTagOmit
   documentPage?: Prisma.DocumentPageOmit
   documentExtraction?: Prisma.DocumentExtractionOmit
   documentRevision?: Prisma.DocumentRevisionOmit
@@ -7165,6 +7578,8 @@ export type GlobalOmitConfig = {
   fieldMapping?: Prisma.FieldMappingOmit
   tenantBackup?: Prisma.TenantBackupOmit
   backupSchedule?: Prisma.BackupScheduleOmit
+  chartOfAccount?: Prisma.ChartOfAccountOmit
+  chartOfAccountsMapping?: Prisma.ChartOfAccountsMappingOmit
 }
 
 /* Types for Logging */

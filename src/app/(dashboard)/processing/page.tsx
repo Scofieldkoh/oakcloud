@@ -28,6 +28,8 @@ import { BulkActionsToolbar } from '@/components/processing/bulk-actions-toolbar
 import { ProcessingFilters, type ProcessingFilterValues } from '@/components/processing/processing-filters';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { useCompanies } from '@/hooks/use-companies';
+import { useAvailableTags } from '@/hooks/use-document-tags';
+import { useActiveCompanyId } from '@/components/ui/company-selector';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 
@@ -129,8 +131,12 @@ export default function ProcessingDocumentsPage() {
     session?.tenantId
   );
 
+  // Get active company from sidebar selector
+  const activeCompanyId = useActiveCompanyId();
+
   // Parse URL params
   const getParamsFromUrl = useCallback((): ProcessingDocumentSearchParams => {
+    const tagIdsParam = searchParams.get('tagIds');
     return {
       page: parseInt(searchParams.get('page') || '1', 10),
       limit: parseInt(searchParams.get('limit') || '20', 10),
@@ -151,15 +157,22 @@ export default function ProcessingDocumentsPage() {
       vendorName: searchParams.get('vendorName') || undefined,
       documentNumber: searchParams.get('documentNumber') || undefined,
       fileName: searchParams.get('fileName') || undefined,
+      // Tag filter
+      tagIds: tagIdsParam ? tagIdsParam.split(',').filter(Boolean) : undefined,
     };
   }, [searchParams]);
 
   const [params, setParams] = useState(getParamsFromUrl);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // Pass tenantId to filter documents by selected tenant (for SUPER_ADMIN)
+  // Determine effective company ID: URL filter takes priority, then sidebar selector
+  // If sidebar has "All Companies" selected (activeCompanyId is undefined), show all companies
+  const effectiveCompanyId = params.companyId || activeCompanyId;
+
+  // Pass tenantId and effective companyId to filter documents
   const { data, isLoading, error, refetch } = useProcessingDocuments({
     ...params,
+    companyId: effectiveCompanyId,
     tenantId: activeTenantId,
   });
 
@@ -169,11 +182,14 @@ export default function ProcessingDocumentsPage() {
     limit: 200, // Fetch all companies for dropdown
   });
 
-  // Reset page and selection when tenant changes
+  // Fetch tags for filter dropdown (uses effectiveCompanyId if available, otherwise just tenant tags)
+  const { data: tagsData } = useAvailableTags(effectiveCompanyId);
+
+  // Reset page and selection when tenant or sidebar company changes
   useEffect(() => {
     setParams((prev) => ({ ...prev, page: 1 }));
     setSelectedIds([]);
-  }, [activeTenantId]);
+  }, [activeTenantId, activeCompanyId]);
 
   // Clear selection when params change (e.g., page change, filter change)
   useEffect(() => {
@@ -230,6 +246,8 @@ export default function ProcessingDocumentsPage() {
     if (params.vendorName) urlParams.set('vendorName', params.vendorName);
     if (params.documentNumber) urlParams.set('documentNumber', params.documentNumber);
     if (params.fileName) urlParams.set('fileName', params.fileName);
+    // Tag filter
+    if (params.tagIds && params.tagIds.length > 0) urlParams.set('tagIds', params.tagIds.join(','));
 
     const queryString = urlParams.toString();
     return queryString ? `/processing?${queryString}` : '/processing';
@@ -267,6 +285,8 @@ export default function ProcessingDocumentsPage() {
       vendorName: filters.vendorName,
       documentNumber: filters.documentNumber,
       fileName: filters.fileName,
+      // Tag filter
+      tagIds: filters.tagIds,
       // Keep search separate (handled by handleSearchChange)
       search: prev.search,
     }));
@@ -425,10 +445,13 @@ export default function ProcessingDocumentsPage() {
             vendorName: params.vendorName,
             documentNumber: params.documentNumber,
             fileName: params.fileName,
+            tagIds: params.tagIds,
           }}
           onSearchChange={handleSearchChange}
           initialSearch={params.search || ''}
           companies={companiesData?.companies.map(c => ({ id: c.id, name: c.name })) || []}
+          tags={tagsData?.map(t => ({ id: t.id, name: t.name, color: t.color })) || []}
+          activeCompanyId={effectiveCompanyId}
         />
       </div>
 

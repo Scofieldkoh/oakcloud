@@ -23,6 +23,7 @@ import {
   ScanText,
   HardDrive,
   DollarSign,
+  BookOpen,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -58,6 +59,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Templates', href: '/admin/template-partials', icon: FileText, adminOnly: true },
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
   { name: 'Exchange Rates', href: '/admin/exchange-rates', icon: DollarSign, adminOnly: true },
+  { name: 'Chart of Accounts', href: '/admin/chart-of-accounts', icon: BookOpen, adminOnly: true },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: Activity, adminOnly: true },
   { name: 'Backup & Restore', href: '/admin/backup', icon: HardDrive, superAdminOnly: true },
   { name: 'Data Purge', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
@@ -298,7 +300,7 @@ function DesktopSidebar() {
     >
       {/* Logo */}
       <div className={cn(
-        "h-12 flex items-center border-b border-border-primary flex-shrink-0",
+        "h-14 flex items-center border-b border-border-primary flex-shrink-0",
         sidebarCollapsed ? "justify-center px-2" : "justify-between px-3"
       )}>
         {sidebarCollapsed ? (
@@ -343,7 +345,7 @@ function MobileHeader() {
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-background-secondary border-b border-border-primary z-30 lg:hidden pt-[env(safe-area-inset-top)]">
-      <div className="flex items-center justify-between h-12 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
+      <div className="flex items-center justify-between h-14 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
         <button
           onClick={toggleMobileSidebar}
           className="p-2 -ml-2 rounded hover:bg-background-tertiary text-text-secondary"
@@ -407,7 +409,7 @@ function MobileDrawer() {
       {/* Drawer */}
       <aside className="absolute left-0 top-0 h-full w-64 bg-background-secondary border-r border-border-primary animate-slide-in-left flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         {/* Header */}
-        <div className="h-12 flex items-center justify-between px-3 border-b border-border-primary flex-shrink-0">
+        <div className="h-14 flex items-center justify-between px-3 border-b border-border-primary flex-shrink-0">
           <Link href="/" className="flex items-center gap-2.5" onClick={() => setMobileSidebarOpen(false)}>
             <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem]" />
             <span className="text-sm font-semibold text-text-primary">Oakcloud</span>

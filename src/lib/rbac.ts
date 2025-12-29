@@ -26,6 +26,7 @@ export const RESOURCES = [
   'shareholder',
   'audit_log',
   'connector',
+  'chart_of_accounts',
 ] as const;
 
 export type Resource = (typeof RESOURCES)[number];
@@ -97,6 +98,12 @@ export const SYSTEM_ROLES = {
       'connector:read',
       'connector:update',
       'connector:delete',
+      'chart_of_accounts:create',
+      'chart_of_accounts:read',
+      'chart_of_accounts:update',
+      'chart_of_accounts:delete',
+      'chart_of_accounts:export',
+      'chart_of_accounts:import',
     ] as PermissionString[],
   },
   COMPANY_ADMIN: {
@@ -122,6 +129,8 @@ export const SYSTEM_ROLES = {
       'shareholder:update',
       'shareholder:delete',
       'audit_log:read',
+      'chart_of_accounts:read',
+      'chart_of_accounts:update',
     ] as PermissionString[],
   },
   COMPANY_USER: {
@@ -134,6 +143,7 @@ export const SYSTEM_ROLES = {
       'officer:read',
       'shareholder:read',
       'audit_log:read',
+      'chart_of_accounts:read',
     ] as PermissionString[],
   },
 } as const;

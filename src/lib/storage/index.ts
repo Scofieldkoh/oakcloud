@@ -104,3 +104,14 @@ export type {
   StorageProvider,
   StorageConfig,
 } from './types';
+
+// Re-export filename utilities
+export {
+  generateApprovedDocumentFilename,
+  sanitizeForFilename,
+  formatAmountForFilename,
+  shortenCompanyName,
+  getFileExtension,
+  buildApprovedStorageKey,
+} from './filename';
+export type { ApprovedDocumentFilenameInput } from './filename';

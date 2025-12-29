@@ -159,7 +159,13 @@ export const AuditAction = {
   EXCHANGE_RATE_SYNCED: 'EXCHANGE_RATE_SYNCED',
   EXCHANGE_RATE_CREATED: 'EXCHANGE_RATE_CREATED',
   EXCHANGE_RATE_UPDATED: 'EXCHANGE_RATE_UPDATED',
-  EXCHANGE_RATE_DELETED: 'EXCHANGE_RATE_DELETED'
+  EXCHANGE_RATE_DELETED: 'EXCHANGE_RATE_DELETED',
+  CHART_OF_ACCOUNTS_CREATED: 'CHART_OF_ACCOUNTS_CREATED',
+  CHART_OF_ACCOUNTS_UPDATED: 'CHART_OF_ACCOUNTS_UPDATED',
+  CHART_OF_ACCOUNTS_DELETED: 'CHART_OF_ACCOUNTS_DELETED',
+  CHART_OF_ACCOUNTS_MAPPING_CREATED: 'CHART_OF_ACCOUNTS_MAPPING_CREATED',
+  CHART_OF_ACCOUNTS_MAPPING_UPDATED: 'CHART_OF_ACCOUNTS_MAPPING_UPDATED',
+  CHART_OF_ACCOUNTS_MAPPING_DELETED: 'CHART_OF_ACCOUNTS_MAPPING_DELETED'
 } as const
 
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction]
@@ -519,6 +525,22 @@ export const DocumentLinkType = {
 export type DocumentLinkType = (typeof DocumentLinkType)[keyof typeof DocumentLinkType]
 
 
+export const TagColor = {
+  GRAY: 'GRAY',
+  RED: 'RED',
+  ORANGE: 'ORANGE',
+  AMBER: 'AMBER',
+  GREEN: 'GREEN',
+  TEAL: 'TEAL',
+  BLUE: 'BLUE',
+  INDIGO: 'INDIGO',
+  PURPLE: 'PURPLE',
+  PINK: 'PINK'
+} as const
+
+export type TagColor = (typeof TagColor)[keyof typeof TagColor]
+
+
 export const ExchangeRateType = {
   MAS_DAILY_RATE: 'MAS_DAILY_RATE',
   MAS_MONTHLY_RATE: 'MAS_MONTHLY_RATE',
@@ -652,3 +674,23 @@ export const PostingStatus = {
 } as const
 
 export type PostingStatus = (typeof PostingStatus)[keyof typeof PostingStatus]
+
+
+export const AccountType = {
+  ASSET: 'ASSET',
+  LIABILITY: 'LIABILITY',
+  EQUITY: 'EQUITY',
+  REVENUE: 'REVENUE',
+  EXPENSE: 'EXPENSE'
+} as const
+
+export type AccountType = (typeof AccountType)[keyof typeof AccountType]
+
+
+export const AccountStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  ARCHIVED: 'ARCHIVED'
+} as const
+
+export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus]

@@ -1425,6 +1425,102 @@ enum DuplicateAction {
 
 ---
 
+## Chart of Accounts Module Tables
+
+### chart_of_accounts
+
+Hierarchical chart of accounts with support for system defaults, tenant-level customization, and company-level overrides.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | Yes | FK to tenants (null = system-level default) |
+| company_id | UUID | Yes | FK to companies (null = tenant-level, not company-specific) |
+| code | VARCHAR(20) | No | Account code (e.g., "6100") |
+| name | VARCHAR(200) | No | Account name (e.g., "Advertising & Marketing") |
+| description | VARCHAR(500) | Yes | Optional description |
+| account_type | AccountType | No | ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE |
+| status | AccountStatus | No | ACTIVE, INACTIVE, ARCHIVED (default: ACTIVE) |
+| parent_id | UUID | Yes | Self-reference for hierarchy |
+| sort_order | INTEGER | No | Display order (default: 0) |
+| is_system | BOOLEAN | No | Whether this is a system-defined account (default: false) |
+| is_tax_applicable | BOOLEAN | No | Whether tax calculations apply (default: true) |
+| created_at | TIMESTAMP | No | Creation timestamp |
+| updated_at | TIMESTAMP | No | Last update timestamp |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Unique Constraint:** `(tenant_id, company_id, code)` - Account codes are unique within a scope.
+
+**Account Resolution:** When resolving accounts for a document, the system looks up in order:
+1. Company-level accounts (matching tenantId and companyId)
+2. Tenant-level accounts (matching tenantId, null companyId)
+3. System-level accounts (null tenantId, null companyId)
+
+### chart_of_accounts_mappings
+
+Maps Oakcloud accounts to external accounting platform codes (Xero, Odoo, etc.). Mappings are company-specific.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| account_id | UUID | No | FK to chart_of_accounts |
+| company_id | UUID | No | FK to companies (mappings are per-company) |
+| provider | AccountingProvider | No | XERO, QUICKBOOKS, MYOB, SAGE |
+| external_code | VARCHAR(50) | Yes | External platform's account code |
+| external_id | VARCHAR(100) | Yes | External platform's account ID |
+| external_name | VARCHAR(200) | Yes | External platform's account name |
+| last_synced_at | TIMESTAMP | Yes | Last sync timestamp |
+| sync_status | VARCHAR | Yes | Sync status (PENDING, SYNCED, ERROR) |
+| created_at | TIMESTAMP | No | Creation timestamp |
+| updated_at | TIMESTAMP | No | Last update timestamp |
+
+**Unique Constraint:** `(account_id, company_id, provider)` - One mapping per account/company/provider.
+
+## Chart of Accounts Module Enums
+
+### AccountType
+
+```sql
+ASSET       -- Resources owned (cash, inventory, equipment)
+LIABILITY   -- Debts and obligations (loans, payables)
+EQUITY      -- Owner's stake (capital, retained earnings)
+REVENUE     -- Income (sales, service fees)
+EXPENSE     -- Costs (salaries, rent, utilities)
+```
+
+### AccountStatus
+
+```sql
+ACTIVE      -- Active and available for use
+INACTIVE    -- Temporarily disabled
+ARCHIVED    -- No longer in use
+```
+
+## Chart of Accounts Audit Actions
+
+```sql
+CHART_OF_ACCOUNTS_CREATED    -- Account created
+CHART_OF_ACCOUNTS_UPDATED    -- Account updated
+CHART_OF_ACCOUNTS_DELETED    -- Account deleted (soft)
+CHART_OF_ACCOUNTS_MAPPING_CREATED  -- Mapping created
+CHART_OF_ACCOUNTS_MAPPING_UPDATED  -- Mapping updated
+CHART_OF_ACCOUNTS_MAPPING_DELETED  -- Mapping deleted
+```
+
+## Chart of Accounts Seed Data
+
+The system seeds 53 standard Singapore chart of accounts (SFRS-aligned) as system-level defaults:
+
+- **Assets (1xxx)**: Current Assets, Cash, AR, Inventory, Fixed Assets, etc.
+- **Liabilities (2xxx)**: AP, Accrued Expenses, GST Payable, Long-term Loans, etc.
+- **Equity (3xxx)**: Share Capital, Retained Earnings, Reserves, Dividends
+- **Revenue (4xxx)**: Sales, Service Revenue, Interest Income, Other Income
+- **COGS (5xxx)**: Cost of Goods Sold, Direct Labor, Direct Materials
+- **Operating Expenses (6xxx-7xxx)**: Advertising, Bank Charges, Rent, Utilities, etc.
+- **Tax Expenses (8xxx)**: Income Tax, Deferred Tax
+
+---
+
 ## Exchange Rate Module Tables
 
 ### exchange_rates

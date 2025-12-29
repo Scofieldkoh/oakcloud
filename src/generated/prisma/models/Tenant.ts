@@ -349,6 +349,7 @@ export type TenantWhereInput = {
   backups?: Prisma.TenantBackupListRelationFilter
   backupSchedule?: Prisma.XOR<Prisma.BackupScheduleNullableScalarRelationFilter, Prisma.BackupScheduleWhereInput> | null
   exchangeRates?: Prisma.ExchangeRateListRelationFilter
+  chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
 }
 
 export type TenantOrderByWithRelationInput = {
@@ -388,6 +389,7 @@ export type TenantOrderByWithRelationInput = {
   backups?: Prisma.TenantBackupOrderByRelationAggregateInput
   backupSchedule?: Prisma.BackupScheduleOrderByWithRelationInput
   exchangeRates?: Prisma.ExchangeRateOrderByRelationAggregateInput
+  chartOfAccounts?: Prisma.ChartOfAccountOrderByRelationAggregateInput
 }
 
 export type TenantWhereUniqueInput = Prisma.AtLeast<{
@@ -430,6 +432,7 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   backups?: Prisma.TenantBackupListRelationFilter
   backupSchedule?: Prisma.XOR<Prisma.BackupScheduleNullableScalarRelationFilter, Prisma.BackupScheduleWhereInput> | null
   exchangeRates?: Prisma.ExchangeRateListRelationFilter
+  chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
 }, "id" | "slug">
 
 export type TenantOrderByWithAggregationInput = {
@@ -521,6 +524,7 @@ export type TenantCreateInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateInput = {
@@ -560,6 +564,7 @@ export type TenantUncheckedCreateInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUpdateInput = {
@@ -599,6 +604,7 @@ export type TenantUpdateInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateInput = {
@@ -638,6 +644,7 @@ export type TenantUncheckedUpdateInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateManyInput = {
@@ -1070,6 +1077,22 @@ export type TenantUpdateOneRequiredWithoutBackupScheduleNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutBackupScheduleInput, Prisma.TenantUpdateWithoutBackupScheduleInput>, Prisma.TenantUncheckedUpdateWithoutBackupScheduleInput>
 }
 
+export type TenantCreateNestedOneWithoutChartOfAccountsInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutChartOfAccountsInput, Prisma.TenantUncheckedCreateWithoutChartOfAccountsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutChartOfAccountsInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneWithoutChartOfAccountsNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutChartOfAccountsInput, Prisma.TenantUncheckedCreateWithoutChartOfAccountsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutChartOfAccountsInput
+  upsert?: Prisma.TenantUpsertWithoutChartOfAccountsInput
+  disconnect?: Prisma.TenantWhereInput | boolean
+  delete?: Prisma.TenantWhereInput | boolean
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutChartOfAccountsInput, Prisma.TenantUpdateWithoutChartOfAccountsInput>, Prisma.TenantUncheckedUpdateWithoutChartOfAccountsInput>
+}
+
 export type TenantCreateWithoutRolesInput = {
   id?: string
   name: string
@@ -1106,6 +1129,7 @@ export type TenantCreateWithoutRolesInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutRolesInput = {
@@ -1144,6 +1168,7 @@ export type TenantUncheckedCreateWithoutRolesInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutRolesInput = {
@@ -1198,6 +1223,7 @@ export type TenantUpdateWithoutRolesInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutRolesInput = {
@@ -1236,6 +1262,7 @@ export type TenantUncheckedUpdateWithoutRolesInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutUsersInput = {
@@ -1274,6 +1301,7 @@ export type TenantCreateWithoutUsersInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutUsersInput = {
@@ -1312,6 +1340,7 @@ export type TenantUncheckedCreateWithoutUsersInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutUsersInput = {
@@ -1366,6 +1395,7 @@ export type TenantUpdateWithoutUsersInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutUsersInput = {
@@ -1404,6 +1434,7 @@ export type TenantUncheckedUpdateWithoutUsersInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutCompaniesInput = {
@@ -1442,6 +1473,7 @@ export type TenantCreateWithoutCompaniesInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutCompaniesInput = {
@@ -1480,6 +1512,7 @@ export type TenantUncheckedCreateWithoutCompaniesInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutCompaniesInput = {
@@ -1534,6 +1567,7 @@ export type TenantUpdateWithoutCompaniesInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutCompaniesInput = {
@@ -1572,6 +1606,7 @@ export type TenantUncheckedUpdateWithoutCompaniesInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutContactsInput = {
@@ -1610,6 +1645,7 @@ export type TenantCreateWithoutContactsInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutContactsInput = {
@@ -1648,6 +1684,7 @@ export type TenantUncheckedCreateWithoutContactsInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutContactsInput = {
@@ -1702,6 +1739,7 @@ export type TenantUpdateWithoutContactsInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutContactsInput = {
@@ -1740,6 +1778,7 @@ export type TenantUncheckedUpdateWithoutContactsInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutDocumentsInput = {
@@ -1778,6 +1817,7 @@ export type TenantCreateWithoutDocumentsInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutDocumentsInput = {
@@ -1816,6 +1856,7 @@ export type TenantUncheckedCreateWithoutDocumentsInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutDocumentsInput = {
@@ -1870,6 +1911,7 @@ export type TenantUpdateWithoutDocumentsInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutDocumentsInput = {
@@ -1908,6 +1950,7 @@ export type TenantUncheckedUpdateWithoutDocumentsInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutAuditLogsInput = {
@@ -1946,6 +1989,7 @@ export type TenantCreateWithoutAuditLogsInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutAuditLogsInput = {
@@ -1984,6 +2028,7 @@ export type TenantUncheckedCreateWithoutAuditLogsInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutAuditLogsInput = {
@@ -2038,6 +2083,7 @@ export type TenantUpdateWithoutAuditLogsInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAuditLogsInput = {
@@ -2076,6 +2122,7 @@ export type TenantUncheckedUpdateWithoutAuditLogsInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutConnectorsInput = {
@@ -2114,6 +2161,7 @@ export type TenantCreateWithoutConnectorsInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutConnectorsInput = {
@@ -2152,6 +2200,7 @@ export type TenantUncheckedCreateWithoutConnectorsInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutConnectorsInput = {
@@ -2206,6 +2255,7 @@ export type TenantUpdateWithoutConnectorsInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutConnectorsInput = {
@@ -2244,6 +2294,7 @@ export type TenantUncheckedUpdateWithoutConnectorsInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutConnectorAccessInput = {
@@ -2282,6 +2333,7 @@ export type TenantCreateWithoutConnectorAccessInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutConnectorAccessInput = {
@@ -2320,6 +2372,7 @@ export type TenantUncheckedCreateWithoutConnectorAccessInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutConnectorAccessInput = {
@@ -2374,6 +2427,7 @@ export type TenantUpdateWithoutConnectorAccessInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutConnectorAccessInput = {
@@ -2412,6 +2466,7 @@ export type TenantUncheckedUpdateWithoutConnectorAccessInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutConnectorUsageLogsInput = {
@@ -2450,6 +2505,7 @@ export type TenantCreateWithoutConnectorUsageLogsInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutConnectorUsageLogsInput = {
@@ -2488,6 +2544,7 @@ export type TenantUncheckedCreateWithoutConnectorUsageLogsInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutConnectorUsageLogsInput = {
@@ -2542,6 +2599,7 @@ export type TenantUpdateWithoutConnectorUsageLogsInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutConnectorUsageLogsInput = {
@@ -2580,6 +2638,7 @@ export type TenantUncheckedUpdateWithoutConnectorUsageLogsInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutDocumentTemplatesInput = {
@@ -2618,6 +2677,7 @@ export type TenantCreateWithoutDocumentTemplatesInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutDocumentTemplatesInput = {
@@ -2656,6 +2716,7 @@ export type TenantUncheckedCreateWithoutDocumentTemplatesInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutDocumentTemplatesInput = {
@@ -2710,6 +2771,7 @@ export type TenantUpdateWithoutDocumentTemplatesInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutDocumentTemplatesInput = {
@@ -2748,6 +2810,7 @@ export type TenantUncheckedUpdateWithoutDocumentTemplatesInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutGeneratedDocumentsInput = {
@@ -2786,6 +2849,7 @@ export type TenantCreateWithoutGeneratedDocumentsInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -2824,6 +2888,7 @@ export type TenantUncheckedCreateWithoutGeneratedDocumentsInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -2878,6 +2943,7 @@ export type TenantUpdateWithoutGeneratedDocumentsInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -2916,6 +2982,7 @@ export type TenantUncheckedUpdateWithoutGeneratedDocumentsInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutLetterheadInput = {
@@ -2954,6 +3021,7 @@ export type TenantCreateWithoutLetterheadInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutLetterheadInput = {
@@ -2992,6 +3060,7 @@ export type TenantUncheckedCreateWithoutLetterheadInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutLetterheadInput = {
@@ -3046,6 +3115,7 @@ export type TenantUpdateWithoutLetterheadInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutLetterheadInput = {
@@ -3084,6 +3154,7 @@ export type TenantUncheckedUpdateWithoutLetterheadInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutTemplatePartialsInput = {
@@ -3122,6 +3193,7 @@ export type TenantCreateWithoutTemplatePartialsInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutTemplatePartialsInput = {
@@ -3160,6 +3232,7 @@ export type TenantUncheckedCreateWithoutTemplatePartialsInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutTemplatePartialsInput = {
@@ -3214,6 +3287,7 @@ export type TenantUpdateWithoutTemplatePartialsInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutTemplatePartialsInput = {
@@ -3252,6 +3326,7 @@ export type TenantUncheckedUpdateWithoutTemplatePartialsInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutAiConversationsInput = {
@@ -3290,6 +3365,7 @@ export type TenantCreateWithoutAiConversationsInput = {
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutAiConversationsInput = {
@@ -3328,6 +3404,7 @@ export type TenantUncheckedCreateWithoutAiConversationsInput = {
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutAiConversationsInput = {
@@ -3382,6 +3459,7 @@ export type TenantUpdateWithoutAiConversationsInput = {
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAiConversationsInput = {
@@ -3420,6 +3498,7 @@ export type TenantUncheckedUpdateWithoutAiConversationsInput = {
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutExchangeRatesInput = {
@@ -3458,6 +3537,7 @@ export type TenantCreateWithoutExchangeRatesInput = {
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutExchangeRatesInput = {
@@ -3496,6 +3576,7 @@ export type TenantUncheckedCreateWithoutExchangeRatesInput = {
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutExchangeRatesInput = {
@@ -3550,6 +3631,7 @@ export type TenantUpdateWithoutExchangeRatesInput = {
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutExchangeRatesInput = {
@@ -3588,6 +3670,7 @@ export type TenantUncheckedUpdateWithoutExchangeRatesInput = {
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutBackupsInput = {
@@ -3626,6 +3709,7 @@ export type TenantCreateWithoutBackupsInput = {
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutBackupsInput = {
@@ -3664,6 +3748,7 @@ export type TenantUncheckedCreateWithoutBackupsInput = {
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutBackupsInput = {
@@ -3718,6 +3803,7 @@ export type TenantUpdateWithoutBackupsInput = {
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutBackupsInput = {
@@ -3756,6 +3842,7 @@ export type TenantUncheckedUpdateWithoutBackupsInput = {
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutBackupScheduleInput = {
@@ -3794,6 +3881,7 @@ export type TenantCreateWithoutBackupScheduleInput = {
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutBackupScheduleInput = {
@@ -3832,6 +3920,7 @@ export type TenantUncheckedCreateWithoutBackupScheduleInput = {
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutBackupScheduleInput = {
@@ -3886,6 +3975,7 @@ export type TenantUpdateWithoutBackupScheduleInput = {
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutBackupScheduleInput = {
@@ -3924,6 +4014,179 @@ export type TenantUncheckedUpdateWithoutBackupScheduleInput = {
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantCreateWithoutChartOfAccountsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+}
+
+export type TenantUncheckedCreateWithoutChartOfAccountsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type TenantCreateOrConnectWithoutChartOfAccountsInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutChartOfAccountsInput, Prisma.TenantUncheckedCreateWithoutChartOfAccountsInput>
+}
+
+export type TenantUpsertWithoutChartOfAccountsInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutChartOfAccountsInput, Prisma.TenantUncheckedUpdateWithoutChartOfAccountsInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutChartOfAccountsInput, Prisma.TenantUncheckedCreateWithoutChartOfAccountsInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutChartOfAccountsInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutChartOfAccountsInput, Prisma.TenantUncheckedUpdateWithoutChartOfAccountsInput>
+}
+
+export type TenantUpdateWithoutChartOfAccountsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutChartOfAccountsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 
@@ -3947,6 +4210,7 @@ export type TenantCountOutputType = {
   aiConversations: number
   backups: number
   exchangeRates: number
+  chartOfAccounts: number
 }
 
 export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3965,6 +4229,7 @@ export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   aiConversations?: boolean | TenantCountOutputTypeCountAiConversationsArgs
   backups?: boolean | TenantCountOutputTypeCountBackupsArgs
   exchangeRates?: boolean | TenantCountOutputTypeCountExchangeRatesArgs
+  chartOfAccounts?: boolean | TenantCountOutputTypeCountChartOfAccountsArgs
 }
 
 /**
@@ -4082,6 +4347,13 @@ export type TenantCountOutputTypeCountExchangeRatesArgs<ExtArgs extends runtime.
   where?: Prisma.ExchangeRateWhereInput
 }
 
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountChartOfAccountsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ChartOfAccountWhereInput
+}
+
 
 export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -4120,6 +4392,7 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   backups?: boolean | Prisma.Tenant$backupsArgs<ExtArgs>
   backupSchedule?: boolean | Prisma.Tenant$backupScheduleArgs<ExtArgs>
   exchangeRates?: boolean | Prisma.Tenant$exchangeRatesArgs<ExtArgs>
+  chartOfAccounts?: boolean | Prisma.Tenant$chartOfAccountsArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tenant"]>
 
@@ -4208,6 +4481,7 @@ export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   backups?: boolean | Prisma.Tenant$backupsArgs<ExtArgs>
   backupSchedule?: boolean | Prisma.Tenant$backupScheduleArgs<ExtArgs>
   exchangeRates?: boolean | Prisma.Tenant$exchangeRatesArgs<ExtArgs>
+  chartOfAccounts?: boolean | Prisma.Tenant$chartOfAccountsArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TenantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -4233,6 +4507,7 @@ export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     backups: Prisma.$TenantBackupPayload<ExtArgs>[]
     backupSchedule: Prisma.$BackupSchedulePayload<ExtArgs> | null
     exchangeRates: Prisma.$ExchangeRatePayload<ExtArgs>[]
+    chartOfAccounts: Prisma.$ChartOfAccountPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -4665,6 +4940,7 @@ export interface Prisma__TenantClient<T, Null = never, ExtArgs extends runtime.T
   backups<T extends Prisma.Tenant$backupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$backupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantBackupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   backupSchedule<T extends Prisma.Tenant$backupScheduleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$backupScheduleArgs<ExtArgs>>): Prisma.Prisma__BackupScheduleClient<runtime.Types.Result.GetResult<Prisma.$BackupSchedulePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   exchangeRates<T extends Prisma.Tenant$exchangeRatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$exchangeRatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExchangeRatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  chartOfAccounts<T extends Prisma.Tenant$chartOfAccountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$chartOfAccountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5496,6 +5772,30 @@ export type Tenant$exchangeRatesArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.ExchangeRateScalarFieldEnum | Prisma.ExchangeRateScalarFieldEnum[]
+}
+
+/**
+ * Tenant.chartOfAccounts
+ */
+export type Tenant$chartOfAccountsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ChartOfAccount
+   */
+  select?: Prisma.ChartOfAccountSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ChartOfAccount
+   */
+  omit?: Prisma.ChartOfAccountOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChartOfAccountInclude<ExtArgs> | null
+  where?: Prisma.ChartOfAccountWhereInput
+  orderBy?: Prisma.ChartOfAccountOrderByWithRelationInput | Prisma.ChartOfAccountOrderByWithRelationInput[]
+  cursor?: Prisma.ChartOfAccountWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ChartOfAccountScalarFieldEnum | Prisma.ChartOfAccountScalarFieldEnum[]
 }
 
 /**

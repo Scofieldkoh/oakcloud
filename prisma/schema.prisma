@@ -162,6 +162,14 @@ enum AuditAction {
   EXCHANGE_RATE_CREATED
   EXCHANGE_RATE_UPDATED
   EXCHANGE_RATE_DELETED
+
+  // Chart of Accounts Operations
+  CHART_OF_ACCOUNTS_CREATED
+  CHART_OF_ACCOUNTS_UPDATED
+  CHART_OF_ACCOUNTS_DELETED
+  CHART_OF_ACCOUNTS_MAPPING_CREATED
+  CHART_OF_ACCOUNTS_MAPPING_UPDATED
+  CHART_OF_ACCOUNTS_MAPPING_DELETED
 }
 
 enum ChangeSource {
@@ -266,6 +274,9 @@ model Tenant {
 
   // Exchange Rates
   exchangeRates        ExchangeRate[]
+
+  // Chart of Accounts
+  chartOfAccounts      ChartOfAccount[]
 
   @@index([slug])
   @@index([status])
@@ -505,6 +516,13 @@ model Company {
 
   // Document Generation Module
   generatedDocuments    GeneratedDocument[]
+
+  // Document Tags
+  documentTags          DocumentTag[]
+
+  // Chart of Accounts
+  chartOfAccounts       ChartOfAccount[]
+  accountMappings       ChartOfAccountsMapping[]
 
   @@unique([tenantId, uen]) // UEN unique within tenant
   @@index([tenantId])
@@ -1695,6 +1713,9 @@ model ProcessingDocument {
   linkedFrom            DocumentLink[]      @relation("DocumentLinkSource")
   linkedTo              DocumentLink[]      @relation("DocumentLinkTarget")
 
+  // Document tags
+  documentTags          ProcessingDocumentTag[]
+
   @@index([documentId])
   @@index([pipelineStatus])
   @@index([parentProcessingDocId])
@@ -1747,6 +1768,85 @@ model DocumentLink {
   @@index([sourceDocumentId])
   @@index([targetDocumentId])
   @@map("document_links")
+}
+
+// ============================================================================
+// DOCUMENT TAG - Custom tags for organizing documents
+// ============================================================================
+
+// Predefined tag colors
+enum TagColor {
+  GRAY      // #6B7280 - Default/neutral
+  RED       // #EF4444 - Urgent/important
+  ORANGE    // #F97316 - Review needed
+  AMBER     // #F59E0B - Warning/attention
+  GREEN     // #22C55E - Completed/approved
+  TEAL      // #14B8A6 - In progress
+  BLUE      // #3B82F6 - Information
+  INDIGO    // #6366F1 - Processing
+  PURPLE    // #A855F7 - Special
+  PINK      // #EC4899 - Highlight
+}
+
+model DocumentTag {
+  id            String    @id @default(uuid())
+
+  // Multi-tenant with optional company scope
+  // companyId = NULL means tenant-level tag (shared across all companies)
+  // companyId = UUID means company-specific tag
+  tenantId      String    @map("tenant_id")
+  companyId     String?   @map("company_id")
+  company       Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Tag definition
+  name          String    // e.g., "Quarterly", "Urgent", "Tax Filing"
+  color         TagColor  @default(GRAY)
+  description   String?   // Optional description
+
+  // Usage tracking for "recent tags" feature
+  usageCount    Int       @default(0) @map("usage_count")
+  lastUsedAt    DateTime? @map("last_used_at")
+
+  // Soft delete
+  deletedAt     DateTime? @map("deleted_at")
+
+  // Timestamps
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  createdById   String    @map("created_by_id")
+
+  // Relations
+  documentTags  ProcessingDocumentTag[]
+
+  // Unique tag name per tenant+company scope (handles both tenant and company tags)
+  // For tenant tags: unique on [tenantId, NULL, name, deletedAt]
+  // For company tags: unique on [tenantId, companyId, name, deletedAt]
+  @@unique([tenantId, companyId, name, deletedAt])
+  @@index([tenantId, companyId])
+  @@index([tenantId, deletedAt])  // For fetching tenant tags (companyId IS NULL)
+  @@index([companyId, lastUsedAt])
+  @@map("document_tags")
+}
+
+model ProcessingDocumentTag {
+  id                    String              @id @default(uuid())
+
+  // Document reference
+  processingDocumentId  String              @map("processing_document_id")
+  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+
+  // Tag reference
+  tagId                 String              @map("tag_id")
+  tag                   DocumentTag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  // Audit
+  addedAt               DateTime            @default(now()) @map("added_at")
+  addedById             String              @map("added_by_id")
+
+  @@unique([processingDocumentId, tagId])
+  @@index([processingDocumentId])
+  @@index([tagId])
+  @@map("processing_document_tags")
 }
 
 // ============================================================================
@@ -2769,4 +2869,110 @@ model BackupSchedule {
   tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("backup_schedules")
+}
+
+// ============================================================================
+// CHART OF ACCOUNTS MODULE
+// ============================================================================
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+// Chart of Accounts - Master account codes for document processing
+// Scope: tenantId=null/companyId=null = system default
+//        tenantId set/companyId=null = tenant-level account
+//        tenantId set/companyId set = company-level override
+model ChartOfAccount {
+  id                String        @id @default(uuid())
+
+  // Scope (nullable for hierarchical resolution: system -> tenant -> company)
+  tenantId          String?       @map("tenant_id")
+  tenant            Tenant?       @relation(fields: [tenantId], references: [id])
+  companyId         String?       @map("company_id")
+  company           Company?      @relation(fields: [companyId], references: [id])
+
+  // Account details
+  code              String        // e.g., "5000", "6100"
+  name              String        // e.g., "Cost of Goods Sold"
+  description       String?
+
+  // Classification
+  accountType       AccountType   @map("account_type")
+  status            AccountStatus @default(ACTIVE)
+
+  // Hierarchy (self-reference for parent-child relationships)
+  parentId          String?       @map("parent_id")
+  parent            ChartOfAccount? @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children          ChartOfAccount[] @relation("AccountHierarchy")
+
+  // Display & ordering
+  sortOrder         Int           @default(0) @map("sort_order")
+
+  // Flags
+  isSystem          Boolean       @default(false) @map("is_system")  // Seeded account (system default)
+  isTaxApplicable   Boolean       @default(true) @map("is_tax_applicable")
+
+  // Audit
+  createdById       String?       @map("created_by_id")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  deletedAt         DateTime?     @map("deleted_at")
+
+  // Relations
+  externalMappings  ChartOfAccountsMapping[]
+
+  @@unique([tenantId, companyId, code]) // Unique code per scope
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([accountType])
+  @@index([parentId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([tenantId, companyId, status, deletedAt]) // For resolved account lookups
+  @@map("chart_of_accounts")
+}
+
+// Chart of Accounts Mapping - Maps internal accounts to external platform codes
+// Scoped per company since each company may have different external account codes
+model ChartOfAccountsMapping {
+  id                String              @id @default(uuid())
+  accountId         String              @map("account_id")
+  account           ChartOfAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // Company scope (required - mappings are per company)
+  companyId         String              @map("company_id")
+  company           Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // External system
+  provider          AccountingProvider  // XERO, QUICKBOOKS, MYOB, SAGE
+  externalCode      String?             @map("external_code")     // Code in external system (optional)
+  externalId        String?             @map("external_id")       // ID in external system (if applicable)
+  externalName      String?             @map("external_name")     // Name in external system
+
+  // Sync status (for future use when integrating with external platforms)
+  lastSyncedAt      DateTime?           @map("last_synced_at")
+  syncStatus        String?             @map("sync_status")       // e.g., "SYNCED", "PENDING", "ERROR"
+
+  // Audit
+  createdById       String?             @map("created_by_id")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  @@unique([accountId, companyId, provider])  // One mapping per provider per account per company
+  @@index([accountId])
+  @@index([companyId])
+  @@index([provider])
+  @@index([companyId, provider]) // For getting all mappings for a company by provider
+  @@map("chart_of_accounts_mappings")
 }

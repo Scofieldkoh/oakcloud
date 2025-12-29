@@ -759,7 +759,45 @@ export function DocumentPageViewer({
       </div>
 
       {/* PDF viewer */}
-      <div className="flex-1 overflow-auto p-4 bg-background-secondary">
+      <div className="flex-1 overflow-auto p-4 bg-background-secondary relative group/viewer">
+        {/* Left navigation arrow - only show if there's a previous page */}
+        {currentPage > 1 && (
+          <button
+            onClick={handlePrevPage}
+            disabled={isLoading}
+            className={cn(
+              'absolute left-2 top-1/2 -translate-y-1/2 z-20',
+              'w-10 h-10 rounded-full flex items-center justify-center',
+              'bg-background-primary/80 backdrop-blur-sm border border-border-primary shadow-lg',
+              'opacity-0 group-hover/viewer:opacity-100 transition-opacity duration-200',
+              'hover:bg-background-secondary hover:border-oak-light',
+              'disabled:opacity-30 disabled:cursor-not-allowed'
+            )}
+            title="Previous page"
+          >
+            <ChevronLeft className="w-5 h-5 text-text-primary" />
+          </button>
+        )}
+
+        {/* Right navigation arrow - only show if there's a next page */}
+        {currentPage < pageCount && (
+          <button
+            onClick={handleNextPage}
+            disabled={isLoading}
+            className={cn(
+              'absolute right-2 top-1/2 -translate-y-1/2 z-20',
+              'w-10 h-10 rounded-full flex items-center justify-center',
+              'bg-background-primary/80 backdrop-blur-sm border border-border-primary shadow-lg',
+              'opacity-0 group-hover/viewer:opacity-100 transition-opacity duration-200',
+              'hover:bg-background-secondary hover:border-oak-light',
+              'disabled:opacity-30 disabled:cursor-not-allowed'
+            )}
+            title="Next page"
+          >
+            <ChevronRight className="w-5 h-5 text-text-primary" />
+          </button>
+        )}
+
         <div className="inline-flex min-w-full min-h-full items-center justify-center">
           <div className="relative">
             {isPdfLoading && (

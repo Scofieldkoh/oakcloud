@@ -84,6 +84,8 @@ export const ModelName = {
   AiConversation: 'AiConversation',
   ProcessingDocument: 'ProcessingDocument',
   DocumentLink: 'DocumentLink',
+  DocumentTag: 'DocumentTag',
+  ProcessingDocumentTag: 'ProcessingDocumentTag',
   DocumentPage: 'DocumentPage',
   DocumentExtraction: 'DocumentExtraction',
   DocumentRevision: 'DocumentRevision',
@@ -110,7 +112,9 @@ export const ModelName = {
   ExternalPosting: 'ExternalPosting',
   FieldMapping: 'FieldMapping',
   TenantBackup: 'TenantBackup',
-  BackupSchedule: 'BackupSchedule'
+  BackupSchedule: 'BackupSchedule',
+  ChartOfAccount: 'ChartOfAccount',
+  ChartOfAccountsMapping: 'ChartOfAccountsMapping'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -790,6 +794,35 @@ export const DocumentLinkScalarFieldEnum = {
 export type DocumentLinkScalarFieldEnum = (typeof DocumentLinkScalarFieldEnum)[keyof typeof DocumentLinkScalarFieldEnum]
 
 
+export const DocumentTagScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  name: 'name',
+  color: 'color',
+  description: 'description',
+  usageCount: 'usageCount',
+  lastUsedAt: 'lastUsedAt',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdById: 'createdById'
+} as const
+
+export type DocumentTagScalarFieldEnum = (typeof DocumentTagScalarFieldEnum)[keyof typeof DocumentTagScalarFieldEnum]
+
+
+export const ProcessingDocumentTagScalarFieldEnum = {
+  id: 'id',
+  processingDocumentId: 'processingDocumentId',
+  tagId: 'tagId',
+  addedAt: 'addedAt',
+  addedById: 'addedById'
+} as const
+
+export type ProcessingDocumentTagScalarFieldEnum = (typeof ProcessingDocumentTagScalarFieldEnum)[keyof typeof ProcessingDocumentTagScalarFieldEnum]
+
+
 export const DocumentPageScalarFieldEnum = {
   id: 'id',
   processingDocumentId: 'processingDocumentId',
@@ -1323,6 +1356,46 @@ export const BackupScheduleScalarFieldEnum = {
 } as const
 
 export type BackupScheduleScalarFieldEnum = (typeof BackupScheduleScalarFieldEnum)[keyof typeof BackupScheduleScalarFieldEnum]
+
+
+export const ChartOfAccountScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  code: 'code',
+  name: 'name',
+  description: 'description',
+  accountType: 'accountType',
+  status: 'status',
+  parentId: 'parentId',
+  sortOrder: 'sortOrder',
+  isSystem: 'isSystem',
+  isTaxApplicable: 'isTaxApplicable',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type ChartOfAccountScalarFieldEnum = (typeof ChartOfAccountScalarFieldEnum)[keyof typeof ChartOfAccountScalarFieldEnum]
+
+
+export const ChartOfAccountsMappingScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  companyId: 'companyId',
+  provider: 'provider',
+  externalCode: 'externalCode',
+  externalId: 'externalId',
+  externalName: 'externalName',
+  lastSyncedAt: 'lastSyncedAt',
+  syncStatus: 'syncStatus',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ChartOfAccountsMappingScalarFieldEnum = (typeof ChartOfAccountsMappingScalarFieldEnum)[keyof typeof ChartOfAccountsMappingScalarFieldEnum]
 
 
 export const SortOrder = {

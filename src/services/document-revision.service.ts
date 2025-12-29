@@ -8,6 +8,12 @@
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import { Prisma } from '@/generated/prisma';
+import {
+  storage,
+  generateApprovedDocumentFilename,
+  getFileExtension,
+  buildApprovedStorageKey,
+} from '@/lib/storage';
 import type { DocumentRevision, DocumentRevisionLineItem } from '@/generated/prisma';
 import type {
   RevisionType,
@@ -508,6 +514,76 @@ export async function approveRevision(
       supersededAt: new Date(),
     },
   });
+
+  // Rename document file in storage based on revision data
+  const processingDoc = await prisma.processingDocument.findUnique({
+    where: { id: revision.processingDocumentId },
+    include: {
+      document: {
+        select: {
+          id: true,
+          fileName: true,
+          storageKey: true,
+        },
+      },
+    },
+  });
+
+  if (processingDoc?.document?.storageKey) {
+    const document = processingDoc.document;
+
+    // Generate new filename based on revision data
+    const extension = getFileExtension(document.fileName || document.storageKey);
+    const newFilename = generateApprovedDocumentFilename({
+      documentSubCategory: revision.documentSubCategory,
+      vendorName: revision.vendorName,
+      documentNumber: revision.documentNumber,
+      currency: revision.currency,
+      totalAmount: revision.totalAmount,
+      originalExtension: extension,
+    });
+
+    // Build new storage key (preserves directory structure)
+    const newStorageKey = buildApprovedStorageKey(document.storageKey, newFilename);
+
+    // Only rename if the key is actually different
+    if (newStorageKey !== document.storageKey) {
+      try {
+        // Check if source file exists before attempting move
+        const fileExists = await storage.exists(document.storageKey);
+
+        if (fileExists) {
+          // Move file to new location (copy + delete)
+          await storage.move(document.storageKey, newStorageKey);
+          log.info(`Renamed document file from "${document.storageKey}" to "${newStorageKey}"`);
+
+          // Update Document record with new filename and storage key
+          await prisma.document.update({
+            where: { id: document.id },
+            data: {
+              fileName: newFilename,
+              storageKey: newStorageKey,
+            },
+          });
+        } else {
+          // File doesn't exist (e.g., extraction-only document without physical file)
+          log.info(`Skipping file rename - source file does not exist: ${document.storageKey}`);
+
+          // Still update the filename for display purposes
+          await prisma.document.update({
+            where: { id: document.id },
+            data: {
+              fileName: newFilename,
+            },
+          });
+        }
+      } catch (error) {
+        // Log error but don't fail the approval
+        log.error(`Failed to rename document file: ${error}`);
+        // Continue with approval even if rename fails
+      }
+    }
+  }
 
   // Approve this revision
   await prisma.documentRevision.update({

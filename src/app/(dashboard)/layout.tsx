@@ -1,6 +1,6 @@
 'use client';
 
-import { Sidebar } from '@/components/ui/Sidebar';
+import { Sidebar } from '@/components/ui/sidebar';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { useUIStore } from '@/stores/ui-store';

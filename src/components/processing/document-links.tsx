@@ -44,7 +44,7 @@ interface DocumentLinksProps {
 }
 
 export function DocumentLinks({ documentId, canUpdate }: DocumentLinksProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
 

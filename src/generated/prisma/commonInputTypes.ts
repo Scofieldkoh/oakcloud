@@ -708,6 +708,23 @@ export type EnumDocumentLinkTypeWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumDocumentLinkTypeFilter<$PrismaModel>
 }
 
+export type EnumTagColorFilter<$PrismaModel = never> = {
+  equals?: $Enums.TagColor | Prisma.EnumTagColorFieldRefInput<$PrismaModel>
+  in?: $Enums.TagColor[] | Prisma.ListEnumTagColorFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TagColor[] | Prisma.ListEnumTagColorFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTagColorFilter<$PrismaModel> | $Enums.TagColor
+}
+
+export type EnumTagColorWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TagColor | Prisma.EnumTagColorFieldRefInput<$PrismaModel>
+  in?: $Enums.TagColor[] | Prisma.ListEnumTagColorFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TagColor[] | Prisma.ListEnumTagColorFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTagColorWithAggregatesFilter<$PrismaModel> | $Enums.TagColor
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTagColorFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTagColorFilter<$PrismaModel>
+}
+
 export type EnumExtractionTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.ExtractionType | Prisma.EnumExtractionTypeFieldRefInput<$PrismaModel>
   in?: $Enums.ExtractionType[] | Prisma.ListEnumExtractionTypeFieldRefInput<$PrismaModel>
@@ -1304,6 +1321,40 @@ export type BigIntWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedBigIntFilter<$PrismaModel>
   _min?: Prisma.NestedBigIntFilter<$PrismaModel>
   _max?: Prisma.NestedBigIntFilter<$PrismaModel>
+}
+
+export type EnumAccountTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountType | Prisma.EnumAccountTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountType[] | Prisma.ListEnumAccountTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountType[] | Prisma.ListEnumAccountTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountTypeFilter<$PrismaModel> | $Enums.AccountType
+}
+
+export type EnumAccountStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountStatus | Prisma.EnumAccountStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountStatus[] | Prisma.ListEnumAccountStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountStatus[] | Prisma.ListEnumAccountStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountStatusFilter<$PrismaModel> | $Enums.AccountStatus
+}
+
+export type EnumAccountTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountType | Prisma.EnumAccountTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountType[] | Prisma.ListEnumAccountTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountType[] | Prisma.ListEnumAccountTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountTypeWithAggregatesFilter<$PrismaModel> | $Enums.AccountType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAccountTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAccountTypeFilter<$PrismaModel>
+}
+
+export type EnumAccountStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountStatus | Prisma.EnumAccountStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountStatus[] | Prisma.ListEnumAccountStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountStatus[] | Prisma.ListEnumAccountStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountStatusWithAggregatesFilter<$PrismaModel> | $Enums.AccountStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAccountStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAccountStatusFilter<$PrismaModel>
 }
 
 export type NestedStringFilter<$PrismaModel = never> = {
@@ -1948,6 +1999,23 @@ export type NestedEnumDocumentLinkTypeWithAggregatesFilter<$PrismaModel = never>
   _max?: Prisma.NestedEnumDocumentLinkTypeFilter<$PrismaModel>
 }
 
+export type NestedEnumTagColorFilter<$PrismaModel = never> = {
+  equals?: $Enums.TagColor | Prisma.EnumTagColorFieldRefInput<$PrismaModel>
+  in?: $Enums.TagColor[] | Prisma.ListEnumTagColorFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TagColor[] | Prisma.ListEnumTagColorFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTagColorFilter<$PrismaModel> | $Enums.TagColor
+}
+
+export type NestedEnumTagColorWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TagColor | Prisma.EnumTagColorFieldRefInput<$PrismaModel>
+  in?: $Enums.TagColor[] | Prisma.ListEnumTagColorFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TagColor[] | Prisma.ListEnumTagColorFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTagColorWithAggregatesFilter<$PrismaModel> | $Enums.TagColor
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTagColorFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTagColorFilter<$PrismaModel>
+}
+
 export type NestedEnumExtractionTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.ExtractionType | Prisma.EnumExtractionTypeFieldRefInput<$PrismaModel>
   in?: $Enums.ExtractionType[] | Prisma.ListEnumExtractionTypeFieldRefInput<$PrismaModel>
@@ -2533,6 +2601,40 @@ export type NestedBigIntWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedBigIntFilter<$PrismaModel>
   _min?: Prisma.NestedBigIntFilter<$PrismaModel>
   _max?: Prisma.NestedBigIntFilter<$PrismaModel>
+}
+
+export type NestedEnumAccountTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountType | Prisma.EnumAccountTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountType[] | Prisma.ListEnumAccountTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountType[] | Prisma.ListEnumAccountTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountTypeFilter<$PrismaModel> | $Enums.AccountType
+}
+
+export type NestedEnumAccountStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountStatus | Prisma.EnumAccountStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountStatus[] | Prisma.ListEnumAccountStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountStatus[] | Prisma.ListEnumAccountStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountStatusFilter<$PrismaModel> | $Enums.AccountStatus
+}
+
+export type NestedEnumAccountTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountType | Prisma.EnumAccountTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountType[] | Prisma.ListEnumAccountTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountType[] | Prisma.ListEnumAccountTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountTypeWithAggregatesFilter<$PrismaModel> | $Enums.AccountType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAccountTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAccountTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumAccountStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountStatus | Prisma.EnumAccountStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountStatus[] | Prisma.ListEnumAccountStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountStatus[] | Prisma.ListEnumAccountStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountStatusWithAggregatesFilter<$PrismaModel> | $Enums.AccountStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAccountStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAccountStatusFilter<$PrismaModel>
 }
 
 

@@ -13,3 +13,5 @@ export { ResizableSplitView, SplitViewHandle, VerticalSplitView } from './resiza
 export { DuplicateComparisonModal } from './duplicate-comparison-modal';
 export { FileMergeModal } from './file-merge-modal';
 export { DocumentLinks } from './document-links';
+export { DocumentTags, TagChip, TagManager } from './document-tags';
+export { ExportDropdown } from './export-dropdown';

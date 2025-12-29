@@ -23,6 +23,7 @@ import {
   Pencil,
   XCircle,
   Sparkles,
+  Download,
 } from 'lucide-react';
 import {
   useProcessingDocument,
@@ -38,6 +39,7 @@ import {
   useUpdatePageRotation,
   useBulkOperation,
   useCreateRevision,
+  useDocumentLinks,
 } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/components/ui/toast';
@@ -49,6 +51,8 @@ import {
   ConfidenceDot,
   DuplicateComparisonModal,
   DocumentLinks,
+  DocumentTags,
+  ExportDropdown,
 } from '@/components/processing';
 import type { FieldValue } from '@/components/processing/document-page-viewer';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
@@ -62,6 +66,7 @@ import {
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
 import { convertToHomeCurrency } from '@/lib/currency-conversion';
 import { useRateLookup } from '@/hooks/use-exchange-rates';
+import { useAccountsForSelect } from '@/hooks/use-chart-of-accounts';
 
 // Status display configs
 const pipelineStatusConfig: Record<
@@ -122,24 +127,7 @@ function getGstRate(taxCode: string | null | undefined): number {
   return gstCode?.rate ?? 0;
 }
 
-const chartOfAccounts = [
-  { code: '5000', name: 'Cost of Goods Sold' },
-  { code: '5100', name: 'Direct Labor' },
-  { code: '5200', name: 'Direct Materials' },
-  { code: '6000', name: 'Operating Expenses' },
-  { code: '6100', name: 'Advertising & Marketing' },
-  { code: '6200', name: 'Bank Charges' },
-  { code: '6300', name: 'Depreciation' },
-  { code: '6400', name: 'Insurance' },
-  { code: '6500', name: 'Office Supplies' },
-  { code: '6600', name: 'Professional Fees' },
-  { code: '6700', name: 'Rent' },
-  { code: '6800', name: 'Repairs & Maintenance' },
-  { code: '6900', name: 'Telephone & Internet' },
-  { code: '7000', name: 'Travel & Entertainment' },
-  { code: '7100', name: 'Utilities' },
-  { code: '7200', name: 'Other Expenses' },
-];
+// Chart of accounts is now fetched from database via useAccountsForSelect hook
 
 // Bounding box type for highlight integration
 interface BoundingBox {
@@ -305,6 +293,21 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     data?.document?.tenantId
   );
 
+  // Chart of accounts for line item assignment
+  const { data: accountsData } = useAccountsForSelect({
+    tenantId: data?.document?.tenantId,
+    companyId: data?.document?.company?.id || undefined,
+  });
+
+  // Transform accounts to the format expected by LineItemsSection
+  const chartOfAccounts = useMemo(() => {
+    if (!accountsData) return [];
+    return accountsData.map((account) => ({
+      code: account.code,
+      name: account.name,
+    }));
+  }, [accountsData]);
+
   // Mutations
   const triggerExtraction = useTriggerExtraction();
   const approveRevision = useApproveRevision();
@@ -313,6 +316,10 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const updatePageRotation = useUpdatePageRotation();
   const bulkOperation = useBulkOperation();
   const createRevision = useCreateRevision();
+
+  // Document links (for export dropdown)
+  const { data: linkedDocsData } = useDocumentLinks(id);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // UI State
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -675,6 +682,38 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       refetch();
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to trigger extraction');
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      const response = await fetch(`/api/processing-documents/${id}/download`);
+      if (!response.ok) {
+        throw new Error('Failed to download document');
+      }
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let fileName = doc?.fileName || 'document';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          fileName = decodeURIComponent(match[1]);
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      success('Document downloaded');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to download');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -1140,6 +1179,23 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                   Approve
                 </button>
               )}
+              {/* Download and Export buttons */}
+              <button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="btn-ghost btn-sm"
+                title="Download document"
+              >
+                {isDownloading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+              </button>
+              <ExportDropdown
+                documentId={id}
+                hasLinkedDocuments={linkedDocsData && linkedDocsData.length > 0}
+              />
             </>
           ) : null}
           {!isViewingSnapshot && can.deleteDocument && (
@@ -1201,7 +1257,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       {/* Main Content - Vertical Split: Top (Preview + Header) | Bottom (Line Items) */}
       <div className="flex-1 overflow-hidden">
         <VerticalSplitView
-          defaultTopHeight={70}
+          defaultTopHeight={75}
           minTopHeight={40}
           maxTopHeight={85}
           topPanel={
@@ -1232,13 +1288,24 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                       onTrigger={handleTriggerExtraction}
                     />
                   ) : (
-                    <div className="space-y-4 max-w-2xl">
-                      {/* Section Header - Company Name */}
-                      <h3 className="text-sm font-medium text-oak-primary px-2">
-                        {doc.company?.name || 'Unassigned Company'}
-                      </h3>
+                    <div className="space-y-4">
+                      {/* Section Header - Company Name - Full width like PDF toolbar */}
+                      <div className="-mx-4 -mt-4 px-4 py-3 bg-background-tertiary border-b border-border-primary">
+                        <span className="text-sm font-medium text-text-primary">
+                          {doc.company?.name || 'Unassigned Company'}
+                        </span>
+                      </div>
+
+                      {/* Tags Section - Above document type, always editable */}
+                      <div className="pt-2">
+                        <DocumentTags
+                          documentId={id}
+                          companyId={doc.company?.id || null}
+                        />
+                      </div>
 
                       {/* Header Fields */}
+                      <div className="max-w-2xl space-y-4">
                       <ExtractedHeaderFields
                         revision={revisionWithLineItems || currentRevision}
                         isEditing={isEditing}
@@ -1268,10 +1335,12 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
                       {/* Validation Status */}
                       {revisionWithLineItems?.validationStatus && revisionWithLineItems.validationStatus !== 'PENDING' && (
-                        <ValidationStatusSection
-                          status={revisionWithLineItems.validationStatus}
-                          issues={(revisionWithLineItems.validationIssues as { issues?: ValidationIssue[] })?.issues}
-                        />
+                        <div className="pt-2">
+                          <ValidationStatusSection
+                            status={revisionWithLineItems.validationStatus}
+                            issues={(revisionWithLineItems.validationIssues as { issues?: ValidationIssue[] })?.issues}
+                          />
+                        </div>
                       )}
 
                       {/* Document Links - Only show when not viewing a snapshot */}
@@ -1281,6 +1350,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                           canUpdate={can.updateDocument}
                         />
                       )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1907,7 +1977,7 @@ function AmountsSection({
           <div className="px-3 py-2 text-right border-r border-border-primary">
             <div className="text-text-muted mb-1">Document Amount</div>
             <div className="flex items-center justify-end">
-              <div className="w-36">
+              <div className="w-36 text-text-primary">
                 <SearchableSelect
                   options={currencyOptions.map((curr) => ({
                     value: curr,
@@ -2002,7 +2072,7 @@ function AmountsSection({
           )}>
             {isSameCurrency ? (
               <div className="w-full px-2 py-1 text-sm text-right tabular-nums text-text-muted">
-                {editFormData.subtotal || '-'}
+                {editFormData.subtotal ? parseFloat(editFormData.subtotal).toFixed(2) : '-'}
               </div>
             ) : (
               <input
@@ -2066,7 +2136,7 @@ function AmountsSection({
           )}>
             {isSameCurrency ? (
               <div className="w-full px-2 py-1 text-sm text-right tabular-nums text-text-muted">
-                {editFormData.taxAmount || '-'}
+                {editFormData.taxAmount ? parseFloat(editFormData.taxAmount).toFixed(2) : '-'}
               </div>
             ) : (
               <input

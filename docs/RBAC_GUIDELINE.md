@@ -315,6 +315,7 @@ if (companyIds && companyIds.length > 0) {
 | `shareholder` | Shareholders |
 | `audit_log` | Audit logs |
 | `connector` | External service connectors (AI providers, storage) |
+| `chart_of_accounts` | Chart of accounts and mappings |
 
 **Actions:**
 

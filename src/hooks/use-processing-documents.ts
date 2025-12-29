@@ -121,6 +121,8 @@ export interface ProcessingDocumentSearchParams {
   vendorName?: string;
   documentNumber?: string;
   fileName?: string;
+  // Tag filter
+  tagIds?: string[]; // Filter by document tags
 }
 
 export interface ProcessingDocumentSearchResult {
@@ -139,7 +141,14 @@ async function fetchProcessingDocuments(
 
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== '') {
-      searchParams.set(key, String(value));
+      // Handle arrays (like tagIds) by joining with commas
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          searchParams.set(key, value.join(','));
+        }
+      } else {
+        searchParams.set(key, String(value));
+      }
     }
   });
 
@@ -304,6 +313,8 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
       params.vendorName,
       params.documentNumber,
       params.fileName,
+      // Tag filter
+      params.tagIds,
     ],
     queryFn: () => fetchProcessingDocuments(params),
     staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
@@ -1145,6 +1156,81 @@ export function useDeleteDocumentLink() {
     onSuccess: (_, { documentId }) => {
       queryClient.invalidateQueries({ queryKey: ['document-links', documentId] });
       queryClient.invalidateQueries({ queryKey: ['linkable-documents', documentId] });
+    },
+  });
+}
+
+// ============================================================================
+// Bulk ZIP Download
+// ============================================================================
+
+/**
+ * Hook for downloading multiple documents as a ZIP file
+ */
+export function useBulkDownloadZip() {
+  return useMutation({
+    mutationFn: async (documentIds: string[]) => {
+      const response = await fetch('/api/processing-documents/bulk-download-zip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentIds }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to download ZIP');
+      }
+      return response.blob();
+    },
+  });
+}
+
+// ============================================================================
+// Bulk Excel Export
+// ============================================================================
+
+/**
+ * Hook for exporting multiple documents to Excel
+ */
+export function useBulkExport() {
+  return useMutation({
+    mutationFn: async (documentIds: string[]) => {
+      const response = await fetch('/api/processing-documents/bulk-export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentIds }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to export');
+      }
+      return response.blob();
+    },
+  });
+}
+
+// ============================================================================
+// Single Document Export
+// ============================================================================
+
+/**
+ * Hook for exporting a single document to Excel with optional linked documents
+ */
+export function useDocumentExport() {
+  return useMutation({
+    mutationFn: async ({
+      documentId,
+      includeLinked,
+    }: {
+      documentId: string;
+      includeLinked: boolean;
+    }) => {
+      const url = `/api/processing-documents/${documentId}/export${includeLinked ? '?includeLinked=true' : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to export');
+      }
+      return response.blob();
     },
   });
 }

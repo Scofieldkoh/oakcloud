@@ -6,16 +6,17 @@ import {
   Play,
   Trash2,
   Download,
+  FileSpreadsheet,
   X,
   AlertTriangle,
   Loader2,
 } from 'lucide-react';
-import { useBulkOperation, useBulkDownload } from '@/hooks/use-processing-documents';
+import { useBulkOperation, useBulkDownloadZip, useBulkExport } from '@/hooks/use-processing-documents';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 
-type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE' | 'DOWNLOAD';
+type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE' | 'DOWNLOAD_ZIP' | 'EXPORT';
 
 interface BulkActionsToolbarProps {
   selectedIds: string[];
@@ -32,10 +33,18 @@ const operations: {
   requiresConfirmation: boolean;
 }[] = [
   {
-    id: 'DOWNLOAD',
-    label: 'Download',
+    id: 'DOWNLOAD_ZIP',
+    label: 'Download ZIP',
     icon: Download,
-    description: 'Download selected documents',
+    description: 'Download selected documents as ZIP',
+    variant: 'default',
+    requiresConfirmation: false,
+  },
+  {
+    id: 'EXPORT',
+    label: 'Export Excel',
+    icon: FileSpreadsheet,
+    description: 'Export selected documents to Excel',
     variant: 'default',
     requiresConfirmation: false,
   },
@@ -71,7 +80,8 @@ export function BulkActionsToolbar({
   className,
 }: BulkActionsToolbarProps) {
   const bulkOperation = useBulkOperation();
-  const bulkDownload = useBulkDownload();
+  const bulkDownloadZip = useBulkDownloadZip();
+  const bulkExport = useBulkExport();
   const { success, error: toastError } = useToast();
 
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -79,46 +89,53 @@ export function BulkActionsToolbar({
     operation: BulkOperation | null;
   }>({ isOpen: false, operation: null });
 
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [activeOperationId, setActiveOperationId] = useState<string | null>(null);
 
-  const handleDownload = async () => {
-    setDownloadingId('DOWNLOAD');
+  const handleDownloadZip = async () => {
+    setActiveOperationId('DOWNLOAD_ZIP');
     try {
-      const result = await bulkDownload.mutateAsync(selectedIds);
+      const blob = await bulkDownloadZip.mutateAsync(selectedIds);
 
-      if (result.downloads.length === 0) {
-        toastError('No documents available for download');
-        return;
-      }
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.download = `documents-${dateStr}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-      // Download files sequentially with small delays to avoid browser blocking
-      for (let i = 0; i < result.downloads.length; i++) {
-        const download = result.downloads[i];
-
-        // Create a temporary link and trigger download
-        const link = document.createElement('a');
-        link.href = download.downloadUrl;
-        link.download = download.fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        // Small delay between downloads to prevent browser blocking
-        if (i < result.downloads.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 200));
-        }
-      }
-
-      success(`Downloaded ${result.downloads.length} document${result.downloads.length > 1 ? 's' : ''}`);
-
-      if (result.errors.length > 0) {
-        toastError(`${result.errors.length} document(s) could not be downloaded`);
-      }
+      success(`Downloaded ${selectedIds.length} document${selectedIds.length > 1 ? 's' : ''} as ZIP`);
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to download documents');
+      toastError(err instanceof Error ? err.message : 'Failed to download ZIP');
     } finally {
-      setDownloadingId(null);
+      setActiveOperationId(null);
+    }
+  };
+
+  const handleExport = async () => {
+    setActiveOperationId('EXPORT');
+    try {
+      const blob = await bulkExport.mutateAsync(selectedIds);
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.download = `export-${dateStr}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      success(`Exported ${selectedIds.length} document${selectedIds.length > 1 ? 's' : ''} to Excel`);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to export');
+    } finally {
+      setActiveOperationId(null);
     }
   };
 
@@ -126,8 +143,10 @@ export function BulkActionsToolbar({
     const op = operations.find((o) => o.id === operation);
     if (op && !op.requiresConfirmation) {
       // Execute immediately without confirmation
-      if (operation === 'DOWNLOAD') {
-        handleDownload();
+      if (operation === 'DOWNLOAD_ZIP') {
+        handleDownloadZip();
+      } else if (operation === 'EXPORT') {
+        handleExport();
       }
       return;
     }
@@ -135,7 +154,7 @@ export function BulkActionsToolbar({
   };
 
   const executeOperation = async () => {
-    if (!confirmDialog.operation || confirmDialog.operation === 'DOWNLOAD') return;
+    if (!confirmDialog.operation || confirmDialog.operation === 'DOWNLOAD_ZIP' || confirmDialog.operation === 'EXPORT') return;
 
     try {
       const result = await bulkOperation.mutateAsync({
@@ -201,8 +220,8 @@ export function BulkActionsToolbar({
             const Icon = op.icon;
             const isLoading =
               (bulkOperation.isPending && confirmDialog.operation === op.id) ||
-              (downloadingId === op.id);
-            const isDisabled = bulkOperation.isPending || downloadingId !== null;
+              (activeOperationId === op.id);
+            const isDisabled = bulkOperation.isPending || activeOperationId !== null;
 
             return (
               <button
