@@ -67,16 +67,34 @@ export function LineItemEditor({
   const [editingItems, setEditingItems] = useState<EditingLineItem[]>([]);
   const [itemsToDelete, setItemsToDelete] = useState<string[]>([]);
 
+  // Currency symbols mapping - SGD displayed as "S$"
+  const CURRENCY_SYMBOLS: Record<string, string> = {
+    SGD: 'S$',
+    USD: 'US$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    CNY: '¥',
+    HKD: 'HK$',
+    AUD: 'A$',
+    MYR: 'RM',
+  };
+
   // Format currency
   const formatCurrency = useCallback(
     (amount: string | null) => {
       if (!amount) return '-';
       const num = parseFloat(amount);
-      return new Intl.NumberFormat('en-SG', {
-        style: 'currency',
-        currency: currency || 'SGD',
+      if (isNaN(num)) return '-';
+
+      const formatted = new Intl.NumberFormat('en-SG', {
         minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
       }).format(num);
+
+      const currCode = currency || 'SGD';
+      const symbol = CURRENCY_SYMBOLS[currCode] || `${currCode} `;
+      return `${symbol}${formatted}`;
     },
     [currency]
   );

@@ -1389,6 +1389,83 @@ const handleSubmit = () => {
 
 **Note**: This issue doesn't apply when using `react-hook-form` with `{ valueAsNumber: true }`, which handles the conversion correctly.
 
+### Currency Formatting
+
+All currency amounts must be displayed using consistent formatting across the application.
+
+**Singapore Dollar Display:**
+- Singapore Dollar (SGD) is displayed as **"S$"** (e.g., "S$1,234.56")
+- This applies globally to all currency displays in the application
+
+**Other Currency Symbols:**
+
+| Currency | Symbol | Example |
+|----------|--------|---------|
+| SGD | S$ | S$1,234.56 |
+| USD | US$ | US$1,234.56 |
+| EUR | € | €1,234.56 |
+| GBP | £ | £1,234.56 |
+| JPY | ¥ | ¥1,234 |
+| CNY | ¥ | ¥1,234.56 |
+| HKD | HK$ | HK$1,234.56 |
+| AUD | A$ | A$1,234.56 |
+| MYR | RM | RM1,234.56 |
+| THB | ฿ | ฿1,234.56 |
+| IDR | Rp | Rp1,234 |
+| PHP | ₱ | ₱1,234.56 |
+| INR | ₹ | ₹1,234.56 |
+| KRW | ₩ | ₩1,234 |
+| TWD | NT$ | NT$1,234.56 |
+| VND | ₫ | ₫1,234 |
+
+**Implementation:**
+
+Use the `formatCurrency` utility from `@/lib/utils`:
+
+```tsx
+import { formatCurrency } from '@/lib/utils';
+
+// Basic usage (defaults to SGD)
+formatCurrency(1234.56)           // "S$1,234.56"
+formatCurrency(1234.56, 'SGD')    // "S$1,234.56"
+formatCurrency(1234.56, 'USD')    // "US$1,234.56"
+formatCurrency(-1234.56, 'SGD')   // "(S$1,234.56)" - negatives in parentheses
+formatCurrency(null)              // "-"
+```
+
+**For inline formatCurrency functions** (in components that don't import from utils), use the `CURRENCY_SYMBOLS` constant:
+
+```tsx
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  SGD: 'S$',
+  USD: 'US$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  // ... other currencies
+};
+
+const formatCurrency = (amount: string | number | null, currency: string) => {
+  if (!amount) return '-';
+  const num = parseFloat(String(amount));
+  if (isNaN(num)) return '-';
+
+  const formatted = new Intl.NumberFormat('en-SG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(num));
+
+  const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
+  return num < 0 ? `(${symbol}${formatted})` : `${symbol}${formatted}`;
+};
+```
+
+**Key Points:**
+- Always use 2 decimal places for most currencies (JPY, KRW, IDR, VND may use 0)
+- Negative amounts are displayed with parentheses: `(S$1,234.56)`
+- Use Singapore locale (`en-SG`) for consistent thousand separators
+- Null/undefined amounts display as `-`
+
 ---
 
 ## Mobile Responsiveness

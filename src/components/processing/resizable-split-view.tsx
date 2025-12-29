@@ -300,6 +300,9 @@ export function VerticalSplitView({
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
+  // Calculate bottom height (remaining percentage minus handle height)
+  const bottomHeight = 100 - topHeight;
+
   return (
     <div
       ref={containerRef}
@@ -315,7 +318,7 @@ export function VerticalSplitView({
           'flex-shrink-0 overflow-auto',
           topPanelClassName
         )}
-        style={{ height: `${topHeight}%` }}
+        style={{ height: `calc(${topHeight}% - 4px)` }}
       >
         {topPanel}
       </div>
@@ -329,7 +332,7 @@ export function VerticalSplitView({
         aria-label="Resize panels vertically"
         tabIndex={0}
         className={cn(
-          'flex items-center justify-center',
+          'flex-shrink-0 flex items-center justify-center',
           'h-2 bg-background-tertiary border-y border-border-primary',
           'cursor-row-resize hover:bg-oak-primary/10 transition-colors',
           'focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-inset',
@@ -344,9 +347,10 @@ export function VerticalSplitView({
       {/* Bottom Panel */}
       <div
         className={cn(
-          'flex-1 overflow-auto',
+          'flex-shrink-0 overflow-auto',
           bottomPanelClassName
         )}
+        style={{ height: `calc(${bottomHeight}% - 4px)` }}
       >
         {bottomPanel}
       </div>

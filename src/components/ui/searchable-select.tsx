@@ -38,6 +38,8 @@ export interface SearchableSelectProps {
   label?: string;
   /** Allow clearing the selection */
   clearable?: boolean;
+  /** Show keyboard hints footer */
+  showKeyboardHints?: boolean;
 }
 
 export function SearchableSelect({
@@ -50,6 +52,7 @@ export function SearchableSelect({
   className,
   label,
   clearable = true,
+  showKeyboardHints = true,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -366,28 +369,30 @@ export function SearchableSelect({
             </div>
 
             {/* Footer hint */}
-            <div className="px-3 py-2 border-t border-border-primary bg-background-secondary rounded-b-xl">
-              <div className="flex items-center gap-3 text-xs text-text-muted">
-                <span>
-                  <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                    ↑↓
-                  </kbd>{' '}
-                  Navigate
-                </span>
-                <span>
-                  <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                    Enter
-                  </kbd>{' '}
-                  Select
-                </span>
-                <span>
-                  <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                    Esc
-                  </kbd>{' '}
-                  Close
-                </span>
+            {showKeyboardHints && (
+              <div className="px-3 py-2 border-t border-border-primary bg-background-secondary rounded-b-xl">
+                <div className="flex items-center gap-3 text-xs text-text-muted">
+                  <span>
+                    <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
+                      ↑↓
+                    </kbd>{' '}
+                    Navigate
+                  </span>
+                  <span>
+                    <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
+                      Enter
+                    </kbd>{' '}
+                    Select
+                  </span>
+                  <span>
+                    <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
+                      Esc
+                    </kbd>{' '}
+                    Close
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>,
           document.body
         )}

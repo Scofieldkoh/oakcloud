@@ -39,16 +39,62 @@ export function formatDateTime(date: Date | string | null | undefined): string {
   });
 }
 
+/**
+ * Format a number as currency with proper symbol.
+ * Singapore Dollar (SGD) is displayed as "S$" (e.g., "S$1,234.56")
+ * Other currencies use their standard ISO symbols.
+ */
 export function formatCurrency(
   amount: Decimal | number | string | null | undefined,
   currency: string = 'SGD'
 ): string {
   const num = toNumber(amount);
   if (num === null) return '-';
-  return new Intl.NumberFormat('en-SG', {
-    style: 'currency',
-    currency,
-  }).format(num);
+
+  // Format number with proper grouping and decimals
+  const formatted = new Intl.NumberFormat('en-SG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(num));
+
+  // Get currency symbol - use S$ for SGD, otherwise use standard symbols
+  const symbol = currency === 'SGD' ? 'S$' : getCurrencySymbolForFormat(currency);
+
+  // Handle negative numbers with parentheses
+  if (num < 0) {
+    return `(${symbol}${formatted})`;
+  }
+
+  return `${symbol}${formatted}`;
+}
+
+/**
+ * Get currency symbol for formatting.
+ * Returns common symbols for major currencies, falls back to currency code.
+ */
+function getCurrencySymbolForFormat(currency: string): string {
+  const symbols: Record<string, string> = {
+    SGD: 'S$',
+    USD: 'US$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    CNY: '¥',
+    HKD: 'HK$',
+    AUD: 'A$',
+    NZD: 'NZ$',
+    CAD: 'C$',
+    CHF: 'CHF ',
+    MYR: 'RM',
+    THB: '฿',
+    IDR: 'Rp',
+    PHP: '₱',
+    INR: '₹',
+    KRW: '₩',
+    TWD: 'NT$',
+    VND: '₫',
+  };
+  return symbols[currency] || `${currency} `;
 }
 
 export function formatNumber(num: number | null | undefined): string {

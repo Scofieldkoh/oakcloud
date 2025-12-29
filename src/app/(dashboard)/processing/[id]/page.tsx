@@ -53,6 +53,7 @@ import {
 import type { FieldValue } from '@/components/processing/document-page-viewer';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import {
   CATEGORY_LABELS,
   SUBCATEGORY_LABELS,
@@ -175,6 +176,29 @@ function formatDateTime(dateString: string): string {
   });
 }
 
+// Currency symbols mapping - SGD displayed as "S$"
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  SGD: 'S$',
+  USD: 'US$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  CNY: '¥',
+  HKD: 'HK$',
+  AUD: 'A$',
+  NZD: 'NZ$',
+  CAD: 'C$',
+  CHF: 'CHF ',
+  MYR: 'RM',
+  THB: '฿',
+  IDR: 'Rp',
+  PHP: '₱',
+  INR: '₹',
+  KRW: '₩',
+  TWD: 'NT$',
+  VND: '₫',
+};
+
 function formatCurrency(amount: string | number | null, currency: string): string {
   if (amount === null || amount === undefined || amount === '') return '-';
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -184,12 +208,13 @@ function formatCurrency(amount: string | number | null, currency: string): strin
   const absNum = Math.abs(num);
 
   const formatted = new Intl.NumberFormat('en-SG', {
-    style: 'currency',
-    currency: currency || 'SGD',
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(absNum);
 
-  return isNegative ? `(${formatted})` : formatted;
+  const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
+
+  return isNegative ? `(${symbol}${formatted})` : `${symbol}${formatted}`;
 }
 
 function formatNumber(value: string | number | null, decimals: number = 2): string {
@@ -856,6 +881,9 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     const updated = [...editLineItems];
     updated[index] = { ...updated[index], [field]: value };
 
+    const exchangeRate = parseFloat(editFormData.homeExchangeRate) || 1;
+    const isSameCurrency = editFormData.currency === editFormData.homeCurrency;
+
     // Auto-calculate amount when qty or unitPrice changes
     if (field === 'quantity' || field === 'unitPrice') {
       const qty = parseFloat(field === 'quantity' ? value : updated[index].quantity) || 0;
@@ -875,8 +903,71 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       updated[index].gstAmount = gstAmount > 0 ? gstAmount.toFixed(2) : '';
     }
 
+    // Auto-calculate home currency amounts when document currency amounts change
+    // (unless user has manually overridden home amounts)
+    if (!isSameCurrency) {
+      if (field === 'amount' || field === 'quantity' || field === 'unitPrice') {
+        // Only auto-calculate if not manually overridden
+        if (!updated[index].isHomeAmountOverride) {
+          const amount = parseFloat(updated[index].amount) || 0;
+          updated[index].homeAmount = (amount * exchangeRate).toFixed(2);
+        }
+      }
+      if (field === 'gstAmount' || field === 'amount' || field === 'taxCode' || field === 'quantity' || field === 'unitPrice') {
+        // Only auto-calculate if not manually overridden
+        if (!updated[index].isHomeGstOverride) {
+          const gstAmount = parseFloat(updated[index].gstAmount) || 0;
+          updated[index].homeGstAmount = (gstAmount * exchangeRate).toFixed(2);
+        }
+      }
+      // When user manually edits home amounts, set override flag
+      if (field === 'homeAmount') {
+        updated[index].isHomeAmountOverride = true;
+      }
+      if (field === 'homeGstAmount') {
+        updated[index].isHomeGstOverride = true;
+      }
+    }
+
     setEditLineItems(updated);
   };
+
+  // Recalculate all line items when exchange rate changes
+  // Note: editLineItems is intentionally excluded from deps to prevent infinite loops
+  // The hasChanges check prevents unnecessary re-renders
+  useEffect(() => {
+    if (!isEditing || editLineItems.length === 0) return;
+
+    const exchangeRate = parseFloat(editFormData.homeExchangeRate) || 1;
+    const isSameCurrency = editFormData.currency === editFormData.homeCurrency;
+
+    if (isSameCurrency) return;
+
+    // Recalculate home amounts for all line items that aren't manually overridden
+    const updated = editLineItems.map((item) => {
+      const newItem = { ...item };
+      if (!item.isHomeAmountOverride) {
+        const amount = parseFloat(item.amount) || 0;
+        newItem.homeAmount = (amount * exchangeRate).toFixed(2);
+      }
+      if (!item.isHomeGstOverride) {
+        const gstAmount = parseFloat(item.gstAmount) || 0;
+        newItem.homeGstAmount = (gstAmount * exchangeRate).toFixed(2);
+      }
+      return newItem;
+    });
+
+    // Only update if there are actual changes to prevent infinite loops
+    const hasChanges = updated.some((item, idx) =>
+      item.homeAmount !== editLineItems[idx].homeAmount ||
+      item.homeGstAmount !== editLineItems[idx].homeGstAmount
+    );
+
+    if (hasChanges) {
+      setEditLineItems(updated);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editFormData.homeExchangeRate, editFormData.currency, editFormData.homeCurrency, isEditing]);
 
   // Loading state
   if (isLoading) {
@@ -922,7 +1013,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const needsDuplicateDecision = doc.duplicateStatus === 'SUSPECTED' && currentRevision?.status === 'DRAFT';
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col h-[100dvh] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-background-primary flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -1141,10 +1232,10 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                       onTrigger={handleTriggerExtraction}
                     />
                   ) : (
-                    <div className="space-y-4">
-                      {/* Section Header */}
-                      <h3 className="text-xs font-medium text-text-muted uppercase tracking-wide">
-                        Header Information
+                    <div className="space-y-4 max-w-2xl">
+                      {/* Section Header - Company Name */}
+                      <h3 className="text-sm font-medium text-oak-primary px-2">
+                        {doc.company?.name || 'Unassigned Company'}
                       </h3>
 
                       {/* Header Fields */}
@@ -1172,6 +1263,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                         focusedField={focusedField}
                         setFocusedField={setFocusedField}
                         getFieldConfidence={getFieldConfidence}
+                        tenantId={data?.document?.tenantId}
                       />
 
                       {/* Validation Status */}
@@ -1199,14 +1291,15 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
             />
           }
           bottomPanel={
-            <div className="h-full overflow-auto bg-background-primary">
+            <div className="overflow-auto bg-background-primary">
               {currentRevision && (
                 <LineItemsSection
                   lineItems={isEditing ? editLineItems : revisionWithLineItems?.lineItems}
                   isEditing={isEditing}
                   isLoading={lineItemsLoading}
-                  currency={revisionWithLineItems?.currency || currentRevision.currency}
+                  currency={isEditing ? editFormData.currency : (revisionWithLineItems?.currency || currentRevision.currency)}
                   homeCurrency={isEditing ? editFormData.homeCurrency : (revisionWithLineItems?.homeCurrency || 'SGD')}
+                  exchangeRate={parseFloat(editFormData.homeExchangeRate) || 1}
                   chartOfAccounts={chartOfAccounts}
                   onAdd={handleAddLineItem}
                   onRemove={handleRemoveLineItem}
@@ -1450,36 +1543,37 @@ function ExtractedHeaderFields({
         <div className="grid grid-cols-2 gap-3 pb-3 border-b border-border-secondary">
           <div>
             <label className="block text-xs text-text-muted mb-1">Category</label>
-            <select
+            <SearchableSelect
+              options={Object.entries(categoryLabels).map(([key, label]) => ({
+                value: key,
+                label: label,
+              }))}
               value={editFormData.documentCategory}
-              onChange={(e) => setEditFormData({
+              onChange={(value) => setEditFormData({
                 ...editFormData,
-                documentCategory: e.target.value,
+                documentCategory: value,
                 documentSubCategory: '',
               })}
-              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
-            >
-              <option value="">Select...</option>
-              {Object.entries(categoryLabels).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
+              placeholder="Select category..."
+              clearable={false}
+            />
           </div>
           <div>
             <label className="block text-xs text-text-muted mb-1">Sub-category</label>
-            <select
-              value={editFormData.documentSubCategory}
-              onChange={(e) => setEditFormData({ ...editFormData, documentSubCategory: e.target.value })}
-              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
-              disabled={!editFormData.documentCategory}
-            >
-              <option value="">Select...</option>
-              {editFormData.documentCategory &&
-                getSubCategoryOptions(editFormData.documentCategory as DocumentCategory).map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
-                ))
+            <SearchableSelect
+              options={editFormData.documentCategory
+                ? getSubCategoryOptions(editFormData.documentCategory as DocumentCategory).map(({ value, label }) => ({
+                    value,
+                    label,
+                  }))
+                : []
               }
-            </select>
+              value={editFormData.documentSubCategory}
+              onChange={(value) => setEditFormData({ ...editFormData, documentSubCategory: value })}
+              placeholder="Select sub-category..."
+              disabled={!editFormData.documentCategory}
+              clearable={false}
+            />
           </div>
         </div>
 
@@ -1532,24 +1626,26 @@ function ExtractedHeaderFields({
     );
   }
 
+  // Format document type as "Category - Subcategory"
+  const documentType = revision.documentCategory
+    ? revision.documentSubCategory
+      ? `${categoryLabels[revision.documentCategory]} - ${SUBCATEGORY_LABELS[revision.documentSubCategory as DocumentSubCategory]}`
+      : categoryLabels[revision.documentCategory]
+    : 'Uncategorized';
+
   return (
     <div className="space-y-3">
-      {/* Document Classification - inline format */}
-      <div className="flex items-center gap-2 text-sm">
-        <span className="font-medium text-text-primary">
-          {revision.documentCategory ? categoryLabels[revision.documentCategory] : 'Uncategorized'}
-        </span>
-        {revision.documentSubCategory && (
-          <>
-            <span className="text-text-muted">-</span>
-            <span className="font-medium text-text-primary">
-              {SUBCATEGORY_LABELS[revision.documentSubCategory as DocumentSubCategory]}
-            </span>
-          </>
-        )}
-      </div>
+      {/* Document Type - Full Row */}
+      <FieldDisplay
+        label="Document Type"
+        value={documentType}
+        fieldKey="documentType"
+        focusedField={focusedField}
+        onFocus={handleFieldFocus}
+        onBlur={handleFieldBlur}
+      />
 
-      {/* Key Identification Fields */}
+      {/* Vendor and Document # */}
       <div className="grid grid-cols-2 gap-3">
         <FieldDisplay
           label="Vendor"
@@ -1662,6 +1758,7 @@ interface AmountsSectionProps {
     homeTaxAmount: string;
     homeTotal: string;
     isHomeExchangeRateOverride: boolean;
+    documentDate: string;
   };
   setEditFormData: React.Dispatch<React.SetStateAction<{
     documentCategory: string;
@@ -1686,6 +1783,7 @@ interface AmountsSectionProps {
   focusedField: string | null;
   setFocusedField: (field: string | null) => void;
   getFieldConfidence: (key: string) => number | undefined;
+  tenantId?: string;
 }
 
 function AmountsSection({
@@ -1700,18 +1798,25 @@ function AmountsSection({
   focusedField,
   setFocusedField,
   getFieldConfidence,
+  tenantId,
 }: AmountsSectionProps) {
-  const isSameCurrency = documentCurrency === editFormData.homeCurrency;
+  // Use editFormData.currency for dynamic updates during editing
+  const isSameCurrency = (isEditing ? editFormData.currency : documentCurrency) === editFormData.homeCurrency;
 
-  // Format amount helper
-  const formatAmount = (value: string | null): string => {
+  // Format amount helper with currency symbol
+  const formatAmount = (value: string | null, currency?: string): string => {
     if (!value || value === '') return '-';
     const num = parseFloat(value);
     if (isNaN(num)) return value;
-    return new Intl.NumberFormat('en-SG', {
+    const formatted = new Intl.NumberFormat('en-SG', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num);
+    if (currency) {
+      const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
+      return `${symbol}${formatted}`;
+    }
+    return formatted;
   };
 
   // Format exchange rate with 6 decimal places
@@ -1725,50 +1830,143 @@ function AmountsSection({
   const handleFieldFocus = (fieldKey: string) => setFocusedField(fieldKey);
   const handleFieldBlur = () => setFocusedField(null);
 
-  // Edit mode
+  // Handler for currency change - looks up exchange rate
+  const handleCurrencyChange = useCallback(async (newCurrency: string) => {
+    const homeCurrency = editFormData.homeCurrency;
+    const isSame = newCurrency === homeCurrency;
+
+    if (isSame) {
+      // Same currency - reset exchange rate to 1 and clear home amounts
+      setEditFormData((prev) => ({
+        ...prev,
+        currency: newCurrency,
+        homeExchangeRate: '1.000000',
+        isHomeExchangeRateOverride: false,
+        homeSubtotal: '',
+        homeTaxAmount: '',
+        homeTotal: '',
+      }));
+      return;
+    }
+
+    // Different currency - lookup rate
+    const rateDate = editFormData.documentDate || new Date().toISOString().split('T')[0];
+
+    try {
+      const searchParams = new URLSearchParams({
+        currency: newCurrency,
+        date: rateDate,
+      });
+      if (tenantId) searchParams.set('tenantId', tenantId);
+
+      const response = await fetch(`/api/admin/exchange-rates/lookup?${searchParams}`);
+
+      if (response.ok) {
+        const rateData = await response.json();
+        const rate = parseFloat(rateData.rate) || 1;
+        const subtotal = parseFloat(editFormData.subtotal) || 0;
+        const tax = parseFloat(editFormData.taxAmount) || 0;
+        const total = subtotal + tax;
+
+        setEditFormData((prev) => ({
+          ...prev,
+          currency: newCurrency,
+          homeExchangeRate: rate.toFixed(6),
+          isHomeExchangeRateOverride: false,
+          homeSubtotal: (subtotal * rate).toFixed(2),
+          homeTaxAmount: (tax * rate).toFixed(2),
+          homeTotal: (total * rate).toFixed(2),
+        }));
+      } else {
+        // Rate lookup failed - just update currency, keep rate as 1
+        setEditFormData((prev) => ({
+          ...prev,
+          currency: newCurrency,
+          homeExchangeRate: '1.000000',
+          isHomeExchangeRateOverride: false,
+        }));
+      }
+    } catch {
+      // Error - just update currency
+      setEditFormData((prev) => ({
+        ...prev,
+        currency: newCurrency,
+      }));
+    }
+  }, [editFormData.homeCurrency, editFormData.documentDate, editFormData.subtotal, editFormData.taxAmount, tenantId, setEditFormData]);
+
+  // Edit mode - CSS class for hiding number input spinners
+  const numberInputClass = '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
+
   if (isEditing) {
     return (
       <div className="border border-border-primary rounded-lg overflow-hidden">
         {/* Table header */}
-        <div className={cn(
-          'grid gap-0 text-xs font-medium text-text-muted bg-background-tertiary border-b border-border-primary',
-          isSameCurrency ? 'grid-cols-[140px_1fr]' : 'grid-cols-[140px_1fr_1fr]'
-        )}>
-          <div className="px-3 py-2 border-r border-border-primary flex items-center gap-2">
-            <select
-              value={editFormData.currency}
-              onChange={(e) => setEditFormData((prev) => ({ ...prev, currency: e.target.value }))}
-              className="px-1.5 py-0.5 text-xs font-medium bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none"
-            >
-              {currencyOptions.map((curr) => (
-                <option key={curr} value={curr}>{curr}</option>
-              ))}
-            </select>
-          </div>
+        <div className="grid grid-cols-[140px_1fr_1fr] gap-0 text-xs font-medium text-text-muted bg-background-tertiary border-b border-border-primary">
+          <div className="px-3 py-2 border-r border-border-primary"></div>
           <div className="px-3 py-2 text-right border-r border-border-primary">
-            Document ({editFormData.currency})
-          </div>
-          {!isSameCurrency && (
-            <div className="px-3 py-2 text-right flex items-center justify-end gap-2">
-              <span>Home ({editFormData.homeCurrency})</span>
-              <span className="text-text-muted/60">@</span>
-              <input
-                type="number"
-                step="0.0001"
-                value={editFormData.homeExchangeRate}
-                onChange={(e) => setEditFormData((prev) => ({ ...prev, homeExchangeRate: e.target.value, isHomeExchangeRateOverride: true }))}
-                className="w-20 px-1.5 py-0.5 text-xs font-mono bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right"
-                placeholder="1.0000"
-              />
+            <div className="text-text-muted mb-1">Document Amount</div>
+            <div className="flex items-center justify-end">
+              <div className="w-36">
+                <SearchableSelect
+                  options={currencyOptions.map((curr) => ({
+                    value: curr,
+                    label: curr,
+                  }))}
+                  value={editFormData.currency}
+                  onChange={handleCurrencyChange}
+                  placeholder="Currency"
+                  clearable={false}
+                  size="sm"
+                  showKeyboardHints={false}
+                />
+              </div>
             </div>
-          )}
+          </div>
+          <div className={cn(
+            'px-3 py-2 text-right',
+            isSameCurrency && 'bg-background-secondary/50'
+          )}>
+            <div className={cn('text-text-muted mb-1', isSameCurrency && 'opacity-50')}>Home Amount</div>
+            <div className={cn(
+              'flex items-center justify-end gap-2 text-sm',
+              isSameCurrency ? 'text-text-muted' : 'text-text-primary'
+            )}>
+              <span className="font-medium">{editFormData.homeCurrency}</span>
+              {!isSameCurrency && (
+                <>
+                  <span>@</span>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={editFormData.homeExchangeRate}
+                    onChange={(e) => {
+                      const newRate = e.target.value;
+                      const rate = parseFloat(newRate) || 1;
+                      setEditFormData((prev) => ({
+                        ...prev,
+                        homeExchangeRate: newRate,
+                        isHomeExchangeRateOverride: true,
+                        // Recalculate home amounts based on new exchange rate
+                        homeSubtotal: prev.subtotal ? (parseFloat(prev.subtotal) * rate).toFixed(2) : '',
+                        homeTaxAmount: prev.taxAmount ? (parseFloat(prev.taxAmount) * rate).toFixed(2) : '',
+                        homeTotal: prev.totalAmount ? (parseFloat(prev.totalAmount) * rate).toFixed(2) : '',
+                      }));
+                    }}
+                    className={cn(
+                      'w-24 px-1.5 py-0.5 text-sm font-mono bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right',
+                      numberInputClass
+                    )}
+                    placeholder="1.000000"
+                  />
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Subtotal row */}
-        <div className={cn(
-          'grid gap-0 border-b border-border-primary',
-          isSameCurrency ? 'grid-cols-[140px_1fr]' : 'grid-cols-[140px_1fr_1fr]'
-        )}>
+        <div className="grid grid-cols-[140px_1fr_1fr] gap-0 border-b border-border-primary">
           <div className="px-3 py-2 text-sm text-text-secondary border-r border-border-primary bg-background-secondary">
             Subtotal
           </div>
@@ -1777,30 +1975,62 @@ function AmountsSection({
               type="number"
               step="0.01"
               value={editFormData.subtotal}
-              onChange={(e) => setEditFormData((prev) => ({ ...prev, subtotal: e.target.value }))}
-              className="w-full px-2 py-1 text-sm text-right tabular-nums bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+              onChange={(e) => {
+                const newSubtotal = e.target.value;
+                const subtotal = parseFloat(newSubtotal) || 0;
+                const tax = parseFloat(editFormData.taxAmount) || 0;
+                const newTotal = (subtotal + tax).toFixed(2);
+                const rate = parseFloat(editFormData.homeExchangeRate) || 1;
+                setEditFormData((prev) => ({
+                  ...prev,
+                  subtotal: newSubtotal,
+                  totalAmount: newTotal,
+                  homeSubtotal: !isSameCurrency ? (subtotal * rate).toFixed(2) : '',
+                  homeTotal: !isSameCurrency ? ((subtotal + tax) * rate).toFixed(2) : '',
+                }));
+              }}
+              className={cn(
+                'w-full px-2 py-1 text-sm text-right tabular-nums bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none',
+                numberInputClass
+              )}
               placeholder="0.00"
             />
           </div>
-          {!isSameCurrency && (
-            <div className="px-3 py-1.5">
+          <div className={cn(
+            'px-3 py-1.5',
+            isSameCurrency && 'bg-background-secondary/50'
+          )}>
+            {isSameCurrency ? (
+              <div className="w-full px-2 py-1 text-sm text-right tabular-nums text-text-muted">
+                {editFormData.subtotal || '-'}
+              </div>
+            ) : (
               <input
                 type="number"
                 step="0.01"
                 value={editFormData.homeSubtotal}
-                onChange={(e) => setEditFormData((prev) => ({ ...prev, homeSubtotal: e.target.value }))}
-                className="w-full px-2 py-1 text-sm text-right tabular-nums bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+                onChange={(e) => {
+                  const newHomeSubtotal = e.target.value;
+                  const homeSubtotal = parseFloat(newHomeSubtotal) || 0;
+                  const homeTax = parseFloat(editFormData.homeTaxAmount) || 0;
+                  setEditFormData((prev) => ({
+                    ...prev,
+                    homeSubtotal: newHomeSubtotal,
+                    homeTotal: (homeSubtotal + homeTax).toFixed(2),
+                  }));
+                }}
+                className={cn(
+                  'w-full px-2 py-1 text-sm text-right tabular-nums bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none',
+                  numberInputClass
+                )}
                 placeholder="0.00"
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Tax row */}
-        <div className={cn(
-          'grid gap-0 border-b border-border-primary',
-          isSameCurrency ? 'grid-cols-[140px_1fr]' : 'grid-cols-[140px_1fr_1fr]'
-        )}>
+        <div className="grid grid-cols-[140px_1fr_1fr] gap-0 border-b border-border-primary">
           <div className="px-3 py-2 text-sm text-text-secondary border-r border-border-primary bg-background-secondary">
             Tax
           </div>
@@ -1809,55 +2039,83 @@ function AmountsSection({
               type="number"
               step="0.01"
               value={editFormData.taxAmount}
-              onChange={(e) => setEditFormData((prev) => ({ ...prev, taxAmount: e.target.value }))}
-              className="w-full px-2 py-1 text-sm text-right tabular-nums bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+              onChange={(e) => {
+                const newTax = e.target.value;
+                const subtotal = parseFloat(editFormData.subtotal) || 0;
+                const tax = parseFloat(newTax) || 0;
+                const newTotal = (subtotal + tax).toFixed(2);
+                const rate = parseFloat(editFormData.homeExchangeRate) || 1;
+                setEditFormData((prev) => ({
+                  ...prev,
+                  taxAmount: newTax,
+                  totalAmount: newTotal,
+                  homeTaxAmount: !isSameCurrency ? (tax * rate).toFixed(2) : '',
+                  homeTotal: !isSameCurrency ? ((subtotal + tax) * rate).toFixed(2) : '',
+                }));
+              }}
+              className={cn(
+                'w-full px-2 py-1 text-sm text-right tabular-nums bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none',
+                numberInputClass
+              )}
               placeholder="0.00"
             />
           </div>
-          {!isSameCurrency && (
-            <div className="px-3 py-1.5">
+          <div className={cn(
+            'px-3 py-1.5',
+            isSameCurrency && 'bg-background-secondary/50'
+          )}>
+            {isSameCurrency ? (
+              <div className="w-full px-2 py-1 text-sm text-right tabular-nums text-text-muted">
+                {editFormData.taxAmount || '-'}
+              </div>
+            ) : (
               <input
                 type="number"
                 step="0.01"
                 value={editFormData.homeTaxAmount}
-                onChange={(e) => setEditFormData((prev) => ({ ...prev, homeTaxAmount: e.target.value }))}
-                className="w-full px-2 py-1 text-sm text-right tabular-nums bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+                onChange={(e) => {
+                  const newHomeTax = e.target.value;
+                  const homeSubtotal = parseFloat(editFormData.homeSubtotal) || 0;
+                  const homeTax = parseFloat(newHomeTax) || 0;
+                  setEditFormData((prev) => ({
+                    ...prev,
+                    homeTaxAmount: newHomeTax,
+                    homeTotal: (homeSubtotal + homeTax).toFixed(2),
+                  }));
+                }}
+                className={cn(
+                  'w-full px-2 py-1 text-sm text-right tabular-nums bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none',
+                  numberInputClass
+                )}
                 placeholder="0.00"
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Total row */}
-        <div className={cn(
-          'grid gap-0 bg-background-tertiary',
-          isSameCurrency ? 'grid-cols-[140px_1fr]' : 'grid-cols-[140px_1fr_1fr]'
-        )}>
+        {/* Total row - calculated, not editable */}
+        <div className="grid grid-cols-[140px_1fr_1fr] gap-0 bg-background-tertiary">
           <div className="px-3 py-2 text-sm font-semibold text-text-primary border-r border-border-primary">
             Total
           </div>
-          <div className="px-3 py-1.5 border-r border-border-primary">
-            <input
-              type="number"
-              step="0.01"
-              value={editFormData.totalAmount}
-              onChange={(e) => setEditFormData((prev) => ({ ...prev, totalAmount: e.target.value }))}
-              className="w-full px-2 py-1 text-sm text-right tabular-nums font-semibold bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none"
-              placeholder="0.00"
-            />
-          </div>
-          {!isSameCurrency && (
-            <div className="px-3 py-1.5">
-              <input
-                type="number"
-                step="0.01"
-                value={editFormData.homeTotal}
-                onChange={(e) => setEditFormData((prev) => ({ ...prev, homeTotal: e.target.value }))}
-                className="w-full px-2 py-1 text-sm text-right tabular-nums font-semibold bg-background-primary border border-border-primary rounded focus:border-oak-light focus:outline-none"
-                placeholder="0.00"
-              />
+          <div className="px-3 py-1.5 border-r border-border-primary bg-background-secondary/30">
+            <div className="w-full px-2 py-1 text-sm text-right tabular-nums font-semibold text-text-secondary">
+              {editFormData.totalAmount ? parseFloat(editFormData.totalAmount).toFixed(2) : '-'}
             </div>
-          )}
+          </div>
+          <div className={cn(
+            'px-3 py-1.5 bg-background-secondary/30',
+            isSameCurrency && 'bg-background-secondary/50'
+          )}>
+            <div className={cn(
+              'w-full px-2 py-1 text-sm text-right tabular-nums font-semibold',
+              isSameCurrency ? 'text-text-muted' : 'text-text-secondary'
+            )}>
+              {isSameCurrency
+                ? (editFormData.totalAmount ? parseFloat(editFormData.totalAmount).toFixed(2) : '-')
+                : (editFormData.homeTotal ? parseFloat(editFormData.homeTotal).toFixed(2) : '-')}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1867,27 +2125,28 @@ function AmountsSection({
   return (
     <div className="border border-border-primary rounded-lg overflow-hidden">
       {/* Table header */}
-      <div className={cn(
-        'grid gap-0 text-xs font-medium text-text-muted bg-background-tertiary border-b border-border-primary',
-        isSameCurrency ? 'grid-cols-[140px_1fr]' : 'grid-cols-[140px_1fr_1fr]'
-      )}>
+      <div className="grid grid-cols-[140px_1fr_1fr] gap-0 text-xs font-medium text-text-muted bg-background-tertiary border-b border-border-primary">
         <div className="px-3 py-2 border-r border-border-primary"></div>
         <div className="px-3 py-2 text-right border-r border-border-primary">
-          {documentCurrency}
+          <div className="text-text-muted">Document Amount</div>
         </div>
-        {!isSameCurrency && (
-          <div className="px-3 py-2 text-right flex items-center justify-end gap-1.5">
-            <span>{editFormData.homeCurrency}</span>
-            <span className="text-text-muted/50">@{formatExchangeRate(editFormData.homeExchangeRate)}</span>
-          </div>
-        )}
+        <div className={cn(
+          'px-3 py-2 text-right',
+          isSameCurrency && 'bg-background-secondary/50'
+        )}>
+          <div className={cn('text-text-muted', isSameCurrency && 'opacity-50')}>Home Amount</div>
+          {!isSameCurrency && (
+            <div className="text-xs text-text-muted mt-0.5">
+              @{formatExchangeRate(editFormData.homeExchangeRate)}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Subtotal row */}
       <div
         className={cn(
-          'grid gap-0 border-b border-border-primary transition-colors cursor-pointer',
-          isSameCurrency ? 'grid-cols-[140px_1fr]' : 'grid-cols-[140px_1fr_1fr]',
+          'grid grid-cols-[140px_1fr_1fr] gap-0 border-b border-border-primary transition-colors cursor-pointer',
           focusedField === 'subtotal' ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'hover:bg-background-secondary/50'
         )}
         onMouseEnter={() => handleFieldFocus('subtotal')}
@@ -1900,20 +2159,20 @@ function AmountsSection({
           )}
         </div>
         <div className="px-3 py-2.5 text-sm tabular-nums text-right text-text-primary border-r border-border-primary">
-          {formatAmount(documentSubtotal)}
+          {formatAmount(documentSubtotal, documentCurrency)}
         </div>
-        {!isSameCurrency && (
-          <div className="px-3 py-2.5 text-sm tabular-nums text-right text-text-primary">
-            {formatAmount(editFormData.homeSubtotal)}
-          </div>
-        )}
+        <div className={cn(
+          'px-3 py-2.5 text-sm tabular-nums text-right',
+          isSameCurrency ? 'text-text-muted bg-background-secondary/50' : 'text-text-primary'
+        )}>
+          {formatAmount(isSameCurrency ? documentSubtotal : editFormData.homeSubtotal, editFormData.homeCurrency)}
+        </div>
       </div>
 
       {/* Tax row */}
       <div
         className={cn(
-          'grid gap-0 border-b border-border-primary transition-colors cursor-pointer',
-          isSameCurrency ? 'grid-cols-[140px_1fr]' : 'grid-cols-[140px_1fr_1fr]',
+          'grid grid-cols-[140px_1fr_1fr] gap-0 border-b border-border-primary transition-colors cursor-pointer',
           focusedField === 'taxAmount' ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'hover:bg-background-secondary/50'
         )}
         onMouseEnter={() => handleFieldFocus('taxAmount')}
@@ -1926,20 +2185,20 @@ function AmountsSection({
           )}
         </div>
         <div className="px-3 py-2.5 text-sm tabular-nums text-right text-text-primary border-r border-border-primary">
-          {formatAmount(documentTaxAmount)}
+          {formatAmount(documentTaxAmount, documentCurrency)}
         </div>
-        {!isSameCurrency && (
-          <div className="px-3 py-2.5 text-sm tabular-nums text-right text-text-primary">
-            {formatAmount(editFormData.homeTaxAmount)}
-          </div>
-        )}
+        <div className={cn(
+          'px-3 py-2.5 text-sm tabular-nums text-right',
+          isSameCurrency ? 'text-text-muted bg-background-secondary/50' : 'text-text-primary'
+        )}>
+          {formatAmount(isSameCurrency ? documentTaxAmount : editFormData.homeTaxAmount, editFormData.homeCurrency)}
+        </div>
       </div>
 
       {/* Total row - emphasized */}
       <div
         className={cn(
-          'grid gap-0 bg-background-tertiary transition-colors cursor-pointer',
-          isSameCurrency ? 'grid-cols-[140px_1fr]' : 'grid-cols-[140px_1fr_1fr]',
+          'grid grid-cols-[140px_1fr_1fr] gap-0 bg-background-tertiary transition-colors cursor-pointer',
           focusedField === 'totalAmount' ? 'bg-yellow-100 dark:bg-yellow-900/30' : ''
         )}
         onMouseEnter={() => handleFieldFocus('totalAmount')}
@@ -1952,13 +2211,14 @@ function AmountsSection({
           )}
         </div>
         <div className="px-3 py-2.5 text-sm tabular-nums text-right font-semibold text-text-primary border-r border-border-primary">
-          {formatAmount(documentTotalAmount)}
+          {formatAmount(documentTotalAmount, documentCurrency)}
         </div>
-        {!isSameCurrency && (
-          <div className="px-3 py-2.5 text-sm tabular-nums text-right font-semibold text-text-primary">
-            {formatAmount(editFormData.homeTotal)}
-          </div>
-        )}
+        <div className={cn(
+          'px-3 py-2.5 text-sm tabular-nums text-right font-semibold',
+          isSameCurrency ? 'text-text-muted bg-background-secondary/50' : 'text-text-primary'
+        )}>
+          {formatAmount(isSameCurrency ? documentTotalAmount : editFormData.homeTotal, editFormData.homeCurrency)}
+        </div>
       </div>
     </div>
   );
@@ -2043,6 +2303,7 @@ function LineItemsSection({
   isLoading,
   currency,
   homeCurrency,
+  exchangeRate: _exchangeRate,
   chartOfAccounts,
   onAdd,
   onRemove,
@@ -2067,6 +2328,7 @@ function LineItemsSection({
   isLoading: boolean;
   currency: string;
   homeCurrency: string;
+  exchangeRate: number;
   chartOfAccounts: Array<{ code: string; name: string }>;
   onAdd: () => void;
   onRemove: (index: number) => void;
@@ -2109,8 +2371,21 @@ function LineItemsSection({
     );
   }
 
+  // Calculate amount including tax for each item
+  const getAmountInclTax = (item: { amount: string; gstAmount?: string | null }) => {
+    const amount = parseFloat(item.amount) || 0;
+    const gst = parseFloat(item.gstAmount || '0') || 0;
+    return amount + gst;
+  };
+
+  const getHomeAmountInclTax = (item: { homeAmount?: string | null; homeGstAmount?: string | null }) => {
+    const amount = parseFloat(item.homeAmount || '0') || 0;
+    const gst = parseFloat(item.homeGstAmount || '0') || 0;
+    return amount + gst;
+  };
+
   return (
-    <div className={cn(fullWidth ? 'h-full flex flex-col' : 'card')}>
+    <div className={cn(fullWidth ? 'flex flex-col' : 'card')}>
       <div className={cn(
         'flex items-center justify-between flex-shrink-0',
         fullWidth ? 'px-4 py-3 border-b border-border-primary bg-background-secondary' : 'p-4 border-b border-border-primary'
@@ -2132,30 +2407,50 @@ function LineItemsSection({
           <table className="w-full text-sm">
             <thead className="bg-background-tertiary">
               <tr>
-                <th className="text-left text-xs font-medium text-text-secondary px-4 py-2.5 w-12">#</th>
-                <th className="text-left text-xs font-medium text-text-secondary px-4 py-2.5">Description</th>
-                <th className="text-left text-xs font-medium text-text-secondary px-4 py-2.5 w-24">Account</th>
-                <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-20">Qty</th>
-                <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-24">
-                  Unit Price
+                <th className="text-left text-xs font-medium text-text-secondary px-3 py-2.5 w-10">#</th>
+                <th className="text-left text-xs font-medium text-text-secondary px-3 py-2.5 min-w-[80px]">Description</th>
+                <th className="text-left text-xs font-medium text-text-secondary px-3 py-2.5 w-64">Account</th>
+                <th className="text-right text-xs font-medium text-text-secondary px-3 py-2.5 w-14">Qty</th>
+                <th className="text-right text-xs font-medium text-text-secondary px-3 py-2.5 w-24">Unit Price</th>
+                <th className="text-right text-xs font-medium text-text-secondary px-3 py-2.5 w-28">
+                  <div>Amount</div>
+                  {isEditing && <div className="font-normal text-text-muted">({currency})</div>}
                 </th>
-                <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-24">
-                  Amount ({currency})
+                <th className="text-right text-xs font-medium text-text-secondary px-3 py-2.5 w-24">
+                  <div>GST Amt</div>
+                  {isEditing && <div className="font-normal text-text-muted">({currency})</div>}
                 </th>
-                <th className="text-left text-xs font-medium text-text-secondary px-2 py-2.5 w-28">GST</th>
-                <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-24">
-                  GST Amt ({currency})
+                <th className="text-right text-xs font-medium text-text-secondary px-3 py-2.5 w-28">
+                  <div>Amt Incl Tax</div>
+                  {isEditing && <div className="font-normal text-text-muted">({currency})</div>}
                 </th>
-                {!isSameCurrency && (
-                  <>
-                    <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-24">
-                      Amount ({homeCurrency})
-                    </th>
-                    <th className="text-right text-xs font-medium text-text-secondary px-4 py-2.5 w-24">
-                      GST Amt ({homeCurrency})
-                    </th>
-                  </>
-                )}
+                {/* Home Currency Headers - always shown */}
+                <th className="w-px bg-border-primary"></th>
+                <th className={cn(
+                  "text-right text-xs font-medium px-3 py-2.5 w-28",
+                  isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-secondary"
+                )}>
+                  <div>Amount</div>
+                  {isEditing && <div className="font-normal text-text-muted">({homeCurrency})</div>}
+                </th>
+                <th className={cn(
+                  "text-right text-xs font-medium px-3 py-2.5 w-24",
+                  isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-secondary"
+                )}>
+                  <div>GST Amt</div>
+                  {isEditing && <div className="font-normal text-text-muted">({homeCurrency})</div>}
+                </th>
+                <th className={cn(
+                  "text-right text-xs font-medium px-3 py-2.5 w-28",
+                  isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-secondary"
+                )}>
+                  <div>Amt Incl Tax</div>
+                  {isEditing && <div className="font-normal text-text-muted">({homeCurrency})</div>}
+                </th>
+                <th className={cn(
+                  "text-right text-xs font-medium text-text-secondary px-3 py-2.5 w-32",
+                  !isEditing && "pr-8"
+                )}>GST</th>
                 {isEditing && <th className="w-10"></th>}
               </tr>
             </thead>
@@ -2164,9 +2459,11 @@ function LineItemsSection({
                 const account = chartOfAccounts.find((a) => a.code === item.accountCode);
                 const gstCode = gstTaxCodes.find((g) => g.code === item.taxCode);
                 const lineConfidence = getLineItemConfidence(item.evidenceJson || null);
+                const amountInclTax = getAmountInclTax(item);
+                const homeAmountInclTax = getHomeAmountInclTax(item);
                 return (
                   <tr key={item.id || `new-${index}`} className="hover:bg-background-tertiary/50">
-                    <td className="px-4 py-2.5 text-text-muted">
+                    <td className="px-3 py-2.5 text-sm text-text-muted">
                       <span className="flex items-center gap-1.5">
                         {item.lineNo}
                         {lineConfidence !== undefined && !isEditing && (
@@ -2174,7 +2471,7 @@ function LineItemsSection({
                         )}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-text-primary">
+                    <td className="px-3 py-2.5 text-sm text-text-primary">
                       {isEditing ? (
                         <input
                           type="text"
@@ -2183,25 +2480,22 @@ function LineItemsSection({
                           className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
                         />
                       ) : (
-                        <span
-                          className="truncate block max-w-[200px] cursor-default"
-                          title={item.description}
-                        >
+                        <span className="block" title={item.description}>
                           {item.description}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-text-secondary text-xs">
+                    <td className="px-3 py-2.5 text-sm text-text-primary">
                       {isEditing ? (
                         <select
                           value={item.accountCode || ''}
                           onChange={(e) => onChange(index, 'accountCode', e.target.value)}
-                          className="w-full px-2 py-1 text-xs bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
                         >
                           <option value="">-</option>
                           {chartOfAccounts.map((acc) => (
                             <option key={acc.code} value={acc.code}>
-                              {acc.code}
+                              {acc.code} - {acc.name}
                             </option>
                           ))}
                         </select>
@@ -2210,11 +2504,11 @@ function LineItemsSection({
                           className="cursor-default"
                           title={account ? `${account.code} - ${account.name}` : item.accountCode || ''}
                         >
-                          {account?.code || item.accountCode || '-'}
+                          {account?.name || item.accountCode || '-'}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-text-secondary">
+                    <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
                       {isEditing ? (
                         <input
                           type="number"
@@ -2227,7 +2521,7 @@ function LineItemsSection({
                         formatNumber(item.quantity || null, 0)
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-text-secondary">
+                    <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
                       {isEditing ? (
                         <input
                           type="number"
@@ -2237,10 +2531,11 @@ function LineItemsSection({
                           className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       ) : (
-                        formatNumber(item.unitPrice || null)
+                        formatCurrency(item.unitPrice || '0', currency)
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-text-primary">
+                    {/* Amount (document currency) */}
+                    <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
                       {isEditing ? (
                         <input
                           type="number"
@@ -2253,25 +2548,8 @@ function LineItemsSection({
                         formatCurrency(item.amount, currency)
                       )}
                     </td>
-                    <td className="px-2 py-2.5 text-left text-text-secondary text-xs">
-                      {isEditing ? (
-                        <select
-                          value={item.taxCode || ''}
-                          onChange={(e) => onChange(index, 'taxCode', e.target.value)}
-                          className="w-full px-2 py-1 text-xs bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-left"
-                        >
-                          <option value="">-</option>
-                          {gstTaxCodes.map((gst) => (
-                            <option key={gst.code} value={gst.code}>
-                              {gst.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        gstCode?.label || item.taxCode || '-'
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-text-secondary">
+                    {/* GST Amount (document currency) */}
+                    <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
                       {isEditing ? (
                         <input
                           type="number"
@@ -2284,17 +2562,76 @@ function LineItemsSection({
                         formatCurrency(item.gstAmount || '0', currency)
                       )}
                     </td>
-                    {/* Home Currency Columns */}
-                    {!isSameCurrency && (
-                      <>
-                        <td className="px-4 py-2.5 text-right text-text-secondary">
-                          {formatCurrency(item.homeAmount || '0', homeCurrency)}
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-text-secondary">
-                          {formatCurrency(item.homeGstAmount || '0', homeCurrency)}
-                        </td>
-                      </>
-                    )}
+                    {/* Amt Incl Tax (document currency) */}
+                    <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
+                      {formatCurrency(amountInclTax.toFixed(2), currency)}
+                    </td>
+                    {/* Home Currency Columns - always shown */}
+                    {/* Divider */}
+                    <td className="w-px bg-border-primary"></td>
+                    {/* Amount (home currency) */}
+                    <td className={cn(
+                      "px-3 py-2.5 text-sm text-right tabular-nums",
+                      isSameCurrency ? "text-text-muted bg-background-secondary/40" : "text-text-primary"
+                    )}>
+                      {isEditing && !isSameCurrency ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.homeAmount || ''}
+                          onChange={(e) => onChange(index, 'homeAmount', e.target.value)}
+                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      ) : (
+                        formatCurrency(isSameCurrency ? item.amount : (item.homeAmount || '0'), homeCurrency)
+                      )}
+                    </td>
+                    {/* GST Amount (home currency) */}
+                    <td className={cn(
+                      "px-3 py-2.5 text-sm text-right tabular-nums",
+                      isSameCurrency ? "text-text-muted bg-background-secondary/40" : "text-text-primary"
+                    )}>
+                      {isEditing && !isSameCurrency ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.homeGstAmount || ''}
+                          onChange={(e) => onChange(index, 'homeGstAmount', e.target.value)}
+                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      ) : (
+                        formatCurrency(isSameCurrency ? (item.gstAmount || '0') : (item.homeGstAmount || '0'), homeCurrency)
+                      )}
+                    </td>
+                    {/* Amt Incl Tax (home currency) */}
+                    <td className={cn(
+                      "px-3 py-2.5 text-sm text-right tabular-nums",
+                      isSameCurrency ? "text-text-muted bg-background-secondary/40" : "text-text-primary"
+                    )}>
+                      {formatCurrency(isSameCurrency ? amountInclTax.toFixed(2) : homeAmountInclTax.toFixed(2), homeCurrency)}
+                    </td>
+                    {/* GST Code (last column) */}
+                    <td className={cn(
+                      "px-3 py-2.5 text-sm text-right text-text-primary",
+                      !isEditing && "pr-8"
+                    )}>
+                      {isEditing ? (
+                        <select
+                          value={item.taxCode || ''}
+                          onChange={(e) => onChange(index, 'taxCode', e.target.value)}
+                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right min-w-[100px]"
+                        >
+                          <option value="">-</option>
+                          {gstTaxCodes.map((gst) => (
+                            <option key={gst.code} value={gst.code}>
+                              {gst.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        gstCode?.label || item.taxCode || '-'
+                      )}
+                    </td>
                     {isEditing && (
                       <td className="px-2 py-2.5 text-center">
                         <button
@@ -2311,58 +2648,42 @@ function LineItemsSection({
               })}
             </tbody>
             <tfoot className="bg-background-tertiary border-t border-border-primary">
-              <tr>
-                <td colSpan={5} className="px-4 py-2 text-right text-text-secondary">
-                  Subtotal
-                </td>
-                <td className="px-4 py-2 text-right text-text-primary">
-                  {formatCurrency(calculatedSubtotal.toFixed(2), currency)}
-                </td>
-                <td colSpan={2}></td>
-                {!isSameCurrency && (
-                  <>
-                    <td className="px-4 py-2 text-right text-text-primary">
-                      {formatCurrency(calculatedHomeSubtotal.toFixed(2), homeCurrency)}
-                    </td>
-                    <td></td>
-                  </>
-                )}
-                {isEditing && <td></td>}
-              </tr>
-              <tr>
-                <td colSpan={5} className="px-4 py-2 text-right text-text-secondary">
-                  Tax
-                </td>
-                <td className="px-4 py-2 text-right text-text-primary">
-                  {formatCurrency(calculatedTax.toFixed(2), currency)}
-                </td>
-                <td colSpan={2}></td>
-                {!isSameCurrency && (
-                  <>
-                    <td></td>
-                    <td className="px-4 py-2 text-right text-text-primary">
-                      {formatCurrency(calculatedHomeTax.toFixed(2), homeCurrency)}
-                    </td>
-                  </>
-                )}
-                {isEditing && <td></td>}
-              </tr>
               <tr className="font-semibold">
-                <td colSpan={5} className="px-4 py-2 text-right text-text-primary">
+                <td colSpan={5} className="px-3 py-2.5 text-sm text-right text-text-primary">
                   Total
                 </td>
-                <td className="px-4 py-2 text-right text-text-primary">
+                {/* Document currency totals */}
+                <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
+                  {formatCurrency(calculatedSubtotal.toFixed(2), currency)}
+                </td>
+                <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
+                  {formatCurrency(calculatedTax.toFixed(2), currency)}
+                </td>
+                <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
                   {formatCurrency(calculatedTotal.toFixed(2), currency)}
                 </td>
-                <td colSpan={2}></td>
-                {!isSameCurrency && (
-                  <>
-                    <td className="px-4 py-2 text-right text-text-primary">
-                      {formatCurrency(calculatedHomeTotal.toFixed(2), homeCurrency)}
-                    </td>
-                    <td></td>
-                  </>
-                )}
+                {/* Home currency totals - always shown */}
+                <td className="w-px bg-border-primary"></td>
+                <td className={cn(
+                  "px-3 py-2.5 text-sm text-right tabular-nums",
+                  isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-primary"
+                )}>
+                  {formatCurrency(isSameCurrency ? calculatedSubtotal.toFixed(2) : calculatedHomeSubtotal.toFixed(2), homeCurrency)}
+                </td>
+                <td className={cn(
+                  "px-3 py-2.5 text-sm text-right tabular-nums",
+                  isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-primary"
+                )}>
+                  {formatCurrency(isSameCurrency ? calculatedTax.toFixed(2) : calculatedHomeTax.toFixed(2), homeCurrency)}
+                </td>
+                <td className={cn(
+                  "px-3 py-2.5 text-sm text-right tabular-nums",
+                  isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-primary"
+                )}>
+                  {formatCurrency(isSameCurrency ? calculatedTotal.toFixed(2) : calculatedHomeTotal.toFixed(2), homeCurrency)}
+                </td>
+                {/* Empty cell for GST column */}
+                <td className={cn("px-3 py-2.5", !isEditing && "pr-8")}></td>
                 {isEditing && <td></td>}
               </tr>
             </tfoot>

@@ -91,13 +91,30 @@ function formatDate(dateString: string): string {
   });
 }
 
+// Currency symbols mapping - SGD displayed as "S$"
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  SGD: 'S$',
+  USD: 'US$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  CNY: '¥',
+  HKD: 'HK$',
+  AUD: 'A$',
+  MYR: 'RM',
+};
+
 function formatCurrency(amount: string, currency: string): string {
   const num = parseFloat(amount);
-  return new Intl.NumberFormat('en-SG', {
-    style: 'currency',
-    currency: currency || 'SGD',
+  if (isNaN(num)) return '-';
+
+  const formatted = new Intl.NumberFormat('en-SG', {
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(num);
+
+  const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
+  return `${symbol}${formatted}`;
 }
 
 export default function ProcessingDocumentsPage() {
