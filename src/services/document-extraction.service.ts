@@ -13,10 +13,13 @@ import type { ExtractionType, DocumentCategory, DocumentSubCategory, ExchangeRat
 import { createRevision, type LineItemInput } from './document-revision.service';
 import { transitionPipelineStatus, recordProcessingAttempt } from './document-processing.service';
 import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection.service';
-import { callAIWithConnector, getBestAvailableModelForTenant } from '@/lib/ai';
+import { callAIWithConnector, getBestAvailableModelForTenant, logExtractionResults, isAIDebugEnabled, stripMarkdownCodeBlocks } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai/types';
 import { storage } from '@/lib/storage';
 import { hashBlake3 } from '@/lib/encryption';
+import { getAccountsForSelect } from './chart-of-accounts.service';
+import { getRate } from './exchange-rate.service';
+import type { SupportedCurrency } from '@/lib/validations/exchange-rate';
 
 type _Decimal = Prisma.Decimal;
 
@@ -277,7 +280,7 @@ export async function extractFields(
     );
 
     // Perform AI extraction (falls back to simulation if AI unavailable)
-    const { result: extractionResult, modelUsed, providerUsed } = await performAIExtraction(pages, tenantId, userId, mergedConfig);
+    const { result: extractionResult, modelUsed, providerUsed } = await performAIExtraction(pages, tenantId, companyId, userId, mergedConfig);
 
     const latencyMs = Date.now() - startTime;
 
@@ -305,7 +308,77 @@ export async function extractFields(
     // Extract home currency equivalent if present (from invoice showing SGD tax equivalent)
     const hce = extractionResult.homeCurrencyEquivalent;
 
-    // Create revision from extraction
+    // Determine home currency - use extracted HCE currency or default to SGD
+    const homeCurrency = hce?.currency || 'SGD';
+    const documentCurrency = extractionResult.currency.value;
+    const isSameCurrency = documentCurrency === homeCurrency;
+
+    // Determine exchange rate with priority:
+    // 1. Document-extracted exchange rate (from HCE)
+    // 2. Database lookup (MAS/IRAS rates based on document date)
+    // 3. Default to 1 (same currency or fallback)
+    let exchangeRate: string;
+    let exchangeRateSource: ExchangeRateSource = 'PROVIDER_DEFAULT';
+
+    if (hce?.exchangeRate) {
+      // Priority 1: Use exchange rate from document
+      exchangeRate = hce.exchangeRate;
+      exchangeRateSource = 'DOCUMENT';
+    } else if (isSameCurrency) {
+      // Same currency - no conversion needed
+      exchangeRate = '1';
+      exchangeRateSource = 'PROVIDER_DEFAULT';
+    } else {
+      // Priority 2: Look up exchange rate from database
+      const documentDate = extractionResult.documentDate?.value
+        ? new Date(extractionResult.documentDate.value)
+        : new Date(); // Use today if no date
+
+      try {
+        const rateResult = await getRate(
+          documentCurrency as SupportedCurrency,
+          'SGD',
+          documentDate,
+          tenantId
+        );
+
+        if (rateResult) {
+          exchangeRate = rateResult.rate.toString();
+          // Map the rate type to ExchangeRateSource
+          if (rateResult.rateType === 'MAS_DAILY_RATE') {
+            exchangeRateSource = 'MAS_DAILY';
+          } else if (rateResult.rateType === 'MAS_MONTHLY_RATE') {
+            exchangeRateSource = 'IRAS_MONTHLY_AVG';
+          } else if (rateResult.rateType === 'MANUAL_RATE') {
+            exchangeRateSource = 'MANUAL';
+          } else {
+            exchangeRateSource = 'PROVIDER_DEFAULT';
+          }
+          log.info(`Exchange rate lookup for ${documentCurrency} on ${documentDate.toISOString().split('T')[0]}: ${exchangeRate} (source: ${exchangeRateSource})`);
+        } else {
+          // Priority 3: No rate found, default to 1
+          exchangeRate = '1';
+          exchangeRateSource = 'PROVIDER_DEFAULT';
+          log.warn(`No exchange rate found for ${documentCurrency} on ${documentDate.toISOString().split('T')[0]}, defaulting to 1`);
+        }
+      } catch (rateError) {
+        // Log error but don't fail extraction - use default rate
+        log.error(`Failed to lookup exchange rate for ${documentCurrency}:`, rateError);
+        exchangeRate = '1';
+        exchangeRateSource = 'PROVIDER_DEFAULT';
+      }
+    }
+    const exchangeRateNum = parseFloat(exchangeRate);
+
+    // Calculate home amounts if not extracted from document
+    const homeSubtotal = hce?.subtotal ||
+      (extractionResult.subtotal?.value ? (parseFloat(extractionResult.subtotal.value) * exchangeRateNum).toFixed(2) : undefined);
+    const homeTaxAmount = hce?.taxAmount ||
+      (extractionResult.taxAmount?.value ? (parseFloat(extractionResult.taxAmount.value) * exchangeRateNum).toFixed(2) : undefined);
+    const homeEquivalent = hce?.totalAmount ||
+      (parseFloat(extractionResult.totalAmount.value) * exchangeRateNum).toFixed(2);
+
+    // Create revision from extraction with calculated home amounts
     const revision = await createRevision({
       processingDocumentId,
       revisionType: 'EXTRACTION',
@@ -329,28 +402,36 @@ export async function extractFields(
       taxAmount: extractionResult.taxAmount?.value,
       totalAmount: extractionResult.totalAmount.value,
       supplierGstNo: extractionResult.supplierGstNo?.value,
-      // Home currency equivalent extracted from invoice (if present)
-      homeCurrency: hce?.currency,
-      homeExchangeRate: hce?.exchangeRate,
-      homeExchangeRateSource: hce ? ('DOCUMENT' as ExchangeRateSource) : undefined, // Mark as from document
-      homeSubtotal: hce?.subtotal,
-      homeTaxAmount: hce?.taxAmount,
-      homeEquivalent: hce?.totalAmount,
+      // Home currency equivalent - use extracted or calculated values
+      homeCurrency,
+      homeExchangeRate: exchangeRate,
+      homeExchangeRateSource: exchangeRateSource,
+      homeSubtotal,
+      homeTaxAmount,
+      homeEquivalent,
       headerEvidenceJson: evidenceJson,
-      items: extractionResult.lineItems?.map((item) => ({
-        lineNo: item.lineNo,
-        description: item.description.value,
-        quantity: item.quantity?.value,
-        unitPrice: item.unitPrice?.value,
-        amount: item.amount.value,
-        gstAmount: item.gstAmount?.value,
-        taxCode: item.taxCode?.value,
-        accountCode: item.accountCode?.value,
-        evidenceJson: {
-          description: item.description.evidence,
-          amount: item.amount.evidence,
-        },
-      })) as LineItemInput[],
+      items: extractionResult.lineItems?.map((item) => {
+        const amount = parseFloat(item.amount.value) || 0;
+        const gstAmount = item.gstAmount?.value ? parseFloat(item.gstAmount.value) : 0;
+
+        return {
+          lineNo: item.lineNo,
+          description: item.description.value,
+          quantity: item.quantity?.value,
+          unitPrice: item.unitPrice?.value,
+          amount: item.amount.value,
+          gstAmount: item.gstAmount?.value,
+          taxCode: item.taxCode?.value,
+          accountCode: item.accountCode?.value,
+          evidenceJson: {
+            description: item.description.evidence,
+            amount: item.amount.evidence,
+          },
+          // Calculate home amounts for line items
+          homeAmount: (amount * exchangeRateNum).toFixed(2),
+          homeGstAmount: gstAmount > 0 ? (gstAmount * exchangeRateNum).toFixed(2) : undefined,
+        };
+      }) as LineItemInput[],
       reason: 'initial_extraction',
     });
 
@@ -426,11 +507,66 @@ interface AIExtractionResult {
 }
 
 /**
+ * Get Chart of Accounts context for AI extraction.
+ * Returns accounts in the 4xxx-8xxx range (Revenue, COGS, Expenses)
+ * formatted as a string for the AI prompt.
+ */
+async function getCOAContextForExtraction(
+  tenantId: string,
+  companyId?: string | null
+): Promise<string> {
+  try {
+    // Fetch accounts for the tenant (includes system accounts)
+    const accounts = await getAccountsForSelect(tenantId, companyId);
+
+    // Filter to relevant ranges: 4xxx (Revenue), 5xxx (COGS), 6xxx-8xxx (Expenses)
+    const relevantAccounts = accounts.filter((acc) => {
+      const code = acc.code;
+      return code >= '4000' && code <= '8999';
+    });
+
+    if (relevantAccounts.length === 0) {
+      return '';
+    }
+
+    // Format as structured list for AI
+    const accountList = relevantAccounts
+      .map((acc) => `- ${acc.code}: ${acc.name} (${acc.accountType})`)
+      .join('\n');
+
+    return `## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+${accountList}
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) → 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) → 6xxx (Professional fees)
+- Office supplies, utilities → 6xxx (Administrative expenses)
+- Inventory purchases → 5xxx (Cost of goods sold)
+- Advertising, marketing → 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.`;
+  } catch (error) {
+    log.warn('Failed to fetch COA context for extraction:', error);
+    return '';
+  }
+}
+
+/**
  * Extract fields using AI vision model
  */
 async function performAIExtraction(
   pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[],
   tenantId: string,
+  companyId: string | null,
   userId: string,
   config: ExtractionConfig
 ): Promise<AIExtractionResult> {
@@ -552,19 +688,26 @@ async function performAIExtraction(
 
 ## Singapore GST Tax Codes (REQUIRED for each line item)
 You MUST assign a taxCode to EVERY line item based on these rules:
-- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. If supplier has GST registration number, default to SR.
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
 - **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
 - **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
-- **NA (Not Applicable)**: Non-business transactions, private expenses, government fees/fines, no GST registration
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
 - **TX (Taxable Purchases)**: Standard input tax claimable purchases
 - **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
 
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
 Determination logic:
-1. If GST/tax amount is shown on line item → SR (9% GST)
-2. If explicitly marked as "0% GST" or "Zero-rated" → ZR
-3. If no GST registration on document and local supplier → NA
-4. If foreign supplier/service → ZR or NA depending on nature
-5. When in doubt for taxable business expenses → SR
+1. **If NO GST registration number found** → ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown → SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" → ZR
+4. If GST registration found but no GST charged → Could be ZR, ES, or exempt item
+5. If foreign supplier/service → ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered → SR
 
 ## Amount Validation Rules (CRITICAL)
 1. **Line Item Calculation**: For each line item, verify: quantity × unitPrice = amount (with small rounding tolerance)
@@ -694,7 +837,72 @@ Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
 - Be precise with numbers - extract exactly as shown, don't round
 - When extracting from Singapore invoices, assume SGD unless otherwise specified
 - Always select both documentCategory AND documentSubCategory when possible
-- ALWAYS look for and extract home currency equivalents on foreign currency invoices`;
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- DO NOT list each food/drink item separately (e.g., "Chicken Rice $8", "Ice Lemon Tea $3")
+- AGGREGATE as single line: "Food & Beverage" or "Meals" with the subtotal before GST
+- Keep service charge as separate line if applicable
+
+**2. Cafe/Coffee Shop Receipts**
+- AGGREGATE all drinks and snacks as "Refreshments" or "Team Refreshments"
+- DO NOT list individual coffees, pastries separately
+
+**3. Entertainment/Events**
+- AGGREGATE admission tickets as "Event Admission" or "Entertainment"
+- Keep major categories separate: "Admission", "F&B", "Merchandise"
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: AGGREGATE as "Office Pantry" or "Office Supplies"
+- For inventory: AGGREGATE by product category unless specifically marked as individual items for resale
+
+**5. Hotel/Accommodation**
+- Keep major expense types separate:
+  - "Room Charges" (aggregate all room nights)
+  - "Food & Beverage" (aggregate all F&B charges)
+  - "Services" (laundry, internet, parking)
+- DO NOT list each meal or minibar item separately
+
+**6. Transport/Parking**
+- AGGREGATE multiple parking charges as "Parking"
+- AGGREGATE multiple transport rides as "Transport"
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature rather than individual receipts
+- E.g., "Office Supplies", "Transport", "Meals"
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with different service types
+- Inventory purchases for resale
+
+### Aggregation Guidelines:
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the sum of individual items before tax
+- GST should be calculated on the aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount`;
+
+  // Fetch COA context for intelligent account code suggestions
+  const coaContext = await getCOAContextForExtraction(tenantId, companyId);
+  if (coaContext) {
+    extractionPrompt += `\n\n${coaContext}`;
+    // Log COA context for debugging
+    if (isAIDebugEnabled()) {
+      const accountCount = (coaContext.match(/^- /gm) || []).length;
+      log.info(`[ai-debug] COA context added to prompt: ${accountCount} accounts`);
+    }
+  } else if (isAIDebugEnabled()) {
+    log.info('[ai-debug] No COA context available - account codes will use fallback logic');
+  }
 
   // Append additional context if provided
   if (config.additionalContext) {
@@ -713,8 +921,9 @@ Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
       temperature: 0.1, // Low temperature for precise extraction
     });
 
-    // Parse the AI response
-    const extractedData = JSON.parse(response.content);
+    // Parse the AI response (strip markdown code blocks if present)
+    const cleanedContent = stripMarkdownCodeBlocks(response.content);
+    const extractedData = JSON.parse(cleanedContent);
 
     // Debug: log raw AI response to understand bbox format
     log.debug('AI extraction raw response (sample fields):', {
@@ -724,8 +933,25 @@ Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
     });
 
     // Map to our FieldExtractionResult format
+    const result = mapAIResponseToResult(extractedData, pages);
+
+    // Log extraction results for debugging (including account code assignments)
+    if (isAIDebugEnabled()) {
+      logExtractionResults(null, {
+        documentCategory: result.documentCategory,
+        vendorName: result.vendorName,
+        totalAmount: result.totalAmount,
+        currency: result.currency,
+        lineItems: result.lineItems?.map((item) => ({
+          lineNo: item.lineNo,
+          description: item.description,
+          accountCode: item.accountCode,
+        })),
+      });
+    }
+
     return {
-      result: mapAIResponseToResult(extractedData, pages),
+      result,
       modelUsed: modelId,
       providerUsed: providerFromModel,
     };
@@ -838,16 +1064,46 @@ function mapAIResponseToResult(
     const taxCodeField = extractFieldValue(item.taxCode);
     const accountCodeField = extractFieldValue(item.accountCode);
 
-    // Determine tax code with intelligent fallback
+    // Determine tax code with intelligent fallback based on actual GST percentage
     let taxCode = taxCodeField?.value;
     let taxCodeConfidence = taxCodeField?.confidence || 0.7;
 
     if (!taxCode) {
-      // Apply fallback logic based on document context
-      if (gstAmountField?.value && parseFloat(gstAmountField.value) > 0) {
-        // Has GST amount → Standard-Rated
+      // Apply fallback logic based on actual GST percentage calculation
+      const gstAmountNum = gstAmountField?.value ? parseFloat(gstAmountField.value) : 0;
+      const amountNum = amountField?.value ? parseFloat(amountField.value) : 0;
+
+      if (gstAmountNum > 0 && amountNum > 0) {
+        // Calculate actual GST rate from amounts
+        const actualRate = gstAmountNum / amountNum;
+
+        // Determine GST code based on actual rate with tolerance bands
+        if (actualRate >= 0.085 && actualRate <= 0.095) {
+          // 8.5% to 9.5% → SR (9%)
+          taxCode = 'SR';
+          taxCodeConfidence = 0.9; // High confidence when calculated from actual amounts
+        } else if (actualRate >= 0.075 && actualRate < 0.085) {
+          // 7.5% to 8.5% → SR8 (8%)
+          taxCode = 'SR8';
+          taxCodeConfidence = 0.9;
+        } else if (actualRate >= 0.065 && actualRate < 0.075) {
+          // 6.5% to 7.5% → SR7 (7%)
+          taxCode = 'SR7';
+          taxCodeConfidence = 0.9;
+        } else if (actualRate < 0.005) {
+          // Less than 0.5% → Zero-rated or NA
+          taxCode = hasGstRegistration ? 'ZR' : 'NA';
+          taxCodeConfidence = 0.75;
+        } else {
+          // Other rates - default to SR but lower confidence
+          taxCode = 'SR';
+          taxCodeConfidence = 0.6;
+          log.debug(`Line item has unusual GST rate: ${(actualRate * 100).toFixed(2)}%`);
+        }
+      } else if (gstAmountNum > 0) {
+        // Has GST amount but no base amount to calculate rate → Standard-Rated
         taxCode = 'SR';
-        taxCodeConfidence = 0.85;
+        taxCodeConfidence = 0.8;
       } else if (hasGstRegistration) {
         // Supplier is GST registered → default to Standard-Rated
         taxCode = 'SR';
@@ -859,16 +1115,68 @@ function mapAIResponseToResult(
       }
     }
 
-    // Calculate GST amount if not provided but tax code is SR
+    // Calculate GST amount if not provided but tax code indicates GST applies
     let gstAmount = gstAmountField?.value;
     let gstAmountConfidence = gstAmountField?.confidence || 0.8;
 
-    if (!gstAmount && taxCode === 'SR' && amountField?.value) {
-      // Calculate 9% GST for standard-rated items
+    if (!gstAmount && amountField?.value) {
       const amount = parseFloat(amountField.value);
       if (!isNaN(amount) && amount > 0) {
-        gstAmount = (amount * 0.09).toFixed(2);
-        gstAmountConfidence = 0.7; // Lower confidence for calculated values
+        // Determine rate based on tax code
+        let gstRate = 0;
+        if (taxCode === 'SR') gstRate = 0.09;
+        else if (taxCode === 'SR8') gstRate = 0.08;
+        else if (taxCode === 'SR7') gstRate = 0.07;
+
+        if (gstRate > 0) {
+          gstAmount = (amount * gstRate).toFixed(2);
+          gstAmountConfidence = 0.7; // Lower confidence for calculated values
+        }
+      }
+    }
+
+    // Default qty=1 and unitPrice=amount when both are not provided
+    let quantity = qtyField?.value;
+    let quantityConfidence = qtyField?.confidence || 0.8;
+    let unitPrice = unitPriceField?.value;
+    let unitPriceConfidence = unitPriceField?.confidence || 0.8;
+
+    if (!quantity && !unitPrice && amountField?.value) {
+      // When qty and unitPrice are not extracted, default qty=1 and unitPrice=amount
+      quantity = '1';
+      quantityConfidence = 0.6; // Lower confidence for defaulted values
+      unitPrice = amountField.value;
+      unitPriceConfidence = 0.6;
+    }
+
+    // Fallback account code suggestion based on description keywords
+    let accountCode = accountCodeField?.value;
+    let accountCodeConfidence = accountCodeField?.confidence || 0.8;
+
+    if (!accountCode && descField?.value) {
+      const desc = descField.value.toLowerCase();
+      // Common keyword mappings for expenses (6xxx range)
+      const expenseKeywords = [
+        'subscription', 'software', 'saas', 'cloud', 'hosting', 'domain',
+        'service', 'consulting', 'professional', 'legal', 'accounting',
+        'office', 'supplies', 'utilities', 'rent', 'maintenance',
+        'marketing', 'advertising', 'promotion', 'travel', 'transport',
+        'insurance', 'license', 'fee', 'training', 'education'
+      ];
+      // Common keywords for COGS (5xxx range)
+      const cogsKeywords = [
+        'purchase', 'inventory', 'goods', 'materials', 'raw material',
+        'stock', 'manufacturing', 'production'
+      ];
+
+      if (cogsKeywords.some(kw => desc.includes(kw))) {
+        // Suggest a COGS account - user should have one in 5xxx range
+        accountCode = '5000'; // Generic COGS
+        accountCodeConfidence = 0.5;
+      } else if (expenseKeywords.some(kw => desc.includes(kw))) {
+        // Suggest a general expense account - user should have one in 6xxx range
+        accountCode = '6000'; // Generic expense
+        accountCodeConfidence = 0.5;
       }
     }
 
@@ -879,8 +1187,8 @@ function mapAIResponseToResult(
         confidence: descField?.confidence || 0.9,
         evidence: descField ? createFieldEvidence(descField.value, descField.confidence || 0.9, pageNum, fingerprint) : undefined,
       },
-      quantity: qtyField ? { value: qtyField.value, confidence: qtyField.confidence } : undefined,
-      unitPrice: unitPriceField ? { value: unitPriceField.value, confidence: unitPriceField.confidence } : undefined,
+      quantity: quantity ? { value: quantity, confidence: quantityConfidence } : undefined,
+      unitPrice: unitPrice ? { value: unitPrice, confidence: unitPriceConfidence } : undefined,
       amount: {
         value: amountField?.value || '0',
         confidence: amountField?.confidence || 0.9,
@@ -888,7 +1196,7 @@ function mapAIResponseToResult(
       },
       gstAmount: gstAmount ? { value: gstAmount, confidence: gstAmountConfidence } : undefined,
       taxCode: { value: taxCode, confidence: taxCodeConfidence },
-      accountCode: accountCodeField ? { value: accountCodeField.value, confidence: accountCodeField.confidence } : undefined,
+      accountCode: accountCode ? { value: accountCode, confidence: accountCodeConfidence } : undefined,
     };
   });
 

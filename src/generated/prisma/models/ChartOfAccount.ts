@@ -47,6 +47,7 @@ export type ChartOfAccountMinAggregateOutputType = {
   sortOrder: number | null
   isSystem: boolean | null
   isTaxApplicable: boolean | null
+  isHeader: boolean | null
   createdById: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -66,6 +67,7 @@ export type ChartOfAccountMaxAggregateOutputType = {
   sortOrder: number | null
   isSystem: boolean | null
   isTaxApplicable: boolean | null
+  isHeader: boolean | null
   createdById: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -85,6 +87,7 @@ export type ChartOfAccountCountAggregateOutputType = {
   sortOrder: number
   isSystem: number
   isTaxApplicable: number
+  isHeader: number
   createdById: number
   createdAt: number
   updatedAt: number
@@ -114,6 +117,7 @@ export type ChartOfAccountMinAggregateInputType = {
   sortOrder?: true
   isSystem?: true
   isTaxApplicable?: true
+  isHeader?: true
   createdById?: true
   createdAt?: true
   updatedAt?: true
@@ -133,6 +137,7 @@ export type ChartOfAccountMaxAggregateInputType = {
   sortOrder?: true
   isSystem?: true
   isTaxApplicable?: true
+  isHeader?: true
   createdById?: true
   createdAt?: true
   updatedAt?: true
@@ -152,6 +157,7 @@ export type ChartOfAccountCountAggregateInputType = {
   sortOrder?: true
   isSystem?: true
   isTaxApplicable?: true
+  isHeader?: true
   createdById?: true
   createdAt?: true
   updatedAt?: true
@@ -258,6 +264,7 @@ export type ChartOfAccountGroupByOutputType = {
   sortOrder: number
   isSystem: boolean
   isTaxApplicable: boolean
+  isHeader: boolean
   createdById: string | null
   createdAt: Date
   updatedAt: Date
@@ -300,6 +307,7 @@ export type ChartOfAccountWhereInput = {
   sortOrder?: Prisma.IntFilter<"ChartOfAccount"> | number
   isSystem?: Prisma.BoolFilter<"ChartOfAccount"> | boolean
   isTaxApplicable?: Prisma.BoolFilter<"ChartOfAccount"> | boolean
+  isHeader?: Prisma.BoolFilter<"ChartOfAccount"> | boolean
   createdById?: Prisma.StringNullableFilter<"ChartOfAccount"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ChartOfAccount"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ChartOfAccount"> | Date | string
@@ -324,6 +332,7 @@ export type ChartOfAccountOrderByWithRelationInput = {
   sortOrder?: Prisma.SortOrder
   isSystem?: Prisma.SortOrder
   isTaxApplicable?: Prisma.SortOrder
+  isHeader?: Prisma.SortOrder
   createdById?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -352,6 +361,7 @@ export type ChartOfAccountWhereUniqueInput = Prisma.AtLeast<{
   sortOrder?: Prisma.IntFilter<"ChartOfAccount"> | number
   isSystem?: Prisma.BoolFilter<"ChartOfAccount"> | boolean
   isTaxApplicable?: Prisma.BoolFilter<"ChartOfAccount"> | boolean
+  isHeader?: Prisma.BoolFilter<"ChartOfAccount"> | boolean
   createdById?: Prisma.StringNullableFilter<"ChartOfAccount"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ChartOfAccount"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ChartOfAccount"> | Date | string
@@ -376,6 +386,7 @@ export type ChartOfAccountOrderByWithAggregationInput = {
   sortOrder?: Prisma.SortOrder
   isSystem?: Prisma.SortOrder
   isTaxApplicable?: Prisma.SortOrder
+  isHeader?: Prisma.SortOrder
   createdById?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -403,6 +414,7 @@ export type ChartOfAccountScalarWhereWithAggregatesInput = {
   sortOrder?: Prisma.IntWithAggregatesFilter<"ChartOfAccount"> | number
   isSystem?: Prisma.BoolWithAggregatesFilter<"ChartOfAccount"> | boolean
   isTaxApplicable?: Prisma.BoolWithAggregatesFilter<"ChartOfAccount"> | boolean
+  isHeader?: Prisma.BoolWithAggregatesFilter<"ChartOfAccount"> | boolean
   createdById?: Prisma.StringNullableWithAggregatesFilter<"ChartOfAccount"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ChartOfAccount"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ChartOfAccount"> | Date | string
@@ -419,6 +431,7 @@ export type ChartOfAccountCreateInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -443,6 +456,7 @@ export type ChartOfAccountUncheckedCreateInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -461,6 +475,7 @@ export type ChartOfAccountUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -485,6 +500,7 @@ export type ChartOfAccountUncheckedUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -506,6 +522,7 @@ export type ChartOfAccountCreateManyInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -522,6 +539,7 @@ export type ChartOfAccountUpdateManyMutationInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -541,6 +559,7 @@ export type ChartOfAccountUncheckedUpdateManyInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -581,6 +600,7 @@ export type ChartOfAccountCountOrderByAggregateInput = {
   sortOrder?: Prisma.SortOrder
   isSystem?: Prisma.SortOrder
   isTaxApplicable?: Prisma.SortOrder
+  isHeader?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -604,6 +624,7 @@ export type ChartOfAccountMaxOrderByAggregateInput = {
   sortOrder?: Prisma.SortOrder
   isSystem?: Prisma.SortOrder
   isTaxApplicable?: Prisma.SortOrder
+  isHeader?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -623,6 +644,7 @@ export type ChartOfAccountMinOrderByAggregateInput = {
   sortOrder?: Prisma.SortOrder
   isSystem?: Prisma.SortOrder
   isTaxApplicable?: Prisma.SortOrder
+  isHeader?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -812,6 +834,7 @@ export type ChartOfAccountCreateWithoutTenantInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -834,6 +857,7 @@ export type ChartOfAccountUncheckedCreateWithoutTenantInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -884,6 +908,7 @@ export type ChartOfAccountScalarWhereInput = {
   sortOrder?: Prisma.IntFilter<"ChartOfAccount"> | number
   isSystem?: Prisma.BoolFilter<"ChartOfAccount"> | boolean
   isTaxApplicable?: Prisma.BoolFilter<"ChartOfAccount"> | boolean
+  isHeader?: Prisma.BoolFilter<"ChartOfAccount"> | boolean
   createdById?: Prisma.StringNullableFilter<"ChartOfAccount"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ChartOfAccount"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ChartOfAccount"> | Date | string
@@ -900,6 +925,7 @@ export type ChartOfAccountCreateWithoutCompanyInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -922,6 +948,7 @@ export type ChartOfAccountUncheckedCreateWithoutCompanyInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -966,6 +993,7 @@ export type ChartOfAccountCreateWithoutChildrenInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -989,6 +1017,7 @@ export type ChartOfAccountUncheckedCreateWithoutChildrenInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1011,6 +1040,7 @@ export type ChartOfAccountCreateWithoutParentInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1033,6 +1063,7 @@ export type ChartOfAccountUncheckedCreateWithoutParentInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1072,6 +1103,7 @@ export type ChartOfAccountUpdateWithoutChildrenInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1095,6 +1127,7 @@ export type ChartOfAccountUncheckedUpdateWithoutChildrenInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1128,6 +1161,7 @@ export type ChartOfAccountCreateWithoutExternalMappingsInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1151,6 +1185,7 @@ export type ChartOfAccountUncheckedCreateWithoutExternalMappingsInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1184,6 +1219,7 @@ export type ChartOfAccountUpdateWithoutExternalMappingsInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1207,6 +1243,7 @@ export type ChartOfAccountUncheckedUpdateWithoutExternalMappingsInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1226,6 +1263,7 @@ export type ChartOfAccountCreateManyTenantInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1242,6 +1280,7 @@ export type ChartOfAccountUpdateWithoutTenantInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1264,6 +1303,7 @@ export type ChartOfAccountUncheckedUpdateWithoutTenantInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1284,6 +1324,7 @@ export type ChartOfAccountUncheckedUpdateManyWithoutTenantInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1302,6 +1343,7 @@ export type ChartOfAccountCreateManyCompanyInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1318,6 +1360,7 @@ export type ChartOfAccountUpdateWithoutCompanyInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1340,6 +1383,7 @@ export type ChartOfAccountUncheckedUpdateWithoutCompanyInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1360,6 +1404,7 @@ export type ChartOfAccountUncheckedUpdateManyWithoutCompanyInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1378,6 +1423,7 @@ export type ChartOfAccountCreateManyParentInput = {
   sortOrder?: number
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1394,6 +1440,7 @@ export type ChartOfAccountUpdateWithoutParentInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1416,6 +1463,7 @@ export type ChartOfAccountUncheckedUpdateWithoutParentInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1436,6 +1484,7 @@ export type ChartOfAccountUncheckedUpdateManyWithoutParentInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isSystem?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTaxApplicable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isHeader?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1495,6 +1544,7 @@ export type ChartOfAccountSelect<ExtArgs extends runtime.Types.Extensions.Intern
   sortOrder?: boolean
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1520,6 +1570,7 @@ export type ChartOfAccountSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   sortOrder?: boolean
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1542,6 +1593,7 @@ export type ChartOfAccountSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   sortOrder?: boolean
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1564,13 +1616,14 @@ export type ChartOfAccountSelectScalar = {
   sortOrder?: boolean
   isSystem?: boolean
   isTaxApplicable?: boolean
+  isHeader?: boolean
   createdById?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type ChartOfAccountOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "code" | "name" | "description" | "accountType" | "status" | "parentId" | "sortOrder" | "isSystem" | "isTaxApplicable" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["chartOfAccount"]>
+export type ChartOfAccountOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "code" | "name" | "description" | "accountType" | "status" | "parentId" | "sortOrder" | "isSystem" | "isTaxApplicable" | "isHeader" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["chartOfAccount"]>
 export type ChartOfAccountInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.ChartOfAccount$tenantArgs<ExtArgs>
   company?: boolean | Prisma.ChartOfAccount$companyArgs<ExtArgs>
@@ -1612,6 +1665,7 @@ export type $ChartOfAccountPayload<ExtArgs extends runtime.Types.Extensions.Inte
     sortOrder: number
     isSystem: boolean
     isTaxApplicable: boolean
+    isHeader: boolean
     createdById: string | null
     createdAt: Date
     updatedAt: Date
@@ -2056,6 +2110,7 @@ export interface ChartOfAccountFieldRefs {
   readonly sortOrder: Prisma.FieldRef<"ChartOfAccount", 'Int'>
   readonly isSystem: Prisma.FieldRef<"ChartOfAccount", 'Boolean'>
   readonly isTaxApplicable: Prisma.FieldRef<"ChartOfAccount", 'Boolean'>
+  readonly isHeader: Prisma.FieldRef<"ChartOfAccount", 'Boolean'>
   readonly createdById: Prisma.FieldRef<"ChartOfAccount", 'String'>
   readonly createdAt: Prisma.FieldRef<"ChartOfAccount", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ChartOfAccount", 'DateTime'>

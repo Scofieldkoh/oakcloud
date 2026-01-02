@@ -82,7 +82,7 @@ export async function POST(
     }
 
     // Parse optional config from body
-    let body: { provider?: string; model?: string; priority?: string } = {};
+    let body: { provider?: string; model?: string; priority?: string; context?: string } = {};
     try {
       const text = await request.text();
       if (text) {
@@ -101,6 +101,7 @@ export async function POST(
       {
         provider: body.provider as 'openai' | 'anthropic' | 'google' | undefined,
         model: body.model,
+        additionalContext: body.context,
       }
     );
 

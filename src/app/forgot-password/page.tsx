@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Mail, ArrowLeft, Send, CheckCircle } from 'lucide-react';
 import { FormInput } from '@/components/ui/form-input';
 import { Button } from '@/components/ui/button';
@@ -51,7 +52,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
+            <Image src="/falcon.svg" alt="Oakcloud" width={84} height={84} unoptimized />
           </Link>
         </div>
 

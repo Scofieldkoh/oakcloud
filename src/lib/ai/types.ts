@@ -10,14 +10,16 @@ export type AIProvider = 'openai' | 'anthropic' | 'google';
 // Supported AI models
 export type AIModel =
   // OpenAI models
-  | 'gpt-5'
+  | 'gpt-5.2'
+  // | 'gpt-5' // Disabled: use gpt-5.2 instead
   | 'gpt-4.1'
   // Anthropic models
   | 'claude-opus-4.5'
   | 'claude-sonnet-4.5'
   // Google models
   | 'gemini-3'
-  | 'gemini-2.5-flash';
+  | 'gemini-3-flash';
+  // | 'gemini-2.5-flash' // Disabled: use gemini-3-flash instead
 
 // Model configuration
 export interface AIModelConfig {
@@ -31,6 +33,7 @@ export interface AIModelConfig {
   outputPricePerMillion: number; // Price per million output tokens in USD
   supportsJson: boolean;
   supportsVision: boolean;
+  supportsTemperature?: boolean; // Whether the model supports custom temperature (default: true)
   isDefault?: boolean;
 }
 

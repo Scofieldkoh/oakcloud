@@ -6480,6 +6480,7 @@ export const ChartOfAccountScalarFieldEnum = {
   sortOrder: 'sortOrder',
   isSystem: 'isSystem',
   isTaxApplicable: 'isTaxApplicable',
+  isHeader: 'isHeader',
   createdById: 'createdById',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',

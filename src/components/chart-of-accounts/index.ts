@@ -6,4 +6,4 @@
 
 export { AccountTypeBadge, AccountStatusBadge, AccountScopeBadge } from './account-type-badge';
 export { AccountFormModal } from './account-form-modal';
-export { AccountActionsDropdown } from './account-actions-dropdown';
+export { AccountTableRow } from './account-table-row';

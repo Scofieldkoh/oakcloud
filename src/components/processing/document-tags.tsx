@@ -25,12 +25,12 @@ import {
   useAvailableTags,
   useTenantTags,
   useCompanyTags,
+  useCreateTag,
+  useCreateTenantTag,
   useUpdateTag,
   useDeleteTag,
   useUpdateTenantTag,
   useDeleteTenantTag,
-  type Tag as TagType,
-  type DocumentTag,
   type TagScope,
 } from '@/hooks/use-document-tags';
 import { useToast } from '@/components/ui/toast';
@@ -140,6 +140,7 @@ function ColorPicker({ selectedColor, onColorSelect }: ColorPickerProps) {
 interface DocumentTagsProps {
   documentId: string;
   companyId: string | null;
+  tenantId?: string | null;
   readOnly?: boolean;
   className?: string;
 }
@@ -147,6 +148,7 @@ interface DocumentTagsProps {
 export function DocumentTags({
   documentId,
   companyId,
+  tenantId,
   readOnly = false,
   className,
 }: DocumentTagsProps) {
@@ -172,11 +174,12 @@ export function DocumentTags({
 
   // Queries
   const { data: documentTags = [], isLoading: isLoadingDocTags } = useDocumentTags(documentId);
-  const { data: recentTags = [] } = useAvailableRecentTags(companyId);
-  const { data: tenantTags = [] } = useTenantTags();
+  const { data: recentTags = [] } = useAvailableRecentTags(companyId, tenantId);
+  const { data: tenantTags = [] } = useTenantTags(tenantId);
   const { data: searchResults = [], isLoading: isSearching } = useSearchAvailableTags(
     companyId,
-    debouncedQuery
+    debouncedQuery,
+    tenantId
   );
 
   // Mutations
@@ -189,7 +192,7 @@ export function DocumentTags({
   const deleteTenantTagMutation = useDeleteTenantTag();
 
   // Fetch all available tags for manage dropdown (tenant + company)
-  const { data: allAvailableTags = [], isLoading: isLoadingAllTags } = useAvailableTags(companyId);
+  const { data: allAvailableTags = [], isLoading: isLoadingAllTags } = useAvailableTags(companyId, tenantId);
 
   // Debounce search query
   useEffect(() => {
@@ -423,10 +426,6 @@ export function DocumentTags({
     },
     [searchQuery, queryMatchesExisting, handleCreateAndAddTag]
   );
-
-  if (!companyId) {
-    return null;
-  }
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
@@ -911,24 +910,49 @@ export function DocumentTags({
 export default DocumentTags;
 
 // ============================================================================
-// TagManager Component - For managing company tags (edit color, delete)
+// TagManager Component - For managing tags (both tenant and company tags)
 // ============================================================================
 
 interface TagManagerProps {
   companyId: string | null;
+  tenantId?: string | null;
   className?: string;
 }
 
-export function TagManager({ companyId, className }: TagManagerProps) {
+export function TagManager({ companyId, tenantId, className }: TagManagerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [editingTag, setEditingTag] = useState<{ id: string; name: string; color: TagColor } | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [editingTag, setEditingTag] = useState<{ id: string; name: string; color: TagColor; scope: TagScope } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; scope: TagScope } | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState<TagColor>('GRAY');
+  const [newTagScope, setNewTagScope] = useState<TagScope>('company');
   const containerRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
 
-  const { data: tags = [], isLoading } = useCompanyTags(companyId);
+  const { data: session } = useSession();
+  const isAdmin = session?.isSuperAdmin || session?.isTenantAdmin;
+
+  // Fetch tenant tags (requires tenantId for super admins)
+  const { data: tenantTags = [], isLoading: isLoadingTenant } = useTenantTags(tenantId);
+  // Fetch company tags (only when companyId is provided)
+  const { data: companyTags = [], isLoading: isLoadingCompany } = useCompanyTags(companyId);
+
+  const isLoading = isLoadingTenant || isLoadingCompany;
+
+  // Combined tags for display
+  const allTags = useMemo(() => {
+    const tenant = tenantTags.map(t => ({ ...t, scope: 'tenant' as TagScope }));
+    const company = companyTags.map(t => ({ ...t, scope: 'company' as TagScope }));
+    return [...tenant, ...company];
+  }, [tenantTags, companyTags]);
+
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
+  const updateTenantTagMutation = useUpdateTenantTag();
+  const deleteTenantTagMutation = useDeleteTenantTag();
+  const createTagMutation = useCreateTag();
+  const createTenantTagMutation = useCreateTenantTag();
 
   // Click outside handler
   useEffect(() => {
@@ -939,6 +963,10 @@ export function TagManager({ companyId, className }: TagManagerProps) {
         setIsOpen(false);
         setEditingTag(null);
         setDeleteConfirm(null);
+        setIsCreating(false);
+        setNewTagName('');
+        setNewTagColor('GRAY');
+        setNewTagScope('company');
       }
     };
 
@@ -946,14 +974,14 @@ export function TagManager({ companyId, className }: TagManagerProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const handleColorChange = async (tagId: string, newColor: TagColor) => {
-    if (!companyId) return;
+  const handleColorChange = async (tagId: string, newColor: TagColor, scope: TagScope) => {
     try {
-      await updateTagMutation.mutateAsync({
-        companyId,
-        tagId,
-        color: newColor,
-      });
+      if (scope === 'tenant') {
+        await updateTenantTagMutation.mutateAsync({ tagId, color: newColor });
+      } else {
+        if (!companyId) return;
+        await updateTagMutation.mutateAsync({ companyId, tagId, color: newColor });
+      }
       setEditingTag(null);
       toast.success('Tag color updated');
     } catch (err) {
@@ -961,10 +989,14 @@ export function TagManager({ companyId, className }: TagManagerProps) {
     }
   };
 
-  const handleDelete = async (tagId: string) => {
-    if (!companyId) return;
+  const handleDelete = async (tagId: string, scope: TagScope) => {
     try {
-      await deleteTagMutation.mutateAsync({ companyId, tagId });
+      if (scope === 'tenant') {
+        await deleteTenantTagMutation.mutateAsync({ tagId });
+      } else {
+        if (!companyId) return;
+        await deleteTagMutation.mutateAsync({ companyId, tagId });
+      }
       setDeleteConfirm(null);
       toast.success('Tag deleted');
     } catch (err) {
@@ -972,7 +1004,36 @@ export function TagManager({ companyId, className }: TagManagerProps) {
     }
   };
 
-  if (!companyId) return null;
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return;
+
+    try {
+      if (newTagScope === 'tenant') {
+        await createTenantTagMutation.mutateAsync({
+          name: newTagName.trim(),
+          color: newTagColor,
+          tenantId: tenantId || undefined,
+        });
+      } else {
+        if (!companyId) {
+          toast.error('Please select a company to create a company-specific tag');
+          return;
+        }
+        await createTagMutation.mutateAsync({
+          companyId,
+          name: newTagName.trim(),
+          color: newTagColor,
+        });
+      }
+      setNewTagName('');
+      setNewTagColor('GRAY');
+      setNewTagScope('company');
+      setIsCreating(false);
+      toast.success(`${newTagScope === 'tenant' ? 'Shared' : 'Company'} tag created`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create tag');
+    }
+  };
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
@@ -999,109 +1060,359 @@ export function TagManager({ companyId, className }: TagManagerProps) {
             'animate-in fade-in-0 zoom-in-95 duration-150'
           )}
         >
-          <div className="px-3 py-2.5 border-b border-border-primary">
-            <h4 className="text-sm font-medium text-text-primary">Manage Tags</h4>
-            <p className="text-2xs text-text-muted mt-0.5">Edit colors or delete tags</p>
+          <div className="px-3 py-2.5 border-b border-border-primary flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-medium text-text-primary">Manage Tags</h4>
+              <p className="text-2xs text-text-muted mt-0.5">Edit colors or delete tags</p>
+            </div>
+            {/* Create new tag button - only for admins or when company is selected */}
+            {(isAdmin || companyId) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreating(true);
+                  // Default to tenant scope for admins when no company, otherwise company
+                  setNewTagScope(companyId ? 'company' : 'tenant');
+                }}
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-1 text-xs rounded',
+                  'text-text-secondary hover:text-text-primary',
+                  'hover:bg-background-tertiary transition-colors'
+                )}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New
+              </button>
+            )}
           </div>
 
-          <div className="max-h-64 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto">
+            {/* Create New Tag Form */}
+            {isCreating && (
+              <div className="px-3 py-3 bg-background-secondary border-b border-border-primary">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-2xs text-text-muted uppercase tracking-wider block mb-1">Tag Name</label>
+                    <input
+                      type="text"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      placeholder="Enter tag name..."
+                      className="input input-sm w-full"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-2xs text-text-muted uppercase tracking-wider block mb-1">Color</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(Object.keys(TAG_COLORS) as TagColor[]).map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setNewTagColor(color)}
+                          className={cn(
+                            'w-6 h-6 rounded-full border-2 transition-all',
+                            TAG_COLORS[color].bg,
+                            newTagColor === color
+                              ? 'border-text-primary scale-110'
+                              : 'border-transparent hover:border-border-primary hover:scale-105'
+                          )}
+                          title={color.toLowerCase()}
+                        >
+                          {newTagColor === color && (
+                            <Check className={cn('w-3 h-3 mx-auto', TAG_COLORS[color].text)} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Scope selector - only show for admins when company is selected */}
+                  {isAdmin && companyId && (
+                    <div>
+                      <label className="text-2xs text-text-muted uppercase tracking-wider block mb-1">Scope</label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setNewTagScope('company')}
+                          className={cn(
+                            'flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs rounded border transition-all',
+                            newTagScope === 'company'
+                              ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
+                              : 'border-border-secondary text-text-secondary hover:border-border-primary'
+                          )}
+                        >
+                          <Tag className="w-3 h-3" />
+                          Company
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTagScope('tenant')}
+                          className={cn(
+                            'flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs rounded border transition-all',
+                            newTagScope === 'tenant'
+                              ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
+                              : 'border-border-secondary text-text-secondary hover:border-border-primary'
+                          )}
+                        >
+                          <Globe className="w-3 h-3" />
+                          Shared
+                        </button>
+                      </div>
+                      <p className="text-2xs text-text-muted mt-1">
+                        {newTagScope === 'tenant'
+                          ? 'Shared tags are available across all companies'
+                          : 'Company tags are only available to this company'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* For admins with no company, only tenant tags */}
+                  {isAdmin && !companyId && (
+                    <p className="text-2xs text-text-muted">
+                      <Globe className="w-3 h-3 inline mr-1" />
+                      Creating a shared tag (available across all companies)
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleCreateTag}
+                      disabled={!newTagName.trim() || createTagMutation.isPending || createTenantTagMutation.isPending}
+                      className="btn-primary btn-sm flex-1"
+                    >
+                      {createTagMutation.isPending || createTenantTagMutation.isPending ? 'Creating...' : 'Create Tag'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreating(false);
+                        setNewTagName('');
+                        setNewTagColor('GRAY');
+                        setNewTagScope('company');
+                      }}
+                      className="btn-secondary btn-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {isLoading ? (
               <p className="px-3 py-4 text-xs text-text-muted text-center">Loading...</p>
-            ) : tags.length === 0 ? (
+            ) : allTags.length === 0 ? (
               <p className="px-3 py-4 text-xs text-text-muted text-center">
-                No tags created yet. Add tags to documents to create them.
+                No tags created yet. {isAdmin || companyId ? 'Click "New" to create one.' : 'Add tags to documents to create them.'}
               </p>
             ) : (
               <div className="py-1">
-                {tags.map((tag) => (
-                  <div key={tag.id}>
-                    {editingTag?.id === tag.id ? (
-                      // Color picker mode
-                      <div className="px-3 py-2 bg-background-secondary">
-                        <div className="flex items-center justify-between mb-2">
-                          <TagChip name={tag.name} color={editingTag.color} size="sm" />
-                          <button
-                            type="button"
-                            onClick={() => setEditingTag(null)}
-                            className="text-xs text-text-muted hover:text-text-secondary"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {(Object.keys(TAG_COLORS) as TagColor[]).map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => handleColorChange(tag.id, color)}
-                              disabled={updateTagMutation.isPending}
-                              className={cn(
-                                'w-6 h-6 rounded-full border-2 transition-all',
-                                TAG_COLORS[color].bg,
-                                editingTag.color === color
-                                  ? 'border-text-primary scale-110'
-                                  : 'border-transparent hover:border-border-primary hover:scale-105',
-                                'disabled:opacity-50'
-                              )}
-                              title={color.toLowerCase()}
-                            >
-                              {editingTag.color === color && (
-                                <Check className={cn('w-3 h-3 mx-auto', TAG_COLORS[color].text)} />
-                              )}
-                            </button>
-                          ))}
-                        </div>
+                {/* Shared Tags Section */}
+                {tenantTags.length > 0 && (
+                  <>
+                    <p className="px-3 py-1 text-2xs text-text-muted uppercase tracking-wider flex items-center gap-1">
+                      <Globe className="w-3 h-3" />
+                      Shared tags
+                      {!isAdmin && <span className="text-text-tertiary ml-1">(view only)</span>}
+                    </p>
+                    {tenantTags.map((tag) => (
+                      <div key={tag.id}>
+                        {editingTag?.id === tag.id ? (
+                          // Color picker mode
+                          <div className="px-3 py-2 bg-background-secondary">
+                            <div className="flex items-center justify-between mb-2">
+                              <TagChip name={tag.name} color={editingTag.color} size="sm" scope="tenant" />
+                              <button
+                                type="button"
+                                onClick={() => setEditingTag(null)}
+                                className="text-xs text-text-muted hover:text-text-secondary"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(Object.keys(TAG_COLORS) as TagColor[]).map((color) => (
+                                <button
+                                  key={color}
+                                  type="button"
+                                  onClick={() => handleColorChange(tag.id, color, 'tenant')}
+                                  disabled={updateTenantTagMutation.isPending}
+                                  className={cn(
+                                    'w-6 h-6 rounded-full border-2 transition-all',
+                                    TAG_COLORS[color].bg,
+                                    editingTag.color === color
+                                      ? 'border-text-primary scale-110'
+                                      : 'border-transparent hover:border-border-primary hover:scale-105',
+                                    'disabled:opacity-50'
+                                  )}
+                                  title={color.toLowerCase()}
+                                >
+                                  {editingTag.color === color && (
+                                    <Check className={cn('w-3 h-3 mx-auto', TAG_COLORS[color].text)} />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : deleteConfirm?.id === tag.id ? (
+                          // Delete confirmation mode
+                          <div className="px-3 py-2 bg-status-error/5">
+                            <p className="text-xs text-text-secondary mb-2">
+                              Delete shared tag &quot;{tag.name}&quot;? This will remove it from all documents across all companies.
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(tag.id, 'tenant')}
+                                disabled={deleteTenantTagMutation.isPending}
+                                className="px-2 py-1 text-xs bg-status-error text-white rounded hover:bg-status-error/90 disabled:opacity-50"
+                              >
+                                {deleteTenantTagMutation.isPending ? 'Deleting...' : 'Delete'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteConfirm(null)}
+                                className="px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          // Normal display mode
+                          <div className="group flex items-center justify-between px-3 py-1.5 hover:bg-background-tertiary">
+                            <TagChip name={tag.name} color={tag.color} size="sm" scope="tenant" />
+                            {isAdmin && (
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingTag({ id: tag.id, name: tag.name, color: tag.color, scope: 'tenant' })}
+                                  className="p-1 text-text-muted hover:text-text-secondary rounded hover:bg-background-secondary"
+                                  title="Change color"
+                                >
+                                  <div className={cn('w-4 h-4 rounded-full border', TAG_COLORS[tag.color].bg, TAG_COLORS[tag.color].border)} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteConfirm({ id: tag.id, scope: 'tenant' })}
+                                  className="p-1 text-text-muted hover:text-status-error rounded hover:bg-background-secondary"
+                                  title="Delete tag"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    ) : deleteConfirm === tag.id ? (
-                      // Delete confirmation mode
-                      <div className="px-3 py-2 bg-status-error/5">
-                        <p className="text-xs text-text-secondary mb-2">
-                          Delete tag &quot;{tag.name}&quot;? This will remove it from all documents.
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(tag.id)}
-                            disabled={deleteTagMutation.isPending}
-                            className="px-2 py-1 text-xs bg-status-error text-white rounded hover:bg-status-error/90 disabled:opacity-50"
-                          >
-                            {deleteTagMutation.isPending ? 'Deleting...' : 'Delete'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfirm(null)}
-                            className="px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
-                          >
-                            Cancel
-                          </button>
-                        </div>
+                    ))}
+                  </>
+                )}
+
+                {/* Company Tags Section */}
+                {companyTags.length > 0 && (
+                  <>
+                    <p className={cn(
+                      'px-3 py-1 text-2xs text-text-muted uppercase tracking-wider flex items-center gap-1',
+                      tenantTags.length > 0 && 'mt-2 pt-2 border-t border-border-primary'
+                    )}>
+                      <Tag className="w-3 h-3" />
+                      Company tags
+                    </p>
+                    {companyTags.map((tag) => (
+                      <div key={tag.id}>
+                        {editingTag?.id === tag.id ? (
+                          // Color picker mode
+                          <div className="px-3 py-2 bg-background-secondary">
+                            <div className="flex items-center justify-between mb-2">
+                              <TagChip name={tag.name} color={editingTag.color} size="sm" scope="company" />
+                              <button
+                                type="button"
+                                onClick={() => setEditingTag(null)}
+                                className="text-xs text-text-muted hover:text-text-secondary"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(Object.keys(TAG_COLORS) as TagColor[]).map((color) => (
+                                <button
+                                  key={color}
+                                  type="button"
+                                  onClick={() => handleColorChange(tag.id, color, 'company')}
+                                  disabled={updateTagMutation.isPending}
+                                  className={cn(
+                                    'w-6 h-6 rounded-full border-2 transition-all',
+                                    TAG_COLORS[color].bg,
+                                    editingTag.color === color
+                                      ? 'border-text-primary scale-110'
+                                      : 'border-transparent hover:border-border-primary hover:scale-105',
+                                    'disabled:opacity-50'
+                                  )}
+                                  title={color.toLowerCase()}
+                                >
+                                  {editingTag.color === color && (
+                                    <Check className={cn('w-3 h-3 mx-auto', TAG_COLORS[color].text)} />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : deleteConfirm?.id === tag.id ? (
+                          // Delete confirmation mode
+                          <div className="px-3 py-2 bg-status-error/5">
+                            <p className="text-xs text-text-secondary mb-2">
+                              Delete tag &quot;{tag.name}&quot;? This will remove it from all documents.
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(tag.id, 'company')}
+                                disabled={deleteTagMutation.isPending}
+                                className="px-2 py-1 text-xs bg-status-error text-white rounded hover:bg-status-error/90 disabled:opacity-50"
+                              >
+                                {deleteTagMutation.isPending ? 'Deleting...' : 'Delete'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteConfirm(null)}
+                                className="px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          // Normal display mode
+                          <div className="group flex items-center justify-between px-3 py-1.5 hover:bg-background-tertiary">
+                            <TagChip name={tag.name} color={tag.color} size="sm" scope="company" />
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={() => setEditingTag({ id: tag.id, name: tag.name, color: tag.color, scope: 'company' })}
+                                className="p-1 text-text-muted hover:text-text-secondary rounded hover:bg-background-secondary"
+                                title="Change color"
+                              >
+                                <div className={cn('w-4 h-4 rounded-full border', TAG_COLORS[tag.color].bg, TAG_COLORS[tag.color].border)} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteConfirm({ id: tag.id, scope: 'company' })}
+                                className="p-1 text-text-muted hover:text-status-error rounded hover:bg-background-secondary"
+                                title="Delete tag"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      // Normal display mode
-                      <div className="group flex items-center justify-between px-3 py-1.5 hover:bg-background-tertiary">
-                        <TagChip name={tag.name} color={tag.color} size="sm" />
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            type="button"
-                            onClick={() => setEditingTag({ id: tag.id, name: tag.name, color: tag.color })}
-                            className="p-1 text-text-muted hover:text-text-secondary rounded hover:bg-background-secondary"
-                            title="Change color"
-                          >
-                            <div className={cn('w-4 h-4 rounded-full border', TAG_COLORS[tag.color].bg, TAG_COLORS[tag.color].border)} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfirm(tag.id)}
-                            className="p-1 text-text-muted hover:text-status-error rounded hover:bg-background-secondary"
-                            title="Delete tag"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>

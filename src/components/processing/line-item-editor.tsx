@@ -16,7 +16,9 @@ import {
   useUpdateRevision,
   type LineItemData,
 } from '@/hooks/use-processing-documents';
+import { useAccountsForSelect } from '@/hooks/use-chart-of-accounts';
 import { useToast } from '@/components/ui/toast';
+import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
 import { cn } from '@/lib/utils';
 
 interface LineItemEditorProps {
@@ -38,6 +40,7 @@ interface EditingLineItem {
   amount: string;
   gstAmount: string;
   taxCode: string;
+  accountCode: string;
 }
 
 const emptyLineItem = (lineNo: number): EditingLineItem => ({
@@ -48,7 +51,41 @@ const emptyLineItem = (lineNo: number): EditingLineItem => ({
   amount: '0',
   gstAmount: '',
   taxCode: '',
+  accountCode: '',
 });
+
+// Currency symbols mapping - SGD displayed as "S$"
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  SGD: 'S$',
+  USD: 'US$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  CNY: '¥',
+  HKD: 'HK$',
+  AUD: 'A$',
+  MYR: 'RM',
+};
+
+// GST tax codes and their rates
+const GST_RATES: Record<string, number> = {
+  SR: 0.09,   // Standard-Rated 9%
+  SR8: 0.08,  // Standard-Rated 8% (historical)
+  SR7: 0.07,  // Standard-Rated 7% (historical)
+  ZR: 0,      // Zero-Rated
+  ES: 0,      // Exempt Supply
+  NA: 0,      // Not Applicable
+  TX: 0.09,   // Taxable (same as SR)
+};
+
+const TAX_CODE_OPTIONS: SelectOption[] = [
+  { value: 'SR', label: 'SR', description: 'Standard-Rated 9%' },
+  { value: 'SR8', label: 'SR8', description: 'Standard-Rated 8%' },
+  { value: 'SR7', label: 'SR7', description: 'Standard-Rated 7%' },
+  { value: 'ZR', label: 'ZR', description: 'Zero-Rated 0%' },
+  { value: 'ES', label: 'ES', description: 'Exempt Supply' },
+  { value: 'NA', label: 'NA', description: 'Not Applicable' },
+];
 
 export function LineItemEditor({
   documentId,
@@ -63,22 +100,12 @@ export function LineItemEditor({
   const updateRevision = useUpdateRevision();
   const { success, error: toastError } = useToast();
 
+  // Fetch chart of accounts for the dropdown
+  const { data: accounts } = useAccountsForSelect({});
+
   const [editMode, setEditMode] = useState(false);
   const [editingItems, setEditingItems] = useState<EditingLineItem[]>([]);
   const [itemsToDelete, setItemsToDelete] = useState<string[]>([]);
-
-  // Currency symbols mapping - SGD displayed as "S$"
-  const CURRENCY_SYMBOLS: Record<string, string> = {
-    SGD: 'S$',
-    USD: 'US$',
-    EUR: '€',
-    GBP: '£',
-    JPY: '¥',
-    CNY: '¥',
-    HKD: 'HK$',
-    AUD: 'A$',
-    MYR: 'RM',
-  };
 
   // Format currency
   const formatCurrency = useCallback(
@@ -99,6 +126,16 @@ export function LineItemEditor({
     [currency]
   );
 
+  // Transform accounts to select options - using code as value, name as label
+  const accountOptions: SelectOption[] = useMemo(() => {
+    if (!accounts) return [];
+    return accounts.map((account) => ({
+      value: account.code,
+      label: account.name,
+      description: `${account.code} • ${account.accountType}`,
+    }));
+  }, [accounts]);
+
   // Calculate totals
   const totals = useMemo(() => {
     const items = editMode ? editingItems : (data?.lineItems ?? []);
@@ -113,6 +150,16 @@ export function LineItemEditor({
     return { subtotal, gst, total: subtotal + gst };
   }, [editMode, editingItems, data?.lineItems]);
 
+  // Helper to get account name from code
+  const getAccountName = useCallback(
+    (code: string | null) => {
+      if (!code || !accounts) return null;
+      const account = accounts.find((a) => a.code === code);
+      return account?.name || code;
+    },
+    [accounts]
+  );
+
   // Enter edit mode
   const handleStartEdit = useCallback(() => {
     if (!data?.lineItems) return;
@@ -123,9 +170,11 @@ export function LineItemEditor({
         description: item.description,
         quantity: item.quantity || '',
         unitPrice: item.unitPrice || '',
-        amount: item.amount,
-        gstAmount: item.gstAmount || '',
+        // Ensure amount is always a string (might be Decimal from API)
+        amount: String(item.amount ?? '0'),
+        gstAmount: item.gstAmount ? String(item.gstAmount) : '',
         taxCode: item.taxCode || '',
+        accountCode: item.accountCode || '',
       }))
     );
     setItemsToDelete([]);
@@ -145,6 +194,18 @@ export function LineItemEditor({
     setEditingItems((prev) => [...prev, emptyLineItem(maxLineNo + 1)]);
   }, [editingItems]);
 
+  // Helper to calculate GST amount based on tax code and amount
+  const calculateGstAmount = useCallback((amount: string, taxCode: string): string => {
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum)) return '';
+
+    const rate = GST_RATES[taxCode] ?? 0;
+    if (rate === 0) return '0.00';
+
+    // Calculate GST - works for both positive and negative amounts
+    return (amountNum * rate).toFixed(2);
+  }, []);
+
   // Update line item field
   const handleItemChange = useCallback(
     (index: number, field: keyof EditingLineItem, value: string) => {
@@ -157,14 +218,31 @@ export function LineItemEditor({
           const qty = parseFloat(updated[index].quantity);
           const price = parseFloat(updated[index].unitPrice);
           if (!isNaN(qty) && !isNaN(price)) {
-            updated[index].amount = (qty * price).toFixed(2);
+            const newAmount = (qty * price).toFixed(2);
+            updated[index].amount = newAmount;
+            // Also recalculate GST when amount changes
+            if (updated[index].taxCode) {
+              updated[index].gstAmount = calculateGstAmount(newAmount, updated[index].taxCode);
+            }
           }
+        }
+
+        // Auto-calculate GST when amount changes directly
+        if (field === 'amount' && updated[index].taxCode) {
+          updated[index].gstAmount = calculateGstAmount(value, updated[index].taxCode);
+        }
+
+        // Auto-calculate GST when tax code changes
+        if (field === 'taxCode' && updated[index].amount) {
+          // Ensure amount is a string (might be Decimal object from API)
+          const amountStr = String(updated[index].amount);
+          updated[index].gstAmount = calculateGstAmount(amountStr, value);
         }
 
         return updated;
       });
     },
-    []
+    [calculateGstAmount]
   );
 
   // Delete line item
@@ -195,6 +273,7 @@ export function LineItemEditor({
             amount: item.amount,
             gstAmount: item.gstAmount || undefined,
             taxCode: item.taxCode || undefined,
+            accountCode: item.accountCode || undefined,
           })),
           itemsToDelete: itemsToDelete.length > 0 ? itemsToDelete : undefined,
         },
@@ -281,9 +360,11 @@ export function LineItemEditor({
             <tr>
               <th className="text-left font-medium text-text-secondary px-4 py-2 w-8">#</th>
               <th className="text-left font-medium text-text-secondary px-4 py-2">Description</th>
+              <th className="text-left font-medium text-text-secondary px-4 py-2 w-72">Account</th>
               <th className="text-right font-medium text-text-secondary px-4 py-2 w-20">Qty</th>
               <th className="text-right font-medium text-text-secondary px-4 py-2 w-24">Unit Price</th>
               <th className="text-right font-medium text-text-secondary px-4 py-2 w-24">Amount</th>
+              <th className="text-center font-medium text-text-secondary px-4 py-2 w-24">GST Code</th>
               <th className="text-right font-medium text-text-secondary px-4 py-2 w-24">GST</th>
               {editMode && <th className="w-10" />}
             </tr>
@@ -291,7 +372,7 @@ export function LineItemEditor({
           <tbody>
             {lineItems.length === 0 ? (
               <tr>
-                <td colSpan={editMode ? 7 : 6} className="px-4 py-8 text-center text-text-muted">
+                <td colSpan={editMode ? 10 : 9} className="px-4 py-8 text-center text-text-muted">
                   No line items
                 </td>
               </tr>
@@ -323,6 +404,26 @@ export function LineItemEditor({
                       />
                     ) : (
                       <span className="text-text-primary">{item.description}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2">
+                    {editMode ? (
+                      accountOptions.length > 0 ? (
+                        <SearchableSelect
+                          options={accountOptions}
+                          value={(item as EditingLineItem).accountCode}
+                          onChange={(value) => handleItemChange(index, 'accountCode', value)}
+                          placeholder="Select account..."
+                          size="sm"
+                          showKeyboardHints={false}
+                        />
+                      ) : (
+                        <span className="text-text-muted text-sm italic">No accounts available</span>
+                      )
+                    ) : (
+                      <span className="text-text-primary text-sm">
+                        {getAccountName((item as LineItemData).accountCode) || '-'}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-2 text-right">
@@ -370,6 +471,23 @@ export function LineItemEditor({
                     ) : (
                       <span className="text-text-primary font-mono">
                         {formatCurrency(item.amount)}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    {editMode ? (
+                      <SearchableSelect
+                        options={TAX_CODE_OPTIONS}
+                        value={(item as EditingLineItem).taxCode}
+                        onChange={(value) => handleItemChange(index, 'taxCode', value)}
+                        placeholder="Code..."
+                        size="sm"
+                        showKeyboardHints={false}
+                        clearable={false}
+                      />
+                    ) : (
+                      <span className="text-text-primary text-sm font-medium">
+                        {(item as LineItemData).taxCode || '-'}
                       </span>
                     )}
                   </td>

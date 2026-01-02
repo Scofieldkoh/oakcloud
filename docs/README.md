@@ -21,6 +21,7 @@ A modular internal management system designed for accounting practices. Clean, e
 **Related Documentation:**
 - [Design Guidelines](./DESIGN_GUIDELINE.md) - UI components, styling, and design system
 - [RBAC Guidelines](./RBAC_GUIDELINE.md) - Role-based access control implementation
+- [AI Debug Guide](./AI_DEBUG.md) - AI extraction debugging and troubleshooting
 - [Changelog](./CHANGELOG.md) - Version history and release notes
 
 ---
@@ -3599,6 +3600,31 @@ Container Upload → Queued → Processing → Split Detection → Child Documen
 | `APPROVED` | User-approved, becomes current revision |
 | `SUPERSEDED` | Replaced by newer approved revision |
 
+### File Rename on Approval
+
+When a document revision is approved, the physical file in storage is automatically renamed using a standardized format:
+
+**Format:** `[Sub-category]-[Vendor]-[Document Number]-[Currency] [Amount].ext`
+
+**Examples:**
+| Revision Data | Resulting Filename |
+|--------------|-------------------|
+| Vendor Invoice, "Acme Pte Ltd", INV-001, SGD 1234.56 | `Vendor Invoice-Acme-INV-001-SGD 1,234.56.pdf` |
+| Purchase Order, "ABC Corporation", PO-2024-100, USD 5000 | `Purchase Order-ABC-PO-2024-100-USD 5,000.00.pdf` |
+
+**Features:**
+- **Sub-category**: Proper casing (e.g., `VENDOR_INVOICE` → "Vendor Invoice")
+- **Vendor name**: Legal suffixes removed (Pte Ltd, Inc, LLC, Corp, Sdn Bhd, GmbH, etc.)
+- **Amount**: Formatted with commas and 2 decimals
+- **Missing parts**: Automatically omitted from filename
+- **Storage**: Both `Document.fileName` and `Document.storageKey` updated
+- **Non-blocking**: Approval continues even if rename fails
+
+**Utilities:** `src/lib/storage/filename.ts`
+- `generateApprovedDocumentFilename()` - Build standardized filename
+- `shortenCompanyName()` - Remove legal suffixes from company names
+- `sanitizeForFilename()` - Remove invalid filename characters
+
 ### Duplicate Detection
 
 The system uses content-based duplicate scoring:
@@ -3628,6 +3654,11 @@ The system uses content-based duplicate scoring:
 | `POST` | `/api/processing-documents/:id/revisions` | Create new revision (edit) |
 | `POST` | `/api/processing-documents/:id/revisions/:revId/approve` | Approve revision |
 | `POST` | `/api/processing-documents/:id/duplicate-decision` | Record duplicate decision |
+| `GET` | `/api/processing-documents/:id/download` | Download original document |
+| `GET` | `/api/processing-documents/:id/export` | Export document to Excel |
+| `POST` | `/api/processing-documents/bulk-download-zip` | Bulk download as ZIP |
+| `POST` | `/api/processing-documents/bulk-export` | Bulk export to Excel |
+| `POST` | `/api/processing-documents/bulk` | Bulk operations (approve, delete, etc.) |
 
 ### Services
 
@@ -3669,6 +3700,7 @@ All document files are stored in **MinIO** (S3-compatible object storage) with a
 | `config.ts` | Environment configuration, storage key utilities |
 | `local.adapter.ts` | Filesystem adapter (development fallback) |
 | `s3.adapter.ts` | S3/MinIO adapter (production) |
+| `filename.ts` | Filename generation for approved documents |
 | `index.ts` | Factory function, singleton export |
 
 **Environment Variables:**
@@ -3682,6 +3714,43 @@ S3_SECRET_KEY=oakcloud_minio_secret
 S3_FORCE_PATH_STYLE=true               # Required for MinIO
 ```
 
+### Document Tagging
+
+Custom tags for organizing and categorizing processing documents. Supports a **hybrid scope system**:
+
+| Scope | Description |
+|-------|-------------|
+| **Tenant Tags** | `companyId = NULL` - Shared across all companies in the tenant |
+| **Company Tags** | `companyId = UUID` - Specific to one company only |
+
+**Behavior by Context:**
+
+| Context | Tags Shown |
+|---------|------------|
+| "All Companies" selected | Tenant tags only |
+| Specific company selected | Tenant tags + Company tags |
+| Document detail page | Tenant tags + Document's company tags |
+
+**Permissions:**
+- **Tenant Tags**: Only SUPER_ADMIN or TENANT_ADMIN can create/edit/delete
+- **Company Tags**: Any user with company access can manage
+
+**Visual Differentiation:** Tenant tags display a globe icon (🌐) to indicate they're shared.
+
+**API Endpoints:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/tags` | List tenant (shared) tags |
+| `POST` | `/api/tags` | Create tenant tag (admin only) |
+| `PATCH` | `/api/tags/:tagId` | Update tenant tag (admin only) |
+| `DELETE` | `/api/tags/:tagId` | Delete tenant tag (admin only) |
+| `GET` | `/api/tags/available` | Get combined tags (tenant + company if companyId provided) |
+| `GET` | `/api/companies/:id/tags` | List company tags |
+| `POST` | `/api/companies/:id/tags` | Create company tag |
+| `POST` | `/api/processing-documents/:id/tags` | Add tag to document |
+| `DELETE` | `/api/processing-documents/:id/tags/:tagId` | Remove tag from document |
+
 ### Database Models (Phase 1A)
 
 - `ProcessingDocument` - Extended document with pipeline state
@@ -3689,6 +3758,8 @@ S3_FORCE_PATH_STYLE=true               # Required for MinIO
 - `DocumentExtraction` - Immutable AI/OCR outputs
 - `DocumentRevision` - Structured accounting data snapshots
 - `DocumentRevisionLineItem` - Line items for revisions
+- `DocumentTag` - Custom tags with tenant/company scope
+- `ProcessingDocumentTag` - Document-tag assignments
 - `VendorAlias` - Vendor name normalization
 - `DuplicateDecision` - User decisions on duplicates
 - `ProcessingAttempt` - Processing attempt tracking
@@ -3841,11 +3912,22 @@ Manage chart of accounts with hierarchical structure, multi-scope resolution, an
 
 Access via **Admin > Chart of Accounts** in the sidebar.
 
+**List Page:**
 - Filter by account type, status, search text
 - Sort by code, name, type, sort order
+- Collapsible parent rows (collapsed by default) with child count indicator
+- Expand All / Collapse All button
+- Click on code or name to navigate to detail page
 - Create/edit accounts with form modal
 - View scope (System/Tenant/Company) badges
 - Delete with required reason (audit trail)
+
+**Detail Page** (`/admin/chart-of-accounts/[id]`):
+- View account details: code, name, type, status, tax applicability
+- Hierarchy navigation: parent account and child accounts (clickable)
+- Edit/Delete buttons (hidden for system accounts)
+- Record info (created/updated dates)
+- Link to audit history
 
 ### Account Resolution
 

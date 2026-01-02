@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Lock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { FormInput } from '@/components/ui/form-input';
 import { Button } from '@/components/ui/button';
@@ -70,7 +71,7 @@ function ChangePasswordContent() {
       <div className="min-h-screen bg-background-primary flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-lg flex items-center justify-center animate-pulse">
-            <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
+            <Image src="/falcon.svg" alt="Oakcloud" width={84} height={84} unoptimized />
           </div>
           <p className="text-text-tertiary text-sm">Loading...</p>
         </div>
@@ -84,7 +85,7 @@ function ChangePasswordContent() {
         {/* Logo */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
+            <Image src="/falcon.svg" alt="Oakcloud" width={84} height={84} unoptimized />
           </Link>
         </div>
 
@@ -201,7 +202,7 @@ function LoadingFallback() {
     <div className="min-h-screen bg-background-primary flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="w-10 h-10 rounded-lg flex items-center justify-center animate-pulse">
-          <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
+          <Image src="/falcon.svg" alt="Oakcloud" width={84} height={84} unoptimized />
         </div>
         <p className="text-text-tertiary text-sm">Loading...</p>
       </div>

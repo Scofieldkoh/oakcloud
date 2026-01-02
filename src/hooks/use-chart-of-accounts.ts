@@ -24,6 +24,7 @@ export interface ChartOfAccount {
   sortOrder: number;
   isSystem: boolean;
   isTaxApplicable: boolean;
+  isHeader: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -96,6 +97,7 @@ export interface AccountSelectParams {
   tenantId?: string | null;
   companyId?: string | null;
   accountType?: AccountType;
+  headersOnly?: boolean;
 }
 
 export interface PaginatedAccountsResponse {
@@ -114,6 +116,7 @@ export interface CreateAccountInput {
   parentId?: string | null;
   sortOrder?: number;
   isTaxApplicable?: boolean;
+  isHeader?: boolean;
   tenantId?: string | null;
   companyId?: string | null;
 }
@@ -127,6 +130,7 @@ export interface UpdateAccountInput {
   parentId?: string | null;
   sortOrder?: number;
   isTaxApplicable?: boolean;
+  isHeader?: boolean;
 }
 
 export interface BulkMappingInput {
@@ -211,6 +215,7 @@ async function fetchAccountsForSelect(params: AccountSelectParams): Promise<Acco
   if (params.tenantId) searchParams.set('tenantId', params.tenantId);
   if (params.companyId) searchParams.set('companyId', params.companyId);
   if (params.accountType) searchParams.set('accountType', params.accountType);
+  if (params.headersOnly) searchParams.set('headersOnly', 'true');
 
   const response = await fetch(`/api/chart-of-accounts/select?${searchParams}`);
 

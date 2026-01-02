@@ -139,8 +139,8 @@ export async function GET(
           // Versioning
           version: processingDoc.version,
           rootDocumentId: processingDoc.rootDocumentId,
-          // File details
-          fileName: document.originalFileName || document.fileName,
+          // File details (prefer renamed fileName after approval, fallback to original)
+          fileName: document.fileName || document.originalFileName,
           mimeType: document.mimeType,
           fileSize: document.fileSize,
           // Company info

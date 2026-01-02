@@ -133,7 +133,11 @@ export interface LineItemInput {
   amount: Decimal | number | string;
   gstAmount?: Decimal | number | string;
   taxCode?: string;
+  accountCode?: string;
   evidenceJson?: Record<string, unknown>;
+  // Home currency fields
+  homeAmount?: Decimal | number | string;
+  homeGstAmount?: Decimal | number | string;
 }
 
 export interface RevisionPatchInput {
@@ -195,6 +199,14 @@ const VALIDATION_CODES = {
   INVALID_CURRENCY: { severity: 'ERROR' as const, message: 'Currency code is invalid' },
   MISSING_VENDOR: { severity: 'WARN' as const, message: 'Vendor name is missing' },
   GST_RATE_MISMATCH: { severity: 'WARN' as const, message: 'GST rate does not match expected' },
+  GST_CODE_AMOUNT_MISMATCH: {
+    severity: 'WARN' as const,
+    message: 'GST code does not match the calculated GST percentage',
+  },
+  HEADER_HOME_LINE_TOTAL_MISMATCH: {
+    severity: 'WARN' as const,
+    message: 'Header home total does not match sum of line item home totals (amount + GST)',
+  },
   CREDIT_NOTE_TOTAL_NOT_NEGATIVE: {
     severity: 'ERROR' as const,
     message: 'Credit note total must be negative',
@@ -340,7 +352,11 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
           amount: toDecimalOrZero(item.amount),
           gstAmount: toDecimal(item.gstAmount),
           taxCode: item.taxCode,
+          accountCode: item.accountCode,
           evidenceJson: item.evidenceJson as Prisma.InputJsonValue,
+          // Home currency fields
+          homeAmount: toDecimal(item.homeAmount),
+          homeGstAmount: toDecimal(item.homeGstAmount),
         })),
       });
     }
@@ -424,6 +440,7 @@ export async function createRevisionFromEdit(
           amount: toDecimalOrZero(upsertItem.amount),
           gstAmount: toDecimal(upsertItem.gstAmount),
           taxCode: upsertItem.taxCode ?? null,
+          accountCode: upsertItem.accountCode ?? items[existingIndex].accountCode ?? null,
         } as DocumentRevisionLineItem;
       } else {
         // Add new item
@@ -437,6 +454,7 @@ export async function createRevisionFromEdit(
           amount: toDecimalOrZero(upsertItem.amount),
           gstAmount: toDecimal(upsertItem.gstAmount),
           taxCode: upsertItem.taxCode ?? null,
+          accountCode: upsertItem.accountCode ?? null,
           evidenceJson: upsertItem.evidenceJson as Prisma.JsonValue,
         } as DocumentRevisionLineItem);
       }
@@ -456,6 +474,7 @@ export async function createRevisionFromEdit(
     amount: item.amount,
     gstAmount: item.gstAmount ?? undefined,
     taxCode: item.taxCode ?? undefined,
+    accountCode: item.accountCode ?? undefined,
     evidenceJson: item.evidenceJson as Record<string, unknown> | undefined,
   }));
 
@@ -675,6 +694,7 @@ export async function validateRevision(revisionId: string): Promise<{
           code: 'LINE_SUM_MISMATCH',
           ...VALIDATION_CODES.LINE_SUM_MISMATCH,
           field: 'subtotal',
+          message: `Header subtotal (${revision.subtotal.toFixed(2)}) does not match line item subtotal (${lineSum.toFixed(2)})`,
         });
       }
     }
@@ -691,7 +711,44 @@ export async function validateRevision(revisionId: string): Promise<{
           code: 'LINE_GST_SUM_MISMATCH',
           ...VALIDATION_CODES.LINE_GST_SUM_MISMATCH,
           field: 'taxAmount',
+          message: `Header tax (${revision.taxAmount.toFixed(2)}) does not match line item tax (${lineGstSum.toFixed(2)})`,
         });
+      }
+    }
+
+    // Check GST code matches actual GST percentage for each line item
+    const gstCodeRates: Record<string, number> = {
+      'SR': 0.09,   // 9%
+      'SR8': 0.08,  // 8%
+      'SR7': 0.07,  // 7%
+      'ZR': 0,      // 0%
+      'ES': 0,      // Exempt
+      'OS': 0,      // Out of scope
+      'NA': 0,      // Not applicable
+    };
+
+    for (const item of revision.items) {
+      if (item.taxCode && item.gstAmount !== null && item.amount) {
+        const amount = parseFloat(item.amount.toString());
+        const gstAmount = parseFloat(item.gstAmount.toString());
+        const expectedRate = gstCodeRates[item.taxCode] ?? null;
+
+        // Handle both positive and negative amounts (credit notes)
+        if (amount !== 0 && expectedRate !== null) {
+          const expectedGst = amount * expectedRate;
+          const amountTolerance = 0.01; // $0.01 absolute tolerance for rounding
+
+          // Flag if GST amount differs from expected by more than $0.01
+          if (Math.abs(gstAmount - expectedGst) > amountTolerance) {
+            const actualRate = gstAmount / amount;
+            issues.push({
+              code: 'GST_CODE_AMOUNT_MISMATCH',
+              ...VALIDATION_CODES.GST_CODE_AMOUNT_MISMATCH,
+              field: 'lineItems',
+              message: `Line ${item.lineNo}: GST code ${item.taxCode} expects ${expectedGst.toFixed(2)} (${(expectedRate * 100).toFixed(0)}%) but actual is ${gstAmount.toFixed(2)} (${(actualRate * 100).toFixed(1)}%)`,
+            });
+          }
+        }
       }
     }
   }
@@ -708,6 +765,8 @@ export async function validateRevision(revisionId: string): Promise<{
       issues.push({
         code: 'HEADER_ARITHMETIC_MISMATCH',
         ...VALIDATION_CODES.HEADER_ARITHMETIC_MISMATCH,
+        field: 'totalAmount',
+        message: `Header total (${revision.totalAmount.toFixed(2)}) does not match subtotal + tax (${expected.toFixed(2)})`,
       });
     }
   }
@@ -743,6 +802,7 @@ export async function validateRevision(revisionId: string): Promise<{
         code: 'HOME_AMOUNT_SUM_MISMATCH',
         ...VALIDATION_CODES.HOME_AMOUNT_SUM_MISMATCH,
         field: 'homeSubtotal',
+        message: `Header home subtotal (${revision.homeSubtotal.toFixed(2)}) does not match line item home subtotal (${homeLineSum.toFixed(2)})`,
       });
     }
   }
@@ -759,21 +819,51 @@ export async function validateRevision(revisionId: string): Promise<{
         code: 'HOME_GST_SUM_MISMATCH',
         ...VALIDATION_CODES.HOME_GST_SUM_MISMATCH,
         field: 'homeTaxAmount',
+        message: `Header home tax (${revision.homeTaxAmount.toFixed(2)}) does not match line item home tax (${homeGstSum.toFixed(2)})`,
       });
     }
   }
 
-  // Check home currency header arithmetic: homeSubtotal + homeTax = homeTotal
-  if (revision.homeEquivalent && (revision.homeSubtotal || revision.homeTaxAmount)) {
-    const homeSubtotal = revision.homeSubtotal || new PrismaDecimal(0);
-    const homeTax = revision.homeTaxAmount || new PrismaDecimal(0);
-    const expectedHomeTotal = homeSubtotal.add(homeTax);
-    const homeTotalDiff = expectedHomeTotal.sub(revision.homeEquivalent).abs();
-    if (homeTotalDiff.greaterThan(new PrismaDecimal('0.01'))) {
+  // Note: HOME_TOTAL_MISMATCH validation removed because:
+  // 1. The UI now calculates and displays homeSubtotal + homeTaxAmount as the total
+  // 2. The stored homeEquivalent field may contain stale/legacy values
+  // 3. HEADER_HOME_LINE_TOTAL_MISMATCH already validates header vs line items
+
+  // Check header home total matches sum of line item home totals (amount + GST)
+  // This validation runs when we have line items AND stored home amounts
+  const hasStoredHomeAmounts = !!(revision.homeSubtotal || revision.homeTaxAmount);
+  const shouldCheckHomeTotal = revision.items.length > 0 && hasStoredHomeAmounts;
+
+  if (shouldCheckHomeTotal) {
+    // Use stored home amounts
+    const headerHomeSubtotal = revision.homeSubtotal
+      ? new PrismaDecimal(revision.homeSubtotal.toString())
+      : new PrismaDecimal(0);
+    const headerHomeTax = revision.homeTaxAmount
+      ? new PrismaDecimal(revision.homeTaxAmount.toString())
+      : new PrismaDecimal(0);
+    const headerHomeTotal = headerHomeSubtotal.add(headerHomeTax);
+
+    // Calculate sum of line item home amounts including GST (using stored values)
+    const lineHomeTotal = revision.items.reduce((sum, item) => {
+      const homeAmount = item.homeAmount
+        ? new PrismaDecimal(item.homeAmount.toString())
+        : new PrismaDecimal(0);
+      const homeGst = item.homeGstAmount
+        ? new PrismaDecimal(item.homeGstAmount.toString())
+        : new PrismaDecimal(0);
+      return sum.add(homeAmount).add(homeGst);
+    }, new PrismaDecimal(0));
+
+    const headerLineDiff = lineHomeTotal.sub(headerHomeTotal).abs();
+
+    // No tolerance - any mismatch should be flagged as a warning
+    if (headerLineDiff.greaterThan(new PrismaDecimal('0.001'))) {
       issues.push({
-        code: 'HOME_TOTAL_MISMATCH',
-        ...VALIDATION_CODES.HOME_TOTAL_MISMATCH,
+        code: 'HEADER_HOME_LINE_TOTAL_MISMATCH',
+        ...VALIDATION_CODES.HEADER_HOME_LINE_TOTAL_MISMATCH,
         field: 'homeEquivalent',
+        message: `Header home total (${headerHomeTotal.toFixed(2)}) does not match line item home total (${lineHomeTotal.toFixed(2)})`,
       });
     }
   }

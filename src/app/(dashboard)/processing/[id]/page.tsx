@@ -24,6 +24,8 @@ import {
   XCircle,
   Sparkles,
   Download,
+  FileSpreadsheet,
+  Building2,
 } from 'lucide-react';
 import {
   useProcessingDocument,
@@ -39,11 +41,15 @@ import {
   useUpdatePageRotation,
   useBulkOperation,
   useCreateRevision,
-  useDocumentLinks,
+  useDocumentExport,
 } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import {
   DocumentPageViewer,
   ResizableSplitView,
@@ -52,7 +58,6 @@ import {
   DuplicateComparisonModal,
   DocumentLinks,
   DocumentTags,
-  ExportDropdown,
 } from '@/components/processing';
 import type { FieldValue } from '@/components/processing/document-page-viewer';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
@@ -67,6 +72,8 @@ import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
 import { convertToHomeCurrency } from '@/lib/currency-conversion';
 import { useRateLookup } from '@/hooks/use-exchange-rates';
 import { useAccountsForSelect } from '@/hooks/use-chart-of-accounts';
+import { useCompany } from '@/hooks/use-companies';
+import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 
 // Status display configs
 const pipelineStatusConfig: Record<
@@ -251,6 +258,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
+  const { data: session } = useSession();
+
+  // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   // Check if we should auto-open compare modal from query param
   const shouldAutoCompare = searchParams.get('compare') === 'true';
@@ -317,8 +331,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const bulkOperation = useBulkOperation();
   const createRevision = useCreateRevision();
 
-  // Document links (for export dropdown)
-  const { data: linkedDocsData } = useDocumentLinks(id);
+  // Export hook
+  const documentExport = useDocumentExport();
   const [isDownloading, setIsDownloading] = useState(false);
 
   // UI State
@@ -327,6 +341,41 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [showModelSelector, setShowModelSelector] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [isReExtraction, setIsReExtraction] = useState(false);
+
+  // AI context state (matching upload page)
+  const [aiContext, setAiContext] = useState('');
+  const [selectedStandardContexts, setSelectedStandardContexts] = useState<string[]>([]);
+
+  // Fetch company details for context
+  const companyId = data?.document?.company?.id;
+  const { data: companyData } = useCompany(companyId || '');
+
+  // Build company context (matching upload page format)
+  const companyContext = useMemo(() => {
+    const company = companyData;
+    if (!company) return '';
+
+    const contextParts: string[] = [];
+    contextParts.push(`Uploading Company: ${company.name}`);
+    if (company.primarySsicDescription) {
+      contextParts.push(`Business Nature: ${company.primarySsicDescription}`);
+    }
+    if (company.homeCurrency) {
+      contextParts.push(`Home Currency: ${company.homeCurrency}`);
+    }
+    contextParts.push('');
+    contextParts.push('IMPORTANT BUSINESS CONTEXT:');
+    contextParts.push(`- "${company.name}" is uploading this document for processing`);
+    contextParts.push(`- For ACCOUNTS_PAYABLE (vendor invoices/bills): "${company.name}" is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company`);
+    contextParts.push(`- For ACCOUNTS_RECEIVABLE (sales invoices): "${company.name}" is the SELLER/ISSUER - extract the customer name as the other party`);
+
+    return contextParts.join('\n');
+  }, [companyData]);
+
+  // Fetch available AI models (no longer using the custom hook - AIModelSelector handles this)
 
   // Handler to view a historical revision snapshot
   const handleViewSnapshot = useCallback((revisionId: string, revisionNumber: number) => {
@@ -430,7 +479,6 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     // Calculate home currency amounts if not already provided
     let homeSubtotal = revision.homeSubtotal || '';
     let homeTaxAmount = revision.homeTaxAmount || '';
-    let homeTotal = revision.homeEquivalent || '';
 
     // If home amounts are empty but we have document amounts, calculate them
     if (!homeSubtotal && revision.subtotal) {
@@ -451,7 +499,15 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       }
     }
 
-    if (!homeTotal && revision.totalAmount) {
+    // Always calculate homeTotal as sum of homeSubtotal + homeTaxAmount for consistency
+    // This ensures the displayed total always matches its components
+    let homeTotal = '';
+    const homeSubtotalNum = parseFloat(homeSubtotal) || 0;
+    const homeTaxNum = parseFloat(homeTaxAmount) || 0;
+    if (homeSubtotal || homeTaxAmount) {
+      homeTotal = (homeSubtotalNum + homeTaxNum).toFixed(2);
+    } else if (revision.totalAmount) {
+      // Fallback: calculate from document total if no components available
       const totalAmount = parseFloat(revision.totalAmount);
       if (!isNaN(totalAmount)) {
         homeTotal = isSameCurrency
@@ -675,14 +731,41 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   }, [handleNavigatePrev, handleNavigateNext]);
 
   // Action handlers
-  const handleTriggerExtraction = async () => {
+  const handleTriggerExtraction = async (model?: string, context?: string) => {
     try {
-      await triggerExtraction.mutateAsync(id);
+      await triggerExtraction.mutateAsync({ documentId: id, model, context });
       success('Extraction triggered successfully');
       refetch();
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to trigger extraction');
     }
+  };
+
+  // Handler to show model selector modal for extraction/re-extraction
+  const handleShowModelSelector = (reExtract: boolean = false) => {
+    setSelectedModel(''); // Reset selection
+    setAiContext(''); // Reset context
+    setSelectedStandardContexts([]); // Reset standard contexts
+    setIsReExtraction(reExtract);
+    setShowModelSelector(true);
+  };
+
+  // Handler to confirm extraction with selected model and context
+  const handleConfirmExtraction = async () => {
+    setShowModelSelector(false);
+
+    // Build full context including company context, standard contexts, and custom context
+    const fullContext = [
+      companyContext,
+      buildFullContext(selectedStandardContexts, aiContext),
+    ].filter(Boolean).join('\n\n');
+
+    await handleTriggerExtraction(selectedModel || undefined, fullContext || undefined);
+
+    // Reset state
+    setSelectedModel('');
+    setAiContext('');
+    setSelectedStandardContexts([]);
   };
 
   const handleDownload = async () => {
@@ -714,6 +797,24 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       toastError(err instanceof Error ? err.message : 'Failed to download');
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const blob = await documentExport.mutateAsync({ documentId: id, includeLinked: false });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.download = `export-${dateStr}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      success('Document exported');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to export');
     }
   };
 
@@ -927,7 +1028,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     if (field === 'quantity' || field === 'unitPrice') {
       const qty = parseFloat(field === 'quantity' ? value : updated[index].quantity) || 0;
       const unitPrice = parseFloat(field === 'unitPrice' ? value : updated[index].unitPrice) || 0;
-      if (qty > 0 && unitPrice > 0) {
+      // Allow negative unitPrice for credit notes (qty=1, unitPrice=-5.12 => amount=-5.12)
+      if (qty !== 0 && unitPrice !== 0) {
         const calculatedAmount = qty * unitPrice;
         updated[index].amount = calculatedAmount.toFixed(2);
       }
@@ -939,7 +1041,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       const taxCode = field === 'taxCode' ? value : updated[index].taxCode;
       const rate = getGstRate(taxCode);
       const gstAmount = amount * rate;
-      updated[index].gstAmount = gstAmount > 0 ? gstAmount.toFixed(2) : '';
+      // Use !== 0 to handle negative amounts (credit notes) correctly
+      updated[index].gstAmount = gstAmount !== 0 ? gstAmount.toFixed(2) : '';
     }
 
     // Auto-calculate home currency amounts when document currency amounts change
@@ -1087,7 +1190,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
           <div className="h-4 w-px bg-border-primary mx-1" />
 
-          <h1 className="text-sm font-medium text-text-primary truncate max-w-[300px]">
+          <h1 className="text-sm font-medium text-text-primary truncate flex-1 min-w-0" title={doc.fileName}>
             {doc.fileName || 'Processing Document'}
           </h1>
           {doc.version > 1 && (
@@ -1105,7 +1208,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           {/* Hide action buttons when viewing snapshot - only show Exit Snapshot in banner */}
           {!isViewingSnapshot && canTriggerExtraction && can.updateDocument && (
             <button
-              onClick={handleTriggerExtraction}
+              onClick={() => handleShowModelSelector(false)}
               disabled={triggerExtraction.isPending}
               className="btn-secondary btn-sm"
             >
@@ -1123,10 +1226,10 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 Cancel
               </button>
               <button
-                onClick={handleTriggerExtraction}
+                onClick={() => handleShowModelSelector(true)}
                 disabled={triggerExtraction.isPending}
                 className="btn-secondary btn-sm"
-                title="Re-run AI extraction to replace current data"
+                title="Re-run AI extraction with model selection"
               >
                 {triggerExtraction.isPending ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
@@ -1192,10 +1295,18 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                   <Download className="w-4 h-4" />
                 )}
               </button>
-              <ExportDropdown
-                documentId={id}
-                hasLinkedDocuments={linkedDocsData && linkedDocsData.length > 0}
-              />
+              <button
+                onClick={handleExport}
+                disabled={documentExport.isPending}
+                className="btn-ghost btn-sm"
+                title="Export to Excel"
+              >
+                {documentExport.isPending ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="w-4 h-4" />
+                )}
+              </button>
             </>
           ) : null}
           {!isViewingSnapshot && can.deleteDocument && (
@@ -1301,6 +1412,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                         <DocumentTags
                           documentId={id}
                           companyId={doc.company?.id || null}
+                          tenantId={activeTenantId}
                         />
                       </div>
 
@@ -1331,6 +1443,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                         setFocusedField={setFocusedField}
                         getFieldConfidence={getFieldConfidence}
                         tenantId={data?.document?.tenantId}
+                        validationIssues={(revisionWithLineItems?.validationIssues as { issues?: ValidationIssue[] })?.issues}
                       />
 
                       {/* Validation Status */}
@@ -1375,6 +1488,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                   onRemove={handleRemoveLineItem}
                   onChange={handleLineItemChange}
                   fullWidth
+                  validationIssues={(revisionWithLineItems?.validationIssues as { issues?: ValidationIssue[] })?.issues}
                 />
               )}
             </div>
@@ -1452,6 +1566,85 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         variant="danger"
         isLoading={bulkOperation.isPending}
       />
+
+      {/* AI Model Selector Modal - Matching Upload Page */}
+      <Modal
+        isOpen={showModelSelector}
+        onClose={() => setShowModelSelector(false)}
+        title={isReExtraction ? 'Re-extract Document' : 'Extract Document'}
+        description={isReExtraction
+          ? 'Re-run AI extraction on this document. This will replace the current extraction results.'
+          : 'Run AI extraction to automatically extract data from this document.'
+        }
+        size="2xl"
+      >
+        <ModalBody>
+          <div className="space-y-4">
+            {/* Company Context - Auto-populated, read-only */}
+            <div className="card p-4">
+              <div className="flex items-start gap-3">
+                <Building2 className="w-4 h-4 text-text-tertiary mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <label className="label mb-1 text-sm">Company Context</label>
+                  <textarea
+                    value={companyContext}
+                    readOnly
+                    disabled
+                    rows={3}
+                    placeholder="Loading company context..."
+                    className="input w-full text-sm resize-none mt-2 px-3 py-2.5 bg-background-tertiary cursor-default"
+                  />
+                  <p className="text-xs text-text-muted mt-2.5 leading-relaxed">
+                    Auto-populated from the selected company. This information helps the AI understand the business context.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* AI Model Selector - Matching Upload Page */}
+            <AIModelSelector
+              value={selectedModel}
+              onChange={setSelectedModel}
+              label="AI Model for Extraction"
+              helpText="Select the AI model to use for extracting invoice/receipt data."
+              jsonModeOnly
+              showContextInput
+              contextValue={aiContext}
+              onContextChange={setAiContext}
+              contextLabel="Additional Context (Optional)"
+              contextPlaceholder="E.g., 'Focus on line items and totals' or 'This is a foreign currency invoice'"
+              contextHelpText="Provide your own hints to help the AI extract data more accurately."
+              showStandardContexts
+              selectedStandardContexts={selectedStandardContexts}
+              onStandardContextsChange={setSelectedStandardContexts}
+              tenantId={activeTenantId || undefined}
+              className="mb-0"
+            />
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowModelSelector(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleConfirmExtraction}
+            isLoading={triggerExtraction.isPending}
+          >
+            {isReExtraction ? (
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            ) : (
+              <Play className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {isReExtraction ? 'Re-extract' : 'Extract'}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Duplicate Comparison Modal */}
       {showDuplicateModal && duplicateData && (
@@ -1854,6 +2047,7 @@ interface AmountsSectionProps {
   setFocusedField: (field: string | null) => void;
   getFieldConfidence: (key: string) => number | undefined;
   tenantId?: string;
+  validationIssues?: ValidationIssue[];
 }
 
 function AmountsSection({
@@ -1869,9 +2063,23 @@ function AmountsSection({
   setFocusedField,
   getFieldConfidence,
   tenantId,
+  validationIssues = [],
 }: AmountsSectionProps) {
   // Use editFormData.currency for dynamic updates during editing
   const isSameCurrency = (isEditing ? editFormData.currency : documentCurrency) === editFormData.homeCurrency;
+
+  // Helper to get validation issue for a specific field
+  const getFieldValidationIssue = (fieldName: string): ValidationIssue | undefined => {
+    return validationIssues.find((issue) => issue.field === fieldName);
+  };
+
+  // Check for header-level validation issues that affect amounts
+  const subtotalIssue = getFieldValidationIssue('subtotal');
+  const taxAmountIssue = getFieldValidationIssue('taxAmount');
+  const totalAmountIssue = getFieldValidationIssue('totalAmount');
+  const homeSubtotalIssue = getFieldValidationIssue('homeSubtotal');
+  const homeTaxAmountIssue = getFieldValidationIssue('homeTaxAmount');
+  const homeEquivalentIssue = getFieldValidationIssue('homeEquivalent');
 
   // Format amount helper with currency symbol
   const formatAmount = (value: string | null, currency?: string): string => {
@@ -2228,14 +2436,31 @@ function AmountsSection({
             <ConfidenceDot confidence={getFieldConfidence('subtotal')!} size="sm" />
           )}
         </div>
-        <div className="px-3 py-2.5 text-sm tabular-nums text-right text-text-primary border-r border-border-primary">
-          {formatAmount(documentSubtotal, documentCurrency)}
+        <div className={cn(
+          'px-3 py-2.5 text-sm tabular-nums text-right border-r border-border-primary',
+          subtotalIssue ? 'text-status-warning' : 'text-text-primary'
+        )}>
+          <span className="flex items-center justify-end gap-1">
+            {subtotalIssue && (
+              <span title={subtotalIssue.message}>
+                <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+              </span>
+            )}
+            {formatAmount(documentSubtotal, documentCurrency)}
+          </span>
         </div>
         <div className={cn(
           'px-3 py-2.5 text-sm tabular-nums text-right',
-          isSameCurrency ? 'text-text-muted bg-background-secondary/50' : 'text-text-primary'
+          homeSubtotalIssue ? 'text-status-warning' : isSameCurrency ? 'text-text-muted bg-background-secondary/50' : 'text-text-primary'
         )}>
-          {formatAmount(isSameCurrency ? documentSubtotal : editFormData.homeSubtotal, editFormData.homeCurrency)}
+          <span className="flex items-center justify-end gap-1">
+            {homeSubtotalIssue && (
+              <span title={homeSubtotalIssue.message}>
+                <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+              </span>
+            )}
+            {formatAmount(isSameCurrency ? documentSubtotal : editFormData.homeSubtotal, editFormData.homeCurrency)}
+          </span>
         </div>
       </div>
 
@@ -2254,14 +2479,31 @@ function AmountsSection({
             <ConfidenceDot confidence={getFieldConfidence('taxAmount')!} size="sm" />
           )}
         </div>
-        <div className="px-3 py-2.5 text-sm tabular-nums text-right text-text-primary border-r border-border-primary">
-          {formatAmount(documentTaxAmount, documentCurrency)}
+        <div className={cn(
+          'px-3 py-2.5 text-sm tabular-nums text-right border-r border-border-primary',
+          taxAmountIssue ? 'text-status-warning' : 'text-text-primary'
+        )}>
+          <span className="flex items-center justify-end gap-1">
+            {taxAmountIssue && (
+              <span title={taxAmountIssue.message}>
+                <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+              </span>
+            )}
+            {formatAmount(documentTaxAmount, documentCurrency)}
+          </span>
         </div>
         <div className={cn(
           'px-3 py-2.5 text-sm tabular-nums text-right',
-          isSameCurrency ? 'text-text-muted bg-background-secondary/50' : 'text-text-primary'
+          homeTaxAmountIssue ? 'text-status-warning' : isSameCurrency ? 'text-text-muted bg-background-secondary/50' : 'text-text-primary'
         )}>
-          {formatAmount(isSameCurrency ? documentTaxAmount : editFormData.homeTaxAmount, editFormData.homeCurrency)}
+          <span className="flex items-center justify-end gap-1">
+            {homeTaxAmountIssue && (
+              <span title={homeTaxAmountIssue.message}>
+                <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+              </span>
+            )}
+            {formatAmount(isSameCurrency ? documentTaxAmount : editFormData.homeTaxAmount, editFormData.homeCurrency)}
+          </span>
         </div>
       </div>
 
@@ -2280,18 +2522,86 @@ function AmountsSection({
             <ConfidenceDot confidence={getFieldConfidence('totalAmount')!} size="sm" />
           )}
         </div>
-        <div className="px-3 py-2.5 text-sm tabular-nums text-right font-semibold text-text-primary border-r border-border-primary">
-          {formatAmount(documentTotalAmount, documentCurrency)}
+        <div className={cn(
+          'px-3 py-2.5 text-sm tabular-nums text-right font-semibold border-r border-border-primary',
+          totalAmountIssue ? 'text-status-warning' : 'text-text-primary'
+        )}>
+          <span className="flex items-center justify-end gap-1">
+            {totalAmountIssue && (
+              <span title={totalAmountIssue.message}>
+                <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+              </span>
+            )}
+            {formatAmount(documentTotalAmount, documentCurrency)}
+          </span>
         </div>
         <div className={cn(
           'px-3 py-2.5 text-sm tabular-nums text-right font-semibold',
-          isSameCurrency ? 'text-text-muted bg-background-secondary/50' : 'text-text-primary'
+          homeEquivalentIssue ? 'text-status-warning' : isSameCurrency ? 'text-text-muted bg-background-secondary/50' : 'text-text-primary'
         )}>
-          {formatAmount(isSameCurrency ? documentTotalAmount : editFormData.homeTotal, editFormData.homeCurrency)}
+          <span className="flex items-center justify-end gap-1">
+            {homeEquivalentIssue && (
+              <span title={homeEquivalentIssue.message}>
+                <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+              </span>
+            )}
+            {formatAmount(isSameCurrency ? documentTotalAmount : editFormData.homeTotal, editFormData.homeCurrency)}
+          </span>
         </div>
       </div>
     </div>
   );
+}
+
+// Helper to format validation message with colored "Header" (blue) and "Line item" (green) text
+function formatValidationMessage(message: string): React.ReactNode {
+  // Split message by "Header" and "line item" keywords and colorize them
+  const parts: React.ReactNode[] = [];
+  const remaining = message;
+  let key = 0;
+
+  // Patterns to match (case-insensitive matching, preserve original case)
+  const patterns = [
+    { regex: /(Header\s+\w+)/gi, className: 'text-blue-600 dark:text-blue-400 font-medium' },
+    { regex: /(line item\s+\w+)/gi, className: 'text-green-600 dark:text-green-400 font-medium' },
+  ];
+
+  // Process each pattern
+  for (const { regex, className } of patterns) {
+    const newParts: React.ReactNode[] = [];
+    for (const part of parts.length === 0 ? [remaining] : parts) {
+      if (typeof part !== 'string') {
+        newParts.push(part);
+        continue;
+      }
+
+      let lastIndex = 0;
+      let match;
+      regex.lastIndex = 0; // Reset regex state
+
+      while ((match = regex.exec(part)) !== null) {
+        // Add text before match
+        if (match.index > lastIndex) {
+          newParts.push(part.slice(lastIndex, match.index));
+        }
+        // Add colored match
+        newParts.push(
+          <span key={key++} className={className}>
+            {match[1]}
+          </span>
+        );
+        lastIndex = regex.lastIndex;
+      }
+      // Add remaining text
+      if (lastIndex < part.length) {
+        newParts.push(part.slice(lastIndex));
+      }
+    }
+    parts.length = 0;
+    parts.push(...newParts);
+  }
+
+  return parts.length > 0 ? parts : message;
 }
 
 function ValidationStatusSection({
@@ -2338,7 +2648,7 @@ function ValidationStatusSection({
                     {issue.severity}
                   </span>
                   <span className="text-text-secondary">
-                    {issue.message}
+                    {formatValidationMessage(issue.message)}
                     {issue.field && <span className="text-text-muted ml-1">({issue.field})</span>}
                   </span>
                 </li>
@@ -2373,12 +2683,13 @@ function LineItemsSection({
   isLoading,
   currency,
   homeCurrency,
-  exchangeRate: _exchangeRate,
+  exchangeRate,
   chartOfAccounts,
   onAdd,
   onRemove,
   onChange,
   fullWidth = false,
+  validationIssues = [],
 }: {
   lineItems?: Array<{
     id?: string;
@@ -2404,8 +2715,48 @@ function LineItemsSection({
   onRemove: (index: number) => void;
   onChange: (index: number, field: string, value: string) => void;
   fullWidth?: boolean;
+  validationIssues?: ValidationIssue[];
 }) {
   const isSameCurrency = currency === homeCurrency;
+
+  // Helper to check if a line item has GST validation issue
+  const getLineItemGstIssue = (lineNo: number): ValidationIssue | undefined => {
+    return validationIssues.find(
+      (issue) =>
+        issue.code === 'GST_CODE_AMOUNT_MISMATCH' &&
+        issue.message.includes(`Line ${lineNo}:`)
+    );
+  };
+
+  // Helper to get validation issue for footer totals
+  const getFooterValidationIssue = (code: string): ValidationIssue | undefined => {
+    return validationIssues.find((issue) => issue.code === code);
+  };
+
+  // Check for footer-level validation issues
+  const lineSubtotalIssue = getFooterValidationIssue('LINE_SUM_MISMATCH');
+  const lineTaxIssue = getFooterValidationIssue('LINE_GST_SUM_MISMATCH');
+  const homeSubtotalIssue = getFooterValidationIssue('HOME_AMOUNT_SUM_MISMATCH');
+  const homeTaxIssue = getFooterValidationIssue('HOME_GST_SUM_MISMATCH');
+  const homeTotalIssue = getFooterValidationIssue('HEADER_HOME_LINE_TOTAL_MISMATCH');
+
+  // Helper to get home amount for display (calculate if not stored)
+  const getDisplayHomeAmount = (item: { amount: string; homeAmount?: string | null }): string => {
+    if (isSameCurrency) return item.amount;
+    if (item.homeAmount) return item.homeAmount;
+    // Calculate from document amount if not stored
+    const amount = parseFloat(item.amount) || 0;
+    return (amount * exchangeRate).toFixed(2);
+  };
+
+  // Helper to get home GST amount for display (calculate if not stored)
+  const getDisplayHomeGstAmount = (item: { gstAmount?: string | null; homeGstAmount?: string | null }): string => {
+    if (isSameCurrency) return item.gstAmount || '0';
+    if (item.homeGstAmount) return item.homeGstAmount;
+    // Calculate from document GST amount if not stored
+    const gstAmount = parseFloat(item.gstAmount || '0') || 0;
+    return (gstAmount * exchangeRate).toFixed(2);
+  };
 
   // Calculate totals from line items (authoritative source)
   const calculatedSubtotal = lineItems?.reduce((sum, item) => {
@@ -2420,14 +2771,14 @@ function LineItemsSection({
 
   const calculatedTotal = calculatedSubtotal + calculatedTax;
 
-  // Calculate home currency totals
+  // Calculate home currency totals (use stored values or calculate)
   const calculatedHomeSubtotal = lineItems?.reduce((sum, item) => {
-    const homeAmount = parseFloat(item.homeAmount || '0') || 0;
+    const homeAmount = parseFloat(getDisplayHomeAmount(item)) || 0;
     return sum + homeAmount;
   }, 0) ?? 0;
 
   const calculatedHomeTax = lineItems?.reduce((sum, item) => {
-    const homeGstAmount = parseFloat(item.homeGstAmount || '0') || 0;
+    const homeGstAmount = parseFloat(getDisplayHomeGstAmount(item)) || 0;
     return sum + homeGstAmount;
   }, 0) ?? 0;
 
@@ -2448,10 +2799,11 @@ function LineItemsSection({
     return amount + gst;
   };
 
-  const getHomeAmountInclTax = (item: { homeAmount?: string | null; homeGstAmount?: string | null }) => {
-    const amount = parseFloat(item.homeAmount || '0') || 0;
-    const gst = parseFloat(item.homeGstAmount || '0') || 0;
-    return amount + gst;
+  // Calculate home amount including tax for each item (use stored or calculated values)
+  const getHomeAmountInclTax = (item: { amount: string; gstAmount?: string | null; homeAmount?: string | null; homeGstAmount?: string | null }) => {
+    const homeAmount = parseFloat(getDisplayHomeAmount(item)) || 0;
+    const homeGst = parseFloat(getDisplayHomeGstAmount(item)) || 0;
+    return homeAmount + homeGst;
   };
 
   return (
@@ -2478,8 +2830,8 @@ function LineItemsSection({
             <thead className="bg-background-tertiary">
               <tr>
                 <th className="text-left text-xs font-medium text-text-secondary px-3 py-2.5 w-10">#</th>
-                <th className="text-left text-xs font-medium text-text-secondary px-3 py-2.5 min-w-[80px]">Description</th>
-                <th className="text-left text-xs font-medium text-text-secondary px-3 py-2.5 w-64">Account</th>
+                <th className="text-left text-xs font-medium text-text-secondary px-3 py-2.5">Description</th>
+                <th className="text-left text-xs font-medium text-text-secondary px-3 py-2.5 w-96">Account</th>
                 <th className="text-right text-xs font-medium text-text-secondary px-3 py-2.5 w-14">Qty</th>
                 <th className="text-right text-xs font-medium text-text-secondary px-3 py-2.5 w-24">Unit Price</th>
                 <th className="text-right text-xs font-medium text-text-secondary px-3 py-2.5 w-28">
@@ -2531,6 +2883,7 @@ function LineItemsSection({
                 const lineConfidence = getLineItemConfidence(item.evidenceJson || null);
                 const amountInclTax = getAmountInclTax(item);
                 const homeAmountInclTax = getHomeAmountInclTax(item);
+                const gstIssue = getLineItemGstIssue(item.lineNo);
                 return (
                   <tr key={item.id || `new-${index}`} className="hover:bg-background-tertiary/50">
                     <td className="px-3 py-2.5 text-sm text-text-muted">
@@ -2557,18 +2910,17 @@ function LineItemsSection({
                     </td>
                     <td className="px-3 py-2.5 text-sm text-text-primary">
                       {isEditing ? (
-                        <select
+                        <SearchableSelect
+                          options={chartOfAccounts.map((acc) => ({
+                            value: acc.code,
+                            label: `${acc.code} - ${acc.name}`,
+                          }))}
                           value={item.accountCode || ''}
-                          onChange={(e) => onChange(index, 'accountCode', e.target.value)}
-                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
-                        >
-                          <option value="">-</option>
-                          {chartOfAccounts.map((acc) => (
-                            <option key={acc.code} value={acc.code}>
-                              {acc.code} - {acc.name}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(value) => onChange(index, 'accountCode', value)}
+                          placeholder="Select account..."
+                          size="sm"
+                          showKeyboardHints={false}
+                        />
                       ) : (
                         <span
                           className="cursor-default"
@@ -2619,17 +2971,30 @@ function LineItemsSection({
                       )}
                     </td>
                     {/* GST Amount (document currency) */}
-                    <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
+                    <td className={cn(
+                      "px-3 py-2.5 text-sm text-right tabular-nums",
+                      gstIssue ? "text-status-warning" : "text-text-primary"
+                    )}>
                       {isEditing ? (
                         <input
                           type="number"
                           step="0.01"
                           value={item.gstAmount || ''}
                           onChange={(e) => onChange(index, 'gstAmount', e.target.value)}
-                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className={cn(
+                            "w-full px-2 py-1 text-sm bg-background-secondary border rounded focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                            gstIssue ? "border-status-warning focus:border-status-warning" : "border-border-primary focus:border-oak-light"
+                          )}
                         />
                       ) : (
-                        formatCurrency(item.gstAmount || '0', currency)
+                        <span className="flex items-center justify-end gap-1">
+                          {gstIssue && (
+                            <span title={gstIssue.message}>
+                              <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+                            </span>
+                          )}
+                          {formatCurrency(item.gstAmount || '0', currency)}
+                        </span>
                       )}
                     </td>
                     {/* Amt Incl Tax (document currency) */}
@@ -2653,7 +3018,7 @@ function LineItemsSection({
                           className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       ) : (
-                        formatCurrency(isSameCurrency ? item.amount : (item.homeAmount || '0'), homeCurrency)
+                        formatCurrency(getDisplayHomeAmount(item), homeCurrency)
                       )}
                     </td>
                     {/* GST Amount (home currency) */}
@@ -2670,7 +3035,7 @@ function LineItemsSection({
                           className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       ) : (
-                        formatCurrency(isSameCurrency ? (item.gstAmount || '0') : (item.homeGstAmount || '0'), homeCurrency)
+                        formatCurrency(getDisplayHomeGstAmount(item), homeCurrency)
                       )}
                     </td>
                     {/* Amt Incl Tax (home currency) */}
@@ -2682,14 +3047,18 @@ function LineItemsSection({
                     </td>
                     {/* GST Code (last column) */}
                     <td className={cn(
-                      "px-3 py-2.5 text-sm text-right text-text-primary",
+                      "px-3 py-2.5 text-sm text-right",
+                      gstIssue ? "text-status-warning" : "text-text-primary",
                       !isEditing && "pr-8"
                     )}>
                       {isEditing ? (
                         <select
                           value={item.taxCode || ''}
                           onChange={(e) => onChange(index, 'taxCode', e.target.value)}
-                          className="w-full px-2 py-1 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none text-right min-w-[100px]"
+                          className={cn(
+                            "w-full px-2 py-1 text-sm bg-background-secondary border rounded focus:outline-none text-right min-w-[100px]",
+                            gstIssue ? "border-status-warning focus:border-status-warning" : "border-border-primary focus:border-oak-light"
+                          )}
                         >
                           <option value="">-</option>
                           {gstTaxCodes.map((gst) => (
@@ -2699,7 +3068,14 @@ function LineItemsSection({
                           ))}
                         </select>
                       ) : (
-                        gstCode?.label || item.taxCode || '-'
+                        <span className="flex items-center justify-end gap-1">
+                          {gstIssue && (
+                            <span title={gstIssue.message}>
+                              <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+                            </span>
+                          )}
+                          {gstCode?.label || item.taxCode || '-'}
+                        </span>
                       )}
                     </td>
                     {isEditing && (
@@ -2723,11 +3099,31 @@ function LineItemsSection({
                   Total
                 </td>
                 {/* Document currency totals */}
-                <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
-                  {formatCurrency(calculatedSubtotal.toFixed(2), currency)}
+                <td className={cn(
+                  "px-3 py-2.5 text-sm text-right tabular-nums",
+                  lineSubtotalIssue ? "text-status-warning" : "text-text-primary"
+                )}>
+                  <span className="flex items-center justify-end gap-1">
+                    {lineSubtotalIssue && (
+                      <span title={lineSubtotalIssue.message}>
+                        <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+                      </span>
+                    )}
+                    {formatCurrency(calculatedSubtotal.toFixed(2), currency)}
+                  </span>
                 </td>
-                <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
-                  {formatCurrency(calculatedTax.toFixed(2), currency)}
+                <td className={cn(
+                  "px-3 py-2.5 text-sm text-right tabular-nums",
+                  lineTaxIssue ? "text-status-warning" : "text-text-primary"
+                )}>
+                  <span className="flex items-center justify-end gap-1">
+                    {lineTaxIssue && (
+                      <span title={lineTaxIssue.message}>
+                        <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+                      </span>
+                    )}
+                    {formatCurrency(calculatedTax.toFixed(2), currency)}
+                  </span>
                 </td>
                 <td className="px-3 py-2.5 text-sm text-right text-text-primary tabular-nums">
                   {formatCurrency(calculatedTotal.toFixed(2), currency)}
@@ -2736,21 +3132,42 @@ function LineItemsSection({
                 <td className="w-px bg-border-primary"></td>
                 <td className={cn(
                   "px-3 py-2.5 text-sm text-right tabular-nums",
-                  isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-primary"
+                  homeSubtotalIssue ? "text-status-warning" : isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-primary"
                 )}>
-                  {formatCurrency(isSameCurrency ? calculatedSubtotal.toFixed(2) : calculatedHomeSubtotal.toFixed(2), homeCurrency)}
+                  <span className="flex items-center justify-end gap-1">
+                    {homeSubtotalIssue && (
+                      <span title={homeSubtotalIssue.message}>
+                        <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+                      </span>
+                    )}
+                    {formatCurrency(isSameCurrency ? calculatedSubtotal.toFixed(2) : calculatedHomeSubtotal.toFixed(2), homeCurrency)}
+                  </span>
                 </td>
                 <td className={cn(
                   "px-3 py-2.5 text-sm text-right tabular-nums",
-                  isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-primary"
+                  homeTaxIssue ? "text-status-warning" : isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-primary"
                 )}>
-                  {formatCurrency(isSameCurrency ? calculatedTax.toFixed(2) : calculatedHomeTax.toFixed(2), homeCurrency)}
+                  <span className="flex items-center justify-end gap-1">
+                    {homeTaxIssue && (
+                      <span title={homeTaxIssue.message}>
+                        <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+                      </span>
+                    )}
+                    {formatCurrency(isSameCurrency ? calculatedTax.toFixed(2) : calculatedHomeTax.toFixed(2), homeCurrency)}
+                  </span>
                 </td>
                 <td className={cn(
                   "px-3 py-2.5 text-sm text-right tabular-nums",
-                  isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-primary"
+                  homeTotalIssue ? "text-status-warning" : isSameCurrency ? "text-text-muted bg-background-secondary/60" : "text-text-primary"
                 )}>
-                  {formatCurrency(isSameCurrency ? calculatedTotal.toFixed(2) : calculatedHomeTotal.toFixed(2), homeCurrency)}
+                  <span className="flex items-center justify-end gap-1">
+                    {homeTotalIssue && (
+                      <span title={homeTotalIssue.message}>
+                        <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+                      </span>
+                    )}
+                    {formatCurrency(isSameCurrency ? calculatedTotal.toFixed(2) : calculatedHomeTotal.toFixed(2), homeCurrency)}
+                  </span>
                 </td>
                 {/* Empty cell for GST column */}
                 <td className={cn("px-3 py-2.5", !isEditing && "pr-8")}></td>

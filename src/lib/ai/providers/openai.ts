@@ -107,13 +107,22 @@ export async function callOpenAI(
     messages.push({ role: 'user', content: options.userPrompt });
   }
 
-  const response = await openai.chat.completions.create({
+  // Build request options - only include temperature if the model supports it
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const requestOptions: any = {
     model: modelConfig.providerModelId,
     messages,
-    temperature: options.temperature ?? 0.1,
     max_tokens: options.maxTokens,
     ...(options.jsonMode && { response_format: { type: 'json_object' } }),
-  });
+  };
+
+  // Only set temperature if the model supports custom temperature values
+  // Some models (e.g., GPT-5) only support the default temperature (1)
+  if (modelConfig.supportsTemperature !== false) {
+    requestOptions.temperature = options.temperature ?? 0.1;
+  }
+
+  const response = await openai.chat.completions.create(requestOptions);
 
   const content = response.choices[0]?.message?.content;
   if (!content) {

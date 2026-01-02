@@ -67,6 +67,7 @@ export const LetterheadHeader = memo(function LetterheadHeader({
       <div className="flex items-center justify-center h-full px-6 gap-4">
         {/* Logo */}
         {letterhead?.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- User-uploaded letterhead with unknown dimensions
           <img
             src={letterhead.logoUrl}
             alt="Logo"
@@ -76,6 +77,7 @@ export const LetterheadHeader = memo(function LetterheadHeader({
 
         {/* Header Image */}
         {letterhead?.headerImageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- User-uploaded letterhead with unknown dimensions
           <img
             src={letterhead.headerImageUrl}
             alt="Header"
@@ -140,6 +142,7 @@ export const LetterheadFooter = memo(function LetterheadFooter({
       <div className="flex flex-col items-center justify-center h-full px-6 gap-1">
         {/* Footer Image */}
         {letterhead?.footerImageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- User-uploaded letterhead with unknown dimensions
           <img
             src={letterhead.footerImageUrl}
             alt="Footer"

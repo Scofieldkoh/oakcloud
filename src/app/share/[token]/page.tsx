@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import {
   FileText,
@@ -78,7 +78,7 @@ export default function SharedDocumentPage() {
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
 
   // Verify password and get verification token
-  const verifyPassword = async (pass: string): Promise<string | null> => {
+  const verifyPassword = useCallback(async (pass: string): Promise<string | null> => {
     try {
       const response = await fetch(`/api/share/${token}/verify`, {
         method: 'POST',
@@ -96,10 +96,10 @@ export default function SharedDocumentPage() {
     } catch (err) {
       throw err;
     }
-  };
+  }, [token]);
 
   // Fetch document
-  const fetchDocument = async (pass?: string) => {
+  const fetchDocument = useCallback(async (pass?: string) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -139,13 +139,13 @@ export default function SharedDocumentPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, verificationToken, verifyPassword]);
 
   useEffect(() => {
     if (token) {
       fetchDocument();
     }
-  }, [token]);
+  }, [token, fetchDocument]);
 
   // Handle password submission
   const handlePasswordSubmit = async (e: React.FormEvent) => {

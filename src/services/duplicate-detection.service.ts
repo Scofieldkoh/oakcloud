@@ -554,6 +554,8 @@ export async function recordDuplicateDecision(
           deletedAt: new Date(),
         },
       });
+      // Clear duplicate references pointing to this document
+      await clearDuplicateReferencesToDocument(processingDocumentId);
       log.info(`Soft deleted confirmed duplicate document ${processingDocumentId}`);
       break;
 
@@ -620,6 +622,35 @@ export async function getPendingDuplicateDecision(
     score: doc.duplicateScore ?? 0,
     reason: doc.duplicateReason ?? undefined,
   };
+}
+
+/**
+ * Clear duplicate references pointing to a document that is being deleted
+ * This should be called when a document is soft-deleted to prevent orphaned references
+ */
+export async function clearDuplicateReferencesToDocument(
+  processingDocumentId: string
+): Promise<number> {
+  const result = await prisma.processingDocument.updateMany({
+    where: {
+      duplicateOfId: processingDocumentId,
+      deletedAt: null,
+    },
+    data: {
+      duplicateStatus: 'NONE',
+      duplicateOfId: null,
+      duplicateScore: null,
+      duplicateReason: null,
+    },
+  });
+
+  if (result.count > 0) {
+    log.info(
+      `Cleared duplicate references from ${result.count} document(s) pointing to deleted document ${processingDocumentId}`
+    );
+  }
+
+  return result.count;
 }
 
 /**

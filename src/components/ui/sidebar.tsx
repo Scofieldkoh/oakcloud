@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Building2,
@@ -8,6 +9,8 @@ import {
   FileText,
   Settings,
   ChevronLeft,
+  ChevronRight,
+  ChevronDown,
   LogOut,
   Menu,
   X,
@@ -24,11 +27,13 @@ import {
   HardDrive,
   DollarSign,
   BookOpen,
+  Lock,
+  Calculator,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
 import { useIsMobile } from '@/hooks/use-media-query';
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { getSidebarWidth as getSidebarWidthFn } from '@/lib/constants/layout';
 import { SidebarTenantButton } from '@/components/ui/tenant-selector';
@@ -43,6 +48,13 @@ interface NavItem {
   superAdminOnly?: boolean; // Only show to SUPER_ADMIN
 }
 
+interface NavGroup {
+  id: string;
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: NavItem[];
+}
+
 const navigation: NavItem[] = [
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
@@ -52,17 +64,36 @@ const navigation: NavItem[] = [
   { name: 'Settings', href: '/settings', icon: Settings, badge: 'Soon' },
 ];
 
-const adminNavigation: NavItem[] = [
-  { name: 'Tenants', href: '/admin/tenants', icon: Building, superAdminOnly: true },
-  { name: 'Users', href: '/admin/users', icon: UserCog, adminOnly: true },
-  { name: 'Roles', href: '/admin/roles', icon: Shield, adminOnly: true },
+// Ungrouped admin items (shown at top level)
+const ungroupedAdminItems: NavItem[] = [
   { name: 'Templates', href: '/admin/template-partials', icon: FileText, adminOnly: true },
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
-  { name: 'Exchange Rates', href: '/admin/exchange-rates', icon: DollarSign, adminOnly: true },
-  { name: 'Chart of Accounts', href: '/admin/chart-of-accounts', icon: BookOpen, adminOnly: true },
-  { name: 'Audit Logs', href: '/admin/audit-logs', icon: Activity, adminOnly: true },
-  { name: 'Backup & Restore', href: '/admin/backup', icon: HardDrive, superAdminOnly: true },
-  { name: 'Data Purge', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
+  { name: 'Recycle Bin', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
+];
+
+// Grouped admin items
+const adminNavGroups: NavGroup[] = [
+  {
+    id: 'security',
+    name: 'Security',
+    icon: Lock,
+    items: [
+      { name: 'Tenants', href: '/admin/tenants', icon: Building, superAdminOnly: true },
+      { name: 'Users', href: '/admin/users', icon: UserCog, adminOnly: true },
+      { name: 'Roles', href: '/admin/roles', icon: Shield, adminOnly: true },
+      { name: 'Backup & Restore', href: '/admin/backup', icon: HardDrive, superAdminOnly: true },
+      { name: 'Audit Logs', href: '/admin/audit-logs', icon: Activity, adminOnly: true },
+    ],
+  },
+  {
+    id: 'accounting',
+    name: 'Accounting',
+    icon: Calculator,
+    items: [
+      { name: 'Exchange Rates', href: '/admin/exchange-rates', icon: DollarSign, adminOnly: true },
+      { name: 'Chart of Accounts', href: '/admin/chart-of-accounts', icon: BookOpen, adminOnly: true },
+    ],
+  },
 ];
 
 // Navigation link component with route prefetching
@@ -116,20 +147,131 @@ function NavLink({
   );
 }
 
+// Group header component for collapsible nav groups
+function NavGroupHeader({
+  group,
+  isCollapsed,
+  onToggle,
+  sidebarCollapsed,
+  isActive,
+}: {
+  group: NavGroup;
+  isCollapsed: boolean;
+  onToggle: () => void;
+  sidebarCollapsed: boolean;
+  isActive: boolean;
+}) {
+  const Icon = group.icon;
+
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors',
+        isActive
+          ? 'bg-oak-primary/10 text-oak-light'
+          : 'text-text-secondary hover:bg-background-tertiary hover:text-text-primary'
+      )}
+      title={sidebarCollapsed ? group.name : undefined}
+    >
+      <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+      {!sidebarCollapsed && (
+        <>
+          <span className="flex-1 text-left">{group.name}</span>
+          {isCollapsed ? (
+            <ChevronRight className="w-4 h-4 text-text-muted" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-text-muted" />
+          )}
+        </>
+      )}
+    </button>
+  );
+}
+
+// Group items component for rendering child nav items
+function NavGroupItems({
+  items,
+  collapsed,
+  onNavigate,
+  pathname,
+}: {
+  items: NavItem[];
+  collapsed: boolean;
+  onNavigate?: () => void;
+  pathname: string;
+}) {
+  if (collapsed) return null;
+
+  return (
+    <div className="ml-4 mt-1 space-y-0.5 border-l border-border-primary pl-2">
+      {items.map((item) => {
+        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        return (
+          <NavLink
+            key={item.name}
+            item={item}
+            collapsed={false}
+            onNavigate={onNavigate}
+            isActive={isActive}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 // Shared navigation content
 function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const { data: user } = useSession();
 
-  // Filter admin navigation based on user role flags
-  const filteredAdminNav = adminNavigation.filter((item) => {
+  // Collapse state - all groups collapsed by default
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    () => new Set(adminNavGroups.map((g) => g.id))
+  );
+
+  const toggleGroup = useCallback((groupId: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) {
+        next.delete(groupId);
+      } else {
+        next.add(groupId);
+      }
+      return next;
+    });
+  }, []);
+
+  // Filter ungrouped items based on permissions
+  const filteredUngroupedItems = ungroupedAdminItems.filter((item) => {
     if (!user) return false;
     if (item.superAdminOnly) return user.isSuperAdmin;
     if (item.adminOnly) return user.isSuperAdmin || user.isTenantAdmin;
     return true;
   });
 
-  const showAdminSection = filteredAdminNav.length > 0;
+  // Filter groups - only show groups where user has access to at least one item
+  const filteredGroups = adminNavGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        if (!user) return false;
+        if (item.superAdminOnly) return user.isSuperAdmin;
+        if (item.adminOnly) return user.isSuperAdmin || user.isTenantAdmin;
+        return true;
+      }),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  // Check if group has an active child
+  const isGroupActive = (group: NavGroup): boolean => {
+    return group.items.some(
+      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
+    );
+  };
+
+  const showAdminSection = filteredUngroupedItems.length > 0 || filteredGroups.length > 0;
 
   return (
     <nav className="p-2.5 space-y-1">
@@ -157,7 +299,9 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
             </div>
           )}
           {collapsed && <div className="pt-3 border-t border-border-primary mt-3" />}
-          {filteredAdminNav.map((item) => {
+
+          {/* Ungrouped admin items */}
+          {filteredUngroupedItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <NavLink
@@ -167,6 +311,32 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
                 onNavigate={onNavigate}
                 isActive={isActive}
               />
+            );
+          })}
+
+          {/* Grouped admin items */}
+          {filteredGroups.map((group) => {
+            const isCollapsed = collapsedGroups.has(group.id);
+            const groupIsActive = isGroupActive(group);
+
+            return (
+              <div key={group.id}>
+                <NavGroupHeader
+                  group={group}
+                  isCollapsed={isCollapsed}
+                  onToggle={() => toggleGroup(group.id)}
+                  sidebarCollapsed={collapsed}
+                  isActive={groupIsActive}
+                />
+                {!collapsed && (
+                  <NavGroupItems
+                    items={group.items}
+                    collapsed={isCollapsed}
+                    onNavigate={onNavigate}
+                    pathname={pathname}
+                  />
+                )}
+              </div>
             );
           })}
         </>
@@ -309,12 +479,12 @@ function DesktopSidebar() {
             className="w-7 h-7 rounded-md flex items-center justify-center hover:opacity-80 transition-opacity"
             aria-label="Expand sidebar"
           >
-            <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem]" />
+            <Image src="/falcon.svg" alt="Oakcloud" width={54} height={54} unoptimized />
           </button>
         ) : (
           <>
             <Link href="/" className="flex items-center gap-2.5">
-              <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem] flex-shrink-0" />
+              <Image src="/falcon.svg" alt="Oakcloud" width={54} height={54} className="flex-shrink-0" unoptimized />
               <span className="text-sm font-semibold text-text-primary">Oakcloud</span>
             </Link>
             <button
@@ -354,7 +524,7 @@ function MobileHeader() {
           <Menu className="w-5 h-5" />
         </button>
         <Link href="/" className="flex items-center gap-2">
-          <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem]" />
+          <Image src="/falcon.svg" alt="Oakcloud" width={54} height={54} unoptimized />
           <span className="text-sm font-semibold text-text-primary">Oakcloud</span>
         </Link>
         <button
@@ -411,7 +581,7 @@ function MobileDrawer() {
         {/* Header */}
         <div className="h-14 flex items-center justify-between px-3 border-b border-border-primary flex-shrink-0">
           <Link href="/" className="flex items-center gap-2.5" onClick={() => setMobileSidebarOpen(false)}>
-            <img src="/falcon.svg" alt="Oakcloud" className="w-[3.375rem] h-[3.375rem]" />
+            <Image src="/falcon.svg" alt="Oakcloud" width={54} height={54} unoptimized />
             <span className="text-sm font-semibold text-text-primary">Oakcloud</span>
           </Link>
           <button

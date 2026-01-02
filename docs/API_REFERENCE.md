@@ -24,15 +24,17 @@ Most endpoints require authentication via JWT token stored in an `auth-token` ht
 3. [Companies](#company-endpoints)
 4. [Contacts](#contact-endpoints)
 5. [Documents (Uploaded)](#uploaded-document-endpoints)
-6. [Document Templates](#document-template-endpoints)
-7. [Template Partials](#template-partial-endpoints)
-8. [Generated Documents](#generated-document-endpoints)
-9. [Document Sharing](#document-sharing-endpoints)
-10. [Connectors (AI)](#connector-endpoints)
-11. [AI Features](#ai-endpoints)
-12. [Audit Logs](#audit-log-endpoints)
-13. [Exchange Rates](#exchange-rate-endpoints)
-14. [Admin](#admin-endpoints)
+6. [Processing Documents](#processing-document-endpoints)
+7. [Document Tags](#document-tags-endpoints)
+8. [Document Templates](#document-template-endpoints)
+9. [Template Partials](#template-partial-endpoints)
+10. [Generated Documents](#generated-document-endpoints)
+11. [Document Sharing](#document-sharing-endpoints)
+12. [Connectors (AI)](#connector-endpoints)
+13. [AI Features](#ai-endpoints)
+14. [Audit Logs](#audit-log-endpoints)
+15. [Exchange Rates](#exchange-rate-endpoints)
+16. [Admin](#admin-endpoints)
 
 ---
 
@@ -533,6 +535,162 @@ Apply extracted data to company.
 
 ### GET /api/companies/[id]/documents/[documentId]/extract
 Extract data from a specific company's document.
+
+---
+
+## Processing Document Endpoints
+
+### GET /api/processing-documents
+List processing documents with filters and pagination.
+
+**Query Parameters:**
+- `page` (number, default: 1)
+- `limit` (number, default: 20)
+- `query` (string, optional) - Search by filename, vendor name, document number
+- `companyId` (string, optional) - Filter by company
+- `pipelineStatus` (string, optional) - Filter by status
+- `duplicateStatus` (string, optional) - Filter by duplicate status
+- `revisionStatus` (string, optional) - Filter by revision status
+- `documentCategory` (string, optional) - Filter by category
+- `tagIds` (string[], optional) - Filter by tags
+
+---
+
+### POST /api/processing-documents
+Upload document for processing.
+
+**Request:** `multipart/form-data`
+- `file`: The document file (PDF, images)
+- `companyId`: Target company ID
+
+---
+
+### GET /api/processing-documents/[id]
+Get a specific processing document with current revision.
+
+---
+
+### GET /api/processing-documents/[id]/download
+Download the original document file.
+
+**Response:** Binary file stream with appropriate Content-Type and Content-Disposition headers.
+
+---
+
+### GET /api/processing-documents/[id]/export
+Export document details to Excel.
+
+**Query Parameters:**
+- `includeLinked` (boolean, default: false) - Include linked documents in export
+
+**Response:** Excel file (.xlsx) with two worksheets:
+- **Document Headers**: File name, status, category, vendor, amounts, dates, etc.
+- **Line Items**: Line items with parent document reference
+
+---
+
+### POST /api/processing-documents/bulk-download-zip
+Bulk download multiple documents as a ZIP file.
+
+**Request Body:**
+```json
+{
+  "documentIds": ["string"]
+}
+```
+
+**Response:** Binary ZIP file stream.
+
+**Limits:** Maximum 100 documents per request.
+
+---
+
+### POST /api/processing-documents/bulk-export
+Bulk export multiple documents to Excel.
+
+**Request Body:**
+```json
+{
+  "documentIds": ["string"]
+}
+```
+
+**Response:** Excel file (.xlsx) with two worksheets:
+- **Document Headers**: All selected documents' header information
+- **Line Items**: All line items from selected documents
+
+**Limits:** Maximum 100 documents per request.
+
+---
+
+### POST /api/processing-documents/bulk
+Bulk operations on multiple documents.
+
+**Request Body:**
+```json
+{
+  "operation": "APPROVE | TRIGGER_EXTRACTION | DELETE",
+  "documentIds": ["string"]
+}
+```
+
+**Response:**
+```json
+{
+  "results": [
+    { "documentId": "string", "success": true },
+    { "documentId": "string", "success": false, "error": "string" }
+  ],
+  "summary": {
+    "total": "number",
+    "succeeded": "number",
+    "failed": "number"
+  }
+}
+```
+
+---
+
+### POST /api/processing-documents/[id]/extract
+Trigger AI field extraction.
+
+---
+
+### POST /api/processing-documents/[id]/lock
+Acquire document lock for editing.
+
+---
+
+### POST /api/processing-documents/[id]/unlock
+Release document lock.
+
+---
+
+### GET /api/processing-documents/[id]/revisions
+Get revision history.
+
+---
+
+### POST /api/processing-documents/[id]/revisions
+Create a new revision (manual edit).
+
+---
+
+### POST /api/processing-documents/[id]/revisions/[revId]/approve
+Approve a revision.
+
+---
+
+### POST /api/processing-documents/[id]/duplicate-decision
+Record duplicate decision.
+
+**Request Body:**
+```json
+{
+  "decision": "CONFIRMED | REJECTED",
+  "duplicateOfId": "string (optional)"
+}
+```
 
 ---
 
@@ -1048,10 +1206,173 @@ Paginated endpoints return:
 
 ---
 
+## Document Tags Endpoints
+
+The Document Tags API supports a hybrid scope system with tenant-level (shared) tags and company-level tags.
+
+### GET /api/tags
+Get all tenant (shared) tags.
+
+**Auth:** Authenticated
+
+**Response:** `200 OK`
+```json
+{
+  "tags": [{
+    "id": "string",
+    "name": "string",
+    "color": "GRAY|RED|ORANGE|YELLOW|GREEN|BLUE|PURPLE|PINK",
+    "description": "string|null",
+    "usageCount": "number",
+    "lastUsedAt": "string|null",
+    "createdAt": "string",
+    "companyId": "null",
+    "scope": "tenant"
+  }]
+}
+```
+
+---
+
+### POST /api/tags
+Create a tenant (shared) tag.
+
+**Auth:** TENANT_ADMIN or SUPER_ADMIN
+
+**Request Body:**
+```json
+{
+  "name": "string",
+  "color": "GRAY|RED|ORANGE|YELLOW|GREEN|BLUE|PURPLE|PINK",
+  "description": "string (optional)"
+}
+```
+
+**Response:** `201 Created`
+
+---
+
+### PATCH /api/tags/:tagId
+Update a tenant (shared) tag.
+
+**Auth:** TENANT_ADMIN or SUPER_ADMIN
+
+**Request Body:**
+```json
+{
+  "name": "string (optional)",
+  "color": "TagColor (optional)",
+  "description": "string|null (optional)"
+}
+```
+
+**Response:** `200 OK`
+
+---
+
+### DELETE /api/tags/:tagId
+Delete a tenant (shared) tag.
+
+**Auth:** TENANT_ADMIN or SUPER_ADMIN
+
+**Response:** `200 OK`
+
+---
+
+### GET /api/tags/available
+Get combined available tags (tenant tags + company tags if companyId provided).
+
+**Auth:** Authenticated
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| companyId | string | Optional - include company-specific tags |
+| query | string | Optional - search tags by name |
+| recent | boolean | Optional - get recently used tags (limit 5) |
+| limit | number | Optional - max results (default: 20, max: 100) |
+
+**Response:** `200 OK`
+```json
+{
+  "tags": [{
+    "id": "string",
+    "name": "string",
+    "color": "TagColor",
+    "companyId": "string|null",
+    "scope": "tenant|company"
+  }]
+}
+```
+
+---
+
+### GET /api/companies/:id/tags
+Get company-specific tags (excludes tenant tags).
+
+**Auth:** Authenticated with company access
+
+**Response:** `200 OK`
+
+---
+
+### POST /api/companies/:id/tags
+Create a company-specific tag.
+
+**Auth:** Authenticated with company access
+
+**Request Body:**
+```json
+{
+  "name": "string",
+  "color": "TagColor (optional)",
+  "description": "string (optional)"
+}
+```
+
+**Response:** `201 Created`
+
+---
+
+### POST /api/processing-documents/:documentId/tags
+Add a tag to a processing document.
+
+**Auth:** Authenticated with company access
+
+**Request Body:**
+```json
+{
+  "tagId": "string"
+}
+```
+or create and add in one call:
+```json
+{
+  "name": "string",
+  "color": "TagColor (optional)"
+}
+```
+
+**Response:** `201 Created`
+
+---
+
+### DELETE /api/processing-documents/:documentId/tags/:tagId
+Remove a tag from a processing document.
+
+**Auth:** Authenticated with company access
+
+**Response:** `200 OK`
+
+---
+
 *Last updated: December 2024*
 
 ---
 
 **Changelog:**
+- Added Document Tags endpoints with hybrid scope support (tenant + company tags)
+- Added Processing Documents section with bulk download ZIP and Excel export endpoints
+- Added single document export endpoint with linked documents option
 - Added sorting parameters (`sortBy`, `sortOrder`) to Users endpoint
 - Added Exchange Rates endpoints with sorting support

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -152,7 +152,7 @@ export function ValidationPanel({
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const runValidation = async () => {
+  const runValidation = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -188,14 +188,14 @@ export function ValidationPanel({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [templateId, companyId, contactIds, customData, onValidationComplete]);
 
   // Auto-validate on mount or when dependencies change
   useEffect(() => {
     if (autoValidate && templateId) {
       runValidation();
     }
-  }, [templateId, companyId, contactIds, customData, autoValidate]);
+  }, [autoValidate, templateId, runValidation]);
 
   // Group errors by category
   const errorsByCategory = result?.errors.reduce(

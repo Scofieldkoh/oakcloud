@@ -1425,6 +1425,77 @@ enum DuplicateAction {
 
 ---
 
+## Document Tagging Tables
+
+### document_tags
+
+Custom tags for organizing and categorizing processing documents. Supports a hybrid scope system with tenant-level (shared) tags and company-level tags.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
+| company_id | UUID | Yes | FK to companies (NULL = tenant-level shared tag, UUID = company-specific tag) |
+| name | VARCHAR | No | Tag name (e.g., "Quarterly", "Urgent", "Tax Filing") |
+| color | TagColor | No | Tag color (default: GRAY) |
+| description | TEXT | Yes | Optional description |
+| usage_count | INT | No | Number of times used (default: 0) |
+| last_used_at | TIMESTAMP | Yes | Last time tag was used |
+| created_by_id | UUID | No | FK to users who created the tag |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Tag Scope System:**
+- `company_id = NULL` - **Tenant Tag** (shared across all companies in the tenant)
+- `company_id = UUID` - **Company Tag** (specific to one company only)
+
+**Permissions:**
+- **Tenant Tags**: Only SUPER_ADMIN or TENANT_ADMIN can create/edit/delete
+- **Company Tags**: Any user with access to the company can create/edit/delete
+
+**Visual Differentiation:** Tenant tags display a globe icon in the UI to indicate they're shared across companies.
+
+**Indexes:**
+- `document_tags_tenant_id_company_id_name_deleted_at_key` UNIQUE on (tenant_id, company_id, name, deleted_at)
+- `document_tags_tenant_id_deleted_at_idx` on (tenant_id, deleted_at) - For fetching tenant tags
+
+---
+
+### processing_document_tags
+
+Many-to-many relationship linking processing documents to tags.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| processing_document_id | UUID | No | FK to processing_documents (CASCADE) |
+| tag_id | UUID | No | FK to document_tags (CASCADE) |
+| added_by_id | UUID | No | FK to users who added the tag |
+| added_at | TIMESTAMP | No | When tag was added (default: now) |
+
+**Indexes:**
+- `processing_document_tags_processing_document_id_tag_id_key` UNIQUE on (processing_document_id, tag_id)
+- `processing_document_tags_processing_document_id_idx` on processing_document_id
+- `processing_document_tags_tag_id_idx` on tag_id
+
+---
+
+### TagColor Enum
+
+```sql
+GRAY        -- Default neutral color
+RED         -- High priority / Urgent
+ORANGE      -- Warning / Attention
+YELLOW      -- Highlight
+GREEN       -- Success / Approved
+BLUE        -- Information
+PURPLE      -- Special / Premium
+PINK        -- Personal / Custom
+```
+
+---
+
 ## Chart of Accounts Module Tables
 
 ### chart_of_accounts

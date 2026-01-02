@@ -50,6 +50,7 @@ export interface AccountWithMetadata {
   sortOrder: number;
   isSystem: boolean;
   isTaxApplicable: boolean;
+  isHeader: boolean;
   tenantId: string | null;
   companyId: string | null;
   createdAt: Date;
@@ -120,6 +121,7 @@ function toAccountWithMetadata(
     sortOrder: account.sortOrder,
     isSystem: account.isSystem,
     isTaxApplicable: account.isTaxApplicable,
+    isHeader: account.isHeader,
     tenantId: account.tenantId,
     companyId: account.companyId,
     createdAt: account.createdAt,
@@ -356,7 +358,7 @@ export async function getAccountHierarchy(
     include: {
       _count: { select: { children: true, externalMappings: true } },
     },
-    orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
+    orderBy: [{ code: 'asc' }],
   });
 
   // Build tree structure
@@ -393,11 +395,16 @@ export async function getAccountHierarchy(
 
 /**
  * Get accounts for select dropdown (simplified output).
+ * Filters out header accounts by default since they are not selectable.
+ *
+ * @param headersOnly - If true, only return header accounts (for parent selection)
  */
 export async function getAccountsForSelect(
   tenantId?: string | null,
   companyId?: string | null,
-  accountType?: AccountType
+  accountType?: AccountType,
+  includeHeaders = false,
+  headersOnly = false
 ): Promise<Array<{ id: string; code: string; name: string; accountType: AccountType }>> {
   // Build scope conditions - always include system accounts
   const scopeConditions: Prisma.ChartOfAccountWhereInput[] = [
@@ -422,6 +429,16 @@ export async function getAccountsForSelect(
     where.accountType = accountType;
   }
 
+  // Filter header accounts based on parameters
+  if (headersOnly) {
+    // Only return header accounts (for parent selection)
+    where.isHeader = true;
+  } else if (!includeHeaders) {
+    // Filter out header accounts (default behavior)
+    where.isHeader = false;
+  }
+  // If includeHeaders is true and headersOnly is false, no filter is applied
+
   const accounts = await prisma.chartOfAccount.findMany({
     where,
     select: {
@@ -430,7 +447,7 @@ export async function getAccountsForSelect(
       name: true,
       accountType: true,
     },
-    orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
+    orderBy: [{ code: 'asc' }],
   });
 
   return accounts;
@@ -443,7 +460,7 @@ export async function createAccount(
   data: CreateAccountInput,
   ctx: TenantAwareParams
 ): Promise<AccountWithMetadata> {
-  const { code, name, description, accountType, parentId, sortOrder, isTaxApplicable, tenantId, companyId } = data;
+  const { code, name, description, accountType, parentId, sortOrder, isTaxApplicable, isHeader, tenantId, companyId } = data;
 
   // Validate that code is unique within scope
   const existing = await prisma.chartOfAccount.findFirst({
@@ -478,6 +495,7 @@ export async function createAccount(
       parentId: parentId || null,
       sortOrder: sortOrder ?? 0,
       isTaxApplicable: isTaxApplicable ?? true,
+      isHeader: isHeader ?? false,
       tenantId: tenantId || null,
       companyId: companyId || null,
       isSystem: false,
@@ -565,6 +583,7 @@ export async function updateAccount(
       parentId: data.parentId,
       sortOrder: data.sortOrder,
       isTaxApplicable: data.isTaxApplicable,
+      isHeader: data.isHeader,
     },
     include: {
       parent: { select: { id: true, code: true, name: true } },
@@ -683,7 +702,7 @@ export async function getCompanyMappings(
         },
       },
     },
-    orderBy: [{ account: { sortOrder: 'asc' } }, { account: { code: 'asc' } }],
+    orderBy: [{ account: { code: 'asc' } }],
   });
 
   return mappings;

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Building2, Users, Shield, FileText, Package, Plug, Link2, LayoutDashboard } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 
@@ -74,7 +75,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/falcon.svg" alt="Oakcloud" className="w-[4.5rem] h-[4.5rem]" />
+              <Image src="/falcon.svg" alt="Oakcloud" width={72} height={72} unoptimized />
               <span className="text-xl font-semibold text-text-primary">Oakcloud</span>
             </div>
             <nav className="flex items-center gap-4">

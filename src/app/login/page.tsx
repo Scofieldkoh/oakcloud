@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { LogIn, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useLogin, useSession } from '@/hooks/use-auth';
 import { FormInput } from '@/components/ui/form-input';
@@ -35,7 +36,7 @@ export default function LoginPage() {
       <div className="min-h-screen bg-background-primary flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-lg flex items-center justify-center animate-pulse">
-            <img src="/falcon.svg" alt="Oakcloud" className="w-[5.25rem] h-[5.25rem]" />
+            <Image src="/falcon.svg" alt="Oakcloud" width={84} height={84} unoptimized />
           </div>
           <p className="text-text-tertiary text-sm">Loading...</p>
         </div>
@@ -56,7 +57,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-2.5">
-            <img src="/falcon.svg" alt="Oakcloud" className="w-[4.5rem] h-[4.5rem]" />
+            <Image src="/falcon.svg" alt="Oakcloud" width={72} height={72} unoptimized />
             <span className="text-base font-semibold text-white">Oakcloud</span>
           </Link>
         </div>
@@ -96,7 +97,7 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center">
             <Link href="/" className="inline-flex items-center gap-2.5">
-              <img src="/falcon.svg" alt="Oakcloud" className="w-16 h-16 sm:w-[5.25rem] sm:h-[5.25rem]" />
+              <Image src="/falcon.svg" alt="Oakcloud" width={84} height={84} className="w-16 h-16 sm:w-[5.25rem] sm:h-[5.25rem]" unoptimized />
             </Link>
           </div>
 

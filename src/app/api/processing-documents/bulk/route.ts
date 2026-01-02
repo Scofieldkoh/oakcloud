@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { clearDuplicateReferencesToDocument } from '@/services/duplicate-detection.service';
 import type { PipelineStatus } from '@/generated/prisma';
 
 type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE';
@@ -223,6 +224,9 @@ export async function POST(request: NextRequest) {
               where: { id: doc.id },
               data: { deletedAt: new Date() },
             });
+
+            // Clear duplicate references pointing to this document
+            await clearDuplicateReferencesToDocument(doc.id);
 
             await createAuditLog({
               tenantId: doc.document!.tenantId,

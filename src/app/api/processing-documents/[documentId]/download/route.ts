@@ -102,8 +102,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const extension = document.storageKey.substring(document.storageKey.lastIndexOf('.')).toLowerCase();
     const contentType = document.mimeType || MIME_TYPES[extension] || 'application/octet-stream';
 
-    // Use original filename for download, fallback to stored filename
-    const downloadFileName = document.originalFileName || document.fileName;
+    // Use renamed filename after approval, fallback to original filename
+    const downloadFileName = document.fileName || document.originalFileName;
 
     // Return the file with appropriate headers
     return new NextResponse(new Uint8Array(fileBuffer), {

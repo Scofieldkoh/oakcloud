@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     for (const doc of accessibleDocs) {
       try {
         const fileBuffer = await storage.download(doc.document!.storageKey!);
-        let fileName = doc.document!.originalFileName || doc.document!.fileName;
+        let fileName = doc.document!.fileName || doc.document!.originalFileName;
 
         // Handle duplicate filenames by appending index
         const count = usedFilenames.get(fileName) || 0;
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
             fileName = `${fileName} (${count})`;
           }
         }
-        usedFilenames.set(doc.document!.originalFileName || doc.document!.fileName, count + 1);
+        usedFilenames.set(doc.document!.fileName || doc.document!.originalFileName, count + 1);
 
         archive.append(Buffer.from(fileBuffer), { name: fileName });
       } catch (err) {

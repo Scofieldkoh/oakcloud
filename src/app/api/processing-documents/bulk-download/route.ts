@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
       downloadInfos.push({
         documentId: doc.id,
-        fileName: doc.document.originalFileName || doc.document.fileName,
+        fileName: doc.document.fileName || doc.document.originalFileName,
         downloadUrl: `/api/processing-documents/${doc.id}/download`,
         mimeType: doc.document.mimeType || 'application/octet-stream',
         fileSize: doc.document.fileSize || 0,

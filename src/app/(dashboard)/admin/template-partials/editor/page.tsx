@@ -239,6 +239,36 @@ const MAX_PANEL_WIDTH = 600;
 const DEFAULT_PANEL_WIDTH = 380;
 
 // ============================================================================
+// Capital Amount Helper
+// ============================================================================
+
+interface ShareCapitalItem {
+  totalValue?: number | string;
+}
+
+interface CompanyWithCapital {
+  paidUpCapitalAmount?: number | string | null;
+  shareCapital?: ShareCapitalItem[];
+}
+
+const getCapitalAmount = (company: CompanyWithCapital): number => {
+  // First try paidUpCapitalAmount (direct field on Company)
+  if (company.paidUpCapitalAmount) {
+    const amount = Number(company.paidUpCapitalAmount);
+    if (!isNaN(amount)) return amount;
+  }
+  // Then try summing shareCapital array totalValue
+  if (Array.isArray(company.shareCapital) && company.shareCapital.length > 0) {
+    const total = company.shareCapital.reduce((sum, sc) => {
+      const val = Number(sc.totalValue || 0);
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+    if (total > 0) return total;
+  }
+  return 0;
+};
+
+// ============================================================================
 // Resizable Panel Hook
 // ============================================================================
 
@@ -1981,32 +2011,6 @@ function TemplateEditorContent() {
     }
   }, []);
 
-  // Helper to extract capital amount from company data
-  // shareCapital is an array of ShareCapital objects, paidUpCapitalAmount is a Decimal
-  interface ShareCapitalItem {
-    totalValue?: number | string;
-  }
-  interface CompanyWithCapital {
-    paidUpCapitalAmount?: number | string | null;
-    shareCapital?: ShareCapitalItem[];
-  }
-  const getCapitalAmount = (company: CompanyWithCapital): number => {
-    // First try paidUpCapitalAmount (direct field on Company)
-    if (company.paidUpCapitalAmount) {
-      const amount = Number(company.paidUpCapitalAmount);
-      if (!isNaN(amount)) return amount;
-    }
-    // Then try summing shareCapital array totalValue
-    if (Array.isArray(company.shareCapital) && company.shareCapital.length > 0) {
-      const total = company.shareCapital.reduce((sum, sc) => {
-        const val = Number(sc.totalValue || 0);
-        return sum + (isNaN(val) ? 0 : val);
-      }, 0);
-      if (total > 0) return total;
-    }
-    return 0;
-  };
-
   // Handle company selection for test data
   const handleSelectCompany = useCallback(async (companyId: string) => {
     try {
@@ -2365,7 +2369,7 @@ function TemplateEditorContent() {
     } finally {
       setIsPreviewLoading(false);
     }
-  }, [formData.content, mockData, partialsData, mergedPlaceholders]);
+  }, [formData.content, formData.customPlaceholders, mockData, partialsData, mergedPlaceholders]);
 
   // Handle save
   // Helper to convert custom placeholders to storage format

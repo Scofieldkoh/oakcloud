@@ -45,14 +45,6 @@ const REVISION_STATUS_LABELS: Record<string, string> = {
   SUPERSEDED: 'Superseded',
 };
 
-const GST_TREATMENT_LABELS: Record<string, string> = {
-  STANDARD_RATED: 'Standard Rated',
-  ZERO_RATED: 'Zero Rated',
-  EXEMPT: 'Exempt',
-  OUT_OF_SCOPE: 'Out of Scope',
-  NOT_APPLICABLE: 'Not Applicable',
-};
-
 function formatDate(date: Date | null): string {
   if (!date) return '';
   return new Date(date).toLocaleDateString('en-SG', {
@@ -70,92 +62,22 @@ function formatDecimal(value: unknown): number | string {
   return isNaN(num) ? '' : num;
 }
 
-// Type for document with includes
-type DocumentWithRevision = Awaited<ReturnType<typeof getDocumentWithRevision>>;
 
-async function getDocumentWithRevision(documentId: string) {
-  return prisma.processingDocument.findUnique({
-    where: { id: documentId },
-    include: {
-      document: {
-        select: {
-          companyId: true,
-          fileName: true,
-          originalFileName: true,
-          createdAt: true,
-        },
-      },
-      currentRevision: {
-        include: {
-          lineItems: {
-            orderBy: { lineNo: 'asc' },
-          },
-        },
-      },
-      sourceLinks: {
-        include: {
-          targetDocument: {
-            include: {
-              document: {
-                select: {
-                  companyId: true,
-                  fileName: true,
-                  originalFileName: true,
-                  createdAt: true,
-                },
-              },
-              currentRevision: {
-                include: {
-                  lineItems: {
-                    orderBy: { lineNo: 'asc' },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      targetLinks: {
-        include: {
-          sourceDocument: {
-            include: {
-              document: {
-                select: {
-                  companyId: true,
-                  fileName: true,
-                  originalFileName: true,
-                  createdAt: true,
-                },
-              },
-              currentRevision: {
-                include: {
-                  lineItems: {
-                    orderBy: { lineNo: 'asc' },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-}
-
-function addHeaderRow(
-  sheet: ExcelJS.Worksheet,
-  doc: NonNullable<DocumentWithRevision>
-) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function addHeaderRow(sheet: ExcelJS.Worksheet, doc: any) {
   const revision = doc.currentRevision;
-  const fileName = doc.document?.originalFileName || doc.document?.fileName || '';
+  const fileName = doc.document?.fileName || doc.document?.originalFileName || '';
+
+  const categoryKey = revision?.documentCategory as string;
+  const subCategoryKey = revision?.documentSubCategory as string;
 
   sheet.addRow({
     fileName,
-    pipelineStatus: PIPELINE_STATUS_LABELS[doc.pipelineStatus] || doc.pipelineStatus,
-    revisionStatus: revision ? (REVISION_STATUS_LABELS[revision.status] || revision.status) : '',
-    duplicateStatus: DUPLICATE_STATUS_LABELS[doc.duplicateStatus] || doc.duplicateStatus,
-    documentCategory: revision?.documentCategory ? (CATEGORY_LABELS[revision.documentCategory] || revision.documentCategory) : '',
-    documentSubCategory: revision?.documentSubCategory ? (SUBCATEGORY_LABELS[revision.documentSubCategory] || revision.documentSubCategory) : '',
+    pipelineStatus: PIPELINE_STATUS_LABELS[doc.pipelineStatus as string] || doc.pipelineStatus,
+    revisionStatus: revision ? (REVISION_STATUS_LABELS[revision.status as string] || revision.status) : '',
+    duplicateStatus: DUPLICATE_STATUS_LABELS[doc.duplicateStatus as string] || doc.duplicateStatus,
+    documentCategory: categoryKey ? (CATEGORY_LABELS[categoryKey as keyof typeof CATEGORY_LABELS] || categoryKey) : '',
+    documentSubCategory: subCategoryKey ? (SUBCATEGORY_LABELS[subCategoryKey as keyof typeof SUBCATEGORY_LABELS] || subCategoryKey) : '',
     vendorName: revision?.vendorName || '',
     documentNumber: revision?.documentNumber || '',
     documentDate: revision?.documentDate ? formatDate(revision.documentDate) : '',
@@ -164,30 +86,34 @@ function addHeaderRow(
     subtotal: formatDecimal(revision?.subtotal),
     taxAmount: formatDecimal(revision?.taxAmount),
     totalAmount: formatDecimal(revision?.totalAmount),
-    gstTreatment: revision?.gstTreatment ? (GST_TREATMENT_LABELS[revision.gstTreatment] || revision.gstTreatment) : '',
     supplierGstNo: revision?.supplierGstNo || '',
     homeCurrency: revision?.homeCurrency || '',
-    homeExchangeRate: formatDecimal(revision?.homeExchangeRate),
+    exchangeRate: formatDecimal(revision?.homeExchangeRate),
     homeEquivalent: formatDecimal(revision?.homeEquivalent),
     createdDate: doc.document?.createdAt ? formatDate(doc.document.createdAt) : '',
     approvedDate: revision?.approvedAt ? formatDate(revision.approvedAt) : '',
   });
 }
 
-function addLineItemRows(
-  sheet: ExcelJS.Worksheet,
-  doc: NonNullable<DocumentWithRevision>
-) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function addLineItemRows(sheet: ExcelJS.Worksheet, doc: any) {
   const revision = doc.currentRevision;
-  if (!revision?.lineItems || revision.lineItems.length === 0) return;
+  if (!revision?.items || revision.items.length === 0) return;
 
-  const fileName = doc.document?.originalFileName || doc.document?.fileName || '';
+  const fileName = doc.document?.fileName || doc.document?.originalFileName || '';
+  const categoryKey = revision?.documentCategory as string;
+  const subCategoryKey = revision?.documentSubCategory as string;
 
-  for (const item of revision.lineItems) {
+  for (const item of revision.items) {
     sheet.addRow({
       fileName,
       vendorName: revision.vendorName || '',
       documentNumber: revision.documentNumber || '',
+      documentCategory: categoryKey ? (CATEGORY_LABELS[categoryKey as keyof typeof CATEGORY_LABELS] || categoryKey) : '',
+      documentSubCategory: subCategoryKey ? (SUBCATEGORY_LABELS[subCategoryKey as keyof typeof SUBCATEGORY_LABELS] || subCategoryKey) : '',
+      documentDate: revision?.documentDate ? formatDate(revision.documentDate) : '',
+      dueDate: revision?.dueDate ? formatDate(revision.dueDate) : '',
+      exchangeRate: formatDecimal(revision?.homeExchangeRate),
       lineNo: item.lineNo,
       description: item.description || '',
       quantity: formatDecimal(item.quantity),
@@ -213,8 +139,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { searchParams } = new URL(request.url);
     const includeLinked = searchParams.get('includeLinked') === 'true';
 
-    // Fetch the document with its revision and linked documents
-    const doc = await getDocumentWithRevision(documentId);
+    // Fetch the main document
+    const doc = await prisma.processingDocument.findUnique({
+      where: { id: documentId },
+      include: {
+        document: {
+          select: {
+            companyId: true,
+            fileName: true,
+            originalFileName: true,
+            createdAt: true,
+          },
+        },
+        currentRevision: {
+          include: {
+            items: {
+              orderBy: { lineNo: 'asc' },
+            },
+          },
+        },
+      },
+    });
 
     if (!doc) {
       return NextResponse.json(
@@ -262,10 +207,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { header: 'Subtotal', key: 'subtotal', width: 15 },
       { header: 'Tax Amount', key: 'taxAmount', width: 15 },
       { header: 'Total Amount', key: 'totalAmount', width: 15 },
-      { header: 'GST Treatment', key: 'gstTreatment', width: 18 },
       { header: 'Supplier GST No', key: 'supplierGstNo', width: 18 },
       { header: 'Home Currency', key: 'homeCurrency', width: 15 },
-      { header: 'Exchange Rate', key: 'homeExchangeRate', width: 15 },
+      { header: 'Exchange Rate', key: 'exchangeRate', width: 15 },
       { header: 'Home Equivalent', key: 'homeEquivalent', width: 15 },
       { header: 'Created Date', key: 'createdDate', width: 18 },
       { header: 'Approved Date', key: 'approvedDate', width: 18 },
@@ -287,6 +231,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { header: 'File Name', key: 'fileName', width: 35 },
       { header: 'Vendor Name', key: 'vendorName', width: 30 },
       { header: 'Document Number', key: 'documentNumber', width: 20 },
+      { header: 'Document Category', key: 'documentCategory', width: 20 },
+      { header: 'Document Sub-Category', key: 'documentSubCategory', width: 22 },
+      { header: 'Document Date', key: 'documentDate', width: 15 },
+      { header: 'Due Date', key: 'dueDate', width: 15 },
+      { header: 'Exchange Rate', key: 'exchangeRate', width: 15 },
       { header: 'Line No', key: 'lineNo', width: 10 },
       { header: 'Description', key: 'description', width: 50 },
       { header: 'Quantity', key: 'quantity', width: 12 },
@@ -315,31 +264,63 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (includeLinked) {
       const processedIds = new Set<string>([doc.id]);
 
-      // Add target documents (documents this one links to)
-      for (const link of doc.sourceLinks || []) {
-        const linkedDoc = link.targetDocument;
-        if (processedIds.has(linkedDoc.id)) continue;
-        processedIds.add(linkedDoc.id);
+      // Fetch document links
+      const links = await prisma.documentLink.findMany({
+        where: {
+          OR: [
+            { sourceDocumentId: documentId },
+            { targetDocumentId: documentId },
+          ],
+        },
+        select: {
+          sourceDocumentId: true,
+          targetDocumentId: true,
+        },
+      });
 
-        // Check access to linked document's company
-        const linkedCompanyId = linkedDoc.document?.companyId;
-        if (linkedCompanyId && await canAccessCompany(session, linkedCompanyId)) {
-          addHeaderRow(headersSheet, linkedDoc as NonNullable<DocumentWithRevision>);
-          addLineItemRows(lineItemsSheet, linkedDoc as NonNullable<DocumentWithRevision>);
+      // Collect all linked document IDs
+      const linkedDocIds: string[] = [];
+      for (const link of links) {
+        if (link.sourceDocumentId !== documentId && !processedIds.has(link.sourceDocumentId)) {
+          linkedDocIds.push(link.sourceDocumentId);
+          processedIds.add(link.sourceDocumentId);
+        }
+        if (link.targetDocumentId !== documentId && !processedIds.has(link.targetDocumentId)) {
+          linkedDocIds.push(link.targetDocumentId);
+          processedIds.add(link.targetDocumentId);
         }
       }
 
-      // Add source documents (documents that link to this one)
-      for (const link of doc.targetLinks || []) {
-        const linkedDoc = link.sourceDocument;
-        if (processedIds.has(linkedDoc.id)) continue;
-        processedIds.add(linkedDoc.id);
+      // Fetch linked documents if any
+      if (linkedDocIds.length > 0) {
+        const linkedDocs = await prisma.processingDocument.findMany({
+          where: { id: { in: linkedDocIds } },
+          include: {
+            document: {
+              select: {
+                companyId: true,
+                fileName: true,
+                originalFileName: true,
+                createdAt: true,
+              },
+            },
+            currentRevision: {
+              include: {
+                items: {
+                  orderBy: { lineNo: 'asc' },
+                },
+              },
+            },
+          },
+        });
 
-        // Check access to linked document's company
-        const linkedCompanyId = linkedDoc.document?.companyId;
-        if (linkedCompanyId && await canAccessCompany(session, linkedCompanyId)) {
-          addHeaderRow(headersSheet, linkedDoc as NonNullable<DocumentWithRevision>);
-          addLineItemRows(lineItemsSheet, linkedDoc as NonNullable<DocumentWithRevision>);
+        for (const linkedDoc of linkedDocs) {
+          // Check access to linked document's company
+          const linkedCompanyId = linkedDoc.document?.companyId;
+          if (linkedCompanyId && await canAccessCompany(session, linkedCompanyId)) {
+            addHeaderRow(headersSheet, linkedDoc);
+            addLineItemRows(lineItemsSheet, linkedDoc);
+          }
         }
       }
     }
@@ -348,7 +329,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const buffer = await workbook.xlsx.writeBuffer();
 
     // Generate filename
-    const docName = doc.document?.originalFileName || doc.document?.fileName || 'document';
+    const docName = doc.document?.fileName || doc.document?.originalFileName || 'document';
     const baseName = docName.replace(/\.[^/.]+$/, ''); // Remove extension
     const sanitizedName = baseName.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50);
     const dateStr = new Date().toISOString().split('T')[0];

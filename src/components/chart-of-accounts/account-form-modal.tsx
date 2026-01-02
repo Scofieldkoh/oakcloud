@@ -5,8 +5,20 @@ import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
-import { useCreateAccount, useUpdateAccount, type ChartOfAccount, type CreateAccountInput, type UpdateAccountInput } from '@/hooks/use-chart-of-accounts';
-import { ACCOUNT_TYPES, ACCOUNT_STATUSES, ACCOUNT_TYPE_NAMES, ACCOUNT_STATUS_NAMES } from '@/lib/validations/chart-of-accounts';
+import { Toggle } from '@/components/ui/toggle';
+import {
+  useCreateAccount,
+  useUpdateAccount,
+  type ChartOfAccount,
+  type CreateAccountInput,
+  type UpdateAccountInput,
+} from '@/hooks/use-chart-of-accounts';
+import {
+  ACCOUNT_TYPES,
+  ACCOUNT_STATUSES,
+  ACCOUNT_TYPE_NAMES,
+  ACCOUNT_STATUS_NAMES,
+} from '@/lib/validations/chart-of-accounts';
 import type { AccountType, AccountStatus } from '@/generated/prisma';
 import { Loader2 } from 'lucide-react';
 
@@ -18,6 +30,10 @@ interface AccountFormModalProps {
   tenantId?: string | null;
   companyId?: string | null;
   onSuccess?: () => void;
+  // For scope selection
+  isSuperAdmin?: boolean;
+  isTenantAdmin?: boolean;
+  tenantOptions?: SelectOption[];
 }
 
 export function AccountFormModal({
@@ -28,6 +44,9 @@ export function AccountFormModal({
   tenantId,
   companyId,
   onSuccess,
+  isSuperAdmin,
+  isTenantAdmin,
+  tenantOptions = [],
 }: AccountFormModalProps) {
   const isEditing = !!account;
   const createAccount = useCreateAccount();
@@ -40,8 +59,9 @@ export function AccountFormModal({
   const [accountType, setAccountType] = useState<AccountType>('EXPENSE');
   const [status, setStatus] = useState<AccountStatus>('ACTIVE');
   const [parentId, setParentId] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState('0');
   const [isTaxApplicable, setIsTaxApplicable] = useState(true);
+  const [isHeader, setIsHeader] = useState(false);
+  const [scope, setScope] = useState<string>('system'); // 'system' or tenant ID
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Reset form when modal opens/closes or account changes
@@ -54,8 +74,14 @@ export function AccountFormModal({
         setAccountType(account.accountType);
         setStatus(account.status);
         setParentId(account.parentId);
-        setSortOrder(String(account.sortOrder));
         setIsTaxApplicable(account.isTaxApplicable);
+        setIsHeader(account.isHeader);
+        // Determine scope from existing account
+        if (account.tenantId) {
+          setScope(account.tenantId);
+        } else {
+          setScope('system');
+        }
       } else {
         // Reset to defaults for new account
         setCode('');
@@ -64,12 +90,18 @@ export function AccountFormModal({
         setAccountType('EXPENSE');
         setStatus('ACTIVE');
         setParentId(null);
-        setSortOrder('0');
         setIsTaxApplicable(true);
+        setIsHeader(false);
+        // Default scope based on role
+        if (isSuperAdmin) {
+          setScope('system');
+        } else if (tenantId) {
+          setScope(tenantId);
+        }
       }
       setErrors({});
     }
-  }, [isOpen, account]);
+  }, [isOpen, account, isSuperAdmin, tenantId]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -92,17 +124,15 @@ export function AccountFormModal({
       newErrors.description = 'Description must not exceed 500 characters';
     }
 
-    const sortOrderNum = parseInt(sortOrder, 10);
-    if (isNaN(sortOrderNum) || sortOrderNum < 0) {
-      newErrors.sortOrder = 'Sort order must be a non-negative number';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
+
+    // Determine tenantId based on scope selection
+    const effectiveTenantId = scope === 'system' ? null : scope;
 
     try {
       if (isEditing && account) {
@@ -113,8 +143,8 @@ export function AccountFormModal({
           accountType: accountType !== account.accountType ? accountType : undefined,
           status: status !== account.status ? status : undefined,
           parentId,
-          sortOrder: parseInt(sortOrder, 10),
           isTaxApplicable,
+          isHeader,
         };
         await updateAccount.mutateAsync({ id: account.id, data: updateData });
       } else {
@@ -124,9 +154,9 @@ export function AccountFormModal({
           description: description || null,
           accountType,
           parentId,
-          sortOrder: parseInt(sortOrder, 10),
           isTaxApplicable,
-          tenantId,
+          isHeader,
+          tenantId: effectiveTenantId,
           companyId,
         };
         await createAccount.mutateAsync(createData);
@@ -156,6 +186,15 @@ export function AccountFormModal({
   // Parent options - filter to avoid circular references
   const filteredParentOptions = parentOptions.filter((opt) => opt.value !== account?.id);
 
+  // Scope options for SUPER_ADMIN
+  const scopeOptions: SelectOption[] = [
+    { value: 'system', label: 'System (All Tenants)' },
+    ...tenantOptions,
+  ];
+
+  // Determine if scope can be changed (only for new accounts by SUPER_ADMIN)
+  const canChangeScope = isSuperAdmin && !isEditing;
+
   return (
     <Modal
       isOpen={isOpen}
@@ -170,34 +209,7 @@ export function AccountFormModal({
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormInput
-            label="Account Code"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="e.g., 6100"
-            error={errors.code}
-            disabled={isLoading || (isEditing && account?.isSystem)}
-          />
-          <FormInput
-            label="Account Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., Advertising & Marketing"
-            error={errors.name}
-            disabled={isLoading || (isEditing && account?.isSystem)}
-          />
-        </div>
-
-        <FormInput
-          label="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional description"
-          error={errors.description}
-          disabled={isLoading}
-        />
-
+        {/* Row 1: Account Type + Account Code */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-text-secondary">Account Type</label>
@@ -209,57 +221,102 @@ export function AccountFormModal({
               disabled={isLoading || (isEditing && account?.isSystem)}
             />
           </div>
-
-          {isEditing && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-text-secondary">Status</label>
-              <SearchableSelect
-                value={status}
-                onChange={(val) => setStatus(val as AccountStatus)}
-                options={statusOptions}
-                placeholder="Select status"
-                disabled={isLoading}
-              />
-            </div>
-          )}
+          <FormInput
+            label="Account Code"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="e.g., 6100"
+            error={errors.code}
+            disabled={isLoading || (isEditing && account?.isSystem)}
+          />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Row 2: Account Name */}
+        <FormInput
+          label="Account Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g., Advertising & Marketing"
+          error={errors.name}
+          disabled={isLoading || (isEditing && account?.isSystem)}
+        />
+
+        {/* Row 3: Description */}
+        <FormInput
+          label="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Optional description"
+          error={errors.description}
+          disabled={isLoading}
+        />
+
+        {/* Row 4: Parent Account */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-text-secondary">Parent Account</label>
+          <SearchableSelect
+            value={parentId || ''}
+            onChange={(val) => setParentId(val || null)}
+            options={[{ value: '', label: '(No Parent)' }, ...filteredParentOptions]}
+            placeholder="Select parent"
+            disabled={isLoading}
+          />
+        </div>
+
+        {/* Row 5: Tax Applicable Toggle */}
+        <Toggle
+          label="Tax Applicable"
+          checked={isTaxApplicable}
+          onChange={setIsTaxApplicable}
+          disabled={isLoading}
+        />
+
+        {/* Row 6: Header Toggle */}
+        <Toggle
+          label="Header"
+          description="Header accounts cannot be selected in document processing"
+          checked={isHeader}
+          onChange={setIsHeader}
+          disabled={isLoading}
+        />
+
+        {/* Scope Selection (SUPER_ADMIN only, new accounts only) */}
+        {canChangeScope && (
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-text-secondary">Parent Account</label>
+            <label className="text-xs font-medium text-text-secondary">Account Scope</label>
             <SearchableSelect
-              value={parentId || ''}
-              onChange={(val) => setParentId(val || null)}
-              options={[{ value: '', label: '(No Parent)' }, ...filteredParentOptions]}
-              placeholder="Select parent"
+              value={scope}
+              onChange={(val) => setScope(val)}
+              options={scopeOptions}
+              placeholder="Select scope"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-text-muted">
+              System accounts are available to all tenants. Tenant accounts are only visible within the selected tenant.
+            </p>
+          </div>
+        )}
+
+        {/* Tenant Admin info */}
+        {isTenantAdmin && !isEditing && (
+          <p className="text-xs text-text-muted">
+            This account will be created at the tenant level and only visible within your tenant.
+          </p>
+        )}
+
+        {/* Status (Edit mode only) */}
+        {isEditing && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-text-secondary">Status</label>
+            <SearchableSelect
+              value={status}
+              onChange={(val) => setStatus(val as AccountStatus)}
+              options={statusOptions}
+              placeholder="Select status"
               disabled={isLoading}
             />
           </div>
-
-          <FormInput
-            label="Sort Order"
-            type="number"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            min={0}
-            error={errors.sortOrder}
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="isTaxApplicable"
-            checked={isTaxApplicable}
-            onChange={(e) => setIsTaxApplicable(e.target.checked)}
-            disabled={isLoading}
-            className="w-4 h-4 rounded border-border-primary text-oak-primary focus:ring-oak-primary"
-          />
-          <label htmlFor="isTaxApplicable" className="text-sm text-text-secondary">
-            Tax Applicable
-          </label>
-        </div>
+        )}
 
         {isEditing && account?.isSystem && (
           <p className="text-xs text-text-muted">

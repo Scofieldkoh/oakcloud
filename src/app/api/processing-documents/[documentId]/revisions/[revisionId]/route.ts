@@ -28,6 +28,10 @@ export async function GET(
     const session = await requireAuth();
     const { documentId, revisionId } = await params;
 
+    // Check if validation should be re-run (e.g., on page refresh)
+    const { searchParams } = new URL(request.url);
+    const revalidate = searchParams.get('revalidate') === 'true';
+
     const processingDoc = await getProcessingDocument(documentId);
 
     if (!processingDoc) {
@@ -89,6 +93,15 @@ export async function GET(
       );
     }
 
+    // Re-run validation if requested (e.g., on page refresh)
+    let validationStatus = revision.validationStatus;
+    let validationIssues: unknown = revision.validationIssues;
+    if (revalidate) {
+      const validationResult = await validateRevision(revisionId);
+      validationStatus = validationResult.status;
+      validationIssues = { issues: validationResult.issues };
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -107,8 +120,8 @@ export async function GET(
         totalAmount: revision.totalAmount.toString(),
         gstTreatment: revision.gstTreatment,
         supplierGstNo: revision.supplierGstNo,
-        validationStatus: revision.validationStatus,
-        validationIssues: revision.validationIssues,
+        validationStatus: validationStatus,
+        validationIssues: validationIssues,
         headerEvidenceJson: revision.headerEvidenceJson,
         // Phase 2: Home currency fields
         homeCurrency: revision.homeCurrency,
@@ -340,7 +353,6 @@ export async function PATCH(
       if (itemsToUpsert && itemsToUpsert.length > 0) {
         for (const item of itemsToUpsert) {
           const itemData = {
-            lineNo: item.lineNo,
             description: item.description,
             quantity: item.quantity ? parseFloat(item.quantity) : null,
             unitPrice: item.unitPrice ? parseFloat(item.unitPrice) : null,
@@ -356,16 +368,28 @@ export async function PATCH(
           };
 
           if (item.id) {
-            // Update existing item
+            // Update existing item by id
             await tx.documentRevisionLineItem.update({
               where: { id: item.id },
-              data: itemData,
+              data: {
+                lineNo: item.lineNo,
+                ...itemData,
+              },
             });
           } else {
-            // Create new item
-            await tx.documentRevisionLineItem.create({
-              data: {
+            // Create or update by revisionId + lineNo composite key
+            // This handles the case where lineNo already exists
+            await tx.documentRevisionLineItem.upsert({
+              where: {
+                revisionId_lineNo: {
+                  revisionId,
+                  lineNo: item.lineNo,
+                },
+              },
+              update: itemData,
+              create: {
                 revisionId,
+                lineNo: item.lineNo,
                 ...itemData,
               },
             });

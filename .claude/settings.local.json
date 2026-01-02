@@ -79,7 +79,10 @@
       "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\test-mas-monthly.ts\")",
       "Bash(PGPASSWORD=oakcloud_password psql:*)",
       "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\src\\\\components\\\\ui\\\\sortable-header.tsx\")",
-      "Bash(git -C \"c:\\\\Users\\\\Scotfield\\\\oakcloud\" diff HEAD src/components/processing/document-links.tsx)"
+      "Bash(git -C \"c:\\\\Users\\\\Scotfield\\\\oakcloud\" diff HEAD src/components/processing/document-links.tsx)",
+      "Bash(del \"C:\\\\Users\\\\Scotfield\\\\.claude\\\\plans\\\\quizzical-baking-knuth.md\")",
+      "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\src\\\\app\\\\\\(dashboard\\)\\\\admin\\\\chart-of-accounts\\\\[id]\\\\page.tsx\")",
+      "Bash(del \"C:\\\\Users\\\\Scotfield\\\\.claude\\\\plans\\\\joyful-yawning-zebra.md\")"
     ],
     "deny": [],
     "ask": []

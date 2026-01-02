@@ -74,14 +74,12 @@ interface CreateFormData {
   tenantId: string | null;
   credentials: Record<string, string>;
   isEnabled: boolean;
-  isDefault: boolean;
 }
 
 interface EditFormData {
   name: string;
   credentials: Record<string, string>;
   isEnabled: boolean;
-  isDefault: boolean;
 }
 
 // ============================================================================
@@ -95,7 +93,6 @@ const INITIAL_CREATE_FORM: CreateFormData = {
   tenantId: null,
   credentials: {},
   isEnabled: true,
-  isDefault: false,
 };
 
 // ============================================================================
@@ -210,7 +207,6 @@ export default function ConnectorsPage() {
     name: '',
     credentials: {},
     isEnabled: true,
-    isDefault: false,
   });
   const [formError, setFormError] = useState('');
   const [showCredentials, setShowCredentials] = useState<Record<string, boolean>>({});
@@ -321,7 +317,6 @@ export default function ConnectorsPage() {
         tenantId: isSuperAdmin ? createForm.tenantId : session?.tenantId || null,
         credentials: createForm.credentials,
         isEnabled: createForm.isEnabled,
-        isDefault: createForm.isDefault,
       });
       success('Connector created successfully');
       setIsCreateModalOpen(false);
@@ -346,7 +341,6 @@ export default function ConnectorsPage() {
       const updateData: Record<string, unknown> = {
         name: editForm.name,
         isEnabled: editForm.isEnabled,
-        isDefault: editForm.isDefault,
       };
 
       // Only include credentials if they've been modified (non-empty)
@@ -409,7 +403,6 @@ export default function ConnectorsPage() {
       name: connector.name,
       credentials: {}, // Don't pre-fill credentials
       isEnabled: connector.isEnabled,
-      isDefault: connector.isDefault,
     });
     setFormError('');
   };
@@ -968,33 +961,6 @@ export default function ConnectorsPage() {
                     />
                   </button>
                 </div>
-
-                {/* Default Toggle */}
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-bg-tertiary">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-text-primary">Set as default</span>
-                    <span className="text-xs text-text-muted">
-                      {createForm.isDefault ? 'This is the default connector for its type' : 'Not the default connector'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={createForm.isDefault}
-                    onClick={() => setCreateForm({ ...createForm, isDefault: !createForm.isDefault })}
-                    className={cn(
-                      'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2',
-                      createForm.isDefault ? 'bg-oak-primary border-oak-primary' : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
-                        createForm.isDefault ? 'translate-x-5' : 'translate-x-0'
-                      )}
-                    />
-                  </button>
-                </div>
               </div>
             </div>
           </ModalBody>
@@ -1135,33 +1101,6 @@ export default function ConnectorsPage() {
                       className={cn(
                         'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
                         editForm.isEnabled ? 'translate-x-5' : 'translate-x-0'
-                      )}
-                    />
-                  </button>
-                </div>
-
-                {/* Default Toggle */}
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-bg-tertiary">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-text-primary">Set as default</span>
-                    <span className="text-xs text-text-muted">
-                      {editForm.isDefault ? 'This is the default connector for its type' : 'Not the default connector'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={editForm.isDefault}
-                    onClick={() => setEditForm({ ...editForm, isDefault: !editForm.isDefault })}
-                    className={cn(
-                      'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2',
-                      editForm.isDefault ? 'bg-oak-primary border-oak-primary' : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
-                        editForm.isDefault ? 'translate-x-5' : 'translate-x-0'
                       )}
                     />
                   </button>

@@ -22,6 +22,7 @@ import type {
 import { PDFDocument } from 'pdf-lib';
 import { storage } from '@/lib/storage';
 import { hashBlake3, generateFingerprint } from '@/lib/encryption';
+import { clearDuplicateReferencesToDocument } from '@/services/duplicate-detection.service';
 
 type Decimal = Prisma.Decimal;
 
@@ -1080,11 +1081,18 @@ export async function listProcessingDocumentsPaged(options: {
             revisionNumber: true,
             status: true,
             documentCategory: true,
+            documentSubCategory: true,
             vendorName: true,
             documentNumber: true,
             documentDate: true,
-            totalAmount: true,
             currency: true,
+            subtotal: true,
+            taxAmount: true,
+            totalAmount: true,
+            homeCurrency: true,
+            homeSubtotal: true,
+            homeTaxAmount: true,
+            homeEquivalent: true,
           },
         },
       },
@@ -1139,11 +1147,18 @@ export interface ProcessingDocumentWithDocument {
     revisionNumber: number;
     status: RevisionStatus;
     documentCategory: DocumentCategory | null;
+    documentSubCategory: string | null;
     vendorName: string | null;
     documentNumber: string | null;
     documentDate: Date | null;
-    totalAmount: Decimal;
     currency: string;
+    subtotal: Decimal | null;
+    taxAmount: Decimal | null;
+    totalAmount: Decimal;
+    homeCurrency: string | null;
+    homeSubtotal: Decimal | null;
+    homeTaxAmount: Decimal | null;
+    homeEquivalent: Decimal | null;
   } | null;
 }
 
@@ -1198,6 +1213,9 @@ export async function archiveDocument(
     },
   });
 
+  // Clear duplicate references pointing to this document
+  await clearDuplicateReferencesToDocument(processingDocumentId);
+
   await createStateEvent({
     processingDocumentId,
     tenantId,
@@ -1248,6 +1266,9 @@ export async function markAsNewVersion(
       },
     }),
   ]);
+
+  // Clear duplicate references pointing to the archived original document
+  await clearDuplicateReferencesToDocument(originalProcessingDocId);
 
   await createStateEvent({
     processingDocumentId: newProcessingDocId,

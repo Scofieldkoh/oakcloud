@@ -43,14 +43,6 @@ const REVISION_STATUS_LABELS: Record<string, string> = {
   SUPERSEDED: 'Superseded',
 };
 
-const GST_TREATMENT_LABELS: Record<string, string> = {
-  STANDARD_RATED: 'Standard Rated',
-  ZERO_RATED: 'Zero Rated',
-  EXEMPT: 'Exempt',
-  OUT_OF_SCOPE: 'Out of Scope',
-  NOT_APPLICABLE: 'Not Applicable',
-};
-
 function formatDate(date: Date | null): string {
   if (!date) return '';
   return new Date(date).toLocaleDateString('en-SG', {
@@ -112,7 +104,7 @@ export async function POST(request: NextRequest) {
         },
         currentRevision: {
           include: {
-            lineItems: {
+            items: {
               orderBy: { lineNo: 'asc' },
             },
           },
@@ -165,10 +157,9 @@ export async function POST(request: NextRequest) {
       { header: 'Subtotal', key: 'subtotal', width: 15 },
       { header: 'Tax Amount', key: 'taxAmount', width: 15 },
       { header: 'Total Amount', key: 'totalAmount', width: 15 },
-      { header: 'GST Treatment', key: 'gstTreatment', width: 18 },
       { header: 'Supplier GST No', key: 'supplierGstNo', width: 18 },
       { header: 'Home Currency', key: 'homeCurrency', width: 15 },
-      { header: 'Exchange Rate', key: 'homeExchangeRate', width: 15 },
+      { header: 'Exchange Rate', key: 'exchangeRate', width: 15 },
       { header: 'Home Equivalent', key: 'homeEquivalent', width: 15 },
       { header: 'Created Date', key: 'createdDate', width: 18 },
       { header: 'Approved Date', key: 'approvedDate', width: 18 },
@@ -185,7 +176,7 @@ export async function POST(request: NextRequest) {
     // Add header data
     for (const doc of accessibleDocs) {
       const revision = doc.currentRevision;
-      const fileName = doc.document?.originalFileName || doc.document?.fileName || '';
+      const fileName = doc.document?.fileName || doc.document?.originalFileName || '';
 
       headersSheet.addRow({
         fileName,
@@ -202,10 +193,9 @@ export async function POST(request: NextRequest) {
         subtotal: formatDecimal(revision?.subtotal),
         taxAmount: formatDecimal(revision?.taxAmount),
         totalAmount: formatDecimal(revision?.totalAmount),
-        gstTreatment: revision?.gstTreatment ? (GST_TREATMENT_LABELS[revision.gstTreatment] || revision.gstTreatment) : '',
         supplierGstNo: revision?.supplierGstNo || '',
         homeCurrency: revision?.homeCurrency || '',
-        homeExchangeRate: formatDecimal(revision?.homeExchangeRate),
+        exchangeRate: formatDecimal(revision?.homeExchangeRate),
         homeEquivalent: formatDecimal(revision?.homeEquivalent),
         createdDate: doc.document?.createdAt ? formatDate(doc.document.createdAt) : '',
         approvedDate: revision?.approvedAt ? formatDate(revision.approvedAt) : '',
@@ -220,6 +210,11 @@ export async function POST(request: NextRequest) {
       { header: 'File Name', key: 'fileName', width: 35 },
       { header: 'Vendor Name', key: 'vendorName', width: 30 },
       { header: 'Document Number', key: 'documentNumber', width: 20 },
+      { header: 'Document Category', key: 'documentCategory', width: 20 },
+      { header: 'Document Sub-Category', key: 'documentSubCategory', width: 22 },
+      { header: 'Document Date', key: 'documentDate', width: 15 },
+      { header: 'Due Date', key: 'dueDate', width: 15 },
+      { header: 'Exchange Rate', key: 'exchangeRate', width: 15 },
       { header: 'Line No', key: 'lineNo', width: 10 },
       { header: 'Description', key: 'description', width: 50 },
       { header: 'Quantity', key: 'quantity', width: 12 },
@@ -243,15 +238,20 @@ export async function POST(request: NextRequest) {
     // Add line item data
     for (const doc of accessibleDocs) {
       const revision = doc.currentRevision;
-      if (!revision?.lineItems || revision.lineItems.length === 0) continue;
+      if (!revision?.items || revision.items.length === 0) continue;
 
-      const fileName = doc.document?.originalFileName || doc.document?.fileName || '';
+      const fileName = doc.document?.fileName || doc.document?.originalFileName || '';
 
-      for (const item of revision.lineItems) {
+      for (const item of revision.items) {
         lineItemsSheet.addRow({
           fileName,
           vendorName: revision.vendorName || '',
           documentNumber: revision.documentNumber || '',
+          documentCategory: revision?.documentCategory ? (CATEGORY_LABELS[revision.documentCategory] || revision.documentCategory) : '',
+          documentSubCategory: revision?.documentSubCategory ? (SUBCATEGORY_LABELS[revision.documentSubCategory] || revision.documentSubCategory) : '',
+          documentDate: revision?.documentDate ? formatDate(revision.documentDate) : '',
+          dueDate: revision?.dueDate ? formatDate(revision.dueDate) : '',
+          exchangeRate: formatDecimal(revision?.homeExchangeRate),
           lineNo: item.lineNo,
           description: item.description || '',
           quantity: formatDecimal(item.quantity),

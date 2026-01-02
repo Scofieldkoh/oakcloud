@@ -6,7 +6,7 @@ import {
   GripVertical,
   Trash2,
   FileUp,
-  Image,
+  Image as ImageIcon,
   FileText,
   Loader2,
   Merge,
@@ -66,7 +66,7 @@ export function FileMergeModal({
     }
   }, [isOpen, initialFiles]);
 
-  // Cleanup previews on unmount
+  // Cleanup preview URLs on unmount
   useEffect(() => {
     return () => {
       files.forEach((f) => {
@@ -74,6 +74,22 @@ export function FileMergeModal({
       });
     };
   }, [files]);
+
+  // Add files to the merge list
+  const addFiles = useCallback((newFiles: File[]) => {
+    const validFiles = newFiles.filter((f) => isSupportedFileType(f) && f.size <= MAX_FILE_SIZE);
+
+    const mergeFiles: MergeFile[] = validFiles.map((file) => ({
+      id: `${file.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      file,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+    }));
+
+    setFiles((prev) => {
+      const combined = [...prev, ...mergeFiles];
+      return combined.slice(0, MAX_MERGE_FILES);
+    });
+  }, []);
 
   // Handle paste event
   useEffect(() => {
@@ -101,7 +117,7 @@ export function FileMergeModal({
 
     document.addEventListener('paste', handlePaste);
     return () => document.removeEventListener('paste', handlePaste);
-  }, [isOpen, files]);
+  }, [isOpen, addFiles]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -123,21 +139,6 @@ export function FileMergeModal({
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, isMerging, onClose]);
-
-  const addFiles = useCallback((newFiles: File[]) => {
-    const validFiles = newFiles.filter((f) => isSupportedFileType(f) && f.size <= MAX_FILE_SIZE);
-
-    const mergeFiles: MergeFile[] = validFiles.map((file) => ({
-      id: `${file.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      file,
-      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
-    }));
-
-    setFiles((prev) => {
-      const combined = [...prev, ...mergeFiles];
-      return combined.slice(0, MAX_MERGE_FILES);
-    });
-  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: addFiles,
@@ -332,6 +333,7 @@ export function FileMergeModal({
                   {/* Thumbnail or icon */}
                   <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded bg-background-tertiary flex items-center justify-center overflow-hidden">
                     {mergeFile.preview ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- File preview data URLs
                       <img
                         src={mergeFile.preview}
                         alt={mergeFile.file.name}
@@ -340,7 +342,7 @@ export function FileMergeModal({
                     ) : mergeFile.file.type === 'application/pdf' ? (
                       <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-status-error" />
                     ) : (
-                      <Image className="w-4 h-4 sm:w-5 sm:h-5 text-oak-primary" />
+                      <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-oak-primary" />
                     )}
                   </div>
 

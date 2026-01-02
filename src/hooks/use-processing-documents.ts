@@ -47,11 +47,18 @@ export interface ProcessingDocumentListItem {
     revisionNumber: number;
     status: RevisionStatus;
     documentCategory: DocumentCategory | null;
+    documentSubCategory: string | null;
     vendorName: string | null;
     documentNumber: string | null;
     documentDate: string | null;
-    totalAmount: string;
     currency: string;
+    subtotal: string | null;
+    taxAmount: string | null;
+    totalAmount: string;
+    homeCurrency: string | null;
+    homeSubtotal: string | null;
+    homeTaxAmount: string | null;
+    homeEquivalent: string | null;
   };
 }
 
@@ -196,10 +203,22 @@ async function fetchRevisionHistory(documentId: string): Promise<{
   return result.data.revisions;
 }
 
-async function triggerExtraction(documentId: string): Promise<{ extractionId: string }> {
+interface TriggerExtractionOptions {
+  documentId: string;
+  model?: string;
+  context?: string;
+}
+
+async function triggerExtraction(options: TriggerExtractionOptions): Promise<{ extractionId: string }> {
+  const { documentId, model, context } = options;
+  const body: { model?: string; context?: string } = {};
+  if (model) body.model = model;
+  if (context) body.context = context;
+
   const response = await fetch(`/api/processing-documents/${documentId}/extract`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
     const error = await response.json();
@@ -320,6 +339,7 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
     staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
     refetchOnMount: 'always', // Always refetch when component mounts
+    placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
   });
 }
 
@@ -348,9 +368,9 @@ export function useTriggerExtraction() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (documentId: string) => triggerExtraction(documentId),
-    onSuccess: (_, documentId) => {
-      queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
+    mutationFn: (options: TriggerExtractionOptions) => triggerExtraction(options),
+    onSuccess: (_, options) => {
+      queryClient.invalidateQueries({ queryKey: ['processing-document', options.documentId] });
       queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
     },
   });
@@ -521,9 +541,13 @@ export interface RevisionWithLineItems {
 // Fetch revision with line items
 async function fetchRevisionWithLineItems(
   documentId: string,
-  revisionId: string
+  revisionId: string,
+  revalidate: boolean = false
 ): Promise<RevisionWithLineItems> {
-  const response = await fetch(`/api/processing-documents/${documentId}/revisions/${revisionId}`);
+  const url = revalidate
+    ? `/api/processing-documents/${documentId}/revisions/${revisionId}?revalidate=true`
+    : `/api/processing-documents/${documentId}/revisions/${revisionId}`;
+  const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error?.message || 'Failed to fetch revision');
@@ -532,10 +556,10 @@ async function fetchRevisionWithLineItems(
   return result.data;
 }
 
-export function useRevisionWithLineItems(documentId: string, revisionId: string | null) {
+export function useRevisionWithLineItems(documentId: string, revisionId: string | null, revalidate: boolean = true) {
   return useQuery({
-    queryKey: ['revision-line-items', documentId, revisionId],
-    queryFn: () => fetchRevisionWithLineItems(documentId, revisionId!),
+    queryKey: ['revision-line-items', documentId, revisionId, revalidate],
+    queryFn: () => fetchRevisionWithLineItems(documentId, revisionId!, revalidate),
     enabled: !!documentId && !!revisionId,
     staleTime: 30_000,
     refetchOnMount: 'always', // Always refetch when component mounts
@@ -1232,6 +1256,48 @@ export function useDocumentExport() {
       }
       return response.blob();
     },
+  });
+}
+
+// ============================================================================
+// AI Models (for extraction model selection)
+// ============================================================================
+
+export interface AvailableAIModel {
+  id: string;
+  name: string;
+  provider: string;
+  providerName: string;
+  description: string;
+  inputPricePerMillion: number;
+  outputPricePerMillion: number;
+}
+
+export interface AIModelsResponse {
+  models: AvailableAIModel[];
+  modelsByProvider: Record<string, AvailableAIModel[]>;
+  availableProviders: string[];
+}
+
+async function fetchAvailableAIModels(): Promise<AIModelsResponse> {
+  const response = await fetch('/api/ai-models');
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to fetch AI models');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Hook to fetch available AI models for the current tenant
+ */
+export function useAvailableAIModels() {
+  return useQuery({
+    queryKey: ['ai-models'],
+    queryFn: fetchAvailableAIModels,
+    staleTime: 5 * 60 * 1000, // 5 minutes - models don't change often
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 

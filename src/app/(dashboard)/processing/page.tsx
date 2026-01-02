@@ -106,7 +106,8 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   MYR: 'RM',
 };
 
-function formatCurrency(amount: string, currency: string): string {
+function formatCurrency(amount: string | null | undefined, currency: string): string {
+  if (!amount) return '-';
   const num = parseFloat(amount);
   if (isNaN(num)) return '-';
 
@@ -117,6 +118,15 @@ function formatCurrency(amount: string, currency: string): string {
 
   const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
   return `${symbol}${formatted}`;
+}
+
+// Format enum values to proper case (e.g., VENDOR_INVOICE -> Vendor Invoice)
+function formatCategory(value: string | null | undefined): string {
+  if (!value) return '-';
+  return value
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 export default function ProcessingDocumentsPage() {
@@ -170,7 +180,7 @@ export default function ProcessingDocumentsPage() {
   const effectiveCompanyId = params.companyId || activeCompanyId;
 
   // Pass tenantId and effective companyId to filter documents
-  const { data, isLoading, error, refetch } = useProcessingDocuments({
+  const { data, isLoading, isFetching, error, refetch } = useProcessingDocuments({
     ...params,
     companyId: effectiveCompanyId,
     tenantId: activeTenantId,
@@ -183,7 +193,7 @@ export default function ProcessingDocumentsPage() {
   });
 
   // Fetch tags for filter dropdown (uses effectiveCompanyId if available, otherwise just tenant tags)
-  const { data: tagsData } = useAvailableTags(effectiveCompanyId);
+  const { data: tagsData } = useAvailableTags(effectiveCompanyId, activeTenantId);
 
   // Reset page and selection when tenant or sidebar company changes
   useEffect(() => {
@@ -351,7 +361,7 @@ export default function ProcessingDocumentsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <MobileCollapsibleSection title="Statistics" count={6} className="mb-6">
+        <MobileCollapsibleSection title="Statistics" count={6} className={cn('mb-6', isFetching && 'opacity-60')}>
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
             <div className="card p-3 sm:p-4">
               <div className="flex items-center gap-3">
@@ -452,6 +462,7 @@ export default function ProcessingDocumentsPage() {
           companies={companiesData?.companies.map(c => ({ id: c.id, name: c.name })) || []}
           tags={tagsData?.map(t => ({ id: t.id, name: t.name, color: t.color })) || []}
           activeCompanyId={effectiveCompanyId}
+          activeTenantId={activeTenantId}
         />
       </div>
 
@@ -465,16 +476,16 @@ export default function ProcessingDocumentsPage() {
         </div>
       )}
 
-      {/* Loading State */}
-      {isLoading && (
+      {/* Loading State - Only show full loading spinner on initial load (no data yet) */}
+      {isLoading && !data && (
         <div className="card p-8 flex items-center justify-center">
           <RefreshCw className="w-6 h-6 animate-spin text-oak-light" />
           <span className="ml-3 text-text-secondary">Loading documents...</span>
         </div>
       )}
 
-      {/* Empty State */}
-      {!isLoading && !error && data?.documents.length === 0 && (
+      {/* Empty State - Only show when not fetching and no documents */}
+      {!isFetching && !error && data?.documents.length === 0 && (
         <div className="card p-8 text-center">
           <FileText className="w-12 h-12 text-text-muted mx-auto mb-4" />
           <h3 className="text-lg font-medium text-text-primary mb-2">No documents found</h3>
@@ -489,8 +500,8 @@ export default function ProcessingDocumentsPage() {
       )}
 
       {/* Document Cards - Mobile View */}
-      {!isLoading && !error && data && data.documents.length > 0 && (
-        <div className="md:hidden space-y-3 mb-6">
+      {!error && data && data.documents.length > 0 && (
+        <div className={cn('md:hidden space-y-3 mb-6 relative', isFetching && 'opacity-60')}>
           {data.documents.map((doc) => {
             const isSelected = selectedIds.includes(doc.id);
             return (
@@ -534,25 +545,69 @@ export default function ProcessingDocumentsPage() {
 
                     <CardDetailsGrid>
                       <CardDetailItem
+                        label="Company"
+                        value={doc.document.company?.name || '-'}
+                      />
+                      <CardDetailItem
+                        label="Category"
+                        value={formatCategory(doc.currentRevision?.documentCategory)}
+                      />
+                      <CardDetailItem
+                        label="Sub-Category"
+                        value={formatCategory(doc.currentRevision?.documentSubCategory)}
+                      />
+                      <CardDetailItem
                         label="Vendor"
                         value={doc.currentRevision?.vendorName || '-'}
                       />
                       <CardDetailItem
-                        label="Amount"
+                        label="Doc #"
+                        value={doc.currentRevision?.documentNumber || '-'}
+                      />
+                      <CardDetailItem
+                        label="Doc Date"
+                        value={doc.currentRevision?.documentDate
+                          ? formatDate(doc.currentRevision.documentDate)
+                          : '-'}
+                      />
+                      <CardDetailItem
+                        label="Subtotal"
+                        value={doc.currentRevision
+                          ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency)
+                          : '-'}
+                      />
+                      <CardDetailItem
+                        label="Tax"
+                        value={doc.currentRevision
+                          ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency)
+                          : '-'}
+                      />
+                      <CardDetailItem
+                        label="Total"
                         value={doc.currentRevision
                           ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
                           : '-'}
                       />
+                      {doc.currentRevision?.homeCurrency && (
+                        <>
+                          <CardDetailItem
+                            label="Home Subtotal"
+                            value={formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency)}
+                          />
+                          <CardDetailItem
+                            label="Home Tax"
+                            value={formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency)}
+                          />
+                          <CardDetailItem
+                            label="Home Total"
+                            value={formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency)}
+                          />
+                        </>
+                      )}
                       <CardDetailItem
                         label="Uploaded"
                         value={formatDate(doc.createdAt)}
                       />
-                      {doc.currentRevision?.documentNumber && (
-                        <CardDetailItem
-                          label="Doc #"
-                          value={doc.currentRevision.documentNumber}
-                        />
-                      )}
                     </CardDetailsGrid>
                   </div>
                 }
@@ -612,8 +667,8 @@ export default function ProcessingDocumentsPage() {
       )}
 
       {/* Document Table - Desktop View */}
-      {!isLoading && !error && data && data.documents.length > 0 && (
-        <div className="hidden md:block card overflow-hidden">
+      {!error && data && data.documents.length > 0 && (
+        <div className={cn('hidden md:block card overflow-hidden relative', isFetching && 'opacity-60')}>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-background-tertiary border-b border-border-primary">
@@ -633,14 +688,23 @@ export default function ProcessingDocumentsPage() {
                       )}
                     </button>
                   </th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Document</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Pipeline</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Status</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Duplicate</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Vendor</th>
-                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3">Amount</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Date</th>
-                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3">Actions</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Document</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Company</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Pipeline</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Status</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Duplicate</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Category</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Sub-Category</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Vendor</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Doc #</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Doc Date</th>
+                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Subtotal</th>
+                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Tax</th>
+                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Total</th>
+                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Home Subtotal</th>
+                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Home Tax</th>
+                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Home Total</th>
+                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Uploaded</th>
                 </tr>
               </thead>
               <tbody>
@@ -649,8 +713,9 @@ export default function ProcessingDocumentsPage() {
                   return (
                     <tr
                       key={doc.id}
+                      onClick={() => router.push(`/processing/${doc.id}`)}
                       className={cn(
-                        'border-b border-border-primary transition-colors',
+                        'border-b border-border-primary transition-colors cursor-pointer',
                         isSelected
                           ? 'bg-oak-primary/5 hover:bg-oak-primary/10'
                           : 'hover:bg-background-tertiary/50'
@@ -658,7 +723,10 @@ export default function ProcessingDocumentsPage() {
                     >
                       <td className="px-4 py-3">
                         <button
-                          onClick={() => toggleSelect(doc.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSelect(doc.id);
+                          }}
                           className="p-0.5 hover:bg-background-secondary rounded transition-colors"
                         >
                           {isSelected ? (
@@ -678,18 +746,19 @@ export default function ProcessingDocumentsPage() {
                             )}
                           </div>
                           <div>
-                            <Link
-                              href={`/processing/${doc.id}`}
-                              className="text-sm font-medium text-text-primary hover:text-oak-light transition-colors truncate max-w-[200px] block"
-                            >
+                            <span className="text-sm font-medium text-text-primary truncate max-w-[200px] block">
                               {doc.document.fileName}
-                            </Link>
+                            </span>
                             <p className="text-xs text-text-muted">
                               {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
-                              {doc.document.company && ` • ${doc.document.company.name}`}
                             </p>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-text-primary truncate max-w-[150px] block">
+                          {doc.document.company?.name || '-'}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge
@@ -716,42 +785,78 @@ export default function ProcessingDocumentsPage() {
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm text-text-primary">
+                        <span className="text-sm text-text-primary truncate max-w-[120px] block" title={formatCategory(doc.currentRevision?.documentCategory)}>
+                          {formatCategory(doc.currentRevision?.documentCategory)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-text-secondary truncate max-w-[120px] block" title={formatCategory(doc.currentRevision?.documentSubCategory)}>
+                          {formatCategory(doc.currentRevision?.documentSubCategory)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-text-primary truncate max-w-[150px] block" title={doc.currentRevision?.vendorName || undefined}>
                           {doc.currentRevision?.vendorName || '-'}
                         </span>
                       </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-text-secondary truncate max-w-[100px] block">
+                          {doc.currentRevision?.documentNumber || '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-text-secondary whitespace-nowrap">
+                          {doc.currentRevision?.documentDate
+                            ? formatDate(doc.currentRevision.documentDate)
+                            : '-'}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="text-sm text-text-primary">
+                        <span className="text-sm text-text-primary whitespace-nowrap">
+                          {doc.currentRevision
+                            ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency)
+                            : '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-sm text-text-primary whitespace-nowrap">
+                          {doc.currentRevision
+                            ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency)
+                            : '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-sm text-text-primary font-medium whitespace-nowrap">
                           {doc.currentRevision
                             ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
                             : '-'}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-text-secondary">
-                          {formatDate(doc.createdAt)}
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-sm text-text-secondary whitespace-nowrap">
+                          {doc.currentRevision?.homeCurrency
+                            ? formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency)
+                            : '-'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {doc.duplicateStatus === 'SUSPECTED' && (
-                            <Link
-                              href={`/processing/${doc.id}?compare=true`}
-                              className="btn-ghost btn-xs inline-flex items-center gap-1 text-status-warning"
-                              title="Compare with suspected duplicate"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                              Compare
-                            </Link>
-                          )}
-                          <Link
-                            href={`/processing/${doc.id}`}
-                            className="btn-ghost btn-xs inline-flex items-center gap-1"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            View
-                          </Link>
-                        </div>
+                        <span className="text-sm text-text-secondary whitespace-nowrap">
+                          {doc.currentRevision?.homeCurrency
+                            ? formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency)
+                            : '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-sm text-text-secondary font-medium whitespace-nowrap">
+                          {doc.currentRevision?.homeCurrency
+                            ? formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency)
+                            : '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-text-muted whitespace-nowrap">
+                          {formatDate(doc.createdAt)}
+                        </span>
                       </td>
                     </tr>
                   );

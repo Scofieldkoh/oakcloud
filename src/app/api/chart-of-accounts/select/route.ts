@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
       tenantId: searchParams.get('tenantId') || (session.isSuperAdmin ? undefined : session.tenantId),
       companyId: searchParams.get('companyId') || undefined,
       accountType: searchParams.get('accountType') || undefined,
+      headersOnly: searchParams.get('headersOnly') || undefined,
     });
 
     // Non-super admins can only access their tenant's accounts
@@ -38,7 +39,9 @@ export async function GET(request: NextRequest) {
     const accounts = await chartOfAccountsService.getAccountsForSelect(
       params.tenantId,
       params.companyId,
-      params.accountType
+      params.accountType,
+      false, // includeHeaders
+      params.headersOnly // headersOnly - for parent account selection
     );
 
     return NextResponse.json(accounts);

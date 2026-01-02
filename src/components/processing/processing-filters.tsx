@@ -43,6 +43,8 @@ interface ProcessingFiltersProps {
   initialSearch?: string;
   /** Company ID for tag management (from sidebar or filter) */
   activeCompanyId?: string;
+  /** Tenant ID for tag management (for super admins) */
+  activeTenantId?: string;
 }
 
 // Status configurations
@@ -83,6 +85,7 @@ export function ProcessingFilters({
   onSearchChange,
   initialSearch = '',
   activeCompanyId,
+  activeTenantId,
 }: ProcessingFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ProcessingFilterValues>(initialFilters);
@@ -131,15 +134,12 @@ export function ProcessingFilters({
     [companies]
   );
 
-  // Convert tags to SelectOption format
-  const tagOptions: SelectOption[] = useMemo(() =>
-    tags.map(t => ({ value: t.id, label: t.name })),
-    [tags]
-  );
+  // Note: tags are displayed directly as chips in the filter section, not as SelectOptions
 
-  // Count active filters (excluding search which is separate)
+  // Count active filters (including search)
   const activeFilterCount = useMemo(() => {
     let count = 0;
+    if (searchQuery.trim()) count++;
     if (filters.pipelineStatus) count++;
     if (filters.duplicateStatus) count++;
     if (filters.revisionStatus) count++;
@@ -152,7 +152,7 @@ export function ProcessingFilters({
     if (filters.fileName) count++;
     if (filters.tagIds && filters.tagIds.length > 0) count += filters.tagIds.length;
     return count;
-  }, [filters]);
+  }, [filters, searchQuery]);
 
   const handleFilterChange = useCallback((key: keyof ProcessingFilterValues, value: unknown) => {
     const newFilters = { ...filters, [key]: value || undefined };
@@ -170,7 +170,10 @@ export function ProcessingFilters({
   const clearAllFilters = useCallback(() => {
     setFilters({});
     onFilterChange({});
-  }, [onFilterChange]);
+    // Also clear search
+    setSearchQuery('');
+    onSearchChange?.('');
+  }, [onFilterChange, onSearchChange]);
 
   // Date picker value conversion helpers
   const uploadDateValue: DatePickerValue | undefined = useMemo(() => {
@@ -300,18 +303,7 @@ export function ProcessingFilters({
       {/* Expandable Filter Panel */}
       {showFilters && (
         <div className="card p-4 animate-fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-text-primary">Filters</h3>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={clearAllFilters}
-                className="btn-ghost btn-xs flex items-center gap-1.5 text-text-secondary hover:text-text-primary"
-              >
-                <X className="w-3.5 h-3.5" />
-                Clear all
-              </button>
-            )}
-          </div>
+          <h3 className="text-sm font-medium text-text-primary mb-4">Filters</h3>
 
           {/* Filter Grid - Responsive layout */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -436,9 +428,8 @@ export function ProcessingFilters({
                 <Tag className="w-3.5 h-3.5" />
                 Filter by Tags
               </label>
-              {activeCompanyId && (
-                <TagManager companyId={activeCompanyId} />
-              )}
+              {/* Show TagManager - works with or without company (tenant tags always available) */}
+              <TagManager companyId={activeCompanyId || null} tenantId={activeTenantId} />
             </div>
             {tags.length > 0 ? (
               <div className="flex flex-wrap gap-2">
@@ -466,115 +457,131 @@ export function ProcessingFilters({
               </div>
             ) : (
               <p className="text-xs text-text-muted">
-                {activeCompanyId
-                  ? 'No tags created yet. Add tags to documents to create them.'
-                  : 'Select a company to see and manage tags.'}
+                No tags created yet. Add tags to documents to create them.
               </p>
             )}
           </div>
+        </div>
+      )}
 
-          {/* Active Filter Chips */}
-          {activeFilterCount > 0 && (
-            <div className="flex items-center gap-2 flex-wrap pt-4 mt-4 border-t border-border-primary">
-              <span className="text-xs text-text-muted">Active:</span>
+      {/* Active Filter Chips - Always visible when there are active filters */}
+      {activeFilterCount > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-text-muted">Active:</span>
 
-              {filters.pipelineStatus && (
-                <FilterChip
-                  label="Pipeline"
-                  value={PIPELINE_STATUS_OPTIONS.find(o => o.value === filters.pipelineStatus)?.label || filters.pipelineStatus}
-                  onRemove={() => clearFilter('pipelineStatus')}
-                />
-              )}
-              {filters.revisionStatus && (
-                <FilterChip
-                  label="Review"
-                  value={REVISION_STATUS_OPTIONS.find(o => o.value === filters.revisionStatus)?.label || filters.revisionStatus}
-                  onRemove={() => clearFilter('revisionStatus')}
-                />
-              )}
-              {filters.duplicateStatus && (
-                <FilterChip
-                  label="Duplicate"
-                  value={DUPLICATE_STATUS_OPTIONS.find(o => o.value === filters.duplicateStatus)?.label || filters.duplicateStatus}
-                  onRemove={() => clearFilter('duplicateStatus')}
-                />
-              )}
-              {filters.isContainer !== undefined && (
-                <FilterChip
-                  label="Type"
-                  value={filters.isContainer ? 'Containers' : 'Children'}
-                  onRemove={() => clearFilter('isContainer')}
-                />
-              )}
-              {filters.companyId && (
-                <FilterChip
-                  label="Company"
-                  value={companyOptions.find(c => c.value === filters.companyId)?.label || filters.companyId}
-                  onRemove={() => clearFilter('companyId')}
-                />
-              )}
-              {(filters.uploadDateFrom || filters.uploadDateTo) && (
-                <FilterChip
-                  label="Upload"
-                  value={`${formatDateDisplay(filters.uploadDateFrom)} - ${formatDateDisplay(filters.uploadDateTo)}`}
-                  onRemove={() => {
-                    const newFilters = { ...filters };
-                    delete newFilters.uploadDateFrom;
-                    delete newFilters.uploadDateTo;
-                    setFilters(newFilters);
-                    onFilterChange(newFilters);
-                  }}
-                />
-              )}
-              {(filters.documentDateFrom || filters.documentDateTo) && (
-                <FilterChip
-                  label="Doc Date"
-                  value={`${formatDateDisplay(filters.documentDateFrom)} - ${formatDateDisplay(filters.documentDateTo)}`}
-                  onRemove={() => {
-                    const newFilters = { ...filters };
-                    delete newFilters.documentDateFrom;
-                    delete newFilters.documentDateTo;
-                    setFilters(newFilters);
-                    onFilterChange(newFilters);
-                  }}
-                />
-              )}
-              {filters.vendorName && (
-                <FilterChip
-                  label="Vendor"
-                  value={filters.vendorName}
-                  onRemove={() => clearFilter('vendorName')}
-                />
-              )}
-              {filters.documentNumber && (
-                <FilterChip
-                  label="Doc #"
-                  value={filters.documentNumber}
-                  onRemove={() => clearFilter('documentNumber')}
-                />
-              )}
-              {filters.fileName && (
-                <FilterChip
-                  label="File"
-                  value={filters.fileName}
-                  onRemove={() => clearFilter('fileName')}
-                />
-              )}
-              {filters.tagIds && filters.tagIds.map((tagId) => {
-                const tag = tags.find(t => t.id === tagId);
-                if (!tag) return null;
-                return (
-                  <TagChip
-                    key={tagId}
-                    name={tag.name}
-                    color={tag.color}
-                    size="sm"
-                    onRemove={() => removeTagFilter(tagId)}
-                  />
-                );
-              })}
-            </div>
+          {searchQuery.trim() && (
+            <FilterChip
+              label="Search"
+              value={searchQuery}
+              onRemove={() => {
+                setSearchQuery('');
+                onSearchChange?.('');
+              }}
+            />
           )}
+          {filters.pipelineStatus && (
+            <FilterChip
+              label="Pipeline"
+              value={PIPELINE_STATUS_OPTIONS.find(o => o.value === filters.pipelineStatus)?.label || filters.pipelineStatus}
+              onRemove={() => clearFilter('pipelineStatus')}
+            />
+          )}
+          {filters.revisionStatus && (
+            <FilterChip
+              label="Review"
+              value={REVISION_STATUS_OPTIONS.find(o => o.value === filters.revisionStatus)?.label || filters.revisionStatus}
+              onRemove={() => clearFilter('revisionStatus')}
+            />
+          )}
+          {filters.duplicateStatus && (
+            <FilterChip
+              label="Duplicate"
+              value={DUPLICATE_STATUS_OPTIONS.find(o => o.value === filters.duplicateStatus)?.label || filters.duplicateStatus}
+              onRemove={() => clearFilter('duplicateStatus')}
+            />
+          )}
+          {filters.isContainer !== undefined && (
+            <FilterChip
+              label="Type"
+              value={filters.isContainer ? 'Containers' : 'Children'}
+              onRemove={() => clearFilter('isContainer')}
+            />
+          )}
+          {filters.companyId && (
+            <FilterChip
+              label="Company"
+              value={companyOptions.find(c => c.value === filters.companyId)?.label || filters.companyId}
+              onRemove={() => clearFilter('companyId')}
+            />
+          )}
+          {(filters.uploadDateFrom || filters.uploadDateTo) && (
+            <FilterChip
+              label="Upload"
+              value={`${formatDateDisplay(filters.uploadDateFrom)} - ${formatDateDisplay(filters.uploadDateTo)}`}
+              onRemove={() => {
+                const newFilters = { ...filters };
+                delete newFilters.uploadDateFrom;
+                delete newFilters.uploadDateTo;
+                setFilters(newFilters);
+                onFilterChange(newFilters);
+              }}
+            />
+          )}
+          {(filters.documentDateFrom || filters.documentDateTo) && (
+            <FilterChip
+              label="Doc Date"
+              value={`${formatDateDisplay(filters.documentDateFrom)} - ${formatDateDisplay(filters.documentDateTo)}`}
+              onRemove={() => {
+                const newFilters = { ...filters };
+                delete newFilters.documentDateFrom;
+                delete newFilters.documentDateTo;
+                setFilters(newFilters);
+                onFilterChange(newFilters);
+              }}
+            />
+          )}
+          {filters.vendorName && (
+            <FilterChip
+              label="Vendor"
+              value={filters.vendorName}
+              onRemove={() => clearFilter('vendorName')}
+            />
+          )}
+          {filters.documentNumber && (
+            <FilterChip
+              label="Doc #"
+              value={filters.documentNumber}
+              onRemove={() => clearFilter('documentNumber')}
+            />
+          )}
+          {filters.fileName && (
+            <FilterChip
+              label="File"
+              value={filters.fileName}
+              onRemove={() => clearFilter('fileName')}
+            />
+          )}
+          {filters.tagIds && filters.tagIds.map((tagId) => {
+            const tag = tags.find(t => t.id === tagId);
+            if (!tag) return null;
+            return (
+              <TagChip
+                key={tagId}
+                name={tag.name}
+                color={tag.color}
+                size="sm"
+                onRemove={() => removeTagFilter(tagId)}
+              />
+            );
+          })}
+
+          <button
+            onClick={clearAllFilters}
+            className="btn-ghost btn-xs flex items-center gap-1.5 text-text-secondary hover:text-text-primary ml-auto"
+          >
+            <X className="w-3.5 h-3.5" />
+            Clear all
+          </button>
         </div>
       )}
     </div>

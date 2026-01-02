@@ -188,6 +188,7 @@ const plain = decrypt(encrypted);
 Required: `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY` (32+ chars)
 Optional: `OPENAI_API_KEY` (for BizFile extraction), `LOG_LEVEL` (silent|error|warn|info|debug|trace)
 Storage: `STORAGE_PROVIDER` (s3|local), `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_ENCRYPTION`
+AI Debug: `AI_DEBUG` (true|false), `AI_DEBUG_LOG_PROMPTS` (true|false), `AI_DEBUG_LOG_RESPONSES` (true|false)
 
 ### Logging
 

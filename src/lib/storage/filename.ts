@@ -190,8 +190,8 @@ export function generateApprovedDocumentFilename(input: ApprovedDocumentFilename
     parts.push(input.currency);
   }
 
-  // Join parts with hyphens and add extension
-  const baseName = parts.join('-');
+  // Join parts with underscores and add extension
+  const baseName = parts.join('_');
   const extension = input.originalExtension.startsWith('.')
     ? input.originalExtension
     : `.${input.originalExtension}`;

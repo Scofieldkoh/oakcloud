@@ -11,6 +11,7 @@
 
 export * from './types';
 export * from './models';
+export * from './debug';
 
 import type {
   AIModel,
@@ -27,6 +28,21 @@ import { callGoogle, isGoogleConfigured } from './providers/google';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('ai');
+
+/**
+ * Strip markdown code blocks from AI response content.
+ * AI models (especially Claude) sometimes wrap JSON in ```json ... ``` blocks
+ * despite being instructed to respond with only valid JSON.
+ */
+export function stripMarkdownCodeBlocks(content: string): string {
+  const codeBlockRegex = /^```(?:json)?\s*\n?([\s\S]*?)\n?```$/;
+  const trimmed = content.trim();
+  const match = trimmed.match(codeBlockRegex);
+  if (match) {
+    return match[1].trim();
+  }
+  return trimmed;
+}
 
 /**
  * Check provider configuration status
@@ -161,7 +177,9 @@ export async function extractJSON<T = unknown>(
   });
 
   try {
-    const data = JSON.parse(response.content) as T;
+    // Strip markdown code blocks if present (some models wrap JSON in ```json ... ```)
+    const cleanedContent = stripMarkdownCodeBlocks(response.content);
+    const data = JSON.parse(cleanedContent) as T;
     return { data, response };
   } catch (error) {
     throw new Error(
@@ -233,10 +251,17 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
   // Lazy import to avoid circular dependencies
   const { resolveConnector } = await import('@/services/connector.service');
   const { logConnectorUsage } = await import('@/services/connector-usage.service');
+  const { logAIRequestStart, logAIResponse, logAIError } = await import('./debug');
 
   const modelConfig = getModelConfig(options.model);
   const provider = options.preferredProvider || modelConfig.provider;
   const connectorProvider = mapProviderToConnectorProvider(provider);
+
+  // Start debug logging if enabled
+  const debugContext = logAIRequestStart(
+    { ...options, tenantId: options.tenantId, userId: options.userId },
+    provider
+  );
 
   // Try to resolve a connector for this tenant/provider
   const resolved = await resolveConnector(options.tenantId, 'AI_PROVIDER', connectorProvider);
@@ -271,9 +296,16 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
       }
     } catch (err) {
       error = err instanceof Error ? err : new Error(String(err));
+      // Log error for debug
+      logAIError(debugContext, error);
       throw error;
     } finally {
       const latencyMs = Date.now() - startTime;
+
+      // Log debug response if available
+      if (response) {
+        logAIResponse(debugContext, response);
+      }
 
       // Log usage (non-blocking)
       logConnectorUsage({

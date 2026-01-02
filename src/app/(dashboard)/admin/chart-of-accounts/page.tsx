@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSession } from '@/hooks/use-auth';
 import {
   useChartOfAccounts,
@@ -22,8 +22,8 @@ import {
   AccountStatusBadge,
   AccountScopeBadge,
   AccountFormModal,
-  AccountActionsDropdown,
 } from '@/components/chart-of-accounts';
+import { AccountTableRow } from '@/components/chart-of-accounts/account-table-row';
 import {
   Plus,
   Search,
@@ -36,10 +36,13 @@ import {
   ChevronDown,
   CornerDownRight,
   ChevronsUpDown,
+  AlertCircle,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
 import { useTenantStore } from '@/stores/tenant-store';
+import { useTenants } from '@/hooks/use-admin';
 import type { AccountType, AccountStatus } from '@/generated/prisma';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -104,8 +107,8 @@ export default function ChartOfAccountsPage() {
   // State - show all results by default (no pagination)
   const [params, setParams] = useState<AccountSearchParams>({
     page: 1,
-    limit: 500, // Show all accounts by default
-    sortBy: 'sortOrder',
+    limit: 200, // Max allowed by API
+    sortBy: 'code',
     sortOrder: 'asc',
     includeSystem: true,
   });
@@ -131,9 +134,20 @@ export default function ChartOfAccountsPage() {
   }), [params, search, accountTypeFilter, statusFilter, effectiveTenantId]);
 
   // Queries
-  const { data, isLoading, refetch } = useChartOfAccounts(queryParams);
-  const { data: parentOptions } = useAccountsForSelect({ tenantId: effectiveTenantId });
+  const { data, isLoading, error, refetch } = useChartOfAccounts(queryParams);
+  // Parent options - only fetch header accounts (parent accounts must be headers)
+  const { data: parentOptions } = useAccountsForSelect({ tenantId: effectiveTenantId, headersOnly: true });
   const deleteAccount = useDeleteAccount();
+
+  // Fetch tenants for scope selection (SUPER_ADMIN only)
+  const { data: tenantsData } = useTenants({ limit: 100 });
+  const tenantOptions = useMemo(() => {
+    if (!tenantsData?.tenants) return [];
+    return tenantsData.tenants.map((tenant) => ({
+      value: tenant.id,
+      label: tenant.name,
+    }));
+  }, [tenantsData?.tenants]);
 
   // Debounced search
   const debouncedSearch = useDebouncedCallback((value: string) => {
@@ -218,7 +232,7 @@ export default function ChartOfAccountsPage() {
   }, [data?.accounts]);
 
   // Initialize collapsed state when data loads (collapse all by default)
-  useMemo(() => {
+  useEffect(() => {
     if (data?.accounts && collapsedParents === null) {
       const accountParentIds = new Set(data.accounts.map((a) => a.parentId).filter(Boolean));
       const parentIds = new Set<string>();
@@ -472,8 +486,24 @@ export default function ChartOfAccountsPage() {
         </div>
       )}
 
+      {/* Error state */}
+      {!isLoading && error && (
+        <div className="text-center py-12 bg-background-secondary border border-status-error/30 rounded-lg">
+          <AlertCircle className="w-12 h-12 text-status-error mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-text-primary mb-2">
+            Failed to load accounts
+          </h3>
+          <p className="text-sm text-text-secondary mb-4">
+            {error instanceof Error ? error.message : 'An unexpected error occurred'}
+          </p>
+          <Button variant="secondary" size="sm" onClick={() => refetch()}>
+            Try Again
+          </Button>
+        </div>
+      )}
+
       {/* Empty state */}
-      {!isLoading && data && data.accounts.length === 0 && (
+      {!isLoading && !error && data && data.accounts.length === 0 && (
         <div className="text-center py-12 bg-background-secondary border border-border-primary rounded-lg">
           <BookOpen className="w-12 h-12 text-text-muted mx-auto mb-4" />
           <h3 className="text-lg font-medium text-text-primary mb-2">
@@ -496,6 +526,7 @@ export default function ChartOfAccountsPage() {
             const hasChildren = accountHasChildrenMap.get(account.id) || false;
             const isCollapsed = collapsedParents?.has(account.id) || false;
             const childCount = childCountMap.get(account.id) || 0;
+            const isSystem = account.isSystem;
 
             return (
               <div
@@ -525,15 +556,12 @@ export default function ChartOfAccountsPage() {
                       {isChild && (
                         <CornerDownRight className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
                       )}
-                      <Link
-                        href={`/admin/chart-of-accounts/${account.id}`}
-                        className="flex items-center gap-2 hover:text-oak-primary transition-colors"
-                      >
+                      <div className="flex items-center gap-2">
                         <span className="font-mono text-sm">{account.code}</span>
                         <span className={cn('text-text-primary', isChild && 'text-text-secondary')}>
                           {account.name}
                         </span>
-                      </Link>
+                      </div>
                       {hasChildren && isCollapsed && (
                         <span className="text-xs text-text-muted">({childCount})</span>
                       )}
@@ -541,13 +569,31 @@ export default function ChartOfAccountsPage() {
                   }
                   badge={<AccountTypeBadge type={account.accountType} />}
                   actions={
-                    <AccountActionsDropdown
-                      account={account}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      canEdit={canEdit}
-                      canDelete={canDelete}
-                    />
+                    <div className="flex items-center gap-1">
+                      {canEdit && !isSystem && (
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(account)}
+                          className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      )}
+                      {canDelete && !isSystem && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(account)}
+                          className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-text-muted hover:text-red-600 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {isSystem && (
+                        <span className="text-xs text-text-muted px-2">System</span>
+                      )}
+                    </div>
                   }
                   details={
                     <CardDetailsGrid>
@@ -562,19 +608,12 @@ export default function ChartOfAccountsPage() {
                           />
                         }
                       />
-                      {account.parent && (
-                        <CardDetailItem
-                          label="Parent Account"
-                          value={
-                            <Link
-                              href={`/admin/chart-of-accounts/${account.parent.id}`}
-                              className="text-text-secondary hover:text-oak-primary transition-colors"
-                            >
-                              {account.parent.code} - {account.parent.name}
-                            </Link>
-                          }
-                          fullWidth
-                        />
+                      <CardDetailItem label="Type" value={<AccountTypeBadge type={account.accountType} showIcon={false} />} />
+                      <CardDetailItem label="Sort Order" value={account.sortOrder} />
+                      <CardDetailItem label="Header" value={account.isHeader ? 'Yes' : 'No'} />
+                      <CardDetailItem label="Tax Applicable" value={account.isTaxApplicable ? 'Yes' : 'No'} />
+                      {account.description && (
+                        <CardDetailItem label="Description" value={account.description} fullWidth />
                       )}
                     </CardDetailsGrid>
                   }
@@ -587,8 +626,8 @@ export default function ChartOfAccountsPage() {
 
       {/* Desktop Table View */}
       {!isLoading && data && visibleAccounts.length > 0 && (
-        <div className="hidden md:block table-container">
-          <table className="table">
+        <div className="hidden md:block table-container overflow-x-auto">
+          <table className="table min-w-[1100px]">
             <thead>
               <tr>
                 <SortableHeader
@@ -599,12 +638,13 @@ export default function ChartOfAccountsPage() {
                   onSort={handleSort}
                 />
                 <SortableHeader
-                  label="Account Name"
+                  label="Name"
                   field="name"
                   sortBy={params.sortBy}
                   sortOrder={params.sortOrder}
                   onSort={handleSort}
                 />
+                <th>Description</th>
                 <SortableHeader
                   label="Type"
                   field="accountType"
@@ -613,109 +653,33 @@ export default function ChartOfAccountsPage() {
                   onSort={handleSort}
                 />
                 <th>Status</th>
+                <th className="text-center">Header</th>
+                <th className="text-center">Tax</th>
                 <th>Scope</th>
-                <th className="w-10">Actions</th>
+                <th className="w-20">Actions</th>
               </tr>
             </thead>
             <tbody>
               {visibleAccounts.map((account) => {
                 const depth = accountDepthMap.get(account.id) || 0;
                 const hasChildren = accountHasChildrenMap.get(account.id) || false;
-                const isChild = depth > 0;
                 const isCollapsed = collapsedParents?.has(account.id) || false;
                 const childCount = childCountMap.get(account.id) || 0;
 
                 return (
-                  <tr
+                  <AccountTableRow
                     key={account.id}
-                    className={cn(
-                      'hover:bg-background-tertiary/50 transition-colors',
-                      isChild && 'bg-background-secondary/30'
-                    )}
-                  >
-                    <td className="font-mono text-sm">
-                      <div className="flex items-center">
-                        {/* Indentation spacer */}
-                        {depth > 0 && (
-                          <span
-                            className="inline-block"
-                            style={{ width: `${depth * 20}px` }}
-                          />
-                        )}
-                        {/* Tree connector for child items */}
-                        {isChild && (
-                          <CornerDownRight className="w-3.5 h-3.5 text-text-muted mr-1.5 flex-shrink-0" />
-                        )}
-                        {/* Collapsible parent indicator */}
-                        {!isChild && hasChildren && (
-                          <button
-                            type="button"
-                            onClick={() => toggleParent(account.id)}
-                            className="p-0.5 rounded hover:bg-background-tertiary transition-colors mr-1 flex-shrink-0"
-                            title={isCollapsed ? 'Expand' : 'Collapse'}
-                          >
-                            {isCollapsed ? (
-                              <ChevronRight className="w-3.5 h-3.5 text-oak-light" />
-                            ) : (
-                              <ChevronDown className="w-3.5 h-3.5 text-oak-light" />
-                            )}
-                          </button>
-                        )}
-                        {/* Non-parent spacer for alignment */}
-                        {!isChild && !hasChildren && (
-                          <span className="inline-block w-5" />
-                        )}
-                        <Link
-                          href={`/admin/chart-of-accounts/${account.id}`}
-                          className="hover:text-oak-primary hover:underline transition-colors"
-                        >
-                          {account.code}
-                        </Link>
-                        {/* Child count when collapsed */}
-                        {hasChildren && isCollapsed && (
-                          <span className="ml-1 text-xs text-text-muted">({childCount})</span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="flex items-center">
-                        {/* Indentation for name too for visual consistency */}
-                        {depth > 0 && (
-                          <span
-                            className="inline-block"
-                            style={{ width: `${depth * 12}px` }}
-                          />
-                        )}
-                        <Link
-                          href={`/admin/chart-of-accounts/${account.id}`}
-                          className={cn(
-                            'hover:text-oak-primary hover:underline transition-colors',
-                            isChild && 'text-text-secondary'
-                          )}
-                        >
-                          {account.name}
-                        </Link>
-                      </div>
-                    </td>
-                    <td><AccountTypeBadge type={account.accountType} /></td>
-                    <td><AccountStatusBadge status={account.status} /></td>
-                    <td>
-                      <AccountScopeBadge
-                        tenantId={account.tenantId}
-                        companyId={account.companyId}
-                        isSystem={account.isSystem}
-                      />
-                    </td>
-                    <td>
-                      <AccountActionsDropdown
-                        account={account}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        canEdit={canEdit}
-                        canDelete={canDelete}
-                      />
-                    </td>
-                  </tr>
+                    account={account}
+                    depth={depth}
+                    hasChildren={hasChildren}
+                    isCollapsed={isCollapsed}
+                    childCount={childCount}
+                    onToggleCollapse={toggleParent}
+                    onDelete={handleDelete}
+                    onUpdate={refetch}
+                    canEdit={canEdit ?? false}
+                    canDelete={canDelete ?? false}
+                  />
                 );
               })}
             </tbody>
@@ -747,6 +711,9 @@ export default function ChartOfAccountsPage() {
         parentOptions={parentSelectOptions}
         tenantId={effectiveTenantId}
         onSuccess={handleFormSuccess}
+        isSuperAdmin={session?.isSuperAdmin}
+        isTenantAdmin={session?.isTenantAdmin}
+        tenantOptions={tenantOptions}
       />
 
       {/* Delete Confirmation */}

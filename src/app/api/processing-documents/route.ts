@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
       createdAt: doc.createdAt.toISOString(),
       document: {
         id: doc.document.id,
-        fileName: doc.document.originalFileName || doc.document.fileName,
+        fileName: doc.document.fileName || doc.document.originalFileName,
         mimeType: doc.document.mimeType,
         fileSize: doc.document.fileSize,
         companyId: doc.document.companyId,
@@ -165,11 +165,18 @@ export async function GET(request: NextRequest) {
             revisionNumber: doc.currentRevision.revisionNumber,
             status: doc.currentRevision.status,
             documentCategory: doc.currentRevision.documentCategory,
+            documentSubCategory: doc.currentRevision.documentSubCategory,
             vendorName: doc.currentRevision.vendorName,
             documentNumber: doc.currentRevision.documentNumber,
             documentDate: doc.currentRevision.documentDate?.toISOString() ?? null,
-            totalAmount: doc.currentRevision.totalAmount.toString(),
             currency: doc.currentRevision.currency,
+            subtotal: doc.currentRevision.subtotal?.toString() ?? null,
+            taxAmount: doc.currentRevision.taxAmount?.toString() ?? null,
+            totalAmount: doc.currentRevision.totalAmount.toString(),
+            homeCurrency: doc.currentRevision.homeCurrency,
+            homeSubtotal: doc.currentRevision.homeSubtotal?.toString() ?? null,
+            homeTaxAmount: doc.currentRevision.homeTaxAmount?.toString() ?? null,
+            homeEquivalent: doc.currentRevision.homeEquivalent?.toString() ?? null,
           }
         : undefined,
     }));

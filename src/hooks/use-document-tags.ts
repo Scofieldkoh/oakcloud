@@ -47,8 +47,9 @@ export interface DocumentTag {
 
 // --- Tenant Tags ---
 
-async function fetchTenantTags(): Promise<Tag[]> {
-  const response = await fetch('/api/tags');
+async function fetchTenantTags(tenantId?: string): Promise<Tag[]> {
+  const url = tenantId ? `/api/tags?tenantId=${tenantId}` : '/api/tags';
+  const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || 'Failed to fetch tenant tags');
@@ -61,6 +62,7 @@ async function createTenantTagApi(data: {
   name: string;
   color?: TagColor;
   description?: string;
+  tenantId?: string;
 }): Promise<Tag> {
   const response = await fetch('/api/tags', {
     method: 'POST',
@@ -104,10 +106,11 @@ async function deleteTenantTagApi(tagId: string): Promise<void> {
 
 // --- Available Tags (Tenant + Company) ---
 
-async function fetchAvailableTags(companyId?: string): Promise<Tag[]> {
-  const url = companyId
-    ? `/api/tags/available?companyId=${companyId}`
-    : '/api/tags/available';
+async function fetchAvailableTags(companyId?: string, tenantId?: string): Promise<Tag[]> {
+  const params = new URLSearchParams();
+  if (companyId) params.set('companyId', companyId);
+  if (tenantId) params.set('tenantId', tenantId);
+  const url = `/api/tags/available${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -117,10 +120,12 @@ async function fetchAvailableTags(companyId?: string): Promise<Tag[]> {
   return result.tags;
 }
 
-async function fetchAvailableRecentTags(companyId?: string): Promise<Tag[]> {
-  const url = companyId
-    ? `/api/tags/available?companyId=${companyId}&recent=true`
-    : '/api/tags/available?recent=true';
+async function fetchAvailableRecentTags(companyId?: string, tenantId?: string): Promise<Tag[]> {
+  const params = new URLSearchParams();
+  if (companyId) params.set('companyId', companyId);
+  if (tenantId) params.set('tenantId', tenantId);
+  params.set('recent', 'true');
+  const url = `/api/tags/available?${params.toString()}`;
   const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -130,10 +135,12 @@ async function fetchAvailableRecentTags(companyId?: string): Promise<Tag[]> {
   return result.tags;
 }
 
-async function searchAvailableTags(companyId: string | undefined, query: string): Promise<Tag[]> {
-  const url = companyId
-    ? `/api/tags/available?companyId=${companyId}&query=${encodeURIComponent(query)}`
-    : `/api/tags/available?query=${encodeURIComponent(query)}`;
+async function searchAvailableTags(companyId: string | undefined, query: string, tenantId?: string): Promise<Tag[]> {
+  const params = new URLSearchParams();
+  if (companyId) params.set('companyId', companyId);
+  if (tenantId) params.set('tenantId', tenantId);
+  params.set('query', query);
+  const url = `/api/tags/available?${params.toString()}`;
   const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -265,12 +272,14 @@ async function removeTagFromDocument(documentId: string, tagId: string): Promise
 
 /**
  * Fetch all tenant (shared) tags
+ * @param tenantId - Optional tenant ID for super admins using tenant selector
  */
-export function useTenantTags() {
+export function useTenantTags(tenantId?: string | null) {
   return useQuery({
-    queryKey: ['tenant-tags'],
-    queryFn: fetchTenantTags,
+    queryKey: ['tenant-tags', tenantId ?? null],
+    queryFn: () => fetchTenantTags(tenantId || undefined),
     staleTime: 60_000, // 1 minute
+    enabled: tenantId !== null, // Don't fetch if explicitly null (no tenant selected)
   });
 }
 
@@ -285,11 +294,13 @@ export function useCreateTenantTag() {
       name,
       color,
       description,
+      tenantId,
     }: {
       name: string;
       color?: TagColor;
       description?: string;
-    }) => createTenantTagApi({ name, color, description }),
+      tenantId?: string;
+    }) => createTenantTagApi({ name, color, description, tenantId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-tags'] });
       queryClient.invalidateQueries({ queryKey: ['available-tags'] });
@@ -346,34 +357,43 @@ export function useDeleteTenantTag() {
 /**
  * Fetch all available tags (tenant tags + company tags if companyId provided)
  * This is the main hook for UI that needs to show all applicable tags
+ * @param companyId - Optional company ID to include company-specific tags
+ * @param tenantId - Optional tenant ID for super admins using tenant selector
  */
-export function useAvailableTags(companyId?: string | null) {
+export function useAvailableTags(companyId?: string | null, tenantId?: string | null) {
   return useQuery({
-    queryKey: ['available-tags', companyId ?? null],
-    queryFn: () => fetchAvailableTags(companyId || undefined),
+    queryKey: ['available-tags', companyId ?? null, tenantId ?? null],
+    queryFn: () => fetchAvailableTags(companyId || undefined, tenantId || undefined),
     staleTime: 60_000, // 1 minute
+    enabled: tenantId !== null, // Don't fetch if explicitly null (no tenant selected)
   });
 }
 
 /**
  * Fetch recent available tags (from both scopes)
+ * @param companyId - Optional company ID to include company-specific tags
+ * @param tenantId - Optional tenant ID for super admins using tenant selector
  */
-export function useAvailableRecentTags(companyId?: string | null) {
+export function useAvailableRecentTags(companyId?: string | null, tenantId?: string | null) {
   return useQuery({
-    queryKey: ['available-recent-tags', companyId ?? null],
-    queryFn: () => fetchAvailableRecentTags(companyId || undefined),
+    queryKey: ['available-recent-tags', companyId ?? null, tenantId ?? null],
+    queryFn: () => fetchAvailableRecentTags(companyId || undefined, tenantId || undefined),
     staleTime: 30_000, // 30 seconds
+    enabled: tenantId !== null, // Don't fetch if explicitly null (no tenant selected)
   });
 }
 
 /**
  * Search available tags by name (across both scopes)
+ * @param companyId - Optional company ID to include company-specific tags
+ * @param query - Search query string
+ * @param tenantId - Optional tenant ID for super admins using tenant selector
  */
-export function useSearchAvailableTags(companyId: string | null | undefined, query: string) {
+export function useSearchAvailableTags(companyId: string | null | undefined, query: string, tenantId?: string | null) {
   return useQuery({
-    queryKey: ['search-available-tags', companyId ?? null, query],
-    queryFn: () => searchAvailableTags(companyId || undefined, query),
-    enabled: query.length > 0,
+    queryKey: ['search-available-tags', companyId ?? null, query, tenantId ?? null],
+    queryFn: () => searchAvailableTags(companyId || undefined, query, tenantId || undefined),
+    enabled: query.length > 0 && tenantId !== null,
     staleTime: 30_000, // 30 seconds
   });
 }
@@ -438,6 +458,7 @@ export function useCreateTag() {
     }) => createTag(companyId, { name, color, description }),
     onSuccess: (_, { companyId }) => {
       queryClient.invalidateQueries({ queryKey: ['company-tags', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['available-tags'] });
     },
   });
 }
@@ -466,6 +487,7 @@ export function useUpdateTag() {
       queryClient.invalidateQueries({ queryKey: ['company-tags', companyId] });
       queryClient.invalidateQueries({ queryKey: ['recent-tags', companyId] });
       queryClient.invalidateQueries({ queryKey: ['search-tags', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['available-tags'] });
     },
   });
 }
@@ -483,6 +505,7 @@ export function useDeleteTag() {
       queryClient.invalidateQueries({ queryKey: ['company-tags', companyId] });
       queryClient.invalidateQueries({ queryKey: ['recent-tags', companyId] });
       queryClient.invalidateQueries({ queryKey: ['search-tags', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['available-tags'] });
       // Also invalidate document tags since removed tag won't appear anymore
       queryClient.invalidateQueries({ queryKey: ['document-tags'] });
     },

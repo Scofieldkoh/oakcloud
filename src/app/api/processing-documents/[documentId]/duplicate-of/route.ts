@@ -137,11 +137,26 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    if (!duplicateDoc) {
+    // If the duplicate document doesn't exist or is soft-deleted, clear the duplicate status
+    if (!duplicateDoc || duplicateDoc.deletedAt) {
+      // Auto-clear the orphaned duplicate reference
+      await prisma.processingDocument.update({
+        where: { id: documentId },
+        data: {
+          duplicateStatus: 'NONE',
+          duplicateOfId: null,
+          duplicateScore: null,
+          duplicateReason: null,
+        },
+      });
+
       return NextResponse.json(
         {
           success: false,
-          error: { code: 'DUPLICATE_NOT_FOUND', message: 'Suspected duplicate document not found' },
+          error: {
+            code: 'DUPLICATE_CLEARED',
+            message: 'Suspected duplicate document was deleted. Duplicate status has been cleared.',
+          },
         },
         { status: 404 }
       );
@@ -158,7 +173,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       data: {
         currentDocument: {
           id: processingDoc.id,
-          fileName: processingDoc.document?.originalFileName || processingDoc.document?.fileName,
+          fileName: processingDoc.document?.fileName || processingDoc.document?.originalFileName,
           pipelineStatus: processingDoc.pipelineStatus,
           approvalStatus: processingDoc.currentRevision?.status || 'N/A',
           createdAt: processingDoc.createdAt,
@@ -173,7 +188,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         },
         duplicateDocument: {
           id: duplicateDoc.id,
-          fileName: duplicateDoc.document?.originalFileName || duplicateDoc.document?.fileName,
+          fileName: duplicateDoc.document?.fileName || duplicateDoc.document?.originalFileName,
           pipelineStatus: duplicateDoc.pipelineStatus,
           approvalStatus: duplicateDoc.currentRevision?.status || 'N/A',
           createdAt: duplicateDoc.createdAt,

@@ -113,6 +113,7 @@ export const createAccountSchema = z.object({
   parentId: z.string().uuid().optional().nullable(),
   sortOrder: z.coerce.number().int().min(0).optional().default(0),
   isTaxApplicable: z.coerce.boolean().optional().default(true),
+  isHeader: z.coerce.boolean().optional().default(false),
   // Scope - at least tenantId should be set for tenant-level, both for company-level
   tenantId: z.string().uuid().optional().nullable(),
   companyId: z.string().uuid().optional().nullable(),
@@ -145,6 +146,7 @@ export const updateAccountSchema = z.object({
   parentId: z.string().uuid().optional().nullable(),
   sortOrder: z.coerce.number().int().min(0).optional(),
   isTaxApplicable: z.coerce.boolean().optional(),
+  isHeader: z.coerce.boolean().optional(),
 });
 
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
@@ -214,6 +216,7 @@ export const accountSelectSchema = z.object({
   tenantId: z.string().uuid().optional().nullable(),
   companyId: z.string().uuid().optional().nullable(),
   accountType: accountTypeSchema.optional(),
+  headersOnly: z.coerce.boolean().optional().default(false),
 });
 
 export type AccountSelectInput = z.infer<typeof accountSelectSchema>;

@@ -8,11 +8,7 @@ You can read the MD files of the docs for information; they are documented and c
 ----
 ## EXISTING ISSUES:
 
-### Build Issues
-- [ ] Missing 'use-debounce' package in chart-of-accounts/page.tsx - install with `npm install use-debounce`
-
 ### Document Processing
-- [ ] Add sub-category dropdown to document editing UI
 
 ### Documents
 - [ ] Mobile friendliness
@@ -30,3 +26,9 @@ You can read the MD files of the docs for information; they are documented and c
 - [ ] URL shortener
 - [ ] E-signature
 - [ ] Salesrooms
+
+
+Column details and filter options, export details, preview next page navigation have to be more obvious, copmpany name consistency, option without line item/ AI extraction.
+
+
+Vendor name consistency, header details not viewable before approval, opening multiple tabs for documents, inconvenient of toggle between unapproved documents, each document takes about 2 seconds to load, columns cannot see full value, no quick filters options

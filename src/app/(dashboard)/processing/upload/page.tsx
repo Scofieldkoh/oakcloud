@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -15,7 +15,7 @@ import {
   RotateCcw,
   Merge,
   ClipboardPaste,
-  Image,
+  Image as ImageIcon,
   FileText,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
@@ -54,7 +54,7 @@ export default function ProcessingUploadPage() {
 
   // Fetch companies for selection
   const { data: companiesData, isLoading: isLoadingCompanies } = useCompanies({ tenantId: activeTenantId });
-  const companies = companiesData?.companies || [];
+  const companies = useMemo(() => companiesData?.companies || [], [companiesData?.companies]);
 
   // State
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
@@ -112,6 +112,29 @@ export default function ProcessingUploadPage() {
     }
   }, [selectedCompanyId, companies]);
 
+  // File queue management
+  const addFilesToQueue = useCallback((acceptedFiles: File[]) => {
+    const newFiles: QueuedFile[] = acceptedFiles.map((file) => ({
+      file,
+      id: `${file.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      status: 'pending' as UploadStatus,
+      originalFile: file,
+    }));
+
+    setQueuedFiles((prev) => {
+      const combined = [...prev, ...newFiles];
+      if (combined.length > MAX_FILES) {
+        toastError(`Maximum ${MAX_FILES} files allowed. Some files were not added.`);
+        return combined.slice(0, MAX_FILES);
+      }
+      return combined;
+    });
+  }, [toastError]);
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    addFilesToQueue(acceptedFiles);
+  }, [addFilesToQueue]);
+
   // Handle paste event for the entire page
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
@@ -145,29 +168,7 @@ export default function ProcessingUploadPage() {
 
     document.addEventListener('paste', handlePaste);
     return () => document.removeEventListener('paste', handlePaste);
-  }, [isMergeModalOpen]);
-
-  const addFilesToQueue = useCallback((acceptedFiles: File[]) => {
-    const newFiles: QueuedFile[] = acceptedFiles.map((file) => ({
-      file,
-      id: `${file.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      status: 'pending' as UploadStatus,
-      originalFile: file,
-    }));
-
-    setQueuedFiles((prev) => {
-      const combined = [...prev, ...newFiles];
-      if (combined.length > MAX_FILES) {
-        toastError(`Maximum ${MAX_FILES} files allowed. Some files were not added.`);
-        return combined.slice(0, MAX_FILES);
-      }
-      return combined;
-    });
-  }, [toastError]);
-
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    addFilesToQueue(acceptedFiles);
-  }, [addFilesToQueue]);
+  }, [isMergeModalOpen, addFilesToQueue, info]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -382,7 +383,7 @@ export default function ProcessingUploadPage() {
       return <FileText className="w-5 h-5 text-status-error" />;
     }
     if (file.type.startsWith('image/')) {
-      return <Image className="w-5 h-5 text-oak-primary" />;
+      return <ImageIcon className="w-5 h-5 text-oak-primary" />;
     }
     return <File className="w-5 h-5 text-text-muted" />;
   };

@@ -4,6 +4,7 @@ import {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   useCallback,
   useMemo,
   type KeyboardEvent,
@@ -62,7 +63,8 @@ export function SearchableSelect({
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0, inputTop: 0 });
+  const [openAbove, setOpenAbove] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Mount check for portal
@@ -112,27 +114,61 @@ export function SearchableSelect({
     }
   }, [isOpen]);
 
-  // Calculate position
-  useEffect(() => {
-    if (isOpen && containerRef.current) {
+  // Calculate position using RAF for smooth updates
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return;
+
+    requestAnimationFrame(() => {
+      if (!containerRef.current) return;
+
       const rect = containerRef.current.getBoundingClientRect();
       const popoverHeight = 280; // Max height
 
-      let top = rect.bottom + 4;
+      const top = rect.bottom + 4;
       const left = rect.left;
       const width = rect.width;
+      const inputTop = rect.top;
+      const above = top + popoverHeight > window.innerHeight - 16;
 
-      // Adjust vertical position if not enough space below
-      if (top + popoverHeight > window.innerHeight - 16) {
-        top = rect.top - popoverHeight - 4;
-        if (top < 16) {
-          top = 16;
-        }
-      }
+      setPosition({ top, left, width, inputTop });
+      setOpenAbove(above);
+    });
+  }, []);
 
-      setPosition({ top, left, width });
+  // Update position immediately when opening (useLayoutEffect for sync update before paint)
+  useLayoutEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const popoverHeight = 280;
+
+      const top = rect.bottom + 4;
+      const left = rect.left;
+      const width = rect.width;
+      const inputTop = rect.top;
+      const above = top + popoverHeight > window.innerHeight - 16;
+
+      setPosition({ top, left, width, inputTop });
+      setOpenAbove(above);
     }
   }, [isOpen]);
+
+  // Update position on scroll and resize
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleScrollOrResize = () => {
+      updatePosition();
+    };
+
+    // Listen to scroll on all ancestors
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [isOpen, updatePosition]);
 
   // Handle click outside
   useEffect(() => {
@@ -176,6 +212,7 @@ export function SearchableSelect({
       }
     }
   }, [highlightedIndex, isOpen]);
+
 
   const handleSelect = useCallback(
     (optionValue: string) => {
@@ -266,7 +303,7 @@ export function SearchableSelect({
         ref={containerRef}
         className={cn(
           'w-full flex items-center gap-2 rounded-lg border',
-          'bg-background-primary border-border-primary',
+          'bg-white dark:bg-background-secondary border-border-primary',
           'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
           'transition-colors',
           sizeClasses[size],
@@ -316,23 +353,31 @@ export function SearchableSelect({
       {/* Popover */}
       {isOpen &&
         mounted &&
+        position.width > 0 &&
         createPortal(
           <div
             ref={popoverRef}
             data-searchable-select-popover
             className={cn(
               'fixed z-[100] bg-background-elevated rounded-xl border border-border-primary shadow-elevation-2',
-              'animate-fade-in flex flex-col'
+              'animate-fade-in flex',
+              openAbove ? 'flex-col-reverse' : 'flex-col'
             )}
             style={{
-              top: position.top,
+              ...(openAbove
+                ? { bottom: window.innerHeight - position.inputTop + 4 }
+                : { top: position.top }
+              ),
               left: position.left,
               width: position.width,
               maxHeight: 280,
             }}
           >
             {/* Options List */}
-            <div ref={listRef} className="flex-1 overflow-y-auto py-1">
+            <div
+              ref={listRef}
+              className="flex-1 overflow-y-auto py-1"
+            >
               {filteredOptions.length === 0 ? (
                 <div className="px-3 py-6 text-center text-sm text-text-muted">
                   No options found
@@ -370,7 +415,14 @@ export function SearchableSelect({
 
             {/* Footer hint */}
             {showKeyboardHints && (
-              <div className="px-3 py-2 border-t border-border-primary bg-background-secondary rounded-b-xl">
+              <div
+                className={cn(
+                  'px-3 py-2 bg-background-secondary',
+                  openAbove
+                    ? 'border-b border-border-primary rounded-t-xl'
+                    : 'border-t border-border-primary rounded-b-xl'
+                )}
+              >
                 <div className="flex items-center gap-3 text-xs text-text-muted">
                   <span>
                     <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">

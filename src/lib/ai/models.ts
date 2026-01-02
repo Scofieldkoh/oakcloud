@@ -9,18 +9,33 @@ import type { AIModel, AIModelConfig, AIProvider } from './types';
 // Model configurations
 export const AI_MODELS: Record<AIModel, AIModelConfig> = {
   // OpenAI Models
-  'gpt-5': {
-    id: 'gpt-5',
-    name: 'GPT-5',
+  'gpt-5.2': {
+    id: 'gpt-5.2',
+    name: 'GPT-5.2',
     provider: 'openai',
-    providerModelId: 'gpt-5',
-    description: 'Most capable OpenAI model',
-    maxTokens: 128000,
-    inputPricePerMillion: 5.0,
-    outputPricePerMillion: 15.0,
+    providerModelId: 'gpt-5.2',
+    description: 'Most advanced model for coding and agentic tasks',
+    maxTokens: 400000, // 400K context window
+    inputPricePerMillion: 1.75,
+    outputPricePerMillion: 14.0,
     supportsJson: true,
     supportsVision: true,
+    supportsTemperature: false, // GPT-5.2 doesn't support custom temperature
   },
+  // GPT-5 disabled - use GPT-5.2 instead (better performance, lower cost)
+  // 'gpt-5': {
+  //   id: 'gpt-5',
+  //   name: 'GPT-5',
+  //   provider: 'openai',
+  //   providerModelId: 'gpt-5',
+  //   description: 'Most capable OpenAI model',
+  //   maxTokens: 128000,
+  //   inputPricePerMillion: 5.0,
+  //   outputPricePerMillion: 15.0,
+  //   supportsJson: true,
+  //   supportsVision: true,
+  //   supportsTemperature: false,
+  // },
   'gpt-4.1': {
     id: 'gpt-4.1',
     name: 'GPT-4.1',
@@ -73,18 +88,31 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
     supportsJson: true,
     supportsVision: true,
   },
-  'gemini-2.5-flash': {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
+  'gemini-3-flash': {
+    id: 'gemini-3-flash',
+    name: 'Gemini 3 Flash',
     provider: 'google',
-    providerModelId: 'gemini-2.5-flash',
-    description: 'Fast and cost-effective',
+    providerModelId: 'gemini-3-flash-preview',
+    description: 'Fast frontier model with strong multimodal capabilities',
     maxTokens: 1000000,
-    inputPricePerMillion: 0.15,
-    outputPricePerMillion: 0.6,
+    inputPricePerMillion: 0.5,
+    outputPricePerMillion: 3.0,
     supportsJson: true,
     supportsVision: true,
   },
+  // Gemini 2.5 Flash disabled - use Gemini 3 Flash instead
+  // 'gemini-2.5-flash': {
+  //   id: 'gemini-2.5-flash',
+  //   name: 'Gemini 2.5 Flash',
+  //   provider: 'google',
+  //   providerModelId: 'gemini-2.5-flash',
+  //   description: 'Fast and cost-effective (previous gen)',
+  //   maxTokens: 1000000,
+  //   inputPricePerMillion: 0.15,
+  //   outputPricePerMillion: 0.6,
+  //   supportsJson: true,
+  //   supportsVision: true,
+  // },
 };
 
 // Get model config by ID
@@ -120,7 +148,7 @@ export function getDefaultModel(): AIModelConfig {
 
   // Fall back to code-defined default
   const defaultModel = Object.values(AI_MODELS).find((m) => m.isDefault);
-  return defaultModel || AI_MODELS['gpt-5'];
+  return defaultModel || AI_MODELS['gpt-5.2'];
 }
 
 // Get the default model ID (for frontend)

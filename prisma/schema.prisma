@@ -2922,6 +2922,7 @@ model ChartOfAccount {
   // Flags
   isSystem          Boolean       @default(false) @map("is_system")  // Seeded account (system default)
   isTaxApplicable   Boolean       @default(true) @map("is_tax_applicable")
+  isHeader          Boolean       @default(false) @map("is_header")  // Header account (not selectable in dropdowns)
 
   // Audit
   createdById       String?       @map("created_by_id")

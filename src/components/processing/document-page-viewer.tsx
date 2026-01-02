@@ -380,7 +380,7 @@ export function DocumentPageViewer({
   // PDF Rendering
   // ==========================================================================
 
-  async function renderPage(pdf: PDFDocumentProxy, pageNum: number, pageRotation: number = 0) {
+  const renderPage = useCallback(async (pdf: PDFDocumentProxy, pageNum: number, pageRotation: number = 0) => {
     if (!canvasRef.current) return;
 
     try {
@@ -432,7 +432,7 @@ export function DocumentPageViewer({
       }
       console.error('Error rendering page:', err);
     }
-  }
+  }, [zoom, onTextLayerReady]);
 
   // ==========================================================================
   // Effects
@@ -500,6 +500,7 @@ export function DocumentPageViewer({
         renderTaskRef.current.cancel();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only re-run when URL changes, not on every render
   }, [effectivePdfUrl]);
 
   // Re-render page on page/zoom/rotation change (also when loading completes)
@@ -507,7 +508,7 @@ export function DocumentPageViewer({
     if (pdfDocRef.current && !isPdfLoading) {
       renderPage(pdfDocRef.current, currentPage, rotation);
     }
-  }, [currentPage, zoom, rotation, isPdfLoading]);
+  }, [currentPage, zoom, rotation, isPdfLoading, renderPage]);
 
   // Notify parent of page changes
   useEffect(() => {
@@ -890,6 +891,7 @@ export function PageThumbnailStrip({
               : 'border-border-primary hover:border-oak-light'
           )}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- Dynamic page thumbnails with unknown dimensions */}
           <img
             src={page.imageUrl}
             alt={`Page ${page.pageNumber}`}

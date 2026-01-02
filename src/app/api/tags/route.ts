@@ -11,15 +11,25 @@ import { getTenantTags, createTenantTag } from '@/services/document-tag.service'
 import { createTagSchema } from '@/lib/validations/document-tag';
 import { createAuditLog } from '@/lib/audit';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth();
+    const { searchParams } = new URL(request.url);
 
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 400 });
+    // Allow tenantId from query param for super admins with tenant selector
+    const tenantIdParam = searchParams.get('tenantId');
+    const tenantId = tenantIdParam || session.tenantId;
+
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant not found. Please select a tenant.' }, { status: 400 });
     }
 
-    const tags = await getTenantTags(session.tenantId);
+    // Verify tenant access for non-super admins
+    if (!session.isSuperAdmin && session.tenantId !== tenantId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const tags = await getTenantTags(tenantId);
 
     return NextResponse.json({ tags });
   } catch (error) {
@@ -36,9 +46,18 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
+    const body = await request.json();
 
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 400 });
+    // Allow tenantId from body for super admins with tenant selector
+    const tenantId = body.tenantId || session.tenantId;
+
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant not found. Please select a tenant.' }, { status: 400 });
+    }
+
+    // Verify tenant access for non-super admins
+    if (!session.isSuperAdmin && session.tenantId !== tenantId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Only SUPER_ADMIN or TENANT_ADMIN can create tenant tags
@@ -49,17 +68,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
     const input = createTagSchema.parse(body);
 
     const tag = await createTenantTag(input, {
-      tenantId: session.tenantId,
+      tenantId,
       userId: session.id,
     });
 
     // Audit log
     await createAuditLog({
-      tenantId: session.tenantId,
+      tenantId,
       userId: session.id,
       action: 'CREATE',
       entityType: 'DocumentTag',

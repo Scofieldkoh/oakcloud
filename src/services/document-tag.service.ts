@@ -434,7 +434,7 @@ export async function getAvailableTags(
       deletedAt: null,
       OR: [
         { companyId: null }, // Tenant tags (always included)
-        ...(companyId ? [{ companyId }] : []), // Company tags (if specified)
+        ...(companyId ? [{ companyId: companyId }] : []), // Company tags (if specified)
       ],
     },
     orderBy: [
@@ -485,7 +485,7 @@ export async function searchTags(
     deletedAt: null,
     OR: [
       { companyId: null },
-      ...(companyId ? [{ companyId }] : []),
+      ...(companyId ? [{ companyId: companyId }] : []),
     ],
   };
 
