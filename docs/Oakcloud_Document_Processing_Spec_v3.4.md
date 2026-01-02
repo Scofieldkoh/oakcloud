@@ -914,6 +914,26 @@ model VendorAlias {
   @@index([companyId, rawName])
 }
 
+model CustomerAlias {
+  id                  String    @id @default(uuid())
+  companyId           String
+  tenantId            String    // Denormalized; must match Company.tenantId (enforced)
+  rawName             String
+  normalizedContactId String
+  confidence          Float     @default(1.0)
+  createdById         String?
+  createdAt           DateTime  @default(now())
+  deletedAt           DateTime?
+
+  company             Company   @relation(fields: [companyId], references: [id])
+  normalizedContact   Contact   @relation(fields: [normalizedContactId], references: [id])
+
+  // Postgres implementation requirement:
+  // unique(companyId, rawName) WHERE deletedAt IS NULL
+  @@index([tenantId, companyId])
+  @@index([companyId, rawName])
+}
+
 model DuplicateDecision {
   id            String          @id @default(uuid())
   documentId    String
@@ -3785,7 +3805,7 @@ function generateDocumentKey(revision: DocumentRevision): string {
 
 | Signal | Weight | Calculation |
 |--------|--------|-------------|
-| Vendor similarity | 25% | Jaro-Winkler on normalized names + alias lookup |
+| Vendor similarity | 25% | Jaro-Winkler on normalized names + alias lookup (token guardrail to avoid merging distinct entities) |
 | Document number | 30% | Exact: 1.0, Near (edit distance ≤ 2): 0.8 |
 | Date proximity | 20% | 1.0 if same day, decay 0.1 per day |
 | Amount (doc currency) | 15% | 1.0 if exact, decay by % difference |
@@ -3794,6 +3814,12 @@ function generateDocumentKey(revision: DocumentRevision): string {
 Optional signals:
 - Text fingerprint (SimHash)
 - Visual fingerprint (pHash)
+
+### B.2.1 Alias Learning Safety
+
+- Aliases SHOULD be learned only when the extracted name is sufficiently similar to the approved canonical name (e.g., same tokens and high similarity score).
+- Low-similarity corrections (e.g., extracted personal name like "Raymond" corrected to a company name) MUST NOT be auto-learned as an alias.
+- A future UI can support explicit "Save as alias" / "Do not learn this" controls on the approval screen.
 
 ### B.3 Scoring Thresholds
 
@@ -3808,7 +3834,15 @@ Optional signals:
 
 ```typescript
 function normalizeVendorName(name: string): string {
-  return name
+  // Drop short acronym-style parentheticals: "Foo Bar (ACCA)" -> "Foo Bar"
+  // This improves consistency when AI variably includes/excludes acronyms.
+  const withoutAcronyms = name.replace(/\(([^)]*)\)/g, (match, inner) => {
+    const compact = (inner ?? '').replace(/[\s.]/g, '');
+    if (/^[A-Z0-9]{2,6}$/.test(compact)) return '';
+    return match;
+  });
+
+  return withoutAcronyms
     .toLowerCase()
     .replace(/\b(pte|ltd|llc|inc|corp|co)\b\.?/g, '')
     .replace(/[^a-z0-9]/g, '')

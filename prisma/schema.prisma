@@ -1963,6 +1963,8 @@ model DocumentRevision {
   // Header fields
   vendorName              String?                     @map("vendor_name")
   vendorId                String?                     @map("vendor_id")
+  customerName            String?                     @map("customer_name")
+  customerId              String?                     @map("customer_id")
   documentNumber          String?                     @map("document_number")
   documentDate            DateTime?                   @db.Date @map("document_date")
   dueDate                 DateTime?                   @db.Date @map("due_date")
@@ -2030,6 +2032,7 @@ model DocumentRevision {
   @@unique([processingDocumentId, revisionNumber])
   @@index([processingDocumentId, status])
   @@index([vendorId])
+  @@index([customerId])
   @@index([documentDate])
   @@index([documentKey])
   @@map("document_revisions")
@@ -2091,6 +2094,28 @@ model VendorAlias {
   @@index([tenantId, companyId])
   @@index([companyId, rawName])
   @@map("vendor_aliases")
+}
+
+// ============================================================================
+// CUSTOMER ALIAS - Customer name normalization
+// ============================================================================
+
+model CustomerAlias {
+  id                    String    @id @default(uuid())
+  tenantId              String    @map("tenant_id")
+  companyId             String    @map("company_id")
+
+  rawName               String    @map("raw_name")
+  normalizedContactId   String    @map("normalized_contact_id")
+  confidence            Float     @default(1.0)
+
+  createdById           String?   @map("created_by_id")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  @@index([tenantId, companyId])
+  @@index([companyId, rawName])
+  @@map("customer_aliases")
 }
 
 // ============================================================================

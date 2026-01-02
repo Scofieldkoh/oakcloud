@@ -136,6 +136,10 @@ export async function POST(
       exchangeRateSource?: ExchangeRateSource;
       exchangeRateDate?: string;
       overrideReason?: string;
+      aliasLearning?: {
+        vendor?: 'AUTO' | 'FORCE' | 'SKIP';
+        customer?: 'AUTO' | 'FORCE' | 'SKIP';
+      };
     } = {};
     try {
       const text = await request.text();
@@ -156,6 +160,7 @@ export async function POST(
         ? new Date(body.exchangeRateDate)
         : undefined,
       overrideReason: body.overrideReason,
+      aliasLearning: body.aliasLearning,
     });
 
     // Get updated document

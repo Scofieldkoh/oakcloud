@@ -63,6 +63,8 @@ export type DocumentRevisionMinAggregateOutputType = {
   documentSubCategory: $Enums.DocumentSubCategory | null
   vendorName: string | null
   vendorId: string | null
+  customerName: string | null
+  customerId: string | null
   documentNumber: string | null
   documentDate: Date | null
   dueDate: Date | null
@@ -110,6 +112,8 @@ export type DocumentRevisionMaxAggregateOutputType = {
   documentSubCategory: $Enums.DocumentSubCategory | null
   vendorName: string | null
   vendorId: string | null
+  customerName: string | null
+  customerId: string | null
   documentNumber: string | null
   documentDate: Date | null
   dueDate: Date | null
@@ -157,6 +161,8 @@ export type DocumentRevisionCountAggregateOutputType = {
   documentSubCategory: number
   vendorName: number
   vendorId: number
+  customerName: number
+  customerId: number
   documentNumber: number
   documentDate: number
   dueDate: number
@@ -232,6 +238,8 @@ export type DocumentRevisionMinAggregateInputType = {
   documentSubCategory?: true
   vendorName?: true
   vendorId?: true
+  customerName?: true
+  customerId?: true
   documentNumber?: true
   documentDate?: true
   dueDate?: true
@@ -279,6 +287,8 @@ export type DocumentRevisionMaxAggregateInputType = {
   documentSubCategory?: true
   vendorName?: true
   vendorId?: true
+  customerName?: true
+  customerId?: true
   documentNumber?: true
   documentDate?: true
   dueDate?: true
@@ -326,6 +336,8 @@ export type DocumentRevisionCountAggregateInputType = {
   documentSubCategory?: true
   vendorName?: true
   vendorId?: true
+  customerName?: true
+  customerId?: true
   documentNumber?: true
   documentDate?: true
   dueDate?: true
@@ -462,6 +474,8 @@ export type DocumentRevisionGroupByOutputType = {
   documentSubCategory: $Enums.DocumentSubCategory | null
   vendorName: string | null
   vendorId: string | null
+  customerName: string | null
+  customerId: string | null
   documentNumber: string | null
   documentDate: Date | null
   dueDate: Date | null
@@ -534,6 +548,8 @@ export type DocumentRevisionWhereInput = {
   documentSubCategory?: Prisma.EnumDocumentSubCategoryNullableFilter<"DocumentRevision"> | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   vendorId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
+  customerName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
+  customerId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentNumber?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   dueDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
@@ -591,6 +607,8 @@ export type DocumentRevisionOrderByWithRelationInput = {
   documentSubCategory?: Prisma.SortOrderInput | Prisma.SortOrder
   vendorName?: Prisma.SortOrderInput | Prisma.SortOrder
   vendorId?: Prisma.SortOrderInput | Prisma.SortOrder
+  customerName?: Prisma.SortOrderInput | Prisma.SortOrder
+  customerId?: Prisma.SortOrderInput | Prisma.SortOrder
   documentNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   documentDate?: Prisma.SortOrderInput | Prisma.SortOrder
   dueDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -652,6 +670,8 @@ export type DocumentRevisionWhereUniqueInput = Prisma.AtLeast<{
   documentSubCategory?: Prisma.EnumDocumentSubCategoryNullableFilter<"DocumentRevision"> | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   vendorId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
+  customerName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
+  customerId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentNumber?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   dueDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
@@ -709,6 +729,8 @@ export type DocumentRevisionOrderByWithAggregationInput = {
   documentSubCategory?: Prisma.SortOrderInput | Prisma.SortOrder
   vendorName?: Prisma.SortOrderInput | Prisma.SortOrder
   vendorId?: Prisma.SortOrderInput | Prisma.SortOrder
+  customerName?: Prisma.SortOrderInput | Prisma.SortOrder
+  customerId?: Prisma.SortOrderInput | Prisma.SortOrder
   documentNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   documentDate?: Prisma.SortOrderInput | Prisma.SortOrder
   dueDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -766,6 +788,8 @@ export type DocumentRevisionScalarWhereWithAggregatesInput = {
   documentSubCategory?: Prisma.EnumDocumentSubCategoryNullableWithAggregatesFilter<"DocumentRevision"> | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
   vendorId?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
+  customerName?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
+  customerId?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
   documentNumber?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
   documentDate?: Prisma.DateTimeNullableWithAggregatesFilter<"DocumentRevision"> | Date | string | null
   dueDate?: Prisma.DateTimeNullableWithAggregatesFilter<"DocumentRevision"> | Date | string | null
@@ -812,6 +836,8 @@ export type DocumentRevisionCreateInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -869,6 +895,8 @@ export type DocumentRevisionUncheckedCreateInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -920,6 +948,8 @@ export type DocumentRevisionUpdateInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -977,6 +1007,8 @@ export type DocumentRevisionUncheckedUpdateInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1031,6 +1063,8 @@ export type DocumentRevisionCreateManyInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1077,6 +1111,8 @@ export type DocumentRevisionUpdateManyMutationInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1126,6 +1162,8 @@ export type DocumentRevisionUncheckedUpdateManyInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1195,6 +1233,8 @@ export type DocumentRevisionCountOrderByAggregateInput = {
   documentSubCategory?: Prisma.SortOrder
   vendorName?: Prisma.SortOrder
   vendorId?: Prisma.SortOrder
+  customerName?: Prisma.SortOrder
+  customerId?: Prisma.SortOrder
   documentNumber?: Prisma.SortOrder
   documentDate?: Prisma.SortOrder
   dueDate?: Prisma.SortOrder
@@ -1256,6 +1296,8 @@ export type DocumentRevisionMaxOrderByAggregateInput = {
   documentSubCategory?: Prisma.SortOrder
   vendorName?: Prisma.SortOrder
   vendorId?: Prisma.SortOrder
+  customerName?: Prisma.SortOrder
+  customerId?: Prisma.SortOrder
   documentNumber?: Prisma.SortOrder
   documentDate?: Prisma.SortOrder
   dueDate?: Prisma.SortOrder
@@ -1303,6 +1345,8 @@ export type DocumentRevisionMinOrderByAggregateInput = {
   documentSubCategory?: Prisma.SortOrder
   vendorName?: Prisma.SortOrder
   vendorId?: Prisma.SortOrder
+  customerName?: Prisma.SortOrder
+  customerId?: Prisma.SortOrder
   documentNumber?: Prisma.SortOrder
   documentDate?: Prisma.SortOrder
   dueDate?: Prisma.SortOrder
@@ -1606,6 +1650,8 @@ export type DocumentRevisionCreateWithoutCurrentForDocumentInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1662,6 +1708,8 @@ export type DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1717,6 +1765,8 @@ export type DocumentRevisionCreateWithoutProcessingDocumentInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1772,6 +1822,8 @@ export type DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1844,6 +1896,8 @@ export type DocumentRevisionUpdateWithoutCurrentForDocumentInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1900,6 +1954,8 @@ export type DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1972,6 +2028,8 @@ export type DocumentRevisionScalarWhereInput = {
   documentSubCategory?: Prisma.EnumDocumentSubCategoryNullableFilter<"DocumentRevision"> | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   vendorId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
+  customerName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
+  customerId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentNumber?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   dueDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
@@ -2018,6 +2076,8 @@ export type DocumentRevisionCreateWithoutExtractionInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2073,6 +2133,8 @@ export type DocumentRevisionUncheckedCreateWithoutExtractionInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2150,6 +2212,8 @@ export type DocumentRevisionCreateWithoutDerivedRevisionsInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2206,6 +2270,8 @@ export type DocumentRevisionUncheckedCreateWithoutDerivedRevisionsInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2261,6 +2327,8 @@ export type DocumentRevisionCreateWithoutBasedOnRevisionInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2316,6 +2384,8 @@ export type DocumentRevisionUncheckedCreateWithoutBasedOnRevisionInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2388,6 +2458,8 @@ export type DocumentRevisionUpdateWithoutDerivedRevisionsInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2444,6 +2516,8 @@ export type DocumentRevisionUncheckedUpdateWithoutDerivedRevisionsInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2510,6 +2584,8 @@ export type DocumentRevisionCreateWithoutItemsInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2566,6 +2642,8 @@ export type DocumentRevisionUncheckedCreateWithoutItemsInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2632,6 +2710,8 @@ export type DocumentRevisionUpdateWithoutItemsInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2688,6 +2768,8 @@ export type DocumentRevisionUncheckedUpdateWithoutItemsInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2738,6 +2820,8 @@ export type DocumentRevisionCreateWithoutMatchGroupItemsInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2794,6 +2878,8 @@ export type DocumentRevisionUncheckedCreateWithoutMatchGroupItemsInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2860,6 +2946,8 @@ export type DocumentRevisionUpdateWithoutMatchGroupItemsInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2916,6 +3004,8 @@ export type DocumentRevisionUncheckedUpdateWithoutMatchGroupItemsInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2966,6 +3056,8 @@ export type DocumentRevisionCreateWithoutPostingsInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3022,6 +3114,8 @@ export type DocumentRevisionUncheckedCreateWithoutPostingsInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3088,6 +3182,8 @@ export type DocumentRevisionUpdateWithoutPostingsInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3144,6 +3240,8 @@ export type DocumentRevisionUncheckedUpdateWithoutPostingsInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3196,6 +3294,8 @@ export type DocumentRevisionCreateManyProcessingDocumentInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3242,6 +3342,8 @@ export type DocumentRevisionUpdateWithoutProcessingDocumentInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3297,6 +3399,8 @@ export type DocumentRevisionUncheckedUpdateWithoutProcessingDocumentInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3350,6 +3454,8 @@ export type DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentInput = 
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3398,6 +3504,8 @@ export type DocumentRevisionCreateManyExtractionInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3444,6 +3552,8 @@ export type DocumentRevisionUpdateWithoutExtractionInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3499,6 +3609,8 @@ export type DocumentRevisionUncheckedUpdateWithoutExtractionInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3552,6 +3664,8 @@ export type DocumentRevisionUncheckedUpdateManyWithoutExtractionInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3600,6 +3714,8 @@ export type DocumentRevisionCreateManyBasedOnRevisionInput = {
   documentSubCategory?: $Enums.DocumentSubCategory | null
   vendorName?: string | null
   vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3646,6 +3762,8 @@ export type DocumentRevisionUpdateWithoutBasedOnRevisionInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3701,6 +3819,8 @@ export type DocumentRevisionUncheckedUpdateWithoutBasedOnRevisionInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3754,6 +3874,8 @@ export type DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionInput = {
   documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
   vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3861,6 +3983,8 @@ export type DocumentRevisionSelect<ExtArgs extends runtime.Types.Extensions.Inte
   documentSubCategory?: boolean
   vendorName?: boolean
   vendorId?: boolean
+  customerName?: boolean
+  customerId?: boolean
   documentNumber?: boolean
   documentDate?: boolean
   dueDate?: boolean
@@ -3919,6 +4043,8 @@ export type DocumentRevisionSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   documentSubCategory?: boolean
   vendorName?: boolean
   vendorId?: boolean
+  customerName?: boolean
+  customerId?: boolean
   documentNumber?: boolean
   documentDate?: boolean
   dueDate?: boolean
@@ -3971,6 +4097,8 @@ export type DocumentRevisionSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   documentSubCategory?: boolean
   vendorName?: boolean
   vendorId?: boolean
+  customerName?: boolean
+  customerId?: boolean
   documentNumber?: boolean
   documentDate?: boolean
   dueDate?: boolean
@@ -4023,6 +4151,8 @@ export type DocumentRevisionSelectScalar = {
   documentSubCategory?: boolean
   vendorName?: boolean
   vendorId?: boolean
+  customerName?: boolean
+  customerId?: boolean
   documentNumber?: boolean
   documentDate?: boolean
   dueDate?: boolean
@@ -4059,7 +4189,7 @@ export type DocumentRevisionSelectScalar = {
   supersededAt?: boolean
 }
 
-export type DocumentRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "processingDocumentId" | "basedOnRevisionId" | "extractionId" | "revisionNumber" | "revisionType" | "status" | "reason" | "documentCategory" | "documentSubCategory" | "vendorName" | "vendorId" | "documentNumber" | "documentDate" | "dueDate" | "currency" | "subtotal" | "taxAmount" | "totalAmount" | "roundingMode" | "gstTreatment" | "supplierGstNo" | "homeCurrency" | "homeExchangeRateSource" | "homeExchangeRate" | "exchangeRateDate" | "homeEquivalent" | "homeSubtotal" | "homeTaxAmount" | "isHomeExchangeRateOverride" | "validationStatus" | "validationIssues" | "documentKey" | "documentKeyVersion" | "documentKeyConfidence" | "headerEvidenceJson" | "postingStatus" | "postedAt" | "postingLock" | "reconciliationStatus" | "searchText" | "createdById" | "createdAt" | "approvedById" | "approvedAt" | "supersededAt", ExtArgs["result"]["documentRevision"]>
+export type DocumentRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "processingDocumentId" | "basedOnRevisionId" | "extractionId" | "revisionNumber" | "revisionType" | "status" | "reason" | "documentCategory" | "documentSubCategory" | "vendorName" | "vendorId" | "customerName" | "customerId" | "documentNumber" | "documentDate" | "dueDate" | "currency" | "subtotal" | "taxAmount" | "totalAmount" | "roundingMode" | "gstTreatment" | "supplierGstNo" | "homeCurrency" | "homeExchangeRateSource" | "homeExchangeRate" | "exchangeRateDate" | "homeEquivalent" | "homeSubtotal" | "homeTaxAmount" | "isHomeExchangeRateOverride" | "validationStatus" | "validationIssues" | "documentKey" | "documentKeyVersion" | "documentKeyConfidence" | "headerEvidenceJson" | "postingStatus" | "postedAt" | "postingLock" | "reconciliationStatus" | "searchText" | "createdById" | "createdAt" | "approvedById" | "approvedAt" | "supersededAt", ExtArgs["result"]["documentRevision"]>
 export type DocumentRevisionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
@@ -4107,6 +4237,8 @@ export type $DocumentRevisionPayload<ExtArgs extends runtime.Types.Extensions.In
     documentSubCategory: $Enums.DocumentSubCategory | null
     vendorName: string | null
     vendorId: string | null
+    customerName: string | null
+    customerId: string | null
     documentNumber: string | null
     documentDate: Date | null
     dueDate: Date | null
@@ -4584,6 +4716,8 @@ export interface DocumentRevisionFieldRefs {
   readonly documentSubCategory: Prisma.FieldRef<"DocumentRevision", 'DocumentSubCategory'>
   readonly vendorName: Prisma.FieldRef<"DocumentRevision", 'String'>
   readonly vendorId: Prisma.FieldRef<"DocumentRevision", 'String'>
+  readonly customerName: Prisma.FieldRef<"DocumentRevision", 'String'>
+  readonly customerId: Prisma.FieldRef<"DocumentRevision", 'String'>
   readonly documentNumber: Prisma.FieldRef<"DocumentRevision", 'String'>
   readonly documentDate: Prisma.FieldRef<"DocumentRevision", 'DateTime'>
   readonly dueDate: Prisma.FieldRef<"DocumentRevision", 'DateTime'>

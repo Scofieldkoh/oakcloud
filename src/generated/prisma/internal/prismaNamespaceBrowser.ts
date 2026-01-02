@@ -91,6 +91,7 @@ export const ModelName = {
   DocumentRevision: 'DocumentRevision',
   DocumentRevisionLineItem: 'DocumentRevisionLineItem',
   VendorAlias: 'VendorAlias',
+  CustomerAlias: 'CustomerAlias',
   DuplicateDecision: 'DuplicateDecision',
   ProcessingAttempt: 'ProcessingAttempt',
   ProcessingCheckpoint: 'ProcessingCheckpoint',
@@ -885,6 +886,8 @@ export const DocumentRevisionScalarFieldEnum = {
   documentSubCategory: 'documentSubCategory',
   vendorName: 'vendorName',
   vendorId: 'vendorId',
+  customerName: 'customerName',
+  customerId: 'customerId',
   documentNumber: 'documentNumber',
   documentDate: 'documentDate',
   dueDate: 'dueDate',
@@ -958,6 +961,21 @@ export const VendorAliasScalarFieldEnum = {
 } as const
 
 export type VendorAliasScalarFieldEnum = (typeof VendorAliasScalarFieldEnum)[keyof typeof VendorAliasScalarFieldEnum]
+
+
+export const CustomerAliasScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  rawName: 'rawName',
+  normalizedContactId: 'normalizedContactId',
+  confidence: 'confidence',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type CustomerAliasScalarFieldEnum = (typeof CustomerAliasScalarFieldEnum)[keyof typeof CustomerAliasScalarFieldEnum]
 
 
 export const DuplicateDecisionScalarFieldEnum = {

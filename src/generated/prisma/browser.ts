@@ -218,6 +218,11 @@ export type DocumentRevisionLineItem = Prisma.DocumentRevisionLineItemModel
  */
 export type VendorAlias = Prisma.VendorAliasModel
 /**
+ * Model CustomerAlias
+ * 
+ */
+export type CustomerAlias = Prisma.CustomerAliasModel
+/**
  * Model DuplicateDecision
  * 
  */

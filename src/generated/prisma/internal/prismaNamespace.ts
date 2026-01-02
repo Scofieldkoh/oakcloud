@@ -424,6 +424,7 @@ export const ModelName = {
   DocumentRevision: 'DocumentRevision',
   DocumentRevisionLineItem: 'DocumentRevisionLineItem',
   VendorAlias: 'VendorAlias',
+  CustomerAlias: 'CustomerAlias',
   DuplicateDecision: 'DuplicateDecision',
   ProcessingAttempt: 'ProcessingAttempt',
   ProcessingCheckpoint: 'ProcessingCheckpoint',
@@ -463,7 +464,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3427,6 +3428,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CustomerAlias: {
+      payload: Prisma.$CustomerAliasPayload<ExtArgs>
+      fields: Prisma.CustomerAliasFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CustomerAliasFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CustomerAliasFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload>
+        }
+        findFirst: {
+          args: Prisma.CustomerAliasFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CustomerAliasFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload>
+        }
+        findMany: {
+          args: Prisma.CustomerAliasFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload>[]
+        }
+        create: {
+          args: Prisma.CustomerAliasCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload>
+        }
+        createMany: {
+          args: Prisma.CustomerAliasCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CustomerAliasCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload>[]
+        }
+        delete: {
+          args: Prisma.CustomerAliasDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload>
+        }
+        update: {
+          args: Prisma.CustomerAliasUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload>
+        }
+        deleteMany: {
+          args: Prisma.CustomerAliasDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CustomerAliasUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CustomerAliasUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload>[]
+        }
+        upsert: {
+          args: Prisma.CustomerAliasUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerAliasPayload>
+        }
+        aggregate: {
+          args: Prisma.CustomerAliasAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCustomerAlias>
+        }
+        groupBy: {
+          args: Prisma.CustomerAliasGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CustomerAliasGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CustomerAliasCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CustomerAliasCountAggregateOutputType> | number
+        }
+      }
+    }
     DuplicateDecision: {
       payload: Prisma.$DuplicateDecisionPayload<ExtArgs>
       fields: Prisma.DuplicateDecisionFieldRefs
@@ -5994,6 +6069,8 @@ export const DocumentRevisionScalarFieldEnum = {
   documentSubCategory: 'documentSubCategory',
   vendorName: 'vendorName',
   vendorId: 'vendorId',
+  customerName: 'customerName',
+  customerId: 'customerId',
   documentNumber: 'documentNumber',
   documentDate: 'documentDate',
   dueDate: 'dueDate',
@@ -6067,6 +6144,21 @@ export const VendorAliasScalarFieldEnum = {
 } as const
 
 export type VendorAliasScalarFieldEnum = (typeof VendorAliasScalarFieldEnum)[keyof typeof VendorAliasScalarFieldEnum]
+
+
+export const CustomerAliasScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  rawName: 'rawName',
+  normalizedContactId: 'normalizedContactId',
+  confidence: 'confidence',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type CustomerAliasScalarFieldEnum = (typeof CustomerAliasScalarFieldEnum)[keyof typeof CustomerAliasScalarFieldEnum]
 
 
 export const DuplicateDecisionScalarFieldEnum = {
@@ -7557,6 +7649,7 @@ export type GlobalOmitConfig = {
   documentRevision?: Prisma.DocumentRevisionOmit
   documentRevisionLineItem?: Prisma.DocumentRevisionLineItemOmit
   vendorAlias?: Prisma.VendorAliasOmit
+  customerAlias?: Prisma.CustomerAliasOmit
   duplicateDecision?: Prisma.DuplicateDecisionOmit
   processingAttempt?: Prisma.ProcessingAttemptOmit
   processingCheckpoint?: Prisma.ProcessingCheckpointOmit

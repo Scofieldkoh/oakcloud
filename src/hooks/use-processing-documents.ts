@@ -269,7 +269,13 @@ async function releaseLock(
 async function approveRevision(
   documentId: string,
   revisionId: string,
-  lockVersion: number
+  lockVersion: number,
+  body?: {
+    aliasLearning?: {
+      vendor?: 'AUTO' | 'FORCE' | 'SKIP';
+      customer?: 'AUTO' | 'FORCE' | 'SKIP';
+    };
+  }
 ): Promise<{ revisionId: string; lockVersion: number }> {
   const response = await fetch(
     `/api/processing-documents/${documentId}/revisions/${revisionId}/approve`,
@@ -279,6 +285,7 @@ async function approveRevision(
         'Content-Type': 'application/json',
         'If-Match': lockVersion.toString(),
       },
+      body: body ? JSON.stringify(body) : undefined,
     }
   );
   if (!response.ok) {
@@ -408,11 +415,18 @@ export function useApproveRevision() {
       documentId,
       revisionId,
       lockVersion,
+      body,
     }: {
       documentId: string;
       revisionId: string;
       lockVersion: number;
-    }) => approveRevision(documentId, revisionId, lockVersion),
+      body?: {
+        aliasLearning?: {
+          vendor?: 'AUTO' | 'FORCE' | 'SKIP';
+          customer?: 'AUTO' | 'FORCE' | 'SKIP';
+        };
+      };
+    }) => approveRevision(documentId, revisionId, lockVersion, body),
     onSuccess: (_, { documentId }) => {
       queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
       queryClient.invalidateQueries({ queryKey: ['revision-history', documentId] });

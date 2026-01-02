@@ -25,6 +25,11 @@ import type {
 } from '@/generated/prisma';
 import { Decimal as PrismaDecimal } from '@prisma/client/runtime/client';
 import { hashBlake3 } from '@/lib/encryption';
+import { normalizeVendorName } from '@/lib/vendor-name';
+import { jaroWinkler } from '@/lib/string-similarity';
+import { getOrCreateVendorContact, learnVendorAlias } from './vendor-resolution.service';
+import { getOrCreateCustomerContact, learnCustomerAlias } from './customer-resolution.service';
+import { jaccardSimilarity, tokenizeEntityName } from '@/lib/entity-name';
 
 type Decimal = Prisma.Decimal;
 
@@ -93,6 +98,8 @@ export interface CreateRevisionInput {
   // Header fields
   vendorName?: string;
   vendorId?: string;
+  customerName?: string;
+  customerId?: string;
   documentNumber?: string;
   documentDate?: Date;
   dueDate?: Date;
@@ -144,6 +151,8 @@ export interface RevisionPatchInput {
   set?: {
     vendorName?: string;
     vendorId?: string;
+    customerName?: string;
+    customerId?: string;
     documentNumber?: string;
     documentDate?: Date;
     dueDate?: Date;
@@ -167,6 +176,10 @@ export interface ApproveRevisionInput {
   exchangeRateSource?: ExchangeRateSource;
   exchangeRateDate?: Date;
   overrideReason?: string;
+  aliasLearning?: {
+    vendor?: 'AUTO' | 'FORCE' | 'SKIP';
+    customer?: 'AUTO' | 'FORCE' | 'SKIP';
+  };
 }
 
 export interface RevisionWithItems extends DocumentRevision {
@@ -252,6 +265,8 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
     documentSubCategory,
     vendorName,
     vendorId,
+    customerName,
+    customerId,
     documentNumber,
     documentDate,
     dueDate,
@@ -315,6 +330,8 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
         documentSubCategory,
         vendorName,
         vendorId,
+        customerName,
+        customerId,
         documentNumber,
         documentDate,
         dueDate,
@@ -407,6 +424,8 @@ export async function createRevisionFromEdit(
     documentSubCategory: patch.set?.documentSubCategory ?? baseRevision.documentSubCategory ?? undefined,
     vendorName: patch.set?.vendorName ?? baseRevision.vendorName ?? undefined,
     vendorId: patch.set?.vendorId ?? baseRevision.vendorId ?? undefined,
+    customerName: patch.set?.customerName ?? (baseRevision as unknown as { customerName?: string | null }).customerName ?? undefined,
+    customerId: patch.set?.customerId ?? (baseRevision as unknown as { customerId?: string | null }).customerId ?? undefined,
     documentNumber: patch.set?.documentNumber ?? baseRevision.documentNumber ?? undefined,
     documentDate: patch.set?.documentDate ?? baseRevision.documentDate ?? undefined,
     dueDate: patch.set?.dueDate ?? baseRevision.dueDate ?? undefined,
@@ -513,6 +532,155 @@ export async function approveRevision(
     throw new Error(`Cannot approve revision with validation errors: ${errors.map((e) => e.code).join(', ')}`);
   }
 
+  // Fetch processing context (tenant/company) for vendor canonicalization + file rename
+  const processingDoc = await prisma.processingDocument.findUnique({
+    where: { id: revision.processingDocumentId },
+    include: {
+      document: {
+        select: {
+          id: true,
+          tenantId: true,
+          companyId: true,
+          fileName: true,
+          storageKey: true,
+        },
+      },
+    },
+  });
+
+  const tenantId = processingDoc?.document?.tenantId;
+  const companyId = processingDoc?.document?.companyId;
+  const isReceivable = revision.documentCategory === 'ACCOUNTS_RECEIVABLE';
+  const vendorAliasMode = input.aliasLearning?.vendor ?? 'AUTO';
+  const customerAliasMode = input.aliasLearning?.customer ?? 'AUTO';
+
+  // Stabilize vendor identity/name on approval (learn aliases over time)
+  let approvedVendorName: string | null | undefined = revision.vendorName;
+  let approvedVendorId: string | null | undefined = revision.vendorId;
+  let approvedCustomerName: string | null | undefined = (revision as unknown as { customerName?: string | null }).customerName;
+  let approvedCustomerId: string | null | undefined = (revision as unknown as { customerId?: string | null }).customerId;
+
+  if (revision.vendorName && tenantId && companyId && !isReceivable) {
+    try {
+      const vendor = await getOrCreateVendorContact({
+        tenantId,
+        companyId,
+        rawVendorName: revision.vendorName,
+        createdById: userId,
+      });
+
+      if (vendor.vendorId && vendor.vendorName) {
+        approvedVendorId = vendor.vendorId;
+        approvedVendorName = vendor.vendorName;
+      }
+
+      if (approvedVendorId && revision.extractionId) {
+        const extraction = await prisma.documentExtraction.findUnique({
+          where: { id: revision.extractionId },
+          select: { rawJson: true },
+        });
+
+        const rawJson = extraction?.rawJson as unknown as { vendorName?: { value?: string } } | null;
+        const extractedVendorName = rawJson?.vendorName?.value?.trim();
+
+        if (extractedVendorName) {
+          const tokenSim = jaccardSimilarity(
+            tokenizeEntityName(extractedVendorName),
+            tokenizeEntityName(approvedVendorName ?? extractedVendorName)
+          );
+          const confidence =
+            tokenSim < 0.8
+              ? 0
+              : jaroWinkler(
+                  normalizeVendorName(extractedVendorName),
+                  normalizeVendorName(approvedVendorName ?? extractedVendorName)
+                );
+
+          const shouldLearn =
+            vendorAliasMode === 'FORCE' ? true : vendorAliasMode === 'SKIP' ? false : confidence >= 0.93;
+
+          // Safety: do not "learn" clearly wrong extractions (e.g., person's name)
+          // into vendor aliases just because a user corrected the field (unless explicitly forced).
+          if (shouldLearn) {
+            await learnVendorAlias({
+              tenantId,
+              companyId,
+              rawName: extractedVendorName,
+              vendorId: approvedVendorId,
+              confidence: vendorAliasMode === 'FORCE' ? 1.0 : confidence,
+              createdById: userId,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      log.warn(`Vendor canonicalization failed for revision ${revisionId}`, e);
+    }
+  }
+
+  // Stabilize customer identity/name on approval for AR documents.
+  // Note: for AR we currently store the counterparty in `vendorName` for UI/backward compatibility.
+  const rawCustomerName = (revision as unknown as { customerName?: string | null }).customerName ?? revision.vendorName;
+  if (rawCustomerName && tenantId && companyId && isReceivable) {
+    try {
+      const customer = await getOrCreateCustomerContact({
+        tenantId,
+        companyId,
+        rawCustomerName,
+        createdById: userId,
+      });
+
+      if (customer.customerId && customer.customerName) {
+        approvedCustomerId = customer.customerId;
+        approvedCustomerName = customer.customerName;
+
+        // Keep vendorName aligned for existing UI/duplicate detection.
+        approvedVendorName = customer.customerName;
+        approvedVendorId = null;
+      }
+
+      if (approvedCustomerId && revision.extractionId) {
+        const extraction = await prisma.documentExtraction.findUnique({
+          where: { id: revision.extractionId },
+          select: { rawJson: true },
+        });
+
+        const rawJson = extraction?.rawJson as unknown as { vendorName?: { value?: string } } | null;
+        const extractedCustomerName = rawJson?.vendorName?.value?.trim();
+
+        if (extractedCustomerName) {
+          const tokenSim = jaccardSimilarity(
+            tokenizeEntityName(extractedCustomerName),
+            tokenizeEntityName(approvedCustomerName ?? extractedCustomerName)
+          );
+          const confidence =
+            tokenSim < 0.8
+              ? 0
+              : jaroWinkler(
+                  normalizeVendorName(extractedCustomerName),
+                  normalizeVendorName(approvedCustomerName ?? extractedCustomerName)
+                );
+
+          const shouldLearn =
+            customerAliasMode === 'FORCE' ? true : customerAliasMode === 'SKIP' ? false : confidence >= 0.93;
+
+          if (shouldLearn) {
+            await learnCustomerAlias({
+              tenantId,
+              companyId,
+              rawName: extractedCustomerName,
+              customerId: approvedCustomerId,
+              confidence: customerAliasMode === 'FORCE' ? 1.0 : confidence,
+              createdById: userId,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      log.warn(`Customer canonicalization failed for revision ${revisionId}`, e);
+    }
+  }
+
   // Calculate home currency equivalent if needed
   let homeEquivalent: Decimal | null = null;
   if (homeCurrency && homeCurrency !== revision.currency && exchangeRate) {
@@ -535,19 +703,6 @@ export async function approveRevision(
   });
 
   // Rename document file in storage based on revision data
-  const processingDoc = await prisma.processingDocument.findUnique({
-    where: { id: revision.processingDocumentId },
-    include: {
-      document: {
-        select: {
-          id: true,
-          fileName: true,
-          storageKey: true,
-        },
-      },
-    },
-  });
-
   if (processingDoc?.document?.storageKey) {
     const document = processingDoc.document;
 
@@ -555,7 +710,7 @@ export async function approveRevision(
     const extension = getFileExtension(document.fileName || document.storageKey);
     const newFilename = generateApprovedDocumentFilename({
       documentSubCategory: revision.documentSubCategory,
-      vendorName: revision.vendorName,
+      vendorName: approvedVendorName ?? revision.vendorName,
       documentNumber: revision.documentNumber,
       currency: revision.currency,
       totalAmount: revision.totalAmount,
@@ -611,6 +766,10 @@ export async function approveRevision(
       status: 'APPROVED',
       approvedById: userId,
       approvedAt: new Date(),
+      vendorName: approvedVendorName ?? revision.vendorName,
+      vendorId: approvedVendorId ?? revision.vendorId,
+      customerName: approvedCustomerName ?? (revision as unknown as { customerName?: string | null }).customerName ?? undefined,
+      customerId: approvedCustomerId ?? (revision as unknown as { customerId?: string | null }).customerId ?? undefined,
       homeCurrency: homeCurrency ?? revision.currency,
       homeExchangeRate: toDecimal(exchangeRate),
       homeExchangeRateSource: exchangeRateSource,
@@ -982,13 +1141,6 @@ function generateDocumentKey(input: {
 /**
  * Normalize vendor name for comparison (per Appendix B)
  */
-function normalizeVendorName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\b(pte|ltd|llc|inc|corp|co)\b\.?/g, '')
-    .replace(/[^a-z0-9]/g, '')
-    .trim();
-}
 
 /**
  * Generate search text for full-text search
@@ -1012,4 +1164,4 @@ function generateSearchText(input: {
 }
 
 // Export helper functions for use in other modules
-export { generateDocumentKey, normalizeVendorName, generateSearchText };
+export { generateDocumentKey, generateSearchText };

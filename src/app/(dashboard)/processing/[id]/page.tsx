@@ -26,6 +26,7 @@ import {
   Download,
   FileSpreadsheet,
   Building2,
+  Link2,
 } from 'lucide-react';
 import {
   useProcessingDocument,
@@ -50,6 +51,7 @@ import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import {
   DocumentPageViewer,
   ResizableSplitView,
@@ -344,6 +346,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [isReExtraction, setIsReExtraction] = useState(false);
+  const [skipAliasLearning, setSkipAliasLearning] = useState(false);
+  const [isResolvingAlias, setIsResolvingAlias] = useState(false);
 
   // AI context state (matching upload page)
   const [aiContext, setAiContext] = useState('');
@@ -821,10 +825,17 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const handleApproveRevision = async () => {
     if (!data?.document || !data?.currentRevision) return;
     try {
+      const isReceivable = data.currentRevision.documentCategory === 'ACCOUNTS_RECEIVABLE';
+      const body = {
+        aliasLearning: isReceivable
+          ? { customer: skipAliasLearning ? 'SKIP' : 'AUTO' }
+          : { vendor: skipAliasLearning ? 'SKIP' : 'AUTO' },
+      };
       await approveRevision.mutateAsync({
         documentId: id,
         revisionId: data.currentRevision.id,
         lockVersion: data.document.lockVersion,
+        body,
       });
       success('Revision approved');
       setShowApproveDialog(false);
@@ -836,6 +847,43 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       }
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to approve revision');
+    }
+  };
+
+  const handleResolveCounterpartyAlias = async () => {
+    if (!data?.document || !data?.currentRevision) return;
+    const rawName = editFormData.vendorName?.trim();
+    if (!rawName) {
+      toastError('Please enter a vendor/customer name first');
+      return;
+    }
+
+    try {
+      setIsResolvingAlias(true);
+      const res = await fetch(
+        `/api/processing-documents/${id}/revisions/${data.currentRevision.id}/resolve-alias`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rawName }),
+        }
+      );
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.error?.message || 'Failed to resolve alias');
+      }
+
+      if (json?.data?.matched && json?.data?.canonicalName) {
+        setEditFormData({ ...editFormData, vendorName: json.data.canonicalName });
+        success('Applied saved contact name');
+      } else {
+        toastError('No saved match found for this name');
+      }
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to resolve alias');
+    } finally {
+      setIsResolvingAlias(false);
     }
   };
 
@@ -1277,7 +1325,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 </button>
               )}
               {canApprove && can.updateDocument && (
-                <button onClick={() => setShowApproveDialog(true)} className="btn-primary btn-sm">
+                <button
+                  onClick={() => {
+                    setSkipAliasLearning(false);
+                    setShowApproveDialog(true);
+                  }}
+                  className="btn-primary btn-sm"
+                >
                   <Check className="w-3.5 h-3.5 mr-1.5" />
                   Approve
                 </button>
@@ -1423,6 +1477,9 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                         isEditing={isEditing}
                         editFormData={editFormData}
                         setEditFormData={setEditFormData}
+                        onResolveAlias={handleResolveCounterpartyAlias}
+                        isResolvingAlias={isResolvingAlias}
+                        disableResolveAlias={approveRevision.isPending}
                         focusedField={focusedField}
                         setFocusedField={setFocusedField}
                         getFieldConfidence={getFieldConfidence}
@@ -1549,11 +1606,26 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         onClose={() => setShowApproveDialog(false)}
         onConfirm={handleApproveRevision}
         title="Approve Revision"
-        description={`Are you sure you want to approve Revision #${currentRevision?.revisionNumber}? This will mark it as the official record.`}
+        description={(
+          <>
+            Are you sure you want to approve Revision #{currentRevision?.revisionNumber}?
+            <br />
+            This will mark it as the official record.
+          </>
+        )}
         confirmLabel="Approve"
         variant="info"
         isLoading={approveRevision.isPending}
-      />
+      >
+        <Toggle
+          size="sm"
+          checked={skipAliasLearning}
+          onChange={setSkipAliasLearning}
+          disabled={approveRevision.isPending}
+          label="Don’t learn this contact name correction"
+          className="pt-1"
+        />
+      </ConfirmDialog>
 
       {/* Delete Dialog */}
       <ConfirmDialog
@@ -1730,6 +1802,9 @@ function ExtractedHeaderFields({
   isEditing,
   editFormData,
   setEditFormData,
+  onResolveAlias,
+  isResolvingAlias,
+  disableResolveAlias,
   focusedField,
   setFocusedField,
   getFieldConfidence,
@@ -1786,6 +1861,9 @@ function ExtractedHeaderFields({
     homeTotal: string;
     isHomeExchangeRateOverride: boolean;
   }>>;
+  onResolveAlias?: () => void;
+  isResolvingAlias?: boolean;
+  disableResolveAlias?: boolean;
   focusedField: string | null;
   setFocusedField: (field: string | null) => void;
   getFieldConfidence: (key: string) => number | undefined;
@@ -1843,14 +1921,27 @@ function ExtractedHeaderFields({
         {/* Key Identification */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-text-muted mb-1">Vendor</label>
-            <input
-              type="text"
-              value={editFormData.vendorName}
-              onChange={(e) => setEditFormData({ ...editFormData, vendorName: e.target.value })}
-              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
-              placeholder="Vendor name"
-            />
+            <label className="block text-xs text-text-muted mb-1">
+              {editFormData.documentCategory === 'ACCOUNTS_RECEIVABLE' ? 'Customer' : 'Vendor'}
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={editFormData.vendorName}
+                onChange={(e) => setEditFormData({ ...editFormData, vendorName: e.target.value })}
+                className="flex-1 w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
+                placeholder={editFormData.documentCategory === 'ACCOUNTS_RECEIVABLE' ? 'Customer name' : 'Vendor name'}
+              />
+              <button
+                type="button"
+                onClick={onResolveAlias}
+                disabled={!onResolveAlias || !!isResolvingAlias || !!disableResolveAlias}
+                className="btn-ghost btn-sm"
+                title="Apply saved contact name"
+              >
+                <Link2 className={cn('w-4 h-4', isResolvingAlias && 'animate-pulse')} />
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-xs text-text-muted mb-1">Document #</label>

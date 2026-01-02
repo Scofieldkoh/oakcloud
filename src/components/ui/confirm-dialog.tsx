@@ -13,6 +13,7 @@ export interface ConfirmDialogProps {
   onConfirm: (reason?: string) => void | Promise<void>;
   title: string;
   description?: ReactNode;
+  children?: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: DialogVariant;
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
+  children,
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   variant = 'danger',
@@ -100,6 +102,12 @@ export function ConfirmDialog({
                 disabled={isLoading}
                 inputSize="sm"
               />
+            </div>
+          )}
+
+          {children && (
+            <div className="w-full text-left mt-3">
+              {children}
             </div>
           )}
         </div>

@@ -20,6 +20,8 @@ import { hashBlake3 } from '@/lib/encryption';
 import { getAccountsForSelect } from './chart-of-accounts.service';
 import { getRate } from './exchange-rate.service';
 import type { SupportedCurrency } from '@/lib/validations/exchange-rate';
+import { learnVendorAlias, resolveVendor } from './vendor-resolution.service';
+import { learnCustomerAlias, resolveCustomer } from './customer-resolution.service';
 
 type _Decimal = Prisma.Decimal;
 
@@ -86,6 +88,7 @@ export interface FieldExtractionResult {
   documentCategory: ExtractedField<DocumentCategory>;
   documentSubCategory?: ExtractedField<DocumentSubCategory>;
   vendorName?: ExtractedField<string>;
+  customerName?: ExtractedField<string>;
   documentNumber?: ExtractedField<string>;
   documentDate?: ExtractedField<string>;
   dueDate?: ExtractedField<string>;
@@ -378,6 +381,71 @@ export async function extractFields(
     const homeEquivalent = hce?.totalAmount ||
       (parseFloat(extractionResult.totalAmount.value) * exchangeRateNum).toFixed(2);
 
+    // Counterparty canonicalization:
+    // - For ACCOUNTS_PAYABLE: vendor is the other party (vendorName).
+    // - For ACCOUNTS_RECEIVABLE: customer is the other party (customerName).
+    const isReceivable = extractionResult.documentCategory.value === 'ACCOUNTS_RECEIVABLE';
+    const rawCounterpartyName = isReceivable
+      ? extractionResult.customerName?.value ?? extractionResult.vendorName?.value
+      : extractionResult.vendorName?.value;
+
+    const vendorResolution = isReceivable
+      ? { vendorName: undefined, vendorId: undefined, confidence: 0, strategy: 'NONE' as const }
+      : await resolveVendor({
+          tenantId,
+          companyId,
+          rawVendorName: rawCounterpartyName,
+          createdById: userId,
+        });
+
+    const customerResolution = isReceivable
+      ? await resolveCustomer({
+          tenantId,
+          companyId,
+          rawCustomerName: rawCounterpartyName,
+          createdById: userId,
+        })
+      : { customerName: undefined, customerId: undefined, confidence: 0, strategy: 'NONE' as const };
+
+    // Learn aliases from extraction (best-effort)
+    if (rawCounterpartyName) {
+      if (!isReceivable && vendorResolution.vendorId) {
+        try {
+          const conf = vendorResolution.confidence || extractionResult.vendorName?.confidence || 0.9;
+          await learnVendorAlias({
+            tenantId,
+            companyId,
+            rawName: rawCounterpartyName,
+            vendorId: vendorResolution.vendorId,
+            confidence: conf,
+            createdById: userId,
+          });
+        } catch (e) {
+          log.warn(`Failed to learn vendor alias for "${rawCounterpartyName}"`, e);
+        }
+      }
+
+      if (isReceivable && customerResolution.customerId) {
+        try {
+          const conf =
+            customerResolution.confidence ||
+            extractionResult.customerName?.confidence ||
+            extractionResult.vendorName?.confidence ||
+            0.9;
+          await learnCustomerAlias({
+            tenantId,
+            companyId,
+            rawName: rawCounterpartyName,
+            customerId: customerResolution.customerId,
+            confidence: conf,
+            createdById: userId,
+          });
+        } catch (e) {
+          log.warn(`Failed to learn customer alias for "${rawCounterpartyName}"`, e);
+        }
+      }
+    }
+
     // Create revision from extraction with calculated home amounts
     const revision = await createRevision({
       processingDocumentId,
@@ -386,7 +454,11 @@ export async function extractFields(
       createdById: userId,
       documentCategory: extractionResult.documentCategory.value,
       documentSubCategory: extractionResult.documentSubCategory?.value,
-      vendorName: extractionResult.vendorName?.value,
+      // Keep `vendorName` populated for existing UI/duplicate detection; for AR docs, this is the customer name.
+      vendorName: isReceivable ? customerResolution.customerName : vendorResolution.vendorName,
+      vendorId: isReceivable ? undefined : vendorResolution.vendorId,
+      customerName: isReceivable ? customerResolution.customerName : undefined,
+      customerId: isReceivable ? customerResolution.customerId : undefined,
       documentNumber: extractionResult.documentNumber?.value,
       documentDate: extractionResult.documentDate?.value
         ? new Date(extractionResult.documentDate.value)
@@ -631,6 +703,10 @@ async function performAIExtraction(
     "value": "string",
     "confidence": number
   } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
   "documentNumber": {
     "value": "string",
     "confidence": number
@@ -685,6 +761,11 @@ async function performAIExtraction(
   ],
   "overallConfidence": number between 0 and 1
 }
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into `vendorName`.
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into `customerName`.
+- Do NOT put a person’s name (e.g., “Raymond”) unless the counterparty on the document is clearly an individual.
 
 ## Singapore GST Tax Codes (REQUIRED for each line item)
 You MUST assign a taxCode to EVERY line item based on these rules:
@@ -1041,6 +1122,7 @@ function mapAIResponseToResult(
 
   // Handle optional header fields with bbox
   const vendorNameField = extractFieldValue(data.vendorName);
+  const customerNameField = extractFieldValue(data.customerName);
   const documentNumberField = extractFieldValue(data.documentNumber);
   const documentDateField = extractFieldValue(data.documentDate);
   const dueDateField = extractFieldValue(data.dueDate);
@@ -1210,6 +1292,11 @@ function mapAIResponseToResult(
       value: vendorNameField.value,
       confidence: vendorNameField.confidence,
       evidence: createFieldEvidence(vendorNameField.value, vendorNameField.confidence, pageNum, fingerprint),
+    } : undefined,
+    customerName: customerNameField ? {
+      value: customerNameField.value,
+      confidence: customerNameField.confidence,
+      evidence: createFieldEvidence(customerNameField.value, customerNameField.confidence, pageNum, fingerprint),
     } : undefined,
     documentNumber: documentNumberField ? {
       value: documentNumberField.value,
@@ -1414,6 +1501,9 @@ function buildEvidenceJson(result: FieldExtractionResult): Record<string, FieldE
   if (result.vendorName?.evidence) {
     evidence.vendorName = result.vendorName.evidence;
   }
+  if (result.customerName?.evidence) {
+    evidence.customerName = result.customerName.evidence;
+  }
   if (result.documentNumber?.evidence) {
     evidence.documentNumber = result.documentNumber.evidence;
   }
@@ -1452,6 +1542,7 @@ function buildConfidenceJson(result: FieldExtractionResult): Prisma.InputJsonVal
       documentCategory: result.documentCategory.confidence,
       documentSubCategory: result.documentSubCategory?.confidence,
       vendorName: result.vendorName?.confidence,
+      customerName: result.customerName?.confidence,
       documentNumber: result.documentNumber?.confidence,
       documentDate: result.documentDate?.confidence,
       currency: result.currency.confidence,
