@@ -48,6 +48,11 @@ export type UserRoleAssignment = Prisma.UserRoleAssignmentModel
  */
 export type User = Prisma.UserModel
 /**
+ * Model UserPreference
+ * 
+ */
+export type UserPreference = Prisma.UserPreferenceModel
+/**
  * Model UserCompanyAssignment
  * 
  */

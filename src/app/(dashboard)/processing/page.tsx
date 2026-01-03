@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, type MouseEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -12,15 +12,25 @@ import {
   XCircle,
   AlertTriangle,
   RefreshCw,
+  Play,
   Eye,
   Copy,
   FileStack,
+  ArrowUpRight,
+  SlidersHorizontal,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
   Square,
   CheckSquare,
   MinusSquare,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
-import { useProcessingDocuments, type ProcessingDocumentSearchParams } from '@/hooks/use-processing-documents';
+import {
+  useProcessingDocuments,
+  type ProcessingDocumentSearchParams,
+  type ProcessingDocumentListItem,
+} from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
@@ -30,8 +40,85 @@ import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/res
 import { useCompanies } from '@/hooks/use-companies';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
+import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
+
+const COLUMN_PREF_KEY = 'processing:list:columns:v1';
+const COLUMN_VISIBILITY_PREF_KEY = 'processing:list:column-visibility:v1';
+const COLUMN_IDS = [
+  'open',
+  'document',
+  'company',
+  'pipeline',
+  'status',
+  'duplicate',
+  'category',
+  'subCategory',
+  'vendor',
+  'docNumber',
+  'docDate',
+  'subtotal',
+  'tax',
+  'total',
+  'homeSubtotal',
+  'homeTax',
+  'homeTotal',
+  'uploaded',
+] as const;
+type ColumnId = (typeof COLUMN_IDS)[number];
+
+const COLUMN_LABELS: Record<ColumnId, string> = {
+  open: 'Open',
+  document: 'Document',
+  company: 'Company',
+  pipeline: 'Pipeline',
+  status: 'Status',
+  duplicate: 'Duplicate',
+  category: 'Category',
+  subCategory: 'Sub-Category',
+  vendor: 'Vendor',
+  docNumber: 'Doc #',
+  docDate: 'Doc Date',
+  subtotal: 'Subtotal',
+  tax: 'Tax',
+  total: 'Total',
+  homeSubtotal: 'Home Subtotal',
+  homeTax: 'Home Tax',
+  homeTotal: 'Home Total',
+  uploaded: 'Uploaded',
+};
+
+const RIGHT_ALIGNED_COLUMNS = new Set<ColumnId>([
+  'subtotal',
+  'tax',
+  'total',
+  'homeSubtotal',
+  'homeTax',
+  'homeTotal',
+]);
+
+const COLUMN_SORT_FIELDS: Partial<Record<ColumnId, string>> = {
+  document: 'fileName',
+  company: 'companyName',
+  pipeline: 'pipelineStatus',
+  status: 'revisionStatus',
+  duplicate: 'duplicateStatus',
+  category: 'documentCategory',
+  subCategory: 'documentSubCategory',
+  vendor: 'vendorName',
+  docNumber: 'documentNumber',
+  docDate: 'documentDate',
+  subtotal: 'subtotal',
+  tax: 'taxAmount',
+  total: 'totalAmount',
+  homeSubtotal: 'homeSubtotal',
+  homeTax: 'homeTaxAmount',
+  homeTotal: 'homeEquivalent',
+  uploaded: 'createdAt',
+};
 
 // Revision status display config
 const revisionStatusConfig: Record<
@@ -155,10 +242,12 @@ export default function ProcessingDocumentsPage() {
       pipelineStatus: (searchParams.get('pipelineStatus') || undefined) as PipelineStatus | undefined,
       duplicateStatus: (searchParams.get('duplicateStatus') || undefined) as DuplicateStatus | undefined,
       revisionStatus: (searchParams.get('revisionStatus') || undefined) as RevisionStatus | undefined,
+      needsReview: searchParams.get('needsReview') === 'true' ? true : undefined,
       isContainer: searchParams.get('isContainer') === 'true' ? true :
                    searchParams.get('isContainer') === 'false' ? false : undefined,
       // New filter parameters
       companyId: searchParams.get('companyId') || undefined,
+      uploadDatePreset: (searchParams.get('uploadDatePreset') || undefined) as 'TODAY' | undefined,
       uploadDateFrom: searchParams.get('uploadDateFrom') || undefined,
       uploadDateTo: searchParams.get('uploadDateTo') || undefined,
       documentDateFrom: searchParams.get('documentDateFrom') || undefined,
@@ -174,10 +263,311 @@ export default function ProcessingDocumentsPage() {
 
   const [params, setParams] = useState(getParamsFromUrl);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const isResizingRef = useRef(false);
+  const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
 
   // Determine effective company ID: URL filter takes priority, then sidebar selector
   // If sidebar has "All Companies" selected (activeCompanyId is undefined), show all companies
   const effectiveCompanyId = params.companyId || activeCompanyId;
+
+  const { data: columnPref } = useUserPreference<Record<string, number>>(COLUMN_PREF_KEY);
+  const { data: visibilityPref } = useUserPreference<Record<string, boolean>>(COLUMN_VISIBILITY_PREF_KEY);
+  const saveColumnPref = useUpsertUserPreference();
+  const [columnWidths, setColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
+  const [columnVisibility, setColumnVisibility] = useState<Partial<Record<ColumnId, boolean>>>({});
+
+  useEffect(() => {
+    const value = columnPref?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+    setColumnWidths(value as Partial<Record<ColumnId, number>>);
+  }, [columnPref?.value]);
+
+  useEffect(() => {
+    const value = visibilityPref?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+    setColumnVisibility(value as Partial<Record<ColumnId, boolean>>);
+  }, [visibilityPref?.value]);
+
+  const isColumnVisible = useCallback((columnId: ColumnId) => {
+    if (columnId === 'open') return true;
+    return columnVisibility[columnId] !== false;
+  }, [columnVisibility]);
+  const visibleColumnIds = useMemo(() => COLUMN_IDS.filter((id) => isColumnVisible(id)), [isColumnVisible]);
+  const hiddenColumnCount = useMemo(() => {
+    return COLUMN_IDS.filter((id) => id !== 'open' && !isColumnVisible(id)).length;
+  }, [isColumnVisible]);
+
+  const renderDesktopCell = (doc: ProcessingDocumentListItem, columnId: ColumnId) => {
+    switch (columnId) {
+      case 'open':
+        return (
+          <td key={columnId} className="px-2 py-3">
+            <Link
+              href={`/processing/${doc.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-background-tertiary text-text-secondary hover:text-text-primary transition-colors"
+              aria-label={`Open "${doc.document.fileName}" in new tab`}
+              title={`Open "${doc.document.fileName}" in new tab`}
+            >
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </td>
+        );
+      case 'document':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 rounded bg-background-tertiary">
+                {doc.isContainer ? (
+                  <FileStack className="w-4 h-4 text-text-secondary" />
+                ) : (
+                  <FileText className="w-4 h-4 text-text-secondary" />
+                )}
+              </div>
+              <div>
+                <Link
+                  href={`/processing/${doc.id}`}
+                  className="text-sm font-medium text-text-primary whitespace-nowrap hover:underline"
+                  title={doc.document.fileName}
+                >
+                  {doc.document.fileName}
+                </Link>
+                <p className="text-xs text-text-muted">
+                  {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
+                </p>
+              </div>
+            </div>
+          </td>
+        );
+      case 'company':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <span className="text-sm text-text-primary whitespace-nowrap">
+              {doc.document.company?.name || '-'}
+            </span>
+          </td>
+        );
+      case 'pipeline':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <StatusBadge status={doc.pipelineStatus} config={pipelineStatusConfig[doc.pipelineStatus]} />
+          </td>
+        );
+      case 'status':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            {doc.currentRevision ? (
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
+                  revisionStatusConfig[doc.currentRevision.status].color
+                )}
+              >
+                {revisionStatusConfig[doc.currentRevision.status].label}
+              </span>
+            ) : (
+              <span className="text-xs text-text-muted">-</span>
+            )}
+          </td>
+        );
+      case 'duplicate':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <StatusBadge status={doc.duplicateStatus} config={duplicateStatusConfig[doc.duplicateStatus]} />
+          </td>
+        );
+      case 'category':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <span
+              className="text-sm text-text-primary whitespace-nowrap"
+              title={formatCategory(doc.currentRevision?.documentCategory)}
+            >
+              {formatCategory(doc.currentRevision?.documentCategory)}
+            </span>
+          </td>
+        );
+      case 'subCategory':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <span
+              className="text-sm text-text-secondary whitespace-nowrap"
+              title={formatCategory(doc.currentRevision?.documentSubCategory)}
+            >
+              {formatCategory(doc.currentRevision?.documentSubCategory)}
+            </span>
+          </td>
+        );
+      case 'vendor':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <span
+              className="text-sm text-text-primary whitespace-nowrap"
+              title={doc.currentRevision?.vendorName || undefined}
+            >
+              {doc.currentRevision?.vendorName || '-'}
+            </span>
+          </td>
+        );
+      case 'docNumber':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <span className="text-sm text-text-secondary whitespace-nowrap">
+              {doc.currentRevision?.documentNumber || '-'}
+            </span>
+          </td>
+        );
+      case 'docDate':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <span className="text-sm text-text-secondary whitespace-nowrap">
+              {doc.currentRevision?.documentDate ? formatDate(doc.currentRevision.documentDate) : '-'}
+            </span>
+          </td>
+        );
+      case 'subtotal':
+        return (
+          <td key={columnId} className="px-4 py-3 text-right">
+            <span className="text-sm text-text-primary whitespace-nowrap">
+              {doc.currentRevision ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency) : '-'}
+            </span>
+          </td>
+        );
+      case 'tax':
+        return (
+          <td key={columnId} className="px-4 py-3 text-right">
+            <span className="text-sm text-text-primary whitespace-nowrap">
+              {doc.currentRevision ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency) : '-'}
+            </span>
+          </td>
+        );
+      case 'total':
+        return (
+          <td key={columnId} className="px-4 py-3 text-right">
+            <span className="text-sm text-text-primary font-medium whitespace-nowrap">
+              {doc.currentRevision
+                ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
+                : '-'}
+            </span>
+          </td>
+        );
+      case 'homeSubtotal':
+        return (
+          <td key={columnId} className="px-4 py-3 text-right">
+            <span className="text-sm text-text-secondary whitespace-nowrap">
+              {doc.currentRevision?.homeCurrency
+                ? formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency)
+                : '-'}
+            </span>
+          </td>
+        );
+      case 'homeTax':
+        return (
+          <td key={columnId} className="px-4 py-3 text-right">
+            <span className="text-sm text-text-secondary whitespace-nowrap">
+              {doc.currentRevision?.homeCurrency
+                ? formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency)
+                : '-'}
+            </span>
+          </td>
+        );
+      case 'homeTotal':
+        return (
+          <td key={columnId} className="px-4 py-3 text-right">
+            <span className="text-sm text-text-secondary font-medium whitespace-nowrap">
+              {doc.currentRevision?.homeCurrency
+                ? formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency)
+                : '-'}
+            </span>
+          </td>
+        );
+      case 'uploaded':
+        return (
+          <td key={columnId} className="px-4 py-3">
+            <span className="text-sm text-text-muted whitespace-nowrap">{formatDate(doc.createdAt)}</span>
+          </td>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const startResize = useCallback((e: React.PointerEvent, columnId: ColumnId) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const handle = e.currentTarget as HTMLElement | null;
+    const th = handle?.closest('th') as HTMLTableCellElement | null;
+    const startWidth = columnWidths[columnId] ?? th?.getBoundingClientRect().width ?? 120;
+    const startX = e.clientX;
+    const pointerId = e.pointerId;
+
+    isResizingRef.current = true;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    let latestWidth = startWidth;
+
+    try {
+      handle?.setPointerCapture(pointerId);
+    } catch {
+      // ignore
+    }
+
+    const onMove = (ev: globalThis.PointerEvent) => {
+      const nextWidth = Math.max(80, startWidth + (ev.clientX - startX));
+      latestWidth = nextWidth;
+      setColumnWidths((prev) => ({ ...prev, [columnId]: nextWidth }));
+    };
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      try {
+        handle?.releasePointerCapture(pointerId);
+      } catch {
+        // ignore
+      }
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+      isResizingRef.current = false;
+
+      setColumnWidths((prev) => {
+        const next = { ...prev, [columnId]: latestWidth };
+        saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: next });
+        return next;
+      });
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, [columnWidths, saveColumnPref]);
+
+  const startResizeIfEdge = useCallback((e: React.PointerEvent, columnId: ColumnId) => {
+    const rect = (e.currentTarget as HTMLElement | null)?.getBoundingClientRect();
+    if (rect && rect.right - e.clientX > 14) return;
+    startResize(e, columnId);
+  }, [startResize]);
+
+  const resetColumns = useCallback(() => {
+    setColumnWidths({});
+    saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: {} });
+  }, [saveColumnPref]);
+
+  const showAllColumns = useCallback(() => {
+    setColumnVisibility({});
+    saveColumnPref.mutate({ key: COLUMN_VISIBILITY_PREF_KEY, value: {} });
+  }, [saveColumnPref]);
+
+  const toggleColumnVisibility = useCallback((columnId: ColumnId) => {
+    if (columnId === 'open') return;
+    setColumnVisibility((prev) => {
+      const next = { ...prev, [columnId]: prev[columnId] === false ? true : false };
+      saveColumnPref.mutate({ key: COLUMN_VISIBILITY_PREF_KEY, value: next });
+      return next;
+    });
+  }, [saveColumnPref]);
 
   // Pass tenantId and effective companyId to filter documents
   const { data, isLoading, isFetching, error, refetch } = useProcessingDocuments({
@@ -224,6 +614,40 @@ export default function ProcessingDocumentsPage() {
     setSelectedIds([]);
   }, []);
 
+  const handleRowNavigate = useCallback(
+    (e: MouseEvent, documentId: string) => {
+      // Only handle plain left-clicks; allow Ctrl/Cmd+click (new tab), right-click, etc.
+      if (e.defaultPrevented) return;
+      if (isResizingRef.current) return;
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('a,button,input,select,textarea,[role="button"]')) return;
+
+      router.push(`/processing/${documentId}`);
+    },
+    [router]
+  );
+
+  const handleReviewNext = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      params.set('filter', 'needs-review');
+      params.set('start', 'true');
+      if (activeTenantId) params.set('tenantId', activeTenantId);
+      if (effectiveCompanyId) params.set('companyId', effectiveCompanyId);
+
+      const response = await fetch(`/api/processing-documents/navigation?${params}`);
+      if (!response.ok) return;
+      const result = await response.json();
+      const nextId = result?.data?.currentDocumentId as string | null | undefined;
+      if (nextId) router.push(`/processing/${nextId}`);
+    } catch {
+      // ignore
+    }
+  }, [activeTenantId, effectiveCompanyId, router]);
+
   // Selection state
   const selectionState = useMemo(() => {
     if (!data?.documents || data.documents.length === 0) return 'none';
@@ -245,9 +669,11 @@ export default function ProcessingDocumentsPage() {
     if (params.pipelineStatus) urlParams.set('pipelineStatus', params.pipelineStatus);
     if (params.duplicateStatus) urlParams.set('duplicateStatus', params.duplicateStatus);
     if (params.revisionStatus) urlParams.set('revisionStatus', params.revisionStatus);
+    if (params.needsReview) urlParams.set('needsReview', 'true');
     if (params.isContainer !== undefined) urlParams.set('isContainer', params.isContainer.toString());
     // New filter parameters
     if (params.companyId) urlParams.set('companyId', params.companyId);
+    if (params.uploadDatePreset) urlParams.set('uploadDatePreset', params.uploadDatePreset);
     if (params.uploadDateFrom) urlParams.set('uploadDateFrom', params.uploadDateFrom);
     if (params.uploadDateTo) urlParams.set('uploadDateTo', params.uploadDateTo);
     if (params.documentDateFrom) urlParams.set('documentDateFrom', params.documentDateFrom);
@@ -286,8 +712,10 @@ export default function ProcessingDocumentsPage() {
       pipelineStatus: filters.pipelineStatus,
       duplicateStatus: filters.duplicateStatus,
       revisionStatus: filters.revisionStatus,
+      needsReview: filters.needsReview,
       isContainer: filters.isContainer,
       companyId: filters.companyId,
+      uploadDatePreset: filters.uploadDatePreset,
       uploadDateFrom: filters.uploadDateFrom,
       uploadDateTo: filters.uploadDateTo,
       documentDateFrom: filters.documentDateFrom,
@@ -300,6 +728,14 @@ export default function ProcessingDocumentsPage() {
       // Keep search separate (handled by handleSearchChange)
       search: prev.search,
     }));
+  }, []);
+
+  const handleSort = useCallback((field: string) => {
+    setParams((prev) => {
+      const isSame = (prev.sortBy || 'createdAt') === field;
+      const nextOrder: 'asc' | 'desc' = isSame ? (prev.sortOrder === 'asc' ? 'desc' : 'asc') : 'asc';
+      return { ...prev, page: 1, sortBy: field, sortOrder: nextOrder };
+    });
   }, []);
 
   const handleSearchChange = useCallback((query: string) => {
@@ -348,6 +784,15 @@ export default function ProcessingDocumentsPage() {
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
+          </button>
+          <button
+            onClick={handleReviewNext}
+            className="btn-secondary btn-sm flex items-center gap-2"
+            title="Review next document needing attention"
+          >
+            <Play className="w-4 h-4" />
+            <span className="hidden sm:inline">Review Next</span>
+            <span className="sm:hidden">Review</span>
           </button>
           {can.createDocument && (
             <Link href="/processing/upload" className="btn-primary btn-sm flex items-center gap-2">
@@ -439,15 +884,17 @@ export default function ProcessingDocumentsPage() {
       )}
 
       {/* Filters */}
-      <div className="mb-6">
+      <div className="mb-4">
         <ProcessingFilters
           onFilterChange={handleFiltersChange}
           initialFilters={{
             pipelineStatus: params.pipelineStatus,
             duplicateStatus: params.duplicateStatus,
             revisionStatus: params.revisionStatus,
+            needsReview: params.needsReview,
             isContainer: params.isContainer,
             companyId: params.companyId,
+            uploadDatePreset: params.uploadDatePreset,
             uploadDateFrom: params.uploadDateFrom,
             uploadDateTo: params.uploadDateTo,
             documentDateFrom: params.documentDateFrom,
@@ -463,6 +910,22 @@ export default function ProcessingDocumentsPage() {
           tags={tagsData?.map(t => ({ id: t.id, name: t.name, color: t.color })) || []}
           activeCompanyId={effectiveCompanyId}
           activeTenantId={activeTenantId}
+          rightActions={
+            <button
+              type="button"
+              onClick={() => setIsColumnModalOpen(true)}
+              className="btn-secondary btn-sm flex items-center gap-2"
+              title="Adjust columns"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span className="hidden sm:inline">Adjust columns</span>
+              {hiddenColumnCount > 0 && (
+                <span className="bg-background-tertiary text-text-secondary text-2xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                  {hiddenColumnCount}
+                </span>
+              )}
+            </button>
+          }
         />
       </div>
 
@@ -510,7 +973,11 @@ export default function ProcessingDocumentsPage() {
                 isSelected={isSelected}
                 selectable
                 onToggle={() => toggleSelect(doc.id)}
-                title={doc.document.fileName}
+                title={
+                  <Link href={`/processing/${doc.id}`} className="hover:underline">
+                    {doc.document.fileName}
+                  </Link>
+                }
                 subtitle={
                   <span className="text-text-muted">
                     {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
@@ -670,7 +1137,22 @@ export default function ProcessingDocumentsPage() {
       {!error && data && data.documents.length > 0 && (
         <div className={cn('hidden md:block card overflow-hidden relative', isFetching && 'opacity-60')}>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-max">
+              <colgroup>
+                <col style={{ width: '40px' }} />
+                {visibleColumnIds.map((id) => (
+                  <col
+                    key={id}
+                    style={
+                      id === 'open'
+                        ? { width: '44px' }
+                        : columnWidths[id]
+                          ? { width: `${columnWidths[id]}px` }
+                          : undefined
+                    }
+                  />
+                ))}
+              </colgroup>
               <thead className="bg-background-tertiary border-b border-border-primary">
                 <tr>
                   <th className="w-10 px-4 py-3">
@@ -685,26 +1167,62 @@ export default function ProcessingDocumentsPage() {
                         <MinusSquare className="w-4 h-4 text-oak-light" />
                       ) : (
                         <Square className="w-4 h-4 text-text-muted" />
-                      )}
+                  )}
                     </button>
-                  </th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Document</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Company</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Pipeline</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Status</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Duplicate</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Category</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Sub-Category</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Vendor</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Doc #</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Doc Date</th>
-                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Subtotal</th>
-                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Tax</th>
-                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Total</th>
-                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Home Subtotal</th>
-                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Home Tax</th>
-                  <th className="text-right text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Home Total</th>
-                  <th className="text-left text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap">Uploaded</th>
+                      </th>
+                  {visibleColumnIds.map((columnId) =>
+                    columnId === 'open' ? (
+                      <th
+                        key={columnId}
+                        className="text-center text-xs font-medium text-text-secondary px-2 py-3 whitespace-nowrap"
+                        title="Open in new tab"
+                      >
+                        <ArrowUpRight className="w-4 h-4 inline-block text-text-muted" />
+                      </th>
+                    ) : (
+                      <th
+                        key={columnId}
+                        style={columnWidths[columnId] ? { width: `${columnWidths[columnId]}px` } : undefined}
+                        className={cn(
+                          'relative text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap pr-3',
+                          RIGHT_ALIGNED_COLUMNS.has(columnId) ? 'text-right' : 'text-left'
+                        )}
+                        onPointerDown={(e) => startResizeIfEdge(e, columnId)}
+                      >
+                        {COLUMN_SORT_FIELDS[columnId] ? (
+                          <button
+                            type="button"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={() => handleSort(COLUMN_SORT_FIELDS[columnId]!)}
+                            className={cn(
+                              'inline-flex items-center gap-1 select-none hover:text-text-primary transition-colors',
+                              params.sortBy === COLUMN_SORT_FIELDS[columnId] && 'text-text-primary'
+                            )}
+                          >
+                            <span>{COLUMN_LABELS[columnId]}</span>
+                            <span className="flex-shrink-0">
+                              {params.sortBy === COLUMN_SORT_FIELDS[columnId] ? (
+                                params.sortOrder === 'asc' ? (
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                ) : (
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                )
+                              ) : (
+                                <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
+                              )}
+                            </span>
+                          </button>
+                        ) : (
+                          <span>{COLUMN_LABELS[columnId]}</span>
+                        )}
+                        <div
+                          onPointerDown={(e) => startResize(e, columnId)}
+                          className="absolute top-0 -right-2 h-full w-4 cursor-col-resize hover:bg-border-secondary/60 z-10 touch-none"
+                          title="Drag to resize"
+                        />
+                      </th>
+                    )
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -713,7 +1231,7 @@ export default function ProcessingDocumentsPage() {
                   return (
                     <tr
                       key={doc.id}
-                      onClick={() => router.push(`/processing/${doc.id}`)}
+                      onClick={(e) => handleRowNavigate(e, doc.id)}
                       className={cn(
                         'border-b border-border-primary transition-colors cursor-pointer',
                         isSelected
@@ -736,128 +1254,7 @@ export default function ProcessingDocumentsPage() {
                           )}
                         </button>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="p-1.5 rounded bg-background-tertiary">
-                            {doc.isContainer ? (
-                              <FileStack className="w-4 h-4 text-text-secondary" />
-                            ) : (
-                              <FileText className="w-4 h-4 text-text-secondary" />
-                            )}
-                          </div>
-                          <div>
-                            <span className="text-sm font-medium text-text-primary truncate max-w-[200px] block">
-                              {doc.document.fileName}
-                            </span>
-                            <p className="text-xs text-text-muted">
-                              {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-text-primary truncate max-w-[150px] block">
-                          {doc.document.company?.name || '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge
-                          status={doc.pipelineStatus}
-                          config={pipelineStatusConfig[doc.pipelineStatus]}
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        {doc.currentRevision ? (
-                          <span className={cn(
-                            'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
-                            revisionStatusConfig[doc.currentRevision.status].color
-                          )}>
-                            {revisionStatusConfig[doc.currentRevision.status].label}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-text-muted">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge
-                          status={doc.duplicateStatus}
-                          config={duplicateStatusConfig[doc.duplicateStatus]}
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-text-primary truncate max-w-[120px] block" title={formatCategory(doc.currentRevision?.documentCategory)}>
-                          {formatCategory(doc.currentRevision?.documentCategory)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-text-secondary truncate max-w-[120px] block" title={formatCategory(doc.currentRevision?.documentSubCategory)}>
-                          {formatCategory(doc.currentRevision?.documentSubCategory)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-text-primary truncate max-w-[150px] block" title={doc.currentRevision?.vendorName || undefined}>
-                          {doc.currentRevision?.vendorName || '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-text-secondary truncate max-w-[100px] block">
-                          {doc.currentRevision?.documentNumber || '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-text-secondary whitespace-nowrap">
-                          {doc.currentRevision?.documentDate
-                            ? formatDate(doc.currentRevision.documentDate)
-                            : '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-sm text-text-primary whitespace-nowrap">
-                          {doc.currentRevision
-                            ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency)
-                            : '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-sm text-text-primary whitespace-nowrap">
-                          {doc.currentRevision
-                            ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency)
-                            : '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-sm text-text-primary font-medium whitespace-nowrap">
-                          {doc.currentRevision
-                            ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
-                            : '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-sm text-text-secondary whitespace-nowrap">
-                          {doc.currentRevision?.homeCurrency
-                            ? formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency)
-                            : '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-sm text-text-secondary whitespace-nowrap">
-                          {doc.currentRevision?.homeCurrency
-                            ? formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency)
-                            : '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-sm text-text-secondary font-medium whitespace-nowrap">
-                          {doc.currentRevision?.homeCurrency
-                            ? formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency)
-                            : '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-text-muted whitespace-nowrap">
-                          {formatDate(doc.createdAt)}
-                        </span>
-                      </td>
+                      {visibleColumnIds.map((columnId) => renderDesktopCell(doc, columnId))}
                     </tr>
                   );
                 })}
@@ -901,6 +1298,43 @@ export default function ProcessingDocumentsPage() {
         selectedIds={selectedIds}
         onClearSelection={clearSelection}
       />
+
+      <Modal
+        isOpen={isColumnModalOpen}
+        onClose={() => setIsColumnModalOpen(false)}
+        title="Adjust columns"
+        description="Choose which columns to show, and reset widths if needed."
+        size="lg"
+      >
+        <ModalBody>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+            {COLUMN_IDS.map((columnId) => (
+              <Checkbox
+                key={columnId}
+                checked={isColumnVisible(columnId)}
+                disabled={columnId === 'open'}
+                label={COLUMN_LABELS[columnId]}
+                description={columnId === 'open' ? 'Always shown' : undefined}
+                onChange={() => toggleColumnVisibility(columnId)}
+              />
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-text-muted">Saved per user.</p>
+        </ModalBody>
+        <ModalFooter className="justify-between">
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={showAllColumns} className="btn-secondary btn-sm">
+              Show all
+            </button>
+            <button type="button" onClick={resetColumns} className="btn-secondary btn-sm" title="Reset column widths">
+              Reset widths
+            </button>
+          </div>
+          <button type="button" onClick={() => setIsColumnModalOpen(false)} className="btn-primary btn-sm">
+            Done
+          </button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

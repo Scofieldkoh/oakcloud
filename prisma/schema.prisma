@@ -410,11 +410,29 @@ model User {
   documentDrafts        DocumentDraft[]       @relation("DraftAuthor")
   createdPartials       TemplatePartial[]     @relation("PartialCreator")
   aiConversations       AiConversation[]      @relation("ConversationOwner")
+  preferences           UserPreference[]
 
   @@index([email])
   @@index([tenantId])
   @@index([passwordResetToken])
   @@map("users")
+}
+
+// Per-user UI/application preferences (persisted across devices)
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  key       String
+  value     Json
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, key])
+  @@index([userId])
+  @@map("user_preferences")
 }
 
 // User-Company many-to-many assignment for multi-company access

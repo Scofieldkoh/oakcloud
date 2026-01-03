@@ -877,6 +877,7 @@ export async function listProcessingDocumentsPaged(options: {
   pipelineStatus?: PipelineStatus;
   duplicateStatus?: DuplicateStatus;
   revisionStatus?: RevisionStatus;
+  needsReview?: boolean;
   isContainer?: boolean;
   page?: number;
   limit?: number;
@@ -912,6 +913,7 @@ export async function listProcessingDocumentsPaged(options: {
     pipelineStatus,
     duplicateStatus,
     revisionStatus,
+    needsReview,
     isContainer,
     page = 1,
     limit = 20,
@@ -933,6 +935,45 @@ export async function listProcessingDocumentsPaged(options: {
   // SECURITY: Tenant ID is required to prevent cross-tenant data access unless explicitly skipped for SUPER_ADMIN
   if (!tenantId && !skipTenantFilter) {
     throw new Error('Tenant ID is required for processing documents list');
+  }
+
+  // Backfill `currentRevisionId` for existing unapproved documents that already have revisions
+  // (e.g., extracted drafts). This keeps list sorting and bulk actions consistent with what is displayed.
+  if (tenantId && !skipTenantFilter) {
+    try {
+      const companyScopeSql =
+        companyIds && companyIds.length > 0
+          ? Prisma.sql`AND d."company_id" IN (${Prisma.join(companyIds)})`
+          : Prisma.empty;
+
+      await prisma.$executeRaw`
+        WITH latest AS (
+          SELECT
+            pd."id" AS pd_id,
+            (
+              SELECT dr."id"
+              FROM "document_revisions" dr
+              WHERE dr."processing_document_id" = pd."id"
+              ORDER BY dr."revision_number" DESC
+              LIMIT 1
+            ) AS rev_id
+          FROM "processing_documents" pd
+          JOIN "documents" d ON d."id" = pd."document_id"
+          WHERE pd."current_revision_id" IS NULL
+            AND pd."deleted_at" IS NULL
+            AND d."tenant_id" = ${tenantId}
+            ${companyScopeSql}
+        )
+        UPDATE "processing_documents" pd
+        SET "current_revision_id" = latest.rev_id
+        FROM latest
+        WHERE pd."id" = latest.pd_id
+          AND latest.rev_id IS NOT NULL
+      `;
+    } catch (e) {
+      // Best-effort only; do not fail listing due to backfill issues.
+      log.warn('Failed to backfill currentRevisionId for processing documents', e);
+    }
   }
 
   // Build document filter - companyIds is optional
@@ -962,9 +1003,21 @@ export async function listProcessingDocumentsPaged(options: {
   }
 
   if (revisionStatus) {
-    where.currentRevision = {
-      status: revisionStatus,
-    };
+    // Filter against ANY revision so unapproved documents (no currentRevisionId yet) can still be found.
+    where.revisions = { some: { status: revisionStatus } };
+  }
+
+  if (needsReview) {
+    where.AND = [
+      ...(where.AND ?? []),
+      {
+        OR: [
+          { duplicateStatus: 'SUSPECTED' },
+          { revisions: { some: { status: 'DRAFT' } } },
+          { revisions: { some: { validationStatus: { in: ['WARNINGS', 'INVALID'] } } } },
+        ],
+      },
+    ];
   }
 
   if (isContainer !== undefined) {
@@ -978,10 +1031,7 @@ export async function listProcessingDocumentsPaged(options: {
       where.createdAt.gte = uploadDateFrom;
     }
     if (uploadDateTo) {
-      // Set to end of day for inclusive filtering
-      const endOfDay = new Date(uploadDateTo);
-      endOfDay.setHours(23, 59, 59, 999);
-      where.createdAt.lte = endOfDay;
+      where.createdAt.lte = uploadDateTo;
     }
   }
 
@@ -993,10 +1043,7 @@ export async function listProcessingDocumentsPaged(options: {
       revisionFilter.documentDate.gte = documentDateFrom;
     }
     if (documentDateTo) {
-      // Set to end of day for inclusive filtering
-      const endOfDay = new Date(documentDateTo);
-      endOfDay.setHours(23, 59, 59, 999);
-      revisionFilter.documentDate.lte = endOfDay;
+      revisionFilter.documentDate.lte = documentDateTo;
     }
     where.currentRevision = revisionFilter;
   }
@@ -1042,13 +1089,76 @@ export async function listProcessingDocumentsPaged(options: {
     };
   }
 
-  // Build orderBy based on sortBy field
-  const orderByField = ['createdAt', 'updatedAt', 'pipelineStatus', 'duplicateStatus'].includes(sortBy)
-    ? sortBy
-    : 'createdAt';
-  const orderBy: Prisma.ProcessingDocumentOrderByWithRelationInput = {
-    [orderByField]: sortOrder,
+  // Build orderBy based on sortBy field (supports nested relation sorts)
+  const buildOrderBy = (
+    field: string,
+    order: 'asc' | 'desc'
+  ): Prisma.ProcessingDocumentOrderByWithRelationInput | Prisma.ProcessingDocumentOrderByWithRelationInput[] => {
+    switch (field) {
+      case 'createdAt':
+      case 'updatedAt':
+      case 'pipelineStatus':
+      case 'duplicateStatus':
+        return [{ [field]: order }, { createdAt: 'desc' }, { id: 'desc' }];
+
+      // Document fields
+      case 'fileName':
+        return [
+          { document: { fileName: order } },
+          { document: { originalFileName: order } },
+          { createdAt: 'desc' },
+          { id: 'desc' },
+        ];
+      case 'companyName':
+        return [{ document: { company: { name: order } } }, { createdAt: 'desc' }, { id: 'desc' }];
+
+      // Revision fields (currentRevision)
+      case 'revisionStatus':
+        return [{ currentRevision: { status: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+      case 'documentCategory':
+        return [{ currentRevision: { documentCategory: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+      case 'documentSubCategory':
+        return [{ currentRevision: { documentSubCategory: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+      case 'vendorName':
+        return [{ currentRevision: { vendorName: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+      case 'documentNumber':
+        return [{ currentRevision: { documentNumber: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+      case 'documentDate':
+        return [{ currentRevision: { documentDate: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+      case 'subtotal':
+        return [
+          { currentRevision: { currency: 'asc' } },
+          { currentRevision: { subtotal: order } },
+          { createdAt: 'desc' },
+          { id: 'desc' },
+        ];
+      case 'taxAmount':
+        return [
+          { currentRevision: { currency: 'asc' } },
+          { currentRevision: { taxAmount: order } },
+          { createdAt: 'desc' },
+          { id: 'desc' },
+        ];
+      case 'totalAmount':
+        return [
+          { currentRevision: { currency: 'asc' } },
+          { currentRevision: { totalAmount: order } },
+          { createdAt: 'desc' },
+          { id: 'desc' },
+        ];
+      case 'homeSubtotal':
+        return [{ currentRevision: { homeSubtotal: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+      case 'homeTaxAmount':
+        return [{ currentRevision: { homeTaxAmount: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+      case 'homeEquivalent':
+        return [{ currentRevision: { homeEquivalent: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+
+      default:
+        return [{ createdAt: 'desc' }, { id: 'desc' }];
+    }
   };
+
+  const orderBy = buildOrderBy(sortBy, sortOrder);
 
   const skip = (page - 1) * limit;
 
@@ -1095,6 +1205,29 @@ export async function listProcessingDocumentsPaged(options: {
             homeEquivalent: true,
           },
         },
+        // Include latest revision so list pages can show extracted data before approval.
+        revisions: {
+          take: 1,
+          orderBy: { revisionNumber: 'desc' },
+          select: {
+            id: true,
+            revisionNumber: true,
+            status: true,
+            documentCategory: true,
+            documentSubCategory: true,
+            vendorName: true,
+            documentNumber: true,
+            documentDate: true,
+            currency: true,
+            subtotal: true,
+            taxAmount: true,
+            totalAmount: true,
+            homeCurrency: true,
+            homeSubtotal: true,
+            homeTaxAmount: true,
+            homeEquivalent: true,
+          },
+        },
       },
       orderBy,
       skip,
@@ -1105,7 +1238,15 @@ export async function listProcessingDocumentsPaged(options: {
   const totalPages = Math.ceil(total / limit);
 
   return {
-    documents: documents as ProcessingDocumentWithDocument[],
+    documents: documents.map((doc) => {
+      const latestRevision = (doc as unknown as { revisions?: Array<ProcessingDocumentWithDocument['currentRevision']> }).revisions?.[0] ?? null;
+      return {
+        ...(doc as unknown as ProcessingDocumentWithDocument),
+        // `currentRevisionId` represents the approved revision pointer.
+        // For list UX, expose a "display revision" so extracted drafts show up immediately after upload.
+        currentRevision: (doc as unknown as ProcessingDocumentWithDocument).currentRevision ?? latestRevision,
+      };
+    }) as ProcessingDocumentWithDocument[],
     total,
     page,
     limit,

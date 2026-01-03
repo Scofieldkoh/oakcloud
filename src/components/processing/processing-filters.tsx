@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Search, Filter, X, ChevronDown, Tag } from 'lucide-react';
+import { Search, Filter, X, ChevronDown, Tag, Calendar, Eye, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
@@ -22,8 +22,10 @@ export interface ProcessingFilterValues {
   pipelineStatus?: PipelineStatus;
   duplicateStatus?: DuplicateStatus;
   revisionStatus?: RevisionStatus;
+  needsReview?: boolean;
   isContainer?: boolean;
   companyId?: string;
+  uploadDatePreset?: 'TODAY';
   uploadDateFrom?: string;
   uploadDateTo?: string;
   documentDateFrom?: string;
@@ -45,6 +47,8 @@ interface ProcessingFiltersProps {
   activeCompanyId?: string;
   /** Tenant ID for tag management (for super admins) */
   activeTenantId?: string;
+  /** Optional right-side toolbar actions (e.g., Adjust columns) */
+  rightActions?: React.ReactNode;
 }
 
 // Status configurations
@@ -86,6 +90,7 @@ export function ProcessingFilters({
   initialSearch = '',
   activeCompanyId,
   activeTenantId,
+  rightActions,
 }: ProcessingFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ProcessingFilterValues>(initialFilters);
@@ -140,11 +145,13 @@ export function ProcessingFilters({
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (searchQuery.trim()) count++;
+    if (filters.needsReview) count++;
     if (filters.pipelineStatus) count++;
     if (filters.duplicateStatus) count++;
     if (filters.revisionStatus) count++;
     if (filters.isContainer !== undefined) count++;
     if (filters.companyId) count++;
+    if (filters.uploadDatePreset) count++;
     if (filters.uploadDateFrom || filters.uploadDateTo) count++;
     if (filters.documentDateFrom || filters.documentDateTo) count++;
     if (filters.vendorName) count++;
@@ -176,31 +183,87 @@ export function ProcessingFilters({
   }, [onFilterChange, onSearchChange]);
 
   // Date picker value conversion helpers
+  const toDateOnly = useCallback((date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, []);
+
+  const toLocalDate = useCallback((value: string) => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m, d] = value.split('-').map((v) => parseInt(v, 10));
+      return new Date(y, m - 1, d);
+    }
+    return new Date(value);
+  }, []);
+
+  const toggleUploadedToday = useCallback(() => {
+    const today = toDateOnly(new Date());
+    const next = { ...filters };
+    if (next.uploadDateFrom === today && next.uploadDateTo === today) {
+      delete next.uploadDateFrom;
+      delete next.uploadDateTo;
+      delete next.uploadDatePreset;
+    } else {
+      next.uploadDateFrom = today;
+      next.uploadDateTo = today;
+      delete next.uploadDatePreset;
+    }
+    setFilters(next);
+    onFilterChange(next);
+  }, [filters, onFilterChange, toDateOnly]);
+
+  const toggleNeedsReview = useCallback(() => {
+    const next = { ...filters };
+    if (next.needsReview) {
+      delete next.needsReview;
+    } else {
+      next.needsReview = true;
+      delete next.revisionStatus;
+      delete next.duplicateStatus;
+    }
+    setFilters(next);
+    onFilterChange(next);
+  }, [filters, onFilterChange]);
+
+  const toggleSuspectedDuplicate = useCallback(() => {
+    const next = { ...filters };
+    if (next.duplicateStatus === 'SUSPECTED') {
+      delete next.duplicateStatus;
+    } else {
+      next.duplicateStatus = 'SUSPECTED';
+      delete next.needsReview;
+    }
+    setFilters(next);
+    onFilterChange(next);
+  }, [filters, onFilterChange]);
+
   const uploadDateValue: DatePickerValue | undefined = useMemo(() => {
     if (filters.uploadDateFrom || filters.uploadDateTo) {
       return {
         mode: 'range' as const,
         range: {
-          from: filters.uploadDateFrom ? new Date(filters.uploadDateFrom) : undefined,
-          to: filters.uploadDateTo ? new Date(filters.uploadDateTo) : undefined,
+          from: filters.uploadDateFrom ? toLocalDate(filters.uploadDateFrom) : undefined,
+          to: filters.uploadDateTo ? toLocalDate(filters.uploadDateTo) : undefined,
         },
       };
     }
     return undefined;
-  }, [filters.uploadDateFrom, filters.uploadDateTo]);
+  }, [filters.uploadDateFrom, filters.uploadDateTo, toLocalDate]);
 
   const documentDateValue: DatePickerValue | undefined = useMemo(() => {
     if (filters.documentDateFrom || filters.documentDateTo) {
       return {
         mode: 'range' as const,
         range: {
-          from: filters.documentDateFrom ? new Date(filters.documentDateFrom) : undefined,
-          to: filters.documentDateTo ? new Date(filters.documentDateTo) : undefined,
+          from: filters.documentDateFrom ? toLocalDate(filters.documentDateFrom) : undefined,
+          to: filters.documentDateTo ? toLocalDate(filters.documentDateTo) : undefined,
         },
       };
     }
     return undefined;
-  }, [filters.documentDateFrom, filters.documentDateTo]);
+  }, [filters.documentDateFrom, filters.documentDateTo, toLocalDate]);
 
   const handleUploadDateChange = useCallback((value: DatePickerValue | undefined) => {
     const newFilters = { ...filters };
@@ -208,12 +271,13 @@ export function ProcessingFilters({
       delete newFilters.uploadDateFrom;
       delete newFilters.uploadDateTo;
     } else {
-      newFilters.uploadDateFrom = value.range.from?.toISOString();
-      newFilters.uploadDateTo = value.range.to?.toISOString();
+      delete newFilters.uploadDatePreset;
+      newFilters.uploadDateFrom = value.range.from ? toDateOnly(value.range.from) : undefined;
+      newFilters.uploadDateTo = value.range.to ? toDateOnly(value.range.to) : undefined;
     }
     setFilters(newFilters);
     onFilterChange(newFilters);
-  }, [filters, onFilterChange]);
+  }, [filters, onFilterChange, toDateOnly]);
 
   const handleDocumentDateChange = useCallback((value: DatePickerValue | undefined) => {
     const newFilters = { ...filters };
@@ -221,12 +285,12 @@ export function ProcessingFilters({
       delete newFilters.documentDateFrom;
       delete newFilters.documentDateTo;
     } else {
-      newFilters.documentDateFrom = value.range.from?.toISOString();
-      newFilters.documentDateTo = value.range.to?.toISOString();
+      newFilters.documentDateFrom = value.range.from ? toDateOnly(value.range.from) : undefined;
+      newFilters.documentDateTo = value.range.to ? toDateOnly(value.range.to) : undefined;
     }
     setFilters(newFilters);
     onFilterChange(newFilters);
-  }, [filters, onFilterChange]);
+  }, [filters, onFilterChange, toDateOnly]);
 
   // Handle tag filter toggle
   const handleTagToggle = useCallback((tagId: string) => {
@@ -252,17 +316,23 @@ export function ProcessingFilters({
   // Format date for display
   const formatDateDisplay = (dateStr: string | undefined) => {
     if (!dateStr) return '...';
-    return new Date(dateStr).toLocaleDateString('en-GB', {
+    return toLocalDate(dateStr).toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
     });
   };
 
+  const isUploadedTodayActive = useMemo(() => {
+    if (filters.uploadDatePreset === 'TODAY') return true;
+    const today = toDateOnly(new Date());
+    return filters.uploadDateFrom === today && filters.uploadDateTo === today;
+  }, [filters.uploadDateFrom, filters.uploadDatePreset, filters.uploadDateTo, toDateOnly]);
+
   return (
-    <div className="space-y-3">
-      {/* Search and Filter Toggle Row */}
-      <div className="flex items-center gap-3">
+    <div className="space-y-2">
+      {/* Compact toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2">
         <div className="flex-1 relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
@@ -281,6 +351,35 @@ export function ProcessingFilters({
             </button>
           )}
         </div>
+
+        {/* Quick Filters (icon-only) */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={toggleUploadedToday}
+            className={cn('btn-ghost btn-xs p-2', isUploadedTodayActive && 'bg-background-tertiary')}
+            title="Uploaded today"
+          >
+            <Calendar className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={toggleNeedsReview}
+            className={cn('btn-ghost btn-xs p-2', !!filters.needsReview && 'bg-background-tertiary')}
+            title="Needs review (draft, suspected duplicate, warnings/invalid)"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={toggleSuspectedDuplicate}
+            className={cn('btn-ghost btn-xs p-2', filters.duplicateStatus === 'SUSPECTED' && 'bg-background-tertiary')}
+            title="Suspected duplicates"
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+        </div>
+
         <button
           onClick={() => setShowFilters(!showFilters)}
           aria-expanded={showFilters}
@@ -298,6 +397,8 @@ export function ProcessingFilters({
           )}
           <ChevronDown className={cn('w-4 h-4 transition-transform', showFilters && 'rotate-180')} />
         </button>
+
+        {rightActions}
       </div>
 
       {/* Expandable Filter Panel */}
@@ -477,6 +578,20 @@ export function ProcessingFilters({
                 setSearchQuery('');
                 onSearchChange?.('');
               }}
+            />
+          )}
+          {filters.uploadDatePreset && (
+            <FilterChip
+              label="Upload"
+              value={filters.uploadDatePreset === 'TODAY' ? 'Today' : filters.uploadDatePreset}
+              onRemove={() => clearFilter('uploadDatePreset')}
+            />
+          )}
+          {filters.needsReview && (
+            <FilterChip
+              label="Review"
+              value="Needs Review"
+              onRemove={() => clearFilter('needsReview')}
             />
           )}
           {filters.pipelineStatus && (

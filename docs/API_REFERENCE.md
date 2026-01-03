@@ -546,13 +546,48 @@ List processing documents with filters and pagination.
 **Query Parameters:**
 - `page` (number, default: 1)
 - `limit` (number, default: 20)
-- `query` (string, optional) - Search by filename, vendor name, document number
-- `companyId` (string, optional) - Filter by company
-- `pipelineStatus` (string, optional) - Filter by status
+- `sortBy` (string, default: `createdAt`)
+- `sortOrder` ('asc' | 'desc', default: 'desc')
+- `pipelineStatus` (string, optional) - Filter by pipeline status
 - `duplicateStatus` (string, optional) - Filter by duplicate status
 - `revisionStatus` (string, optional) - Filter by revision status
-- `documentCategory` (string, optional) - Filter by category
-- `tagIds` (string[], optional) - Filter by tags
+- `needsReview` (boolean, optional) - Needs review (draft, suspected duplicate, or warnings/invalid)
+- `isContainer` (boolean, optional) - Filter by container/child type
+- `companyId` (string, optional) - Filter by company
+- `tenantId` (string, optional) - SUPER_ADMIN: tenant scope
+- `uploadDatePreset` ('TODAY', optional) - Uses tenant timezone
+- `uploadDateFrom` (string, optional) - `YYYY-MM-DD` or ISO datetime
+- `uploadDateTo` (string, optional) - `YYYY-MM-DD` or ISO datetime
+- `documentDateFrom` (string, optional) - `YYYY-MM-DD` or ISO datetime
+- `documentDateTo` (string, optional) - `YYYY-MM-DD` or ISO datetime
+- `search` (string, optional) - General search (file name, vendor name, document number)
+- `vendorName` (string, optional)
+- `documentNumber` (string, optional)
+- `fileName` (string, optional)
+- `tagIds` (string, optional) - Comma-separated tag IDs
+
+---
+
+### GET /api/processing-documents/navigation
+Get prev/next navigation within a filtered processing document set (used by “Review Next” and detail page navigation).
+
+**Query Parameters:**
+- `filter` ('needs-review' | 'all', default: 'needs-review')
+- `start` (boolean, default: false) - When true, returns the first item in the set
+- `currentDocumentId` (string, required unless `start=true`)
+- `companyId` (string, optional) - Filter by company
+- `tenantId` (string, required for SUPER_ADMIN)
+
+**Response:** `200 OK`
+```json
+{
+  "total": "number",
+  "currentIndex": "number",
+  "currentDocumentId": "string | null",
+  "prevId": "string | null",
+  "nextId": "string | null"
+}
+```
 
 ---
 
@@ -1122,6 +1157,29 @@ List companies a user has access to.
 
 ### PUT /api/users/[id]/companies
 Update user's company assignments.
+
+---
+
+## User Preference Endpoints
+
+### GET /api/user-preferences
+Get a single user preference value.
+
+**Query Parameters:**
+- `key` (string, required)
+
+---
+
+### PUT /api/user-preferences
+Upsert a user preference value.
+
+**Request Body:**
+```json
+{
+  "key": "string",
+  "value": "any JSON"
+}
+```
 
 ---
 

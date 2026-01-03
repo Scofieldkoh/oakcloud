@@ -26,6 +26,55 @@ import { extractFields } from '@/services/document-extraction.service';
 import { storage, StorageKeys } from '@/lib/storage';
 import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 
+function getTenantTimezone(settings: unknown): string {
+  const tz = (settings as Record<string, unknown> | null | undefined)?.timezone;
+  return typeof tz === 'string' && tz.trim() ? tz : 'Asia/Singapore';
+}
+
+function getTimeZoneOffsetMinutes(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    timeZoneName: 'shortOffset',
+  }).formatToParts(date);
+  const tz = parts.find((p) => p.type === 'timeZoneName')?.value || '';
+
+  // Examples: "GMT+8", "GMT+08:00", "UTC", "GMT"
+  const match = /(?:GMT|UTC)([+-]\d{1,2})(?::(\d{2}))?/.exec(tz);
+  if (!match) return 0;
+  const hours = parseInt(match[1], 10);
+  const minutes = match[2] ? parseInt(match[2], 10) : 0;
+  return hours * 60 + Math.sign(hours) * minutes;
+}
+
+function dateOnlyToUtcStartEnd(isoDate: string, timeZone: string): { start: Date; end: Date } {
+  const [y, m, d] = isoDate.split('-').map((v) => parseInt(v, 10));
+  const utcMidnight = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+
+  let offset = getTimeZoneOffsetMinutes(utcMidnight, timeZone);
+  let start = new Date(utcMidnight.getTime() - offset * 60_000);
+  const offset2 = getTimeZoneOffsetMinutes(start, timeZone);
+  if (offset2 !== offset) {
+    offset = offset2;
+    start = new Date(utcMidnight.getTime() - offset * 60_000);
+  }
+
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1);
+  return { start, end };
+}
+
+function nowDateOnlyInTimeZone(timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const year = parts.find((p) => p.type === 'year')?.value;
+  const month = parts.find((p) => p.type === 'month')?.value;
+  const day = parts.find((p) => p.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
 /**
  * GET /api/processing-documents
  * List processing documents with page-based pagination and filters
@@ -53,10 +102,12 @@ export async function GET(request: NextRequest) {
     const pipelineStatus = searchParams.get('pipelineStatus') as PipelineStatus | null;
     const duplicateStatus = searchParams.get('duplicateStatus') as DuplicateStatus | null;
     const revisionStatus = searchParams.get('revisionStatus') as RevisionStatus | null;
+    const needsReview = searchParams.get('needsReview') === 'true' ? true : undefined;
     const isContainerStr = searchParams.get('isContainer');
     const companyId = searchParams.get('companyId');
 
     // New filter parameters
+    const uploadDatePreset = searchParams.get('uploadDatePreset') as 'TODAY' | null;
     const uploadDateFrom = searchParams.get('uploadDateFrom');
     const uploadDateTo = searchParams.get('uploadDateTo');
     const documentDateFrom = searchParams.get('documentDateFrom');
@@ -112,6 +163,46 @@ export async function GET(request: NextRequest) {
     }
     // SUPER_ADMIN, TENANT_ADMIN, and users with hasAllCompaniesAccess see all documents in the tenant
 
+    // Tenant timezone for "today" and date-only filters
+    const tenantForTimezone = effectiveTenantId
+      ? await prisma.tenant.findUnique({ where: { id: effectiveTenantId }, select: { settings: true } })
+      : null;
+    const timeZone = getTenantTimezone(tenantForTimezone?.settings);
+
+    const parseFrom = (value: string | null): Date | undefined => {
+      if (!value) return undefined;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return dateOnlyToUtcStartEnd(value, timeZone).start;
+      }
+      const dt = new Date(value);
+      return isNaN(dt.getTime()) ? undefined : dt;
+    };
+
+    const parseTo = (value: string | null): Date | undefined => {
+      if (!value) return undefined;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return dateOnlyToUtcStartEnd(value, timeZone).end;
+      }
+      const dt = new Date(value);
+      return isNaN(dt.getTime()) ? undefined : dt;
+    };
+
+    let effectiveUploadDateFrom: Date | undefined;
+    let effectiveUploadDateTo: Date | undefined;
+
+    if (uploadDatePreset === 'TODAY') {
+      const today = nowDateOnlyInTimeZone(timeZone);
+      const range = dateOnlyToUtcStartEnd(today, timeZone);
+      effectiveUploadDateFrom = range.start;
+      effectiveUploadDateTo = range.end;
+    } else {
+      effectiveUploadDateFrom = parseFrom(uploadDateFrom);
+      effectiveUploadDateTo = parseTo(uploadDateTo);
+    }
+
+    const effectiveDocumentDateFrom = parseFrom(documentDateFrom);
+    const effectiveDocumentDateTo = parseTo(documentDateTo);
+
     // Get documents with paged results
     const result = await listProcessingDocumentsPaged({
       tenantId: effectiveTenantId,
@@ -119,6 +210,7 @@ export async function GET(request: NextRequest) {
       pipelineStatus: pipelineStatus ?? undefined,
       duplicateStatus: duplicateStatus ?? undefined,
       revisionStatus: revisionStatus ?? undefined,
+      needsReview,
       isContainer,
       page,
       limit,
@@ -126,10 +218,10 @@ export async function GET(request: NextRequest) {
       sortOrder,
       skipTenantFilter: session.isSuperAdmin && !effectiveTenantId,
       // New filter parameters
-      uploadDateFrom: uploadDateFrom ? new Date(uploadDateFrom) : undefined,
-      uploadDateTo: uploadDateTo ? new Date(uploadDateTo) : undefined,
-      documentDateFrom: documentDateFrom ? new Date(documentDateFrom) : undefined,
-      documentDateTo: documentDateTo ? new Date(documentDateTo) : undefined,
+      uploadDateFrom: effectiveUploadDateFrom,
+      uploadDateTo: effectiveUploadDateTo,
+      documentDateFrom: effectiveDocumentDateFrom,
+      documentDateTo: effectiveDocumentDateTo,
       search: search ?? undefined,
       vendorName: vendorName ?? undefined,
       documentNumber: documentNumber ?? undefined,

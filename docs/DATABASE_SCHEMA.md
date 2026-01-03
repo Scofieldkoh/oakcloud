@@ -184,6 +184,25 @@ User accounts for authentication and authorization. Permissions and company acce
 
 ---
 
+### user_preferences
+
+Per-user UI/application preferences persisted across devices (e.g., table column widths/visibility).
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| user_id | UUID | No | FK to users |
+| key | VARCHAR | No | Preference key (namespaced string) |
+| value | JSONB | No | Preference value (JSON) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Indexes:**
+- `user_preferences_user_id_key_key` UNIQUE on (user_id, key)
+- `user_preferences_user_id_idx` on user_id
+
+---
+
 ### companies
 
 Main company records with ACRA information. Each company belongs to a tenant.

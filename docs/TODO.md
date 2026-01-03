@@ -32,7 +32,15 @@ You can read the MD files of the docs for information; they are documented and c
 - [ ] Salesrooms
 
 
-Column details and filter options, export details, preview next page navigation have to be more obvious, copmpany name consistency, option without line item/ AI extraction.
+### Document Processing UX
+- [x] Show extracted data in the processing list immediately after upload (no approval required)
+- [x] Allow opening multiple document tabs (Ctrl/Cmd+click, middle-click, context menu)
+- [x] Add “Review Next” + prev/next navigation for docs needing review (includes `SUSPECTED` + `WARNINGS/INVALID`)
+- [x] Improve detail page load time by removing redundant fetches and disabling auto-revalidate on mount
+- [x] Add manual `Revalidate` button during edit
+- [x] Auto-fit columns (no truncation), resizable widths, persisted per user across sessions
+- [x] Column visibility controls (persisted per user across sessions)
+- [x] Add quick filter buttons (icon-only) for common combinations (e.g. uploaded today) using tenant timezone
+- [ ] Decide Prisma schema sync strategy for new `user_preferences` table (repo has no migrations; `prisma migrate dev` may detect drift)
 
-
-Header details not viewable before approval, opening multiple tabs for documents, inconvenient of toggle between unapproved documents, each document takes about 2 seconds to load, columns cannot see full value, no quick filters options
+Column details and filter options, export details, preview next page navigation have to be more obvious, company name consistency, option without line item/ AI extraction.

@@ -109,6 +109,16 @@ export async function POST(request: NextRequest) {
             },
           },
         },
+        // Fallback for unapproved documents: export latest extracted draft revision.
+        revisions: {
+          take: 1,
+          orderBy: { revisionNumber: 'desc' },
+          include: {
+            items: {
+              orderBy: { lineNo: 'asc' },
+            },
+          },
+        },
       },
     });
 
@@ -175,7 +185,7 @@ export async function POST(request: NextRequest) {
 
     // Add header data
     for (const doc of accessibleDocs) {
-      const revision = doc.currentRevision;
+      const revision = doc.currentRevision ?? doc.revisions[0] ?? null;
       const fileName = doc.document?.fileName || doc.document?.originalFileName || '';
 
       headersSheet.addRow({
@@ -237,7 +247,7 @@ export async function POST(request: NextRequest) {
 
     // Add line item data
     for (const doc of accessibleDocs) {
-      const revision = doc.currentRevision;
+      const revision = doc.currentRevision ?? doc.revisions[0] ?? null;
       if (!revision?.items || revision.items.length === 0) continue;
 
       const fileName = doc.document?.fileName || doc.document?.originalFileName || '';

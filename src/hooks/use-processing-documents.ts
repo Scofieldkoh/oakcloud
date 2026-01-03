@@ -111,6 +111,7 @@ export interface ProcessingDocumentSearchParams {
   pipelineStatus?: PipelineStatus;
   duplicateStatus?: DuplicateStatus;
   revisionStatus?: RevisionStatus; // Filter by revision status (DRAFT = pending review, APPROVED)
+  needsReview?: boolean;
   isContainer?: boolean;
   companyId?: string;
   tenantId?: string; // For SUPER_ADMIN to filter by specific tenant
@@ -119,6 +120,7 @@ export interface ProcessingDocumentSearchParams {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   // Date range filters
+  uploadDatePreset?: 'TODAY';
   uploadDateFrom?: string; // ISO date string (createdAt filter)
   uploadDateTo?: string;
   documentDateFrom?: string; // ISO date string (revision.documentDate filter)
@@ -323,6 +325,7 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
       params.pipelineStatus,
       params.duplicateStatus,
       params.revisionStatus,
+      params.needsReview,
       params.isContainer,
       params.companyId,
       params.tenantId,
@@ -331,6 +334,7 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
       params.sortBy,
       params.sortOrder,
       // New filter parameters
+      params.uploadDatePreset,
       params.uploadDateFrom,
       params.uploadDateTo,
       params.documentDateFrom,
@@ -759,65 +763,42 @@ export function useBulkDownload() {
 // ============================================================================
 
 export interface DocumentNavigationResult {
-  documents: Array<{
-    id: string;
-    fileName: string;
-    pipelineStatus: PipelineStatus;
-    duplicateStatus: DuplicateStatus;
-    approvalStatus: string;
-    overallConfidence?: number;
-  }>;
   total: number;
   currentIndex: number;
+  currentDocumentId: string | null;
+  prevId: string | null;
+  nextId: string | null;
 }
 
 /**
  * Hook for navigating between documents that need review
- * Filters by: DRAFT status, suspected duplicate, or low confidence
+ * Filters by: DRAFT status, suspected duplicate, or validation WARNINGS/INVALID
  */
 export function useDocumentNavigation(
   currentDocumentId: string,
-  filter: 'all' | 'needs-review' = 'needs-review'
+  filter: 'all' | 'needs-review' = 'needs-review',
+  options?: {
+    tenantId?: string | null;
+    companyId?: string;
+    start?: boolean;
+  }
 ) {
   return useQuery({
-    queryKey: ['document-navigation', currentDocumentId, filter],
+    queryKey: ['document-navigation', currentDocumentId, filter, options?.tenantId ?? null, options?.companyId ?? null, options?.start ?? false],
     queryFn: async (): Promise<DocumentNavigationResult> => {
-      // Fetch documents needing review (DRAFT status or suspected duplicate)
       const params = new URLSearchParams();
-      params.set('limit', '100'); // Get enough for navigation
-      params.set('sortBy', 'createdAt');
-      params.set('sortOrder', 'desc');
+      params.set('filter', filter);
+      if (options?.start) params.set('start', 'true');
+      if (!options?.start) params.set('currentDocumentId', currentDocumentId);
+      if (options?.tenantId) params.set('tenantId', options.tenantId);
+      if (options?.companyId) params.set('companyId', options.companyId);
 
-      const response = await fetch(`/api/processing-documents?${params}`);
+      const response = await fetch(`/api/processing-documents/navigation?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch documents for navigation');
       }
       const result = await response.json();
-      const allDocs = result.data.documents || [];
-
-      // Filter documents based on criteria
-      const filteredDocs = filter === 'needs-review'
-        ? allDocs.filter((doc: ProcessingDocumentListItem) =>
-            doc.currentRevision?.status === 'DRAFT' ||
-            doc.duplicateStatus === 'SUSPECTED'
-          )
-        : allDocs;
-
-      const currentIndex = filteredDocs.findIndex(
-        (doc: ProcessingDocumentListItem) => doc.id === currentDocumentId
-      );
-
-      return {
-        documents: filteredDocs.map((doc: ProcessingDocumentListItem) => ({
-          id: doc.id,
-          fileName: doc.document?.fileName || 'Unknown',
-          pipelineStatus: doc.pipelineStatus,
-          duplicateStatus: doc.duplicateStatus,
-          approvalStatus: doc.currentRevision?.status || 'N/A',
-        })),
-        total: filteredDocs.length,
-        currentIndex: currentIndex >= 0 ? currentIndex : 0,
-      };
+      return result.data as DocumentNavigationResult;
     },
     enabled: !!currentDocumentId,
     staleTime: 30_000,

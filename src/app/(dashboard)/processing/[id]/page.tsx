@@ -28,13 +28,13 @@ import {
   Building2,
   Link2,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useProcessingDocument,
   useRevisionHistory,
   useTriggerExtraction,
   useApproveRevision,
   useRecordDuplicateDecision,
-  useDocumentPages,
   useRevisionWithLineItems,
   useUpdateRevision,
   useDocumentNavigation,
@@ -258,6 +258,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
   const { data: session } = useSession();
@@ -274,8 +275,10 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Data fetching
   const { data, isLoading, error, refetch } = useProcessingDocument(id);
   const { data: revisions, isLoading: revisionsLoading } = useRevisionHistory(id);
-  const { isLoading: pagesLoading } = useDocumentPages(id);
-  const { data: navData } = useDocumentNavigation(id);
+  const { data: navData } = useDocumentNavigation(id, 'needs-review', {
+    tenantId: activeTenantId,
+    companyId: data?.document?.company?.id || undefined,
+  });
 
   // Current revision data
   const currentRevisionId = data?.currentRevision?.id || null;
@@ -288,7 +291,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const displayRevisionId = viewingSnapshotId || currentRevisionId;
   const isViewingSnapshot = viewingSnapshotId !== null;
 
-  const { data: revisionWithLineItems, isLoading: lineItemsLoading, refetch: refetchLineItems } = useRevisionWithLineItems(id, displayRevisionId);
+  const { data: revisionWithLineItems, isLoading: lineItemsLoading, refetch: refetchLineItems } = useRevisionWithLineItems(id, displayRevisionId, false);
 
   // Duplicate comparison (only fetch when needed)
   const { data: duplicateData } = useDuplicateComparison(
@@ -336,6 +339,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Export hook
   const documentExport = useDocumentExport();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isRevalidating, setIsRevalidating] = useState(false);
 
   // UI State
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -709,15 +713,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
   // Navigation handlers
   const handleNavigatePrev = useCallback(() => {
-    if (!navData || navData.currentIndex <= 0) return;
-    const prevDoc = navData.documents[navData.currentIndex - 1];
-    if (prevDoc) router.push(`/processing/${prevDoc.id}`);
+    if (!navData?.prevId) return;
+    router.push(`/processing/${navData.prevId}`);
   }, [navData, router]);
 
   const handleNavigateNext = useCallback(() => {
-    if (!navData || navData.currentIndex >= navData.total - 1) return;
-    const nextDoc = navData.documents[navData.currentIndex + 1];
-    if (nextDoc) router.push(`/processing/${nextDoc.id}`);
+    if (!navData?.nextId) return;
+    router.push(`/processing/${navData.nextId}`);
   }, [navData, router]);
 
   // Keyboard navigation
@@ -1033,6 +1035,29 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     }
   };
 
+  const handleRevalidate = useCallback(async () => {
+    if (!displayRevisionId) return;
+    try {
+      setIsRevalidating(true);
+      const response = await fetch(`/api/processing-documents/${id}/revisions/${displayRevisionId}?revalidate=true`);
+      if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.error?.message || 'Failed to revalidate');
+      }
+      const result = await response.json();
+      const updated = result.data;
+
+      queryClient.setQueryData(['revision-line-items', id, displayRevisionId, false], updated);
+      queryClient.setQueryData(['revision-line-items', id, displayRevisionId, true], updated);
+
+      success('Revalidation complete');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to revalidate');
+    } finally {
+      setIsRevalidating(false);
+    }
+  }, [displayRevisionId, id, queryClient, success, toastError]);
+
   const handleAddLineItem = () => {
     const maxLineNo = editLineItems.reduce((max, item) => Math.max(max, item.lineNo), 0);
     setEditLineItems([
@@ -1216,7 +1241,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleNavigatePrev}
-                disabled={navData.currentIndex <= 0}
+                disabled={!navData.prevId}
                 className="btn-ghost btn-xs p-1.5"
                 title="Previous document (Alt+Left)"
               >
@@ -1227,7 +1252,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               </span>
               <button
                 onClick={handleNavigateNext}
-                disabled={navData.currentIndex >= navData.total - 1}
+                disabled={!navData.nextId}
                 className="btn-ghost btn-xs p-1.5"
                 title="Next document (Alt+Right)"
               >
@@ -1273,6 +1298,21 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               <button onClick={() => { setIsEditing(false); setIsEditingApproved(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm">
                 Cancel
               </button>
+              {!isEditingApproved && (
+                <button
+                  onClick={handleRevalidate}
+                  disabled={isRevalidating}
+                  className="btn-secondary btn-sm"
+                  title="Re-run server-side validation (saved data only)"
+                >
+                  {isRevalidating ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5 mr-1.5" />
+                  )}
+                  Revalidate
+                </button>
+              )}
               <button
                 onClick={() => handleShowModelSelector(true)}
                 disabled={triggerExtraction.isPending}
@@ -1428,19 +1468,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           topPanel={
             <ResizableSplitView
               leftPanel={
-                pagesLoading ? (
-                  <div className="flex items-center justify-center h-full bg-background-secondary">
-                    <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
-                  </div>
-                ) : (
-                  <DocumentPageViewer
-                    documentId={id}
-                    highlights={highlights}
-                    fieldValues={fieldValues}
-                    className="h-full"
-                    onRotationChange={handleRotationChange}
-                  />
-                )
+                <DocumentPageViewer
+                  documentId={id}
+                  highlights={highlights}
+                  fieldValues={fieldValues}
+                  className="h-full"
+                  onRotationChange={handleRotationChange}
+                />
               }
               rightPanel={
                 <div className="h-full overflow-y-auto bg-background-primary p-4">

@@ -507,6 +507,16 @@ export async function extractFields(
       reason: 'initial_extraction',
     });
 
+    // Point the processing document to the latest extracted draft revision so list views and sorting
+    // can use it immediately (no approval required).
+    await prisma.processingDocument.update({
+      where: { id: processingDocumentId },
+      data: {
+        currentRevisionId: revision.id,
+        lockVersion: { increment: 1 },
+      },
+    });
+
     // Update pipeline status to EXTRACTION_DONE
     await transitionPipelineStatus(processingDocumentId, 'EXTRACTION_DONE', tenantId, companyId);
 
@@ -763,9 +773,9 @@ async function performAIExtraction(
 }
 
 ## Counterparty Field Rules (IMPORTANT)
-- For **ACCOUNTS_PAYABLE** documents, extract the supplier into `vendorName`.
-- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into `customerName`.
-- Do NOT put a person’s name (e.g., “Raymond”) unless the counterparty on the document is clearly an individual.
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
 
 ## Singapore GST Tax Codes (REQUIRED for each line item)
 You MUST assign a taxCode to EVERY line item based on these rules:

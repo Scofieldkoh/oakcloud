@@ -57,6 +57,7 @@ export const ModelName = {
   RolePermission: 'RolePermission',
   UserRoleAssignment: 'UserRoleAssignment',
   User: 'User',
+  UserPreference: 'UserPreference',
   UserCompanyAssignment: 'UserCompanyAssignment',
   Company: 'Company',
   CompanyFormerName: 'CompanyFormerName',
@@ -223,6 +224,18 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const UserPreferenceScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  key: 'key',
+  value: 'value',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserPreferenceScalarFieldEnum = (typeof UserPreferenceScalarFieldEnum)[keyof typeof UserPreferenceScalarFieldEnum]
 
 
 export const UserCompanyAssignmentScalarFieldEnum = {
