@@ -66,7 +66,7 @@ export function DocumentLinks({ documentId, canUpdate }: DocumentLinksProps) {
 
   // Currency symbols mapping - SGD displayed as "S$"
   const CURRENCY_SYMBOLS: Record<string, string> = {
-    SGD: 'S$', USD: 'US$', EUR: '€', GBP: '£', JPY: '¥', HKD: 'HK$', AUD: 'A$', MYR: 'RM',
+    SGD: 'S$', USD: 'US$', EUR: 'â‚¬', GBP: ' £', JPY: ' ¥', HKD: 'HK$', AUD: 'A$', MYR: 'RM',
   };
 
   const formatCurrency = (amount: string | null, currency: string | null) => {
@@ -277,7 +277,7 @@ function AddLinkModal({
 
   // Currency symbols mapping - SGD displayed as "S$"
   const CURRENCY_SYMBOLS: Record<string, string> = {
-    SGD: 'S$', USD: 'US$', EUR: '€', GBP: '£', JPY: '¥', HKD: 'HK$', AUD: 'A$', MYR: 'RM',
+    SGD: 'S$', USD: 'US$', EUR: 'â‚¬', GBP: ' £', JPY: ' ¥', HKD: 'HK$', AUD: 'A$', MYR: 'RM',
   };
 
   const formatCurrency = (amount: string | null, currency: string | null) => {

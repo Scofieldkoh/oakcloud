@@ -116,7 +116,31 @@ export async function GET(request: NextRequest) {
     const vendorName = searchParams.get('vendorName');
     const documentNumber = searchParams.get('documentNumber');
     const fileName = searchParams.get('fileName');
+    const documentCategory = searchParams.get('documentCategory') || undefined;
+    const documentSubCategory = searchParams.get('documentSubCategory') || undefined;
     const tagIds = searchParams.get('tagIds')?.split(',').filter(Boolean) || undefined;
+
+    // Amount filters - single value mode
+    const subtotal = searchParams.get('subtotal');
+    const tax = searchParams.get('tax');
+    const total = searchParams.get('total');
+    const homeSubtotal = searchParams.get('homeSubtotal');
+    const homeTax = searchParams.get('homeTax');
+    const homeTotal = searchParams.get('homeTotal');
+
+    // Amount filters - range mode
+    const subtotalFrom = searchParams.get('subtotalFrom');
+    const subtotalTo = searchParams.get('subtotalTo');
+    const taxFrom = searchParams.get('taxFrom');
+    const taxTo = searchParams.get('taxTo');
+    const totalFrom = searchParams.get('totalFrom');
+    const totalTo = searchParams.get('totalTo');
+    const homeSubtotalFrom = searchParams.get('homeSubtotalFrom');
+    const homeSubtotalTo = searchParams.get('homeSubtotalTo');
+    const homeTaxFrom = searchParams.get('homeTaxFrom');
+    const homeTaxTo = searchParams.get('homeTaxTo');
+    const homeTotalFrom = searchParams.get('homeTotalFrom');
+    const homeTotalTo = searchParams.get('homeTotalTo');
 
     const page = pageStr ? parseInt(pageStr, 10) : 1;
     const limit = Math.min(limitStr ? parseInt(limitStr, 10) : 20, 100);
@@ -203,6 +227,13 @@ export async function GET(request: NextRequest) {
     const effectiveDocumentDateFrom = parseFrom(documentDateFrom);
     const effectiveDocumentDateTo = parseTo(documentDateTo);
 
+    // Parse amount filters (convert strings to numbers)
+    const parseAmount = (value: string | null): number | undefined => {
+      if (!value) return undefined;
+      const num = parseFloat(value);
+      return isNaN(num) ? undefined : num;
+    };
+
     // Get documents with paged results
     const result = await listProcessingDocumentsPaged({
       tenantId: effectiveTenantId,
@@ -226,7 +257,29 @@ export async function GET(request: NextRequest) {
       vendorName: vendorName ?? undefined,
       documentNumber: documentNumber ?? undefined,
       fileName: fileName ?? undefined,
+      documentCategory: documentCategory ?? undefined,
+      documentSubCategory: documentSubCategory ?? undefined,
       tagIds,
+      // Amount filters - single value mode
+      subtotal: parseAmount(subtotal),
+      tax: parseAmount(tax),
+      total: parseAmount(total),
+      homeSubtotal: parseAmount(homeSubtotal),
+      homeTax: parseAmount(homeTax),
+      homeTotal: parseAmount(homeTotal),
+      // Amount filters - range mode
+      subtotalFrom: parseAmount(subtotalFrom),
+      subtotalTo: parseAmount(subtotalTo),
+      taxFrom: parseAmount(taxFrom),
+      taxTo: parseAmount(taxTo),
+      totalFrom: parseAmount(totalFrom),
+      totalTo: parseAmount(totalTo),
+      homeSubtotalFrom: parseAmount(homeSubtotalFrom),
+      homeSubtotalTo: parseAmount(homeSubtotalTo),
+      homeTaxFrom: parseAmount(homeTaxFrom),
+      homeTaxTo: parseAmount(homeTaxTo),
+      homeTotalFrom: parseAmount(homeTotalFrom),
+      homeTotalTo: parseAmount(homeTotalTo),
     });
 
     // Transform for API response (convert Decimal to string, Date to ISO string)

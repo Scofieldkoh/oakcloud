@@ -16,6 +16,7 @@ import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection
 import { callAIWithConnector, getBestAvailableModelForTenant, logExtractionResults, isAIDebugEnabled, stripMarkdownCodeBlocks } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai/types';
 import { storage } from '@/lib/storage';
+import { performAISplitDetection } from '@/lib/split-detection';
 import { hashBlake3 } from '@/lib/encryption';
 import { getAccountsForSelect } from './chart-of-accounts.service';
 import { getRate } from './exchange-rate.service';
@@ -141,6 +142,7 @@ export async function detectSplitBoundaries(
   processingDocumentId: string,
   tenantId: string,
   companyId: string,
+  userId: string,
   config: Partial<ExtractionConfig> = {}
 ): Promise<SplitDetectionResult> {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
@@ -165,7 +167,7 @@ export async function detectSplitBoundaries(
     // For now, we simulate the extraction
     const startTime = Date.now();
 
-    const result = await simulateSplitDetection(pages);
+    const result = await performAISplitDetection(pages, tenantId, userId, mergedConfig);
 
     const latencyMs = Date.now() - startTime;
 
@@ -205,35 +207,6 @@ export async function detectSplitBoundaries(
 
     throw error;
   }
-}
-
-/**
- * Simulate split detection (placeholder for actual AI implementation)
- */
-async function simulateSplitDetection(
-  pages: { pageNumber: number }[]
-): Promise<SplitDetectionResult> {
-  // Simple heuristic: treat each page as a separate document
-  // In production, this would use AI to detect actual boundaries
-  const boundaries = pages.map((page) => ({
-    pageFrom: page.pageNumber,
-    pageTo: page.pageNumber,
-    confidence: 0.85,
-    predictedCategory: 'INVOICE' as DocumentCategory,
-  }));
-
-  // If single page, high confidence
-  if (pages.length === 1) {
-    return {
-      documentBoundaries: boundaries,
-      overallConfidence: 0.95,
-    };
-  }
-
-  return {
-    documentBoundaries: boundaries,
-    overallConfidence: 0.75,
-  };
 }
 
 // ============================================================================
@@ -629,11 +602,11 @@ Guidelines for account selection:
 - 8xxx: Tax expenses (use for income tax, deferred tax)
 
 Common mappings for vendor invoices (Accounts Payable):
-- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) → 6xxx (IT/Software expenses)
-- Professional services (legal, accounting, consulting) → 6xxx (Professional fees)
-- Office supplies, utilities → 6xxx (Administrative expenses)
-- Inventory purchases → 5xxx (Cost of goods sold)
-- Advertising, marketing → 6xxx (Marketing expenses)
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
 
 Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.`;
   } catch (error) {
@@ -793,15 +766,15 @@ First, look for a GST Registration Number on the document. It typically appears 
 - Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
 
 Determination logic:
-1. **If NO GST registration number found** → ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
-2. If GST registration found AND GST/tax amount is shown → SR (9% GST)
-3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" → ZR
-4. If GST registration found but no GST charged → Could be ZR, ES, or exempt item
-5. If foreign supplier/service → ZR or NA depending on nature
-6. When in doubt AND supplier is GST registered → SR
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
 
 ## Amount Validation Rules (CRITICAL)
-1. **Line Item Calculation**: For each line item, verify: quantity × unitPrice = amount (with small rounding tolerance)
+1. **Line Item Calculation**: For each line item, verify: quantity Ã— unitPrice = amount (with small rounding tolerance)
 2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
 3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
 4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
@@ -813,13 +786,13 @@ If the document shows values that don't add up:
 
 ## Line Item GST Amount Calculation
 For each line item with taxCode = "SR":
-- gstAmount = amount × 0.09 (rounded to 2 decimal places)
+- gstAmount = amount Ã— 0.09 (rounded to 2 decimal places)
 - If the document shows a different GST amount per line, use the document's value
 
 ## Negative Amounts (Credits/Refunds) - CRITICAL
 Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
-- Extract as negative decimal: "($17.50)" → "-17.50"
-- Extract as negative decimal: "(17.50)" → "-17.50"
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
 - These are credits, refunds, discounts, or reversals
 - When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
 - The subtotal must be the algebraic SUM of all line items including negatives
@@ -1171,19 +1144,19 @@ function mapAIResponseToResult(
 
         // Determine GST code based on actual rate with tolerance bands
         if (actualRate >= 0.085 && actualRate <= 0.095) {
-          // 8.5% to 9.5% → SR (9%)
+          // 8.5% to 9.5% â†’ SR (9%)
           taxCode = 'SR';
           taxCodeConfidence = 0.9; // High confidence when calculated from actual amounts
         } else if (actualRate >= 0.075 && actualRate < 0.085) {
-          // 7.5% to 8.5% → SR8 (8%)
+          // 7.5% to 8.5% â†’ SR8 (8%)
           taxCode = 'SR8';
           taxCodeConfidence = 0.9;
         } else if (actualRate >= 0.065 && actualRate < 0.075) {
-          // 6.5% to 7.5% → SR7 (7%)
+          // 6.5% to 7.5% â†’ SR7 (7%)
           taxCode = 'SR7';
           taxCodeConfidence = 0.9;
         } else if (actualRate < 0.005) {
-          // Less than 0.5% → Zero-rated or NA
+          // Less than 0.5% â†’ Zero-rated or NA
           taxCode = hasGstRegistration ? 'ZR' : 'NA';
           taxCodeConfidence = 0.75;
         } else {
@@ -1193,15 +1166,15 @@ function mapAIResponseToResult(
           log.debug(`Line item has unusual GST rate: ${(actualRate * 100).toFixed(2)}%`);
         }
       } else if (gstAmountNum > 0) {
-        // Has GST amount but no base amount to calculate rate → Standard-Rated
+        // Has GST amount but no base amount to calculate rate â†’ Standard-Rated
         taxCode = 'SR';
         taxCodeConfidence = 0.8;
       } else if (hasGstRegistration) {
-        // Supplier is GST registered → default to Standard-Rated
+        // Supplier is GST registered â†’ default to Standard-Rated
         taxCode = 'SR';
         taxCodeConfidence = 0.75;
       } else {
-        // No GST registration → Not Applicable
+        // No GST registration â†’ Not Applicable
         taxCode = 'NA';
         taxCodeConfidence = 0.6;
       }

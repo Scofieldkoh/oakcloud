@@ -14,6 +14,9 @@ import {
   acquireDocumentLock,
 } from '@/services/document-processing.service';
 import { createAuditLog } from '@/lib/audit';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('document-lock');
 
 type Params = { documentId: string };
 
@@ -162,7 +165,7 @@ export async function POST(
 }
 
 function handleError(error: unknown): NextResponse {
-  console.error('Lock API error:', error);
+  log.error('Lock API error', error);
 
   if (error instanceof Error) {
     if (error.message === 'Unauthorized') {

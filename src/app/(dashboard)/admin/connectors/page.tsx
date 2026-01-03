@@ -1452,7 +1452,7 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
                   rel="noopener noreferrer"
                   className="text-oak-light hover:underline inline-flex items-center gap-1"
                 >
-                  Azure Portal → App registrations
+                  Azure Portal â†’ App registrations
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </li>
@@ -1472,8 +1472,8 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
             <div className="ml-8 text-text-secondary">
               <p className="mb-2">From the app&apos;s <strong>Overview</strong> page, copy:</p>
               <ul className="list-disc list-inside space-y-1">
-                <li><strong>Application (client) ID</strong> → Client ID</li>
-                <li><strong>Directory (tenant) ID</strong> → Microsoft Tenant ID</li>
+                <li><strong>Application (client) ID</strong> â†’ Client ID</li>
+                <li><strong>Directory (tenant) ID</strong> â†’ Microsoft Tenant ID</li>
               </ul>
             </div>
           </section>
@@ -1485,10 +1485,10 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
               Create Client Secret
             </h3>
             <ol className="list-decimal list-inside space-y-1 text-text-secondary ml-8">
-              <li>Go to <strong>Certificates & secrets</strong> → <strong>Client secrets</strong></li>
+              <li>Go to <strong>Certificates & secrets</strong> â†’ <strong>Client secrets</strong></li>
               <li>Click <strong>New client secret</strong></li>
               <li>Add description and select expiry (recommend 24 months)</li>
-              <li>Copy the <strong>Value</strong> immediately (shown only once!) → Client Secret</li>
+              <li>Copy the <strong>Value</strong> immediately (shown only once!) â†’ Client Secret</li>
             </ol>
           </section>
 
@@ -1499,8 +1499,8 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
               Configure API Permissions
             </h3>
             <ol className="list-decimal list-inside space-y-1 text-text-secondary ml-8">
-              <li>Go to <strong>API permissions</strong> → <strong>Add a permission</strong></li>
-              <li>Select <strong>Microsoft Graph</strong> → <strong>Application permissions</strong></li>
+              <li>Go to <strong>API permissions</strong> â†’ <strong>Add a permission</strong></li>
+              <li>Select <strong>Microsoft Graph</strong> â†’ <strong>Application permissions</strong></li>
               <li>
                 Add these permissions:
                 <ul className="list-disc list-inside ml-4 mt-1">
@@ -1548,7 +1548,7 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
                   </a>
                   {' '}to find your site ID.
                 </p>
-                <p>Copy the <strong>id</strong> field from the response → SharePoint Site ID</p>
+                <p>Copy the <strong>id</strong> field from the response â†’ SharePoint Site ID</p>
               </div>
             </section>
           )}

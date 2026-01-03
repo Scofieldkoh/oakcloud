@@ -654,7 +654,7 @@ export function DocumentPageViewer({
             onClick={handlePrevPage}
             disabled={currentPage <= 1 || isLoading}
             className="btn-ghost btn-xs p-1.5"
-            title="Previous page (←)"
+            title="Previous page (â†)"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -676,7 +676,7 @@ export function DocumentPageViewer({
             onClick={handleNextPage}
             disabled={currentPage >= pageCount || isLoading}
             className="btn-ghost btn-xs p-1.5"
-            title="Next page (→)"
+            title="Next page (â†’)"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

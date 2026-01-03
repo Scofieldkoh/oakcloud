@@ -10,6 +10,7 @@ import {
   FileStack,
   History,
   Copy,
+  Scissors,
   AlertCircle,
   AlertTriangle,
   Check,
@@ -60,6 +61,7 @@ import {
   DuplicateComparisonModal,
   DocumentLinks,
   DocumentTags,
+  DocumentSplitterModal,
 } from '@/components/processing';
 import type { FieldValue } from '@/components/processing/document-page-viewer';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
@@ -177,23 +179,23 @@ function formatDateTime(dateString: string): string {
 const CURRENCY_SYMBOLS: Record<string, string> = {
   SGD: 'S$',
   USD: 'US$',
-  EUR: '€',
-  GBP: '£',
-  JPY: '¥',
-  CNY: '¥',
+  EUR: 'â‚¬',
+  GBP: ' £',
+  JPY: ' ¥',
+  CNY: ' ¥',
   HKD: 'HK$',
   AUD: 'A$',
   NZD: 'NZ$',
   CAD: 'C$',
   CHF: 'CHF ',
   MYR: 'RM',
-  THB: '฿',
+  THB: 'à¸¿',
   IDR: 'Rp',
-  PHP: '₱',
-  INR: '₹',
-  KRW: '₩',
+  PHP: 'â‚±',
+  INR: 'â‚¹',
+  KRW: 'â‚©',
   TWD: 'NT$',
-  VND: '₫',
+  VND: 'â‚«',
 };
 
 function formatCurrency(amount: string | number | null, currency: string): string {
@@ -272,13 +274,42 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Check if we should auto-open compare modal from query param
   const shouldAutoCompare = searchParams.get('compare') === 'true';
 
+  // UI State for controlling data fetching
+  const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
+
   // Data fetching
   const { data, isLoading, error, refetch } = useProcessingDocument(id);
-  const { data: revisions, isLoading: revisionsLoading } = useRevisionHistory(id);
-  const { data: navData } = useDocumentNavigation(id, 'needs-review', {
-    tenantId: activeTenantId,
-    companyId: data?.document?.company?.id || undefined,
-  });
+
+  // Only fetch revision history when needed (when dropdown is shown or might be shown)
+  // Always fetch if document has DRAFT status (user might need to see history)
+  const shouldFetchHistory = showHistoryDropdown || data?.currentRevision?.status === 'DRAFT';
+  const { data: revisions, isLoading: revisionsLoading } = useRevisionHistory(id, shouldFetchHistory);
+
+  // Only fetch navigation when document is in a reviewable state
+  const isReviewable = data?.document?.pipelineStatus === 'EXTRACTION_DONE' && data?.currentRevision?.status === 'DRAFT';
+  const { data: navData } = useDocumentNavigation(
+    id,
+    'needs-review',
+    {
+      tenantId: activeTenantId,
+      companyId: data?.document?.company?.id || undefined,
+    },
+    isReviewable
+  );
+
+  // Auto-refresh every 10 seconds if document is being processed
+  useEffect(() => {
+    const isExtracting = data?.document?.pipelineStatus === 'QUEUED' ||
+                        data?.document?.pipelineStatus === 'PROCESSING';
+
+    if (isExtracting) {
+      const interval = setInterval(() => {
+        refetch();
+      }, 10000); // 10 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [data?.document?.pipelineStatus, refetch]);
 
   // Current revision data
   const currentRevisionId = data?.currentRevision?.id || null;
@@ -313,10 +344,16 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   );
 
   // Chart of accounts for line item assignment
-  const { data: accountsData } = useAccountsForSelect({
-    tenantId: data?.document?.tenantId,
-    companyId: data?.document?.company?.id || undefined,
-  });
+  // Only fetch when user can edit and document has line items or is in editable state
+  const canEdit = can.updateDocument && data?.currentRevision?.status === 'DRAFT';
+  const shouldFetchAccounts = canEdit && data?.document?.pipelineStatus === 'EXTRACTION_DONE';
+  const { data: accountsData } = useAccountsForSelect(
+    {
+      tenantId: data?.document?.tenantId,
+      companyId: data?.document?.company?.id || undefined,
+    },
+    shouldFetchAccounts
+  );
 
   // Transform accounts to the format expected by LineItemsSection
   const chartOfAccounts = useMemo(() => {
@@ -341,13 +378,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isRevalidating, setIsRevalidating] = useState(false);
 
-  // UI State
+  // UI State (showHistoryDropdown already declared above for data fetching optimization)
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-  const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showModelSelector, setShowModelSelector] = useState(false);
+  const [showSplitterModal, setShowSplitterModal] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [isReExtraction, setIsReExtraction] = useState(false);
   const [skipAliasLearning, setSkipAliasLearning] = useState(false);
@@ -824,14 +861,35 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     }
   };
 
+  // Handle split document
+  const handleSplitDocument = async (ranges: { pageFrom: number; pageTo: number; label: string }[]) => {
+    try {
+      const response = await fetch(`/api/processing-documents/${id}/split`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ranges }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to split document');
+      }
+      const result = await response.json();
+      success(`Document split into ${result.data.splitCount} parts`);
+      refetch();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to split document');
+      throw err;
+    }
+  };
+
   const handleApproveRevision = async () => {
     if (!data?.document || !data?.currentRevision) return;
     try {
       const isReceivable = data.currentRevision.documentCategory === 'ACCOUNTS_RECEIVABLE';
       const body = {
         aliasLearning: isReceivable
-          ? { customer: skipAliasLearning ? 'SKIP' : 'AUTO' }
-          : { vendor: skipAliasLearning ? 'SKIP' : 'AUTO' },
+          ? { customer: (skipAliasLearning ? 'SKIP' : 'AUTO') as 'SKIP' | 'AUTO' }
+          : { vendor: (skipAliasLearning ? 'SKIP' : 'AUTO') as 'SKIP' | 'AUTO' },
       };
       await approveRevision.mutateAsync({
         documentId: id,
@@ -843,9 +901,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       setShowApproveDialog(false);
       refetch();
       // Auto-advance to next document after approval
-      if (navData && navData.currentIndex < navData.total - 1) {
-        const nextDoc = navData.documents[navData.currentIndex + 1];
-        if (nextDoc) router.push(`/processing/${nextDoc.id}`);
+      if (navData?.nextId) {
+        router.push(`/processing/${navData.nextId}`);
       }
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to approve revision');
@@ -1293,6 +1350,17 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               Extract
             </button>
           )}
+          {/* Split button - only show for multi-page documents */}
+          {!isViewingSnapshot && (data?.document?.pageCount || 0) > 1 && can.updateDocument && (
+            <button
+              onClick={() => setShowSplitterModal(true)}
+              className="btn-secondary btn-sm"
+              title="Split document into multiple parts"
+            >
+              <Scissors className="w-3.5 h-3.5 mr-1.5" />
+              Split
+            </button>
+          )}
           {!isViewingSnapshot && isEditing ? (
             <>
               <button onClick={() => { setIsEditing(false); setIsEditingApproved(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm">
@@ -1656,7 +1724,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           checked={skipAliasLearning}
           onChange={setSkipAliasLearning}
           disabled={approveRevision.isPending}
-          label="Don’t learn this contact name correction"
+          label="Don't learn this contact name correction"
           className="pt-1"
         />
       </ConfirmDialog>
@@ -1753,6 +1821,18 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       </Modal>
 
       {/* Duplicate Comparison Modal */}
+      {/* Document Splitter Modal */}
+      {showSplitterModal && data?.document && (
+        <DocumentSplitterModal
+          isOpen={showSplitterModal}
+          onClose={() => setShowSplitterModal(false)}
+          onConfirm={handleSplitDocument}
+          documentId={id}
+          fileName={data?.document?.fileName || 'Document'}
+          totalPages={data?.document?.pageCount || 1}
+        />
+      )}
+
       {showDuplicateModal && duplicateData && (
         <DuplicateComparisonModal
           isOpen={showDuplicateModal}

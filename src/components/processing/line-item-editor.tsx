@@ -58,10 +58,10 @@ const emptyLineItem = (lineNo: number): EditingLineItem => ({
 const CURRENCY_SYMBOLS: Record<string, string> = {
   SGD: 'S$',
   USD: 'US$',
-  EUR: '€',
-  GBP: '£',
-  JPY: '¥',
-  CNY: '¥',
+  EUR: 'â‚¬',
+  GBP: ' £',
+  JPY: ' ¥',
+  CNY: ' ¥',
   HKD: 'HK$',
   AUD: 'A$',
   MYR: 'RM',
@@ -234,7 +234,7 @@ export function LineItemEditor({
 
         // Auto-calculate GST when tax code changes
         if (field === 'taxCode' && updated[index].amount) {
-          // Ensure amount is a string (might be Decimal object from API)
+          // Convert amount to string (should already be string per EditingLineItem interface)
           const amountStr = String(updated[index].amount);
           updated[index].gstAmount = calculateGstAmount(amountStr, value);
         }
@@ -256,9 +256,61 @@ export function LineItemEditor({
     });
   }, []);
 
+  // Validate line item
+  const validateLineItem = (item: EditingLineItem, index: number): string | null => {
+    // Description is required
+    if (!item.description || item.description.trim() === '') {
+      return `Line ${index + 1}: Description is required`;
+    }
+
+    // Amount must be a valid positive number
+    const amount = parseFloat(item.amount);
+    if (isNaN(amount)) {
+      return `Line ${index + 1}: Amount must be a valid number`;
+    }
+    if (amount < 0) {
+      return `Line ${index + 1}: Amount cannot be negative`;
+    }
+
+    // If quantity is provided, it must be positive
+    if (item.quantity && item.quantity.trim() !== '') {
+      const qty = parseFloat(item.quantity);
+      if (isNaN(qty) || qty <= 0) {
+        return `Line ${index + 1}: Quantity must be a positive number`;
+      }
+    }
+
+    // If unit price is provided, it must be a number
+    if (item.unitPrice && item.unitPrice.trim() !== '') {
+      const price = parseFloat(item.unitPrice);
+      if (isNaN(price)) {
+        return `Line ${index + 1}: Unit price must be a valid number`;
+      }
+    }
+
+    // If GST amount is provided, validate it
+    if (item.gstAmount && item.gstAmount.trim() !== '') {
+      const gst = parseFloat(item.gstAmount);
+      if (isNaN(gst) || gst < 0) {
+        return `Line ${index + 1}: GST amount must be a valid non-negative number`;
+      }
+    }
+
+    return null;
+  };
+
   // Save changes
   const handleSave = async () => {
     try {
+      // Validate all line items before saving
+      for (let i = 0; i < editingItems.length; i++) {
+        const error = validateLineItem(editingItems[i], i);
+        if (error) {
+          toastError(error);
+          return;
+        }
+      }
+
       await updateRevision.mutateAsync({
         documentId,
         revisionId,

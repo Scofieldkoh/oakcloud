@@ -246,7 +246,7 @@ export function DocumentTable({
                 <CardDetailsGrid>
                   <CardDetailItem
                     label="Company"
-                    value={doc.company?.name || '—'}
+                    value={doc.company?.name || '"”'}
                     icon={<Building2 className="w-3 h-3" />}
                   />
                   <CardDetailItem

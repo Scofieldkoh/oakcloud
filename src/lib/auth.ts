@@ -32,7 +32,7 @@ function getJwtSecret(): Uint8Array {
       throw new Error('JWT_SECRET environment variable is required in production');
     }
     // Development fallback with warning
-    console.warn('⚠️  JWT_SECRET not set. Using insecure default for development only.');
+    console.warn('âš ï¸  JWT_SECRET not set. Using insecure default for development only.');
     return new TextEncoder().encode('development-only-secret-do-not-use-in-production');
   }
 

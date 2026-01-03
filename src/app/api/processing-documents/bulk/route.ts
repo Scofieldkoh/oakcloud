@@ -7,9 +7,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
+import { hasPermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { clearDuplicateReferencesToDocument } from '@/services/duplicate-detection.service';
+import { handleApiError } from '@/lib/api-error-handler';
 import type { PipelineStatus } from '@/generated/prisma';
 
 type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE';
@@ -102,6 +104,13 @@ export async function POST(request: NextRequest) {
       case 'APPROVE':
         for (const doc of accessibleDocs) {
           try {
+            // Check RBAC permission for document approval (requires update permission)
+            const companyId = doc.document?.companyId;
+            if (!companyId || !(await hasPermission(session.id, 'document', 'update', companyId))) {
+              results.push({ documentId: doc.id, success: false, error: 'Permission denied: document:update' });
+              continue;
+            }
+
             // Check if document can be approved
             if (!doc.currentRevisionId || !doc.currentRevision) {
               results.push({ documentId: doc.id, success: false, error: 'No revision to approve' });
@@ -173,6 +182,13 @@ export async function POST(request: NextRequest) {
       case 'TRIGGER_EXTRACTION':
         for (const doc of accessibleDocs) {
           try {
+            // Check RBAC permission for document update (re-extraction)
+            const companyId = doc.document?.companyId;
+            if (!companyId || !(await hasPermission(session.id, 'document', 'update', companyId))) {
+              results.push({ documentId: doc.id, success: false, error: 'Permission denied: document:update' });
+              continue;
+            }
+
             // Check if document can be re-extracted
             const canRetrigger: PipelineStatus[] = ['UPLOADED', 'FAILED_RETRYABLE'];
             if (!canRetrigger.includes(doc.pipelineStatus)) {
@@ -220,6 +236,13 @@ export async function POST(request: NextRequest) {
         // Soft delete - sets deletedAt timestamp
         for (const doc of accessibleDocs) {
           try {
+            // Check RBAC permission for document delete
+            const companyId = doc.document?.companyId;
+            if (!companyId || !(await hasPermission(session.id, 'document', 'delete', companyId))) {
+              results.push({ documentId: doc.id, success: false, error: 'Permission denied: document:delete' });
+              continue;
+            }
+
             await prisma.processingDocument.update({
               where: { id: doc.id },
               data: { deletedAt: new Date() },
@@ -281,26 +304,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Bulk operations API error:', error);
-
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json(
-          {
-            success: false,
-            error: { code: 'AUTHENTICATION_REQUIRED', message: 'Unauthorized' },
-          },
-          { status: 401 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'bulk-operations');
   }
 }

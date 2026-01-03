@@ -8,7 +8,8 @@ import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-
 import { FilterChip } from '@/components/ui/filter-chip';
 import { TagChip, TagManager } from '@/components/processing/document-tags';
 import { TAG_COLORS } from '@/lib/validations/document-tag';
-import type { PipelineStatus, DuplicateStatus, RevisionStatus, TagColor } from '@/generated/prisma';
+import type { PipelineStatus, DuplicateStatus, RevisionStatus, TagColor, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
+import type { AmountFilterValue } from '@/components/ui/amount-filter';
 
 // Tag info type for filter display
 export interface TagInfo {
@@ -33,7 +34,16 @@ export interface ProcessingFilterValues {
   vendorName?: string;
   documentNumber?: string;
   fileName?: string;
+  documentCategory?: DocumentCategory;
+  documentSubCategory?: DocumentSubCategory;
   tagIds?: string[];
+  // Amount filters
+  subtotalFilter?: AmountFilterValue;
+  taxFilter?: AmountFilterValue;
+  totalFilter?: AmountFilterValue;
+  homeSubtotalFilter?: AmountFilterValue;
+  homeTaxFilter?: AmountFilterValue;
+  homeTotalFilter?: AmountFilterValue;
 }
 
 interface ProcessingFiltersProps {

@@ -15,6 +15,7 @@ import type {
   DuplicateStatus,
   RevisionStatus,
   DocumentCategory,
+  DocumentSubCategory,
 } from '@/generated/prisma';
 
 // Types
@@ -130,8 +131,31 @@ export interface ProcessingDocumentSearchParams {
   vendorName?: string;
   documentNumber?: string;
   fileName?: string;
+  // Category filters
+  documentCategory?: DocumentCategory;
+  documentSubCategory?: DocumentSubCategory;
   // Tag filter
   tagIds?: string[]; // Filter by document tags
+  // Amount filters - single value mode
+  subtotal?: number;
+  tax?: number;
+  total?: number;
+  homeSubtotal?: number;
+  homeTax?: number;
+  homeTotal?: number;
+  // Amount filters - range mode
+  subtotalFrom?: number;
+  subtotalTo?: number;
+  taxFrom?: number;
+  taxTo?: number;
+  totalFrom?: number;
+  totalTo?: number;
+  homeSubtotalFrom?: number;
+  homeSubtotalTo?: number;
+  homeTaxFrom?: number;
+  homeTaxTo?: number;
+  homeTotalFrom?: number;
+  homeTotalTo?: number;
 }
 
 export interface ProcessingDocumentSearchResult {
@@ -365,11 +389,11 @@ export function useProcessingDocument(id: string) {
   });
 }
 
-export function useRevisionHistory(documentId: string) {
+export function useRevisionHistory(documentId: string, enabled: boolean = true) {
   return useQuery({
     queryKey: ['revision-history', documentId],
     queryFn: () => fetchRevisionHistory(documentId),
-    enabled: !!documentId,
+    enabled: !!documentId && enabled,
     staleTime: 30_000,
     refetchOnMount: 'always', // Always refetch when component mounts
   });
@@ -781,7 +805,8 @@ export function useDocumentNavigation(
     tenantId?: string | null;
     companyId?: string;
     start?: boolean;
-  }
+  },
+  enabled: boolean = true
 ) {
   return useQuery({
     queryKey: ['document-navigation', currentDocumentId, filter, options?.tenantId ?? null, options?.companyId ?? null, options?.start ?? false],
@@ -800,7 +825,7 @@ export function useDocumentNavigation(
       const result = await response.json();
       return result.data as DocumentNavigationResult;
     },
-    enabled: !!currentDocumentId,
+    enabled: !!currentDocumentId && enabled,
     staleTime: 30_000,
     refetchOnMount: 'always', // Always refetch when component mounts
   });
@@ -1296,3 +1321,42 @@ export function useAvailableAIModels() {
   });
 }
 
+
+
+// ============================================================================
+// Bulk Merge Documents
+// ============================================================================
+
+interface BulkMergeResult {
+  success: boolean;
+  mergedDocumentId: string;
+  sourceDocumentIds: string[];
+  pageCount: number;
+  sourceDocumentsDeleted: boolean;
+}
+
+/**
+ * Hook for merging multiple documents into a single PDF
+ */
+export function useBulkMerge() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (documentIds: string[]): Promise<BulkMergeResult> => {
+      const response = await fetch('/api/processing-documents/bulk-merge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentIds }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to merge documents');
+      }
+      const result = await response.json();
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
+    },
+  });
+}

@@ -13,7 +13,10 @@ import { getProcessingDocument } from '@/services/document-processing.service';
 import { approveRevision, getRevision } from '@/services/document-revision.service';
 import { canApproveDocument } from '@/services/duplicate-detection.service';
 import { createAuditLog } from '@/lib/audit';
+import { createLogger } from '@/lib/logger';
 import type { ExchangeRateSource } from '@/generated/prisma';
+
+const log = createLogger('revision-approve');
 
 type Params = { documentId: string; revisionId: string };
 
@@ -227,7 +230,7 @@ export async function POST(
 }
 
 function handleError(error: unknown): NextResponse {
-  console.error('Approve revision API error:', error);
+  log.error('Approve revision API error', error);
 
   if (error instanceof Error) {
     if (error.message === 'Unauthorized') {

@@ -472,13 +472,13 @@ export function useAIModels(tenantId?: string) {
 export function getProviderIcon(providerId: string): string {
   switch (providerId) {
     case 'openai':
-      return '🤖';
+      return 'ðŸ¤–';
     case 'anthropic':
-      return '🔮';
+      return 'ðŸ”®';
     case 'google':
-      return '✨';
+      return 'âœ¨';
     default:
-      return '🧠';
+      return 'ðŸ§ ';
   }
 }
 

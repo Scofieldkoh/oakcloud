@@ -82,7 +82,10 @@
       "Bash(git -C \"c:\\\\Users\\\\Scotfield\\\\oakcloud\" diff HEAD src/components/processing/document-links.tsx)",
       "Bash(del \"C:\\\\Users\\\\Scotfield\\\\.claude\\\\plans\\\\quizzical-baking-knuth.md\")",
       "Bash(del \"c:\\\\Users\\\\Scotfield\\\\oakcloud\\\\src\\\\app\\\\\\(dashboard\\)\\\\admin\\\\chart-of-accounts\\\\[id]\\\\page.tsx\")",
-      "Bash(del \"C:\\\\Users\\\\Scotfield\\\\.claude\\\\plans\\\\joyful-yawning-zebra.md\")"
+      "Bash(del \"C:\\\\Users\\\\Scotfield\\\\.claude\\\\plans\\\\joyful-yawning-zebra.md\")",
+      "Bash(del /F /S /Q \".next\")",
+      "Bash(del:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

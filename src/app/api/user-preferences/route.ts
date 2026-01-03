@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { Prisma } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -60,12 +61,12 @@ export async function PUT(request: NextRequest) {
     }
 
     // `value` is stored as JSON. We intentionally allow any JSON-serializable structure.
-    const value = body?.value ?? null;
+    const value = body?.value ?? {};
 
     const pref = await prisma.userPreference.upsert({
       where: { userId_key: { userId: session.id, key } },
-      create: { userId: session.id, key, value },
-      update: { value },
+      create: { userId: session.id, key, value: value as Prisma.InputJsonValue },
+      update: { value: value as Prisma.InputJsonValue },
       select: { key: true, value: true, updatedAt: true },
     });
 

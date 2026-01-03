@@ -53,25 +53,25 @@ export interface LinkedDocumentInfo {
 
 // Link type display labels
 export const linkTypeLabels: Record<DocumentLinkType, string> = {
-  PO_TO_DN: 'PO → Delivery Note',
-  PO_TO_INVOICE: 'PO → Invoice',
-  DN_TO_INVOICE: 'Delivery Note → Invoice',
-  INVOICE_TO_CN: 'Invoice → Credit Note',
-  INVOICE_TO_DN_ADJ: 'Invoice → Debit Note',
-  QUOTE_TO_PO: 'Quote → PO',
-  CONTRACT_TO_PO: 'Contract → PO',
+  PO_TO_DN: 'PO â†’ Delivery Note',
+  PO_TO_INVOICE: 'PO â†’ Invoice',
+  DN_TO_INVOICE: 'Delivery Note â†’ Invoice',
+  INVOICE_TO_CN: 'Invoice â†’ Credit Note',
+  INVOICE_TO_DN_ADJ: 'Invoice â†’ Debit Note',
+  QUOTE_TO_PO: 'Quote â†’ PO',
+  CONTRACT_TO_PO: 'Contract â†’ PO',
   RELATED: 'Related Document',
 };
 
 // Reverse link type labels (when viewing from target's perspective)
 export const reverseLinkTypeLabels: Record<DocumentLinkType, string> = {
-  PO_TO_DN: 'Delivery Note ← PO',
-  PO_TO_INVOICE: 'Invoice ← PO',
-  DN_TO_INVOICE: 'Invoice ← Delivery Note',
-  INVOICE_TO_CN: 'Credit Note ← Invoice',
-  INVOICE_TO_DN_ADJ: 'Debit Note ← Invoice',
-  QUOTE_TO_PO: 'PO ← Quote',
-  CONTRACT_TO_PO: 'PO ← Contract',
+  PO_TO_DN: 'Delivery Note â† PO',
+  PO_TO_INVOICE: 'Invoice â† PO',
+  DN_TO_INVOICE: 'Invoice â† Delivery Note',
+  INVOICE_TO_CN: 'Credit Note â† Invoice',
+  INVOICE_TO_DN_ADJ: 'Debit Note â† Invoice',
+  QUOTE_TO_PO: 'PO â† Quote',
+  CONTRACT_TO_PO: 'PO â† Contract',
   RELATED: 'Related Document',
 };
 

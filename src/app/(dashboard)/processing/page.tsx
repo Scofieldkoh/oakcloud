@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef, type MouseEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useDropzone } from 'react-dropzone';
 import {
   FileText,
   AlertCircle,
@@ -17,7 +18,6 @@ import {
   Copy,
   FileStack,
   ArrowUpRight,
-  SlidersHorizontal,
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
@@ -36,14 +36,19 @@ import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { BulkActionsToolbar } from '@/components/processing/bulk-actions-toolbar';
 import { ProcessingFilters, type ProcessingFilterValues } from '@/components/processing/processing-filters';
+import { ProcessingToolbar } from '@/components/processing/processing-toolbar';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { DatePicker } from '@/components/ui/date-picker';
+import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
 import { useCompanies } from '@/hooks/use-companies';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
+import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
+import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '@/lib/document-categories';
 import { cn } from '@/lib/utils';
 
 const COLUMN_PREF_KEY = 'processing:list:columns:v1';
@@ -184,10 +189,10 @@ function formatDate(dateString: string): string {
 const CURRENCY_SYMBOLS: Record<string, string> = {
   SGD: 'S$',
   USD: 'US$',
-  EUR: '€',
-  GBP: '£',
-  JPY: '¥',
-  CNY: '¥',
+  EUR: 'â‚¬',
+  GBP: ' £',
+  JPY: ' ¥',
+  CNY: ' ¥',
   HKD: 'HK$',
   AUD: 'A$',
   MYR: 'RM',
@@ -216,6 +221,40 @@ function formatCategory(value: string | null | undefined): string {
     .join(' ');
 }
 
+// Parse URL params to AmountFilterValue
+function parseAmountFilter(
+  searchParams: URLSearchParams,
+  prefix: string
+): AmountFilterValue | undefined {
+  const exact = searchParams.get(prefix);
+  const from = searchParams.get(`${prefix}From`);
+  const to = searchParams.get(`${prefix}To`);
+
+  if (exact) {
+    const num = parseFloat(exact);
+    if (!isNaN(num)) {
+      return { mode: 'single', single: num };
+    }
+  }
+
+  if (from || to) {
+    const fromNum = from ? parseFloat(from) : undefined;
+    const toNum = to ? parseFloat(to) : undefined;
+
+    if (fromNum !== undefined || toNum !== undefined) {
+      return {
+        mode: 'range',
+        range: {
+          from: !isNaN(fromNum!) ? fromNum : undefined,
+          to: !isNaN(toNum!) ? toNum : undefined,
+        },
+      };
+    }
+  }
+
+  return undefined;
+}
+
 export default function ProcessingDocumentsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -230,6 +269,42 @@ export default function ProcessingDocumentsPage() {
 
   // Get active company from sidebar selector
   const activeCompanyId = useActiveCompanyId();
+
+  // Handle file drop - redirect to upload page with files
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      // Store files in sessionStorage to pass to upload page
+      const fileData = acceptedFiles.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      }));
+      sessionStorage.setItem('pendingUploadFiles', JSON.stringify(fileData));
+
+      // Create a DataTransfer object to temporarily hold files
+      const dataTransfer = new DataTransfer();
+      acceptedFiles.forEach(file => dataTransfer.items.add(file));
+
+      // Store the FileList in a global variable (will be picked up by upload page)
+      (window as Window & { __pendingUploadFiles?: FileList }).__pendingUploadFiles = dataTransfer.files;
+
+      // Navigate to upload page
+      router.push('/processing/upload');
+    }
+  }, [router]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/tiff': ['.tif', '.tiff'],
+    },
+    maxSize: 50 * 1024 * 1024, // 50MB
+    noClick: true, // Don't open file picker on click
+    noKeyboard: true, // Don't open on keyboard events
+  });
 
   // Parse URL params
   const getParamsFromUrl = useCallback((): ProcessingDocumentSearchParams => {
@@ -256,10 +331,70 @@ export default function ProcessingDocumentsPage() {
       vendorName: searchParams.get('vendorName') || undefined,
       documentNumber: searchParams.get('documentNumber') || undefined,
       fileName: searchParams.get('fileName') || undefined,
+      // Category filters
+      documentCategory: (searchParams.get('documentCategory') || undefined) as DocumentCategory | undefined,
+      documentSubCategory: (searchParams.get('documentSubCategory') || undefined) as DocumentSubCategory | undefined,
       // Tag filter
       tagIds: tagIdsParam ? tagIdsParam.split(',').filter(Boolean) : undefined,
+      // Amount filters - parse using helper function
+      ...parseAmountFilterParams(searchParams),
     };
   }, [searchParams]);
+
+  // Helper to parse all amount filter parameters
+  const parseAmountFilterParams = (searchParams: URLSearchParams) => {
+    const params: Partial<ProcessingDocumentSearchParams> = {};
+
+    // Subtotal
+    const subtotal = parseAmountFilter(searchParams, 'subtotal');
+    if (subtotal?.mode === 'single') params.subtotal = subtotal.single;
+    if (subtotal?.mode === 'range') {
+      params.subtotalFrom = subtotal.range?.from;
+      params.subtotalTo = subtotal.range?.to;
+    }
+
+    // Tax
+    const tax = parseAmountFilter(searchParams, 'tax');
+    if (tax?.mode === 'single') params.tax = tax.single;
+    if (tax?.mode === 'range') {
+      params.taxFrom = tax.range?.from;
+      params.taxTo = tax.range?.to;
+    }
+
+    // Total
+    const total = parseAmountFilter(searchParams, 'total');
+    if (total?.mode === 'single') params.total = total.single;
+    if (total?.mode === 'range') {
+      params.totalFrom = total.range?.from;
+      params.totalTo = total.range?.to;
+    }
+
+    // Home Subtotal
+    const homeSubtotal = parseAmountFilter(searchParams, 'homeSubtotal');
+    if (homeSubtotal?.mode === 'single') params.homeSubtotal = homeSubtotal.single;
+    if (homeSubtotal?.mode === 'range') {
+      params.homeSubtotalFrom = homeSubtotal.range?.from;
+      params.homeSubtotalTo = homeSubtotal.range?.to;
+    }
+
+    // Home Tax
+    const homeTax = parseAmountFilter(searchParams, 'homeTax');
+    if (homeTax?.mode === 'single') params.homeTax = homeTax.single;
+    if (homeTax?.mode === 'range') {
+      params.homeTaxFrom = homeTax.range?.from;
+      params.homeTaxTo = homeTax.range?.to;
+    }
+
+    // Home Total
+    const homeTotal = parseAmountFilter(searchParams, 'homeTotal');
+    if (homeTotal?.mode === 'single') params.homeTotal = homeTotal.single;
+    if (homeTotal?.mode === 'range') {
+      params.homeTotalFrom = homeTotal.range?.from;
+      params.homeTotalTo = homeTotal.range?.to;
+    }
+
+    return params;
+  };
 
   const [params, setParams] = useState(getParamsFromUrl);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -272,7 +407,7 @@ export default function ProcessingDocumentsPage() {
 
   const { data: columnPref } = useUserPreference<Record<string, number>>(COLUMN_PREF_KEY);
   const { data: visibilityPref } = useUserPreference<Record<string, boolean>>(COLUMN_VISIBILITY_PREF_KEY);
-  const saveColumnPref = useUpsertUserPreference();
+  const saveColumnPref = useUpsertUserPreference<Record<string, number | boolean>>();
   const [columnWidths, setColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
   const [columnVisibility, setColumnVisibility] = useState<Partial<Record<ColumnId, boolean>>>({});
 
@@ -307,8 +442,8 @@ export default function ProcessingDocumentsPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-background-tertiary text-text-secondary hover:text-text-primary transition-colors"
-              aria-label={`Open "${doc.document.fileName}" in new tab`}
-              title={`Open "${doc.document.fileName}" in new tab`}
+              aria-label={`Open &quot;${doc.document.fileName}&quot; in new tab`}
+              title={`Open &quot;${doc.document.fileName}&quot; in new tab`}
             >
               <ArrowUpRight className="w-4 h-4" />
             </Link>
@@ -533,11 +668,9 @@ export default function ProcessingDocumentsPage() {
         document.body.style.cursor = '';
       isResizingRef.current = false;
 
-      setColumnWidths((prev) => {
-        const next = { ...prev, [columnId]: latestWidth };
-        saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: next });
-        return next;
-      });
+      const nextWidths = { ...columnWidths, [columnId]: latestWidth };
+      setColumnWidths(nextWidths);
+      saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: nextWidths });
     };
 
     window.addEventListener('pointermove', onMove);
@@ -562,12 +695,10 @@ export default function ProcessingDocumentsPage() {
 
   const toggleColumnVisibility = useCallback((columnId: ColumnId) => {
     if (columnId === 'open') return;
-    setColumnVisibility((prev) => {
-      const next = { ...prev, [columnId]: prev[columnId] === false ? true : false };
-      saveColumnPref.mutate({ key: COLUMN_VISIBILITY_PREF_KEY, value: next });
-      return next;
-    });
-  }, [saveColumnPref]);
+    const next = { ...columnVisibility, [columnId]: columnVisibility[columnId] === false ? true : false };
+    setColumnVisibility(next);
+    saveColumnPref.mutate({ key: COLUMN_VISIBILITY_PREF_KEY, value: next });
+  }, [columnVisibility, saveColumnPref]);
 
   // Pass tenantId and effective companyId to filter documents
   const { data, isLoading, isFetching, error, refetch } = useProcessingDocuments({
@@ -701,33 +832,71 @@ export default function ProcessingDocumentsPage() {
   };
 
   // Handler for the new ProcessingFilters component
-  const handleFiltersChange = useCallback((filters: ProcessingFilterValues) => {
-    setParams((prev) => ({
-      // Keep pagination and sorting params
-      page: 1, // Reset to first page on filter change
-      limit: prev.limit,
-      sortBy: prev.sortBy,
-      sortOrder: prev.sortOrder,
-      // Replace all filter fields with the new values (undefined if cleared)
-      pipelineStatus: filters.pipelineStatus,
-      duplicateStatus: filters.duplicateStatus,
-      revisionStatus: filters.revisionStatus,
-      needsReview: filters.needsReview,
-      isContainer: filters.isContainer,
-      companyId: filters.companyId,
-      uploadDatePreset: filters.uploadDatePreset,
-      uploadDateFrom: filters.uploadDateFrom,
-      uploadDateTo: filters.uploadDateTo,
-      documentDateFrom: filters.documentDateFrom,
-      documentDateTo: filters.documentDateTo,
-      vendorName: filters.vendorName,
-      documentNumber: filters.documentNumber,
-      fileName: filters.fileName,
-      // Tag filter
-      tagIds: filters.tagIds,
-      // Keep search separate (handled by handleSearchChange)
-      search: prev.search,
-    }));
+  const handleFiltersChange = useCallback((filters: Partial<ProcessingFilterValues>) => {
+    setParams((prev) => {
+      // Convert AmountFilterValue to flat params
+      const convertAmountFilter = (filter?: AmountFilterValue) => {
+        if (!filter) return { single: undefined, from: undefined, to: undefined };
+        if (filter.mode === 'single') return { single: filter.single, from: undefined, to: undefined };
+        return { single: undefined, from: filter.range?.from, to: filter.range?.to };
+      };
+
+      // Only convert amount filters if they are provided in the filters object
+      const subtotal = 'subtotalFilter' in filters ? convertAmountFilter(filters.subtotalFilter) : undefined;
+      const tax = 'taxFilter' in filters ? convertAmountFilter(filters.taxFilter) : undefined;
+      const total = 'totalFilter' in filters ? convertAmountFilter(filters.totalFilter) : undefined;
+      const homeSubtotal = 'homeSubtotalFilter' in filters ? convertAmountFilter(filters.homeSubtotalFilter) : undefined;
+      const homeTax = 'homeTaxFilter' in filters ? convertAmountFilter(filters.homeTaxFilter) : undefined;
+      const homeTotal = 'homeTotalFilter' in filters ? convertAmountFilter(filters.homeTotalFilter) : undefined;
+
+      return {
+        // Keep pagination and sorting params
+        page: 1, // Reset to first page on filter change
+        limit: prev.limit,
+        sortBy: prev.sortBy,
+        sortOrder: prev.sortOrder,
+        // Merge new filter values with previous values (only update if provided)
+        pipelineStatus: 'pipelineStatus' in filters ? filters.pipelineStatus : prev.pipelineStatus,
+        duplicateStatus: 'duplicateStatus' in filters ? filters.duplicateStatus : prev.duplicateStatus,
+        revisionStatus: 'revisionStatus' in filters ? filters.revisionStatus : prev.revisionStatus,
+        needsReview: 'needsReview' in filters ? filters.needsReview : prev.needsReview,
+        isContainer: 'isContainer' in filters ? filters.isContainer : prev.isContainer,
+        companyId: 'companyId' in filters ? filters.companyId : prev.companyId,
+        uploadDatePreset: 'uploadDatePreset' in filters ? filters.uploadDatePreset : prev.uploadDatePreset,
+        uploadDateFrom: 'uploadDateFrom' in filters ? filters.uploadDateFrom : prev.uploadDateFrom,
+        uploadDateTo: 'uploadDateTo' in filters ? filters.uploadDateTo : prev.uploadDateTo,
+        documentDateFrom: 'documentDateFrom' in filters ? filters.documentDateFrom : prev.documentDateFrom,
+        documentDateTo: 'documentDateTo' in filters ? filters.documentDateTo : prev.documentDateTo,
+        vendorName: 'vendorName' in filters ? filters.vendorName : prev.vendorName,
+        documentNumber: 'documentNumber' in filters ? filters.documentNumber : prev.documentNumber,
+        fileName: 'fileName' in filters ? filters.fileName : prev.fileName,
+        documentCategory: 'documentCategory' in filters ? filters.documentCategory : prev.documentCategory,
+        documentSubCategory: 'documentSubCategory' in filters ? filters.documentSubCategory : prev.documentSubCategory,
+        // Tag filter
+        tagIds: 'tagIds' in filters ? filters.tagIds : prev.tagIds,
+        // Amount filters - only update if provided
+        subtotal: subtotal !== undefined ? subtotal.single : prev.subtotal,
+        subtotalFrom: subtotal !== undefined ? subtotal.from : prev.subtotalFrom,
+        subtotalTo: subtotal !== undefined ? subtotal.to : prev.subtotalTo,
+        tax: tax !== undefined ? tax.single : prev.tax,
+        taxFrom: tax !== undefined ? tax.from : prev.taxFrom,
+        taxTo: tax !== undefined ? tax.to : prev.taxTo,
+        total: total !== undefined ? total.single : prev.total,
+        totalFrom: total !== undefined ? total.from : prev.totalFrom,
+        totalTo: total !== undefined ? total.to : prev.totalTo,
+        homeSubtotal: homeSubtotal !== undefined ? homeSubtotal.single : prev.homeSubtotal,
+        homeSubtotalFrom: homeSubtotal !== undefined ? homeSubtotal.from : prev.homeSubtotalFrom,
+        homeSubtotalTo: homeSubtotal !== undefined ? homeSubtotal.to : prev.homeSubtotalTo,
+        homeTax: homeTax !== undefined ? homeTax.single : prev.homeTax,
+        homeTaxFrom: homeTax !== undefined ? homeTax.from : prev.homeTaxFrom,
+        homeTaxTo: homeTax !== undefined ? homeTax.to : prev.homeTaxTo,
+        homeTotal: homeTotal !== undefined ? homeTotal.single : prev.homeTotal,
+        homeTotalFrom: homeTotal !== undefined ? homeTotal.from : prev.homeTotalFrom,
+        homeTotalTo: homeTotal !== undefined ? homeTotal.to : prev.homeTotalTo,
+        // Keep search separate (handled by handleSearchChange)
+        search: prev.search,
+      };
+    });
   }, []);
 
   const handleSort = useCallback((field: string) => {
@@ -768,7 +937,29 @@ export default function ProcessingDocumentsPage() {
   }, [data]);
 
   return (
-    <div className="p-4 sm:p-6">
+    <div {...getRootProps()} className="p-4 sm:p-6 relative">
+      <input {...getInputProps()} />
+
+      {/* Drag overlay */}
+      {isDragActive && (
+        <div className="fixed inset-0 z-50 bg-oak-primary/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="bg-background-secondary border-2 border-dashed border-oak-primary rounded-lg shadow-xl p-12 max-w-md">
+            <div className="flex flex-col items-center text-center">
+              <div className="p-4 rounded-lg bg-oak-primary/10 mb-4">
+                <Upload className="w-12 h-12 text-oak-primary" />
+              </div>
+              <p className="text-lg font-semibold text-text-primary mb-2">Drop files to upload</p>
+              <p className="text-sm text-text-secondary">
+                You&apos;ll be redirected to the upload page with files attached
+              </p>
+              <div className="mt-4 text-xs text-text-muted">
+                PDF, PNG, JPG, TIFF • Max 50MB per file
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -883,8 +1074,8 @@ export default function ProcessingDocumentsPage() {
         </MobileCollapsibleSection>
       )}
 
-      {/* Filters */}
-      <div className="mb-4">
+      {/* Filters - Desktop: Integrated in table. Mobile: Separate panel */}
+      <div className="mb-4 md:hidden">
         <ProcessingFilters
           onFilterChange={handleFiltersChange}
           initialFilters={{
@@ -910,22 +1101,6 @@ export default function ProcessingDocumentsPage() {
           tags={tagsData?.map(t => ({ id: t.id, name: t.name, color: t.color })) || []}
           activeCompanyId={effectiveCompanyId}
           activeTenantId={activeTenantId}
-          rightActions={
-            <button
-              type="button"
-              onClick={() => setIsColumnModalOpen(true)}
-              className="btn-secondary btn-sm flex items-center gap-2"
-              title="Adjust columns"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Adjust columns</span>
-              {hiddenColumnCount > 0 && (
-                <span className="bg-background-tertiary text-text-secondary text-2xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                  {hiddenColumnCount}
-                </span>
-              )}
-            </button>
-          }
         />
       </div>
 
@@ -1133,6 +1308,34 @@ export default function ProcessingDocumentsPage() {
         </div>
       )}
 
+      {/* Desktop Toolbar */}
+      <div className="hidden md:block mb-4">
+        <ProcessingToolbar
+          search={params.search || ''}
+          onSearchChange={handleSearchChange}
+          quickFilters={{
+            needsReview: params.needsReview,
+            uploadDatePreset: params.uploadDatePreset,
+            duplicateStatus: params.duplicateStatus,
+          }}
+          onQuickFilterChange={(filters) => {
+            handleFiltersChange(filters);
+          }}
+          companies={companiesData?.companies.map(c => ({ id: c.id, name: c.name })) || []}
+          selectedCompanyId={params.companyId}
+          onCompanyChange={(companyId) => {
+            handleFiltersChange({ companyId });
+          }}
+          tags={tagsData}
+          selectedTagIds={params.tagIds}
+          onTagsChange={(tagIds) => {
+            handleFiltersChange({ tagIds });
+          }}
+          onAdjustColumns={() => setIsColumnModalOpen(true)}
+          hiddenColumnCount={hiddenColumnCount}
+        />
+      </div>
+
       {/* Document Table - Desktop View */}
       {!error && data && data.documents.length > 0 && (
         <div className={cn('hidden md:block card overflow-hidden relative', isFetching && 'opacity-60')}>
@@ -1154,6 +1357,7 @@ export default function ProcessingDocumentsPage() {
                 ))}
               </colgroup>
               <thead className="bg-background-tertiary border-b border-border-primary">
+                {/* Column header row */}
                 <tr>
                   <th className="w-10 px-4 py-3">
                     <button
@@ -1223,6 +1427,236 @@ export default function ProcessingDocumentsPage() {
                       </th>
                     )
                   )}
+                </tr>
+                {/* Inline filter row */}
+                <tr className="bg-background-secondary">
+                  <th className="px-4 py-2"></th>
+                  {visibleColumnIds.map((columnId) => (
+                    <th key={columnId} className="px-2 py-2">
+                      {columnId === 'open' ? null : columnId === 'document' ? (
+                        <input
+                          type="text"
+                          value={params.fileName || ''}
+                          onChange={(e) => handleFiltersChange({ fileName: e.target.value || undefined })}
+                          placeholder="Filter..."
+                          className="w-full h-9 text-sm px-3 rounded-lg border border-border-primary bg-white dark:bg-background-secondary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary outline-none transition-colors placeholder:text-text-muted"
+                        />
+                      ) : columnId === 'company' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...companiesData?.companies.map(c => ({ value: c.id, label: c.name })) || []
+                          ]}
+                          value={params.companyId || ''}
+                          onChange={(value) => handleFiltersChange({ companyId: value || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'pipeline' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(pipelineStatusConfig).map(([value, config]) => ({
+                              value,
+                              label: config.label
+                            }))
+                          ]}
+                          value={params.pipelineStatus || ''}
+                          onChange={(value) => handleFiltersChange({ pipelineStatus: value as PipelineStatus || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'status' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(revisionStatusConfig).map(([value, config]) => ({
+                              value,
+                              label: config.label
+                            }))
+                          ]}
+                          value={params.revisionStatus || ''}
+                          onChange={(value) => handleFiltersChange({ revisionStatus: value as RevisionStatus || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'duplicate' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(duplicateStatusConfig).map(([value, config]) => ({
+                              value,
+                              label: config.label
+                            }))
+                          ]}
+                          value={params.duplicateStatus || ''}
+                          onChange={(value) => handleFiltersChange({ duplicateStatus: value as DuplicateStatus || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'vendor' ? (
+                        <input
+                          type="text"
+                          value={params.vendorName || ''}
+                          onChange={(e) => handleFiltersChange({ vendorName: e.target.value || undefined })}
+                          placeholder="Filter..."
+                          className="w-full h-9 text-sm px-3 rounded-lg border border-border-primary bg-white dark:bg-background-secondary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary outline-none transition-colors placeholder:text-text-muted"
+                        />
+                      ) : columnId === 'docNumber' ? (
+                        <input
+                          type="text"
+                          value={params.documentNumber || ''}
+                          onChange={(e) => handleFiltersChange({ documentNumber: e.target.value || undefined })}
+                          placeholder="Filter..."
+                          className="w-full h-9 text-sm px-3 rounded-lg border border-border-primary bg-white dark:bg-background-secondary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary outline-none transition-colors placeholder:text-text-muted"
+                        />
+                      ) : columnId === 'docDate' ? (
+                        <DatePicker
+                          value={
+                            params.documentDateFrom || params.documentDateTo
+                              ? {
+                                  mode: 'range' as const,
+                                  range: {
+                                    from: params.documentDateFrom ? new Date(params.documentDateFrom) : undefined,
+                                    to: params.documentDateTo ? new Date(params.documentDateTo) : undefined,
+                                  }
+                                }
+                              : undefined
+                          }
+                          onChange={(value) => {
+                            if (!value || value.mode !== 'range') {
+                              handleFiltersChange({ documentDateFrom: undefined, documentDateTo: undefined });
+                            } else if (value.range) {
+                              handleFiltersChange({
+                                documentDateFrom: value.range.from?.toISOString().split('T')[0],
+                                documentDateTo: value.range.to?.toISOString().split('T')[0],
+                              });
+                            }
+                          }}
+                          placeholder="All dates"
+                          size="sm"
+                          defaultTab="range"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'uploaded' ? (
+                        <DatePicker
+                          value={
+                            params.uploadDateFrom || params.uploadDateTo
+                              ? {
+                                  mode: 'range' as const,
+                                  range: {
+                                    from: params.uploadDateFrom ? new Date(params.uploadDateFrom) : undefined,
+                                    to: params.uploadDateTo ? new Date(params.uploadDateTo) : undefined,
+                                  }
+                                }
+                              : undefined
+                          }
+                          onChange={(value) => {
+                            if (!value || value.mode !== 'range') {
+                              handleFiltersChange({ uploadDateFrom: undefined, uploadDateTo: undefined });
+                            } else if (value.range) {
+                              handleFiltersChange({
+                                uploadDateFrom: value.range.from?.toISOString().split('T')[0],
+                                uploadDateTo: value.range.to?.toISOString().split('T')[0],
+                              });
+                            }
+                          }}
+                          placeholder="All dates"
+                          size="sm"
+                          defaultTab="range"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'category' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(CATEGORY_LABELS).map(([value, label]) => ({
+                              value,
+                              label
+                            }))
+                          ]}
+                          value={params.documentCategory || ''}
+                          onChange={(value) => handleFiltersChange({ documentCategory: value as DocumentCategory || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'subCategory' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(SUBCATEGORY_LABELS).map(([value, label]) => ({
+                              value,
+                              label
+                            }))
+                          ]}
+                          value={params.documentSubCategory || ''}
+                          onChange={(value) => handleFiltersChange({ documentSubCategory: value as DocumentSubCategory || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'subtotal' ? (
+                        <AmountFilter
+                          value={params.subtotal !== undefined ? { mode: 'single', single: params.subtotal } :
+                                params.subtotalFrom !== undefined || params.subtotalTo !== undefined ?
+                                { mode: 'range', range: { from: params.subtotalFrom, to: params.subtotalTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ subtotalFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'tax' ? (
+                        <AmountFilter
+                          value={params.tax !== undefined ? { mode: 'single', single: params.tax } :
+                                params.taxFrom !== undefined || params.taxTo !== undefined ?
+                                { mode: 'range', range: { from: params.taxFrom, to: params.taxTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ taxFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'total' ? (
+                        <AmountFilter
+                          value={params.total !== undefined ? { mode: 'single', single: params.total } :
+                                params.totalFrom !== undefined || params.totalTo !== undefined ?
+                                { mode: 'range', range: { from: params.totalFrom, to: params.totalTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ totalFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'homeSubtotal' ? (
+                        <AmountFilter
+                          value={params.homeSubtotal !== undefined ? { mode: 'single', single: params.homeSubtotal } :
+                                params.homeSubtotalFrom !== undefined || params.homeSubtotalTo !== undefined ?
+                                { mode: 'range', range: { from: params.homeSubtotalFrom, to: params.homeSubtotalTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ homeSubtotalFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'homeTax' ? (
+                        <AmountFilter
+                          value={params.homeTax !== undefined ? { mode: 'single', single: params.homeTax } :
+                                params.homeTaxFrom !== undefined || params.homeTaxTo !== undefined ?
+                                { mode: 'range', range: { from: params.homeTaxFrom, to: params.homeTaxTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ homeTaxFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'homeTotal' ? (
+                        <AmountFilter
+                          value={params.homeTotal !== undefined ? { mode: 'single', single: params.homeTotal } :
+                                params.homeTotalFrom !== undefined || params.homeTotalTo !== undefined ?
+                                { mode: 'range', range: { from: params.homeTotalFrom, to: params.homeTotalTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ homeTotalFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                        />
+                      ) : null}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>

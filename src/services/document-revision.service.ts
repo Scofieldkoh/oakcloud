@@ -50,7 +50,7 @@ function sanitizeDecimalValue(value: Decimal | number | string | null | undefine
   }
 
   // Remove currency symbols and whitespace
-  str = str.replace(/[$€£¥\s]/g, '');
+  str = str.replace(/[$â‚¬ £ ¥\s]/g, '');
 
   // Remove thousands separators (commas)
   str = str.replace(/,/g, '');
@@ -198,7 +198,7 @@ const VALIDATION_CODES = {
   PARTIAL_EXTRACTION: { severity: 'WARN' as const, message: 'Extraction may be incomplete' },
   HEADER_ARITHMETIC_MISMATCH: {
     severity: 'WARN' as const,
-    message: 'Header amounts do not compute correctly (subtotal + tax ≠ total)',
+    message: 'Header amounts do not compute correctly (subtotal + tax â‰  total)',
   },
   LINE_SUM_MISMATCH: {
     severity: 'WARN' as const,
@@ -690,19 +690,23 @@ export async function approveRevision(
     homeEquivalent = revision.totalAmount;
   }
 
-  // Supersede any previously approved revision
-  await prisma.documentRevision.updateMany({
-    where: {
-      processingDocumentId: revision.processingDocumentId,
-      status: 'APPROVED',
-    },
-    data: {
-      status: 'SUPERSEDED',
-      supersededAt: new Date(),
-    },
-  });
+  // Prepare data for atomic transaction
+  const approvalData = {
+    status: 'APPROVED' as const,
+    approvedById: userId,
+    approvedAt: new Date(),
+    vendorName: approvedVendorName ?? revision.vendorName,
+    vendorId: approvedVendorId ?? revision.vendorId,
+    customerName: approvedCustomerName ?? (revision as unknown as { customerName?: string | null }).customerName ?? undefined,
+    customerId: approvedCustomerId ?? (revision as unknown as { customerId?: string | null }).customerId ?? undefined,
+    homeCurrency: homeCurrency ?? revision.currency,
+    homeExchangeRate: toDecimal(exchangeRate),
+    homeExchangeRateSource: exchangeRateSource,
+    exchangeRateDate,
+    homeEquivalent,
+  };
 
-  // Rename document file in storage based on revision data
+  // Rename document file in storage based on revision data (BEFORE transaction)
   if (processingDoc?.document?.storageKey) {
     const document = processingDoc.document;
 
@@ -759,33 +763,33 @@ export async function approveRevision(
     }
   }
 
-  // Approve this revision
-  await prisma.documentRevision.update({
-    where: { id: revisionId },
-    data: {
-      status: 'APPROVED',
-      approvedById: userId,
-      approvedAt: new Date(),
-      vendorName: approvedVendorName ?? revision.vendorName,
-      vendorId: approvedVendorId ?? revision.vendorId,
-      customerName: approvedCustomerName ?? (revision as unknown as { customerName?: string | null }).customerName ?? undefined,
-      customerId: approvedCustomerId ?? (revision as unknown as { customerId?: string | null }).customerId ?? undefined,
-      homeCurrency: homeCurrency ?? revision.currency,
-      homeExchangeRate: toDecimal(exchangeRate),
-      homeExchangeRateSource: exchangeRateSource,
-      exchangeRateDate,
-      homeEquivalent,
-    },
-  });
-
-  // Update processing document to point to this revision
-  await prisma.processingDocument.update({
-    where: { id: revision.processingDocumentId },
-    data: {
-      currentRevisionId: revisionId,
-      lockVersion: { increment: 1 },
-    },
-  });
+  // Execute approval atomically - supersede old revisions, approve current, update document
+  await prisma.$transaction([
+    // Supersede any previously approved revision
+    prisma.documentRevision.updateMany({
+      where: {
+        processingDocumentId: revision.processingDocumentId,
+        status: 'APPROVED',
+      },
+      data: {
+        status: 'SUPERSEDED',
+        supersededAt: new Date(),
+      },
+    }),
+    // Approve this revision
+    prisma.documentRevision.update({
+      where: { id: revisionId },
+      data: approvalData,
+    }),
+    // Update processing document to point to this revision
+    prisma.processingDocument.update({
+      where: { id: revision.processingDocumentId },
+      data: {
+        currentRevisionId: revisionId,
+        lockVersion: { increment: 1 },
+      },
+    }),
+  ]);
 
   const approvedRevision = await getRevision(revisionId);
   log.info(`Revision ${revisionId} approved`);

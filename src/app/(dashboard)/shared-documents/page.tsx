@@ -402,7 +402,7 @@ export default function SharedDocumentsPage() {
                     <CardDetailsGrid>
                       <CardDetailItem
                         label="Company"
-                        value={share.document.company?.name || '—'}
+                        value={share.document.company?.name || '"”'}
                         icon={<Building2 className="w-3 h-3" />}
                       />
                       <CardDetailItem

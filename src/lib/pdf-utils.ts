@@ -5,6 +5,7 @@
  * - Convert images to PDF
  * - Merge multiple files into a single PDF
  * - Compress large PDFs
+ * - Split PDFs by page ranges
  */
 
 import { PDFDocument } from 'pdf-lib';
@@ -435,4 +436,95 @@ export function getExtensionFromMimeType(mimeType: string): string {
     'image/tif': 'tiff',
   };
   return extensions[mimeType.toLowerCase()] || 'bin';
+}
+
+/**
+ * Split range definition for PDF splitting
+ */
+export interface SplitPageRange {
+  /** Page number to start from (1-indexed, inclusive) */
+  pageFrom: number;
+  /** Page number to end at (1-indexed, inclusive) */
+  pageTo: number;
+  /** Optional label for the split (e.g., "Invoice 1") */
+  label?: string;
+}
+
+/**
+ * Get the total number of pages in a PDF file
+ */
+export async function getPdfPageCount(file: File): Promise<number> {
+  const pdfBytes = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  return pdfDoc.getPageCount();
+}
+
+/**
+ * Split a PDF file into multiple PDFs based on page ranges
+ * @param file - Source PDF file to split
+ * @param ranges - Array of page ranges (1-indexed, inclusive)
+ * @returns Array of split PDF files
+ */
+export async function splitPdfByRanges(
+  file: File,
+  ranges: SplitPageRange[]
+): Promise<File[]> {
+  if (ranges.length === 0) {
+    throw new Error('At least one split range is required');
+  }
+
+  const sourceBytes = await file.arrayBuffer();
+  const sourceDoc = await PDFDocument.load(sourceBytes);
+  const totalPages = sourceDoc.getPageCount();
+
+  // Validate ranges
+  for (const range of ranges) {
+    if (range.pageFrom < 1 || range.pageTo < range.pageFrom) {
+      throw new Error(`Invalid range: ${range.pageFrom}-${range.pageTo}`);
+    }
+    if (range.pageTo > totalPages) {
+      throw new Error(`Page ${range.pageTo} exceeds document length (${totalPages} pages)`);
+    }
+  }
+
+  const result: File[] = [];
+  const baseName = file.name.replace(/\.pdf$/i, '');
+
+  for (let i = 0; i < ranges.length; i++) {
+    const range = ranges[i];
+    const newDoc = await PDFDocument.create();
+
+    // Copy pages for this range (convert to 0-indexed)
+    const pageIndices: number[] = [];
+    for (let p = range.pageFrom - 1; p < range.pageTo; p++) {
+      pageIndices.push(p);
+    }
+
+    const copiedPages = await newDoc.copyPages(sourceDoc, pageIndices);
+    copiedPages.forEach((page) => newDoc.addPage(page));
+
+    // Save the new PDF
+    const pdfBytes = await newDoc.save({ useObjectStreams: true });
+    const label = range.label || `Part ${i + 1}`;
+    const fileName = `${baseName}_${label.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    result.push(createPdfFile(pdfBytes, fileName));
+  }
+
+  return result;
+}
+
+/**
+ * Get page thumbnails for split preview
+ * Renders each page as a small canvas for preview purposes
+ * Note: This uses pdf.js internally for rendering
+ */
+export async function getPdfPageThumbnails(
+  file: File,
+  maxThumbnailHeight: number = 150
+): Promise<{ pageNumber: number; dataUrl: string }[]> {
+  // This would require pdf.js for rendering. For now, return empty array
+  // and let the component use a different approach (e.g., pdf.js directly)
+  console.log('[splitPdf] Thumbnail generation requested, maxHeight:', maxThumbnailHeight);
+  // Placeholder - actual implementation would use pdfjs-dist
+  return [];
 }

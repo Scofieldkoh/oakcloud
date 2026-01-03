@@ -18,6 +18,7 @@ import type {
   DuplicateStatus,
   RevisionStatus,
   DocumentCategory,
+  DocumentSubCategory,
 } from '@/generated/prisma';
 import { PDFDocument } from 'pdf-lib';
 import { storage } from '@/lib/storage';
@@ -898,8 +899,31 @@ export async function listProcessingDocumentsPaged(options: {
   vendorName?: string;
   documentNumber?: string;
   fileName?: string;
+  // Category filters
+  documentCategory?: string;
+  documentSubCategory?: string;
   // Tag filter
   tagIds?: string[];
+  // Amount filters - single value mode
+  subtotal?: number;
+  tax?: number;
+  total?: number;
+  homeSubtotal?: number;
+  homeTax?: number;
+  homeTotal?: number;
+  // Amount filters - range mode
+  subtotalFrom?: number;
+  subtotalTo?: number;
+  taxFrom?: number;
+  taxTo?: number;
+  totalFrom?: number;
+  totalTo?: number;
+  homeSubtotalFrom?: number;
+  homeSubtotalTo?: number;
+  homeTaxFrom?: number;
+  homeTaxTo?: number;
+  homeTotalFrom?: number;
+  homeTotalTo?: number;
 }): Promise<{
   documents: ProcessingDocumentWithDocument[];
   total: number;
@@ -929,7 +953,28 @@ export async function listProcessingDocumentsPaged(options: {
     vendorName,
     documentNumber,
     fileName,
+    documentCategory,
+    documentSubCategory,
     tagIds,
+    // Amount filters
+    subtotal: filterSubtotal,
+    tax: filterTax,
+    total: filterTotal,
+    homeSubtotal: filterHomeSubtotal,
+    homeTax: filterHomeTax,
+    homeTotal: filterHomeTotal,
+    subtotalFrom,
+    subtotalTo,
+    taxFrom,
+    taxTo,
+    totalFrom,
+    totalTo,
+    homeSubtotalFrom,
+    homeSubtotalTo,
+    homeTaxFrom,
+    homeTaxTo,
+    homeTotalFrom,
+    homeTotalTo,
   } = options;
 
   // SECURITY: Tenant ID is required to prevent cross-tenant data access unless explicitly skipped for SUPER_ADMIN
@@ -941,9 +986,13 @@ export async function listProcessingDocumentsPaged(options: {
   // (e.g., extracted drafts). This keeps list sorting and bulk actions consistent with what is displayed.
   if (tenantId && !skipTenantFilter) {
     try {
+      // Validate companyIds are UUIDs to prevent SQL injection
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const validCompanyIds = companyIds?.filter(id => UUID_REGEX.test(id)) ?? [];
+
       const companyScopeSql =
-        companyIds && companyIds.length > 0
-          ? Prisma.sql`AND d."company_id" IN (${Prisma.join(companyIds)})`
+        validCompanyIds.length > 0
+          ? Prisma.sql`AND d."companyId" IN (${Prisma.join(validCompanyIds)})`
           : Prisma.empty;
 
       await prisma.$executeRaw`
@@ -961,7 +1010,7 @@ export async function listProcessingDocumentsPaged(options: {
           JOIN "documents" d ON d."id" = pd."document_id"
           WHERE pd."current_revision_id" IS NULL
             AND pd."deleted_at" IS NULL
-            AND d."tenant_id" = ${tenantId}
+            AND d."tenantId" = ${tenantId}
             ${companyScopeSql}
         )
         UPDATE "processing_documents" pd
@@ -1008,8 +1057,9 @@ export async function listProcessingDocumentsPaged(options: {
   }
 
   if (needsReview) {
+    const existingAND = where.AND ? (Array.isArray(where.AND) ? where.AND : [where.AND]) : [];
     where.AND = [
-      ...(where.AND ?? []),
+      ...existingAND,
       {
         OR: [
           { duplicateStatus: 'SUSPECTED' },
@@ -1080,6 +1130,20 @@ export async function listProcessingDocumentsPaged(options: {
     ];
   }
 
+  // Document category filter
+  if (documentCategory) {
+    const revisionFilter: Prisma.DocumentRevisionWhereInput = where.currentRevision as Prisma.DocumentRevisionWhereInput || {};
+    revisionFilter.documentCategory = documentCategory as DocumentCategory;
+    where.currentRevision = revisionFilter;
+  }
+
+  // Document sub-category filter
+  if (documentSubCategory) {
+    const revisionFilter: Prisma.DocumentRevisionWhereInput = where.currentRevision as Prisma.DocumentRevisionWhereInput || {};
+    revisionFilter.documentSubCategory = documentSubCategory as DocumentSubCategory;
+    where.currentRevision = revisionFilter;
+  }
+
   // Tag filter - documents must have ALL specified tags
   if (tagIds && tagIds.length > 0) {
     where.documentTags = {
@@ -1087,6 +1151,105 @@ export async function listProcessingDocumentsPaged(options: {
         tagId: { in: tagIds },
       },
     };
+  }
+
+  // Amount filters (via currentRevision fields)
+  // Helper to get/create revision filter
+  const getRevisionFilter = (): Prisma.DocumentRevisionWhereInput => {
+    if (!where.currentRevision || typeof where.currentRevision !== 'object') {
+      where.currentRevision = {};
+    }
+    return where.currentRevision as Prisma.DocumentRevisionWhereInput;
+  };
+
+  // Subtotal filters
+  if (filterSubtotal !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.subtotal = new Prisma.Decimal(filterSubtotal);
+  } else if (subtotalFrom !== undefined || subtotalTo !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.subtotal = {};
+    if (subtotalFrom !== undefined) {
+      revisionFilter.subtotal.gte = new Prisma.Decimal(subtotalFrom);
+    }
+    if (subtotalTo !== undefined) {
+      revisionFilter.subtotal.lte = new Prisma.Decimal(subtotalTo);
+    }
+  }
+
+  // Tax filters
+  if (filterTax !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.taxAmount = new Prisma.Decimal(filterTax);
+  } else if (taxFrom !== undefined || taxTo !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.taxAmount = {};
+    if (taxFrom !== undefined) {
+      revisionFilter.taxAmount.gte = new Prisma.Decimal(taxFrom);
+    }
+    if (taxTo !== undefined) {
+      revisionFilter.taxAmount.lte = new Prisma.Decimal(taxTo);
+    }
+  }
+
+  // Total filters
+  if (filterTotal !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.totalAmount = new Prisma.Decimal(filterTotal);
+  } else if (totalFrom !== undefined || totalTo !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.totalAmount = {};
+    if (totalFrom !== undefined) {
+      revisionFilter.totalAmount.gte = new Prisma.Decimal(totalFrom);
+    }
+    if (totalTo !== undefined) {
+      revisionFilter.totalAmount.lte = new Prisma.Decimal(totalTo);
+    }
+  }
+
+  // Home subtotal filters
+  if (filterHomeSubtotal !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.homeSubtotal = new Prisma.Decimal(filterHomeSubtotal);
+  } else if (homeSubtotalFrom !== undefined || homeSubtotalTo !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.homeSubtotal = {};
+    if (homeSubtotalFrom !== undefined) {
+      revisionFilter.homeSubtotal.gte = new Prisma.Decimal(homeSubtotalFrom);
+    }
+    if (homeSubtotalTo !== undefined) {
+      revisionFilter.homeSubtotal.lte = new Prisma.Decimal(homeSubtotalTo);
+    }
+  }
+
+  // Home tax filters
+  if (filterHomeTax !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.homeTaxAmount = new Prisma.Decimal(filterHomeTax);
+  } else if (homeTaxFrom !== undefined || homeTaxTo !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.homeTaxAmount = {};
+    if (homeTaxFrom !== undefined) {
+      revisionFilter.homeTaxAmount.gte = new Prisma.Decimal(homeTaxFrom);
+    }
+    if (homeTaxTo !== undefined) {
+      revisionFilter.homeTaxAmount.lte = new Prisma.Decimal(homeTaxTo);
+    }
+  }
+
+  // Home total filters
+  if (filterHomeTotal !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.homeEquivalent = new Prisma.Decimal(filterHomeTotal);
+  } else if (homeTotalFrom !== undefined || homeTotalTo !== undefined) {
+    const revisionFilter = getRevisionFilter();
+    revisionFilter.homeEquivalent = {};
+    if (homeTotalFrom !== undefined) {
+      revisionFilter.homeEquivalent.gte = new Prisma.Decimal(homeTotalFrom);
+    }
+    if (homeTotalTo !== undefined) {
+      revisionFilter.homeEquivalent.lte = new Prisma.Decimal(homeTotalTo);
+    }
   }
 
   // Build orderBy based on sortBy field (supports nested relation sorts)

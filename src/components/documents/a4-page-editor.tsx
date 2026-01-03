@@ -1637,7 +1637,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
         <div className="flex-shrink-0 px-4 py-1.5 bg-white dark:bg-gray-900 border-t text-xs text-gray-500 flex justify-between">
           <span>
-            A4: {A4.WIDTH_PX}×{A4.HEIGHT_PX}px ({A4.MARGIN_MM}mm margins)
+            A4: {A4.WIDTH_PX}Ã—{A4.HEIGHT_PX}px ({A4.MARGIN_MM}mm margins)
           </span>
           <span>
             {readOnly ? 'Viewing document' : (effectivePreviewMode ? 'Viewing preview' : 'Editing')} • What you see = What prints

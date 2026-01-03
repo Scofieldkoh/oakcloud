@@ -48,11 +48,12 @@ export function useUserPreference<T>(key: string, options?: { enabled?: boolean 
   });
 }
 
-export function useUpsertUserPreference() {
+export function useUpsertUserPreference<T = unknown>() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async <T,>({ key, value }: { key: string; value: T }) => upsertUserPreference(key, value),
+    mutationFn: async ({ key, value }: { key: string; value: T }) =>
+      upsertUserPreference(key, value),
     onSuccess: (data) => {
       queryClient.setQueryData(['user-preference', data.key], { ...data });
     },

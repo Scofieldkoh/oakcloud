@@ -9,6 +9,7 @@ import {
   File,
   X,
   AlertCircle,
+  AlertTriangle,
   CheckCircle,
   Loader2,
   Building2,
@@ -17,6 +18,7 @@ import {
   ClipboardPaste,
   Image as ImageIcon,
   FileText,
+  Copy,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
 import { useCompanies } from '@/hooks/use-companies';
@@ -26,9 +28,16 @@ import { useToast } from '@/components/ui/toast';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { FileMergeModal } from '@/components/processing/file-merge-modal';
 import { processFileForUpload, isSupportedFileType } from '@/lib/pdf-utils';
+import { calculateFileHash } from '@/lib/file-hash';
 import { cn } from '@/lib/utils';
 
 type UploadStatus = 'pending' | 'processing' | 'uploading' | 'success' | 'error';
+
+interface DuplicateInfo {
+  documentId: string;
+  fileName: string;
+  uploadedAt: string;
+}
 
 interface QueuedFile {
   file: File;
@@ -37,6 +46,10 @@ interface QueuedFile {
   error?: string;
   processingDocumentId?: string;
   originalFile?: File; // Keep reference to original file before processing
+  fileHash?: string; // SHA-256 hash for duplicate detection
+  isDuplicate?: boolean; // Whether this file is a duplicate
+  duplicateInfo?: DuplicateInfo; // Info about the existing duplicate
+  uploadAnyway?: boolean; // User override to upload despite duplicate
 }
 
 const MAX_FILES = 20;
@@ -112,6 +125,68 @@ export default function ProcessingUploadPage() {
     }
   }, [selectedCompanyId, companies]);
 
+  // Check files for duplicates against server
+  const checkFilesForDuplicates = useCallback(async (files: QueuedFile[]) => {
+    if (!selectedCompanyId || files.length === 0) return;
+
+    try {
+      // Calculate hashes for all files
+      const hashPromises = files.map(async (qf) => {
+        const hash = await calculateFileHash(qf.file);
+        return { id: qf.id, hash };
+      });
+      const hashResults = await Promise.all(hashPromises);
+
+      // Update files with their hashes
+      setQueuedFiles((prev) =>
+        prev.map((f) => {
+          const result = hashResults.find((h) => h.id === f.id);
+          return result ? { ...f, fileHash: result.hash } : f;
+        })
+      );
+
+      // Check hashes against server
+      const hashes = hashResults.map((h) => h.hash);
+      const response = await fetch('/api/processing-documents/check-duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileHashes: hashes, companyId: selectedCompanyId }),
+      });
+
+      if (response.ok) {
+        const { data } = await response.json();
+        const duplicateMap = new Map(
+          data.duplicates.map((d: DuplicateInfo & { hash: string }) => [d.hash, d])
+        );
+
+        // Mark duplicate files
+        setQueuedFiles((prev) =>
+          prev.map((f) => {
+            if (f.fileHash && duplicateMap.has(f.fileHash)) {
+              const dupInfo = duplicateMap.get(f.fileHash) as DuplicateInfo & { hash: string };
+              return {
+                ...f,
+                isDuplicate: true,
+                duplicateInfo: {
+                  documentId: dupInfo.documentId,
+                  fileName: dupInfo.fileName,
+                  uploadedAt: dupInfo.uploadedAt,
+                },
+              };
+            }
+            return f;
+          })
+        );
+
+        if (data.duplicateCount > 0) {
+          info(`${data.duplicateCount} file(s) already exist in the system`);
+        }
+      }
+    } catch (err) {
+      console.error('Duplicate check failed:', err);
+    }
+  }, [selectedCompanyId, info]);
+
   // File queue management
   const addFilesToQueue = useCallback((acceptedFiles: File[]) => {
     const newFiles: QueuedFile[] = acceptedFiles.map((file) => ({
@@ -129,7 +204,28 @@ export default function ProcessingUploadPage() {
       }
       return combined;
     });
-  }, [toastError]);
+
+    // Check for duplicates after adding (only if company selected)
+    if (selectedCompanyId) {
+      setTimeout(() => checkFilesForDuplicates(newFiles), 100);
+    }
+  }, [toastError, selectedCompanyId, checkFilesForDuplicates]);
+
+  // Check for files passed from processing page on mount
+  useEffect(() => {
+    const windowWithFiles = window as Window & { __pendingUploadFiles?: FileList };
+    const pendingFiles = windowWithFiles.__pendingUploadFiles;
+    if (pendingFiles && pendingFiles.length > 0) {
+      const filesArray = Array.from(pendingFiles);
+      addFilesToQueue(filesArray);
+
+      // Clean up
+      delete windowWithFiles.__pendingUploadFiles;
+      sessionStorage.removeItem('pendingUploadFiles');
+
+      info(`${filesArray.length} file${filesArray.length > 1 ? 's' : ''} ready to upload`);
+    }
+  }, [addFilesToQueue, info]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     addFilesToQueue(acceptedFiles);
@@ -286,10 +382,10 @@ export default function ProcessingUploadPage() {
           prev.map((f) =>
             f.id === queuedFile.id
               ? {
-                  ...f,
-                  status: 'error' as UploadStatus,
-                  error: err instanceof Error ? err.message : 'File processing failed',
-                }
+                ...f,
+                status: 'error' as UploadStatus,
+                error: err instanceof Error ? err.message : 'File processing failed',
+              }
               : f
           )
         );
@@ -335,11 +431,11 @@ export default function ProcessingUploadPage() {
           prev.map((f) =>
             f.id === queuedFile.id
               ? {
-                  ...f,
-                  status: 'success' as UploadStatus,
-                  processingDocumentId: result.data?.document?.id,
-                  file: processedFile, // Update to processed file
-                }
+                ...f,
+                status: 'success' as UploadStatus,
+                processingDocumentId: result.data?.document?.id,
+                file: processedFile, // Update to processed file
+              }
               : f
           )
         );
@@ -350,10 +446,10 @@ export default function ProcessingUploadPage() {
           prev.map((f) =>
             f.id === queuedFile.id
               ? {
-                  ...f,
-                  status: 'error' as UploadStatus,
-                  error: err instanceof Error ? err.message : 'Upload failed',
-                }
+                ...f,
+                status: 'error' as UploadStatus,
+                error: err instanceof Error ? err.message : 'Upload failed',
+              }
               : f
           )
         );
@@ -380,12 +476,12 @@ export default function ProcessingUploadPage() {
   // Get file icon based on type
   const getFileIcon = (file: File) => {
     if (file.type === 'application/pdf') {
-      return <FileText className="w-5 h-5 text-status-error" />;
+      return <FileText className="w-4 h-4 text-status-error" />;
     }
     if (file.type.startsWith('image/')) {
-      return <ImageIcon className="w-5 h-5 text-oak-primary" />;
+      return <ImageIcon className="w-4 h-4 text-oak-primary" />;
     }
-    return <File className="w-5 h-5 text-text-muted" />;
+    return <File className="w-4 h-4 text-text-muted" />;
   };
 
   // Get status icon
@@ -394,23 +490,25 @@ export default function ProcessingUploadPage() {
       case 'pending':
         return getFileIcon(qf.file);
       case 'processing':
-        return <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />;
+        return <Loader2 className="w-4 h-4 text-status-warning animate-spin" />;
       case 'uploading':
-        return <Loader2 className="w-5 h-5 text-oak-primary animate-spin" />;
+        return <Loader2 className="w-4 h-4 text-oak-primary animate-spin" />;
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-status-success" />;
+        return <CheckCircle className="w-4 h-4 text-status-success" />;
       case 'error':
-        return <AlertCircle className="w-5 h-5 text-status-error" />;
+        return <AlertCircle className="w-4 h-4 text-status-error" />;
     }
   };
 
-  // Get status text
-  const getStatusText = (qf: QueuedFile) => {
+  // Get status badge
+  const getStatusBadge = (qf: QueuedFile) => {
     switch (qf.status) {
       case 'processing':
-        return <span className="text-amber-600 ml-2">• Converting...</span>;
+        return <span className="badge badge-warning ml-2">Converting</span>;
       case 'uploading':
-        return <span className="text-oak-primary ml-2">• Uploading...</span>;
+        return <span className="badge badge-info ml-2">Uploading</span>;
+      case 'success':
+        return <span className="badge badge-success ml-2">Uploaded</span>;
       default:
         return null;
     }
@@ -496,8 +594,8 @@ export default function ProcessingUploadPage() {
           isDragActive
             ? 'border-oak-primary bg-oak-primary/5'
             : isUploading
-            ? 'border-border-secondary bg-background-tertiary cursor-not-allowed'
-            : 'border-border-secondary hover:border-oak-primary/50'
+              ? 'border-border-secondary bg-background-tertiary cursor-not-allowed'
+              : 'border-border-secondary hover:border-oak-primary/50'
         )}
       >
         <input {...getInputProps()} />
@@ -573,39 +671,83 @@ export default function ProcessingUploadPage() {
           </div>
           <div className="divide-y divide-border-primary max-h-60 sm:max-h-80 overflow-y-auto">
             {queuedFiles.map((qf) => (
-              <div key={qf.id} className="p-3 flex items-center gap-3">
+              <div key={qf.id} className={cn(
+                'p-3 flex items-center gap-3',
+                qf.isDuplicate && !qf.uploadAnyway && 'bg-status-warning/5 border-l-2 border-status-warning'
+              )}>
                 <div className="flex-shrink-0">
-                  {getStatusIcon(qf)}
+                  {qf.isDuplicate && !qf.uploadAnyway ? (
+                    <Copy className="w-4 h-4 text-status-warning" />
+                  ) : (
+                    getStatusIcon(qf)
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-text-primary truncate">
-                    {qf.file.name}
-                    {qf.originalFile && qf.file.name !== qf.originalFile.name && (
-                      <span className="text-text-muted ml-1">
-                        (from {qf.originalFile.name})
-                      </span>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-text-primary truncate">
+                      {qf.file.name}
+                      {qf.originalFile && qf.file.name !== qf.originalFile.name && (
+                        <span className="text-text-muted ml-1">
+                          (from {qf.originalFile.name})
+                        </span>
+                      )}
+                    </p>
+                    {getStatusBadge(qf)}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mt-1">
+                    <span className="text-xs text-text-tertiary">
+                      {qf.file.size >= 1024 * 1024
+                        ? `${(qf.file.size / 1024 / 1024).toFixed(1)} MB`
+                        : `${(qf.file.size / 1024).toFixed(1)} KB`}
+                    </span>
+                    {qf.isDuplicate && !qf.uploadAnyway && qf.duplicateInfo && (
+                      <>
+                        <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+                        <span className="text-2xs text-status-warning">
+                          Duplicate of &quot;{qf.duplicateInfo.fileName}&quot;
+                        </span>
+                        <Link
+                          href={`/processing/${qf.duplicateInfo.documentId}?compare=true`}
+                          className="text-2xs text-text-secondary hover:text-text-primary underline"
+                          target="_blank"
+                        >
+                          Compare documents
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setQueuedFiles((prev) =>
+                              prev.map((f) =>
+                                f.id === qf.id ? { ...f, uploadAnyway: true } : f
+                              )
+                            );
+                          }}
+                          className="text-2xs text-text-secondary hover:text-text-primary underline"
+                        >
+                          Upload anyway
+                        </button>
+                      </>
                     )}
-                  </p>
-                  <p className="text-xs text-text-tertiary">
-                    {qf.file.size >= 1024 * 1024
-                      ? `${(qf.file.size / 1024 / 1024).toFixed(1)} MB`
-                      : `${(qf.file.size / 1024).toFixed(1)} KB`}
                     {qf.file.type.startsWith('image/') && qf.status === 'pending' && (
-                      <span className="text-amber-600 ml-2">• Will convert to PDF</span>
+                      <span className="badge badge-neutral text-2xs">Will convert to PDF</span>
                     )}
-                    {getStatusText(qf)}
                     {qf.error && (
-                      <span className="text-status-error ml-2">• {qf.error}</span>
+                      <span className="text-2xs text-status-error">{qf.error}</span>
                     )}
                     {qf.processingDocumentId && (
                       <Link
                         href={`/processing/${qf.processingDocumentId}`}
-                        className="text-oak-light ml-2 hover:underline"
+                        className="text-2xs text-oak-light hover:underline font-medium"
                       >
-                        • View
+                        View document
                       </Link>
                     )}
-                  </p>
+                  </div>
+                  {qf.isDuplicate && qf.uploadAnyway && (
+                    <div className="mt-2 flex items-center gap-1.5 text-2xs text-text-muted">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Will upload despite being a duplicate</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   {qf.status === 'error' && !isUploading && (

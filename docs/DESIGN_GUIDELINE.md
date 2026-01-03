@@ -824,6 +824,7 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | `Checkbox` | `indeterminate`, `label`, `description`, `size` | Checkbox with indeterminate state for bulk selection |
 | `DatePicker` | `value`, `onChange`, `placeholder`, `size`, `label`, `disabled` | Date/range picker with presets (see Filter Components) |
 | `SearchableSelect` | `options`, `value`, `onChange`, `placeholder`, `clearable`, `size` | Searchable dropdown with keyboard navigation |
+| `AmountFilter` | `value`, `onChange`, `placeholder`, `size`, `className` | Numeric filter with single/range modes (see Filter Components) |
 | `FilterPillGroup` | `options`, `value`, `onChange`, `label`, `allowSelectAll`, `allowEmpty` | Multi-select filter pills (see Filter Components) |
 | `FilterPillToggle` | `label`, `active`, `onChange`, `icon` | Single toggleable filter pill |
 | `FilterChip` | `label`, `value`, `onRemove` | Active filter indicator with remove button |
@@ -1078,6 +1079,73 @@ const [currency, setCurrency] = useState('');
 - Clear button (when `clearable={true}`)
 - Portal-rendered popover (avoids clipping)
 - Optional description line per option
+
+#### AmountFilter
+
+Currency-agnostic numeric filter with single value and range modes. Perfect for filtering amount columns in tables.
+
+```tsx
+import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
+
+const [totalFilter, setTotalFilter] = useState<AmountFilterValue | undefined>();
+
+<AmountFilter
+  value={totalFilter}
+  onChange={setTotalFilter}
+  placeholder="All amounts"
+  size="sm"
+/>
+```
+
+**Features:**
+- **Two modes**: Single value (exact match) or Range (min/max)
+- **Currency-agnostic**: Works with raw numbers, ignores currency symbols
+- **Auto-formatting**: Displays numbers with commas (1000 → 1,000)
+- **Decimal support**: Handles decimal values (1000.50)
+- **Keyboard navigation**: Enter to apply, Escape to close (global)
+- **Portal-rendered**: Dropdown renders outside table DOM to avoid clipping
+- **Smart positioning**: Automatically adjusts to viewport edges (opens left if no space on right, opens above if no space below)
+- **Fixed dimensions**: Modal maintains consistent width when switching between modes to prevent UI shifts
+- **Responsive**: Handles scroll, resize, and small viewports gracefully
+- **Compact design**: Suitable for inline table filters
+
+**AmountFilterValue type:**
+```typescript
+type AmountFilterValue =
+  | { mode: 'single'; single: number }
+  | { mode: 'range'; range: { from?: number; to?: number } };
+```
+
+**Display behavior:**
+- Single value: Shows formatted number (e.g., "1,000")
+- Range with both: Shows "min - max" (e.g., "1,000 - 5,000")
+- Range with from only: Shows "≥ min" (e.g., "≥ 1,000")
+- Range with to only: Shows "≤ max" (e.g., "≤ 5,000")
+
+**Usage in table filters:**
+```tsx
+// In inline filter row
+<th className="px-2 py-2">
+  <AmountFilter
+    value={params.totalFilter}
+    onChange={(value) => handleFiltersChange({ totalFilter: value })}
+    placeholder="All amounts"
+    size="sm"
+    className="text-xs"
+  />
+</th>
+```
+
+**URL parameter serialization:**
+```typescript
+// Single value mode
+{ total: "1000" }
+
+// Range mode
+{ totalFrom: "1000", totalTo: "5000" }
+```
+
+**See also:** `src/components/ui/amount-filter.example.tsx` for integration examples.
 
 #### Filter Layout Pattern
 

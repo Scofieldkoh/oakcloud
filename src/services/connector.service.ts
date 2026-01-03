@@ -488,10 +488,10 @@ export async function searchConnectors(
  * Resolve the best available connector for a given type/provider
  *
  * Resolution logic:
- * 1. Check tenant-specific connector → use if exists & enabled
- * 2. Check TenantConnectorAccess for system connector → blocked if isEnabled=false
- * 3. Check system connector → use if exists & enabled
- * 4. No connector → return null
+ * 1. Check tenant-specific connector â†’ use if exists & enabled
+ * 2. Check TenantConnectorAccess for system connector â†’ blocked if isEnabled=false
+ * 3. Check system connector â†’ use if exists & enabled
+ * 4. No connector â†’ return null
  */
 export async function resolveConnector(
   tenantId: string | null,

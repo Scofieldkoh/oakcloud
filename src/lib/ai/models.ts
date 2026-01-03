@@ -170,9 +170,9 @@ export const PROVIDER_NAMES: Record<AIProvider, string> = {
 
 // Provider icons (for UI)
 export const PROVIDER_ICONS: Record<AIProvider, string> = {
-  openai: '🤖',
-  anthropic: '🔮',
-  google: '✨',
+  openai: 'ðŸ¤–',
+  anthropic: 'ðŸ”®',
+  google: 'âœ¨',
 };
 
 /**

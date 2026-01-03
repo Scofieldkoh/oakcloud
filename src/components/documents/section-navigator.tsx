@@ -122,7 +122,7 @@ function SectionItem({
           className="text-xs text-amber-600 dark:text-amber-400 flex-shrink-0"
           title="Page break before this section"
         >
-          ↵
+          â†µ
         </span>
       )}
     </button>

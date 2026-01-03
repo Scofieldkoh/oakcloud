@@ -175,7 +175,7 @@ export default function ContactAuditPage({
                                 <span className="text-status-error line-through">
                                   {formatValue(oldValue)}
                                 </span>
-                                <span className="text-text-muted">→</span>
+                                <span className="text-text-muted">â†’</span>
                                 <span className="text-status-success">{formatValue(newValue)}</span>
                               </div>
                             )

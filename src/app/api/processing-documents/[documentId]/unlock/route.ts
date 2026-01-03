@@ -14,6 +14,9 @@ import {
   releaseDocumentLock,
 } from '@/services/document-processing.service';
 import { createAuditLog } from '@/lib/audit';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('document-unlock');
 
 type Params = { documentId: string };
 
@@ -159,7 +162,7 @@ export async function POST(
 }
 
 function handleError(error: unknown): NextResponse {
-  console.error('Unlock API error:', error);
+  log.error('Unlock API error', error);
 
   if (error instanceof Error) {
     if (error.message === 'Unauthorized') {

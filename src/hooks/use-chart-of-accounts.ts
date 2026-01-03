@@ -374,10 +374,11 @@ export function useAccountHierarchy(params: AccountHierarchyParams = {}) {
 /**
  * Fetch accounts for select dropdown (simplified list).
  */
-export function useAccountsForSelect(params: AccountSelectParams = {}) {
+export function useAccountsForSelect(params: AccountSelectParams = {}, enabled: boolean = true) {
   return useQuery({
     queryKey: ['chart-of-accounts', 'select', params],
     queryFn: () => fetchAccountsForSelect(params),
+    enabled,
   });
 }
 

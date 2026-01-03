@@ -524,7 +524,7 @@ export function AISidebar({
             <p className="text-sm text-text-muted">
               {hasAvailableModels
                 ? 'Ask me anything about your document, or use the quick actions above.'
-                : 'No AI models available. Please configure an AI provider in Admin → Connectors.'}
+                : 'No AI models available. Please configure an AI provider in Admin â†’ Connectors.'}
             </p>
           </div>
         )}

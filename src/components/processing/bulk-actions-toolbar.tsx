@@ -10,13 +10,14 @@ import {
   X,
   AlertTriangle,
   Loader2,
+  Merge,
 } from 'lucide-react';
-import { useBulkOperation, useBulkDownloadZip, useBulkExport } from '@/hooks/use-processing-documents';
+import { useBulkOperation, useBulkDownloadZip, useBulkExport, useBulkMerge } from '@/hooks/use-processing-documents';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 
-type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE' | 'DOWNLOAD_ZIP' | 'EXPORT';
+type BulkOperation = 'APPROVE' | 'TRIGGER_EXTRACTION' | 'DELETE' | 'DOWNLOAD_ZIP' | 'EXPORT' | 'MERGE';
 
 interface BulkActionsToolbarProps {
   selectedIds: string[];
@@ -31,48 +32,58 @@ const operations: {
   description: string;
   variant: 'default' | 'warning' | 'danger';
   requiresConfirmation: boolean;
+  minSelection?: number;
 }[] = [
-  {
-    id: 'DOWNLOAD_ZIP',
-    label: 'Download ZIP',
-    icon: Download,
-    description: 'Download selected documents as ZIP',
-    variant: 'default',
-    requiresConfirmation: false,
-  },
-  {
-    id: 'EXPORT',
-    label: 'Export Excel',
-    icon: FileSpreadsheet,
-    description: 'Export selected documents to Excel',
-    variant: 'default',
-    requiresConfirmation: false,
-  },
-  {
-    id: 'APPROVE',
-    label: 'Approve',
-    icon: CheckCircle,
-    description: 'Approve selected documents with DRAFT revisions',
-    variant: 'default',
-    requiresConfirmation: true,
-  },
-  {
-    id: 'TRIGGER_EXTRACTION',
-    label: 'Re-extract',
-    icon: Play,
-    description: 'Trigger extraction for selected documents',
-    variant: 'default',
-    requiresConfirmation: true,
-  },
-  {
-    id: 'DELETE',
-    label: 'Delete',
-    icon: Trash2,
-    description: 'Delete selected documents',
-    variant: 'danger',
-    requiresConfirmation: true,
-  },
-];
+    {
+      id: 'DOWNLOAD_ZIP',
+      label: 'Download ZIP',
+      icon: Download,
+      description: 'Download selected documents as ZIP',
+      variant: 'default',
+      requiresConfirmation: false,
+    },
+    {
+      id: 'EXPORT',
+      label: 'Export Excel',
+      icon: FileSpreadsheet,
+      description: 'Export selected documents to Excel',
+      variant: 'default',
+      requiresConfirmation: false,
+    },
+    {
+      id: 'APPROVE',
+      label: 'Approve',
+      icon: CheckCircle,
+      description: 'Approve selected documents with DRAFT revisions',
+      variant: 'default',
+      requiresConfirmation: true,
+    },
+    {
+      id: 'TRIGGER_EXTRACTION',
+      label: 'Re-extract',
+      icon: Play,
+      description: 'Trigger extraction for selected documents',
+      variant: 'default',
+      requiresConfirmation: true,
+    },
+    {
+      id: 'DELETE',
+      label: 'Delete',
+      icon: Trash2,
+      description: 'Delete selected documents',
+      variant: 'danger',
+      requiresConfirmation: true,
+    },
+    {
+      id: 'MERGE',
+      label: 'Merge',
+      icon: Merge,
+      description: 'Merge selected documents into one PDF',
+      variant: 'default',
+      requiresConfirmation: true,
+      minSelection: 2, // Requires at least 2 documents
+    },
+  ];
 
 export function BulkActionsToolbar({
   selectedIds,
@@ -82,6 +93,7 @@ export function BulkActionsToolbar({
   const bulkOperation = useBulkOperation();
   const bulkDownloadZip = useBulkDownloadZip();
   const bulkExport = useBulkExport();
+  const bulkMerge = useBulkMerge();
   const { success, error: toastError } = useToast();
 
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -157,6 +169,18 @@ export function BulkActionsToolbar({
     if (!confirmDialog.operation || confirmDialog.operation === 'DOWNLOAD_ZIP' || confirmDialog.operation === 'EXPORT') return;
 
     try {
+      // Handle MERGE operation separately
+      if (confirmDialog.operation === 'MERGE') {
+        const result = await bulkMerge.mutateAsync(selectedIds);
+        success(
+          `Successfully merged ${selectedIds.length} documents into one. Created document: ${result.mergedDocumentId}`
+        );
+        setConfirmDialog({ isOpen: false, operation: null });
+        onClearSelection();
+        return;
+      }
+
+      // Handle other bulk operations (APPROVE, TRIGGER_EXTRACTION, DELETE)
       const result = await bulkOperation.mutateAsync({
         operation: confirmDialog.operation,
         documentIds: selectedIds,
@@ -219,9 +243,11 @@ export function BulkActionsToolbar({
           {operations.map((op) => {
             const Icon = op.icon;
             const isLoading =
-              (bulkOperation.isPending && confirmDialog.operation === op.id) ||
+              (bulkOperation.isPending && confirmDialog.operation === op.id && op.id !== 'MERGE') ||
+              (bulkMerge.isPending && confirmDialog.operation === 'MERGE' && op.id === 'MERGE') ||
               (activeOperationId === op.id);
-            const isDisabled = bulkOperation.isPending || activeOperationId !== null;
+            const meetsMinSelection = !op.minSelection || selectedIds.length >= op.minSelection;
+            const isDisabled = bulkOperation.isPending || bulkMerge.isPending || activeOperationId !== null || !meetsMinSelection;
 
             return (
               <button
@@ -234,11 +260,15 @@ export function BulkActionsToolbar({
                   op.variant === 'danger'
                     ? 'hover:bg-status-error/10 hover:text-status-error text-text-secondary'
                     : op.variant === 'warning'
-                    ? 'hover:bg-status-warning/10 hover:text-status-warning text-text-secondary'
-                    : 'hover:bg-oak-light/10 hover:text-oak-primary text-text-secondary',
+                      ? 'hover:bg-status-warning/10 hover:text-status-warning text-text-secondary'
+                      : 'hover:bg-oak-light/10 hover:text-oak-primary text-text-secondary',
                   isDisabled && 'opacity-50 cursor-not-allowed'
                 )}
-                title={op.description}
+                title={
+                  !meetsMinSelection && op.minSelection
+                    ? `Requires at least ${op.minSelection} documents selected`
+                    : op.description
+                }
               >
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -270,12 +300,12 @@ export function BulkActionsToolbar({
           </div>
         }
         confirmLabel={
-          bulkOperation.isPending
+          bulkOperation.isPending || bulkMerge.isPending
             ? 'Processing...'
             : `${currentOp?.label} ${selectedIds.length} Documents`
         }
         variant={confirmDialog.operation === 'DELETE' ? 'danger' : 'info'}
-        isLoading={bulkOperation.isPending}
+        isLoading={bulkOperation.isPending || bulkMerge.isPending}
       />
     </>
   );

@@ -347,13 +347,13 @@ export function getProviderIcon(
   provider: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'ONEDRIVE' | 'SHAREPOINT'
 ): string {
   const icons: Record<string, string> = {
-    OPENAI: '🤖',
-    ANTHROPIC: '🧠',
-    GOOGLE: '🔮',
-    ONEDRIVE: '☁️',
-    SHAREPOINT: '📂',
+    OPENAI: 'ðŸ¤–',
+    ANTHROPIC: 'ðŸ§ ',
+    GOOGLE: 'ðŸ”®',
+    ONEDRIVE: 'â˜ï¸',
+    SHAREPOINT: 'ðŸ“‚',
   };
-  return icons[provider] || '🔌';
+  return icons[provider] || 'ðŸ”Œ';
 }
 
 /**

@@ -242,8 +242,8 @@ export interface ConnectorAIOptions extends AIRequestOptions {
  * Call AI using connector credentials (tenant-aware)
  *
  * Resolution order:
- * 1. Tenant connector for the provider → use if exists & enabled
- * 2. System connector for the provider → use if exists & enabled & tenant has access
+ * 1. Tenant connector for the provider â†’ use if exists & enabled
+ * 2. System connector for the provider â†’ use if exists & enabled & tenant has access
  * 3. Fall back to environment variables
  * 4. Throw error if no provider available
  */
