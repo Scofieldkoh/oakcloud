@@ -317,35 +317,62 @@ export function DatePicker({
     }
   }, [isOpen, value, defaultTab]);
 
-  // Calculate position
+  // Calculate position with scroll and resize handling
   useEffect(() => {
-    if (isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const popoverWidth = 580; // Approximate width
-      const popoverHeight = 420; // Approximate height
+    const updatePosition = () => {
+      if (isOpen && triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
 
-      let left = rect.left;
-      let top = rect.bottom + 4;
+        // Dynamic width based on active tab
+        const popoverWidth = activeTab === 'presets' ? 400 : activeTab === 'single' ? 500 : 580;
+        const popoverHeight = 420; // Approximate height
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const spaceOnRight = viewportWidth - rect.left;
+        const spaceOnLeft = rect.right;
 
-      // Adjust horizontal position
-      if (left + popoverWidth > window.innerWidth - 16) {
-        left = window.innerWidth - popoverWidth - 16;
-      }
-      if (left < 16) {
-        left = 16;
-      }
+        // Calculate horizontal position - align right if insufficient space on right
+        let left = rect.left;
+        const shouldAlignRight = spaceOnRight < popoverWidth && spaceOnLeft >= popoverWidth;
 
-      // Adjust vertical position
-      if (top + popoverHeight > window.innerHeight - 16) {
-        top = rect.top - popoverHeight - 4;
-        if (top < 16) {
-          top = 16;
+        if (shouldAlignRight) {
+          // Align to right edge of trigger (right-aligned)
+          left = rect.right - popoverWidth;
         }
-      }
 
-      setPosition({ top, left });
+        // Ensure popover doesn't go off-screen on the left
+        if (left < 16) {
+          left = 16;
+        }
+
+        // Ensure popover doesn't go off-screen on the right
+        if (left + popoverWidth > viewportWidth - 16) {
+          left = viewportWidth - popoverWidth - 16;
+        }
+
+        // Calculate vertical position
+        let top = rect.bottom + 4;
+        if (top + popoverHeight > viewportHeight - 16) {
+          top = rect.top - popoverHeight - 4;
+          if (top < 16) {
+            top = 16;
+          }
+        }
+
+        setPosition({ top, left });
+      }
+    };
+
+    if (isOpen) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true); // Capture phase for all scrolls
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
     }
-  }, [isOpen]);
+  }, [isOpen, activeTab]);
 
   // Handle click outside
   useEffect(() => {
@@ -496,7 +523,7 @@ export function DatePicker({
         ref={triggerRef}
         className={cn(
           'w-full flex items-center gap-2 rounded-lg border',
-          'bg-background-primary border-border-primary',
+          'bg-background-secondary/30 border-border-primary',
           'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
           'transition-colors text-left cursor-pointer',
           sizeClasses[size],
@@ -506,7 +533,7 @@ export function DatePicker({
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <Calendar className="w-4 h-4 text-text-muted flex-shrink-0" />
-        <span className={cn('flex-1 truncate', !displayValue && 'text-text-muted')}>
+        <span className={cn('flex-1 truncate text-text-primary', !displayValue && 'text-text-secondary')}>
           {displayValue || placeholder}
         </span>
         {displayValue && !disabled && (

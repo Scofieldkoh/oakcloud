@@ -118,7 +118,7 @@ export function ResponsiveTable<T>({
                   className={cn(
                     'transition-colors',
                     isSelected
-                      ? 'bg-oak-primary/5 hover:bg-oak-primary/10'
+                      ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
                       : 'hover:bg-background-tertiary/50'
                   )}
                 >
@@ -186,7 +186,7 @@ export function MobileCard({
     <div
       className={cn(
         'card p-4 transition-colors',
-        isSelected && 'ring-2 ring-oak-primary/50 bg-oak-primary/5',
+        isSelected && 'ring-2 ring-oak-primary/50 bg-oak-row-selected',
         className
       )}
     >

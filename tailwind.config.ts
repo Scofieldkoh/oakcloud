@@ -15,6 +15,10 @@ const config: Config = {
           hover: 'var(--oak-hover)',
           light: 'var(--oak-light)',
           dark: 'var(--oak-dark)',
+          'row-alt': 'var(--oak-row-alt)',
+          'row-alt-hover': 'var(--oak-row-alt-hover)',
+          'row-selected': 'var(--oak-row-selected)',
+          'row-selected-hover': 'var(--oak-row-selected-hover)',
         },
         background: {
           primary: 'var(--bg-primary)',

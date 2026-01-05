@@ -904,6 +904,9 @@ export async function listProcessingDocumentsPaged(options: {
   documentSubCategory?: string;
   // Tag filter
   tagIds?: string[];
+  // Currency filters
+  currency?: string;
+  homeCurrency?: string;
   // Amount filters - single value mode
   subtotal?: number;
   tax?: number;
@@ -956,6 +959,9 @@ export async function listProcessingDocumentsPaged(options: {
     documentCategory,
     documentSubCategory,
     tagIds,
+    // Currency filters
+    currency: filterCurrency,
+    homeCurrency: filterHomeCurrency,
     // Amount filters
     subtotal: filterSubtotal,
     tax: filterTax,
@@ -1153,6 +1159,20 @@ export async function listProcessingDocumentsPaged(options: {
     };
   }
 
+  // Currency filter (exact match, case-insensitive)
+  if (filterCurrency) {
+    const revisionFilter: Prisma.DocumentRevisionWhereInput = where.currentRevision as Prisma.DocumentRevisionWhereInput || {};
+    revisionFilter.currency = { equals: filterCurrency, mode: 'insensitive' };
+    where.currentRevision = revisionFilter;
+  }
+
+  // Home currency filter (exact match, case-insensitive)
+  if (filterHomeCurrency) {
+    const revisionFilter: Prisma.DocumentRevisionWhereInput = where.currentRevision as Prisma.DocumentRevisionWhereInput || {};
+    revisionFilter.homeCurrency = { equals: filterHomeCurrency, mode: 'insensitive' };
+    where.currentRevision = revisionFilter;
+  }
+
   // Amount filters (via currentRevision fields)
   // Helper to get/create revision filter
   const getRevisionFilter = (): Prisma.DocumentRevisionWhereInput => {
@@ -1309,6 +1329,10 @@ export async function listProcessingDocumentsPaged(options: {
           { createdAt: 'desc' },
           { id: 'desc' },
         ];
+      case 'currency':
+        return [{ currentRevision: { currency: order } }, { createdAt: 'desc' }, { id: 'desc' }];
+      case 'homeCurrency':
+        return [{ currentRevision: { homeCurrency: order } }, { createdAt: 'desc' }, { id: 'desc' }];
       case 'homeSubtotal':
         return [{ currentRevision: { homeSubtotal: order } }, { createdAt: 'desc' }, { id: 'desc' }];
       case 'homeTaxAmount':
@@ -1391,6 +1415,23 @@ export async function listProcessingDocumentsPaged(options: {
             homeEquivalent: true,
           },
         },
+        // Include document tags for list display
+        documentTags: {
+          select: {
+            id: true,
+            tagId: true,
+            tag: {
+              select: {
+                id: true,
+                name: true,
+                color: true,
+                companyId: true,
+                tenantId: true,
+              },
+            },
+          },
+          orderBy: { addedAt: 'asc' },
+        },
       },
       orderBy,
       skip,
@@ -1464,6 +1505,17 @@ export interface ProcessingDocumentWithDocument {
     homeTaxAmount: Decimal | null;
     homeEquivalent: Decimal | null;
   } | null;
+  documentTags: Array<{
+    id: string;
+    tagId: string;
+    tag: {
+      id: string;
+      name: string;
+      color: string;
+      companyId: string | null;
+      tenantId: string | null;
+    };
+  }>;
 }
 
 /**

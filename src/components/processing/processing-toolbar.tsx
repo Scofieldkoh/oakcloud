@@ -3,7 +3,6 @@
 import { Search, Calendar, Eye, Copy, SlidersHorizontal, X } from 'lucide-react';
 import { useState } from 'react';
 import type { DuplicateStatus } from '@/generated/prisma';
-import { SearchableSelect } from '@/components/ui/searchable-select';
 
 export interface ProcessingToolbarProps {
   search: string;
@@ -18,12 +17,6 @@ export interface ProcessingToolbarProps {
     uploadDatePreset?: 'TODAY' | undefined;
     duplicateStatus?: DuplicateStatus | undefined;
   }) => void;
-  companies: Array<{ id: string; name: string }>;
-  selectedCompanyId?: string;
-  onCompanyChange: (companyId?: string) => void;
-  tags?: Array<{ id: string; name: string; color: string | null }>;
-  selectedTagIds?: string[];
-  onTagsChange?: (tagIds: string[]) => void;
   onAdjustColumns: () => void;
   hiddenColumnCount: number;
 }
@@ -33,12 +26,6 @@ export function ProcessingToolbar({
   onSearchChange,
   quickFilters,
   onQuickFilterChange,
-  companies,
-  selectedCompanyId,
-  onCompanyChange,
-  tags = [],
-  selectedTagIds = [],
-  onTagsChange,
   onAdjustColumns,
   hiddenColumnCount,
 }: ProcessingToolbarProps) {
@@ -129,35 +116,6 @@ export function ProcessingToolbar({
           <span className="hidden lg:inline">Duplicates</span>
         </button>
       </div>
-
-      {/* Company Filter */}
-      {companies.length > 0 && (
-        <div className="w-48">
-          <SearchableSelect
-            options={[
-              { value: '', label: 'All Companies' },
-              ...companies.map(c => ({ value: c.id, label: c.name }))
-            ]}
-            value={selectedCompanyId || ''}
-            onChange={(value) => onCompanyChange(value || undefined)}
-            placeholder="Company"
-            className="text-sm"
-          />
-        </div>
-      )}
-
-      {/* Tags Filter */}
-      {tags.length > 0 && onTagsChange && (
-        <div className="w-48">
-          <SearchableSelect
-            options={tags.map(t => ({ value: t.id, label: t.name }))}
-            value={selectedTagIds.length === 1 ? selectedTagIds[0] : ''}
-            onChange={(value) => onTagsChange(value ? [value] : [])}
-            placeholder="Tags"
-            className="text-sm"
-          />
-        </div>
-      )}
 
       {/* Adjust Columns Button */}
       <button

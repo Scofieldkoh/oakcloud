@@ -33,7 +33,8 @@ import {
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
 import { useIsMobile } from '@/hooks/use-media-query';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { getSidebarWidth as getSidebarWidthFn } from '@/lib/constants/layout';
 import { SidebarTenantButton } from '@/components/ui/tenant-selector';
@@ -144,6 +145,102 @@ function NavLink({
         </>
       )}
     </Link>
+  );
+}
+
+// Collapsed sidebar popover for showing submenu items on hover
+function CollapsedNavPopover({
+  group,
+  items,
+  isActive,
+  onNavigate,
+  pathname,
+}: {
+  group: NavGroup;
+  items: NavItem[];
+  isActive: boolean;
+  onNavigate?: () => void;
+  pathname: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const Icon = group.icon;
+
+  // Update popover position when opened
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPopoverPosition({
+        top: rect.top,
+        left: rect.right + 4, // 4px gap from sidebar
+      });
+    }
+  }, [isOpen]);
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
+      <button
+        ref={buttonRef}
+        className={cn(
+          'w-full flex items-center justify-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors',
+          isActive
+            ? 'bg-oak-primary/10 text-oak-light'
+            : 'text-text-secondary hover:bg-background-tertiary hover:text-text-primary'
+        )}
+        title={group.name}
+      >
+        <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+      </button>
+
+      {/* Popover menu - rendered via portal to escape overflow clipping */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed z-[100] min-w-48 bg-background-secondary border border-border-primary rounded-md shadow-lg py-1"
+          style={{ top: popoverPosition.top, left: popoverPosition.left }}
+          onMouseEnter={() => setIsOpen(true)}
+          onMouseLeave={() => setIsOpen(false)}
+        >
+          {/* Group header */}
+          <div className="px-3 py-2 border-b border-border-primary">
+            <span className="text-xs font-medium uppercase text-text-muted tracking-wider">
+              {group.name}
+            </span>
+          </div>
+          {/* Menu items */}
+          <div className="py-1">
+            {items.map((item) => {
+              const ItemIcon = item.icon;
+              const itemIsActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => {
+                    setIsOpen(false);
+                    onNavigate?.();
+                  }}
+                  className={cn(
+                    'flex items-center gap-2.5 px-3 py-2 text-sm transition-colors',
+                    itemIsActive
+                      ? 'bg-oak-primary/10 text-oak-light'
+                      : 'text-text-secondary hover:bg-background-tertiary hover:text-text-primary'
+                  )}
+                >
+                  <ItemIcon className="w-4 h-4 flex-shrink-0" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
   );
 }
 
@@ -316,26 +413,39 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
 
           {/* Grouped admin items */}
           {filteredGroups.map((group) => {
-            const isCollapsed = collapsedGroups.has(group.id);
+            const isGroupCollapsed = collapsedGroups.has(group.id);
             const groupIsActive = isGroupActive(group);
 
+            // When sidebar is collapsed, show popover on hover
+            if (collapsed) {
+              return (
+                <CollapsedNavPopover
+                  key={group.id}
+                  group={group}
+                  items={group.items}
+                  isActive={groupIsActive}
+                  onNavigate={onNavigate}
+                  pathname={pathname}
+                />
+              );
+            }
+
+            // When sidebar is expanded, show collapsible groups
             return (
               <div key={group.id}>
                 <NavGroupHeader
                   group={group}
-                  isCollapsed={isCollapsed}
+                  isCollapsed={isGroupCollapsed}
                   onToggle={() => toggleGroup(group.id)}
                   sidebarCollapsed={collapsed}
                   isActive={groupIsActive}
                 />
-                {!collapsed && (
-                  <NavGroupItems
-                    items={group.items}
-                    collapsed={isCollapsed}
-                    onNavigate={onNavigate}
-                    pathname={pathname}
-                  />
-                )}
+                <NavGroupItems
+                  items={group.items}
+                  collapsed={isGroupCollapsed}
+                  onNavigate={onNavigate}
+                  pathname={pathname}
+                />
               </div>
             );
           })}

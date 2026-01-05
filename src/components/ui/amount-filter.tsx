@@ -20,6 +20,7 @@ interface AmountFilterProps {
   placeholder?: string;
   className?: string;
   size?: 'sm' | 'md';
+  showChevron?: boolean;
 }
 
 /**
@@ -49,6 +50,7 @@ export function AmountFilter({
   placeholder = 'All amounts',
   className,
   size = 'md',
+  showChevron = true,
 }: AmountFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'single' | 'range'>(value?.mode || 'range');
@@ -179,6 +181,17 @@ export function AmountFilter({
     return num.toLocaleString('en-US', { maximumFractionDigits: 2 });
   };
 
+  // Validate range: ensure min <= max
+  const isRangeValid = (): boolean => {
+    if (mode !== 'range') return true;
+    const from = parseNumber(fromValue);
+    const to = parseNumber(toValue);
+    if (from !== undefined && to !== undefined) {
+      return from <= to;
+    }
+    return true; // Valid if one or both are empty
+  };
+
   // Handle apply button click
   const handleApply = () => {
     if (mode === 'single') {
@@ -191,6 +204,10 @@ export function AmountFilter({
     } else {
       const from = parseNumber(fromValue);
       const to = parseNumber(toValue);
+      // Validate range before applying
+      if (from !== undefined && to !== undefined && from > to) {
+        return; // Don't apply invalid range
+      }
       if (from !== undefined || to !== undefined) {
         onChange({ mode: 'range', range: { from, to } });
       } else {
@@ -235,6 +252,12 @@ export function AmountFilter({
 
   const isActive = value !== undefined;
 
+  // Handle inline clear button click (stops propagation to prevent opening dropdown)
+  const handleInlineClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleClear();
+  };
+
   return (
     <div className="relative">
       {/* Trigger Button */}
@@ -243,8 +266,8 @@ export function AmountFilter({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center justify-between gap-2 w-full rounded-lg border transition-colors',
-          'bg-white dark:bg-background-secondary',
+          'flex items-center justify-between gap-1 w-full rounded-lg border transition-colors',
+          'bg-background-secondary/30',
           size === 'sm' ? 'h-9 px-3 text-sm' : 'h-10 px-4 text-base',
           isActive
             ? 'border-oak-primary ring-2 ring-oak-primary/30 text-text-primary font-medium'
@@ -253,17 +276,38 @@ export function AmountFilter({
           className
         )}
       >
-        <span className={cn('truncate', !isActive && 'text-text-muted')}>
+        <span className={cn('truncate flex-1 text-left text-text-primary', !isActive && 'text-text-secondary')}>
           {getDisplayText()}
         </span>
-        <ChevronDown
-          className={cn(
-            'flex-shrink-0 transition-transform',
-            size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4',
-            isOpen && 'rotate-180',
-            isActive ? 'text-oak-primary' : 'text-text-muted'
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Clear button - only show when active */}
+          {isActive && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={handleInlineClear}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleInlineClear(e as unknown as React.MouseEvent);
+                }
+              }}
+              className="p-0.5 rounded hover:bg-background-tertiary transition-colors"
+            >
+              <X className={cn('text-text-muted hover:text-text-primary', size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4')} />
+            </span>
           )}
-        />
+          {showChevron && (
+            <ChevronDown
+              className={cn(
+                'flex-shrink-0 transition-transform',
+                size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4',
+                isOpen && 'rotate-180',
+                isActive ? 'text-oak-primary' : 'text-text-muted'
+              )}
+            />
+          )}
+        </div>
       </button>
 
       {/* Dropdown (portal-rendered to avoid table clipping) */}
@@ -354,7 +398,12 @@ export function AmountFilter({
                       }
                     }}
                     placeholder="Min amount"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-border-primary bg-white dark:bg-background-secondary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary outline-none transition-colors"
+                    className={cn(
+                      'w-full px-3 py-2 text-sm rounded-lg border bg-white dark:bg-background-secondary outline-none transition-colors',
+                      !isRangeValid()
+                        ? 'border-red-500 focus:ring-2 focus:ring-red-500/30 focus:border-red-500'
+                        : 'border-border-primary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary'
+                    )}
                     autoFocus
                   />
                 </div>
@@ -374,12 +423,23 @@ export function AmountFilter({
                       }
                     }}
                     placeholder="Max amount"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-border-primary bg-white dark:bg-background-secondary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary outline-none transition-colors"
+                    className={cn(
+                      'w-full px-3 py-2 text-sm rounded-lg border bg-white dark:bg-background-secondary outline-none transition-colors',
+                      !isRangeValid()
+                        ? 'border-red-500 focus:ring-2 focus:ring-red-500/30 focus:border-red-500'
+                        : 'border-border-primary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary'
+                    )}
                   />
                 </div>
-                <p className="text-xs text-text-muted">
-                  Leave blank for open-ended range (e.g., only &quot;From&quot; for ≥ minimum)
-                </p>
+                {!isRangeValid() ? (
+                  <p className="text-xs text-red-500">
+                    Minimum cannot be greater than maximum
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-muted">
+                    Leave blank for open-ended range (e.g., only &quot;From&quot; for ≥ minimum)
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -397,7 +457,11 @@ export function AmountFilter({
             <button
               type="button"
               onClick={handleApply}
-              className="btn-primary btn-sm"
+              disabled={!isRangeValid()}
+              className={cn(
+                'btn-primary btn-sm',
+                !isRangeValid() && 'opacity-50 cursor-not-allowed'
+              )}
             >
               Apply
             </button>

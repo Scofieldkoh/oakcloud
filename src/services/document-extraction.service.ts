@@ -249,6 +249,13 @@ export async function extractFields(
 
     log.info(`Found ${pages.length} pages for document ${processingDocumentId}`);
 
+    // Fetch company's home currency - this is the currency used for home equivalent calculations
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { homeCurrency: true },
+    });
+    const companyHomeCurrency = company?.homeCurrency || 'SGD';
+
     // Generate input fingerprint for reproducibility
     const inputFingerprint = generateInputFingerprint(
       pages.map((p) => p.id),
@@ -281,24 +288,29 @@ export async function extractFields(
       },
     });
 
-    // Extract home currency equivalent if present (from invoice showing SGD tax equivalent)
+    // Extract home currency equivalent if present (from invoice showing home currency tax equivalent)
     const hce = extractionResult.homeCurrencyEquivalent;
 
-    // Determine home currency - use extracted HCE currency or default to SGD
-    const homeCurrency = hce?.currency || 'SGD';
+    // Home currency is ALWAYS the company's home currency, not extracted from document
+    // The AI may extract HCE amounts, but the currency itself comes from company settings
+    const homeCurrency = companyHomeCurrency;
     const documentCurrency = extractionResult.currency.value;
     const isSameCurrency = documentCurrency === homeCurrency;
 
     // Determine exchange rate with priority:
-    // 1. Document-extracted exchange rate (from HCE)
+    // 1. Document-extracted exchange rate (only if HCE currency matches company home currency)
     // 2. Database lookup (MAS/IRAS rates based on document date)
     // 3. Default to 1 (same currency or fallback)
     let exchangeRate: string;
     let exchangeRateSource: ExchangeRateSource = 'PROVIDER_DEFAULT';
 
-    if (hce?.exchangeRate) {
-      // Priority 1: Use exchange rate from document
-      exchangeRate = hce.exchangeRate;
+    // Only use document exchange rate if the HCE currency matches company's home currency
+    // Example: Invoice MYR→SGD rate is only useful if company's home currency is SGD
+    const hceExchangeRateValid = hce?.exchangeRate && hce?.currency === companyHomeCurrency;
+
+    if (hceExchangeRateValid) {
+      // Priority 1: Use exchange rate from document (HCE currency matches company home currency)
+      exchangeRate = hce!.exchangeRate!;
       exchangeRateSource = 'DOCUMENT';
     } else if (isSameCurrency) {
       // Same currency - no conversion needed
@@ -313,7 +325,7 @@ export async function extractFields(
       try {
         const rateResult = await getRate(
           documentCurrency as SupportedCurrency,
-          'SGD',
+          companyHomeCurrency as SupportedCurrency,
           documentDate,
           tenantId
         );
@@ -346,12 +358,18 @@ export async function extractFields(
     }
     const exchangeRateNum = parseFloat(exchangeRate);
 
-    // Calculate home amounts if not extracted from document
-    const homeSubtotal = hce?.subtotal ||
+    // Only use AI-extracted HCE amounts if the extracted currency matches company's home currency
+    // Example: Invoice shows MYR with SGD equivalents, but company uses USD
+    // In this case, we must calculate USD equivalents, not use the SGD amounts from the invoice
+    const hceMatchesHomeCurrency = hce?.currency === companyHomeCurrency;
+    const useExtractedHce = hceMatchesHomeCurrency && hce;
+
+    // Calculate home amounts - prefer extracted if currency matches, otherwise calculate
+    const homeSubtotal = (useExtractedHce && hce?.subtotal) ||
       (extractionResult.subtotal?.value ? (parseFloat(extractionResult.subtotal.value) * exchangeRateNum).toFixed(2) : undefined);
-    const homeTaxAmount = hce?.taxAmount ||
+    const homeTaxAmount = (useExtractedHce && hce?.taxAmount) ||
       (extractionResult.taxAmount?.value ? (parseFloat(extractionResult.taxAmount.value) * exchangeRateNum).toFixed(2) : undefined);
-    const homeEquivalent = hce?.totalAmount ||
+    const homeEquivalent = (useExtractedHce && hce?.totalAmount) ||
       (parseFloat(extractionResult.totalAmount.value) * exchangeRateNum).toFixed(2);
 
     // Counterparty canonicalization:
@@ -907,53 +925,71 @@ Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
 For certain document types, DO NOT extract every individual item as a separate line item.
 Instead, aggregate items into meaningful categories for accounting purposes.
 
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
 ### When to Aggregate:
 
 **1. Restaurant/Dining Receipts**
-- DO NOT list each food/drink item separately (e.g., "Chicken Rice $8", "Ice Lemon Tea $3")
-- AGGREGATE as single line: "Food & Beverage" or "Meals" with the subtotal before GST
-- Keep service charge as separate line if applicable
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
 
 **2. Cafe/Coffee Shop Receipts**
-- AGGREGATE all drinks and snacks as "Refreshments" or "Team Refreshments"
-- DO NOT list individual coffees, pastries separately
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
 
 **3. Entertainment/Events**
-- AGGREGATE admission tickets as "Event Admission" or "Entertainment"
-- Keep major categories separate: "Admission", "F&B", "Merchandise"
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
 
 **4. Supermarket/Grocery Receipts**
-- For office/pantry purchases: AGGREGATE as "Office Pantry" or "Office Supplies"
-- For inventory: AGGREGATE by product category unless specifically marked as individual items for resale
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
 
 **5. Hotel/Accommodation**
-- Keep major expense types separate:
-  - "Room Charges" (aggregate all room nights)
-  - "Food & Beverage" (aggregate all F&B charges)
-  - "Services" (laundry, internet, parking)
-- DO NOT list each meal or minibar item separately
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
 
 **6. Transport/Parking**
-- AGGREGATE multiple parking charges as "Parking"
-- AGGREGATE multiple transport rides as "Transport"
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
 
 **7. Petty Cash Claims/Expense Reports**
-- Group by expense nature rather than individual receipts
-- E.g., "Office Supplies", "Transport", "Meals"
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
 
 ### When NOT to Aggregate (keep individual items):
 - Official invoices for products/services purchased for resale
 - Capital expenditure items (equipment, assets)
 - Items that need individual tracking for warranty/support
-- Professional services invoices with different service types
-- Inventory purchases for resale
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
 
 ### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
 - Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
-- The aggregated amount MUST equal the sum of individual items before tax
-- GST should be calculated on the aggregated subtotal
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
 - Set quantity to 1 for aggregated items
-- Set unitPrice equal to the aggregated amount`;
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them`;
 
   // Fetch COA context for intelligent account code suggestions
   const coaContext = await getCOAContextForExtraction(tenantId, companyId);

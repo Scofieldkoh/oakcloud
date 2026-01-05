@@ -681,13 +681,22 @@ export async function approveRevision(
     }
   }
 
+  // Determine final values - preserve existing revision values if not explicitly overridden
+  const finalHomeCurrency = homeCurrency ?? revision.homeCurrency ?? revision.currency;
+  const finalExchangeRate = exchangeRate ?? revision.homeExchangeRate;
+  const finalExchangeRateSource = exchangeRateSource ?? revision.homeExchangeRateSource;
+  const finalExchangeRateDate = exchangeRateDate ?? revision.exchangeRateDate;
+
   // Calculate home currency equivalent if needed
   let homeEquivalent: Decimal | null = null;
-  if (homeCurrency && homeCurrency !== revision.currency && exchangeRate) {
-    const rate = toDecimal(exchangeRate);
+  if (finalHomeCurrency && finalHomeCurrency !== revision.currency && finalExchangeRate) {
+    const rate = toDecimal(finalExchangeRate);
     homeEquivalent = rate ? new PrismaDecimal(revision.totalAmount.toString()).mul(rate) : null;
-  } else if (!homeCurrency || homeCurrency === revision.currency) {
+  } else if (!finalHomeCurrency || finalHomeCurrency === revision.currency) {
     homeEquivalent = revision.totalAmount;
+  } else {
+    // Preserve existing homeEquivalent if no exchange rate to recalculate
+    homeEquivalent = revision.homeEquivalent;
   }
 
   // Prepare data for atomic transaction
@@ -699,10 +708,10 @@ export async function approveRevision(
     vendorId: approvedVendorId ?? revision.vendorId,
     customerName: approvedCustomerName ?? (revision as unknown as { customerName?: string | null }).customerName ?? undefined,
     customerId: approvedCustomerId ?? (revision as unknown as { customerId?: string | null }).customerId ?? undefined,
-    homeCurrency: homeCurrency ?? revision.currency,
-    homeExchangeRate: toDecimal(exchangeRate),
-    homeExchangeRateSource: exchangeRateSource,
-    exchangeRateDate,
+    homeCurrency: finalHomeCurrency,
+    homeExchangeRate: toDecimal(finalExchangeRate),
+    homeExchangeRateSource: finalExchangeRateSource,
+    exchangeRateDate: finalExchangeRateDate,
     homeEquivalent,
   };
 

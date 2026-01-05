@@ -41,6 +41,8 @@ export interface SearchableSelectProps {
   clearable?: boolean;
   /** Show keyboard hints footer */
   showKeyboardHints?: boolean;
+  /** Show chevron icon */
+  showChevron?: boolean;
 }
 
 export function SearchableSelect({
@@ -54,6 +56,7 @@ export function SearchableSelect({
   label,
   clearable = true,
   showKeyboardHints = true,
+  showChevron = true,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -303,7 +306,7 @@ export function SearchableSelect({
         ref={containerRef}
         className={cn(
           'w-full flex items-center gap-2 rounded-lg border',
-          'bg-white dark:bg-background-secondary border-border-primary',
+          'bg-background-secondary/30 border-border-primary',
           'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
           'transition-colors',
           sizeClasses[size],
@@ -322,7 +325,7 @@ export function SearchableSelect({
           disabled={disabled}
           className={cn(
             'flex-1 bg-transparent outline-none px-3 min-w-0',
-            'placeholder:text-text-muted',
+            'text-text-primary placeholder:text-text-secondary',
             sizeClasses[size]
           )}
         />
@@ -335,19 +338,21 @@ export function SearchableSelect({
             <X className="w-3.5 h-3.5 text-text-muted" />
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => !disabled && setIsOpen(!isOpen)}
-          className="pr-3 flex items-center"
-          tabIndex={-1}
-        >
-          <ChevronDown
-            className={cn(
-              'w-4 h-4 text-text-muted transition-transform flex-shrink-0',
-              isOpen && 'rotate-180'
-            )}
-          />
-        </button>
+        {showChevron && (
+          <button
+            type="button"
+            onClick={() => !disabled && setIsOpen(!isOpen)}
+            className="pr-3 flex items-center"
+            tabIndex={-1}
+          >
+            <ChevronDown
+              className={cn(
+                'w-4 h-4 text-text-muted transition-transform flex-shrink-0',
+                isOpen && 'rotate-180'
+              )}
+            />
+          </button>
+        )}
       </div>
 
       {/* Popover */}

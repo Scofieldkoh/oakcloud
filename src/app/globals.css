@@ -9,6 +9,10 @@
     --oak-hover: #23423a;
     --oak-light: #3a6b5f;
     --oak-dark: #1f3a33;
+    --oak-row-alt: #f7fbfa;
+    --oak-row-alt-hover: #f0f7f5;
+    --oak-row-selected: #d4e8e2;
+    --oak-row-selected-hover: #c5ded6;
 
     --bg-primary: #f8f9fb;
     --bg-secondary: #ffffff;
@@ -33,6 +37,10 @@
     --oak-hover: #3a6b5f;
     --oak-light: #4a8b7f;
     --oak-dark: #1f3a33;
+    --oak-row-alt: #161a19;
+    --oak-row-alt-hover: #1a2420;
+    --oak-row-selected: #1f3830;
+    --oak-row-selected-hover: #264239;
 
     --bg-primary: #0d0d0d;
     --bg-secondary: #141414;

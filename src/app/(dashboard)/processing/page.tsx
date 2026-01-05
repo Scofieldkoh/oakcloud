@@ -24,6 +24,7 @@ import {
   Square,
   CheckSquare,
   MinusSquare,
+  X,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import {
@@ -41,6 +42,8 @@ import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/res
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
+import { Pagination } from '@/components/ui/pagination';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { useCompanies } from '@/hooks/use-companies';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
@@ -50,6 +53,21 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '@/lib/document-categories';
 import { cn } from '@/lib/utils';
+import { TagChip } from '@/components/processing/document-tags';
+import type { TagColor } from '@/lib/validations/document-tag';
+import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
+
+/**
+ * Convert a Date to a local YYYY-MM-DD string.
+ * Unlike toISOString().split('T')[0] which uses UTC,
+ * this uses the browser's local timezone.
+ */
+function toLocalDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 const COLUMN_PREF_KEY = 'processing:list:columns:v1';
 const COLUMN_VISIBILITY_PREF_KEY = 'processing:list:column-visibility:v1';
@@ -60,14 +78,17 @@ const COLUMN_IDS = [
   'pipeline',
   'status',
   'duplicate',
+  'tags',
   'category',
   'subCategory',
   'vendor',
   'docNumber',
   'docDate',
+  'currency',
   'subtotal',
   'tax',
   'total',
+  'homeCurrency',
   'homeSubtotal',
   'homeTax',
   'homeTotal',
@@ -82,14 +103,17 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
   pipeline: 'Pipeline',
   status: 'Status',
   duplicate: 'Duplicate',
+  tags: 'Tags',
   category: 'Category',
   subCategory: 'Sub-Category',
   vendor: 'Vendor',
   docNumber: 'Doc #',
   docDate: 'Doc Date',
+  currency: 'Currency',
   subtotal: 'Subtotal',
   tax: 'Tax',
   total: 'Total',
+  homeCurrency: 'Home Ccy',
   homeSubtotal: 'Home Subtotal',
   homeTax: 'Home Tax',
   homeTotal: 'Home Total',
@@ -116,6 +140,8 @@ const COLUMN_SORT_FIELDS: Partial<Record<ColumnId, string>> = {
   vendor: 'vendorName',
   docNumber: 'documentNumber',
   docDate: 'documentDate',
+  currency: 'currency',
+  homeCurrency: 'homeCurrency',
   subtotal: 'subtotal',
   tax: 'taxAmount',
   total: 'totalAmount',
@@ -170,9 +196,9 @@ function StatusBadge({
 }) {
   const Icon = config.icon;
   return (
-    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium', config.color)}>
-      <Icon className="w-3 h-3" />
-      {config.label}
+    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium max-w-full', config.color)} title={config.label}>
+      <Icon className="w-3 h-3 flex-shrink-0" />
+      <span className="truncate">{config.label}</span>
     </span>
   );
 }
@@ -336,6 +362,9 @@ export default function ProcessingDocumentsPage() {
       documentSubCategory: (searchParams.get('documentSubCategory') || undefined) as DocumentSubCategory | undefined,
       // Tag filter
       tagIds: tagIdsParam ? tagIdsParam.split(',').filter(Boolean) : undefined,
+      // Currency filters
+      currency: searchParams.get('currency') || undefined,
+      homeCurrency: searchParams.get('homeCurrency') || undefined,
       // Amount filters - parse using helper function
       ...parseAmountFilterParams(searchParams),
     };
@@ -451,24 +480,24 @@ export default function ProcessingDocumentsPage() {
         );
       case 'document':
         return (
-          <td key={columnId} className="px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded bg-background-tertiary">
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-1.5 rounded bg-background-tertiary flex-shrink-0">
                 {doc.isContainer ? (
                   <FileStack className="w-4 h-4 text-text-secondary" />
                 ) : (
                   <FileText className="w-4 h-4 text-text-secondary" />
                 )}
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <Link
                   href={`/processing/${doc.id}`}
-                  className="text-sm font-medium text-text-primary whitespace-nowrap hover:underline"
+                  className="text-sm font-medium text-text-primary hover:underline block truncate"
                   title={doc.document.fileName}
                 >
                   {doc.document.fileName}
                 </Link>
-                <p className="text-xs text-text-muted">
+                <p className="text-xs text-text-muted truncate">
                   {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
                 </p>
               </div>
@@ -477,46 +506,78 @@ export default function ProcessingDocumentsPage() {
         );
       case 'company':
         return (
-          <td key={columnId} className="px-4 py-3">
-            <span className="text-sm text-text-primary whitespace-nowrap">
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.document.company?.name || undefined}>
               {doc.document.company?.name || '-'}
             </span>
           </td>
         );
       case 'pipeline':
         return (
-          <td key={columnId} className="px-4 py-3">
-            <StatusBadge status={doc.pipelineStatus} config={pipelineStatusConfig[doc.pipelineStatus]} />
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <div className="min-w-0">
+              <StatusBadge status={doc.pipelineStatus} config={pipelineStatusConfig[doc.pipelineStatus]} />
+            </div>
           </td>
         );
       case 'status':
         return (
-          <td key={columnId} className="px-4 py-3">
-            {doc.currentRevision ? (
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
-                  revisionStatusConfig[doc.currentRevision.status].color
-                )}
-              >
-                {revisionStatusConfig[doc.currentRevision.status].label}
-              </span>
-            ) : (
-              <span className="text-xs text-text-muted">-</span>
-            )}
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <div className="min-w-0">
+              {doc.currentRevision ? (
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium max-w-full truncate',
+                    revisionStatusConfig[doc.currentRevision.status].color
+                  )}
+                  title={revisionStatusConfig[doc.currentRevision.status].label}
+                >
+                  {revisionStatusConfig[doc.currentRevision.status].label}
+                </span>
+              ) : (
+                <span className="text-sm text-text-primary">-</span>
+              )}
+            </div>
           </td>
         );
       case 'duplicate':
         return (
-          <td key={columnId} className="px-4 py-3">
-            <StatusBadge status={doc.duplicateStatus} config={duplicateStatusConfig[doc.duplicateStatus]} />
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <div className="min-w-0">
+              <StatusBadge status={doc.duplicateStatus} config={duplicateStatusConfig[doc.duplicateStatus]} />
+            </div>
+          </td>
+        );
+      case 'tags':
+        return (
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <div className="flex flex-wrap items-center gap-1 min-w-0">
+              {doc.tags.length === 0 ? (
+                <span className="text-sm text-text-muted">-</span>
+              ) : (
+                <>
+                  {doc.tags.slice(0, 3).map((tag) => (
+                    <TagChip
+                      key={tag.id}
+                      name={tag.name}
+                      color={tag.color as TagColor}
+                      size="xs"
+                      scope={tag.scope}
+                    />
+                  ))}
+                  {doc.tags.length > 3 && (
+                    <span className="text-xs text-text-muted">+{doc.tags.length - 3}</span>
+                  )}
+                </>
+              )}
+            </div>
           </td>
         );
       case 'category':
         return (
-          <td key={columnId} className="px-4 py-3">
+          <td key={columnId} className="px-4 py-3 max-w-0">
             <span
-              className="text-sm text-text-primary whitespace-nowrap"
+              className="text-sm text-text-primary block truncate"
               title={formatCategory(doc.currentRevision?.documentCategory)}
             >
               {formatCategory(doc.currentRevision?.documentCategory)}
@@ -525,9 +586,9 @@ export default function ProcessingDocumentsPage() {
         );
       case 'subCategory':
         return (
-          <td key={columnId} className="px-4 py-3">
+          <td key={columnId} className="px-4 py-3 max-w-0">
             <span
-              className="text-sm text-text-secondary whitespace-nowrap"
+              className="text-sm text-text-primary block truncate"
               title={formatCategory(doc.currentRevision?.documentSubCategory)}
             >
               {formatCategory(doc.currentRevision?.documentSubCategory)}
@@ -536,9 +597,9 @@ export default function ProcessingDocumentsPage() {
         );
       case 'vendor':
         return (
-          <td key={columnId} className="px-4 py-3">
+          <td key={columnId} className="px-4 py-3 max-w-0">
             <span
-              className="text-sm text-text-primary whitespace-nowrap"
+              className="text-sm text-text-primary block truncate"
               title={doc.currentRevision?.vendorName || undefined}
             >
               {doc.currentRevision?.vendorName || '-'}
@@ -547,40 +608,56 @@ export default function ProcessingDocumentsPage() {
         );
       case 'docNumber':
         return (
-          <td key={columnId} className="px-4 py-3">
-            <span className="text-sm text-text-secondary whitespace-nowrap">
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.documentNumber || undefined}>
               {doc.currentRevision?.documentNumber || '-'}
             </span>
           </td>
         );
       case 'docDate':
         return (
-          <td key={columnId} className="px-4 py-3">
-            <span className="text-sm text-text-secondary whitespace-nowrap">
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.documentDate ? formatDate(doc.currentRevision.documentDate) : undefined}>
               {doc.currentRevision?.documentDate ? formatDate(doc.currentRevision.documentDate) : '-'}
+            </span>
+          </td>
+        );
+      case 'currency':
+        return (
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.currency || undefined}>
+              {doc.currentRevision?.currency || '-'}
+            </span>
+          </td>
+        );
+      case 'homeCurrency':
+        return (
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.homeCurrency || undefined}>
+              {doc.currentRevision?.homeCurrency || '-'}
             </span>
           </td>
         );
       case 'subtotal':
         return (
-          <td key={columnId} className="px-4 py-3 text-right">
-            <span className="text-sm text-text-primary whitespace-nowrap">
+          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency) : undefined}>
               {doc.currentRevision ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency) : '-'}
             </span>
           </td>
         );
       case 'tax':
         return (
-          <td key={columnId} className="px-4 py-3 text-right">
-            <span className="text-sm text-text-primary whitespace-nowrap">
+          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency) : undefined}>
               {doc.currentRevision ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency) : '-'}
             </span>
           </td>
         );
       case 'total':
         return (
-          <td key={columnId} className="px-4 py-3 text-right">
-            <span className="text-sm text-text-primary font-medium whitespace-nowrap">
+          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency) : undefined}>
               {doc.currentRevision
                 ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
                 : '-'}
@@ -589,8 +666,8 @@ export default function ProcessingDocumentsPage() {
         );
       case 'homeSubtotal':
         return (
-          <td key={columnId} className="px-4 py-3 text-right">
-            <span className="text-sm text-text-secondary whitespace-nowrap">
+          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.homeCurrency ? formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency) : undefined}>
               {doc.currentRevision?.homeCurrency
                 ? formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency)
                 : '-'}
@@ -599,8 +676,8 @@ export default function ProcessingDocumentsPage() {
         );
       case 'homeTax':
         return (
-          <td key={columnId} className="px-4 py-3 text-right">
-            <span className="text-sm text-text-secondary whitespace-nowrap">
+          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.homeCurrency ? formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency) : undefined}>
               {doc.currentRevision?.homeCurrency
                 ? formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency)
                 : '-'}
@@ -609,8 +686,8 @@ export default function ProcessingDocumentsPage() {
         );
       case 'homeTotal':
         return (
-          <td key={columnId} className="px-4 py-3 text-right">
-            <span className="text-sm text-text-secondary font-medium whitespace-nowrap">
+          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.homeCurrency ? formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency) : undefined}>
               {doc.currentRevision?.homeCurrency
                 ? formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency)
                 : '-'}
@@ -619,8 +696,8 @@ export default function ProcessingDocumentsPage() {
         );
       case 'uploaded':
         return (
-          <td key={columnId} className="px-4 py-3">
-            <span className="text-sm text-text-muted whitespace-nowrap">{formatDate(doc.createdAt)}</span>
+          <td key={columnId} className="px-4 py-3 max-w-0">
+            <span className="text-sm text-text-primary block truncate" title={formatDate(doc.createdAt)}>{formatDate(doc.createdAt)}</span>
           </td>
         );
       default:
@@ -651,7 +728,7 @@ export default function ProcessingDocumentsPage() {
     }
 
     const onMove = (ev: globalThis.PointerEvent) => {
-      const nextWidth = Math.max(80, startWidth + (ev.clientX - startX));
+      const nextWidth = Math.max(40, startWidth + (ev.clientX - startX)); // Reduced minimum from 80px to 40px for user flexibility
       latestWidth = nextWidth;
       setColumnWidths((prev) => ({ ...prev, [columnId]: nextWidth }));
     };
@@ -745,6 +822,12 @@ export default function ProcessingDocumentsPage() {
     setSelectedIds([]);
   }, []);
 
+  // Get selected documents for bulk actions summary
+  const selectedDocuments = useMemo(() => {
+    if (!data?.documents || selectedIds.length === 0) return [];
+    return data.documents.filter((doc) => selectedIds.includes(doc.id));
+  }, [data?.documents, selectedIds]);
+
   const handleRowNavigate = useCallback(
     (e: MouseEvent, documentId: string) => {
       // Only handle plain left-clicks; allow Ctrl/Cmd+click (new tab), right-click, etc.
@@ -813,8 +896,33 @@ export default function ProcessingDocumentsPage() {
     if (params.vendorName) urlParams.set('vendorName', params.vendorName);
     if (params.documentNumber) urlParams.set('documentNumber', params.documentNumber);
     if (params.fileName) urlParams.set('fileName', params.fileName);
+    // Category filters
+    if (params.documentCategory) urlParams.set('documentCategory', params.documentCategory);
+    if (params.documentSubCategory) urlParams.set('documentSubCategory', params.documentSubCategory);
     // Tag filter
     if (params.tagIds && params.tagIds.length > 0) urlParams.set('tagIds', params.tagIds.join(','));
+    // Currency filters
+    if (params.currency) urlParams.set('currency', params.currency);
+    if (params.homeCurrency) urlParams.set('homeCurrency', params.homeCurrency);
+    // Amount filters
+    if (params.subtotal !== undefined) urlParams.set('subtotal', params.subtotal.toString());
+    if (params.subtotalFrom !== undefined) urlParams.set('subtotalFrom', params.subtotalFrom.toString());
+    if (params.subtotalTo !== undefined) urlParams.set('subtotalTo', params.subtotalTo.toString());
+    if (params.tax !== undefined) urlParams.set('tax', params.tax.toString());
+    if (params.taxFrom !== undefined) urlParams.set('taxFrom', params.taxFrom.toString());
+    if (params.taxTo !== undefined) urlParams.set('taxTo', params.taxTo.toString());
+    if (params.total !== undefined) urlParams.set('total', params.total.toString());
+    if (params.totalFrom !== undefined) urlParams.set('totalFrom', params.totalFrom.toString());
+    if (params.totalTo !== undefined) urlParams.set('totalTo', params.totalTo.toString());
+    if (params.homeSubtotal !== undefined) urlParams.set('homeSubtotal', params.homeSubtotal.toString());
+    if (params.homeSubtotalFrom !== undefined) urlParams.set('homeSubtotalFrom', params.homeSubtotalFrom.toString());
+    if (params.homeSubtotalTo !== undefined) urlParams.set('homeSubtotalTo', params.homeSubtotalTo.toString());
+    if (params.homeTax !== undefined) urlParams.set('homeTax', params.homeTax.toString());
+    if (params.homeTaxFrom !== undefined) urlParams.set('homeTaxFrom', params.homeTaxFrom.toString());
+    if (params.homeTaxTo !== undefined) urlParams.set('homeTaxTo', params.homeTaxTo.toString());
+    if (params.homeTotal !== undefined) urlParams.set('homeTotal', params.homeTotal.toString());
+    if (params.homeTotalFrom !== undefined) urlParams.set('homeTotalFrom', params.homeTotalFrom.toString());
+    if (params.homeTotalTo !== undefined) urlParams.set('homeTotalTo', params.homeTotalTo.toString());
 
     const queryString = urlParams.toString();
     return queryString ? `/processing?${queryString}` : '/processing';
@@ -850,9 +958,9 @@ export default function ProcessingDocumentsPage() {
       const homeTotal = 'homeTotalFilter' in filters ? convertAmountFilter(filters.homeTotalFilter) : undefined;
 
       return {
-        // Keep pagination and sorting params
-        page: 1, // Reset to first page on filter change
-        limit: prev.limit,
+        // Handle pagination - use provided values or defaults
+        page: 'page' in filters ? filters.page ?? 1 : 1, // Reset to first page on filter change unless explicitly provided
+        limit: 'limit' in filters ? filters.limit ?? prev.limit : prev.limit,
         sortBy: prev.sortBy,
         sortOrder: prev.sortOrder,
         // Merge new filter values with previous values (only update if provided)
@@ -874,6 +982,9 @@ export default function ProcessingDocumentsPage() {
         documentSubCategory: 'documentSubCategory' in filters ? filters.documentSubCategory : prev.documentSubCategory,
         // Tag filter
         tagIds: 'tagIds' in filters ? filters.tagIds : prev.tagIds,
+        // Currency filters
+        currency: 'currency' in filters ? filters.currency : prev.currency,
+        homeCurrency: 'homeCurrency' in filters ? filters.homeCurrency : prev.homeCurrency,
         // Amount filters - only update if provided
         subtotal: subtotal !== undefined ? subtotal.single : prev.subtotal,
         subtotalFrom: subtotal !== undefined ? subtotal.from : prev.subtotalFrom,
@@ -935,6 +1046,313 @@ export default function ProcessingDocumentsPage() {
       ).length,
     };
   }, [data]);
+
+  // Generate active filter chips
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{ key: string; label: string; value: string; onRemove: () => void }> = [];
+
+    // Quick Filters
+    if (params.needsReview) {
+      chips.push({
+        key: 'needsReview',
+        label: 'Review',
+        value: 'Needs Review',
+        onRemove: () => handleFiltersChange({ needsReview: undefined }),
+      });
+    }
+
+    if (params.uploadDatePreset === 'TODAY') {
+      chips.push({
+        key: 'uploadDatePreset',
+        label: 'Uploaded',
+        value: 'Today',
+        onRemove: () => handleFiltersChange({ uploadDatePreset: undefined, uploadDateFrom: undefined, uploadDateTo: undefined }),
+      });
+    }
+
+    // Pipeline Status
+    if (params.pipelineStatus) {
+      const statusLabels: Record<PipelineStatus, string> = {
+        UPLOADED: 'Uploaded',
+        QUEUED: 'Queued',
+        PROCESSING: 'Processing',
+        SPLIT_PENDING: 'Split Pending',
+        SPLIT_DONE: 'Split Done',
+        EXTRACTION_DONE: 'Extracted',
+        FAILED_RETRYABLE: 'Failed (Retry)',
+        FAILED_PERMANENT: 'Failed',
+        DEAD_LETTER: 'Dead Letter',
+      };
+      chips.push({
+        key: 'pipelineStatus',
+        label: 'Pipeline',
+        value: statusLabels[params.pipelineStatus],
+        onRemove: () => handleFiltersChange({ pipelineStatus: undefined }),
+      });
+    }
+
+    // Revision Status
+    if (params.revisionStatus) {
+      const statusLabels: Record<RevisionStatus, string> = {
+        DRAFT: 'Pending Review',
+        APPROVED: 'Approved',
+        SUPERSEDED: 'Superseded',
+      };
+      chips.push({
+        key: 'revisionStatus',
+        label: 'Status',
+        value: statusLabels[params.revisionStatus],
+        onRemove: () => handleFiltersChange({ revisionStatus: undefined }),
+      });
+    }
+
+    // Duplicate Status
+    if (params.duplicateStatus) {
+      const statusLabels: Record<DuplicateStatus, string> = {
+        NONE: 'None',
+        SUSPECTED: 'Suspected',
+        CONFIRMED: 'Confirmed',
+        REJECTED: 'Not Duplicate',
+      };
+      chips.push({
+        key: 'duplicateStatus',
+        label: 'Duplicate',
+        value: statusLabels[params.duplicateStatus],
+        onRemove: () => handleFiltersChange({ duplicateStatus: undefined }),
+      });
+    }
+
+    // Category
+    if (params.documentCategory) {
+      chips.push({
+        key: 'documentCategory',
+        label: 'Category',
+        value: CATEGORY_LABELS[params.documentCategory] || params.documentCategory,
+        onRemove: () => handleFiltersChange({ documentCategory: undefined }),
+      });
+    }
+
+    // Sub-Category
+    if (params.documentSubCategory) {
+      chips.push({
+        key: 'documentSubCategory',
+        label: 'Sub-Category',
+        value: SUBCATEGORY_LABELS[params.documentSubCategory] || params.documentSubCategory,
+        onRemove: () => handleFiltersChange({ documentSubCategory: undefined }),
+      });
+    }
+
+    // Vendor Name
+    if (params.vendorName) {
+      chips.push({
+        key: 'vendorName',
+        label: 'Vendor',
+        value: params.vendorName,
+        onRemove: () => handleFiltersChange({ vendorName: undefined }),
+      });
+    }
+
+    // Document Number
+    if (params.documentNumber) {
+      chips.push({
+        key: 'documentNumber',
+        label: 'Doc Number',
+        value: params.documentNumber,
+        onRemove: () => handleFiltersChange({ documentNumber: undefined }),
+      });
+    }
+
+    // File Name
+    if (params.fileName) {
+      chips.push({
+        key: 'fileName',
+        label: 'File Name',
+        value: params.fileName,
+        onRemove: () => handleFiltersChange({ fileName: undefined }),
+      });
+    }
+
+    // Currency Filters
+    if (params.currency) {
+      chips.push({
+        key: 'currency',
+        label: 'Currency',
+        value: params.currency,
+        onRemove: () => handleFiltersChange({ currency: undefined }),
+      });
+    }
+
+    if (params.homeCurrency) {
+      chips.push({
+        key: 'homeCurrency',
+        label: 'Home Ccy',
+        value: params.homeCurrency,
+        onRemove: () => handleFiltersChange({ homeCurrency: undefined }),
+      });
+    }
+
+    // Tags Filter
+    if (params.tagIds && params.tagIds.length > 0) {
+      const tagNames = params.tagIds.map(tagId => {
+        const tag = tagsData?.find(t => t.id === tagId);
+        return tag?.name || tagId;
+      }).join(', ');
+      chips.push({
+        key: 'tags',
+        label: 'Tags',
+        value: tagNames,
+        onRemove: () => handleFiltersChange({ tagIds: undefined }),
+      });
+    }
+
+    // Date Filters
+    if (params.documentDateFrom || params.documentDateTo) {
+      const from = params.documentDateFrom || '...';
+      const to = params.documentDateTo || '...';
+      chips.push({
+        key: 'documentDate',
+        label: 'Doc Date',
+        value: `${from} to ${to}`,
+        onRemove: () => handleFiltersChange({ documentDateFrom: undefined, documentDateTo: undefined }),
+      });
+    }
+
+    // Only show upload date range if preset is not active
+    if ((params.uploadDateFrom || params.uploadDateTo) && params.uploadDatePreset !== 'TODAY') {
+      const from = params.uploadDateFrom || '...';
+      const to = params.uploadDateTo || '...';
+      chips.push({
+        key: 'uploadDate',
+        label: 'Uploaded',
+        value: `${from} to ${to}`,
+        onRemove: () => handleFiltersChange({ uploadDateFrom: undefined, uploadDateTo: undefined }),
+      });
+    }
+
+    // Amount Filters
+    const formatAmount = (num: number) => num.toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+    if (params.subtotal !== undefined) {
+      chips.push({
+        key: 'subtotal',
+        label: 'Subtotal',
+        value: formatAmount(params.subtotal),
+        onRemove: () => handleFiltersChange({ subtotalFilter: undefined }),
+      });
+    } else if (params.subtotalFrom !== undefined || params.subtotalTo !== undefined) {
+      const from = params.subtotalFrom !== undefined ? formatAmount(params.subtotalFrom) : '...';
+      const to = params.subtotalTo !== undefined ? formatAmount(params.subtotalTo) : '...';
+      chips.push({
+        key: 'subtotalRange',
+        label: 'Subtotal',
+        value: `${from} to ${to}`,
+        onRemove: () => handleFiltersChange({ subtotalFilter: undefined }),
+      });
+    }
+
+    if (params.tax !== undefined) {
+      chips.push({
+        key: 'tax',
+        label: 'Tax',
+        value: formatAmount(params.tax),
+        onRemove: () => handleFiltersChange({ taxFilter: undefined }),
+      });
+    } else if (params.taxFrom !== undefined || params.taxTo !== undefined) {
+      const from = params.taxFrom !== undefined ? formatAmount(params.taxFrom) : '...';
+      const to = params.taxTo !== undefined ? formatAmount(params.taxTo) : '...';
+      chips.push({
+        key: 'taxRange',
+        label: 'Tax',
+        value: `${from} to ${to}`,
+        onRemove: () => handleFiltersChange({ taxFilter: undefined }),
+      });
+    }
+
+    if (params.total !== undefined) {
+      chips.push({
+        key: 'total',
+        label: 'Total',
+        value: formatAmount(params.total),
+        onRemove: () => handleFiltersChange({ totalFilter: undefined }),
+      });
+    } else if (params.totalFrom !== undefined || params.totalTo !== undefined) {
+      const from = params.totalFrom !== undefined ? formatAmount(params.totalFrom) : '...';
+      const to = params.totalTo !== undefined ? formatAmount(params.totalTo) : '...';
+      chips.push({
+        key: 'totalRange',
+        label: 'Total',
+        value: `${from} to ${to}`,
+        onRemove: () => handleFiltersChange({ totalFilter: undefined }),
+      });
+    }
+
+    if (params.homeSubtotal !== undefined) {
+      chips.push({
+        key: 'homeSubtotal',
+        label: 'Home Subtotal',
+        value: formatAmount(params.homeSubtotal),
+        onRemove: () => handleFiltersChange({ homeSubtotalFilter: undefined }),
+      });
+    } else if (params.homeSubtotalFrom !== undefined || params.homeSubtotalTo !== undefined) {
+      const from = params.homeSubtotalFrom !== undefined ? formatAmount(params.homeSubtotalFrom) : '...';
+      const to = params.homeSubtotalTo !== undefined ? formatAmount(params.homeSubtotalTo) : '...';
+      chips.push({
+        key: 'homeSubtotalRange',
+        label: 'Home Subtotal',
+        value: `${from} to ${to}`,
+        onRemove: () => handleFiltersChange({ homeSubtotalFilter: undefined }),
+      });
+    }
+
+    if (params.homeTax !== undefined) {
+      chips.push({
+        key: 'homeTax',
+        label: 'Home Tax',
+        value: formatAmount(params.homeTax),
+        onRemove: () => handleFiltersChange({ homeTaxFilter: undefined }),
+      });
+    } else if (params.homeTaxFrom !== undefined || params.homeTaxTo !== undefined) {
+      const from = params.homeTaxFrom !== undefined ? formatAmount(params.homeTaxFrom) : '...';
+      const to = params.homeTaxTo !== undefined ? formatAmount(params.homeTaxTo) : '...';
+      chips.push({
+        key: 'homeTaxRange',
+        label: 'Home Tax',
+        value: `${from} to ${to}`,
+        onRemove: () => handleFiltersChange({ homeTaxFilter: undefined }),
+      });
+    }
+
+    if (params.homeTotal !== undefined) {
+      chips.push({
+        key: 'homeTotal',
+        label: 'Home Total',
+        value: formatAmount(params.homeTotal),
+        onRemove: () => handleFiltersChange({ homeTotalFilter: undefined }),
+      });
+    } else if (params.homeTotalFrom !== undefined || params.homeTotalTo !== undefined) {
+      const from = params.homeTotalFrom !== undefined ? formatAmount(params.homeTotalFrom) : '...';
+      const to = params.homeTotalTo !== undefined ? formatAmount(params.homeTotalTo) : '...';
+      chips.push({
+        key: 'homeTotalRange',
+        label: 'Home Total',
+        value: `${from} to ${to}`,
+        onRemove: () => handleFiltersChange({ homeTotalFilter: undefined }),
+      });
+    }
+
+    return chips;
+  }, [params, handleFiltersChange, tagsData]);
+
+  // Clear all filters
+  const handleClearAllFilters = useCallback(() => {
+    setParams({
+      page: 1,
+      limit: params.limit,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
+      search: params.search, // Keep search
+    });
+  }, [params.limit, params.sortBy, params.sortOrder, params.search]);
 
   return (
     <div {...getRootProps()} className="p-4 sm:p-6 relative">
@@ -1094,6 +1512,8 @@ export default function ProcessingDocumentsPage() {
             documentNumber: params.documentNumber,
             fileName: params.fileName,
             tagIds: params.tagIds,
+            currency: params.currency,
+            homeCurrency: params.homeCurrency,
           }}
           onSearchChange={handleSearchChange}
           initialSearch={params.search || ''}
@@ -1122,39 +1542,32 @@ export default function ProcessingDocumentsPage() {
         </div>
       )}
 
-      {/* Empty State - Only show when not fetching and no documents */}
-      {!isFetching && !error && data?.documents.length === 0 && (
-        <div className="card p-8 text-center">
-          <FileText className="w-12 h-12 text-text-muted mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-text-primary mb-2">No documents found</h3>
-          <p className="text-text-secondary mb-4">
-            Upload invoices, receipts, and other business documents for AI-powered extraction.
-          </p>
-          <Link href="/processing/upload" className="btn-primary btn-sm inline-flex items-center gap-2">
-            <Upload className="w-4 h-4" />
-            Upload Documents
-          </Link>
-        </div>
-      )}
 
       {/* Document Cards - Mobile View */}
-      {!error && data && data.documents.length > 0 && (
+      {!error && data && (
         <div className={cn('md:hidden space-y-3 mb-6 relative', isFetching && 'opacity-60')}>
-          {data.documents.map((doc) => {
-            const isSelected = selectedIds.includes(doc.id);
-            return (
-              <MobileCard
-                key={doc.id}
-                isSelected={isSelected}
-                selectable
-                onToggle={() => toggleSelect(doc.id)}
-                title={
-                  <Link href={`/processing/${doc.id}`} className="hover:underline">
-                    {doc.document.fileName}
-                  </Link>
-                }
-                subtitle={
-                  <span className="text-text-muted">
+          {data.documents.length === 0 ? (
+            <div className="card p-8 text-center">
+              <p className="text-sm text-text-secondary">No documents found</p>
+            </div>
+          ) : (
+            data.documents.map((doc, index) => {
+              const isSelected = selectedIds.includes(doc.id);
+              const isAlternate = index % 2 === 1;
+              return (
+                <MobileCard
+                  key={doc.id}
+                  isSelected={isSelected}
+                  selectable
+                  onToggle={() => toggleSelect(doc.id)}
+                  className={!isSelected && isAlternate ? 'bg-oak-row-alt' : undefined}
+                  title={
+                    <Link href={`/processing/${doc.id}`} className="hover:underline">
+                      {doc.document.fileName}
+                    </Link>
+                  }
+                  subtitle={
+                    <span className="text-text-muted">
                     {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
                     {doc.document.company && ` • ${doc.document.company.name}`}
                   </span>
@@ -1275,8 +1688,9 @@ export default function ProcessingDocumentsPage() {
                   </div>
                 }
               />
-            );
-          })}
+              );
+            })
+          )}
 
           {/* Mobile Pagination */}
           {data.totalPages > 1 && (
@@ -1321,23 +1735,35 @@ export default function ProcessingDocumentsPage() {
           onQuickFilterChange={(filters) => {
             handleFiltersChange(filters);
           }}
-          companies={companiesData?.companies.map(c => ({ id: c.id, name: c.name })) || []}
-          selectedCompanyId={params.companyId}
-          onCompanyChange={(companyId) => {
-            handleFiltersChange({ companyId });
-          }}
-          tags={tagsData}
-          selectedTagIds={params.tagIds}
-          onTagsChange={(tagIds) => {
-            handleFiltersChange({ tagIds });
-          }}
           onAdjustColumns={() => setIsColumnModalOpen(true)}
           hiddenColumnCount={hiddenColumnCount}
         />
       </div>
 
+      {/* Active Filter Chips - Desktop Only */}
+      {activeFilterChips.length > 0 && (
+        <div className="hidden md:flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-sm text-text-secondary font-medium">Active filters:</span>
+          {activeFilterChips.map((chip) => (
+            <FilterChip
+              key={chip.key}
+              label={chip.label}
+              value={chip.value}
+              onRemove={chip.onRemove}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={handleClearAllFilters}
+            className="text-sm text-oak-primary hover:text-oak-primary/80 font-medium transition-colors ml-2"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       {/* Document Table - Desktop View */}
-      {!error && data && data.documents.length > 0 && (
+      {!error && data && (
         <div className={cn('hidden md:block card overflow-hidden relative', isFetching && 'opacity-60')}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-max">
@@ -1357,9 +1783,359 @@ export default function ProcessingDocumentsPage() {
                 ))}
               </colgroup>
               <thead className="bg-background-tertiary border-b border-border-primary">
-                {/* Column header row */}
-                <tr>
-                  <th className="w-10 px-4 py-3">
+                {/* Inline filter row - moved above headers */}
+                <tr className="bg-background-secondary/50">
+                  <th className="px-4 py-2"></th>
+                  {visibleColumnIds.map((columnId) => (
+                    <th key={columnId} className="px-4 py-2 max-w-0">
+                      {columnId === 'open' ? null : columnId === 'document' ? (
+                        <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
+                          <input
+                            type="text"
+                            value={params.fileName || ''}
+                            onChange={(e) => handleFiltersChange({ fileName: e.target.value || undefined })}
+                            placeholder="All"
+                            className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
+                          />
+                          {params.fileName && (
+                            <button
+                              type="button"
+                              onClick={() => handleFiltersChange({ fileName: undefined })}
+                              className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
+                            >
+                              <X className="w-3.5 h-3.5 text-text-muted" />
+                            </button>
+                          )}
+                        </div>
+                      ) : columnId === 'company' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...companiesData?.companies.map(c => ({ value: c.id, label: c.name })) || []
+                          ]}
+                          value={params.companyId || ''}
+                          onChange={(value) => handleFiltersChange({ companyId: value || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                          showChevron={false}
+                          showKeyboardHints={false}
+                        />
+                      ) : columnId === 'pipeline' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(pipelineStatusConfig).map(([value, config]) => ({
+                              value,
+                              label: config.label
+                            }))
+                          ]}
+                          value={params.pipelineStatus || ''}
+                          onChange={(value) => handleFiltersChange({ pipelineStatus: value as PipelineStatus || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                          showChevron={false}
+                          showKeyboardHints={false}
+                        />
+                      ) : columnId === 'status' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(revisionStatusConfig).map(([value, config]) => ({
+                              value,
+                              label: config.label
+                            }))
+                          ]}
+                          value={params.revisionStatus || ''}
+                          onChange={(value) => handleFiltersChange({ revisionStatus: value as RevisionStatus || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                          showChevron={false}
+                          showKeyboardHints={false}
+                        />
+                      ) : columnId === 'duplicate' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(duplicateStatusConfig).map(([value, config]) => ({
+                              value,
+                              label: config.label
+                            }))
+                          ]}
+                          value={params.duplicateStatus || ''}
+                          onChange={(value) => handleFiltersChange({ duplicateStatus: value as DuplicateStatus || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                          showChevron={false}
+                          showKeyboardHints={false}
+                        />
+                      ) : columnId === 'tags' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...tagsData?.map(tag => ({
+                              value: tag.id,
+                              label: tag.name
+                            })) || []
+                          ]}
+                          value={params.tagIds?.[0] || ''}
+                          onChange={(value) => handleFiltersChange({ tagIds: value ? [value] : undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                          showChevron={false}
+                          showKeyboardHints={false}
+                        />
+                      ) : columnId === 'vendor' ? (
+                        <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
+                          <input
+                            type="text"
+                            value={params.vendorName || ''}
+                            onChange={(e) => handleFiltersChange({ vendorName: e.target.value || undefined })}
+                            placeholder="All"
+                            className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
+                          />
+                          {params.vendorName && (
+                            <button
+                              type="button"
+                              onClick={() => handleFiltersChange({ vendorName: undefined })}
+                              className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
+                            >
+                              <X className="w-3.5 h-3.5 text-text-muted" />
+                            </button>
+                          )}
+                        </div>
+                      ) : columnId === 'docNumber' ? (
+                        <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
+                          <input
+                            type="text"
+                            value={params.documentNumber || ''}
+                            onChange={(e) => handleFiltersChange({ documentNumber: e.target.value || undefined })}
+                            placeholder="All"
+                            className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
+                          />
+                          {params.documentNumber && (
+                            <button
+                              type="button"
+                              onClick={() => handleFiltersChange({ documentNumber: undefined })}
+                              className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
+                            >
+                              <X className="w-3.5 h-3.5 text-text-muted" />
+                            </button>
+                          )}
+                        </div>
+                      ) : columnId === 'docDate' ? (
+                        <DatePicker
+                          value={
+                            params.documentDateFrom || params.documentDateTo
+                              ? {
+                                  mode: 'range' as const,
+                                  range: {
+                                    from: params.documentDateFrom ? new Date(params.documentDateFrom) : undefined,
+                                    to: params.documentDateTo ? new Date(params.documentDateTo) : undefined,
+                                  }
+                                }
+                              : undefined
+                          }
+                          onChange={(value) => {
+                            if (!value || value.mode !== 'range') {
+                              handleFiltersChange({ documentDateFrom: undefined, documentDateTo: undefined });
+                            } else if (value.range) {
+                              handleFiltersChange({
+                                documentDateFrom: value.range.from ? toLocalDateString(value.range.from) : undefined,
+                                documentDateTo: value.range.to ? toLocalDateString(value.range.to) : undefined,
+                              });
+                            }
+                          }}
+                          placeholder="All dates"
+                          size="sm"
+                          defaultTab="range"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'uploaded' ? (
+                        <DatePicker
+                          value={
+                            params.uploadDatePreset === 'TODAY'
+                              ? {
+                                  mode: 'range' as const,
+                                  range: {
+                                    from: new Date(new Date().setHours(0, 0, 0, 0)),
+                                    to: new Date(new Date().setHours(23, 59, 59, 999)),
+                                  }
+                                }
+                              : params.uploadDateFrom || params.uploadDateTo
+                              ? {
+                                  mode: 'range' as const,
+                                  range: {
+                                    from: params.uploadDateFrom ? new Date(params.uploadDateFrom) : undefined,
+                                    to: params.uploadDateTo ? new Date(params.uploadDateTo) : undefined,
+                                  }
+                                }
+                              : undefined
+                          }
+                          onChange={(value) => {
+                            if (!value || value.mode !== 'range') {
+                              handleFiltersChange({ uploadDateFrom: undefined, uploadDateTo: undefined, uploadDatePreset: undefined });
+                            } else if (value.range) {
+                              // Check if selected range is today
+                              const today = new Date();
+                              const todayStart = new Date(today.setHours(0, 0, 0, 0));
+                              const _todayEnd = new Date(today.setHours(23, 59, 59, 999));
+                              const selectedFrom = value.range.from ? new Date(value.range.from.setHours(0, 0, 0, 0)) : null;
+                              const selectedTo = value.range.to ? new Date(value.range.to.setHours(0, 0, 0, 0)) : null;
+
+                              const isToday = selectedFrom && selectedTo &&
+                                selectedFrom.getTime() === todayStart.getTime() &&
+                                selectedTo.getTime() === todayStart.getTime();
+
+                              handleFiltersChange({
+                                uploadDateFrom: value.range.from ? toLocalDateString(value.range.from) : undefined,
+                                uploadDateTo: value.range.to ? toLocalDateString(value.range.to) : undefined,
+                                uploadDatePreset: isToday ? 'TODAY' : undefined,
+                              });
+                            }
+                          }}
+                          placeholder="All dates"
+                          size="sm"
+                          defaultTab="range"
+                          className="text-xs"
+                        />
+                      ) : columnId === 'category' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(CATEGORY_LABELS).map(([value, label]) => ({
+                              value,
+                              label
+                            }))
+                          ]}
+                          value={params.documentCategory || ''}
+                          onChange={(value) => handleFiltersChange({ documentCategory: value as DocumentCategory || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                          showChevron={false}
+                          showKeyboardHints={false}
+                        />
+                      ) : columnId === 'subCategory' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...Object.entries(SUBCATEGORY_LABELS).map(([value, label]) => ({
+                              value,
+                              label
+                            }))
+                          ]}
+                          value={params.documentSubCategory || ''}
+                          onChange={(value) => handleFiltersChange({ documentSubCategory: value as DocumentSubCategory || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                          showChevron={false}
+                          showKeyboardHints={false}
+                        />
+                      ) : columnId === 'currency' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...SUPPORTED_CURRENCIES.map((code) => ({
+                              value: code,
+                              label: code
+                            }))
+                          ]}
+                          value={params.currency || ''}
+                          onChange={(value) => handleFiltersChange({ currency: value || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                          showChevron={false}
+                          showKeyboardHints={false}
+                        />
+                      ) : columnId === 'homeCurrency' ? (
+                        <SearchableSelect
+                          options={[
+                            { value: '', label: 'All' },
+                            ...SUPPORTED_CURRENCIES.map((code) => ({
+                              value: code,
+                              label: code
+                            }))
+                          ]}
+                          value={params.homeCurrency || ''}
+                          onChange={(value) => handleFiltersChange({ homeCurrency: value || undefined })}
+                          placeholder="All"
+                          className="text-xs"
+                          showChevron={false}
+                          showKeyboardHints={false}
+                        />
+                      ) : columnId === 'subtotal' ? (
+                        <AmountFilter
+                          value={params.subtotal !== undefined ? { mode: 'single', single: params.subtotal } :
+                                params.subtotalFrom !== undefined || params.subtotalTo !== undefined ?
+                                { mode: 'range', range: { from: params.subtotalFrom, to: params.subtotalTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ subtotalFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                          showChevron={false}
+                        />
+                      ) : columnId === 'tax' ? (
+                        <AmountFilter
+                          value={params.tax !== undefined ? { mode: 'single', single: params.tax } :
+                                params.taxFrom !== undefined || params.taxTo !== undefined ?
+                                { mode: 'range', range: { from: params.taxFrom, to: params.taxTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ taxFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                          showChevron={false}
+                        />
+                      ) : columnId === 'total' ? (
+                        <AmountFilter
+                          value={params.total !== undefined ? { mode: 'single', single: params.total } :
+                                params.totalFrom !== undefined || params.totalTo !== undefined ?
+                                { mode: 'range', range: { from: params.totalFrom, to: params.totalTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ totalFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                          showChevron={false}
+                        />
+                      ) : columnId === 'homeSubtotal' ? (
+                        <AmountFilter
+                          value={params.homeSubtotal !== undefined ? { mode: 'single', single: params.homeSubtotal } :
+                                params.homeSubtotalFrom !== undefined || params.homeSubtotalTo !== undefined ?
+                                { mode: 'range', range: { from: params.homeSubtotalFrom, to: params.homeSubtotalTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ homeSubtotalFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                          showChevron={false}
+                        />
+                      ) : columnId === 'homeTax' ? (
+                        <AmountFilter
+                          value={params.homeTax !== undefined ? { mode: 'single', single: params.homeTax } :
+                                params.homeTaxFrom !== undefined || params.homeTaxTo !== undefined ?
+                                { mode: 'range', range: { from: params.homeTaxFrom, to: params.homeTaxTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ homeTaxFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                          showChevron={false}
+                        />
+                      ) : columnId === 'homeTotal' ? (
+                        <AmountFilter
+                          value={params.homeTotal !== undefined ? { mode: 'single', single: params.homeTotal } :
+                                params.homeTotalFrom !== undefined || params.homeTotalTo !== undefined ?
+                                { mode: 'range', range: { from: params.homeTotalFrom, to: params.homeTotalTo } } : undefined}
+                          onChange={(value) => handleFiltersChange({ homeTotalFilter: value })}
+                          placeholder="All amounts"
+                          size="sm"
+                          className="text-xs"
+                          showChevron={false}
+                        />
+                      ) : null}
+                    </th>
+                  ))}
+                </tr>
+
+                {/* Column header row - below filters */}
+                <tr className="border-t border-border-primary">
+                  <th className="w-10 px-4 py-2.5">
                     <button
                       onClick={toggleSelectAll}
                       className="p-0.5 hover:bg-background-secondary rounded transition-colors"
@@ -1371,14 +2147,14 @@ export default function ProcessingDocumentsPage() {
                         <MinusSquare className="w-4 h-4 text-oak-light" />
                       ) : (
                         <Square className="w-4 h-4 text-text-muted" />
-                  )}
+                      )}
                     </button>
-                      </th>
+                  </th>
                   {visibleColumnIds.map((columnId) =>
                     columnId === 'open' ? (
                       <th
                         key={columnId}
-                        className="text-center text-xs font-medium text-text-secondary px-2 py-3 whitespace-nowrap"
+                        className="text-center text-xs font-medium text-text-secondary px-4 py-2.5 whitespace-nowrap"
                         title="Open in new tab"
                       >
                         <ArrowUpRight className="w-4 h-4 inline-block text-text-muted" />
@@ -1388,8 +2164,8 @@ export default function ProcessingDocumentsPage() {
                         key={columnId}
                         style={columnWidths[columnId] ? { width: `${columnWidths[columnId]}px` } : undefined}
                         className={cn(
-                          'relative text-xs font-medium text-text-secondary px-4 py-3 whitespace-nowrap pr-3',
-                          RIGHT_ALIGNED_COLUMNS.has(columnId) ? 'text-right' : 'text-left'
+                          'relative text-xs font-medium text-text-secondary px-4 py-2.5 whitespace-nowrap',
+                          RIGHT_ALIGNED_COLUMNS.has(columnId) ? 'text-right pr-6' : 'text-left'
                         )}
                         onPointerDown={(e) => startResizeIfEdge(e, columnId)}
                       >
@@ -1428,300 +2204,68 @@ export default function ProcessingDocumentsPage() {
                     )
                   )}
                 </tr>
-                {/* Inline filter row */}
-                <tr className="bg-background-secondary">
-                  <th className="px-4 py-2"></th>
-                  {visibleColumnIds.map((columnId) => (
-                    <th key={columnId} className="px-2 py-2">
-                      {columnId === 'open' ? null : columnId === 'document' ? (
-                        <input
-                          type="text"
-                          value={params.fileName || ''}
-                          onChange={(e) => handleFiltersChange({ fileName: e.target.value || undefined })}
-                          placeholder="Filter..."
-                          className="w-full h-9 text-sm px-3 rounded-lg border border-border-primary bg-white dark:bg-background-secondary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary outline-none transition-colors placeholder:text-text-muted"
-                        />
-                      ) : columnId === 'company' ? (
-                        <SearchableSelect
-                          options={[
-                            { value: '', label: 'All' },
-                            ...companiesData?.companies.map(c => ({ value: c.id, label: c.name })) || []
-                          ]}
-                          value={params.companyId || ''}
-                          onChange={(value) => handleFiltersChange({ companyId: value || undefined })}
-                          placeholder="All"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'pipeline' ? (
-                        <SearchableSelect
-                          options={[
-                            { value: '', label: 'All' },
-                            ...Object.entries(pipelineStatusConfig).map(([value, config]) => ({
-                              value,
-                              label: config.label
-                            }))
-                          ]}
-                          value={params.pipelineStatus || ''}
-                          onChange={(value) => handleFiltersChange({ pipelineStatus: value as PipelineStatus || undefined })}
-                          placeholder="All"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'status' ? (
-                        <SearchableSelect
-                          options={[
-                            { value: '', label: 'All' },
-                            ...Object.entries(revisionStatusConfig).map(([value, config]) => ({
-                              value,
-                              label: config.label
-                            }))
-                          ]}
-                          value={params.revisionStatus || ''}
-                          onChange={(value) => handleFiltersChange({ revisionStatus: value as RevisionStatus || undefined })}
-                          placeholder="All"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'duplicate' ? (
-                        <SearchableSelect
-                          options={[
-                            { value: '', label: 'All' },
-                            ...Object.entries(duplicateStatusConfig).map(([value, config]) => ({
-                              value,
-                              label: config.label
-                            }))
-                          ]}
-                          value={params.duplicateStatus || ''}
-                          onChange={(value) => handleFiltersChange({ duplicateStatus: value as DuplicateStatus || undefined })}
-                          placeholder="All"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'vendor' ? (
-                        <input
-                          type="text"
-                          value={params.vendorName || ''}
-                          onChange={(e) => handleFiltersChange({ vendorName: e.target.value || undefined })}
-                          placeholder="Filter..."
-                          className="w-full h-9 text-sm px-3 rounded-lg border border-border-primary bg-white dark:bg-background-secondary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary outline-none transition-colors placeholder:text-text-muted"
-                        />
-                      ) : columnId === 'docNumber' ? (
-                        <input
-                          type="text"
-                          value={params.documentNumber || ''}
-                          onChange={(e) => handleFiltersChange({ documentNumber: e.target.value || undefined })}
-                          placeholder="Filter..."
-                          className="w-full h-9 text-sm px-3 rounded-lg border border-border-primary bg-white dark:bg-background-secondary hover:border-oak-primary/50 focus:ring-2 focus:ring-oak-primary/30 focus:border-oak-primary outline-none transition-colors placeholder:text-text-muted"
-                        />
-                      ) : columnId === 'docDate' ? (
-                        <DatePicker
-                          value={
-                            params.documentDateFrom || params.documentDateTo
-                              ? {
-                                  mode: 'range' as const,
-                                  range: {
-                                    from: params.documentDateFrom ? new Date(params.documentDateFrom) : undefined,
-                                    to: params.documentDateTo ? new Date(params.documentDateTo) : undefined,
-                                  }
-                                }
-                              : undefined
-                          }
-                          onChange={(value) => {
-                            if (!value || value.mode !== 'range') {
-                              handleFiltersChange({ documentDateFrom: undefined, documentDateTo: undefined });
-                            } else if (value.range) {
-                              handleFiltersChange({
-                                documentDateFrom: value.range.from?.toISOString().split('T')[0],
-                                documentDateTo: value.range.to?.toISOString().split('T')[0],
-                              });
-                            }
-                          }}
-                          placeholder="All dates"
-                          size="sm"
-                          defaultTab="range"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'uploaded' ? (
-                        <DatePicker
-                          value={
-                            params.uploadDateFrom || params.uploadDateTo
-                              ? {
-                                  mode: 'range' as const,
-                                  range: {
-                                    from: params.uploadDateFrom ? new Date(params.uploadDateFrom) : undefined,
-                                    to: params.uploadDateTo ? new Date(params.uploadDateTo) : undefined,
-                                  }
-                                }
-                              : undefined
-                          }
-                          onChange={(value) => {
-                            if (!value || value.mode !== 'range') {
-                              handleFiltersChange({ uploadDateFrom: undefined, uploadDateTo: undefined });
-                            } else if (value.range) {
-                              handleFiltersChange({
-                                uploadDateFrom: value.range.from?.toISOString().split('T')[0],
-                                uploadDateTo: value.range.to?.toISOString().split('T')[0],
-                              });
-                            }
-                          }}
-                          placeholder="All dates"
-                          size="sm"
-                          defaultTab="range"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'category' ? (
-                        <SearchableSelect
-                          options={[
-                            { value: '', label: 'All' },
-                            ...Object.entries(CATEGORY_LABELS).map(([value, label]) => ({
-                              value,
-                              label
-                            }))
-                          ]}
-                          value={params.documentCategory || ''}
-                          onChange={(value) => handleFiltersChange({ documentCategory: value as DocumentCategory || undefined })}
-                          placeholder="All"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'subCategory' ? (
-                        <SearchableSelect
-                          options={[
-                            { value: '', label: 'All' },
-                            ...Object.entries(SUBCATEGORY_LABELS).map(([value, label]) => ({
-                              value,
-                              label
-                            }))
-                          ]}
-                          value={params.documentSubCategory || ''}
-                          onChange={(value) => handleFiltersChange({ documentSubCategory: value as DocumentSubCategory || undefined })}
-                          placeholder="All"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'subtotal' ? (
-                        <AmountFilter
-                          value={params.subtotal !== undefined ? { mode: 'single', single: params.subtotal } :
-                                params.subtotalFrom !== undefined || params.subtotalTo !== undefined ?
-                                { mode: 'range', range: { from: params.subtotalFrom, to: params.subtotalTo } } : undefined}
-                          onChange={(value) => handleFiltersChange({ subtotalFilter: value })}
-                          placeholder="All amounts"
-                          size="sm"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'tax' ? (
-                        <AmountFilter
-                          value={params.tax !== undefined ? { mode: 'single', single: params.tax } :
-                                params.taxFrom !== undefined || params.taxTo !== undefined ?
-                                { mode: 'range', range: { from: params.taxFrom, to: params.taxTo } } : undefined}
-                          onChange={(value) => handleFiltersChange({ taxFilter: value })}
-                          placeholder="All amounts"
-                          size="sm"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'total' ? (
-                        <AmountFilter
-                          value={params.total !== undefined ? { mode: 'single', single: params.total } :
-                                params.totalFrom !== undefined || params.totalTo !== undefined ?
-                                { mode: 'range', range: { from: params.totalFrom, to: params.totalTo } } : undefined}
-                          onChange={(value) => handleFiltersChange({ totalFilter: value })}
-                          placeholder="All amounts"
-                          size="sm"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'homeSubtotal' ? (
-                        <AmountFilter
-                          value={params.homeSubtotal !== undefined ? { mode: 'single', single: params.homeSubtotal } :
-                                params.homeSubtotalFrom !== undefined || params.homeSubtotalTo !== undefined ?
-                                { mode: 'range', range: { from: params.homeSubtotalFrom, to: params.homeSubtotalTo } } : undefined}
-                          onChange={(value) => handleFiltersChange({ homeSubtotalFilter: value })}
-                          placeholder="All amounts"
-                          size="sm"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'homeTax' ? (
-                        <AmountFilter
-                          value={params.homeTax !== undefined ? { mode: 'single', single: params.homeTax } :
-                                params.homeTaxFrom !== undefined || params.homeTaxTo !== undefined ?
-                                { mode: 'range', range: { from: params.homeTaxFrom, to: params.homeTaxTo } } : undefined}
-                          onChange={(value) => handleFiltersChange({ homeTaxFilter: value })}
-                          placeholder="All amounts"
-                          size="sm"
-                          className="text-xs"
-                        />
-                      ) : columnId === 'homeTotal' ? (
-                        <AmountFilter
-                          value={params.homeTotal !== undefined ? { mode: 'single', single: params.homeTotal } :
-                                params.homeTotalFrom !== undefined || params.homeTotalTo !== undefined ?
-                                { mode: 'range', range: { from: params.homeTotalFrom, to: params.homeTotalTo } } : undefined}
-                          onChange={(value) => handleFiltersChange({ homeTotalFilter: value })}
-                          placeholder="All amounts"
-                          size="sm"
-                          className="text-xs"
-                        />
-                      ) : null}
-                    </th>
-                  ))}
-                </tr>
               </thead>
               <tbody>
-                {data.documents.map((doc) => {
-                  const isSelected = selectedIds.includes(doc.id);
-                  return (
-                    <tr
-                      key={doc.id}
-                      onClick={(e) => handleRowNavigate(e, doc.id)}
-                      className={cn(
-                        'border-b border-border-primary transition-colors cursor-pointer',
-                        isSelected
-                          ? 'bg-oak-primary/5 hover:bg-oak-primary/10'
-                          : 'hover:bg-background-tertiary/50'
-                      )}
-                    >
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSelect(doc.id);
-                          }}
-                          className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                        >
-                          {isSelected ? (
-                            <CheckSquare className="w-4 h-4 text-oak-primary" />
-                          ) : (
-                            <Square className="w-4 h-4 text-text-muted" />
-                          )}
-                        </button>
-                      </td>
-                      {visibleColumnIds.map((columnId) => renderDesktopCell(doc, columnId))}
-                    </tr>
-                  );
-                })}
+                {data.documents.length === 0 ? (
+                  <tr>
+                    <td colSpan={visibleColumnIds.length + 1} className="px-4 py-12 text-center">
+                      <p className="text-sm text-text-secondary">No documents found</p>
+                    </td>
+                  </tr>
+                ) : (
+                  data.documents.map((doc, index) => {
+                    const isSelected = selectedIds.includes(doc.id);
+                    const isAlternate = index % 2 === 1;
+                    return (
+                      <tr
+                        key={doc.id}
+                        onClick={(e) => handleRowNavigate(e, doc.id)}
+                        className={cn(
+                          'border-b border-border-primary transition-colors cursor-pointer',
+                          isSelected
+                            ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
+                            : isAlternate
+                              ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
+                              : 'hover:bg-background-tertiary/50'
+                        )}
+                      >
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSelect(doc.id);
+                            }}
+                            className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                          >
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-oak-primary" />
+                            ) : (
+                              <Square className="w-4 h-4 text-text-muted" />
+                            )}
+                          </button>
+                        </td>
+                        {visibleColumnIds.map((columnId) => renderDesktopCell(doc, columnId))}
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          {data.totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border-primary">
-              <p className="text-sm text-text-secondary">
-                Showing {(data.page - 1) * data.limit + 1} to{' '}
-                {Math.min(data.page * data.limit, data.total)} of {data.total} documents
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(data.page - 1)}
-                  disabled={data.page === 1}
-                  className="btn-ghost btn-xs"
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-text-secondary">
-                  Page {data.page} of {data.totalPages}
-                </span>
-                <button
-                  onClick={() => handlePageChange(data.page + 1)}
-                  disabled={data.page === data.totalPages}
-                  className="btn-ghost btn-xs"
-                >
-                  Next
-                </button>
-              </div>
+          {data.totalPages > 0 && (
+            <div className="border-t border-border-primary">
+              <Pagination
+                page={data.page}
+                totalPages={data.totalPages}
+                total={data.total}
+                limit={data.limit}
+                onPageChange={handlePageChange}
+                onLimitChange={(newLimit) => {
+                  handleFiltersChange({ limit: newLimit, page: 1 });
+                }}
+              />
             </div>
           )}
         </div>
@@ -1730,6 +2274,7 @@ export default function ProcessingDocumentsPage() {
       {/* Bulk Actions Toolbar */}
       <BulkActionsToolbar
         selectedIds={selectedIds}
+        selectedDocuments={selectedDocuments}
         onClearSelection={clearSelection}
       />
 

@@ -120,6 +120,10 @@ export async function GET(request: NextRequest) {
     const documentSubCategory = searchParams.get('documentSubCategory') || undefined;
     const tagIds = searchParams.get('tagIds')?.split(',').filter(Boolean) || undefined;
 
+    // Currency filters
+    const currency = searchParams.get('currency') || undefined;
+    const homeCurrency = searchParams.get('homeCurrency') || undefined;
+
     // Amount filters - single value mode
     const subtotal = searchParams.get('subtotal');
     const tax = searchParams.get('tax');
@@ -193,7 +197,8 @@ export async function GET(request: NextRequest) {
       : null;
     const timeZone = getTenantTimezone(tenantForTimezone?.settings);
 
-    const parseFrom = (value: string | null): Date | undefined => {
+    // For TIMESTAMP fields (createdAt/uploadDate): convert using tenant timezone
+    const parseTimestampFrom = (value: string | null): Date | undefined => {
       if (!value) return undefined;
       if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
         return dateOnlyToUtcStartEnd(value, timeZone).start;
@@ -202,10 +207,22 @@ export async function GET(request: NextRequest) {
       return isNaN(dt.getTime()) ? undefined : dt;
     };
 
-    const parseTo = (value: string | null): Date | undefined => {
+    const parseTimestampTo = (value: string | null): Date | undefined => {
       if (!value) return undefined;
       if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
         return dateOnlyToUtcStartEnd(value, timeZone).end;
+      }
+      const dt = new Date(value);
+      return isNaN(dt.getTime()) ? undefined : dt;
+    };
+
+    // For DATE fields (documentDate): use midnight UTC, no timezone conversion needed
+    // PostgreSQL DATE columns have no time component, so comparing at midnight UTC is correct
+    const parseDateOnly = (value: string | null): Date | undefined => {
+      if (!value) return undefined;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        const [y, m, d] = value.split('-').map((v) => parseInt(v, 10));
+        return new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
       }
       const dt = new Date(value);
       return isNaN(dt.getTime()) ? undefined : dt;
@@ -220,12 +237,13 @@ export async function GET(request: NextRequest) {
       effectiveUploadDateFrom = range.start;
       effectiveUploadDateTo = range.end;
     } else {
-      effectiveUploadDateFrom = parseFrom(uploadDateFrom);
-      effectiveUploadDateTo = parseTo(uploadDateTo);
+      effectiveUploadDateFrom = parseTimestampFrom(uploadDateFrom);
+      effectiveUploadDateTo = parseTimestampTo(uploadDateTo);
     }
 
-    const effectiveDocumentDateFrom = parseFrom(documentDateFrom);
-    const effectiveDocumentDateTo = parseTo(documentDateTo);
+    // Document date uses DATE column - no timezone conversion needed
+    const effectiveDocumentDateFrom = parseDateOnly(documentDateFrom);
+    const effectiveDocumentDateTo = parseDateOnly(documentDateTo);
 
     // Parse amount filters (convert strings to numbers)
     const parseAmount = (value: string | null): number | undefined => {
@@ -260,6 +278,9 @@ export async function GET(request: NextRequest) {
       documentCategory: documentCategory ?? undefined,
       documentSubCategory: documentSubCategory ?? undefined,
       tagIds,
+      // Currency filters
+      currency,
+      homeCurrency,
       // Amount filters - single value mode
       subtotal: parseAmount(subtotal),
       tax: parseAmount(tax),
@@ -324,6 +345,14 @@ export async function GET(request: NextRequest) {
             homeEquivalent: doc.currentRevision.homeEquivalent?.toString() ?? null,
           }
         : undefined,
+      // Transform tags for display
+      tags: doc.documentTags?.map((t: { id: string; tagId: string; tag: { name: string; color: string; tenantId: string | null; companyId: string | null } }) => ({
+        id: t.id,
+        tagId: t.tagId,
+        name: t.tag.name,
+        color: t.tag.color,
+        scope: t.tag.tenantId && !t.tag.companyId ? 'tenant' : 'company',
+      })) ?? [],
     }));
 
     return NextResponse.json({

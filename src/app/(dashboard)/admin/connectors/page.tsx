@@ -60,6 +60,16 @@ import {
 import { cn } from '@/lib/utils';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 
+/**
+ * Convert a Date to a local YYYY-MM-DD string (uses browser timezone, not UTC)
+ */
+function toLocalDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -241,13 +251,13 @@ export default function ConnectorsPage() {
 
     if (usageDateFilter.mode === 'range' && usageDateFilter.range) {
       return {
-        startDate: usageDateFilter.range.from?.toISOString().split('T')[0] || '',
-        endDate: usageDateFilter.range.to?.toISOString().split('T')[0] || '',
+        startDate: usageDateFilter.range.from ? toLocalDateString(usageDateFilter.range.from) : '',
+        endDate: usageDateFilter.range.to ? toLocalDateString(usageDateFilter.range.to) : '',
       };
     }
 
     if (usageDateFilter.mode === 'single' && usageDateFilter.date) {
-      const dateStr = usageDateFilter.date.toISOString().split('T')[0];
+      const dateStr = toLocalDateString(usageDateFilter.date);
       return { startDate: dateStr, endDate: dateStr };
     }
 

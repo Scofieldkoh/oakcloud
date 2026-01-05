@@ -19,6 +19,15 @@ import type {
 } from '@/generated/prisma';
 
 // Types
+// Tag item for list display
+export interface ProcessingDocumentTagItem {
+  id: string;
+  tagId: string;
+  name: string;
+  color: string;
+  scope: 'tenant' | 'company';
+}
+
 export interface ProcessingDocumentListItem {
   id: string;
   documentId: string;
@@ -61,6 +70,7 @@ export interface ProcessingDocumentListItem {
     homeTaxAmount: string | null;
     homeEquivalent: string | null;
   };
+  tags: ProcessingDocumentTagItem[];
 }
 
 export interface ProcessingDocumentDetail {
@@ -136,6 +146,9 @@ export interface ProcessingDocumentSearchParams {
   documentSubCategory?: DocumentSubCategory;
   // Tag filter
   tagIds?: string[]; // Filter by document tags
+  // Currency filters
+  currency?: string; // Filter by document currency (e.g., SGD, USD)
+  homeCurrency?: string; // Filter by home currency
   // Amount filters - single value mode
   subtotal?: number;
   tax?: number;
@@ -357,18 +370,45 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
       params.limit,
       params.sortBy,
       params.sortOrder,
-      // New filter parameters
+      // Date filter parameters
       params.uploadDatePreset,
       params.uploadDateFrom,
       params.uploadDateTo,
       params.documentDateFrom,
       params.documentDateTo,
+      // Text search filters
       params.search,
       params.vendorName,
       params.documentNumber,
       params.fileName,
+      // Category filters
+      params.documentCategory,
+      params.documentSubCategory,
       // Tag filter
       params.tagIds,
+      // Currency filters
+      params.currency,
+      params.homeCurrency,
+      // Amount filters - single value
+      params.subtotal,
+      params.tax,
+      params.total,
+      params.homeSubtotal,
+      params.homeTax,
+      params.homeTotal,
+      // Amount filters - range
+      params.subtotalFrom,
+      params.subtotalTo,
+      params.taxFrom,
+      params.taxTo,
+      params.totalFrom,
+      params.totalTo,
+      params.homeSubtotalFrom,
+      params.homeSubtotalTo,
+      params.homeTaxFrom,
+      params.homeTaxTo,
+      params.homeTotalFrom,
+      params.homeTotalTo,
     ],
     queryFn: () => fetchProcessingDocuments(params),
     staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s

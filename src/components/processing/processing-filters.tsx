@@ -8,6 +8,7 @@ import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-
 import { FilterChip } from '@/components/ui/filter-chip';
 import { TagChip, TagManager } from '@/components/processing/document-tags';
 import { TAG_COLORS } from '@/lib/validations/document-tag';
+import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, TagColor, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import type { AmountFilterValue } from '@/components/ui/amount-filter';
 
@@ -37,6 +38,9 @@ export interface ProcessingFilterValues {
   documentCategory?: DocumentCategory;
   documentSubCategory?: DocumentSubCategory;
   tagIds?: string[];
+  // Currency filters
+  currency?: string;
+  homeCurrency?: string;
   // Amount filters
   subtotalFilter?: AmountFilterValue;
   taxFilter?: AmountFilterValue;
@@ -44,6 +48,9 @@ export interface ProcessingFilterValues {
   homeSubtotalFilter?: AmountFilterValue;
   homeTaxFilter?: AmountFilterValue;
   homeTotalFilter?: AmountFilterValue;
+  // Pagination
+  page?: number;
+  limit?: number;
 }
 
 interface ProcessingFiltersProps {
@@ -167,6 +174,8 @@ export function ProcessingFilters({
     if (filters.vendorName) count++;
     if (filters.documentNumber) count++;
     if (filters.fileName) count++;
+    if (filters.currency) count++;
+    if (filters.homeCurrency) count++;
     if (filters.tagIds && filters.tagIds.length > 0) count += filters.tagIds.length;
     return count;
   }, [filters, searchQuery]);
@@ -530,6 +539,41 @@ export function ProcessingFilters({
                 className="input input-sm"
               />
             </div>
+
+            {/* Currency Filters */}
+            <div>
+              <label className="label">Currency</label>
+              <SearchableSelect
+                options={[
+                  { value: '', label: 'All' },
+                  ...SUPPORTED_CURRENCIES.map((code) => ({
+                    value: code,
+                    label: code
+                  }))
+                ]}
+                value={filters.currency || ''}
+                onChange={(v) => handleFilterChange('currency', v)}
+                placeholder="All Currencies"
+                size="sm"
+              />
+            </div>
+
+            <div>
+              <label className="label">Home Currency</label>
+              <SearchableSelect
+                options={[
+                  { value: '', label: 'All' },
+                  ...SUPPORTED_CURRENCIES.map((code) => ({
+                    value: code,
+                    label: code
+                  }))
+                ]}
+                value={filters.homeCurrency || ''}
+                onChange={(v) => handleFilterChange('homeCurrency', v)}
+                placeholder="All Currencies"
+                size="sm"
+              />
+            </div>
           </div>
 
           {/* Tags Filter Section */}
@@ -684,6 +728,20 @@ export function ProcessingFilters({
               label="File"
               value={filters.fileName}
               onRemove={() => clearFilter('fileName')}
+            />
+          )}
+          {filters.currency && (
+            <FilterChip
+              label="Currency"
+              value={filters.currency}
+              onRemove={() => clearFilter('currency')}
+            />
+          )}
+          {filters.homeCurrency && (
+            <FilterChip
+              label="Home Ccy"
+              value={filters.homeCurrency}
+              onRemove={() => clearFilter('homeCurrency')}
             />
           )}
           {filters.tagIds && filters.tagIds.map((tagId) => {

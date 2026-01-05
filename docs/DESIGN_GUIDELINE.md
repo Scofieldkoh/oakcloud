@@ -93,6 +93,12 @@ The application supports both light and dark modes with CSS variables. Light mod
 --text-secondary: #5c6370; /* Secondary text */
 --text-tertiary: #7d838f;  /* Placeholder, disabled */
 --text-muted: #a0a5b0;     /* Muted, decorative */
+
+/* Table Row Colors */
+--oak-row-alt: #f7fbfa;           /* Alternate row background */
+--oak-row-alt-hover: #f0f7f5;     /* Alternate row hover */
+--oak-row-selected: #d4e8e2;      /* Selected row background (visible green) */
+--oak-row-selected-hover: #c5ded6; /* Selected row hover */
 ```
 
 ### Dark Mode
@@ -120,6 +126,12 @@ The application supports both light and dark modes with CSS variables. Light mod
 --text-secondary: #a1a1a1; /* Secondary text */
 --text-tertiary: #6b6b6b;  /* Placeholder, disabled */
 --text-muted: #525252;     /* Muted, decorative */
+
+/* Table Row Colors */
+--oak-row-alt: #161a19;           /* Alternate row background */
+--oak-row-alt-hover: #1a2420;     /* Alternate row hover */
+--oak-row-selected: #1f3830;      /* Selected row background (visible green) */
+--oak-row-selected-hover: #264239; /* Selected row hover */
 ```
 
 ### Status Colors (Both Modes)
@@ -419,7 +431,7 @@ const isIndeterminate = selectedIds.size > 0 && selectedIds.size < items.length;
   </thead>
   <tbody>
     {items.map((item) => (
-      <tr key={item.id} className={selectedIds.has(item.id) ? 'bg-oak-primary/5' : ''}>
+      <tr key={item.id} className={selectedIds.has(item.id) ? 'bg-oak-row-selected' : ''}>
         <td>
           <Checkbox
             size="sm"
@@ -438,7 +450,7 @@ const isIndeterminate = selectedIds.size > 0 && selectedIds.size < items.length;
 **Key points:**
 - Use `size="sm"` for table checkboxes
 - Support `indeterminate` state for partial selection
-- Highlight selected rows with `bg-oak-primary/5`
+- Highlight selected rows with `bg-oak-row-selected` (deeper green than alternate rows)
 - Show bulk action buttons conditionally when items are selected
 
 ### Floating Bulk Actions Toolbar
