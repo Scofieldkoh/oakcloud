@@ -137,12 +137,23 @@ function ColorPicker({ selectedColor, onColorSelect }: ColorPickerProps) {
 // DocumentTags Component
 // ============================================================================
 
+// Type for initial tags from consolidated API
+interface InitialTag {
+  id: string;
+  tagId: string;
+  name: string;
+  color: string;
+  scope: 'tenant' | 'company';
+}
+
 interface DocumentTagsProps {
   documentId: string;
   companyId: string | null;
   tenantId?: string | null;
   readOnly?: boolean;
   className?: string;
+  /** Initial tags from consolidated API - skips initial fetch if provided */
+  initialTags?: InitialTag[];
 }
 
 export function DocumentTags({
@@ -151,6 +162,7 @@ export function DocumentTags({
   tenantId,
   readOnly = false,
   className,
+  initialTags,
 }: DocumentTagsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
@@ -173,13 +185,25 @@ export function DocumentTags({
   const isAdmin = session?.isSuperAdmin || session?.isTenantAdmin;
 
   // Queries
-  const { data: documentTags = [], isLoading: isLoadingDocTags } = useDocumentTags(documentId);
-  const { data: recentTags = [] } = useAvailableRecentTags(companyId, tenantId);
-  const { data: tenantTags = [] } = useTenantTags(tenantId);
+  // Skip fetching document tags if initialTags are provided (from consolidated API)
+  const { data: fetchedDocTags = [], isLoading: isLoadingDocTags } = useDocumentTags(
+    initialTags ? null : documentId // Skip fetch if initial tags provided
+  );
+  // Use initial tags if provided, otherwise use fetched tags
+  const documentTags = initialTags || fetchedDocTags;
+
+  // Lazy load tag selector data - only fetch when dropdown is open
+  const { data: recentTags = [] } = useAvailableRecentTags(
+    isOpen ? companyId : null, // Only fetch when dropdown is open
+    isOpen ? tenantId : null
+  );
+  const { data: tenantTags = [] } = useTenantTags(
+    isOpen ? tenantId : null // Only fetch when dropdown is open
+  );
   const { data: searchResults = [], isLoading: isSearching } = useSearchAvailableTags(
-    companyId,
+    isOpen ? companyId : null, // Only search when dropdown is open
     debouncedQuery,
-    tenantId
+    isOpen ? tenantId : null
   );
 
   // Mutations
@@ -431,7 +455,7 @@ export function DocumentTags({
     <div ref={containerRef} className={cn('relative', className)}>
       {/* Current Tags Display */}
       <div className="flex flex-wrap items-center gap-1.5">
-        {isLoadingDocTags ? (
+        {!initialTags && isLoadingDocTags ? (
           <span className="text-xs text-text-muted">Loading...</span>
         ) : documentTags.length === 0 && readOnly ? (
           <span className="text-xs text-text-muted">No tags</span>
@@ -440,7 +464,7 @@ export function DocumentTags({
             <TagChip
               key={tag.id}
               name={tag.name}
-              color={tag.color}
+              color={tag.color as TagColor}
               size="sm"
               scope={tag.scope}
               onRemove={readOnly ? undefined : () => handleRemoveTag(tag.tagId)}

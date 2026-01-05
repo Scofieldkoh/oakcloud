@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
 import { PDFDocument } from 'pdf-lib';
@@ -51,21 +51,60 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Filter by tenant access
-        const accessibleDocs = sourceDocs.filter(
-            (doc) => doc.document.tenantId === session.tenantId
-        );
+        // Determine which document IDs were not found
+        const foundIds = new Set(sourceDocs.map((d) => d.id));
+        const notFoundIds = documentIds.filter((id) => !foundIds.has(id));
+
+        // Check access to each document using canAccessCompany (handles SUPER_ADMIN properly)
+        const accessibleDocs: typeof sourceDocs = [];
+        const accessDeniedIds: string[] = [];
+
+        for (const doc of sourceDocs) {
+            const companyId = doc.document.companyId;
+            // canAccessCompany handles SUPER_ADMIN, tenant admin, and company-level access
+            if (companyId && (await canAccessCompany(session, companyId))) {
+                accessibleDocs.push(doc);
+            } else if (!companyId) {
+                // Documents without a company - check tenant access (SUPER_ADMIN can access all)
+                if (session.isSuperAdmin || doc.document.tenantId === session.tenantId) {
+                    accessibleDocs.push(doc);
+                } else {
+                    accessDeniedIds.push(doc.id);
+                }
+            } else {
+                accessDeniedIds.push(doc.id);
+            }
+        }
 
         if (accessibleDocs.length !== documentIds.length) {
+            const issues: string[] = [];
+            if (notFoundIds.length > 0) {
+                issues.push(`${notFoundIds.length} document(s) not found or deleted`);
+                log.warn('Merge failed - documents not found', { notFoundIds });
+            }
+            if (accessDeniedIds.length > 0) {
+                issues.push(`${accessDeniedIds.length} document(s) access denied`);
+                log.warn('Merge failed - access denied', { accessDeniedIds });
+            }
             return NextResponse.json(
-                { error: { message: 'One or more documents not found or access denied' } },
+                { error: { message: issues.join('; ') || 'One or more documents not found or access denied' } },
                 { status: 404 }
             );
         }
 
-        // Verify all documents belong to the same company
-        const companyIds = new Set(accessibleDocs.map((d) => d.document.companyId).filter(Boolean));
-        if (companyIds.size > 1) {
+        // Verify all documents belong to the same tenant and company
+        const tenantIds = new Set(accessibleDocs.map((d) => d.document.tenantId));
+        if (tenantIds.size > 1) {
+            return NextResponse.json(
+                { error: { message: 'All documents must belong to the same tenant' } },
+                { status: 400 }
+            );
+        }
+
+        const companyIds = new Set(accessibleDocs.map((d) => d.document.companyId));
+        // Allow mixing null companyId with one specific companyId, but not multiple different companies
+        const nonNullCompanyIds = [...companyIds].filter(Boolean);
+        if (nonNullCompanyIds.length > 1) {
             return NextResponse.json(
                 { error: { message: 'All documents must belong to the same company' } },
                 { status: 400 }
@@ -73,7 +112,12 @@ export async function POST(request: NextRequest) {
         }
 
         const tenantId = accessibleDocs[0].document.tenantId;
-        const companyId = accessibleDocs[0].document.companyId;
+        // Use the first non-null companyId, or null if all are null
+        const companyId = nonNullCompanyIds[0] || null;
+
+        // Sort accessibleDocs to match the order of documentIds (preserve user's intended order)
+        const docIdOrder = new Map(documentIds.map((id, index) => [id, index]));
+        accessibleDocs.sort((a, b) => (docIdOrder.get(a.id) ?? 0) - (docIdOrder.get(b.id) ?? 0));
 
         // Create merged PDF
         const mergedPdf = await PDFDocument.create();

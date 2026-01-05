@@ -1,0 +1,298 @@
+/**
+ * Processing Document View API
+ *
+ * GET /api/processing-documents/:documentId/view - Get consolidated document view data
+ *
+ * This endpoint returns all data needed for the initial document view in a single request:
+ * - Document metadata
+ * - Current revision with line items
+ * - Page metadata (for PDF viewer)
+ * - Document tags
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
+import { requireAuth, canAccessCompany } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
+import { prisma } from '@/lib/prisma';
+
+type Params = { documentId: string };
+
+/**
+ * GET /api/processing-documents/:documentId/view
+ * Get consolidated document view data for initial page load
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<Params> }
+) {
+  try {
+    const session = await requireAuth();
+    const { documentId } = await params;
+
+    // Single query to get document with all related data
+    const processingDoc = await prisma.processingDocument.findUnique({
+      where: { id: documentId },
+      include: {
+        document: {
+          select: {
+            companyId: true,
+            tenantId: true,
+            fileName: true,
+            originalFileName: true,
+            mimeType: true,
+            fileSize: true,
+            storageKey: true,
+            company: {
+              select: {
+                id: true,
+                name: true,
+                homeCurrency: true,
+              },
+            },
+          },
+        },
+        pages: {
+          orderBy: { pageNumber: 'asc' },
+          select: {
+            id: true,
+            pageNumber: true,
+            widthPx: true,
+            heightPx: true,
+            rotationDeg: true,
+            renderDpi: true,
+          },
+        },
+        documentTags: {
+          include: {
+            tag: {
+              select: {
+                id: true,
+                name: true,
+                color: true,
+                companyId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!processingDoc) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Document not found' },
+        },
+        { status: 404 }
+      );
+    }
+
+    const document = processingDoc.document;
+
+    if (!document || !document.companyId || !document.tenantId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Base document not found' },
+        },
+        { status: 404 }
+      );
+    }
+
+    // Check permission
+    await requirePermission(session, 'document', 'read', document.companyId);
+
+    if (!(await canAccessCompany(session, document.companyId))) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
+        },
+        { status: 403 }
+      );
+    }
+
+    // Get current revision with line items
+    // First check currentRevisionId, then fall back to latest revision
+    let currentRevision = null;
+    const revisionId = processingDoc.currentRevisionId;
+
+    if (revisionId) {
+      currentRevision = await prisma.documentRevision.findUnique({
+        where: { id: revisionId },
+        include: {
+          items: {
+            orderBy: { lineNo: 'asc' },
+          },
+        },
+      });
+    }
+
+    // If no approved revision, get the latest draft revision
+    if (!currentRevision) {
+      currentRevision = await prisma.documentRevision.findFirst({
+        where: { processingDocumentId: documentId },
+        orderBy: { revisionNumber: 'desc' },
+        include: {
+          items: {
+            orderBy: { lineNo: 'asc' },
+          },
+        },
+      });
+    }
+
+    // Detect if this is a PDF file
+    const isPdf =
+      document.mimeType === 'application/pdf' ||
+      document.originalFileName?.toLowerCase().endsWith('.pdf') ||
+      document.storageKey?.toLowerCase().endsWith('.pdf');
+
+    // Transform pages
+    const pages = processingDoc.pages.map((page) => ({
+      id: page.id,
+      pageNumber: page.pageNumber,
+      width: page.widthPx,
+      height: page.heightPx,
+      rotation: page.rotationDeg,
+      dpi: page.renderDpi,
+      imageUrl: `/api/processing-documents/${documentId}/pages/${page.pageNumber}/image`,
+    }));
+
+    // Transform tags
+    const tags = processingDoc.documentTags.map((docTag) => ({
+      id: docTag.id,
+      tagId: docTag.tag.id,
+      name: docTag.tag.name,
+      color: docTag.tag.color,
+      scope: docTag.tag.companyId ? 'company' : 'tenant' as const,
+    }));
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        document: {
+          id: processingDoc.id,
+          documentId: processingDoc.documentId,
+          isContainer: processingDoc.isContainer,
+          parentDocumentId: processingDoc.parentProcessingDocId,
+          pageFrom: processingDoc.pageFrom,
+          pageTo: processingDoc.pageTo,
+          pageCount: processingDoc.pageCount,
+          pipelineStatus: processingDoc.pipelineStatus,
+          duplicateStatus: processingDoc.duplicateStatus,
+          currentRevisionId: processingDoc.currentRevisionId,
+          lockVersion: processingDoc.lockVersion,
+          createdAt: processingDoc.createdAt.toISOString(),
+          pages: pages.length,
+          // Versioning
+          version: processingDoc.version,
+          rootDocumentId: processingDoc.rootDocumentId,
+          // File details (prefer renamed fileName after approval, fallback to original)
+          fileName: document.fileName || document.originalFileName,
+          mimeType: document.mimeType,
+          fileSize: document.fileSize,
+          // Tenant info
+          tenantId: document.tenantId,
+          // Company info
+          company: document.company,
+        },
+        currentRevision: currentRevision
+          ? {
+              id: currentRevision.id,
+              revisionNumber: currentRevision.revisionNumber,
+              status: currentRevision.status,
+              documentCategory: currentRevision.documentCategory,
+              documentSubCategory: currentRevision.documentSubCategory,
+              vendorName: currentRevision.vendorName,
+              documentNumber: currentRevision.documentNumber,
+              documentDate: currentRevision.documentDate?.toISOString().split('T')[0] || null,
+              dueDate: currentRevision.dueDate?.toISOString().split('T')[0] || null,
+              currency: currentRevision.currency,
+              subtotal: currentRevision.subtotal?.toString() || null,
+              taxAmount: currentRevision.taxAmount?.toString() || null,
+              totalAmount: currentRevision.totalAmount.toString(),
+              gstTreatment: currentRevision.gstTreatment,
+              supplierGstNo: currentRevision.supplierGstNo,
+              validationStatus: currentRevision.validationStatus,
+              validationIssues: currentRevision.validationIssues,
+              headerEvidenceJson: currentRevision.headerEvidenceJson,
+              // Home currency fields
+              homeCurrency: currentRevision.homeCurrency,
+              homeExchangeRate: currentRevision.homeExchangeRate?.toString() || null,
+              homeExchangeRateSource: currentRevision.homeExchangeRateSource,
+              exchangeRateDate: currentRevision.exchangeRateDate?.toISOString().split('T')[0] || null,
+              homeSubtotal: currentRevision.homeSubtotal?.toString() || null,
+              homeTaxAmount: currentRevision.homeTaxAmount?.toString() || null,
+              homeEquivalent: currentRevision.homeEquivalent?.toString() || null,
+              isHomeExchangeRateOverride: currentRevision.isHomeExchangeRateOverride ?? false,
+              lineItems: currentRevision.items.map((item) => ({
+                id: item.id,
+                lineNo: item.lineNo,
+                description: item.description,
+                quantity: item.quantity?.toString() || null,
+                unitPrice: item.unitPrice?.toString() || null,
+                amount: item.amount.toString(),
+                gstAmount: item.gstAmount?.toString() || null,
+                taxCode: item.taxCode,
+                accountCode: item.accountCode,
+                evidenceJson: item.evidenceJson,
+                // Home currency line item fields
+                homeAmount: item.homeAmount?.toString() || null,
+                homeGstAmount: item.homeGstAmount?.toString() || null,
+                isHomeAmountOverride: item.isHomeAmountOverride ?? false,
+                isHomeGstOverride: item.isHomeGstOverride ?? false,
+              })),
+            }
+          : null,
+        pages: {
+          documentId,
+          pageCount: pages.length,
+          pages,
+          isPdf: isPdf || false,
+          pdfUrl: isPdf ? `/api/processing-documents/${documentId}/pdf` : null,
+        },
+        tags,
+      },
+      meta: {
+        requestId: uuidv4(),
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+function handleError(error: unknown): NextResponse {
+  console.error('Processing document view API error:', error);
+
+  if (error instanceof Error) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'AUTHENTICATION_REQUIRED', message: 'Unauthorized' },
+        },
+        { status: 401 }
+      );
+    }
+    if (error.message === 'Forbidden') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
+        },
+        { status: 403 }
+      );
+    }
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
+    },
+    { status: 500 }
+  );
+}

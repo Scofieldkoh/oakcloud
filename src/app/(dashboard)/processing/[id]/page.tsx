@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  useProcessingDocument,
+  useProcessingDocumentView,
   useRevisionHistory,
   useTriggerExtraction,
   useApproveRevision,
@@ -277,8 +277,33 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // UI State for controlling data fetching
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
 
-  // Data fetching
-  const { data, isLoading, error, refetch } = useProcessingDocument(id);
+  // Data fetching - consolidated API for initial load
+  // This replaces multiple hooks: useProcessingDocument, useDocumentPages, useRevisionWithLineItems, useDocumentTags
+  const { data: viewData, isLoading, error, refetch } = useProcessingDocumentView(id);
+
+  // Extract data from consolidated response
+  const currentRevisionFromView = viewData?.currentRevision;
+  const pagesData = viewData?.pages;
+  const initialTags = viewData?.tags;
+
+  // Compatibility layer for existing code that expects data.document and data.currentRevision
+  const data = viewData ? {
+    document: viewData.document,
+    currentRevision: viewData.currentRevision ? {
+      id: viewData.currentRevision.id,
+      revisionNumber: viewData.currentRevision.revisionNumber,
+      status: viewData.currentRevision.status,
+      documentCategory: viewData.currentRevision.documentCategory,
+      vendorName: viewData.currentRevision.vendorName,
+      documentNumber: viewData.currentRevision.documentNumber,
+      documentDate: viewData.currentRevision.documentDate,
+      totalAmount: viewData.currentRevision.totalAmount,
+      currency: viewData.currentRevision.currency,
+      homeEquivalent: viewData.currentRevision.homeEquivalent,
+      validationStatus: viewData.currentRevision.validationStatus,
+      lineItemCount: viewData.currentRevision.lineItems.length,
+    } : null,
+  } : undefined;
 
   // Only fetch revision history when needed (when dropdown is shown or might be shown)
   // Always fetch if document has DRAFT status (user might need to see history)
@@ -322,7 +347,18 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const displayRevisionId = viewingSnapshotId || currentRevisionId;
   const isViewingSnapshot = viewingSnapshotId !== null;
 
-  const { data: revisionWithLineItems, isLoading: lineItemsLoading, refetch: refetchLineItems } = useRevisionWithLineItems(id, displayRevisionId, false);
+  // Only fetch revision separately when viewing a snapshot (historical revision)
+  // For current revision, use data from consolidated view
+  const { data: snapshotRevision, isLoading: snapshotLoading, refetch: refetchSnapshot } = useRevisionWithLineItems(
+    id,
+    isViewingSnapshot ? viewingSnapshotId : null, // Only fetch when viewing snapshot
+    false
+  );
+
+  // Use snapshot data when viewing snapshot, otherwise use consolidated view data
+  const revisionWithLineItems = isViewingSnapshot ? snapshotRevision : currentRevisionFromView;
+  const lineItemsLoading = isViewingSnapshot ? snapshotLoading : isLoading;
+  const refetchLineItems = isViewingSnapshot ? refetchSnapshot : refetch;
 
   // Duplicate comparison (only fetch when needed)
   const { data: duplicateData } = useDuplicateComparison(
@@ -1538,6 +1574,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               leftPanel={
                 <DocumentPageViewer
                   documentId={id}
+                  pdfUrl={pagesData?.pdfUrl || undefined}
                   highlights={highlights}
                   fieldValues={fieldValues}
                   className="h-full"
@@ -1569,6 +1606,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                           documentId={id}
                           companyId={doc.company?.id || null}
                           tenantId={activeTenantId}
+                          initialTags={initialTags}
                         />
                       </div>
 

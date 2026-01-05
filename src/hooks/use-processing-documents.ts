@@ -429,6 +429,60 @@ export function useProcessingDocument(id: string) {
   });
 }
 
+// ============================================================================
+// Consolidated View Hook - Single API call for initial page load
+// ============================================================================
+
+/**
+ * Consolidated document view data returned by the /view endpoint
+ * Combines document, revision, pages, and tags in a single request
+ */
+export interface ProcessingDocumentViewData {
+  document: ProcessingDocumentDetail & {
+    company: { id: string; name: string; homeCurrency: string } | null;
+  };
+  currentRevision: RevisionWithLineItems | null;
+  pages: DocumentPagesResult;
+  tags: ProcessingDocumentTagItem[];
+}
+
+/**
+ * Fetch consolidated document view data for initial page load
+ * This replaces multiple individual API calls with a single request
+ */
+async function fetchProcessingDocumentView(id: string): Promise<ProcessingDocumentViewData> {
+  const response = await fetch(`/api/processing-documents/${id}/view`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to fetch document view');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Hook for fetching consolidated document view data
+ *
+ * Replaces the need for multiple hooks on initial page load:
+ * - useProcessingDocument (document + revision summary)
+ * - useDocumentPages (page metadata)
+ * - useRevisionWithLineItems (full revision)
+ * - useDocumentTags (document tags)
+ *
+ * @param id - Processing document ID
+ * @returns Consolidated view data with document, revision, pages, and tags
+ */
+export function useProcessingDocumentView(id: string) {
+  return useQuery({
+    queryKey: ['processing-document-view', id],
+    queryFn: () => fetchProcessingDocumentView(id),
+    enabled: !!id,
+    staleTime: 30_000, // 30 seconds
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: 'always', // Always refetch when component mounts (page navigation)
+  });
+}
+
 export function useRevisionHistory(documentId: string, enabled: boolean = true) {
   return useQuery({
     queryKey: ['revision-history', documentId],
