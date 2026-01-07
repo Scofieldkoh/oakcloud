@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
       { header: 'Type', key: 'detailType', width: 12 },
       { header: 'Value', key: 'value', width: 35 },
       { header: 'Label', key: 'label', width: 20 },
+      { header: 'Purposes', key: 'purposes', width: 25 },
       { header: 'Primary', key: 'isPrimary', width: 10 },
     ];
 
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
         detailType: formatDetailType(detail.detailType),
         value: detail.value,
         label: detail.label || '-',
+        purposes: detail.purposes.length > 0 ? detail.purposes.join(', ') : '-',
         isPrimary: detail.isPrimary ? 'Yes' : 'No',
       });
     }
@@ -146,8 +148,6 @@ function formatDetailType(type: string): string {
   const typeMap: Record<string, string> = {
     EMAIL: 'Email',
     PHONE: 'Phone',
-    FAX: 'Fax',
-    MOBILE: 'Mobile',
     WEBSITE: 'Website',
     OTHER: 'Other',
   };

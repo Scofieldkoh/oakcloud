@@ -79,8 +79,6 @@ enum AddressType {
 enum ContactDetailType {
   EMAIL
   PHONE
-  FAX
-  MOBILE
   WEBSITE
   OTHER
 }
@@ -719,6 +717,10 @@ model ContactDetail {
 
   // Function/purpose label (e.g., "Account Receivable", "Main Office", "Personal")
   label          String?
+
+  // Purposes for automation (e.g., ["INVOICE", "STATEMENT"])
+  // Common purposes: INVOICE, STATEMENT, TAX_NOTICE, RECEIPT, REMINDER, GENERAL
+  purposes       String[]          @default([])
 
   // Additional notes
   description    String?

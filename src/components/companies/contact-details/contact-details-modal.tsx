@@ -44,11 +44,19 @@ interface ContactDetailsModalProps {
 const detailTypeConfig: Record<ContactDetailType, { icon: typeof Mail; label: string }> = {
   EMAIL: { icon: Mail, label: 'Email' },
   PHONE: { icon: Phone, label: 'Phone' },
-  MOBILE: { icon: Phone, label: 'Mobile' },
-  FAX: { icon: Phone, label: 'Fax' },
   WEBSITE: { icon: Globe, label: 'Website' },
   OTHER: { icon: Mail, label: 'Other' },
 };
+
+// Available purposes for automation
+const availablePurposes = [
+  { value: 'INVOICE', label: 'Invoice' },
+  { value: 'STATEMENT', label: 'Statement' },
+  { value: 'TAX_NOTICE', label: 'Tax Notice' },
+  { value: 'RECEIPT', label: 'Receipt' },
+  { value: 'REMINDER', label: 'Reminder' },
+  { value: 'GENERAL', label: 'General' },
+] as const;
 
 // Common label suggestions
 const labelSuggestions = [
@@ -96,11 +104,13 @@ export function ContactDetailsModal({
     detailType: ContactDetailType;
     value: string;
     label: string;
+    purposes: string[];
     isPrimary: boolean;
   }>({
     detailType: 'EMAIL',
     value: '',
     label: '',
+    purposes: [],
     isPrimary: false,
   });
 
@@ -109,11 +119,13 @@ export function ContactDetailsModal({
     detailType: ContactDetailType;
     value: string;
     label: string;
+    purposes: string[];
     isPrimary: boolean;
   }>({
     detailType: 'EMAIL',
     value: '',
     label: '',
+    purposes: [],
     isPrimary: false,
   });
 
@@ -126,7 +138,7 @@ export function ContactDetailsModal({
     email: string;
     phone: string;
     relationship: string;
-    details: Array<{ detailType: ContactDetailType; value: string; label: string }>;
+    details: Array<{ detailType: ContactDetailType; value: string; label: string; purposes: string[] }>;
   }>({
     contactType: 'INDIVIDUAL',
     firstName: '',
@@ -159,6 +171,7 @@ export function ContactDetailsModal({
         detailType: newDetailForm.detailType,
         value: newDetailForm.value.trim(),
         label: newDetailForm.label.trim() || undefined,
+        purposes: newDetailForm.purposes,
         isPrimary: newDetailForm.isPrimary,
       };
 
@@ -169,7 +182,7 @@ export function ContactDetailsModal({
       await createDetailMutation.mutateAsync(input);
       success('Contact detail added');
       setShowAddDetailForm(false);
-      setNewDetailForm({ detailType: 'EMAIL', value: '', label: '', isPrimary: false });
+      setNewDetailForm({ detailType: 'EMAIL', value: '', label: '', purposes: [], isPrimary: false });
     } catch {
       // Error handled by mutation
     }
@@ -185,6 +198,7 @@ export function ContactDetailsModal({
           detailType: editForm.detailType,
           value: editForm.value.trim(),
           label: editForm.label.trim() || null,
+          purposes: editForm.purposes,
           isPrimary: editForm.isPrimary,
         },
       });
@@ -260,13 +274,14 @@ export function ContactDetailsModal({
       detailType: detail.detailType,
       value: detail.value,
       label: detail.label || '',
+      purposes: detail.purposes || [],
       isPrimary: detail.isPrimary,
     });
   };
 
   const cancelEdit = () => {
     setEditingDetailId(null);
-    setEditForm({ detailType: 'EMAIL', value: '', label: '', isPrimary: false });
+    setEditForm({ detailType: 'EMAIL', value: '', label: '', purposes: [], isPrimary: false });
   };
 
   const renderDetailRow = (detail: ContactDetail, isContactLevel: boolean = false) => {
@@ -333,6 +348,15 @@ export function ContactDetailsModal({
           <span className="text-xs text-text-muted bg-surface-tertiary px-1.5 py-0.5 rounded">
             {detail.label}
           </span>
+        )}
+        {detail.purposes && detail.purposes.length > 0 && (
+          <div className="flex items-center gap-1">
+            {detail.purposes.map((purpose) => (
+              <span key={purpose} className="text-xs text-oak-light bg-oak-light/10 px-1.5 py-0.5 rounded">
+                {purpose}
+              </span>
+            ))}
+          </div>
         )}
         {detail.isPrimary && (
           <Star className="w-3.5 h-3.5 text-status-warning" fill="currentColor" />
@@ -597,6 +621,38 @@ export function ContactDetailsModal({
                     list="label-suggestions"
                   />
                 </div>
+                <div>
+                  <label className="label">Purposes (for automation)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {availablePurposes.map((purpose) => (
+                      <label
+                        key={purpose.value}
+                        className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded cursor-pointer transition-colors ${
+                          newDetailForm.purposes.includes(purpose.value)
+                            ? 'bg-oak-light text-white'
+                            : 'bg-surface-tertiary text-text-secondary hover:bg-surface-secondary'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={newDetailForm.purposes.includes(purpose.value)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewDetailForm(prev => ({ ...prev, purposes: [...prev.purposes, purpose.value] }));
+                            } else {
+                              setNewDetailForm(prev => ({ ...prev, purposes: prev.purposes.filter(p => p !== purpose.value) }));
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        {purpose.label}
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-text-muted mt-1">
+                    Select which automations should use this contact detail
+                  </p>
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -615,7 +671,7 @@ export function ContactDetailsModal({
                   variant="secondary"
                   onClick={() => {
                     setShowAddDetailForm(false);
-                    setNewDetailForm({ detailType: 'EMAIL', value: '', label: '', isPrimary: false });
+                    setNewDetailForm({ detailType: 'EMAIL', value: '', label: '', purposes: [], isPrimary: false });
                   }}
                 >
                   Cancel
@@ -755,7 +811,7 @@ export function ContactDetailsModal({
                       type="button"
                       onClick={() => setNewContactForm(prev => ({
                         ...prev,
-                        details: [...prev.details, { detailType: 'EMAIL' as ContactDetailType, value: '', label: '' }],
+                        details: [...prev.details, { detailType: 'EMAIL' as ContactDetailType, value: '', label: '', purposes: [] }],
                       }))}
                       className="text-xs text-oak-light hover:text-oak-dark flex items-center gap-1"
                     >

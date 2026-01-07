@@ -14,6 +14,7 @@ export interface ContactDetail {
   detailType: ContactDetailType;
   value: string;
   label: string | null;
+  purposes: string[];
   description: string | null;
   displayOrder: number;
   isPrimary: boolean;
@@ -54,6 +55,7 @@ export interface CreateContactDetailInput {
   detailType: ContactDetailType;
   value: string;
   label?: string;
+  purposes?: string[];
   description?: string;
   displayOrder?: number;
   isPrimary?: boolean;
@@ -64,6 +66,7 @@ export interface UpdateContactDetailInput {
   detailType?: ContactDetailType;
   value?: string;
   label?: string | null;
+  purposes?: string[];
   description?: string | null;
   displayOrder?: number;
   isPrimary?: boolean;
@@ -88,6 +91,7 @@ export interface CreateContactWithDetailsInput {
     detailType: ContactDetailType;
     value: string;
     label?: string;
+    purposes?: string[];
     description?: string;
     isPrimary?: boolean;
   }>;

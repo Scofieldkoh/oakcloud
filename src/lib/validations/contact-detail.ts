@@ -1,8 +1,20 @@
 import { z } from 'zod';
 
 // Contact detail types enum
-export const contactDetailTypeEnum = z.enum(['EMAIL', 'PHONE', 'FAX', 'MOBILE', 'WEBSITE', 'OTHER']);
+export const contactDetailTypeEnum = z.enum(['EMAIL', 'PHONE', 'WEBSITE', 'OTHER']);
 export type ContactDetailTypeEnum = z.infer<typeof contactDetailTypeEnum>;
+
+// Available purposes for automation
+export const contactPurposes = [
+  'INVOICE',      // Send invoices
+  'STATEMENT',    // Send account statements
+  'TAX_NOTICE',   // Send tax-related notices
+  'RECEIPT',      // Send payment receipts
+  'REMINDER',     // Send payment reminders
+  'GENERAL',      // General correspondence
+] as const;
+export type ContactPurpose = typeof contactPurposes[number];
+export const contactPurposeEnum = z.enum(['INVOICE', 'STATEMENT', 'TAX_NOTICE', 'RECEIPT', 'REMINDER', 'GENERAL']);
 
 // Email validation
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,8 +31,6 @@ const validateValueForType = (value: string, type: ContactDetailTypeEnum): boole
     case 'EMAIL':
       return emailRegex.test(value);
     case 'PHONE':
-    case 'MOBILE':
-    case 'FAX':
       return phoneRegex.test(value);
     case 'WEBSITE':
       return websiteRegex.test(value);
@@ -38,6 +48,7 @@ export const createContactDetailSchema = z.object({
   detailType: contactDetailTypeEnum,
   value: z.string().min(1, 'Value is required').max(500, 'Value too long'),
   label: z.string().max(100, 'Label too long').optional(),
+  purposes: z.array(contactPurposeEnum).optional().default([]),
   description: z.string().max(500, 'Description too long').optional(),
   displayOrder: z.number().int().min(0).max(1000).optional(),
   isPrimary: z.boolean().optional(),
@@ -57,6 +68,7 @@ export const updateContactDetailSchema = z.object({
   detailType: contactDetailTypeEnum.optional(),
   value: z.string().min(1, 'Value is required').max(500, 'Value too long').optional(),
   label: z.string().max(100, 'Label too long').optional().nullable(),
+  purposes: z.array(contactPurposeEnum).optional(),
   description: z.string().max(500, 'Description too long').optional().nullable(),
   displayOrder: z.number().int().min(0).max(1000).optional(),
   isPrimary: z.boolean().optional(),
@@ -85,6 +97,7 @@ export const createContactWithDetailsSchema = z.object({
     detailType: contactDetailTypeEnum,
     value: z.string().min(1).max(500),
     label: z.string().max(100).optional(),
+    purposes: z.array(contactPurposeEnum).optional().default([]),
     description: z.string().max(500).optional(),
     isPrimary: z.boolean().optional(),
   })).optional(),

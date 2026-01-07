@@ -26,6 +26,7 @@ export interface CreateContactDetailInput {
   detailType: ContactDetailType;
   value: string;
   label?: string;
+  purposes?: string[];
   description?: string;
   displayOrder?: number;
   isPrimary?: boolean;
@@ -36,6 +37,7 @@ export interface UpdateContactDetailInput {
   detailType?: ContactDetailType;
   value?: string;
   label?: string;
+  purposes?: string[];
   description?: string;
   displayOrder?: number;
   isPrimary?: boolean;
@@ -127,6 +129,7 @@ export async function createContactDetail(
       detailType: data.detailType,
       value: data.value,
       label: data.label,
+      purposes: data.purposes ?? [],
       description: data.description,
       displayOrder: data.displayOrder ?? 0,
       isPrimary: data.isPrimary ?? false,
@@ -198,6 +201,7 @@ export async function updateContactDetail(
       detailType: data.detailType,
       value: data.value,
       label: data.label,
+      purposes: data.purposes,
       description: data.description,
       displayOrder: data.displayOrder,
       isPrimary: data.isPrimary,
@@ -446,6 +450,7 @@ export interface ExportContactDetail {
   detailType: string;
   value: string;
   label: string | null;
+  purposes: string[];
   isPrimary: boolean;
 }
 
@@ -527,6 +532,7 @@ export async function getContactDetailsForExport(
         detailType: detail.detailType,
         value: detail.value,
         label: detail.label,
+        purposes: detail.purposes,
         isPrimary: detail.isPrimary,
       });
     }
@@ -549,6 +555,7 @@ export async function getContactDetailsForExport(
           detailType: 'EMAIL',
           value: rel.contact.email,
           label: 'Primary',
+          purposes: [],
           isPrimary: true,
         });
       }
@@ -561,6 +568,7 @@ export async function getContactDetailsForExport(
           detailType: 'PHONE',
           value: rel.contact.phone,
           label: 'Primary',
+          purposes: [],
           isPrimary: true,
         });
       }
@@ -575,6 +583,7 @@ export async function getContactDetailsForExport(
           detailType: detail.detailType,
           value: detail.value,
           label: detail.label,
+          purposes: detail.purposes,
           isPrimary: detail.isPrimary,
         });
       }
@@ -596,6 +605,7 @@ export async function getContactDetailsForExport(
           detailType: 'EMAIL',
           value: officer.contact.email,
           label: 'Primary',
+          purposes: [],
           isPrimary: true,
         });
       }
@@ -608,6 +618,7 @@ export async function getContactDetailsForExport(
           detailType: 'PHONE',
           value: officer.contact.phone,
           label: 'Primary',
+          purposes: [],
           isPrimary: true,
         });
       }
@@ -621,6 +632,7 @@ export async function getContactDetailsForExport(
           detailType: detail.detailType,
           value: detail.value,
           label: detail.label,
+          purposes: detail.purposes,
           isPrimary: detail.isPrimary,
         });
       }
@@ -642,6 +654,7 @@ export async function getContactDetailsForExport(
           detailType: 'EMAIL',
           value: shareholder.contact.email,
           label: 'Primary',
+          purposes: [],
           isPrimary: true,
         });
       }
@@ -654,6 +667,7 @@ export async function getContactDetailsForExport(
           detailType: 'PHONE',
           value: shareholder.contact.phone,
           label: 'Primary',
+          purposes: [],
           isPrimary: true,
         });
       }
@@ -667,6 +681,7 @@ export async function getContactDetailsForExport(
           detailType: detail.detailType,
           value: detail.value,
           label: detail.label,
+          purposes: detail.purposes,
           isPrimary: detail.isPrimary,
         });
       }
@@ -674,4 +689,75 @@ export async function getContactDetailsForExport(
   }
 
   return exportDetails;
+}
+
+// ============================================================================
+// AUTOMATION HELPERS
+// ============================================================================
+
+/**
+ * Get contact details for a company filtered by purpose
+ * Used for automation to find the right contact for specific purposes (e.g., invoicing)
+ */
+export async function getContactDetailsByPurpose(
+  companyId: string,
+  purpose: string,
+  tenantId: string
+): Promise<ContactDetailWithRelations[]> {
+  // Get all contact details for this company (both company-level and contact-level)
+  const { companyDetails, contactDetails } = await getCompanyContactDetails(companyId, tenantId);
+
+  // Filter by purpose
+  const matchingDetails: ContactDetailWithRelations[] = [];
+
+  // Check company-level details
+  for (const detail of companyDetails) {
+    if (detail.purposes.includes(purpose)) {
+      matchingDetails.push(detail);
+    }
+  }
+
+  // Check contact-level details
+  for (const contactData of contactDetails) {
+    for (const detail of contactData.details) {
+      if (detail.purposes.includes(purpose)) {
+        // Attach contact info to the detail for context
+        matchingDetails.push({
+          ...detail,
+          contact: {
+            id: contactData.contact.id,
+            fullName: contactData.contact.fullName,
+            contactType: contactData.contact.contactType,
+            email: contactData.contact.email,
+            phone: contactData.contact.phone,
+          },
+        });
+      }
+    }
+  }
+
+  // Sort by isPrimary (primary first), then by displayOrder
+  matchingDetails.sort((a, b) => {
+    if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+    return a.displayOrder - b.displayOrder;
+  });
+
+  return matchingDetails;
+}
+
+/**
+ * Get the primary contact detail for a specific purpose and type
+ * Returns the first matching detail (prioritized by isPrimary, then displayOrder)
+ */
+export async function getPrimaryContactForPurpose(
+  companyId: string,
+  purpose: string,
+  detailType: ContactDetailType,
+  tenantId: string
+): Promise<ContactDetailWithRelations | null> {
+  const matchingDetails = await getContactDetailsByPurpose(companyId, purpose, tenantId);
+
+  // Filter by type and return the first match
+  const filtered = matchingDetails.filter((d) => d.detailType === detailType);
+  return filtered[0] || null;
 }
