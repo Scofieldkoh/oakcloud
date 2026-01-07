@@ -3,9 +3,10 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Building2, AlertCircle, FileUp, Trash2 } from 'lucide-react';
+import { Plus, Building2, AlertCircle, FileUp, Trash2, Download } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { useCompanies, useCompanyStats, useDeleteCompany, useBulkDeleteCompanies } from '@/hooks/use-companies';
+import { useExportContactDetails } from '@/hooks/use-contact-details';
 import { usePermissions, useCompanyPermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
@@ -61,6 +62,7 @@ export default function CompaniesPage() {
   const { data: stats, error: statsError } = useCompanyStats(activeTenantId);
   const deleteCompany = useDeleteCompany();
   const bulkDeleteCompanies = useBulkDeleteCompanies();
+  const exportContactDetails = useExportContactDetails();
 
   // Selection state for bulk operations
   const {
@@ -191,6 +193,17 @@ export default function CompaniesPage() {
     setBulkDeleteDialogOpen(false);
   };
 
+  const handleExportContactDetails = async () => {
+    if (selectedCount === 0) return;
+
+    try {
+      await exportContactDetails.mutateAsync(Array.from(selectedIds));
+      success('Contact details exported successfully');
+    } catch (err) {
+      // Error handled by mutation
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6">
       {/* Header */}
@@ -314,7 +327,7 @@ export default function CompaniesPage() {
           canEdit={canEditCompany}
           canDelete={canDeleteCompany}
           canCreate={can.createCompany}
-          selectable={can.deleteCompany}
+          selectable={can.deleteCompany || can.exportCompany}
           selectedIds={selectedIds}
           onToggleOne={toggleOne}
           onToggleAll={toggleAll}
@@ -339,24 +352,34 @@ export default function CompaniesPage() {
       )}
 
       {/* Floating Bulk Actions Toolbar */}
-      {can.deleteCompany && (
+      {(can.deleteCompany || can.exportCompany) && (
         <BulkActionsToolbar
           selectedCount={selectedCount}
           onClearSelection={clearSelection}
           itemLabel="company"
           actions={[
-            {
+            ...(can.exportCompany ? [{
+              id: 'export-contacts',
+              label: 'Export Contacts',
+              icon: Download,
+              description: 'Export contact details to Excel',
+              variant: 'secondary' as const,
+              isLoading: exportContactDetails.isPending,
+            }] : []),
+            ...(can.deleteCompany ? [{
               id: 'delete',
               label: 'Delete',
               icon: Trash2,
               description: 'Delete selected companies',
-              variant: 'danger',
+              variant: 'danger' as const,
               isLoading: bulkDeleteCompanies.isPending,
-            },
+            }] : []),
           ]}
           onAction={(actionId) => {
             if (actionId === 'delete') {
               handleBulkDeleteClick();
+            } else if (actionId === 'export-contacts') {
+              handleExportContactDetails();
             }
           }}
         />

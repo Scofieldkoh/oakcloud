@@ -367,6 +367,43 @@ Multi-tab internal notes with rich text support for companies and contacts.
 
 ---
 
+### contact_details
+
+Additional contact methods (email, phone, fax, etc.) that can be linked to a Contact, Company, or both.
+Supports multiple contact details per entity with labels for function/purpose.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
+| contact_id | UUID | Yes | FK to contacts (CASCADE on delete) |
+| company_id | UUID | Yes | FK to companies (CASCADE on delete) |
+| detail_type | ENUM | No | EMAIL, PHONE, FAX, MOBILE, WEBSITE, OTHER |
+| value | VARCHAR(500) | No | The actual contact value |
+| label | VARCHAR(100) | Yes | Purpose/function label (e.g., "Account Receivable") |
+| description | VARCHAR(500) | Yes | Additional notes |
+| display_order | INT | No | Display ordering (default: 0) |
+| is_primary | BOOLEAN | No | Primary detail of this type (default: false) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Use Cases:**
+- Company-level: Direct contact info for the company (e.g., "Account Receivable email")
+- Contact-level: Personal contact details for linked individuals
+- Both: A contact's specific role at a company (e.g., director's work email)
+
+**Indexes:**
+- `contact_details_tenant_id_idx` on tenant_id
+- `contact_details_contact_id_idx` on contact_id
+- `contact_details_company_id_idx` on company_id
+- `contact_details_detail_type_idx` on detail_type
+- `contact_details_tenant_id_contact_id_idx` on (tenant_id, contact_id)
+- `contact_details_tenant_id_company_id_idx` on (tenant_id, company_id)
+- `contact_details_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+
+---
+
 ### company_contacts
 
 Many-to-many relationship between companies and contacts.
@@ -623,6 +660,16 @@ REGISTERED_OFFICE
 MAILING
 RESIDENTIAL
 BUSINESS
+```
+
+### ContactDetailType
+```sql
+EMAIL
+PHONE
+FAX
+MOBILE
+WEBSITE
+OTHER
 ```
 
 ### AuditAction
