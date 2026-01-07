@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useDropzone } from 'react-dropzone';
 import {
   ArrowLeft,
@@ -56,6 +57,7 @@ const MAX_FILES = 20;
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB to match API
 
 export default function ProcessingUploadPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const { success, error: toastError, info } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -315,11 +317,11 @@ export default function ProcessingUploadPage() {
     success('Files merged successfully');
   };
 
-  const openMergeModal = () => {
+  const openMergeModal = useCallback(() => {
     setIsMergeModalOpen(true);
-  };
+  }, []);
 
-  const uploadFiles = async () => {
+  const uploadFiles = useCallback(async () => {
     if (!selectedCompanyId) {
       toastError('Please select a company');
       return;
@@ -466,12 +468,50 @@ export default function ProcessingUploadPage() {
     } else {
       toastError('All uploads failed');
     }
-  };
+  }, [selectedCompanyId, queuedFiles, selectedModelId, companyContext, selectedStandardContexts, aiContext, toastError, success]);
 
   const completedCount = queuedFiles.filter((f) => f.status === 'success').length;
   const pendingCount = queuedFiles.filter((f) => ['pending', 'processing'].includes(f.status)).length;
   const errorCount = queuedFiles.filter((f) => f.status === 'error').length;
   const allComplete = queuedFiles.length > 0 && completedCount === queuedFiles.length;
+
+  // Keyboard hotkeys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip hotkeys when typing in inputs or when modal is open
+      const isInInput = e.target instanceof HTMLInputElement ||
+                        e.target instanceof HTMLSelectElement ||
+                        e.target instanceof HTMLTextAreaElement;
+
+      // Escape - Back to processing page (works unless modal is open or uploading)
+      if (e.key === 'Escape' && !isMergeModalOpen && !isUploading) {
+        e.preventDefault();
+        router.push('/processing');
+        return;
+      }
+
+      if (isInInput || isMergeModalOpen) return;
+
+      // F1 - Upload files
+      if (e.key === 'F1') {
+        e.preventDefault();
+        if (!isUploading && queuedFiles.length > 0 && selectedCompanyId && !allComplete) {
+          uploadFiles();
+        }
+      }
+
+      // M - Open merge modal
+      if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        if (!isUploading) {
+          openMergeModal();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isUploading, queuedFiles.length, selectedCompanyId, allComplete, isMergeModalOpen, uploadFiles, openMergeModal, router]);
 
   // Get file icon based on type
   const getFileIcon = (file: File) => {
@@ -521,9 +561,10 @@ export default function ProcessingUploadPage() {
         <Link
           href="/processing"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
+          title="Back to Processing (Esc)"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Processing
+          Back to Processing (Esc)
         </Link>
         <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
           Upload Documents for Processing
@@ -627,9 +668,10 @@ export default function ProcessingUploadPage() {
           onClick={openMergeModal}
           disabled={isUploading}
           className="btn-secondary btn-sm flex items-center gap-2"
+          title="Merge multiple files into one PDF (M)"
         >
           <Merge className="w-4 h-4" />
-          Merge Multiple Files
+          Merge Multiple Files (M)
         </button>
         <p className="text-xs text-text-muted mt-1.5">
           Combine multiple files/images into a single PDF document
@@ -832,6 +874,7 @@ export default function ProcessingUploadPage() {
               onClick={uploadFiles}
               disabled={isUploading || queuedFiles.length === 0 || !selectedCompanyId}
               className="btn-primary btn-sm flex items-center justify-center gap-2 w-full sm:w-auto"
+              title="Upload files (F1)"
             >
               {isUploading ? (
                 <>
@@ -841,7 +884,7 @@ export default function ProcessingUploadPage() {
               ) : (
                 <>
                   <FileUp className="w-4 h-4" />
-                  Upload {queuedFiles.length > 0 ? `${queuedFiles.length} File${queuedFiles.length > 1 ? 's' : ''}` : 'Files'}
+                  Upload {queuedFiles.length > 0 ? `${queuedFiles.length} File${queuedFiles.length > 1 ? 's' : ''} (F1)` : 'Files (F1)'}
                 </>
               )}
             </button>

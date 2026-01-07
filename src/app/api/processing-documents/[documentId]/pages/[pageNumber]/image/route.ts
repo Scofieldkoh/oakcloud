@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, canAccessCompany } from '@/lib/auth';
+import { requireAuth, canAccessCompany, canAccessTenant } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
 
@@ -70,6 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         document: {
           select: {
             companyId: true,
+            tenantId: true,
           },
         },
         pages: {
@@ -92,9 +93,34 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Check access to the company via document relation
+    // Check access - either via company or tenant (for unassigned documents)
     const companyId = processingDoc.document?.companyId;
-    if (!companyId || !(await canAccessCompany(session, companyId))) {
+    const tenantId = processingDoc.document?.tenantId;
+
+    // If document has a company, check company access
+    if (companyId) {
+      if (!(await canAccessCompany(session, companyId))) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
+          },
+          { status: 403 }
+        );
+      }
+    } else if (tenantId) {
+      // For unassigned documents, check tenant access
+      if (!canAccessTenant(session, tenantId)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
+          },
+          { status: 403 }
+        );
+      }
+    } else {
+      // No company or tenant - deny access
       return NextResponse.json(
         {
           success: false,

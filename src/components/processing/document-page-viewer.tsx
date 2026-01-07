@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   ZoomIn,
   ZoomOut,
@@ -14,9 +14,30 @@ import {
   ToggleRight,
   RotateCw,
   RotateCcw,
+  PanelLeft,
+  Plus,
+  Trash2,
 } from 'lucide-react';
-import { useDocumentPages } from '@/hooks/use-processing-documents';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useDocumentPages, useAppendPages, useReorderPages, useDeletePages } from '@/hooks/use-processing-documents';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // Import pdfjs-dist types
 import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
@@ -71,6 +92,10 @@ interface DocumentPageViewerProps {
   showHighlights?: boolean;
   onShowHighlightsChange?: (show: boolean) => void;
   className?: string;
+  /** Document revision status for append/reorder confirmation */
+  documentStatus?: 'DRAFT' | 'APPROVED' | 'SUPERSEDED';
+  /** Callback when pages are modified (append/reorder) */
+  onPagesChanged?: () => void;
 }
 
 // =============================================================================
@@ -273,6 +298,8 @@ export function DocumentPageViewer({
   showHighlights: showHighlightsProp,
   onShowHighlightsChange,
   className,
+  documentStatus,
+  onPagesChanged,
 }: DocumentPageViewerProps) {
   // Stable references
   const stableHighlights = highlights ?? EMPTY_HIGHLIGHTS;
@@ -297,6 +324,7 @@ export function DocumentPageViewer({
   const [textLayerItems, setTextLayerItems] = useState<TextLayerItem[]>([]);
   const [textLayerHighlights, setTextLayerHighlights] = useState<BoundingBox[]>([]);
   const [showHighlightsInternal, setShowHighlightsInternal] = useState(true);
+  const [showThumbnails, setShowThumbnails] = useState(true);
 
   const showHighlights = showHighlightsProp ?? showHighlightsInternal;
   const zoom = ZOOM_LEVELS[zoomIndex];
@@ -304,6 +332,7 @@ export function DocumentPageViewer({
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
 
@@ -550,31 +579,63 @@ export function DocumentPageViewer({
     setTextLayerHighlights(newHighlights);
   }, [textLayerItems, stableFieldValues, currentPage]);
 
-  // Keyboard navigation
+  // Keyboard navigation for PDF pages and zoom
+  // Left/Right arrows for page navigation, +/- for zoom
+  // Up/Down arrows are NOT captured to allow natural scrolling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
+      if (e.target instanceof HTMLInputElement ||
+          e.target instanceof HTMLSelectElement ||
+          e.target instanceof HTMLTextAreaElement) return;
 
-      switch (e.key) {
-        case 'ArrowLeft':
-          handlePrevPage();
-          break;
-        case 'ArrowRight':
-          handleNextPage();
-          break;
-        case '+':
-        case '=':
-          handleZoomIn();
-          break;
-        case '-':
-          handleZoomOut();
-          break;
+      // Left/Right arrows for page navigation
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrevPage();
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNextPage();
+        return;
+      }
+
+      // Page Up/Down for page navigation (alternative)
+      if (e.key === 'PageUp') {
+        e.preventDefault();
+        handlePrevPage();
+        return;
+      }
+      if (e.key === 'PageDown') {
+        e.preventDefault();
+        handleNextPage();
+        return;
+      }
+
+      // Zoom with +/- keys
+      if (e.key === '+' || e.key === '=') {
+        handleZoomIn();
+        return;
+      }
+      if (e.key === '-') {
+        handleZoomOut();
+        return;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handlePrevPage, handleNextPage, handleZoomIn, handleZoomOut]);
+
+  // Auto-focus scroll container when PDF loads to enable keyboard scrolling
+  useEffect(() => {
+    if (!isPdfLoading && scrollContainerRef.current) {
+      // Only focus if no other element is focused (e.g., user isn't in an input)
+      if (!document.activeElement || document.activeElement === document.body) {
+        scrollContainerRef.current.focus();
+      }
+    }
+  }, [isPdfLoading]);
 
   // Ctrl+scroll wheel zoom
   useEffect(() => {
@@ -756,101 +817,138 @@ export function DocumentPageViewer({
               <Maximize2 className="w-4 h-4" />
             )}
           </button>
+
+          <div className="w-px h-4 bg-border-primary mx-1" />
+
+          {/* Page thumbnails toggle */}
+          <button
+            onClick={() => setShowThumbnails(!showThumbnails)}
+            className={cn(
+              'btn-ghost btn-xs p-1.5 flex items-center gap-1',
+              showThumbnails && 'text-oak-primary'
+            )}
+            title={showThumbnails ? 'Hide page thumbnails' : 'Show page thumbnails'}
+          >
+            <PanelLeft className="w-4 h-4" />
+            <span className="text-xs hidden sm:inline">Pages</span>
+          </button>
         </div>
       </div>
 
-      {/* PDF viewer */}
-      <div className="flex-1 overflow-auto p-4 bg-background-secondary relative group/viewer">
-        {/* Left navigation arrow - only show if there's a previous page */}
-        {currentPage > 1 && (
-          <button
-            onClick={handlePrevPage}
-            disabled={isLoading}
-            className={cn(
-              'absolute left-2 top-1/2 -translate-y-1/2 z-20',
-              'w-10 h-10 rounded-full flex items-center justify-center',
-              'bg-background-primary/80 backdrop-blur-sm border border-border-primary shadow-lg',
-              'opacity-0 group-hover/viewer:opacity-100 transition-opacity duration-200',
-              'hover:bg-background-secondary hover:border-oak-light',
-              'disabled:opacity-30 disabled:cursor-not-allowed'
-            )}
-            title="Previous page"
-          >
-            <ChevronLeft className="w-5 h-5 text-text-primary" />
-          </button>
+      {/* PDF viewer with optional thumbnail sidebar */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Page thumbnail sidebar */}
+        {showThumbnails && data?.pages && data.pages.length > 0 && (
+          <PageThumbnailSidebar
+            pages={data.pages}
+            currentPage={currentPage}
+            onPageSelect={setCurrentPage}
+            pdfUrl={data.isPdf && effectivePdfUrl ? effectivePdfUrl : undefined}
+            documentId={documentId}
+            documentStatus={documentStatus}
+            isPdf={data.isPdf}
+            onPagesChanged={onPagesChanged}
+          />
         )}
 
-        {/* Right navigation arrow - only show if there's a next page */}
-        {currentPage < pageCount && (
-          <button
-            onClick={handleNextPage}
-            disabled={isLoading}
-            className={cn(
-              'absolute right-2 top-1/2 -translate-y-1/2 z-20',
-              'w-10 h-10 rounded-full flex items-center justify-center',
-              'bg-background-primary/80 backdrop-blur-sm border border-border-primary shadow-lg',
-              'opacity-0 group-hover/viewer:opacity-100 transition-opacity duration-200',
-              'hover:bg-background-secondary hover:border-oak-light',
-              'disabled:opacity-30 disabled:cursor-not-allowed'
-            )}
-            title="Next page"
-          >
-            <ChevronRight className="w-5 h-5 text-text-primary" />
-          </button>
-        )}
-
-        <div className="inline-flex min-w-full min-h-full items-center justify-center">
-          <div className="relative">
-            {isPdfLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary rounded z-10 min-w-[600px] min-h-[800px]">
-                <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
-                <span className="ml-3 text-text-secondary">Loading PDF...</span>
-              </div>
-            )}
-
-            <canvas
-              ref={canvasRef}
+        {/* Main viewer area with navigation bars */}
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Left navigation bar - sticky full height */}
+          {currentPage > 1 && (
+            <button
+              onClick={handlePrevPage}
+              disabled={isLoading}
               className={cn(
-                'shadow-lg rounded border border-border-primary',
-                isPdfLoading && 'opacity-0'
+                'sticky top-0 left-0 z-20 self-stretch flex-shrink-0',
+                'w-12 flex items-center justify-center',
+                'bg-black/5 hover:bg-black/20 dark:bg-white/5 dark:hover:bg-white/20',
+                'transition-colors duration-200',
+                'disabled:opacity-30 disabled:cursor-not-allowed'
               )}
-            />
+              title="Previous page (←)"
+            >
+              <ChevronLeft className="w-6 h-6 text-text-primary" />
+            </button>
+          )}
 
-            {/* SVG overlay for highlights */}
-            {showHighlights && !isPdfLoading && currentHighlights.length > 0 && canvasDimensions.width > 0 && (
-              <svg
-                className="absolute top-0 left-0 pointer-events-none"
-                style={{
-                  width: canvasDimensions.width,
-                  height: canvasDimensions.height,
-                }}
-                viewBox={`0 0 ${canvasDimensions.width} ${canvasDimensions.height}`}
-                preserveAspectRatio="none"
-              >
-                {currentHighlights.map((highlight, idx) => {
-                  const x = highlight.x * canvasDimensions.width;
-                  const y = highlight.y * canvasDimensions.height;
-                  const w = highlight.width * canvasDimensions.width;
-                  const h = highlight.height * canvasDimensions.height;
-                  const color = highlight.color || '#93C5FD';
+          {/* Scrollable PDF content area - tabIndex allows keyboard scrolling with arrow keys */}
+          <div
+            ref={scrollContainerRef}
+            className="flex-1 overflow-auto p-4 bg-background-secondary focus:outline-none"
+            tabIndex={0}
+          >
+            <div className="inline-flex min-w-full min-h-full items-center justify-center">
+              <div className="relative">
+                {isPdfLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary rounded z-10 min-w-[600px] min-h-[800px]">
+                    <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
+                    <span className="ml-3 text-text-secondary">Loading PDF...</span>
+                  </div>
+                )}
 
-                  return (
-                    <rect
-                      key={idx}
-                      x={x}
-                      y={y}
-                      width={w}
-                      height={h}
-                      fill={`${color}30`}
-                      stroke={color}
-                      strokeWidth="1.5"
-                      rx="4"
-                    />
-                  );
-                })}
-              </svg>
-            )}
+                <canvas
+                  ref={canvasRef}
+                  className={cn(
+                    'shadow-lg rounded border border-border-primary',
+                    isPdfLoading && 'opacity-0'
+                  )}
+                />
+
+                {/* SVG overlay for highlights */}
+                {showHighlights && !isPdfLoading && currentHighlights.length > 0 && canvasDimensions.width > 0 && (
+                  <svg
+                    className="absolute top-0 left-0 pointer-events-none"
+                    style={{
+                      width: canvasDimensions.width,
+                      height: canvasDimensions.height,
+                    }}
+                    viewBox={`0 0 ${canvasDimensions.width} ${canvasDimensions.height}`}
+                    preserveAspectRatio="none"
+                  >
+                    {currentHighlights.map((highlight, idx) => {
+                      const x = highlight.x * canvasDimensions.width;
+                      const y = highlight.y * canvasDimensions.height;
+                      const w = highlight.width * canvasDimensions.width;
+                      const h = highlight.height * canvasDimensions.height;
+                      const color = highlight.color || '#93C5FD';
+
+                      return (
+                        <rect
+                          key={idx}
+                          x={x}
+                          y={y}
+                          width={w}
+                          height={h}
+                          fill={`${color}30`}
+                          stroke={color}
+                          strokeWidth="1.5"
+                          rx="4"
+                        />
+                      );
+                    })}
+                  </svg>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Right navigation bar - sticky full height */}
+          {currentPage < pageCount && (
+            <button
+              onClick={handleNextPage}
+              disabled={isLoading}
+              className={cn(
+                'sticky top-0 right-0 z-20 self-stretch flex-shrink-0',
+                'w-12 flex items-center justify-center',
+                'bg-black/5 hover:bg-black/20 dark:bg-white/5 dark:hover:bg-white/20',
+                'transition-colors duration-200',
+                'disabled:opacity-30 disabled:cursor-not-allowed'
+              )}
+              title="Next page (→)"
+            >
+              <ChevronRight className="w-6 h-6 text-text-primary" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -903,5 +1001,750 @@ export function PageThumbnailStrip({
         </button>
       ))}
     </div>
+  );
+}
+
+// =============================================================================
+// Thumbnail Sidebar (vertical, for left side of viewer)
+// =============================================================================
+
+interface PageInfo {
+  id: string;
+  pageNumber: number;
+  imageUrl: string;
+}
+
+const MIN_SIDEBAR_WIDTH = 80;
+const MAX_SIDEBAR_WIDTH = 200;
+const DEFAULT_SIDEBAR_WIDTH = 150;
+const THUMBNAIL_SCALE = 0.5; // Scale for thumbnail rendering (higher = sharper)
+
+// Component for rendering a single PDF page thumbnail using canvas
+function PdfThumbnail({
+  pdfUrl,
+  pageNumber,
+  onLoad,
+  onError,
+  isLoading,
+}: {
+  pdfUrl: string;
+  pageNumber: number;
+  onLoad: () => void;
+  onError: () => void;
+  isLoading: boolean;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [rendered, setRendered] = useState(false);
+  const prevPdfUrlRef = useRef(pdfUrl);
+
+  // Use refs to avoid re-running the effect when callbacks change
+  const onLoadRef = useRef(onLoad);
+  const onErrorRef = useRef(onError);
+
+  // Keep refs updated
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+    onErrorRef.current = onError;
+  });
+
+  // Reset rendered state when pdfUrl changes (cache busting)
+  useEffect(() => {
+    if (prevPdfUrlRef.current !== pdfUrl) {
+      setRendered(false);
+      prevPdfUrlRef.current = pdfUrl;
+    }
+  }, [pdfUrl]);
+
+  useEffect(() => {
+    // Skip if already rendered
+    if (rendered) return;
+
+    let cancelled = false;
+
+    async function renderThumbnail() {
+      try {
+        const pdfjs = await getPdfJs();
+        const loadingTask = pdfjs.getDocument(pdfUrl);
+        const pdf = await loadingTask.promise;
+
+        if (cancelled) {
+          pdf.destroy();
+          return;
+        }
+
+        // Validate page number is within bounds
+        if (pageNumber < 1 || pageNumber > pdf.numPages) {
+          pdf.destroy();
+          onErrorRef.current();
+          return;
+        }
+
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: THUMBNAIL_SCALE });
+
+        const canvas = canvasRef.current;
+        if (!canvas || cancelled) {
+          pdf.destroy();
+          return;
+        }
+
+        const context = canvas.getContext('2d');
+        if (!context) {
+          pdf.destroy();
+          onErrorRef.current();
+          return;
+        }
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({
+          canvasContext: context,
+          viewport,
+          canvas,
+        } as Parameters<typeof page.render>[0]).promise;
+
+        if (!cancelled) {
+          setRendered(true);
+          onLoadRef.current();
+        }
+
+        pdf.destroy();
+      } catch (err) {
+        console.error(`Failed to render thumbnail for page ${pageNumber}:`, err);
+        if (!cancelled) {
+          onErrorRef.current();
+        }
+      }
+    }
+
+    renderThumbnail();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfUrl, pageNumber, rendered]);
+
+  return (
+    <>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary">
+          <RefreshCw className="w-4 h-4 animate-spin text-text-muted" />
+        </div>
+      )}
+      <canvas
+        ref={canvasRef}
+        className={cn(
+          'w-full h-full object-cover',
+          isLoading && 'opacity-0'
+        )}
+      />
+    </>
+  );
+}
+
+// Sortable thumbnail item wrapper
+function SortableThumbnail({
+  page,
+  displayNumber,
+  currentPage,
+  onPageSelect,
+  onDelete,
+  pdfUrl,
+  isLoading,
+  hasFailed,
+  onLoad,
+  onError,
+  disabled,
+  canDelete,
+}: {
+  page: PageInfo;
+  displayNumber: number; // Visual position in the list (1-indexed)
+  currentPage: number;
+  onPageSelect: (pageNumber: number) => void;
+  onDelete?: (pageNumber: number) => void;
+  pdfUrl?: string;
+  isLoading: boolean;
+  hasFailed: boolean;
+  onLoad: () => void;
+  onError: () => void;
+  disabled?: boolean;
+  canDelete?: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: page.id, disabled });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : undefined,
+  };
+
+  const usePdfThumbnails = !!pdfUrl;
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (onDelete && canDelete) {
+      onDelete(page.pageNumber);
+    }
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={() => !isDragging && onPageSelect(displayNumber)}
+      role="button"
+      tabIndex={0}
+      className={cn(
+        'group relative w-full aspect-[3/4] rounded border-2 overflow-hidden transition-all',
+        'hover:scale-[1.02] cursor-grab active:cursor-grabbing',
+        currentPage === displayNumber
+          ? 'border-oak-primary ring-2 ring-oak-primary/30 shadow-md'
+          : 'border-border-primary hover:border-oak-light',
+        isDragging && 'shadow-lg ring-2 ring-oak-primary'
+      )}
+    >
+      {/* Delete button - appears on hover */}
+      {canDelete && onDelete && !isDragging && (
+        <button
+          onClick={handleDeleteClick}
+          className={cn(
+            'absolute top-1 right-1 z-10 p-1 rounded',
+            'bg-red-500/80 hover:bg-red-600 text-white',
+            'opacity-0 group-hover:opacity-100 transition-opacity',
+            'focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-400'
+          )}
+          title="Delete page"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      )}
+
+      {/* Show placeholder if image failed to load */}
+      {hasFailed ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary">
+          <FileText className="w-8 h-8 text-text-muted" />
+        </div>
+      ) : usePdfThumbnails ? (
+        <PdfThumbnail
+          pdfUrl={pdfUrl}
+          pageNumber={displayNumber}
+          isLoading={isLoading}
+          onLoad={onLoad}
+          onError={onError}
+        />
+      ) : (
+        <>
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary">
+              <RefreshCw className="w-4 h-4 animate-spin text-text-muted" />
+            </div>
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={page.imageUrl}
+            alt={`Page ${page.pageNumber}`}
+            className={cn('w-full h-full object-cover', isLoading && 'opacity-0')}
+            onLoad={onLoad}
+            onError={onError}
+          />
+        </>
+      )}
+      <span className={cn(
+        'absolute bottom-0 left-0 right-0 text-white text-xs text-center py-0.5',
+        currentPage === displayNumber ? 'bg-oak-primary' : 'bg-black/60'
+      )}>
+        {displayNumber}
+      </span>
+    </div>
+  );
+}
+
+// Accepted file types for appending
+const APPEND_ACCEPT = '.pdf,.png,.jpg,.jpeg,.tiff,.tif';
+const APPEND_MIME_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/tiff'];
+
+export function PageThumbnailSidebar({
+  pages,
+  currentPage,
+  onPageSelect,
+  pdfUrl,
+  className,
+  documentId,
+  documentStatus,
+  isPdf = true,
+  onPagesChanged,
+}: {
+  pages: PageInfo[];
+  currentPage: number;
+  onPageSelect: (pageNumber: number) => void;
+  pdfUrl?: string;
+  className?: string;
+  documentId?: string;
+  documentStatus?: 'DRAFT' | 'APPROVED' | 'SUPERSEDED';
+  isPdf?: boolean;
+  onPagesChanged?: () => void;
+}) {
+  const [width, setWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(() => new Set(pages.map(p => p.id)));
+
+  // Local state for optimistic reordering
+  const [localPages, setLocalPages] = useState(pages);
+  const [showApprovedConfirm, setShowApprovedConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'append' | 'reorder' | 'delete' | null>(null);
+  const [pendingReorderData, setPendingReorderData] = useState<number[] | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
+  const [pendingDeletePageNumber, setPendingDeletePageNumber] = useState<number | null>(null);
+
+  // Mutations
+  const appendPages = useAppendPages();
+  const reorderPages = useReorderPages();
+  const deletePagesMutation = useDeletePages();
+
+  const isOperationPending = appendPages.isPending || reorderPages.isPending || deletePagesMutation.isPending;
+
+  // Sync local pages with props and reset loading state for new pages
+  useEffect(() => {
+    setLocalPages(pages);
+    // Reset loading state - mark all pages as loading, they'll clear as they render
+    setLoadingImages(new Set(pages.map(p => p.id)));
+    // Clear failed state since we have fresh data
+    setFailedImages(new Set());
+  }, [pages]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before starting drag
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Page IDs for sortable context
+  const pageIds = useMemo(() => localPages.map((p) => p.id), [localPages]);
+
+  // Handle drag end
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (!over || active.id === over.id || !documentId || !isPdf) return;
+
+      const oldIndex = localPages.findIndex((p) => p.id === active.id);
+      const newIndex = localPages.findIndex((p) => p.id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      // Calculate new order (1-indexed page numbers in new order)
+      const reorderedPages = arrayMove(localPages, oldIndex, newIndex);
+      const newOrder = reorderedPages.map((p) => p.pageNumber);
+
+      // Check if approved - show confirmation
+      if (documentStatus === 'APPROVED') {
+        setPendingAction('reorder');
+        setPendingReorderData(newOrder);
+        setShowApprovedConfirm(true);
+        return;
+      }
+
+      // Execute reorder
+      executeReorder(reorderedPages, newOrder);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- executeReorder is defined after handleDragEnd
+    [localPages, documentId, isPdf, documentStatus]
+  );
+
+  const executeReorder = useCallback(
+    (reorderedPages: PageInfo[], newOrder: number[]) => {
+      if (!documentId) return;
+
+      // Optimistic update - just reorder the array, keep original pageNumbers for PDF rendering
+      // The visual page number badge will be calculated from array position
+      setLocalPages(reorderedPages);
+
+      // Call API
+      reorderPages.mutate(
+        { documentId, newOrder },
+        {
+          onSuccess: () => {
+            onPagesChanged?.();
+          },
+          onError: () => {
+            // Revert optimistic update
+            setLocalPages(pages);
+          },
+        }
+      );
+    },
+    [documentId, pages, reorderPages, onPagesChanged]
+  );
+
+  // Handle files for append (from file input or paste)
+  const handleFilesForAppend = useCallback(
+    (files: File[]) => {
+      if (files.length === 0 || !documentId) return;
+
+      // Check if approved - show confirmation
+      if (documentStatus === 'APPROVED') {
+        setPendingFiles(files);
+        setPendingAction('append');
+        setShowApprovedConfirm(true);
+        return;
+      }
+
+      // Execute append
+      executeAppend(files);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- executeAppend is defined after handleFilesForAppend
+    [documentId, documentStatus]
+  );
+
+  // Handle file selection for append
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      handleFilesForAppend(Array.from(files));
+    },
+    [handleFilesForAppend]
+  );
+
+  // Handle paste event for appending files
+  const handlePaste = useCallback(
+    (e: ClipboardEvent) => {
+      if (!documentId || !isPdf || isOperationPending) return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const files: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === 'file' && APPEND_MIME_TYPES.includes(item.type)) {
+          const file = item.getAsFile();
+          if (file) files.push(file);
+        }
+      }
+
+      if (files.length > 0) {
+        e.preventDefault();
+        handleFilesForAppend(files);
+      }
+    },
+    [documentId, isPdf, isOperationPending, handleFilesForAppend]
+  );
+
+  // Add paste listener to sidebar
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar || !documentId || !isPdf) return;
+
+    sidebar.addEventListener('paste', handlePaste);
+    return () => sidebar.removeEventListener('paste', handlePaste);
+  }, [handlePaste, documentId, isPdf]);
+
+  const executeAppend = useCallback(
+    (files: File[]) => {
+      if (!documentId) return;
+
+      appendPages.mutate(
+        { documentId, files },
+        {
+          onSuccess: () => {
+            onPagesChanged?.();
+            // Clear file input
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
+          },
+          onError: () => {
+            // Clear file input on error too
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
+          },
+        }
+      );
+    },
+    [documentId, appendPages, onPagesChanged]
+  );
+
+  // Handle delete page request
+  const handleDeletePage = useCallback(
+    (pageNumber: number) => {
+      if (!documentId || localPages.length <= 1) return;
+
+      // Check if approved - show approval confirmation first
+      if (documentStatus === 'APPROVED') {
+        setPendingDeletePageNumber(pageNumber);
+        setPendingAction('delete');
+        setShowApprovedConfirm(true);
+        return;
+      }
+
+      // Show delete confirmation
+      setPendingDeletePageNumber(pageNumber);
+      setShowDeleteConfirm(true);
+    },
+    [documentId, localPages.length, documentStatus]
+  );
+
+  // Execute delete after confirmation
+  const executeDelete = useCallback(
+    (pageNumber: number) => {
+      if (!documentId) return;
+
+      deletePagesMutation.mutate(
+        { documentId, pageNumbers: [pageNumber] },
+        {
+          onSuccess: () => {
+            onPagesChanged?.();
+          },
+        }
+      );
+    },
+    [documentId, deletePagesMutation, onPagesChanged]
+  );
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = useCallback(() => {
+    setShowDeleteConfirm(false);
+    if (pendingDeletePageNumber !== null) {
+      executeDelete(pendingDeletePageNumber);
+    }
+    setPendingDeletePageNumber(null);
+  }, [pendingDeletePageNumber, executeDelete]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setShowDeleteConfirm(false);
+    setPendingDeletePageNumber(null);
+  }, []);
+
+  // Handle confirmation for approved documents
+  const handleApprovedConfirm = useCallback(() => {
+    setShowApprovedConfirm(false);
+
+    if (pendingAction === 'reorder' && pendingReorderData) {
+      // Reconstruct reordered pages from newOrder
+      const reorderedPages = pendingReorderData.map((pageNum) =>
+        localPages.find((p) => p.pageNumber === pageNum)!
+      );
+      executeReorder(reorderedPages, pendingReorderData);
+    } else if (pendingAction === 'append' && pendingFiles) {
+      executeAppend(pendingFiles);
+    } else if (pendingAction === 'delete' && pendingDeletePageNumber !== null) {
+      // For delete, show the delete confirmation dialog next
+      setShowDeleteConfirm(true);
+      // Don't clear pendingDeletePageNumber - we need it for the delete dialog
+      setPendingAction(null);
+      setPendingReorderData(null);
+      setPendingFiles(null);
+      return;
+    }
+
+    setPendingAction(null);
+    setPendingReorderData(null);
+    setPendingFiles(null);
+    setPendingDeletePageNumber(null);
+  }, [pendingAction, pendingReorderData, pendingFiles, pendingDeletePageNumber, localPages, executeReorder, executeAppend]);
+
+  const handleApprovedCancel = useCallback(() => {
+    setShowApprovedConfirm(false);
+    setPendingAction(null);
+    setPendingReorderData(null);
+    setPendingFiles(null);
+    setPendingDeletePageNumber(null);
+    // Clear file input if append was cancelled
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
+  // Handle resize drag
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!sidebarRef.current) return;
+      const rect = sidebarRef.current.getBoundingClientRect();
+      const newWidth = e.clientX - rect.left;
+      setWidth(Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, newWidth)));
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
+  if (pages.length === 0 && !documentId) {
+    return null;
+  }
+
+  const canModify = !!documentId && isPdf;
+
+  return (
+    <>
+      <div
+        ref={sidebarRef}
+        tabIndex={canModify ? 0 : undefined}
+        className={cn(
+          'flex-shrink-0 bg-background-tertiary border-r border-border-primary',
+          'flex relative focus:outline-none',
+          isResizing && 'select-none',
+          className
+        )}
+        style={{ width }}
+      >
+        {/* Loading overlay */}
+        {isOperationPending && (
+          <div className="absolute inset-0 bg-background-tertiary/80 z-50 flex items-center justify-center">
+            <RefreshCw className="w-6 h-6 animate-spin text-oak-primary" />
+          </div>
+        )}
+
+        {/* Thumbnails container */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="flex flex-col gap-2 p-2">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={pageIds} strategy={verticalListSortingStrategy}>
+                {localPages.map((page, index) => (
+                  <SortableThumbnail
+                    key={page.id}
+                    page={page}
+                    displayNumber={index + 1}
+                    currentPage={currentPage}
+                    onPageSelect={onPageSelect}
+                    onDelete={handleDeletePage}
+                    pdfUrl={pdfUrl}
+                    isLoading={loadingImages.has(page.id)}
+                    hasFailed={failedImages.has(page.id)}
+                    onLoad={() => {
+                      setLoadingImages((prev) => {
+                        const next = new Set(prev);
+                        next.delete(page.id);
+                        return next;
+                      });
+                    }}
+                    onError={() => {
+                      setLoadingImages((prev) => {
+                        const next = new Set(prev);
+                        next.delete(page.id);
+                        return next;
+                      });
+                      setFailedImages((prev) => new Set(prev).add(page.id));
+                    }}
+                    disabled={!canModify || isOperationPending}
+                    canDelete={canModify && localPages.length > 1 && !isOperationPending}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+
+            {/* Append button */}
+            {canModify && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={APPEND_ACCEPT}
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isOperationPending}
+                  className={cn(
+                    'relative w-full aspect-[3/4] rounded border-2 border-dashed overflow-hidden transition-all',
+                    'flex items-center justify-center',
+                    'border-border-secondary hover:border-oak-light hover:bg-oak-primary/5',
+                    'text-text-muted hover:text-oak-primary',
+                    isOperationPending && 'opacity-50 cursor-not-allowed'
+                  )}
+                  title="Add pages (PDF, PNG, JPEG, TIFF) - or Ctrl+V to paste"
+                >
+                  <Plus className="w-6 h-6" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Resize handle */}
+        <div
+          className={cn(
+            'absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize',
+            'hover:bg-oak-primary/30 transition-colors',
+            isResizing && 'bg-oak-primary/50'
+          )}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsResizing(true);
+          }}
+        />
+      </div>
+
+      {/* Confirmation dialog for approved documents */}
+      <ConfirmDialog
+        isOpen={showApprovedConfirm}
+        onClose={handleApprovedCancel}
+        onConfirm={handleApprovedConfirm}
+        title="Modify Approved Document"
+        description={
+          pendingAction === 'append'
+            ? 'This document is approved. Adding pages will not change the approved extraction data. You can re-extract if needed after adding pages.'
+            : pendingAction === 'delete'
+            ? 'This document is approved. Deleting pages will not change the approved extraction data. You can re-extract if needed after deleting.'
+            : 'This document is approved. Reordering pages will not change the approved extraction data. You can re-extract if needed after reordering.'
+        }
+        confirmLabel="Continue"
+        cancelLabel="Cancel"
+        variant="warning"
+      />
+
+      {/* Confirmation dialog for delete */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Page"
+        description={`Are you sure you want to delete page ${pendingDeletePageNumber}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
+    </>
   );
 }

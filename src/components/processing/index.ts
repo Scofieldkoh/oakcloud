@@ -4,7 +4,7 @@
  * UI components for the Document Processing module
  */
 
-export { DocumentPageViewer, PageThumbnailStrip } from './document-page-viewer';
+export { DocumentPageViewer, PageThumbnailStrip, PageThumbnailSidebar } from './document-page-viewer';
 export type { BoundingBox, FieldValue, TextLayerItem } from './document-page-viewer';
 export { LineItemEditor } from './line-item-editor';
 export { BulkActionsToolbar } from './bulk-actions-toolbar';

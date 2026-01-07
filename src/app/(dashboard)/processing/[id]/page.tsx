@@ -44,6 +44,7 @@ import {
   useBulkOperation,
   useCreateRevision,
   useDocumentExport,
+  usePrefetchNextDocument,
 } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
@@ -335,6 +336,15 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       return () => clearInterval(interval);
     }
   }, [data?.document?.pipelineStatus, refetch]);
+
+  // Prefetch next document for faster navigation during approval workflow
+  const prefetchNextDocument = usePrefetchNextDocument();
+  useEffect(() => {
+    // Only prefetch when current document is fully loaded and we have navigation data
+    if (!isLoading && navData?.nextId) {
+      prefetchNextDocument(navData.nextId);
+    }
+  }, [isLoading, navData?.nextId, prefetchNextDocument]);
 
   // Current revision data
   const currentRevisionId = data?.currentRevision?.id || null;
@@ -795,7 +805,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     router.push(`/processing/${navData.nextId}`);
   }, [navData, router]);
 
-  // Keyboard navigation
+  // Keyboard navigation (basic - before handlers are defined)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
@@ -821,13 +831,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   };
 
   // Handler to show model selector modal for extraction/re-extraction
-  const handleShowModelSelector = (reExtract: boolean = false) => {
+  const handleShowModelSelector = useCallback((reExtract: boolean = false) => {
     setSelectedModel(''); // Reset selection
     setAiContext(''); // Reset context
     setSelectedStandardContexts([]); // Reset standard contexts
     setIsReExtraction(reExtract);
     setShowModelSelector(true);
-  };
+  }, []);
 
   // Handler to confirm extraction with selected model and context
   const handleConfirmExtraction = async () => {
@@ -918,7 +928,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     }
   };
 
-  const handleApproveRevision = async () => {
+  const handleApproveRevision = useCallback(async () => {
     if (!data?.document || !data?.currentRevision) return;
     try {
       const isReceivable = data.currentRevision.documentCategory === 'ACCOUNTS_RECEIVABLE';
@@ -943,7 +953,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to approve revision');
     }
-  };
+  }, [data, skipAliasLearning, id, approveRevision, success, refetch, navData?.nextId, router, toastError]);
 
   const handleResolveCounterpartyAlias = async () => {
     if (!data?.document || !data?.currentRevision) return;
@@ -1030,16 +1040,16 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   }, [id, updatePageRotation, toastError]);
 
   // Start editing a draft revision directly
-  const handleStartEdit = () => {
+  const handleStartEdit = useCallback(() => {
     if (revisionWithLineItems) {
       initializeFormDataFromRevision(revisionWithLineItems, rateLookupData?.rate);
       setDeletedLineItemIds([]); // Reset deleted items when starting edit
     }
     setIsEditing(true);
-  };
+  }, [revisionWithLineItems, rateLookupData?.rate, initializeFormDataFromRevision]);
 
   // Start editing an approved document - only enter edit mode, don't create revision yet
-  const handleEditApproved = () => {
+  const handleEditApproved = useCallback(() => {
     if (!data?.document || !currentRevisionId || !revisionWithLineItems) return;
     // Initialize form data from current revision (with home currency calculation)
     initializeFormDataFromRevision(revisionWithLineItems, rateLookupData?.rate);
@@ -1047,9 +1057,9 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     // Mark that we're editing an approved document (revision will be created on save)
     setIsEditingApproved(true);
     setIsEditing(true);
-  };
+  }, [data?.document, currentRevisionId, revisionWithLineItems, rateLookupData?.rate, initializeFormDataFromRevision]);
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = useCallback(async () => {
     if (!data?.document || !currentRevisionId) return;
     try {
       let targetRevisionId = currentRevisionId;
@@ -1126,7 +1136,21 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to save changes');
     }
-  };
+  }, [
+    data?.document,
+    currentRevisionId,
+    isEditingApproved,
+    id,
+    editFormData,
+    editLineItems,
+    deletedLineItemIds,
+    createRevision,
+    updateRevision,
+    success,
+    toastError,
+    refetch,
+    refetchLineItems,
+  ]);
 
   const handleRevalidate = useCallback(async () => {
     if (!displayRevisionId) return;
@@ -1277,6 +1301,170 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editFormData.homeExchangeRate, editFormData.currency, editFormData.homeCurrency, isEditing]);
 
+  // Recalculate header totals when line items change
+  // This ensures subtotal, taxAmount, homeSubtotal, and homeTaxAmount stay in sync with line items
+  useEffect(() => {
+    if (!isEditing || editLineItems.length === 0) return;
+
+    // Sum up line item amounts and GST amounts (document currency)
+    const subtotalSum = editLineItems.reduce((sum, item) => {
+      const amount = parseFloat(item.amount) || 0;
+      return sum + amount;
+    }, 0);
+
+    const taxSum = editLineItems.reduce((sum, item) => {
+      const gstAmount = parseFloat(item.gstAmount) || 0;
+      return sum + gstAmount;
+    }, 0);
+
+    // Sum up line item home amounts and home GST amounts
+    const homeSubtotalSum = editLineItems.reduce((sum, item) => {
+      const homeAmount = parseFloat(item.homeAmount) || 0;
+      return sum + homeAmount;
+    }, 0);
+
+    const homeTaxSum = editLineItems.reduce((sum, item) => {
+      const homeGstAmount = parseFloat(item.homeGstAmount) || 0;
+      return sum + homeGstAmount;
+    }, 0);
+
+    const newSubtotal = subtotalSum.toFixed(2);
+    const newTaxAmount = taxSum.toFixed(2);
+    const newTotalAmount = (subtotalSum + taxSum).toFixed(2);
+    const newHomeSubtotal = homeSubtotalSum.toFixed(2);
+    const newHomeTaxAmount = homeTaxSum.toFixed(2);
+    const newHomeTotal = (homeSubtotalSum + homeTaxSum).toFixed(2);
+
+    // Use functional update to compare with current state and avoid stale closures
+    setEditFormData((prev) => {
+      // Only update if values have changed to prevent infinite loops
+      if (newSubtotal !== prev.subtotal ||
+          newTaxAmount !== prev.taxAmount ||
+          newTotalAmount !== prev.totalAmount ||
+          newHomeSubtotal !== prev.homeSubtotal ||
+          newHomeTaxAmount !== prev.homeTaxAmount ||
+          newHomeTotal !== prev.homeTotal) {
+        return {
+          ...prev,
+          subtotal: newSubtotal,
+          taxAmount: newTaxAmount,
+          totalAmount: newTotalAmount,
+          homeSubtotal: newHomeSubtotal,
+          homeTaxAmount: newHomeTaxAmount,
+          homeTotal: newHomeTotal,
+        };
+      }
+      return prev; // Return same reference if no changes
+    });
+  }, [editLineItems, isEditing]);
+
+  // Hotkeys effect (after all handler definitions)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip hotkeys when typing in inputs (except for Escape and modal hotkeys)
+      const isInInput = e.target instanceof HTMLInputElement ||
+                        e.target instanceof HTMLSelectElement ||
+                        e.target instanceof HTMLTextAreaElement;
+
+      // Handle approval modal hotkeys first (F1 to confirm, Escape to cancel)
+      if (showApproveDialog) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setShowApproveDialog(false);
+          return;
+        }
+        if (e.key === 'F1' && !approveRevision.isPending) {
+          e.preventDefault();
+          handleApproveRevision();
+          return;
+        }
+        return; // Block other hotkeys when modal is open
+      }
+
+      // Escape - Cancel editing (works even in input fields)
+      if (e.key === 'Escape' && isEditing) {
+        e.preventDefault();
+        setIsEditing(false);
+        setIsEditingApproved(false);
+        setDeletedLineItemIds([]);
+        return;
+      }
+
+      // Escape - Go back to processing page (when not editing, not in modal, not in input)
+      if (e.key === 'Escape' && !isEditing && !isInInput) {
+        e.preventDefault();
+        router.push('/processing');
+        return;
+      }
+
+      // Skip other hotkeys when in input fields
+      if (isInInput) return;
+
+      // Skip action hotkeys if data not loaded
+      if (!data) return;
+
+      const currentRev = data.currentRevision;
+      const doc = data.document;
+      const canApproveNow = currentRev?.status === 'DRAFT' &&
+        (doc.duplicateStatus === 'NONE' || doc.duplicateStatus === 'REJECTED');
+
+      // F1 - Approve (when viewing, not editing)
+      if (e.key === 'F1') {
+        e.preventDefault();
+        if (!isEditing && !isViewingSnapshot && canApproveNow && can.updateDocument) {
+          setSkipAliasLearning(false);
+          setShowApproveDialog(true);
+        }
+      }
+
+      // F2 - Edit
+      if (e.key === 'F2') {
+        e.preventDefault();
+        if (!isViewingSnapshot && !isEditing && can.updateDocument) {
+          if (currentRev?.status === 'DRAFT') {
+            handleStartEdit();
+          } else if (currentRev?.status === 'APPROVED') {
+            handleEditApproved();
+          }
+        }
+      }
+
+      // F3 - Save (when editing)
+      if (e.key === 'F3') {
+        e.preventDefault();
+        if (isEditing && !updateRevision.isPending) {
+          handleSaveEdit();
+        }
+      }
+
+      // F4 - Re-extract (when editing)
+      if (e.key === 'F4') {
+        e.preventDefault();
+        if (isEditing && !triggerExtraction.isPending) {
+          handleShowModelSelector(true);
+        }
+      }
+    };
+    // Use capture phase to intercept F3/F4 before browser handles them
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [
+    isEditing,
+    isViewingSnapshot,
+    data,
+    can.updateDocument,
+    updateRevision.isPending,
+    triggerExtraction.isPending,
+    handleStartEdit,
+    handleEditApproved,
+    handleSaveEdit,
+    handleShowModelSelector,
+    showApproveDialog,
+    approveRevision.isPending,
+    handleApproveRevision,
+    router,
+  ]);
+
   // Loading state
   if (isLoading) {
     return (
@@ -1325,7 +1513,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-background-primary flex-shrink-0">
         <div className="flex items-center gap-3">
-          <Link href="/processing" className="btn-ghost btn-sm p-2" title="Back to list">
+          <Link href="/processing" className="btn-ghost btn-sm p-2" title="Back to list (Esc)">
             <ArrowLeft className="w-4 h-4" />
           </Link>
 
@@ -1340,8 +1528,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-sm text-text-secondary whitespace-nowrap">
-                {navData.currentIndex + 1} / {navData.total}
+              <span className="text-sm text-text-secondary whitespace-nowrap" title="Documents pending approval">
+                {navData.currentIndex + 1} / {navData.total} Pending approval
               </span>
               <button
                 onClick={handleNavigateNext}
@@ -1399,57 +1587,43 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           )}
           {!isViewingSnapshot && isEditing ? (
             <>
-              <button onClick={() => { setIsEditing(false); setIsEditingApproved(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm">
-                Cancel
+              <button onClick={() => { setIsEditing(false); setIsEditingApproved(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm" title="Cancel editing (Esc)">
+                Cancel (Esc)
               </button>
-              {!isEditingApproved && (
-                <button
-                  onClick={handleRevalidate}
-                  disabled={isRevalidating}
-                  className="btn-secondary btn-sm"
-                  title="Re-run server-side validation (saved data only)"
-                >
-                  {isRevalidating ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                  ) : (
-                    <Check className="w-3.5 h-3.5 mr-1.5" />
-                  )}
-                  Revalidate
-                </button>
-              )}
               <button
                 onClick={() => handleShowModelSelector(true)}
                 disabled={triggerExtraction.isPending}
                 className="btn-secondary btn-sm"
-                title="Re-run AI extraction with model selection"
+                title="Re-run AI extraction with model selection (F4)"
               >
                 {triggerExtraction.isPending ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
                 ) : (
                   <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                 )}
-                Re-extract
+                Re-extract (F4)
               </button>
               <button
                 onClick={handleSaveEdit}
                 disabled={updateRevision.isPending}
                 className="btn-primary btn-sm"
+                title="Save changes (F3)"
               >
                 {updateRevision.isPending ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
                 ) : (
                   <Save className="w-3.5 h-3.5 mr-1.5" />
                 )}
-                Save
+                Save (F3)
               </button>
             </>
           ) : !isViewingSnapshot ? (
             <>
               {/* Edit button for DRAFT revisions - edits directly */}
               {currentRevision?.status === 'DRAFT' && can.updateDocument && (
-                <button onClick={handleStartEdit} className="btn-secondary btn-sm">
+                <button onClick={handleStartEdit} className="btn-secondary btn-sm" title="Edit document (F2)">
                   <Pencil className="w-3.5 h-3.5 mr-1.5" />
-                  Edit
+                  Edit (F2)
                 </button>
               )}
               {/* Edit button for APPROVED revisions - creates new draft revision */}
@@ -1458,14 +1632,14 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                   onClick={handleEditApproved}
                   disabled={createRevision.isPending}
                   className="btn-secondary btn-sm"
-                  title="Create a new draft revision from the approved document"
+                  title="Create a new draft revision from the approved document (F2)"
                 >
                   {createRevision.isPending ? (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
                   ) : (
                     <Pencil className="w-3.5 h-3.5 mr-1.5" />
                   )}
-                  Edit
+                  Edit (F2)
                 </button>
               )}
               {canApprove && can.updateDocument && (
@@ -1475,9 +1649,10 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                     setShowApproveDialog(true);
                   }}
                   className="btn-primary btn-sm"
+                  title="Approve document (F1)"
                 >
                   <Check className="w-3.5 h-3.5 mr-1.5" />
-                  Approve
+                  Approve (F1)
                 </button>
               )}
               {/* Download and Export buttons */}
@@ -1579,6 +1754,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                   fieldValues={fieldValues}
                   className="h-full"
                   onRotationChange={handleRotationChange}
+                  documentStatus={currentRevision?.status}
+                  onPagesChanged={refetch}
                 />
               }
               rightPanel={
@@ -1753,7 +1930,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
             This will mark it as the official record.
           </>
         )}
-        confirmLabel="Approve"
+        confirmLabel="Approve (F1)"
+        cancelLabel="Cancel (Esc)"
         variant="info"
         isLoading={approveRevision.isPending}
       >
@@ -1931,7 +2109,7 @@ function NoExtractionPlaceholder({
           : 'Extraction is not available for this document status.'}
       </p>
       {canTrigger && (
-        <button onClick={onTrigger} disabled={isPending} className="btn-primary btn-sm">
+        <button onClick={() => onTrigger()} disabled={isPending} className="btn-primary btn-sm">
           {isPending ? (
             <>
               <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
@@ -2324,20 +2502,22 @@ function AmountsSection({
   const homeTaxAmountIssue = getFieldValidationIssue('homeTaxAmount');
   const homeEquivalentIssue = getFieldValidationIssue('homeEquivalent');
 
-  // Format amount helper with currency symbol
+  // Format amount helper with currency symbol (uses parentheses for negative numbers)
   const formatAmount = (value: string | null, currency?: string): string => {
     if (!value || value === '') return '-';
     const num = parseFloat(value);
     if (isNaN(num)) return value;
+    const isNegative = num < 0;
+    const absNum = Math.abs(num);
     const formatted = new Intl.NumberFormat('en-SG', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(num);
+    }).format(absNum);
     if (currency) {
       const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
-      return `${symbol}${formatted}`;
+      return isNegative ? `(${symbol}${formatted})` : `${symbol}${formatted}`;
     }
-    return formatted;
+    return isNegative ? `(${formatted})` : formatted;
   };
 
   // Format exchange rate with 6 decimal places

@@ -29,6 +29,7 @@ import {
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import {
   useProcessingDocuments,
+  useDocumentNavigation,
   type ProcessingDocumentSearchParams,
   type ProcessingDocumentListItem,
 } from '@/hooks/use-processing-documents';
@@ -229,13 +230,16 @@ function formatCurrency(amount: string | null | undefined, currency: string): st
   const num = parseFloat(amount);
   if (isNaN(num)) return '-';
 
+  const isNegative = num < 0;
+  const absNum = Math.abs(num);
+
   const formatted = new Intl.NumberFormat('en-SG', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(num);
+  }).format(absNum);
 
   const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
-  return `${symbol}${formatted}`;
+  return isNegative ? `(${symbol}${formatted})` : `${symbol}${formatted}`;
 }
 
 // Format enum values to proper case (e.g., VENDOR_INVOICE -> Vendor Invoice)
@@ -784,6 +788,19 @@ export default function ProcessingDocumentsPage() {
     tenantId: activeTenantId,
   });
 
+  // Get pending approval count for "Approve" button visibility
+  const { data: pendingNavData, refetch: refetchPendingCount } = useDocumentNavigation(
+    'pending-count', // Dummy ID, not used when start=true
+    'needs-review',
+    {
+      tenantId: activeTenantId,
+      companyId: effectiveCompanyId,
+      start: true,
+    },
+    true // enabled
+  );
+  const pendingApprovalCount = pendingNavData?.total ?? 0;
+
   // Fetch companies for filter dropdown
   const { data: companiesData } = useCompanies({
     tenantId: activeTenantId || undefined,
@@ -861,6 +878,43 @@ export default function ProcessingDocumentsPage() {
       // ignore
     }
   }, [activeTenantId, effectiveCompanyId, router]);
+
+  // Keyboard hotkeys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip hotkeys when typing in inputs
+      const isInInput = e.target instanceof HTMLInputElement ||
+                        e.target instanceof HTMLSelectElement ||
+                        e.target instanceof HTMLTextAreaElement;
+      if (isInInput) return;
+
+      // R - Refresh
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        refetch();
+        refetchPendingCount();
+      }
+
+      // F1 - Approve (navigate to next pending document)
+      if (e.key === 'F1') {
+        e.preventDefault();
+        if (pendingApprovalCount > 0) {
+          handleReviewNext();
+        }
+      }
+
+      // F2 - Upload (navigate to upload page)
+      if (e.key === 'F2') {
+        e.preventDefault();
+        if (can.createDocument) {
+          router.push('/processing/upload');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [refetch, refetchPendingCount, handleReviewNext, pendingApprovalCount, can.createDocument, router]);
 
   // Selection state
   const selectionState = useMemo(() => {
@@ -1388,25 +1442,29 @@ export default function ProcessingDocumentsPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => refetch()}
+            onClick={() => { refetch(); refetchPendingCount(); }}
             className="btn-secondary btn-sm flex items-center gap-2"
+            title="Refresh list (R)"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="sm:hidden">Refresh</span>
           </button>
-          <button
-            onClick={handleReviewNext}
-            className="btn-secondary btn-sm flex items-center gap-2"
-            title="Review next document needing attention"
-          >
-            <Play className="w-4 h-4" />
-            <span className="hidden sm:inline">Review Next</span>
-            <span className="sm:hidden">Review</span>
-          </button>
+          {pendingApprovalCount > 0 && (
+            <button
+              onClick={handleReviewNext}
+              className="btn-secondary btn-sm flex items-center gap-2"
+              title="Approve next document pending approval (F1)"
+            >
+              <Play className="w-4 h-4" />
+              <span className="hidden sm:inline">Approve ({pendingApprovalCount}) (F1)</span>
+              <span className="sm:hidden">Approve ({pendingApprovalCount})</span>
+            </button>
+          )}
           {can.createDocument && (
-            <Link href="/processing/upload" className="btn-primary btn-sm flex items-center gap-2">
+            <Link href="/processing/upload" className="btn-primary btn-sm flex items-center gap-2" title="Upload documents (F2)">
               <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload Documents</span>
+              <span className="hidden sm:inline">Upload (F2)</span>
               <span className="sm:hidden">Upload</span>
             </Link>
           )}

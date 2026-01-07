@@ -720,10 +720,16 @@ export async function approveRevision(
     const document = processingDoc.document;
 
     // Generate new filename based on revision data
+    // Use customer name for AR documents, vendor name for AP documents
+    const contactName = isReceivable
+      ? (approvedCustomerName ?? approvedVendorName ?? revision.vendorName)
+      : (approvedVendorName ?? revision.vendorName);
+
     const extension = getFileExtension(document.fileName || document.storageKey);
     const newFilename = generateApprovedDocumentFilename({
       documentSubCategory: revision.documentSubCategory,
-      vendorName: approvedVendorName ?? revision.vendorName,
+      documentDate: revision.documentDate,
+      contactName,
       documentNumber: revision.documentNumber,
       currency: revision.currency,
       totalAmount: revision.totalAmount,
@@ -779,6 +785,18 @@ export async function approveRevision(
       where: {
         processingDocumentId: revision.processingDocumentId,
         status: 'APPROVED',
+      },
+      data: {
+        status: 'SUPERSEDED',
+        supersededAt: new Date(),
+      },
+    }),
+    // Also supersede any other DRAFT revisions (not the one being approved)
+    prisma.documentRevision.updateMany({
+      where: {
+        processingDocumentId: revision.processingDocumentId,
+        status: 'DRAFT',
+        id: { not: revisionId },
       },
       data: {
         status: 'SUPERSEDED',

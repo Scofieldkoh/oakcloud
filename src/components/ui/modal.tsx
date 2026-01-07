@@ -54,6 +54,7 @@ export function Modal({
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape' && closeOnEscape) {
+        e.stopPropagation(); // Prevent other handlers from also responding to Escape
         onCloseRef.current();
       }
     },

@@ -15,6 +15,7 @@ import { PDFDocument } from 'pdf-lib';
 import { createAuditLog } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
 import { clearDuplicateReferencesToDocument } from '@/services/duplicate-detection.service';
+import { extractFields } from '@/services/document-extraction.service';
 import crypto from 'crypto';
 
 const log = createLogger('bulk-merge');
@@ -213,6 +214,23 @@ export async function POST(request: NextRequest) {
         }
 
         log.info(`Merged ${accessibleDocs.length} documents into ${mergedProcessingDoc.id}, source documents soft-deleted`);
+
+        // Trigger extraction for the merged document (run asynchronously - don't wait for completion)
+        // Only trigger if we have a valid companyId
+        if (companyId) {
+            extractFields(mergedProcessingDoc.id, tenantId, companyId, session.id)
+                .then((result) => {
+                    log.info(`Extraction completed for merged document ${mergedProcessingDoc.id}`, {
+                        extractionId: result.extractionId,
+                        revisionId: result.revisionId,
+                    });
+                })
+                .catch((err) => {
+                    log.error(`Extraction failed for merged document ${mergedProcessingDoc.id}`, err);
+                });
+        } else {
+            log.warn(`Skipping extraction for merged document ${mergedProcessingDoc.id} - no company assigned`);
+        }
 
         return NextResponse.json({
             data: {

@@ -140,6 +140,18 @@ export async function POST(request: NextRequest) {
                   supersededAt: new Date(),
                 },
               }),
+              // Also supersede any other DRAFT revisions (not the one being approved)
+              prisma.documentRevision.updateMany({
+                where: {
+                  processingDocumentId: doc.id,
+                  status: 'DRAFT',
+                  id: { not: doc.currentRevisionId },
+                },
+                data: {
+                  status: 'SUPERSEDED',
+                  supersededAt: new Date(),
+                },
+              }),
               // Approve the current revision
               prisma.documentRevision.update({
                 where: { id: doc.currentRevisionId },

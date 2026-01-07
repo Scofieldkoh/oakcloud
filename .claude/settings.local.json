@@ -85,7 +85,9 @@
       "Bash(del \"C:\\\\Users\\\\Scotfield\\\\.claude\\\\plans\\\\joyful-yawning-zebra.md\")",
       "Bash(del /F /S /Q \".next\")",
       "Bash(del:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(echo:*)",
+      "Bash(S3_ACCESS_KEY=\"oakcloud\" S3_SECRET_KEY=\"oakcloud_minio_secret\" npx tsx:*)"
     ],
     "deny": [],
     "ask": []

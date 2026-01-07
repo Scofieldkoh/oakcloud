@@ -792,10 +792,15 @@ Determination logic:
 6. When in doubt AND supplier is GST registered â†’ SR
 
 ## Amount Validation Rules (CRITICAL)
-1. **Line Item Calculation**: For each line item, verify: quantity Ã— unitPrice = amount (with small rounding tolerance)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
 2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
 3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
 4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
 
 If the document shows values that don't add up:
 - Extract the values as shown on the document
@@ -804,8 +809,36 @@ If the document shows values that don't add up:
 
 ## Line Item GST Amount Calculation
 For each line item with taxCode = "SR":
-- gstAmount = amount Ã— 0.09 (rounded to 2 decimal places)
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
 - If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
 
 ## Negative Amounts (Credits/Refunds) - CRITICAL
 Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:

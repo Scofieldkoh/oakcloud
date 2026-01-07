@@ -53,16 +53,31 @@ export function FileMergeModal({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(false);
 
-  // Initialize with initial files
+  // Initialize with initial files or clear when modal opens fresh
   useEffect(() => {
-    if (isOpen && initialFiles.length > 0) {
-      const mergeFiles = initialFiles.map((file) => ({
-        id: `${file.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        file,
-        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
-      }));
-      setFiles(mergeFiles);
+    // Only run when modal transitions from closed to open
+    if (isOpen && !wasOpenRef.current) {
+      wasOpenRef.current = true;
+      if (initialFiles.length > 0) {
+        const mergeFiles = initialFiles.map((file) => ({
+          id: `${file.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          file,
+          preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+        }));
+        setFiles(mergeFiles);
+      } else {
+        // Clear files when modal opens with no initial files
+        setFiles((prev) => {
+          prev.forEach((f) => {
+            if (f.preview) URL.revokeObjectURL(f.preview);
+          });
+          return [];
+        });
+      }
+    } else if (!isOpen) {
+      wasOpenRef.current = false;
     }
   }, [isOpen, initialFiles]);
 
@@ -128,17 +143,6 @@ export function FileMergeModal({
       document.body.style.overflow = '';
     };
   }, [isOpen]);
-
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen && !isMerging) {
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, isMerging, onClose]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: addFiles,
@@ -212,7 +216,7 @@ export function FileMergeModal({
     setDragOverIndex(null);
   };
 
-  const handleMerge = async () => {
+  const handleMerge = useCallback(async () => {
     if (files.length < 2) return;
 
     setIsMerging(true);
@@ -226,7 +230,36 @@ export function FileMergeModal({
     } finally {
       setIsMerging(false);
     }
-  };
+  }, [files, onMergeComplete, onClose]);
+
+  // Keyboard hotkeys (Escape to cancel, M to merge)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      // Skip when typing in inputs
+      const isInInput = e.target instanceof HTMLInputElement ||
+                        e.target instanceof HTMLSelectElement ||
+                        e.target instanceof HTMLTextAreaElement;
+
+      // Escape - Cancel (works even in input fields)
+      if (e.key === 'Escape' && !isMerging) {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (isInInput) return;
+
+      // M - Merge files
+      if ((e.key === 'm' || e.key === 'M') && !isMerging && files.length >= 2) {
+        e.preventDefault();
+        handleMerge();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isMerging, onClose, files.length, handleMerge]);
 
   if (!isOpen) return null;
 
@@ -381,13 +414,15 @@ export function FileMergeModal({
               onClick={onClose}
               disabled={isMerging}
               className="btn-secondary btn-sm text-center"
+              title="Cancel (Esc)"
             >
-              Cancel
+              Cancel (Esc)
             </button>
             <button
               onClick={handleMerge}
               disabled={isMerging || files.length < 2}
               className="btn-primary btn-sm flex items-center justify-center gap-2"
+              title="Merge files (M)"
             >
               {isMerging ? (
                 <>
@@ -397,7 +432,7 @@ export function FileMergeModal({
               ) : (
                 <>
                   <Merge className="w-4 h-4" />
-                  Merge {files.length} Files
+                  Merge {files.length} Files (M)
                 </>
               )}
             </button>

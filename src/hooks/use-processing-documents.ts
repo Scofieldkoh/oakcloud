@@ -9,6 +9,7 @@
 
 'use client';
 
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   PipelineStatus,
@@ -483,6 +484,25 @@ export function useProcessingDocumentView(id: string) {
   });
 }
 
+/**
+ * Prefetch the next document view data for faster navigation during approval workflow
+ * This should be called after the current document finishes loading
+ */
+export function usePrefetchNextDocument() {
+  const queryClient = useQueryClient();
+
+  return useCallback((nextDocumentId: string | null | undefined) => {
+    if (!nextDocumentId) return;
+
+    // Prefetch the document view data
+    queryClient.prefetchQuery({
+      queryKey: ['processing-document-view', nextDocumentId],
+      queryFn: () => fetchProcessingDocumentView(nextDocumentId),
+      staleTime: 30_000,
+    });
+  }, [queryClient]);
+}
+
 export function useRevisionHistory(documentId: string, enabled: boolean = true) {
   return useQuery({
     queryKey: ['revision-history', documentId],
@@ -920,7 +940,9 @@ export function useDocumentNavigation(
       return result.data as DocumentNavigationResult;
     },
     enabled: !!currentDocumentId && enabled,
-    staleTime: 30_000,
+    // For start=true (count queries on list page), use short staleTime for accurate counts
+    // For navigation within detail page, use longer staleTime for performance
+    staleTime: options?.start ? 5_000 : 30_000,
     refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
@@ -1451,6 +1473,150 @@ export function useBulkMerge() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
+    },
+  });
+}
+
+// ============================================================================
+// Append Pages
+// ============================================================================
+
+interface AppendPagesResult {
+  documentId: string;
+  pagesAdded: number;
+  newPageCount: number;
+  newPages: Array<{ id: string; pageNumber: number }>;
+}
+
+/**
+ * Hook for appending pages (PDFs or images) to an existing document
+ */
+export function useAppendPages() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      documentId,
+      files,
+    }: {
+      documentId: string;
+      files: File[];
+    }): Promise<AppendPagesResult> => {
+      const formData = new FormData();
+      files.forEach((file) => formData.append('files', file));
+
+      const response = await fetch(`/api/processing-documents/${documentId}/pages/append`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to append pages');
+      }
+
+      const result = await response.json();
+      return result.data;
+    },
+    onSuccess: (_, { documentId }) => {
+      // Invalidate all related queries
+      queryClient.invalidateQueries({ queryKey: ['document-pages', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document-view', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
+    },
+  });
+}
+
+// ============================================================================
+// Reorder Pages
+// ============================================================================
+
+interface ReorderPagesResult {
+  documentId: string;
+  pageCount: number;
+  reordered: boolean;
+  pageMapping?: Array<{ oldPageNumber: number; newPageNumber: number }>;
+  message?: string;
+}
+
+/**
+ * Hook for reordering pages within a document
+ */
+export function useReorderPages() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      documentId,
+      newOrder,
+    }: {
+      documentId: string;
+      newOrder: number[]; // Array of page numbers in new order (1-indexed)
+    }): Promise<ReorderPagesResult> => {
+      const response = await fetch(`/api/processing-documents/${documentId}/pages/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newOrder }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to reorder pages');
+      }
+
+      const result = await response.json();
+      return result.data;
+    },
+    onSuccess: (_, { documentId }) => {
+      // Invalidate all related queries
+      queryClient.invalidateQueries({ queryKey: ['document-pages', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document-view', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
+    },
+  });
+}
+
+// Result type for delete pages
+interface DeletePagesResult {
+  documentId: string;
+  pagesDeleted: number;
+  newPageCount: number;
+  deletedPageNumbers: number[];
+}
+
+/**
+ * Hook to delete pages from a processing document
+ */
+export function useDeletePages() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      documentId,
+      pageNumbers,
+    }: {
+      documentId: string;
+      pageNumbers: number[]; // Array of page numbers to delete (1-indexed)
+    }): Promise<DeletePagesResult> => {
+      const response = await fetch(`/api/processing-documents/${documentId}/pages/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageNumbers }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to delete pages');
+      }
+
+      const result = await response.json();
+      return result.data;
+    },
+    onSuccess: (_, { documentId }) => {
+      // Invalidate all related queries
+      queryClient.invalidateQueries({ queryKey: ['document-pages', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document-view', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
     },
   });
 }

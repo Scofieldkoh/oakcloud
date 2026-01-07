@@ -110,6 +110,7 @@ export {
   generateApprovedDocumentFilename,
   sanitizeForFilename,
   formatAmountForFilename,
+  formatDateForFilename,
   shortenCompanyName,
   getFileExtension,
   buildApprovedStorageKey,

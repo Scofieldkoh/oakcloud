@@ -25,7 +25,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Get the processing document with its pages and document for company context and file info
     const processingDoc = await prisma.processingDocument.findUnique({
       where: { id: documentId },
-      include: {
+      select: {
+        lockVersion: true,
         document: {
           select: {
             companyId: true,
@@ -106,7 +107,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         pages,
         // PDF-specific fields for client-side rendering
         isPdf: isPdf || false,
-        pdfUrl: isPdf ? `/api/processing-documents/${documentId}/pdf` : null,
+        // Include lockVersion in URL for cache busting after page modifications
+        pdfUrl: isPdf ? `/api/processing-documents/${documentId}/pdf?v=${processingDoc.lockVersion}` : null,
       },
       meta: {
         requestId: uuidv4(),

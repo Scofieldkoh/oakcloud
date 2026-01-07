@@ -3604,17 +3604,19 @@ Container Upload → Queued → Processing → Split Detection → Child Documen
 
 When a document revision is approved, the physical file in storage is automatically renamed using a standardized format:
 
-**Format:** `[Sub-category]-[Vendor]-[Document Number]-[Currency] [Amount].ext`
+**Format:** `[Sub Category]_[Document Date]_[Contact Name]_[Document No]_[Amount].ext`
 
 **Examples:**
 | Revision Data | Resulting Filename |
 |--------------|-------------------|
-| Vendor Invoice, "Acme Pte Ltd", INV-001, SGD 1234.56 | `Vendor Invoice-Acme-INV-001-SGD 1,234.56.pdf` |
-| Purchase Order, "ABC Corporation", PO-2024-100, USD 5000 | `Purchase Order-ABC-PO-2024-100-USD 5,000.00.pdf` |
+| Vendor Invoice, 2024-01-15, "Acme Pte Ltd", INV-001, SGD 1234.56 | `Vendor Invoice_2024-01-15_Acme_INV-001_SGD 1,234.56.pdf` |
+| Sales Invoice, 2024-03-20, "ABC Corporation", SI-2024-100, USD 5000 | `Sales Invoice_2024-03-20_ABC_SI-2024-100_USD 5,000.00.pdf` |
+| Purchase Order, (no date), "XYZ Inc", PO-001, SGD 500 | `Purchase Order_XYZ_PO-001_SGD 500.00.pdf` |
 
 **Features:**
 - **Sub-category**: Proper casing (e.g., `VENDOR_INVOICE` → "Vendor Invoice")
-- **Vendor name**: Legal suffixes removed (Pte Ltd, Inc, LLC, Corp, Sdn Bhd, GmbH, etc.)
+- **Document date**: Formatted as YYYY-MM-DD (omitted if not available)
+- **Contact name**: Vendor name for AP, Customer name for AR; legal suffixes removed (Pte Ltd, Inc, LLC, Corp, Sdn Bhd, GmbH, etc.)
 - **Amount**: Formatted with commas and 2 decimals
 - **Missing parts**: Automatically omitted from filename
 - **Storage**: Both `Document.fileName` and `Document.storageKey` updated
@@ -3622,6 +3624,7 @@ When a document revision is approved, the physical file in storage is automatica
 
 **Utilities:** `src/lib/storage/filename.ts`
 - `generateApprovedDocumentFilename()` - Build standardized filename
+- `formatDateForFilename()` - Format date as YYYY-MM-DD
 - `shortenCompanyName()` - Remove legal suffixes from company names
 - `sanitizeForFilename()` - Remove invalid filename characters
 

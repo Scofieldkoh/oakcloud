@@ -250,7 +250,8 @@ export async function GET(
           pageCount: pages.length,
           pages,
           isPdf: isPdf || false,
-          pdfUrl: isPdf ? `/api/processing-documents/${documentId}/pdf` : null,
+          // Include lockVersion in URL for cache busting after page modifications
+          pdfUrl: isPdf ? `/api/processing-documents/${documentId}/pdf?v=${processingDoc.lockVersion}` : null,
         },
         tags,
       },

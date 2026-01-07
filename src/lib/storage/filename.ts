@@ -2,8 +2,8 @@
  * Document Filename Generation Utilities
  *
  * Generates standardized filenames for approved documents.
- * Format: [Sub-category]-[Vendor]-[Document Number]-[Currency] [Amount].ext
- * Example: Vendor Invoice-Acme-INV-2024-001-SGD 1,234.56.pdf
+ * Format: [Sub Category]_[Document Date]_[Contact Name]_[Document No]_[Amount].ext
+ * Example: Vendor Invoice_2024-01-15_Acme_INV-2024-001_SGD 1,234.56.pdf
  */
 
 import type { DocumentSubCategory } from '@/generated/prisma';
@@ -134,11 +134,28 @@ export function formatAmountForFilename(
 }
 
 /**
+ * Format a date as YYYY-MM-DD for filename
+ */
+export function formatDateForFilename(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return null;
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Input for generating approved document filename
  */
 export interface ApprovedDocumentFilenameInput {
   documentSubCategory?: DocumentSubCategory | null;
-  vendorName?: string | null;
+  documentDate?: Date | string | null;
+  contactName?: string | null; // Vendor name for AP, Customer name for AR
   documentNumber?: string | null;
   currency: string;
   totalAmount: Decimal | number | string;
@@ -148,11 +165,11 @@ export interface ApprovedDocumentFilenameInput {
 /**
  * Generate a standardized filename for an approved document
  *
- * Format: [Sub-category]-[Vendor]-[Document Number]-[Currency] [Amount].ext
+ * Format: [Sub Category]_[Document Date]_[Contact Name]_[Document No]_[Amount].ext
  *
  * Parts are omitted if not available:
- * - With all parts: Vendor Invoice-Acme-INV-2024-001-SGD 1,234.56.pdf
- * - Missing vendor: Vendor Invoice-INV-2024-001-SGD 1,234.56.pdf
+ * - With all parts: Vendor Invoice_2024-01-15_Acme_INV-2024-001_SGD 1,234.56.pdf
+ * - Missing date: Vendor Invoice_Acme_INV-2024-001_SGD 1,234.56.pdf
  * - Minimal: SGD 1,234.56.pdf
  */
 export function generateApprovedDocumentFilename(input: ApprovedDocumentFilenameInput): string {
@@ -164,16 +181,22 @@ export function generateApprovedDocumentFilename(input: ApprovedDocumentFilename
     parts.push(label);
   }
 
-  // 2. Vendor name (shortened and sanitized)
-  if (input.vendorName) {
-    const shortened = shortenCompanyName(input.vendorName);
-    const sanitizedVendor = sanitizeForFilename(shortened, 40);
-    if (sanitizedVendor) {
-      parts.push(sanitizedVendor);
+  // 2. Document date (YYYY-MM-DD format)
+  const formattedDate = formatDateForFilename(input.documentDate);
+  if (formattedDate) {
+    parts.push(formattedDate);
+  }
+
+  // 3. Contact name - vendor for AP, customer for AR (shortened and sanitized)
+  if (input.contactName) {
+    const shortened = shortenCompanyName(input.contactName);
+    const sanitizedContact = sanitizeForFilename(shortened, 40);
+    if (sanitizedContact) {
+      parts.push(sanitizedContact);
     }
   }
 
-  // 3. Document number (sanitized)
+  // 4. Document number (sanitized)
   if (input.documentNumber) {
     const sanitizedDocNumber = sanitizeForFilename(input.documentNumber, 30);
     if (sanitizedDocNumber) {
@@ -181,7 +204,7 @@ export function generateApprovedDocumentFilename(input: ApprovedDocumentFilename
     }
   }
 
-  // 4. Currency and Amount (always present)
+  // 5. Currency and Amount (always present)
   const formattedAmount = formatAmountForFilename(input.totalAmount);
   if (formattedAmount) {
     parts.push(`${input.currency} ${formattedAmount}`);

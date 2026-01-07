@@ -13,7 +13,7 @@ You can read the MD files of the docs for information; they are documented and c
 - [ ] **N+1 query problem**: Duplicate detection could potentially load thousands of documents (add filters to reduce candidate set)
 
 ### Document Processing - REMAINING IMPROVEMENTS
-- [ ] Review next button is not ideal, there should be major redesign or a page/ feature that is specifically used for user to approve documents
+- Merge and split document not working yet
 
 ----
 

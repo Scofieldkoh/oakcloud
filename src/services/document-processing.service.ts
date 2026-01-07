@@ -317,12 +317,14 @@ interface PdfMetadata {
 }
 
 /**
- * Extract PDF metadata using pdf-lib (lightweight, no image rendering)
- * PDFs are rendered client-side using pdfjs-dist for better coordinate accuracy
+ * Extract PDF metadata using pdf-lib with pdfjs-dist fallback
+ * Some PDFs have internal structures that pdf-lib can't parse, so we fall back to pdfjs-dist
  */
 async function extractPdfMetadata(storageKey: string): Promise<PdfMetadata> {
+  const pdfBytes = await storage.download(storageKey);
+
+  // Try pdf-lib first (faster, lightweight)
   try {
-    const pdfBytes = await storage.download(storageKey);
     const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
 
     const pageCount = pdfDoc.getPageCount();
@@ -338,11 +340,35 @@ async function extractPdfMetadata(storageKey: string): Promise<PdfMetadata> {
       });
     }
 
-    log.info(`Extracted metadata for ${pageCount} pages from PDF`);
+    log.info(`Extracted metadata for ${pageCount} pages from PDF using pdf-lib`);
     return { pageCount, pages };
-  } catch (error) {
-    log.error('Failed to extract PDF metadata:', error);
-    throw new Error(`PDF metadata extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } catch (pdfLibError) {
+    log.warn(`pdf-lib failed, falling back to pdfjs-dist: ${pdfLibError instanceof Error ? pdfLibError.message : 'Unknown error'}`);
+  }
+
+  // Fallback to pdfjs-dist (more compatible with various PDF structures)
+  try {
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+
+    const pageCount = pdfDoc.numPages;
+    const pages: PdfMetadata['pages'] = [];
+
+    for (let i = 1; i <= pageCount; i++) {
+      const page = await pdfDoc.getPage(i);
+      const viewport = page.getViewport({ scale: 1.0 });
+      pages.push({
+        pageNumber: i,
+        width: Math.round(viewport.width),
+        height: Math.round(viewport.height),
+      });
+    }
+
+    log.info(`Extracted metadata for ${pageCount} pages from PDF using pdfjs-dist`);
+    return { pageCount, pages };
+  } catch (pdfjsError) {
+    log.error('Both pdf-lib and pdfjs-dist failed to extract PDF metadata:', pdfjsError);
+    throw new Error(`PDF metadata extraction failed: ${pdfjsError instanceof Error ? pdfjsError.message : 'Unknown error'}`);
   }
 }
 

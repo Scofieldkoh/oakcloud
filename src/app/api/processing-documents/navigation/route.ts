@@ -32,11 +32,16 @@ function buildBaseWhere(input: {
 }
 
 function buildNeedsReviewWhere(): Prisma.ProcessingDocumentWhereInput {
+  // Only match documents that need review:
+  // 1. Suspected duplicates that need resolution
+  // 2. Documents with any DRAFT revision (not yet approved)
+  // Note: Approved documents should NOT appear even if they have validation issues
+  // (validation issues on approved docs were accepted by the user during approval)
   return {
     OR: [
       { duplicateStatus: 'SUSPECTED' },
+      // Any document with a DRAFT revision needs review
       { revisions: { some: { status: 'DRAFT' } } },
-      { revisions: { some: { validationStatus: { in: ['WARNINGS', 'INVALID'] } } } },
     ],
   };
 }
