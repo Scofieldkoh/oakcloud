@@ -76,6 +76,13 @@ enum AddressType {
   BUSINESS
 }
 
+enum ContactDetailType {
+  EMAIL
+  PHONE
+  WEBSITE
+  OTHER
+}
+
 enum AuditAction {
   // CRUD Operations
   CREATE
@@ -277,6 +284,9 @@ model Tenant {
 
   // Chart of Accounts
   chartOfAccounts      ChartOfAccount[]
+
+  // Contact Details
+  contactDetails       ContactDetail[]
 
   @@index([slug])
   @@index([status])
@@ -542,6 +552,9 @@ model Company {
   chartOfAccounts       ChartOfAccount[]
   accountMappings       ChartOfAccountsMapping[]
 
+  // Contact Details
+  contactDetails        ContactDetail[]
+
   @@unique([tenantId, uen]) // UEN unique within tenant
   @@index([tenantId])
   @@index([uen])
@@ -647,6 +660,7 @@ model Contact {
   shareholdings       CompanyShareholder[]
   chargeHoldings      CompanyCharge[]
   noteTabs            NoteTab[]
+  contactDetails      ContactDetail[]
 
   @@unique([tenantId, identificationType, identificationNumber])
   @@index([tenantId])
@@ -673,6 +687,63 @@ model CompanyContact {
   @@index([contactId])
   @@index([deletedAt])
   @@map("company_contacts")
+}
+
+// ============================================================================
+// CONTACT DETAILS
+// ============================================================================
+
+// ContactDetail stores additional contact methods (email, phone, etc.)
+// Can be linked to:
+// - A Contact only (personal contact details)
+// - A Company only (company-level contact details like "accounts receivable email")
+// - Both Contact AND Company (contact's detail for a specific company function)
+model ContactDetail {
+  id             String            @id @default(uuid())
+  tenantId       String
+  tenant         Tenant            @relation(fields: [tenantId], references: [id])
+
+  // Optional link to Contact (for contact-level details)
+  contactId      String?
+  contact        Contact?          @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  // Optional link to Company (for company-level details)
+  companyId      String?
+  company        Company?          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Detail type and value
+  detailType     ContactDetailType
+  value          String            // The actual email, phone number, etc.
+
+  // Function/purpose label (e.g., "Account Receivable", "Main Office", "Personal")
+  label          String?
+
+  // Purposes for automation (e.g., ["INVOICE", "STATEMENT"])
+  // Common purposes: INVOICE, STATEMENT, TAX_NOTICE, RECEIPT, REMINDER, GENERAL
+  purposes       String[]          @default([])
+
+  // Additional notes
+  description    String?
+
+  // Ordering for display
+  displayOrder   Int               @default(0)
+
+  // Whether this is the primary detail of this type
+  isPrimary      Boolean           @default(false)
+
+  // Timestamps
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deletedAt      DateTime?
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([companyId])
+  @@index([detailType])
+  @@index([tenantId, contactId])
+  @@index([tenantId, companyId])
+  @@index([tenantId, deletedAt])
+  @@map("contact_details")
 }
 
 // ============================================================================

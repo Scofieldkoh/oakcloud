@@ -21,6 +21,7 @@ import {
   CreditCard,
   Globe,
   User,
+  Contact,
 } from 'lucide-react';
 import {
   useCompany,
@@ -41,6 +42,7 @@ import { useToast } from '@/components/ui/toast';
 import { X, Filter, Pencil as PencilIcon } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { InternalNotes } from '@/components/notes/internal-notes';
+import { ContactDetailsModal } from '@/components/companies/contact-details';
 
 // Helper to convert UPPER_CASE or UPPERCASE to Title Case
 function toTitleCase(str: string): string {
@@ -73,6 +75,7 @@ export default function CompanyDetailPage({
   const { can } = usePermissions(id);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contactDetailsModalOpen, setContactDetailsModalOpen] = useState(false);
 
   // Filter state for officers
   const [officerNameFilter, setOfficerNameFilter] = useState('');
@@ -347,8 +350,18 @@ export default function CompanyDetailPage({
             )}
           </div>
         </div>
-        {(can.updateCompany || can.deleteCompany) && (
+        {(can.updateCompany || can.deleteCompany || can.readCompany) && (
           <div className="flex items-center gap-2 sm:gap-3">
+            {can.readCompany && (
+              <button
+                onClick={() => setContactDetailsModalOpen(true)}
+                className="btn-secondary btn-sm flex items-center gap-2"
+              >
+                <Contact className="w-4 h-4" />
+                <span className="hidden sm:inline">Contact Details</span>
+                <span className="sm:hidden">Contacts</span>
+              </button>
+            )}
             {can.updateCompany && (
               <Link
                 href={`/companies/upload?companyId=${id}`}
@@ -1168,6 +1181,15 @@ export default function CompanyDetailPage({
           </Button>
         </ModalFooter>
       </Modal>
+
+      {/* Contact Details Modal */}
+      <ContactDetailsModal
+        isOpen={contactDetailsModalOpen}
+        onClose={() => setContactDetailsModalOpen(false)}
+        companyId={id}
+        companyName={company?.name || ''}
+        canEdit={can.updateCompany}
+      />
     </div>
   );
 }
