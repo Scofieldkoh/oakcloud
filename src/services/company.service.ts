@@ -618,10 +618,12 @@ export async function getCompanyById(
           contact: {
             select: {
               id: true,
+              fullName: true,
               email: true,
               phone: true,
               nationality: true,
               fullAddress: true,
+              identificationType: true,
               identificationNumber: true,
             },
           },
@@ -649,6 +651,7 @@ export async function getCompanyById(
           contact: {
             select: {
               id: true,
+              fullName: true,
               email: true,
               phone: true,
               nationality: true,
@@ -908,10 +911,13 @@ export async function getCompanyFullDetails(
           contact: {
             select: {
               id: true,
+              fullName: true,
               email: true,
               phone: true,
               nationality: true,
               fullAddress: true,
+              identificationType: true,
+              identificationNumber: true,
             },
           },
         },
@@ -922,10 +928,13 @@ export async function getCompanyFullDetails(
           contact: {
             select: {
               id: true,
+              fullName: true,
               email: true,
               phone: true,
               nationality: true,
               fullAddress: true,
+              identificationType: true,
+              identificationNumber: true,
             },
           },
         },

@@ -64,6 +64,7 @@ export const ModelName = {
   CompanyAddress: 'CompanyAddress',
   Contact: 'Contact',
   CompanyContact: 'CompanyContact',
+  ContactDetail: 'ContactDetail',
   CompanyOfficer: 'CompanyOfficer',
   ShareCapital: 'ShareCapital',
   CompanyShareholder: 'CompanyShareholder',
@@ -365,6 +366,26 @@ export const CompanyContactScalarFieldEnum = {
 } as const
 
 export type CompanyContactScalarFieldEnum = (typeof CompanyContactScalarFieldEnum)[keyof typeof CompanyContactScalarFieldEnum]
+
+
+export const ContactDetailScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  contactId: 'contactId',
+  companyId: 'companyId',
+  detailType: 'detailType',
+  value: 'value',
+  label: 'label',
+  purposes: 'purposes',
+  description: 'description',
+  displayOrder: 'displayOrder',
+  isPrimary: 'isPrimary',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type ContactDetailScalarFieldEnum = (typeof ContactDetailScalarFieldEnum)[keyof typeof ContactDetailScalarFieldEnum]
 
 
 export const CompanyOfficerScalarFieldEnum = {

@@ -18,6 +18,7 @@ type Decimal = Prisma.Decimal;
  */
 export interface RelatedContact {
   id: string;
+  fullName?: string | null;
   email?: string | null;
   phone?: string | null;
   nationality?: string | null;

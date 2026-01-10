@@ -433,6 +433,23 @@ export type EnumIdentificationTypeNullableWithAggregatesFilter<$PrismaModel = ne
   _max?: Prisma.NestedEnumIdentificationTypeNullableFilter<$PrismaModel>
 }
 
+export type EnumContactDetailTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactDetailType | Prisma.EnumContactDetailTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ContactDetailType[] | Prisma.ListEnumContactDetailTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContactDetailType[] | Prisma.ListEnumContactDetailTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContactDetailTypeFilter<$PrismaModel> | $Enums.ContactDetailType
+}
+
+export type EnumContactDetailTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactDetailType | Prisma.EnumContactDetailTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ContactDetailType[] | Prisma.ListEnumContactDetailTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContactDetailType[] | Prisma.ListEnumContactDetailTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContactDetailTypeWithAggregatesFilter<$PrismaModel> | $Enums.ContactDetailType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumContactDetailTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumContactDetailTypeFilter<$PrismaModel>
+}
+
 export type EnumOfficerRoleFilter<$PrismaModel = never> = {
   equals?: $Enums.OfficerRole | Prisma.EnumOfficerRoleFieldRefInput<$PrismaModel>
   in?: $Enums.OfficerRole[] | Prisma.ListEnumOfficerRoleFieldRefInput<$PrismaModel>
@@ -1733,6 +1750,23 @@ export type NestedEnumIdentificationTypeNullableWithAggregatesFilter<$PrismaMode
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedEnumIdentificationTypeNullableFilter<$PrismaModel>
   _max?: Prisma.NestedEnumIdentificationTypeNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumContactDetailTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactDetailType | Prisma.EnumContactDetailTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ContactDetailType[] | Prisma.ListEnumContactDetailTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContactDetailType[] | Prisma.ListEnumContactDetailTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContactDetailTypeFilter<$PrismaModel> | $Enums.ContactDetailType
+}
+
+export type NestedEnumContactDetailTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactDetailType | Prisma.EnumContactDetailTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ContactDetailType[] | Prisma.ListEnumContactDetailTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContactDetailType[] | Prisma.ListEnumContactDetailTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContactDetailTypeWithAggregatesFilter<$PrismaModel> | $Enums.ContactDetailType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumContactDetailTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumContactDetailTypeFilter<$PrismaModel>
 }
 
 export type NestedEnumOfficerRoleFilter<$PrismaModel = never> = {

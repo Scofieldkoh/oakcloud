@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Search, Filter, X, ChevronDown, Tag, Calendar, Eye, Copy } from 'lucide-react';
+import { Search, Filter, X, ChevronDown, Tag, Calendar, Eye, Copy, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
+import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui/async-search-select';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { TagChip, TagManager } from '@/components/processing/document-tags';
 import { TAG_COLORS } from '@/lib/validations/document-tag';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
+import { useCompanies } from '@/hooks/use-companies';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, TagColor, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import type { AmountFilterValue } from '@/components/ui/amount-filter';
 
@@ -56,7 +58,6 @@ export interface ProcessingFilterValues {
 interface ProcessingFiltersProps {
   onFilterChange: (filters: ProcessingFilterValues) => void;
   initialFilters?: ProcessingFilterValues;
-  companies?: Array<{ id: string; name: string }>;
   tags?: TagInfo[];
   onSearchChange?: (query: string) => void;
   initialSearch?: string;
@@ -66,6 +67,11 @@ interface ProcessingFiltersProps {
   activeTenantId?: string;
   /** Optional right-side toolbar actions (e.g., Adjust columns) */
   rightActions?: React.ReactNode;
+}
+
+// Company option type for AsyncSearchSelect
+interface CompanyOption extends AsyncSearchSelectOption {
+  uen?: string | null;
 }
 
 // Status configurations
@@ -101,7 +107,6 @@ const DOCUMENT_TYPE_OPTIONS: SelectOption[] = [
 export function ProcessingFilters({
   onFilterChange,
   initialFilters = {},
-  companies = [],
   tags = [],
   onSearchChange,
   initialSearch = '',
@@ -113,6 +118,39 @@ export function ProcessingFilters({
   const [filters, setFilters] = useState<ProcessingFilterValues>(initialFilters);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Company search state with debounce
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const [debouncedCompanyQuery, setDebouncedCompanyQuery] = useState('');
+
+  // Debounce company search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCompanyQuery(companySearchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [companySearchQuery]);
+
+  // Fetch companies with server-side search
+  const { data: companiesData, isLoading: companiesLoading } = useCompanies({
+    query: debouncedCompanyQuery || undefined,
+    tenantId: activeTenantId,
+    limit: 50,
+    sortBy: 'name',
+    sortOrder: 'asc',
+  });
+
+  // Transform companies to AsyncSearchSelect options
+  const companyOptions: CompanyOption[] = useMemo(
+    () =>
+      (companiesData?.companies || []).map((c) => ({
+        id: c.id,
+        label: c.name,
+        description: c.uen || undefined,
+        uen: c.uen,
+      })),
+    [companiesData?.companies]
+  );
 
   // Serialize initialFilters for comparison to avoid object reference issues
   const initialFiltersKey = useMemo(() => JSON.stringify(initialFilters), [initialFilters]);
@@ -149,12 +187,6 @@ export function ProcessingFilters({
       }
     };
   }, []);
-
-  // Convert companies to SelectOption format
-  const companyOptions: SelectOption[] = useMemo(() =>
-    companies.map(c => ({ value: c.id, label: c.name })),
-    [companies]
-  );
 
   // Note: tags are displayed directly as chips in the filter section, not as SelectOptions
 
@@ -473,18 +505,21 @@ export function ProcessingFilters({
             </div>
 
             {/* Row 2: Company & Date Filters */}
-            {companyOptions.length > 0 && (
-              <div>
-                <label className="label">Company</label>
-                <SearchableSelect
-                  options={companyOptions}
-                  value={filters.companyId || ''}
-                  onChange={(v) => handleFilterChange('companyId', v)}
-                  placeholder="All Companies"
-                  size="sm"
-                />
-              </div>
-            )}
+            <div>
+              <label className="label">Company</label>
+              <AsyncSearchSelect<CompanyOption>
+                value={filters.companyId || ''}
+                onChange={(id) => handleFilterChange('companyId', id)}
+                options={companyOptions}
+                isLoading={companiesLoading}
+                searchQuery={companySearchQuery}
+                onSearchChange={setCompanySearchQuery}
+                placeholder="Search companies..."
+                icon={<Building2 className="w-4 h-4" />}
+                emptySearchText="Type to search companies"
+                noResultsText="No companies found"
+              />
+            </div>
 
             <div>
               <label className="label">Upload Date</label>
@@ -679,7 +714,7 @@ export function ProcessingFilters({
           {filters.companyId && (
             <FilterChip
               label="Company"
-              value={companyOptions.find(c => c.value === filters.companyId)?.label || filters.companyId}
+              value={companyOptions.find(c => c.id === filters.companyId)?.label || filters.companyId}
               onRemove={() => clearFilter('companyId')}
             />
           )}

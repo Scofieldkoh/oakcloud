@@ -7,3 +7,4 @@
 export * from './application';
 export * from './a4';
 export * from './layout';
+export * from './automation-purposes';

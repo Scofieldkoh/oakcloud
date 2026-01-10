@@ -36,9 +36,9 @@ export interface UpdateContactDetailInput {
   id: string;
   detailType?: ContactDetailType;
   value?: string;
-  label?: string;
+  label?: string | null;
   purposes?: string[];
-  description?: string;
+  description?: string | null;
   displayOrder?: number;
   isPrimary?: boolean;
 }
@@ -135,6 +135,35 @@ export async function createContactDetail(
       isPrimary: data.isPrimary ?? false,
     },
   });
+
+  // Sync to Contact's primary email/phone if applicable
+  // When adding EMAIL or PHONE to a contact, update the contact's primary field if:
+  // 1. The contact doesn't have a primary email/phone yet, OR
+  // 2. isPrimary is true
+  if (data.contactId) {
+    const contact = await db.contact.findFirst({
+      where: { id: data.contactId, tenantId, deletedAt: null },
+      select: { id: true, email: true, phone: true },
+    });
+
+    if (contact) {
+      const updateData: { email?: string; phone?: string } = {};
+
+      if (data.detailType === 'EMAIL' && (!contact.email || data.isPrimary)) {
+        updateData.email = data.value;
+      }
+      if (data.detailType === 'PHONE' && (!contact.phone || data.isPrimary)) {
+        updateData.phone = data.value;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await db.contact.update({
+          where: { id: data.contactId },
+          data: updateData,
+        });
+      }
+    }
+  }
 
   // Create audit log
   const entityName = data.label || `${data.detailType}: ${data.value}`;

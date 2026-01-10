@@ -268,9 +268,11 @@ export function useUpdateContact() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<UpdateContactInput> }) =>
       updateContact(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      queryClient.invalidateQueries({ queryKey: ['contact', id] });
+    onSuccess: async (_, { id }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['contacts'] }),
+        queryClient.invalidateQueries({ queryKey: ['contact', id] }),
+      ]);
     },
   });
 }

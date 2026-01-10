@@ -43,6 +43,8 @@ export interface SearchableSelectProps {
   showKeyboardHints?: boolean;
   /** Show chevron icon */
   showChevron?: boolean;
+  /** Whether options are loading */
+  loading?: boolean;
 }
 
 export function SearchableSelect({
@@ -57,6 +59,7 @@ export function SearchableSelect({
   clearable = true,
   showKeyboardHints = true,
   showChevron = true,
+  loading = false,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -383,9 +386,17 @@ export function SearchableSelect({
               ref={listRef}
               className="flex-1 overflow-y-auto py-1"
             >
-              {filteredOptions.length === 0 ? (
+              {loading ? (
                 <div className="px-3 py-6 text-center text-sm text-text-muted">
-                  No options found
+                  Loading...
+                </div>
+              ) : options.length === 0 ? (
+                <div className="px-3 py-6 text-center text-sm text-text-muted">
+                  No options available
+                </div>
+              ) : filteredOptions.length === 0 ? (
+                <div className="px-3 py-6 text-center text-sm text-text-muted">
+                  No matches found
                 </div>
               ) : (
                 filteredOptions.map((option, index) => (

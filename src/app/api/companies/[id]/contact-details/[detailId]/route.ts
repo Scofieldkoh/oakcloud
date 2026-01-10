@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireTenantContext } from '@/lib/api-helpers';
 import {
   getContactDetailById,
   updateContactDetail,
@@ -30,10 +31,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Check read permission
     await requirePermission(session, 'company', 'read', companyId);
 
-    const tenantId = session.tenantId;
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    // Resolve tenant context - SUPER_ADMIN can specify via query param
+    const { searchParams } = new URL(request.url);
+    const tenantIdParam = searchParams.get('tenantId');
+    const tenantResult = await requireTenantContext(session, tenantIdParam);
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     const contactDetail = await getContactDetailById(detailId, tenantId);
 
@@ -78,10 +81,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Check update permission
     await requirePermission(session, 'company', 'update', companyId);
 
-    const tenantId = session.tenantId;
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const body = await request.json();
+
+    // Resolve tenant context - SUPER_ADMIN can specify via body
+    const { tenantId: bodyTenantId, ...updateData } = body;
+    const tenantResult = await requireTenantContext(session, bodyTenantId);
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Verify the contact detail exists and belongs to this company
     const existing = await getContactDetailById(detailId, tenantId);
@@ -94,11 +100,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Contact detail not found' }, { status: 404 });
     }
 
-    const body = await request.json();
-
     // Parse and validate input
     const data = updateContactDetailSchema.parse({
-      ...body,
+      ...updateData,
       id: detailId,
     });
 
@@ -148,10 +152,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // Check update permission (deleting a detail requires update permission)
     await requirePermission(session, 'company', 'update', companyId);
 
-    const tenantId = session.tenantId;
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    // Resolve tenant context - SUPER_ADMIN can specify via query param
+    const { searchParams } = new URL(request.url);
+    const tenantIdParam = searchParams.get('tenantId');
+    const tenantResult = await requireTenantContext(session, tenantIdParam);
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Verify the contact detail exists and belongs to this company
     const existing = await getContactDetailById(detailId, tenantId);

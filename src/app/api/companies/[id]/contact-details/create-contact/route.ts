@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireTenantContext } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
 import { createContact, linkContactToCompany } from '@/services/contact.service';
 import { createContactDetail } from '@/services/contact-detail.service';
@@ -28,16 +29,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Check update permission
     await requirePermission(session, 'company', 'update', companyId);
 
-    const tenantId = session.tenantId;
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
     const body = await request.json();
+
+    // Resolve tenant context - SUPER_ADMIN can specify via body
+    const { tenantId: bodyTenantId, ...contactData } = body;
+    const tenantResult = await requireTenantContext(session, bodyTenantId);
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Parse and validate input
     const data = createContactWithDetailsSchema.parse({
-      ...body,
+      ...contactData,
       companyId,
     });
 

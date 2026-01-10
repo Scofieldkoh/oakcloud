@@ -17,25 +17,28 @@ const contactBaseSchema = z.object({
   identificationType: identificationTypeEnum.optional().nullable(),
   identificationNumber: z.string().max(50).optional().nullable(),
   nationality: z.string().max(100).optional().nullable(),
-  dateOfBirth: z
-    .string()
-    .datetime()
-    .optional()
-    .nullable()
-    .refine(
-      (val) => {
-        if (!val) return true;
-        const dob = new Date(val);
-        const today = new Date();
-        // Not in future
-        if (dob > today) return false;
-        // Not older than 150 years
-        const age = today.getFullYear() - dob.getFullYear();
-        if (age > 150) return false;
-        return true;
-      },
-      { message: 'Date of birth must be valid and not in the future' }
-    ),
+  dateOfBirth: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z
+      .string()
+      .datetime()
+      .optional()
+      .nullable()
+      .refine(
+        (val) => {
+          if (!val) return true;
+          const dob = new Date(val);
+          const today = new Date();
+          // Not in future
+          if (dob > today) return false;
+          // Not older than 150 years
+          const age = today.getFullYear() - dob.getFullYear();
+          if (age > 150) return false;
+          return true;
+        },
+        { message: 'Date of birth must be valid and not in the future' }
+      )
+  ),
 
   // Corporate fields
   corporateName: z.string().max(200).optional().nullable(),

@@ -207,7 +207,9 @@
 
   /* ===== BADGES ===== */
   .badge {
-    @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium leading-none whitespace-nowrap;
+    @apply inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap;
+    line-height: 1;
+    vertical-align: middle;
   }
 
   .badge-sm {

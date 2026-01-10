@@ -363,7 +363,7 @@ export default function CompaniesPage() {
               label: 'Export Contacts',
               icon: Download,
               description: 'Export contact details to Excel',
-              variant: 'secondary' as const,
+              variant: 'default' as const,
               isLoading: exportContactDetails.isPending,
             }] : []),
             ...(can.deleteCompany ? [{

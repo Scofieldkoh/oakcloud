@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/toast';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import type { ContactDetailType } from '@/generated/prisma';
 
 // ============================================================================
@@ -115,10 +117,19 @@ export const contactDetailKeys = {
  * Get all contact details for a company (including linked contacts' details)
  */
 export function useCompanyContactDetails(companyId: string | null) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
   return useQuery({
     queryKey: contactDetailKeys.company(companyId ?? ''),
     queryFn: async (): Promise<CompanyContactDetailsResponse> => {
-      const response = await fetch(`/api/companies/${companyId}/contact-details`);
+      const url = activeTenantId
+        ? `/api/companies/${companyId}/contact-details?tenantId=${activeTenantId}`
+        : `/api/companies/${companyId}/contact-details`;
+      const response = await fetch(url);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to fetch contact details');
@@ -130,18 +141,53 @@ export function useCompanyContactDetails(companyId: string | null) {
 }
 
 /**
- * Create a new company-level contact detail
+ * Prefetch contact details for a company (for background loading)
+ * This triggers the query but doesn't subscribe to updates
+ */
+export function usePrefetchCompanyContactDetails(companyId: string | null, enabled: boolean = true) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  useQuery({
+    queryKey: contactDetailKeys.company(companyId ?? ''),
+    queryFn: async (): Promise<CompanyContactDetailsResponse> => {
+      const url = activeTenantId
+        ? `/api/companies/${companyId}/contact-details?tenantId=${activeTenantId}`
+        : `/api/companies/${companyId}/contact-details`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch contact details');
+      }
+      return response.json();
+    },
+    enabled: !!companyId && enabled,
+    // Lower priority - don't block other queries
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Create a new company-level or contact-level contact detail
  */
 export function useCreateContactDetail(companyId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (data: CreateContactDetailInput) => {
       const response = await fetch(`/api/companies/${companyId}/contact-details`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -149,8 +195,14 @@ export function useCreateContactDetail(companyId: string) {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      // Invalidate company contact details
       queryClient.invalidateQueries({ queryKey: contactDetailKeys.company(companyId) });
+      // If adding to a contact, also invalidate that contact's queries
+      if (variables.contactId) {
+        queryClient.invalidateQueries({ queryKey: ['contact', variables.contactId] });
+        queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      }
     },
     onError: (err: Error) => {
       error(err.message);
@@ -164,13 +216,18 @@ export function useCreateContactDetail(companyId: string) {
 export function useUpdateContactDetail(companyId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async ({ detailId, data }: { detailId: string; data: UpdateContactDetailInput }) => {
       const response = await fetch(`/api/companies/${companyId}/contact-details/${detailId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -193,10 +250,18 @@ export function useUpdateContactDetail(companyId: string) {
 export function useDeleteContactDetail(companyId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (detailId: string) => {
-      const response = await fetch(`/api/companies/${companyId}/contact-details/${detailId}`, {
+      const url = activeTenantId
+        ? `/api/companies/${companyId}/contact-details/${detailId}?tenantId=${activeTenantId}`
+        : `/api/companies/${companyId}/contact-details/${detailId}`;
+      const response = await fetch(url, {
         method: 'DELETE',
       });
       if (!response.ok) {
@@ -220,13 +285,18 @@ export function useDeleteContactDetail(companyId: string) {
 export function useCreateContactWithDetails(companyId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (data: CreateContactWithDetailsInput) => {
       const response = await fetch(`/api/companies/${companyId}/contact-details/create-contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -250,13 +320,18 @@ export function useCreateContactWithDetails(companyId: string) {
  */
 export function useExportContactDetails() {
   const { error } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (companyIds: string[]) => {
       const response = await fetch('/api/companies/export-contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyIds }),
+        body: JSON.stringify({ companyIds, tenantId: activeTenantId }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -285,6 +360,155 @@ export function useExportContactDetails() {
       window.URL.revokeObjectURL(url);
 
       return { success: true };
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+// ============================================================================
+// CONTACT-LEVEL CONTACT DETAILS HOOKS
+// ============================================================================
+
+/**
+ * Query keys for contact-level contact details
+ */
+export const contactLevelDetailKeys = {
+  all: ['contact-level-details'] as const,
+  contact: (contactId: string) => [...contactLevelDetailKeys.all, 'contact', contactId] as const,
+  detail: (contactId: string, detailId: string) => [...contactLevelDetailKeys.contact(contactId), detailId] as const,
+};
+
+/**
+ * Get all contact details for a specific contact
+ */
+export function useContactDetails(contactId: string | null) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useQuery({
+    queryKey: contactLevelDetailKeys.contact(contactId ?? ''),
+    queryFn: async (): Promise<ContactDetail[]> => {
+      const url = activeTenantId
+        ? `/api/contacts/${contactId}/contact-details?tenantId=${activeTenantId}`
+        : `/api/contacts/${contactId}/contact-details`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch contact details');
+      }
+      return response.json();
+    },
+    enabled: !!contactId,
+  });
+}
+
+/**
+ * Create a new contact detail for a contact
+ */
+export function useCreateContactLevelDetail(contactId: string) {
+  const queryClient = useQueryClient();
+  const { error } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async (data: Omit<CreateContactDetailInput, 'contactId'>) => {
+      const response = await fetch(`/api/contacts/${contactId}/contact-details`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to create contact detail');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate contact-level details
+      queryClient.invalidateQueries({ queryKey: contactLevelDetailKeys.contact(contactId) });
+      // Also invalidate contact query
+      queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+/**
+ * Update a contact detail for a contact
+ */
+export function useUpdateContactLevelDetail(contactId: string) {
+  const queryClient = useQueryClient();
+  const { error } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async ({ detailId, data }: { detailId: string; data: UpdateContactDetailInput }) => {
+      const response = await fetch(`/api/contacts/${contactId}/contact-details/${detailId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update contact detail');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contactLevelDetailKeys.contact(contactId) });
+      queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+/**
+ * Delete a contact detail for a contact
+ */
+export function useDeleteContactLevelDetail(contactId: string) {
+  const queryClient = useQueryClient();
+  const { error } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async (detailId: string) => {
+      const url = activeTenantId
+        ? `/api/contacts/${contactId}/contact-details/${detailId}?tenantId=${activeTenantId}`
+        : `/api/contacts/${contactId}/contact-details/${detailId}`;
+      const response = await fetch(url, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete contact detail');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contactLevelDetailKeys.contact(contactId) });
+      queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
     },
     onError: (err: Error) => {
       error(err.message);

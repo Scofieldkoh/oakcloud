@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireTenantContext } from '@/lib/api-helpers';
 import { getContactDetailsForExport } from '@/services/contact-detail.service';
 import { exportContactDetailsSchema } from '@/lib/validations/contact-detail';
 import { ZodError } from 'zod';
@@ -17,15 +18,16 @@ export async function POST(request: NextRequest) {
     // Check export permission (tenant-level since this spans multiple companies)
     await requirePermission(session, 'company', 'export');
 
-    const tenantId = session.tenantId;
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
     const body = await request.json();
 
     // Parse and validate input
-    const { companyIds } = exportContactDetailsSchema.parse(body);
+    const { companyIds, tenantId: bodyTenantId } = body;
+    exportContactDetailsSchema.parse({ companyIds });
+
+    // Resolve tenant context - SUPER_ADMIN can specify via body
+    const tenantResult = await requireTenantContext(session, bodyTenantId);
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Verify access to all companies
     for (const companyId of companyIds) {

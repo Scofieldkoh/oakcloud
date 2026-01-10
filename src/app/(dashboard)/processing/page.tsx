@@ -1575,7 +1575,6 @@ export default function ProcessingDocumentsPage() {
           }}
           onSearchChange={handleSearchChange}
           initialSearch={params.search || ''}
-          companies={companiesData?.companies.map(c => ({ id: c.id, name: c.name })) || []}
           tags={tagsData?.map(t => ({ id: t.id, name: t.name, color: t.color })) || []}
           activeCompanyId={effectiveCompanyId}
           activeTenantId={activeTenantId}

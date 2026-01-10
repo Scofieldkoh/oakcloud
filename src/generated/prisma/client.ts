@@ -105,6 +105,11 @@ export type Contact = Prisma.ContactModel
  */
 export type CompanyContact = Prisma.CompanyContactModel
 /**
+ * Model ContactDetail
+ * 
+ */
+export type ContactDetail = Prisma.ContactDetailModel
+/**
  * Model CompanyOfficer
  * 
  */

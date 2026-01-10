@@ -16,9 +16,9 @@ import {
   useUpdateRevision,
   type LineItemData,
 } from '@/hooks/use-processing-documents';
-import { useAccountsForSelect } from '@/hooks/use-chart-of-accounts';
 import { useToast } from '@/components/ui/toast';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
+import { AccountSearchSelect } from '@/components/ui/account-search-select';
 import { cn } from '@/lib/utils';
 
 interface LineItemEditorProps {
@@ -100,9 +100,6 @@ export function LineItemEditor({
   const updateRevision = useUpdateRevision();
   const { success, error: toastError } = useToast();
 
-  // Fetch chart of accounts for the dropdown
-  const { data: accounts } = useAccountsForSelect({});
-
   const [editMode, setEditMode] = useState(false);
   const [editingItems, setEditingItems] = useState<EditingLineItem[]>([]);
   const [itemsToDelete, setItemsToDelete] = useState<string[]>([]);
@@ -126,16 +123,6 @@ export function LineItemEditor({
     [currency]
   );
 
-  // Transform accounts to select options - using code as value, name as label
-  const accountOptions: SelectOption[] = useMemo(() => {
-    if (!accounts) return [];
-    return accounts.map((account) => ({
-      value: account.code,
-      label: account.name,
-      description: `${account.code} • ${account.accountType}`,
-    }));
-  }, [accounts]);
-
   // Calculate totals
   const totals = useMemo(() => {
     const items = editMode ? editingItems : (data?.lineItems ?? []);
@@ -149,16 +136,6 @@ export function LineItemEditor({
     }, 0);
     return { subtotal, gst, total: subtotal + gst };
   }, [editMode, editingItems, data?.lineItems]);
-
-  // Helper to get account name from code
-  const getAccountName = useCallback(
-    (code: string | null) => {
-      if (!code || !accounts) return null;
-      const account = accounts.find((a) => a.code === code);
-      return account?.name || code;
-    },
-    [accounts]
-  );
 
   // Enter edit mode
   const handleStartEdit = useCallback(() => {
@@ -460,21 +437,14 @@ export function LineItemEditor({
                   </td>
                   <td className="px-4 py-2">
                     {editMode ? (
-                      accountOptions.length > 0 ? (
-                        <SearchableSelect
-                          options={accountOptions}
-                          value={(item as EditingLineItem).accountCode}
-                          onChange={(value) => handleItemChange(index, 'accountCode', value)}
-                          placeholder="Select account..."
-                          size="sm"
-                          showKeyboardHints={false}
-                        />
-                      ) : (
-                        <span className="text-text-muted text-sm italic">No accounts available</span>
-                      )
+                      <AccountSearchSelect
+                        value={(item as EditingLineItem).accountCode}
+                        onChange={(code) => handleItemChange(index, 'accountCode', code)}
+                        placeholder="Search accounts..."
+                      />
                     ) : (
                       <span className="text-text-primary text-sm">
-                        {getAccountName((item as LineItemData).accountCode) || '-'}
+                        {(item as LineItemData).accountCode || '-'}
                       </span>
                     )}
                   </td>

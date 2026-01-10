@@ -95,6 +95,16 @@ export const AddressType = {
 export type AddressType = (typeof AddressType)[keyof typeof AddressType]
 
 
+export const ContactDetailType = {
+  EMAIL: 'EMAIL',
+  PHONE: 'PHONE',
+  WEBSITE: 'WEBSITE',
+  OTHER: 'OTHER'
+} as const
+
+export type ContactDetailType = (typeof ContactDetailType)[keyof typeof ContactDetailType]
+
+
 export const AuditAction = {
   CREATE: 'CREATE',
   UPDATE: 'UPDATE',

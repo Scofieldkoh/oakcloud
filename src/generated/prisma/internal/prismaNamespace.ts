@@ -397,6 +397,7 @@ export const ModelName = {
   CompanyAddress: 'CompanyAddress',
   Contact: 'Contact',
   CompanyContact: 'CompanyContact',
+  ContactDetail: 'ContactDetail',
   CompanyOfficer: 'CompanyOfficer',
   ShareCapital: 'ShareCapital',
   CompanyShareholder: 'CompanyShareholder',
@@ -465,7 +466,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1428,6 +1429,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CompanyContactCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CompanyContactCountAggregateOutputType> | number
+        }
+      }
+    }
+    ContactDetail: {
+      payload: Prisma.$ContactDetailPayload<ExtArgs>
+      fields: Prisma.ContactDetailFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ContactDetailFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ContactDetailFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload>
+        }
+        findFirst: {
+          args: Prisma.ContactDetailFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ContactDetailFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload>
+        }
+        findMany: {
+          args: Prisma.ContactDetailFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload>[]
+        }
+        create: {
+          args: Prisma.ContactDetailCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload>
+        }
+        createMany: {
+          args: Prisma.ContactDetailCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ContactDetailCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload>[]
+        }
+        delete: {
+          args: Prisma.ContactDetailDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload>
+        }
+        update: {
+          args: Prisma.ContactDetailUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload>
+        }
+        deleteMany: {
+          args: Prisma.ContactDetailDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ContactDetailUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ContactDetailUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload>[]
+        }
+        upsert: {
+          args: Prisma.ContactDetailUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDetailPayload>
+        }
+        aggregate: {
+          args: Prisma.ContactDetailAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateContactDetail>
+        }
+        groupBy: {
+          args: Prisma.ContactDetailGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactDetailGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ContactDetailCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactDetailCountAggregateOutputType> | number
         }
       }
     }
@@ -5624,6 +5699,26 @@ export const CompanyContactScalarFieldEnum = {
 export type CompanyContactScalarFieldEnum = (typeof CompanyContactScalarFieldEnum)[keyof typeof CompanyContactScalarFieldEnum]
 
 
+export const ContactDetailScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  contactId: 'contactId',
+  companyId: 'companyId',
+  detailType: 'detailType',
+  value: 'value',
+  label: 'label',
+  purposes: 'purposes',
+  description: 'description',
+  displayOrder: 'displayOrder',
+  isPrimary: 'isPrimary',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type ContactDetailScalarFieldEnum = (typeof ContactDetailScalarFieldEnum)[keyof typeof ContactDetailScalarFieldEnum]
+
+
 export const CompanyOfficerScalarFieldEnum = {
   id: 'id',
   companyId: 'companyId',
@@ -6903,6 +6998,20 @@ export type ListEnumIdentificationTypeFieldRefInput<$PrismaModel> = FieldRefInpu
 
 
 /**
+ * Reference to a field of type 'ContactDetailType'
+ */
+export type EnumContactDetailTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactDetailType'>
+    
+
+
+/**
+ * Reference to a field of type 'ContactDetailType[]'
+ */
+export type ListEnumContactDetailTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactDetailType[]'>
+    
+
+
+/**
  * Reference to a field of type 'OfficerRole'
  */
 export type EnumOfficerRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OfficerRole'>
@@ -7709,6 +7818,7 @@ export type GlobalOmitConfig = {
   companyAddress?: Prisma.CompanyAddressOmit
   contact?: Prisma.ContactOmit
   companyContact?: Prisma.CompanyContactOmit
+  contactDetail?: Prisma.ContactDetailOmit
   companyOfficer?: Prisma.CompanyOfficerOmit
   shareCapital?: Prisma.ShareCapitalOmit
   companyShareholder?: Prisma.CompanyShareholderOmit

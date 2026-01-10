@@ -11,7 +11,7 @@ You can read the MD files of the docs for information; they are documented and c
 ### Document Processing - OPTIMIZATION OPPORTUNITIES (Non-blocking)
 - [ ] **Async auto-extraction error handling**: Errors only logged to console, not stored in database
 - [ ] **N+1 query problem**: Duplicate detection could potentially load thousands of documents (add filters to reduce candidate set)
-
+    
 ### Document Processing - REMAINING IMPROVEMENTS
 - Merge and split document not working yet
 

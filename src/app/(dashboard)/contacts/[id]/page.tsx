@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -13,6 +13,7 @@ import {
   Pencil,
   Trash2,
   AlertCircle,
+  Building2,
 } from 'lucide-react';
 import { useContact, useDeleteContact, useLinkContactToCompany, useUnlinkContactFromCompany, useRemoveOfficerPosition, useRemoveShareholding, useUpdateOfficerPosition, useUpdateShareholding, useContactLinkInfo } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
@@ -21,10 +22,16 @@ import { formatDate } from '@/lib/utils';
 import { OFFICER_ROLES } from '@/lib/constants';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui/async-search-select';
 import { useToast } from '@/components/ui/toast';
 import { CompanyRelationships } from '@/components/contacts/company-relationships';
 import { InternalNotes } from '@/components/notes/internal-notes';
 import type { ContactType, IdentificationType } from '@/generated/prisma';
+
+// Company option type for AsyncSearchSelect
+interface CompanyOption extends AsyncSearchSelectOption {
+  uen?: string | null;
+}
 
 const contactTypeConfig: Record<ContactType, { color: string; label: string }> = {
   INDIVIDUAL: { color: 'badge-info', label: 'Individual' },
@@ -72,11 +79,38 @@ export default function ContactDetailPage({
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
 
+  // Company search state with debounce for async search
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const [debouncedCompanyQuery, setDebouncedCompanyQuery] = useState('');
+
+  // Debounce company search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCompanyQuery(companySearchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [companySearchQuery]);
+
   // Fetch companies for linking modal - filter by contact's tenant to prevent cross-tenant linking
-  const { data: companiesData } = useCompanies({
-    limit: 100,
+  const { data: companiesData, isLoading: companiesLoading } = useCompanies({
+    query: debouncedCompanyQuery || undefined,
+    limit: 50,
+    sortBy: 'name',
+    sortOrder: 'asc',
     tenantId: contact?.tenantId,
   });
+
+  // Transform companies to AsyncSearchSelect options
+  const companyOptions: CompanyOption[] = useMemo(
+    () =>
+      (companiesData?.companies || []).map((c) => ({
+        id: c.id,
+        label: c.name,
+        description: c.uen || undefined,
+        uen: c.uen,
+      })),
+    [companiesData?.companies]
+  );
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -635,25 +669,27 @@ export default function ContactDetailPage({
         onClose={() => {
           setLinkModalOpen(false);
           setLinkForm({ companyId: '', relationship: '', isPrimary: false, appointmentDate: '', numberOfShares: '', shareClass: 'Ordinary' });
+          setCompanySearchQuery('');
         }}
         title="Link Contact to Company"
+        size="lg"
       >
         <ModalBody>
           <div className="space-y-4">
             <div>
               <label className="label">Company</label>
-              <select
+              <AsyncSearchSelect<CompanyOption>
                 value={linkForm.companyId}
-                onChange={(e) => setLinkForm((prev) => ({ ...prev, companyId: e.target.value }))}
-                className="input input-sm w-full"
-              >
-                <option value="">Select a company</option>
-                {companiesData?.companies?.map((company) => (
-                  <option key={company.id} value={company.id}>
-                    {company.name} ({company.uen})
-                  </option>
-                ))}
-              </select>
+                onChange={(id) => setLinkForm((prev) => ({ ...prev, companyId: id }))}
+                options={companyOptions}
+                isLoading={companiesLoading}
+                searchQuery={companySearchQuery}
+                onSearchChange={setCompanySearchQuery}
+                placeholder="Search companies..."
+                icon={<Building2 className="w-4 h-4" />}
+                emptySearchText="Type to search companies"
+                noResultsText="No companies found"
+              />
             </div>
             <div>
               <label className="label">Role / Relationship</label>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireTenantContext } from '@/lib/api-helpers';
 import {
   getCompanyContactDetails,
   createContactDetail,
@@ -29,10 +30,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Check read permission
     await requirePermission(session, 'company', 'read', companyId);
 
-    const tenantId = session.tenantId;
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    // Resolve tenant context - SUPER_ADMIN can specify via query param
+    const { searchParams } = new URL(request.url);
+    const tenantIdParam = searchParams.get('tenantId');
+    const tenantResult = await requireTenantContext(session, tenantIdParam);
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     const result = await getCompanyContactDetails(companyId, tenantId);
 
@@ -71,16 +74,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Check update permission
     await requirePermission(session, 'company', 'update', companyId);
 
-    const tenantId = session.tenantId;
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
     const body = await request.json();
+
+    // Resolve tenant context - SUPER_ADMIN can specify via body
+    const { tenantId: bodyTenantId, ...detailData } = body;
+    const tenantResult = await requireTenantContext(session, bodyTenantId);
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Parse and validate input
     const data = createContactDetailSchema.parse({
-      ...body,
+      ...detailData,
       companyId,
     });
 

@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## User Instruction
 
+This web app is in development and testing stage, all data are dummy, and it's ok to refactor and redesign, no backward compatibility required. Remember to keep the code clean, efficient, modular, reusable and consistent. Ensure documentations are kept up to date, updating where applicable (under docs) instead of creating new documentation every time. If you encounter error or any potential improvement unrelated to current implementation, update TODO.md.
+
 ALWAYS remember to keep the code clean, efficient, modular and reusable. Ensure documentations (README and database-schema) are kept up to date, updating where applicable instead of creating new documentation every time. 
 
 ## Project Overview
