@@ -1,18 +1,16 @@
 'use client';
 
-import { use, useState, useEffect, useMemo } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert, Info } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateContactSchema, type UpdateContactInput } from '@/lib/validations/contact';
 import { useContact, useUpdateContact } from '@/hooks/use-contacts';
-import { useContactDetails, useCreateContactLevelDetail, useUpdateContactLevelDetail } from '@/hooks/use-contact-details';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useToast } from '@/components/ui/toast';
-import { AUTOMATION_PURPOSES } from '@/lib/constants/automation-purposes';
 
 const contactTypes = [
   { value: 'INDIVIDUAL', label: 'Individual' },
@@ -40,22 +38,10 @@ export default function EditContactPage({
   const { id } = use(params);
   const router = useRouter();
   const { data: contact, isLoading: contactLoading, error: contactError } = useContact(id, false);
-  const { data: contactDetails, isLoading: detailsLoading } = useContactDetails(id);
   const updateContact = useUpdateContact();
-  const createDetail = useCreateContactLevelDetail(id);
-  const updateDetail = useUpdateContactLevelDetail(id);
   const { can, isLoading: permissionsLoading } = usePermissions();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [emailPurposes, setEmailPurposes] = useState<string[]>([]);
   const toast = useToast();
-
-  // Find existing email detail to get its purposes
-  const existingEmailDetail = useMemo(() => {
-    if (!contactDetails || !contact?.email) return null;
-    return contactDetails.find(
-      (d) => d.detailType === 'EMAIL' && d.value === contact.email
-    );
-  }, [contactDetails, contact?.email]);
 
   const {
     register,
@@ -86,19 +72,10 @@ export default function EditContactPage({
           : undefined,
         corporateName: contact.corporateName || undefined,
         corporateUen: contact.corporateUen || undefined,
-        email: contact.email || undefined,
-        phone: contact.phone || undefined,
         fullAddress: contact.fullAddress || undefined,
       });
     }
   }, [contact, reset]);
-
-  // Initialize email purposes from existing detail
-  useEffect(() => {
-    if (existingEmailDetail) {
-      setEmailPurposes(existingEmailDetail.purposes || []);
-    }
-  }, [existingEmailDetail]);
 
   // Warn about unsaved changes when leaving the page
   useUnsavedChangesWarning(isDirty, !isSubmitting);
@@ -123,7 +100,7 @@ export default function EditContactPage({
   };
 
   // Loading state
-  if (contactLoading || permissionsLoading || detailsLoading) {
+  if (contactLoading || permissionsLoading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 text-oak-primary animate-spin" />
@@ -174,31 +151,6 @@ export default function EditContactPage({
 
     try {
       await updateContact.mutateAsync({ id, data });
-
-      // Handle email purposes if email is provided
-      if (data.email && emailPurposes.length > 0) {
-        // Find if there's an existing email ContactDetail that matches
-        const existingDetail = contactDetails?.find(
-          (d) => d.detailType === 'EMAIL' && d.value === data.email
-        );
-
-        if (existingDetail) {
-          // Update existing detail with new purposes
-          await updateDetail.mutateAsync({
-            detailId: existingDetail.id,
-            data: { purposes: emailPurposes },
-          });
-        } else {
-          // Create new detail with purposes
-          await createDetail.mutateAsync({
-            detailType: 'EMAIL',
-            value: data.email,
-            purposes: emailPurposes,
-            isPrimary: true,
-          });
-        }
-      }
-
       router.push(`/contacts/${id}`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to update contact');
@@ -377,80 +329,6 @@ export default function EditContactPage({
                   className="input input-sm"
                 />
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Details */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Contact Details</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Email</label>
-                <input
-                  type="email"
-                  {...register('email')}
-                  placeholder="john@example.com"
-                  className={`input input-sm ${errors.email ? 'input-error' : ''}`}
-                />
-                {errors.email && (
-                  <p className="text-xs text-status-error mt-1.5">{errors.email.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="label">Phone</label>
-                <input
-                  type="tel"
-                  {...register('phone')}
-                  placeholder="+65 9123 4567"
-                  className="input input-sm"
-                />
-              </div>
-            </div>
-
-            {/* Email Automation Purposes */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <label className="label mb-0">Email Automation Purposes</label>
-                <div className="group relative">
-                  <Info className="w-3.5 h-3.5 text-text-muted cursor-help" />
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                    Select which automated emails should be sent to this address
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {AUTOMATION_PURPOSES.map((purpose) => {
-                  const isSelected = emailPurposes.includes(purpose.value);
-                  return (
-                    <button
-                      key={purpose.value}
-                      type="button"
-                      onClick={() => {
-                        setEmailPurposes((prev) =>
-                          isSelected
-                            ? prev.filter((p) => p !== purpose.value)
-                            : [...prev, purpose.value]
-                        );
-                      }}
-                      className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                        isSelected
-                          ? 'bg-oak-light/10 border-oak-light text-oak-light'
-                          : 'bg-surface-secondary border-border-primary text-text-secondary hover:border-border-secondary'
-                      }`}
-                      title={purpose.description}
-                    >
-                      {purpose.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-text-muted mt-2">
-                These tags determine which automated communications this email address will receive.
-              </p>
             </div>
           </div>
         </div>

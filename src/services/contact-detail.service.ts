@@ -30,6 +30,7 @@ export interface CreateContactDetailInput {
   description?: string;
   displayOrder?: number;
   isPrimary?: boolean;
+  isPoc?: boolean;
 }
 
 export interface UpdateContactDetailInput {
@@ -41,6 +42,7 @@ export interface UpdateContactDetailInput {
   description?: string | null;
   displayOrder?: number;
   isPrimary?: boolean;
+  isPoc?: boolean;
 }
 
 export interface ContactDetailSearchParams {
@@ -55,8 +57,6 @@ export interface ContactDetailWithRelations extends ContactDetail {
     id: string;
     fullName: string;
     contactType: string;
-    email: string | null;
-    phone: string | null;
   } | null;
   company?: {
     id: string;
@@ -104,6 +104,35 @@ export async function createContactDetail(
     }
   }
 
+  // Uniqueness validation: Only one EMAIL and one PHONE per scope (for contact-level details only)
+  // Scope is defined by: contactId + companyId combination
+  // - Default detail: contactId set, companyId null - RESTRICTED to one per type
+  // - Company-specific: contactId set, companyId set - RESTRICTED to one per type
+  // - Company-level: contactId null, companyId set - NO RESTRICTION (can have multiple)
+  const isCompanyLevelDetail = !data.contactId && data.companyId;
+
+  if (!isCompanyLevelDetail && (data.detailType === 'EMAIL' || data.detailType === 'PHONE')) {
+    const existingDetail = await db.contactDetail.findFirst({
+      where: {
+        tenantId,
+        detailType: data.detailType,
+        contactId: data.contactId || null,
+        companyId: data.companyId || null,
+        deletedAt: null,
+      },
+    });
+
+    if (existingDetail) {
+      const scopeDesc = data.contactId && data.companyId
+        ? 'company-specific'
+        : 'default';
+      throw new Error(
+        `A ${scopeDesc} ${data.detailType.toLowerCase()} already exists. ` +
+        `Each contact can only have one ${data.detailType.toLowerCase()} per scope.`
+      );
+    }
+  }
+
   // If isPrimary is true, unset other primary details of the same type
   if (data.isPrimary) {
     const where: Prisma.ContactDetailWhereInput = {
@@ -133,37 +162,9 @@ export async function createContactDetail(
       description: data.description,
       displayOrder: data.displayOrder ?? 0,
       isPrimary: data.isPrimary ?? false,
+      isPoc: data.isPoc ?? false,
     },
   });
-
-  // Sync to Contact's primary email/phone if applicable
-  // When adding EMAIL or PHONE to a contact, update the contact's primary field if:
-  // 1. The contact doesn't have a primary email/phone yet, OR
-  // 2. isPrimary is true
-  if (data.contactId) {
-    const contact = await db.contact.findFirst({
-      where: { id: data.contactId, tenantId, deletedAt: null },
-      select: { id: true, email: true, phone: true },
-    });
-
-    if (contact) {
-      const updateData: { email?: string; phone?: string } = {};
-
-      if (data.detailType === 'EMAIL' && (!contact.email || data.isPrimary)) {
-        updateData.email = data.value;
-      }
-      if (data.detailType === 'PHONE' && (!contact.phone || data.isPrimary)) {
-        updateData.phone = data.value;
-      }
-
-      if (Object.keys(updateData).length > 0) {
-        await db.contact.update({
-          where: { id: data.contactId },
-          data: updateData,
-        });
-      }
-    }
-  }
 
   // Create audit log
   const entityName = data.label || `${data.detailType}: ${data.value}`;
@@ -234,6 +235,7 @@ export async function updateContactDetail(
       description: data.description,
       displayOrder: data.displayOrder,
       isPrimary: data.isPrimary,
+      isPoc: data.isPoc,
     },
   });
 
@@ -312,12 +314,11 @@ export async function getCompanyContactDetails(
       id: string;
       fullName: string;
       contactType: string;
-      email: string | null;
-      phone: string | null;
       relationship?: string;
     };
     details: ContactDetailWithRelations[];
   }>;
+  hasPoc: boolean;
 }> {
   // Validate company belongs to tenant
   const company = await prisma.company.findFirst({
@@ -344,13 +345,14 @@ export async function getCompanyContactDetails(
   });
 
   // Get all contacts linked to this company (via CompanyContact, officers, shareholders)
+  // For officers, exclude those with cessation dates (ceased officers)
   const linkedContacts = await prisma.contact.findMany({
     where: {
       tenantId,
       deletedAt: null,
       OR: [
         { companyRelations: { some: { companyId, deletedAt: null } } },
-        { officerPositions: { some: { companyId, isCurrent: true } } },
+        { officerPositions: { some: { companyId, isCurrent: true, cessationDate: null } } },
         { shareholdings: { some: { companyId, isCurrent: true } } },
       ],
     },
@@ -360,7 +362,7 @@ export async function getCompanyContactDetails(
         select: { relationship: true },
       },
       officerPositions: {
-        where: { companyId, isCurrent: true },
+        where: { companyId, isCurrent: true, cessationDate: null },
         select: { role: true },
       },
       shareholdings: {
@@ -391,17 +393,20 @@ export async function getCompanyContactDetails(
         id: contact.id,
         fullName: contact.fullName,
         contactType: contact.contactType,
-        email: contact.email,
-        phone: contact.phone,
         relationship: relationships.join(', ') || undefined,
       },
       details: contact.contactDetails as ContactDetailWithRelations[],
     };
   });
 
+  // Check if any contact detail is marked as POC
+  const hasPoc = companyDetails.some((d) => d.isPoc) ||
+    contactDetails.some((c) => c.details.some((d) => d.isPoc));
+
   return {
     companyDetails: companyDetails as ContactDetailWithRelations[],
     contactDetails,
+    hasPoc,
   };
 }
 
@@ -438,6 +443,87 @@ export async function getContactDetails(
 }
 
 /**
+ * Get contact details for a contact, grouped by company
+ * Returns default details (not company-specific) and company-specific details
+ */
+export async function getContactDetailsGrouped(
+  contactId: string,
+  tenantId: string
+): Promise<{
+  defaultDetails: ContactDetailWithRelations[];
+  companyDetails: Array<{
+    companyId: string;
+    companyName: string;
+    companyUen: string;
+    details: ContactDetailWithRelations[];
+  }>;
+}> {
+  // Validate contact belongs to tenant
+  const contact = await prisma.contact.findFirst({
+    where: { id: contactId, tenantId, deletedAt: null },
+  });
+
+  if (!contact) {
+    throw new Error('Contact not found');
+  }
+
+  // Get all contact details for this contact
+  const details = await prisma.contactDetail.findMany({
+    where: {
+      tenantId,
+      contactId,
+      deletedAt: null,
+    },
+    include: {
+      company: {
+        select: {
+          id: true,
+          name: true,
+          uen: true,
+        },
+      },
+    },
+    orderBy: [
+      { detailType: 'asc' },
+      { displayOrder: 'asc' },
+      { createdAt: 'asc' },
+    ],
+  });
+
+  // Separate default details (no companyId) from company-specific details
+  const defaultDetails: ContactDetailWithRelations[] = [];
+  const companyDetailsMap = new Map<string, {
+    companyId: string;
+    companyName: string;
+    companyUen: string;
+    details: ContactDetailWithRelations[];
+  }>();
+
+  for (const detail of details) {
+    if (!detail.companyId) {
+      // Default detail (contact-only, no company)
+      defaultDetails.push(detail as ContactDetailWithRelations);
+    } else if (detail.company) {
+      // Company-specific detail
+      if (!companyDetailsMap.has(detail.companyId)) {
+        companyDetailsMap.set(detail.companyId, {
+          companyId: detail.company.id,
+          companyName: detail.company.name,
+          companyUen: detail.company.uen,
+          details: [],
+        });
+      }
+      companyDetailsMap.get(detail.companyId)!.details.push(detail as ContactDetailWithRelations);
+    }
+  }
+
+  return {
+    defaultDetails,
+    companyDetails: Array.from(companyDetailsMap.values()),
+  };
+}
+
+/**
  * Get a single contact detail by ID
  */
 export async function getContactDetailById(
@@ -452,8 +538,6 @@ export async function getContactDetailById(
           id: true,
           fullName: true,
           contactType: true,
-          email: true,
-          phone: true,
         },
       },
       company: {
@@ -517,9 +601,9 @@ export async function getContactDetailsForExport(
           },
         },
       },
-      // Officers
+      // Officers (exclude those with cessation dates)
       officers: {
-        where: { isCurrent: true },
+        where: { isCurrent: true, cessationDate: null },
         include: {
           contact: {
             include: {
@@ -574,35 +658,7 @@ export async function getContactDetailsForExport(
       if (!rel.contact || processedContactIds.has(rel.contact.id)) continue;
       processedContactIds.add(rel.contact.id);
 
-      // Add the contact's primary email and phone if available
-      if (rel.contact.email) {
-        exportDetails.push({
-          companyName: company.name,
-          companyUen: company.uen,
-          contactName: rel.contact.fullName,
-          relationship: rel.relationship,
-          detailType: 'EMAIL',
-          value: rel.contact.email,
-          label: 'Primary',
-          purposes: [],
-          isPrimary: true,
-        });
-      }
-      if (rel.contact.phone) {
-        exportDetails.push({
-          companyName: company.name,
-          companyUen: company.uen,
-          contactName: rel.contact.fullName,
-          relationship: rel.relationship,
-          detailType: 'PHONE',
-          value: rel.contact.phone,
-          label: 'Primary',
-          purposes: [],
-          isPrimary: true,
-        });
-      }
-
-      // Add additional contact details
+      // Add all contact details from ContactDetail records
       for (const detail of rel.contact.contactDetails) {
         exportDetails.push({
           companyName: company.name,
@@ -625,33 +681,6 @@ export async function getContactDetailsForExport(
 
       const relationship = officer.role.charAt(0).toUpperCase() + officer.role.slice(1).toLowerCase().replace(/_/g, ' ');
 
-      if (officer.contact.email) {
-        exportDetails.push({
-          companyName: company.name,
-          companyUen: company.uen,
-          contactName: officer.contact.fullName,
-          relationship,
-          detailType: 'EMAIL',
-          value: officer.contact.email,
-          label: 'Primary',
-          purposes: [],
-          isPrimary: true,
-        });
-      }
-      if (officer.contact.phone) {
-        exportDetails.push({
-          companyName: company.name,
-          companyUen: company.uen,
-          contactName: officer.contact.fullName,
-          relationship,
-          detailType: 'PHONE',
-          value: officer.contact.phone,
-          label: 'Primary',
-          purposes: [],
-          isPrimary: true,
-        });
-      }
-
       for (const detail of officer.contact.contactDetails) {
         exportDetails.push({
           companyName: company.name,
@@ -673,33 +702,6 @@ export async function getContactDetailsForExport(
       processedContactIds.add(shareholder.contact.id);
 
       const relationship = `${shareholder.shareClass || 'Ordinary'} Shareholder`;
-
-      if (shareholder.contact.email) {
-        exportDetails.push({
-          companyName: company.name,
-          companyUen: company.uen,
-          contactName: shareholder.contact.fullName,
-          relationship,
-          detailType: 'EMAIL',
-          value: shareholder.contact.email,
-          label: 'Primary',
-          purposes: [],
-          isPrimary: true,
-        });
-      }
-      if (shareholder.contact.phone) {
-        exportDetails.push({
-          companyName: company.name,
-          companyUen: company.uen,
-          contactName: shareholder.contact.fullName,
-          relationship,
-          detailType: 'PHONE',
-          value: shareholder.contact.phone,
-          label: 'Primary',
-          purposes: [],
-          isPrimary: true,
-        });
-      }
 
       for (const detail of shareholder.contact.contactDetails) {
         exportDetails.push({
@@ -757,8 +759,6 @@ export async function getContactDetailsByPurpose(
             id: contactData.contact.id,
             fullName: contactData.contact.fullName,
             contactType: contactData.contact.contactType,
-            email: contactData.contact.email,
-            phone: contactData.contact.phone,
           },
         });
       }

@@ -45,6 +45,7 @@ export type ContactDetailMinAggregateOutputType = {
   description: string | null
   displayOrder: number | null
   isPrimary: boolean | null
+  isPoc: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -61,6 +62,7 @@ export type ContactDetailMaxAggregateOutputType = {
   description: string | null
   displayOrder: number | null
   isPrimary: boolean | null
+  isPoc: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -78,6 +80,7 @@ export type ContactDetailCountAggregateOutputType = {
   description: number
   displayOrder: number
   isPrimary: number
+  isPoc: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -104,6 +107,7 @@ export type ContactDetailMinAggregateInputType = {
   description?: true
   displayOrder?: true
   isPrimary?: true
+  isPoc?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -120,6 +124,7 @@ export type ContactDetailMaxAggregateInputType = {
   description?: true
   displayOrder?: true
   isPrimary?: true
+  isPoc?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -137,6 +142,7 @@ export type ContactDetailCountAggregateInputType = {
   description?: true
   displayOrder?: true
   isPrimary?: true
+  isPoc?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -241,6 +247,7 @@ export type ContactDetailGroupByOutputType = {
   description: string | null
   displayOrder: number
   isPrimary: boolean
+  isPoc: boolean
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -281,6 +288,7 @@ export type ContactDetailWhereInput = {
   description?: Prisma.StringNullableFilter<"ContactDetail"> | string | null
   displayOrder?: Prisma.IntFilter<"ContactDetail"> | number
   isPrimary?: Prisma.BoolFilter<"ContactDetail"> | boolean
+  isPoc?: Prisma.BoolFilter<"ContactDetail"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ContactDetail"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContactDetail"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContactDetail"> | Date | string | null
@@ -301,6 +309,7 @@ export type ContactDetailOrderByWithRelationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -324,6 +333,7 @@ export type ContactDetailWhereUniqueInput = Prisma.AtLeast<{
   description?: Prisma.StringNullableFilter<"ContactDetail"> | string | null
   displayOrder?: Prisma.IntFilter<"ContactDetail"> | number
   isPrimary?: Prisma.BoolFilter<"ContactDetail"> | boolean
+  isPoc?: Prisma.BoolFilter<"ContactDetail"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ContactDetail"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContactDetail"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContactDetail"> | Date | string | null
@@ -344,6 +354,7 @@ export type ContactDetailOrderByWithAggregationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -369,6 +380,7 @@ export type ContactDetailScalarWhereWithAggregatesInput = {
   description?: Prisma.StringNullableWithAggregatesFilter<"ContactDetail"> | string | null
   displayOrder?: Prisma.IntWithAggregatesFilter<"ContactDetail"> | number
   isPrimary?: Prisma.BoolWithAggregatesFilter<"ContactDetail"> | boolean
+  isPoc?: Prisma.BoolWithAggregatesFilter<"ContactDetail"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ContactDetail"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ContactDetail"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ContactDetail"> | Date | string | null
@@ -383,6 +395,7 @@ export type ContactDetailCreateInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -403,6 +416,7 @@ export type ContactDetailUncheckedCreateInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -417,6 +431,7 @@ export type ContactDetailUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -437,6 +452,7 @@ export type ContactDetailUncheckedUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -454,6 +470,7 @@ export type ContactDetailCreateManyInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -468,6 +485,7 @@ export type ContactDetailUpdateManyMutationInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -485,6 +503,7 @@ export type ContactDetailUncheckedUpdateManyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -520,6 +539,7 @@ export type ContactDetailCountOrderByAggregateInput = {
   description?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -540,6 +560,7 @@ export type ContactDetailMaxOrderByAggregateInput = {
   description?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -556,6 +577,7 @@ export type ContactDetailMinOrderByAggregateInput = {
   description?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -713,6 +735,7 @@ export type ContactDetailCreateWithoutTenantInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -731,6 +754,7 @@ export type ContactDetailUncheckedCreateWithoutTenantInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -777,6 +801,7 @@ export type ContactDetailScalarWhereInput = {
   description?: Prisma.StringNullableFilter<"ContactDetail"> | string | null
   displayOrder?: Prisma.IntFilter<"ContactDetail"> | number
   isPrimary?: Prisma.BoolFilter<"ContactDetail"> | boolean
+  isPoc?: Prisma.BoolFilter<"ContactDetail"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ContactDetail"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContactDetail"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContactDetail"> | Date | string | null
@@ -791,6 +816,7 @@ export type ContactDetailCreateWithoutCompanyInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -809,6 +835,7 @@ export type ContactDetailUncheckedCreateWithoutCompanyInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -849,6 +876,7 @@ export type ContactDetailCreateWithoutContactInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -867,6 +895,7 @@ export type ContactDetailUncheckedCreateWithoutContactInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -909,6 +938,7 @@ export type ContactDetailCreateManyTenantInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -923,6 +953,7 @@ export type ContactDetailUpdateWithoutTenantInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -941,6 +972,7 @@ export type ContactDetailUncheckedUpdateWithoutTenantInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -957,6 +989,7 @@ export type ContactDetailUncheckedUpdateManyWithoutTenantInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -973,6 +1006,7 @@ export type ContactDetailCreateManyCompanyInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -987,6 +1021,7 @@ export type ContactDetailUpdateWithoutCompanyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1005,6 +1040,7 @@ export type ContactDetailUncheckedUpdateWithoutCompanyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1021,6 +1057,7 @@ export type ContactDetailUncheckedUpdateManyWithoutCompanyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1037,6 +1074,7 @@ export type ContactDetailCreateManyContactInput = {
   description?: string | null
   displayOrder?: number
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1051,6 +1089,7 @@ export type ContactDetailUpdateWithoutContactInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1069,6 +1108,7 @@ export type ContactDetailUncheckedUpdateWithoutContactInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1085,6 +1125,7 @@ export type ContactDetailUncheckedUpdateManyWithoutContactInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1104,6 +1145,7 @@ export type ContactDetailSelect<ExtArgs extends runtime.Types.Extensions.Interna
   description?: boolean
   displayOrder?: boolean
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1124,6 +1166,7 @@ export type ContactDetailSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   description?: boolean
   displayOrder?: boolean
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1144,6 +1187,7 @@ export type ContactDetailSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   description?: boolean
   displayOrder?: boolean
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1164,12 +1208,13 @@ export type ContactDetailSelectScalar = {
   description?: boolean
   displayOrder?: boolean
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type ContactDetailOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contactId" | "companyId" | "detailType" | "value" | "label" | "purposes" | "description" | "displayOrder" | "isPrimary" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contactDetail"]>
+export type ContactDetailOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contactId" | "companyId" | "detailType" | "value" | "label" | "purposes" | "description" | "displayOrder" | "isPrimary" | "isPoc" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contactDetail"]>
 export type ContactDetailInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contact?: boolean | Prisma.ContactDetail$contactArgs<ExtArgs>
@@ -1205,6 +1250,7 @@ export type $ContactDetailPayload<ExtArgs extends runtime.Types.Extensions.Inter
     description: string | null
     displayOrder: number
     isPrimary: boolean
+    isPoc: boolean
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -1645,6 +1691,7 @@ export interface ContactDetailFieldRefs {
   readonly description: Prisma.FieldRef<"ContactDetail", 'String'>
   readonly displayOrder: Prisma.FieldRef<"ContactDetail", 'Int'>
   readonly isPrimary: Prisma.FieldRef<"ContactDetail", 'Boolean'>
+  readonly isPoc: Prisma.FieldRef<"ContactDetail", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"ContactDetail", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ContactDetail", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"ContactDetail", 'DateTime'>

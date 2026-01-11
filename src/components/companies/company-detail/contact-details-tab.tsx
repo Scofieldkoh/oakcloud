@@ -10,16 +10,15 @@ import {
   useCreateContactDetail,
   useUpdateContactDetail,
   useDeleteContactDetail,
-  useCreateContactWithDetails,
   type ContactDetail,
   type ContactWithDetails,
   type CreateContactDetailInput,
-  type CreateContactWithDetailsInput,
 } from '@/hooks/use-contact-details';
+import { useLinkContactToCompany, useUnlinkContactFromCompany } from '@/hooks/use-contacts';
 import type { ContactDetailType } from '@/generated/prisma';
 import {
   AddContactDetailModal,
-  AddContactModal,
+  LinkContactModal,
   ContactDetailRow,
   ContactRow,
 } from '@/components/companies/contact-details';
@@ -38,11 +37,17 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
   const createDetailMutation = useCreateContactDetail(companyId);
   const updateDetailMutation = useUpdateContactDetail(companyId);
   const deleteDetailMutation = useDeleteContactDetail(companyId);
-  const createContactMutation = useCreateContactWithDetails(companyId);
+  const linkContactMutation = useLinkContactToCompany();
+  const unlinkContactMutation = useUnlinkContactFromCompany();
 
   // State for add detail modal
   const [showAddDetailModal, setShowAddDetailModal] = useState(false);
-  const [addDetailTarget, setAddDetailTarget] = useState<{ type: 'company' | 'contact'; id?: string; name: string }>({
+  const [addDetailTarget, setAddDetailTarget] = useState<{
+    type: 'company' | 'contact';
+    id?: string;
+    name: string;
+    existingDetails?: ContactDetail[];
+  }>({
     type: 'company',
     name: companyName,
   });
@@ -58,23 +63,69 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
     label: string;
     purposes: string[];
     isPrimary: boolean;
+    isPoc: boolean;
   }>({
     detailType: 'EMAIL',
     value: '',
     label: '',
     purposes: [],
     isPrimary: false,
+    isPoc: false,
   });
 
   // State for delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; value: string } | null>(null);
   const [deletingDetailId, setDeletingDetailId] = useState<string | null>(null);
 
-  const handleAddDetail = async (input: CreateContactDetailInput) => {
+  // State for unlink confirmation
+  const [unlinkConfirm, setUnlinkConfirm] = useState<{
+    contactId: string;
+    contactName: string;
+    relationship: string;
+  } | null>(null);
+
+  // State for POC toggle loading
+  const [togglingPocContactId, setTogglingPocContactId] = useState<string | null>(null);
+
+  const handleAddDetail = async (input: CreateContactDetailInput & { isCompanySpecific?: boolean }) => {
     try {
-      await createDetailMutation.mutateAsync(input);
+      // If isCompanySpecific is true, the API should use the companyId
+      // We pass this as a separate flag, the hook will handle it
+      const { isCompanySpecific, ...data } = input;
+      await createDetailMutation.mutateAsync({
+        ...data,
+        // For company-specific details, we tell the API to also set companyId
+        ...(isCompanySpecific ? { isCompanySpecific: true } : {}),
+      } as CreateContactDetailInput);
       success('Contact detail added');
       setShowAddDetailModal(false);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleUpdateDetailFromModal = async (detailId: string, data: { value: string; label?: string | null; purposes?: string[] }) => {
+    try {
+      await updateDetailMutation.mutateAsync({
+        detailId,
+        data: {
+          value: data.value,
+          label: data.label,
+          purposes: data.purposes,
+        },
+      });
+      success('Contact detail updated');
+      setShowAddDetailModal(false);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleDeleteDetailFromModal = async (detailId: string) => {
+    try {
+      await deleteDetailMutation.mutateAsync(detailId);
+      success('Contact detail deleted');
+      // Don't close modal - let user continue editing other field
     } catch {
       // Error handled by mutation
     }
@@ -92,6 +143,7 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
           label: editForm.label.trim() || null,
           purposes: editForm.purposes,
           isPrimary: editForm.isPrimary,
+          isPoc: editForm.isPoc,
         },
       });
       success('Contact detail updated');
@@ -116,13 +168,48 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
     }
   };
 
-  const handleAddContact = async (input: CreateContactWithDetailsInput) => {
+  const handleLinkContact = async (contactId: string, relationship: string) => {
     try {
-      await createContactMutation.mutateAsync(input);
-      success('Contact created and linked');
+      await linkContactMutation.mutateAsync({
+        contactId,
+        companyId,
+        relationship,
+      });
+      success('Contact linked successfully');
       setShowAddContactModal(false);
     } catch {
       // Error handled by mutation
+    }
+  };
+
+  const handleUnlinkContact = async () => {
+    if (!unlinkConfirm) return;
+
+    try {
+      await unlinkContactMutation.mutateAsync({
+        contactId: unlinkConfirm.contactId,
+        companyId,
+        relationship: unlinkConfirm.relationship,
+      });
+      success('Contact unlinked successfully');
+      setUnlinkConfirm(null);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleTogglePoc = async (contactId: string, detailId: string, isPoc: boolean) => {
+    try {
+      setTogglingPocContactId(contactId);
+      await updateDetailMutation.mutateAsync({
+        detailId,
+        data: { isPoc },
+      });
+      success(isPoc ? 'Set as Point of Contact' : 'Removed Point of Contact');
+    } catch {
+      // Error handled by mutation
+    } finally {
+      setTogglingPocContactId(null);
     }
   };
 
@@ -134,12 +221,13 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
       label: detail.label || '',
       purposes: detail.purposes || [],
       isPrimary: detail.isPrimary,
+      isPoc: detail.isPoc,
     });
   };
 
   const cancelEdit = () => {
     setEditingDetailId(null);
-    setEditForm({ detailType: 'EMAIL', value: '', label: '', purposes: [], isPrimary: false });
+    setEditForm({ detailType: 'EMAIL', value: '', label: '', purposes: [], isPrimary: false, isPoc: false });
   };
 
   const updateEditForm = (field: string, value: string | string[] | boolean) => {
@@ -151,8 +239,13 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
     setShowAddDetailModal(true);
   };
 
-  const openAddDetailForContact = (contact: ContactWithDetails['contact']) => {
-    setAddDetailTarget({ type: 'contact', id: contact.id, name: contact.fullName });
+  const openAddDetailForContact = (item: ContactWithDetails) => {
+    setAddDetailTarget({
+      type: 'contact',
+      id: item.contact.id,
+      name: item.contact.fullName,
+      existingDetails: item.details,
+    });
     setShowAddDetailModal(true);
   };
 
@@ -209,9 +302,19 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
               </div>
               <div className="py-2">
                 {data.companyDetails.length > 0 ? (
-                  <div className="divide-y divide-border-secondary">
-                    {data.companyDetails.map((detail) => (
-                      <ContactDetailRow
+                  <>
+                    {/* Header row - aligned with Linked Contacts */}
+                    <div className="flex items-center gap-4 py-2 px-4 text-xs font-medium text-text-muted border-b border-border-secondary">
+                      <div className="flex-shrink-0 w-[360px]">Label</div>
+                      <div className="flex-shrink-0 w-[300px]">Type</div>
+                      <div className="flex-shrink-0 w-[80px] text-center">POC</div>
+                      <div className="flex-1">Value</div>
+                      <div className="flex-shrink-0 w-[56px]"></div>
+                    </div>
+                    {/* Detail rows */}
+                    <div className="divide-y divide-border-secondary">
+                      {data.companyDetails.map((detail) => (
+                        <ContactDetailRow
                         key={detail.id}
                         detail={detail}
                         canEdit={canEdit}
@@ -224,9 +327,10 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                         onUpdateForm={updateEditForm}
                         isSaving={updateDetailMutation.isPending}
                         isDeleting={deletingDetailId === detail.id}
-                      />
-                    ))}
-                  </div>
+                        />
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <div className="text-center py-6">
                     <Building2 className="w-8 h-8 text-text-muted mx-auto mb-2" />
@@ -276,10 +380,11 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                   <>
                     {/* Header row */}
                     <div className="flex items-center gap-4 py-2 px-4 text-xs font-medium text-text-muted border-b border-border-secondary">
-                      <div className="flex-shrink-0 w-[240px]">Name</div>
-                      <div className="flex-shrink-0 w-[240px]">Role</div>
+                      <div className="flex-shrink-0 w-[360px]">Name</div>
+                      <div className="flex-shrink-0 w-[300px]">Role</div>
+                      <div className="flex-shrink-0 w-[80px] text-center">POC</div>
+                      <div className="flex-shrink-0 w-[210px]">Phone</div>
                       <div className="flex-1">Email</div>
-                      <div className="flex-shrink-0 w-[140px]">Phone</div>
                       <div className="flex-shrink-0 w-[32px]"></div>
                     </div>
                     {/* Contact rows */}
@@ -288,8 +393,16 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                         <ContactRow
                           key={item.contact.id}
                           item={item}
+                          companyId={companyId}
                           canEdit={canEdit}
-                          onAddDetail={() => openAddDetailForContact(item.contact)}
+                          onAddDetail={() => openAddDetailForContact(item)}
+                          onUnlink={() => setUnlinkConfirm({
+                            contactId: item.contact.id,
+                            contactName: item.contact.fullName,
+                            relationship: item.contact.relationship || '',
+                          })}
+                          onTogglePoc={(detailId, isPoc) => handleTogglePoc(item.contact.id, detailId, isPoc)}
+                          isTogglingPoc={togglingPocContactId === item.contact.id}
                         />
                       ))}
                     </div>
@@ -320,18 +433,24 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
         isOpen={showAddDetailModal}
         onClose={() => setShowAddDetailModal(false)}
         onSubmit={handleAddDetail}
-        isLoading={createDetailMutation.isPending}
+        onUpdate={handleUpdateDetailFromModal}
+        onDelete={handleDeleteDetailFromModal}
+        onReopen={openAddDetailForCompany}
+        isLoading={createDetailMutation.isPending || updateDetailMutation.isPending}
         targetName={addDetailTarget.name}
         targetType={addDetailTarget.type}
         contactId={addDetailTarget.id}
+        companyId={companyId}
+        companyName={companyName}
+        existingDetails={addDetailTarget.existingDetails}
       />
 
-      {/* Add Contact Modal */}
-      <AddContactModal
+      {/* Link Contact Modal */}
+      <LinkContactModal
         isOpen={showAddContactModal}
         onClose={() => setShowAddContactModal(false)}
-        onSubmit={handleAddContact}
-        isLoading={createContactMutation.isPending}
+        onSubmit={handleLinkContact}
+        isLoading={linkContactMutation.isPending}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -344,6 +463,18 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
         variant="danger"
         confirmLabel="Delete"
         isLoading={deleteDetailMutation.isPending}
+      />
+
+      {/* Unlink Contact Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!unlinkConfirm}
+        onClose={() => setUnlinkConfirm(null)}
+        onConfirm={handleUnlinkContact}
+        title="Unlink Contact"
+        description={`Are you sure you want to unlink "${unlinkConfirm?.contactName}" from this company? This will remove their relationship as "${unlinkConfirm?.relationship}".`}
+        variant="danger"
+        confirmLabel="Unlink"
+        isLoading={unlinkContactMutation.isPending}
       />
     </>
   );

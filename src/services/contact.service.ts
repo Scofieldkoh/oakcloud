@@ -54,8 +54,6 @@ export async function createContact(
       dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       corporateName: data.corporateName,
       corporateUen: data.corporateUen,
-      email: data.email,
-      phone: data.phone,
       fullAddress: data.fullAddress,
     },
   });
@@ -102,8 +100,6 @@ export async function updateContact(
     updateData.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null;
   if (data.corporateName !== undefined) updateData.corporateName = data.corporateName;
   if (data.corporateUen !== undefined) updateData.corporateUen = data.corporateUen;
-  if (data.email !== undefined) updateData.email = data.email;
-  if (data.phone !== undefined) updateData.phone = data.phone;
   if (data.fullAddress !== undefined) updateData.fullAddress = data.fullAddress;
 
   // Rebuild full name if relevant fields changed
@@ -213,10 +209,10 @@ export async function searchContacts(
     const searchTerm = params.query.trim();
     where.OR = [
       { fullName: { contains: searchTerm, mode: 'insensitive' } },
-      { email: { contains: searchTerm, mode: 'insensitive' } },
       { identificationNumber: { contains: searchTerm, mode: 'insensitive' } },
       { corporateUen: { contains: searchTerm, mode: 'insensitive' } },
-      { phone: { contains: searchTerm, mode: 'insensitive' } },
+      // Search in contact details (email/phone are now in ContactDetail)
+      { contactDetails: { some: { value: { contains: searchTerm, mode: 'insensitive' } } } },
     ];
   }
 
@@ -337,15 +333,14 @@ export async function getContactLinkInfo(
 
 import type { OfficerRole } from '@/generated/prisma';
 
-// Officer roles that create Officer records
-const OFFICER_ROLES = ['Director', 'Secretary', 'Auditor', 'Authorized Representative'];
+// Officer roles that create Officer records (legal positions that require ACRA registration)
+const OFFICER_ROLES = ['Director', 'Secretary', 'Auditor'];
 
 // Map display name to OfficerRole enum
 const OFFICER_ROLE_MAP: Record<string, OfficerRole> = {
   'Director': 'DIRECTOR',
   'Secretary': 'SECRETARY',
   'Auditor': 'AUDITOR',
-  'Authorized Representative': 'DIRECTOR', // Map to DIRECTOR as closest match
 };
 
 /**
@@ -902,7 +897,11 @@ export async function searchContactsWithCounts(
   tenantId: string | null,
   options: SearchContactsOptions = {}
 ): Promise<{
-  contacts: Array<Contact & { _count: { companyRelations: number } }>;
+  contacts: Array<Contact & {
+    _count: { companyRelations: number };
+    defaultEmail: string | null;
+    defaultPhone: string | null;
+  }>;
   total: number;
   page: number;
   limit: number;
@@ -940,10 +939,10 @@ export async function searchContactsWithCounts(
     andConditions.push({
       OR: [
         { fullName: { contains: searchTerm, mode: 'insensitive' } },
-        { email: { contains: searchTerm, mode: 'insensitive' } },
         { identificationNumber: { contains: searchTerm, mode: 'insensitive' } },
         { corporateUen: { contains: searchTerm, mode: 'insensitive' } },
-        { phone: { contains: searchTerm, mode: 'insensitive' } },
+        // Search in contact details (email/phone are now in ContactDetail)
+        { contactDetails: { some: { value: { contains: searchTerm, mode: 'insensitive' } } } },
       ],
     });
   }
@@ -998,13 +997,45 @@ export async function searchContactsWithCounts(
             companyRelations: true,
           },
         },
+        // Include default contact details (where companyId is null) for email/phone display
+        contactDetails: {
+          where: {
+            companyId: null, // Only default (non-company-specific) details
+            detailType: { in: ['EMAIL', 'PHONE'] },
+          },
+          select: {
+            detailType: true,
+            value: true,
+            isPrimary: true,
+          },
+          orderBy: [
+            { isPrimary: 'desc' },
+            { createdAt: 'asc' },
+          ],
+        },
       },
     }),
     prisma.contact.count({ where }),
   ]);
 
+  // Map contacts to include defaultEmail and defaultPhone
+  const contactsWithDetails = contacts.map((contact) => {
+    const emailDetail = contact.contactDetails.find((d) => d.detailType === 'EMAIL');
+    const phoneDetail = contact.contactDetails.find((d) => d.detailType === 'PHONE');
+
+    // Remove contactDetails from the response and add defaultEmail/defaultPhone
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { contactDetails, ...contactWithoutDetails } = contact;
+
+    return {
+      ...contactWithoutDetails,
+      defaultEmail: emailDetail?.value || null,
+      defaultPhone: phoneDetail?.value || null,
+    };
+  });
+
   return {
-    contacts,
+    contacts: contactsWithDetails,
     total,
     page: params.page,
     limit: params.limit,

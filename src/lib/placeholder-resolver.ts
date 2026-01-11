@@ -62,8 +62,8 @@ export interface OfficerData {
   cessationDate?: Date | null;
   isCurrent: boolean;
   contact?: {
-    email?: string | null;
-    phone?: string | null;
+    id: string;
+    contactDetails?: Array<{ detailType: string; value: string }>;
   } | null;
 }
 
@@ -76,8 +76,8 @@ export interface ShareholderData {
   shareClass?: string | null;
   isCurrent: boolean;
   contact?: {
-    email?: string | null;
-    phone?: string | null;
+    id: string;
+    contactDetails?: Array<{ detailType: string; value: string }>;
   } | null;
 }
 

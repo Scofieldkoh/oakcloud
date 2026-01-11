@@ -340,6 +340,8 @@ export function useLinkContactToCompany() {
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+      // Also invalidate contact-details query for the company
+      queryClient.invalidateQueries({ queryKey: ['contact-details', 'company', companyId] });
     },
   });
 }
@@ -357,9 +359,12 @@ export function useUnlinkContactFromCompany() {
       companyId: string;
       relationship: string;
     }) => unlinkContactFromCompany(contactId, companyId, relationship),
-    onSuccess: (_, { contactId }) => {
+    onSuccess: (_, { contactId, companyId }) => {
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+      // Also invalidate contact-details query for the company
+      queryClient.invalidateQueries({ queryKey: ['contact-details', 'company', companyId] });
     },
   });
 }

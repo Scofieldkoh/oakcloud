@@ -25,34 +25,14 @@ export interface AutomationPurpose {
  */
 export const AUTOMATION_PURPOSES: AutomationPurpose[] = [
   {
-    value: 'INVOICE',
-    label: 'Invoice',
-    description: 'Send invoices to this email address',
+    value: 'FINANCE',
+    label: 'Finance matters',
+    description: 'Finance-related communications (invoices, statements, receipts, etc.)',
   },
   {
-    value: 'STATEMENT',
-    label: 'Statement',
-    description: 'Send account statements to this email address',
-  },
-  {
-    value: 'TAX_NOTICE',
-    label: 'Tax Notice',
-    description: 'Send tax notices and related documents to this email address',
-  },
-  {
-    value: 'RECEIPT',
-    label: 'Receipt',
-    description: 'Send payment receipts to this email address',
-  },
-  {
-    value: 'REMINDER',
-    label: 'Reminder',
-    description: 'Send payment reminders to this email address',
-  },
-  {
-    value: 'GENERAL',
-    label: 'General',
-    description: 'General communication and announcements',
+    value: 'HR',
+    label: 'HR matters',
+    description: 'HR-related communications (payroll, leave, employment matters, etc.)',
   },
 ] as const;
 

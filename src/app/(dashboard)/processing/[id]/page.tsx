@@ -288,7 +288,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const initialTags = viewData?.tags;
 
   // Compatibility layer for existing code that expects data.document and data.currentRevision
-  const data = viewData ? {
+  const data = useMemo(() => viewData ? {
     document: viewData.document,
     currentRevision: viewData.currentRevision ? {
       id: viewData.currentRevision.id,
@@ -304,7 +304,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       validationStatus: viewData.currentRevision.validationStatus,
       lineItemCount: viewData.currentRevision.lineItems.length,
     } : null,
-  } : undefined;
+  } : undefined, [viewData]);
 
   // Only fetch revision history when needed (when dropdown is shown or might be shown)
   // Always fetch if document has DRAFT status (user might need to see history)
@@ -422,7 +422,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Export hook
   const documentExport = useDocumentExport();
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isRevalidating, setIsRevalidating] = useState(false);
+  const [_isRevalidating, setIsRevalidating] = useState(false);
 
   // UI State (showHistoryDropdown already declared above for data fetching optimization)
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -1152,7 +1152,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     refetchLineItems,
   ]);
 
-  const handleRevalidate = useCallback(async () => {
+  const _handleRevalidate = useCallback(async () => {
     if (!displayRevisionId) return;
     try {
       setIsRevalidating(true);

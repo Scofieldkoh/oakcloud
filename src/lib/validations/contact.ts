@@ -56,24 +56,6 @@ const contactBaseSchema = z.object({
       { message: 'Corporate UEN must be 9-10 alphanumeric characters' }
     ),
 
-  // Contact info
-  email: z.preprocess(
-    (val) => (val === '' ? null : val),
-    z.string().email().max(200).nullable()
-  ).optional(),
-  phone: z
-    .string()
-    .max(20)
-    .optional()
-    .nullable()
-    .refine(
-      (val) => {
-        if (!val) return true;
-        return phoneRegex.test(val);
-      },
-      { message: 'Phone number can only contain digits, spaces, dashes, parentheses, and + sign' }
-    ),
-
   // Address
   fullAddress: z.string().max(500).optional().nullable(),
 });

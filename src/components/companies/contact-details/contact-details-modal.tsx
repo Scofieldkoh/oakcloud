@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   Mail,
@@ -10,34 +10,38 @@ import {
   Pencil,
   Building2,
   User,
-  Globe,
-  ChevronDown,
-  ChevronRight,
   X,
   Check,
   Star,
-  ExternalLink,
   Loader2,
-  FileText,
-  Copy,
+  Unlink,
 } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
+import { LoadingState } from '@/components/ui/loading-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { CopyButton } from './copy-button';
+import { PurposeToggle, PurposeBadges } from '@/components/contacts/purpose-toggle';
 import {
   useCompanyContactDetails,
   useCreateContactDetail,
   useUpdateContactDetail,
   useDeleteContactDetail,
-  useCreateContactWithDetails,
   type ContactDetail,
   type ContactWithDetails,
   type CreateContactDetailInput,
-  type CreateContactWithDetailsInput,
 } from '@/hooks/use-contact-details';
+import { useLinkContactToCompany, useUnlinkContactFromCompany } from '@/hooks/use-contacts';
+import { ContactSearchSelect } from '@/components/ui/contact-search-select';
 import type { ContactDetailType } from '@/generated/prisma';
-import { AUTOMATION_PURPOSES } from '@/lib/constants/automation-purposes';
+import {
+  DETAIL_TYPE_CONFIG,
+  LABEL_SUGGESTIONS,
+  RELATIONSHIP_OPTIONS,
+} from '@/lib/constants/contact-details';
+import { AddContactDetailModal } from './add-contact-detail-modal';
 
 interface ContactDetailsModalProps {
   isOpen: boolean;
@@ -47,340 +51,30 @@ interface ContactDetailsModalProps {
   canEdit: boolean;
 }
 
-// Detail type icons and labels
-const detailTypeConfig: Record<ContactDetailType, { icon: typeof Mail; label: string; placeholder: string }> = {
-  EMAIL: { icon: Mail, label: 'Email', placeholder: 'email@example.com' },
-  PHONE: { icon: Phone, label: 'Phone', placeholder: '+65 1234 5678' },
-  WEBSITE: { icon: Globe, label: 'Website', placeholder: 'https://example.com' },
-  OTHER: { icon: FileText, label: 'Other', placeholder: 'Enter value' },
-};
-
-// Use centralized automation purposes from @/lib/constants/automation-purposes
-
-// Common label suggestions
-const labelSuggestions = [
-  'Main Office',
-  'Account Receivable',
-  'Account Payable',
-  'Human Resources',
-  'Sales',
-  'Support',
-  'Personal',
-  'Work',
-  'Home',
-  'Emergency',
-];
-
-// Relationship options
-const relationshipOptions = [
-  'Agent',
-  'Authorized Representative',
-  'Accountant',
-  'Lawyer',
-  'Consultant',
-  'Vendor',
-  'Customer',
-  'Partner',
-  'Other',
-];
-
 // ============================================================================
-// COPY BUTTON HELPER
+// LINK CONTACT MODAL
 // ============================================================================
 
-function CopyButton({ value, className = '' }: { value: string; className?: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // Failed to copy
-    }
-  };
-
-  return (
-    <button
-      onClick={handleCopy}
-      className={`p-1 rounded hover:bg-surface-tertiary transition-colors ${className}`}
-      title={copied ? 'Copied!' : 'Copy'}
-    >
-      {copied ? (
-        <Check className="w-3 h-3 text-status-success" />
-      ) : (
-        <Copy className="w-3 h-3 text-text-muted hover:text-text-secondary" />
-      )}
-    </button>
-  );
-}
-
-// ============================================================================
-// ADD CONTACT DETAIL MODAL
-// ============================================================================
-
-interface AddContactDetailModalProps {
+interface LinkContactModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateContactDetailInput) => Promise<void>;
+  onSubmit: (contactId: string, relationship: string) => Promise<void>;
   isLoading: boolean;
-  targetName: string;
-  targetType: 'company' | 'contact';
-  contactId?: string;
+  companyName: string;
 }
 
-function AddContactDetailModal({
-  isOpen,
-  onClose,
-  onSubmit,
-  isLoading,
-  targetName,
-  targetType,
-  contactId,
-}: AddContactDetailModalProps) {
-  const [form, setForm] = useState<{
-    detailType: ContactDetailType;
-    value: string;
-    label: string;
-    purposes: string[];
-    isPrimary: boolean;
-  }>({
-    detailType: 'EMAIL',
-    value: '',
-    label: '',
-    purposes: [],
-    isPrimary: false,
-  });
+function LinkContactModal({ isOpen, onClose, onSubmit, isLoading, companyName }: LinkContactModalProps) {
+  const [contactId, setContactId] = useState('');
+  const [relationship, setRelationship] = useState('');
 
   const handleSubmit = async () => {
-    const input: CreateContactDetailInput = {
-      detailType: form.detailType,
-      value: form.value.trim(),
-      label: form.label.trim() || undefined,
-      purposes: form.purposes,
-      isPrimary: form.isPrimary,
-    };
-    if (contactId) {
-      input.contactId = contactId;
-    }
-    await onSubmit(input);
-    // Reset form on success
-    setForm({ detailType: 'EMAIL', value: '', label: '', purposes: [], isPrimary: false });
-  };
-
-  const handleClose = () => {
-    setForm({ detailType: 'EMAIL', value: '', label: '', purposes: [], isPrimary: false });
-    onClose();
-  };
-
-  const togglePurpose = (purpose: string) => {
-    setForm(prev => ({
-      ...prev,
-      purposes: prev.purposes.includes(purpose)
-        ? prev.purposes.filter(p => p !== purpose)
-        : [...prev.purposes, purpose],
-    }));
-  };
-
-  const config = detailTypeConfig[form.detailType];
-
-  return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Add Contact Detail" size="md">
-      <ModalBody className="space-y-4">
-        {/* Target indicator */}
-        <div className="flex items-center gap-2 p-3 bg-surface-tertiary rounded-lg">
-          {targetType === 'company' ? (
-            <Building2 className="w-4 h-4 text-text-tertiary" />
-          ) : (
-            <User className="w-4 h-4 text-text-tertiary" />
-          )}
-          <span className="text-sm text-text-secondary">Adding to:</span>
-          <span className="text-sm font-medium text-text-primary">{targetName}</span>
-        </div>
-
-        {/* Type selection */}
-        <div>
-          <label className="label">Type</label>
-          <select
-            value={form.detailType}
-            onChange={(e) => {
-              const newType = e.target.value as ContactDetailType;
-              setForm(prev => ({
-                ...prev,
-                detailType: newType,
-                // Clear purposes when switching away from EMAIL
-                purposes: newType === 'EMAIL' ? prev.purposes : [],
-              }));
-            }}
-            className="input input-sm w-full"
-          >
-            {Object.entries(detailTypeConfig).map(([type, cfg]) => (
-              <option key={type} value={type}>{cfg.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Value input */}
-        <div>
-          <label className="label">Value</label>
-          <div className="relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">
-              <config.icon className="w-4 h-4" />
-            </div>
-            <input
-              type={form.detailType === 'EMAIL' ? 'email' : form.detailType === 'WEBSITE' ? 'url' : 'text'}
-              value={form.value}
-              onChange={(e) => setForm(prev => ({ ...prev, value: e.target.value }))}
-              className="input input-sm w-full pl-10"
-              placeholder={config.placeholder}
-            />
-          </div>
-        </div>
-
-        {/* Label input */}
-        <div>
-          <label className="label">Label (Optional)</label>
-          <input
-            type="text"
-            value={form.label}
-            onChange={(e) => setForm(prev => ({ ...prev, label: e.target.value }))}
-            className="input input-sm w-full"
-            placeholder="e.g., Account Receivable, Main Office"
-            list="label-suggestions-add"
-          />
-          <datalist id="label-suggestions-add">
-            {labelSuggestions.map((label) => (
-              <option key={label} value={label} />
-            ))}
-          </datalist>
-        </div>
-
-        {/* Purposes selection - only for EMAIL type */}
-        {form.detailType === 'EMAIL' && (
-          <div>
-            <label className="label">Purposes (for automation)</label>
-            <div className="flex flex-wrap gap-2">
-              {AUTOMATION_PURPOSES.map((purpose) => (
-                <button
-                  key={purpose.value}
-                  type="button"
-                  onClick={() => togglePurpose(purpose.value)}
-                  title={purpose.description}
-                  className={`text-xs px-2.5 py-1.5 rounded-md transition-colors ${
-                    form.purposes.includes(purpose.value)
-                      ? 'bg-oak-light text-white'
-                      : 'bg-surface-tertiary text-text-secondary hover:bg-surface-secondary border border-border-primary'
-                  }`}
-                >
-                  {purpose.label}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-text-muted mt-2">
-              Select which automations should use this contact detail
-            </p>
-          </div>
-        )}
-
-        {/* Primary toggle */}
-        <div className="flex items-center gap-3 p-3 bg-surface-secondary rounded-lg border border-border-primary">
-          <input
-            type="checkbox"
-            id="isPrimary-add"
-            checked={form.isPrimary}
-            onChange={(e) => setForm(prev => ({ ...prev, isPrimary: e.target.checked }))}
-            className="checkbox"
-          />
-          <label htmlFor="isPrimary-add" className="flex-1 cursor-pointer">
-            <span className="text-sm font-medium text-text-primary">Set as primary</span>
-            <p className="text-xs text-text-secondary">
-              Primary contact details are used by default for this type
-            </p>
-          </label>
-          <Star className={`w-4 h-4 ${form.isPrimary ? 'text-status-warning' : 'text-text-muted'}`} fill={form.isPrimary ? 'currentColor' : 'none'} />
-        </div>
-      </ModalBody>
-
-      <ModalFooter>
-        <Button variant="secondary" size="sm" onClick={handleClose} disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleSubmit}
-          disabled={isLoading || !form.value.trim()}
-        >
-          {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Add Detail
-        </Button>
-      </ModalFooter>
-    </Modal>
-  );
-}
-
-// ============================================================================
-// ADD CONTACT MODAL
-// ============================================================================
-
-interface AddContactModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: CreateContactWithDetailsInput) => Promise<void>;
-  isLoading: boolean;
-}
-
-function AddContactModal({ isOpen, onClose, onSubmit, isLoading }: AddContactModalProps) {
-  const [form, setForm] = useState<{
-    contactType: 'INDIVIDUAL' | 'CORPORATE';
-    firstName: string;
-    lastName: string;
-    corporateName: string;
-    email: string;
-    phone: string;
-    relationship: string;
-    details: Array<{ detailType: ContactDetailType; value: string; label: string; purposes: string[] }>;
-  }>({
-    contactType: 'INDIVIDUAL',
-    firstName: '',
-    lastName: '',
-    corporateName: '',
-    email: '',
-    phone: '',
-    relationship: '',
-    details: [],
-  });
-
-  const handleSubmit = async () => {
-    const input: CreateContactWithDetailsInput = {
-      relationship: form.relationship.trim(),
-      contact: {
-        contactType: form.contactType,
-        firstName: form.firstName.trim() || undefined,
-        lastName: form.lastName.trim() || undefined,
-        corporateName: form.corporateName.trim() || undefined,
-        email: form.email.trim() || undefined,
-        phone: form.phone.trim() || undefined,
-      },
-      contactDetails: form.details.filter(d => d.value.trim()),
-    };
-    await onSubmit(input);
+    await onSubmit(contactId, relationship);
     resetForm();
   };
 
   const resetForm = () => {
-    setForm({
-      contactType: 'INDIVIDUAL',
-      firstName: '',
-      lastName: '',
-      corporateName: '',
-      email: '',
-      phone: '',
-      relationship: '',
-      details: [],
-    });
+    setContactId('');
+    setRelationship('');
   };
 
   const handleClose = () => {
@@ -388,198 +82,39 @@ function AddContactModal({ isOpen, onClose, onSubmit, isLoading }: AddContactMod
     onClose();
   };
 
-  const addDetail = () => {
-    setForm(prev => ({
-      ...prev,
-      details: [...prev.details, { detailType: 'EMAIL' as ContactDetailType, value: '', label: '', purposes: [] }],
-    }));
-  };
-
-  const updateDetail = (index: number, field: string, value: string | string[]) => {
-    const newDetails = [...form.details];
-    newDetails[index] = { ...newDetails[index], [field]: value };
-    setForm(prev => ({ ...prev, details: newDetails }));
-  };
-
-  const removeDetail = (index: number) => {
-    setForm(prev => ({ ...prev, details: prev.details.filter((_, i) => i !== index) }));
-  };
-
-  const isValid = form.contactType === 'INDIVIDUAL'
-    ? (form.firstName.trim() || form.lastName.trim()) && form.relationship.trim()
-    : form.corporateName.trim() && form.relationship.trim();
+  const isValid = contactId && relationship;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Add New Contact" size="lg">
-      <ModalBody className="space-y-4 max-h-[70vh] overflow-y-auto">
-        {/* Contact Type */}
-        <div>
-          <label className="label">Contact Type</label>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                checked={form.contactType === 'INDIVIDUAL'}
-                onChange={() => setForm(prev => ({ ...prev, contactType: 'INDIVIDUAL' }))}
-                className="radio"
-              />
-              <User className="w-4 h-4 text-text-tertiary" />
-              <span className="text-sm">Individual</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                checked={form.contactType === 'CORPORATE'}
-                onChange={() => setForm(prev => ({ ...prev, contactType: 'CORPORATE' }))}
-                className="radio"
-              />
-              <Building2 className="w-4 h-4 text-text-tertiary" />
-              <span className="text-sm">Corporate</span>
-            </label>
-          </div>
+    <Modal isOpen={isOpen} onClose={handleClose} title="Link Contact" size="md">
+      <ModalBody className="space-y-4">
+        {/* Company indicator */}
+        <div className="flex items-center gap-2 p-3 bg-surface-tertiary rounded-lg">
+          <Building2 className="w-4 h-4 text-text-tertiary" />
+          <span className="text-sm text-text-secondary">Linking to:</span>
+          <span className="text-sm font-medium text-text-primary">{companyName}</span>
         </div>
 
-        {/* Name fields */}
-        {form.contactType === 'INDIVIDUAL' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">First Name</label>
-              <input
-                type="text"
-                value={form.firstName}
-                onChange={(e) => setForm(prev => ({ ...prev, firstName: e.target.value }))}
-                className="input input-sm w-full"
-                placeholder="First name"
-              />
-            </div>
-            <div>
-              <label className="label">Last Name</label>
-              <input
-                type="text"
-                value={form.lastName}
-                onChange={(e) => setForm(prev => ({ ...prev, lastName: e.target.value }))}
-                className="input input-sm w-full"
-                placeholder="Last name"
-              />
-            </div>
-          </div>
-        ) : (
-          <div>
-            <label className="label">Company Name</label>
-            <input
-              type="text"
-              value={form.corporateName}
-              onChange={(e) => setForm(prev => ({ ...prev, corporateName: e.target.value }))}
-              className="input input-sm w-full"
-              placeholder="Company name"
-            />
-          </div>
-        )}
+        {/* Contact Search */}
+        <ContactSearchSelect
+          label="Contact"
+          value={contactId}
+          onChange={(id) => setContactId(id)}
+          placeholder="Search for a contact..."
+        />
 
         {/* Relationship */}
         <div>
           <label className="label">Relationship</label>
           <select
-            value={form.relationship}
-            onChange={(e) => setForm(prev => ({ ...prev, relationship: e.target.value }))}
+            value={relationship}
+            onChange={(e) => setRelationship(e.target.value)}
             className="input input-sm w-full"
           >
             <option value="">Select relationship...</option>
-            {relationshipOptions.map((rel) => (
+            {RELATIONSHIP_OPTIONS.map((rel) => (
               <option key={rel} value={rel}>{rel}</option>
             ))}
           </select>
-        </div>
-
-        {/* Primary contact info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="label">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-                className="input input-sm w-full pl-10"
-                placeholder="email@example.com"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="label">Phone</label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
-                className="input input-sm w-full pl-10"
-                placeholder="+65 1234 5678"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Additional contact details */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <label className="label mb-0">Additional Contact Details</label>
-            <button
-              type="button"
-              onClick={addDetail}
-              className="text-xs text-oak-light hover:text-oak-dark flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add
-            </button>
-          </div>
-          {form.details.length === 0 ? (
-            <p className="text-sm text-text-muted py-2">No additional details added</p>
-          ) : (
-            <div className="space-y-2">
-              {form.details.map((detail, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 bg-surface-secondary rounded-lg">
-                  <select
-                    value={detail.detailType}
-                    onChange={(e) => updateDetail(index, 'detailType', e.target.value)}
-                    className="input input-xs w-24"
-                  >
-                    {Object.entries(detailTypeConfig).map(([type, cfg]) => (
-                      <option key={type} value={type}>{cfg.label}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={detail.value}
-                    onChange={(e) => updateDetail(index, 'value', e.target.value)}
-                    className="input input-xs flex-1"
-                    placeholder={detailTypeConfig[detail.detailType].placeholder}
-                  />
-                  <input
-                    type="text"
-                    value={detail.label}
-                    onChange={(e) => updateDetail(index, 'label', e.target.value)}
-                    className="input input-xs w-28"
-                    placeholder="Label"
-                    list="label-suggestions-contact"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeDetail(index)}
-                    className="text-text-muted hover:text-status-error p-1"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <datalist id="label-suggestions-contact">
-            {labelSuggestions.map((label) => (
-              <option key={label} value={label} />
-            ))}
-          </datalist>
         </div>
       </ModalBody>
 
@@ -589,7 +124,7 @@ function AddContactModal({ isOpen, onClose, onSubmit, isLoading }: AddContactMod
         </Button>
         <Button variant="primary" size="sm" onClick={handleSubmit} disabled={isLoading || !isValid}>
           {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Create Contact
+          Link Contact
         </Button>
       </ModalFooter>
     </Modal>
@@ -633,7 +168,7 @@ function ContactDetailRow({
   isSaving,
   isDeleting,
 }: ContactDetailRowProps) {
-  const config = detailTypeConfig[detail.detailType];
+  const config = DETAIL_TYPE_CONFIG[detail.detailType];
   const Icon = config.icon;
 
   if (isEditing && canEdit) {
@@ -652,7 +187,7 @@ function ContactDetailRow({
             }}
             className="input input-xs w-24"
           >
-            {Object.entries(detailTypeConfig).map(([type, cfg]) => (
+            {Object.entries(DETAIL_TYPE_CONFIG).map(([type, cfg]) => (
               <option key={type} value={type}>{cfg.label}</option>
             ))}
           </select>
@@ -681,27 +216,11 @@ function ContactDetailRow({
         </div>
         {/* Purposes in edit mode - only for EMAIL type */}
         {editForm.detailType === 'EMAIL' && (
-          <div className="flex flex-wrap gap-1.5">
-            {AUTOMATION_PURPOSES.map((purpose) => (
-              <button
-                key={purpose.value}
-                type="button"
-                onClick={() => {
-                  const newPurposes = editForm.purposes.includes(purpose.value)
-                    ? editForm.purposes.filter(p => p !== purpose.value)
-                    : [...editForm.purposes, purpose.value];
-                  onUpdateForm('purposes', newPurposes);
-                }}
-                className={`text-xs px-2 py-1 rounded transition-colors ${
-                  editForm.purposes.includes(purpose.value)
-                    ? 'bg-oak-light text-white'
-                    : 'bg-surface-tertiary text-text-secondary hover:bg-surface-secondary'
-                }`}
-              >
-                {purpose.label}
-              </button>
-            ))}
-          </div>
+          <PurposeToggle
+            selectedPurposes={editForm.purposes}
+            onChange={(purposes) => onUpdateForm('purposes', purposes)}
+            size="sm"
+          />
         )}
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="ghost" size="xs" onClick={onCancelEdit} disabled={isSaving}>
@@ -714,7 +233,7 @@ function ContactDetailRow({
           </Button>
         </div>
         <datalist id="label-suggestions-edit">
-          {labelSuggestions.map((label) => (
+          {LABEL_SUGGESTIONS.map((label) => (
             <option key={label} value={label} />
           ))}
         </datalist>
@@ -733,16 +252,7 @@ function ContactDetailRow({
       )}
       {/* Only show purposes for EMAIL type */}
       {detail.detailType === 'EMAIL' && detail.purposes && detail.purposes.length > 0 && (
-        <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
-          {detail.purposes.slice(0, 2).map((purpose) => (
-            <span key={purpose} className="text-xs text-oak-light bg-oak-light/10 px-1.5 py-0.5 rounded">
-              {purpose}
-            </span>
-          ))}
-          {detail.purposes.length > 2 && (
-            <span className="text-xs text-text-muted">+{detail.purposes.length - 2}</span>
-          )}
-        </div>
+        <PurposeBadges purposes={detail.purposes} className="hidden sm:flex flex-shrink-0" />
       )}
       {detail.isPrimary && (
         <Star className="w-3.5 h-3.5 text-status-warning flex-shrink-0" fill="currentColor" />
@@ -771,31 +281,8 @@ function ContactDetailRow({
 }
 
 // ============================================================================
-// CONTACT CARD
+// HELPER FUNCTIONS
 // ============================================================================
-
-interface ContactCardProps {
-  item: ContactWithDetails;
-  isExpanded: boolean;
-  onToggle: () => void;
-  canEdit: boolean;
-  onAddDetail: () => void;
-  editingDetailId: string | null;
-  editForm: {
-    detailType: ContactDetailType;
-    value: string;
-    label: string;
-    purposes: string[];
-    isPrimary: boolean;
-  };
-  onStartEdit: (detail: ContactDetail) => void;
-  onCancelEdit: () => void;
-  onSaveEdit: () => void;
-  onDeleteDetail: (detailId: string) => void;
-  onUpdateEditForm: (field: string, value: string | string[] | boolean) => void;
-  isSaving: boolean;
-  deletingDetailId: string | null;
-}
 
 // Helper to convert UPPERCASE to Title Case
 function toTitleCase(str: string): string {
@@ -818,23 +305,39 @@ function cleanRelationships(relationshipStr: string | undefined): string[] {
 
 function ContactRow({
   item,
+  companyId,
   canEdit,
   onAddDetail,
+  onUnlink,
 }: {
   item: ContactWithDetails;
+  companyId: string;
   canEdit: boolean;
   onAddDetail: () => void;
+  onUnlink?: () => void;
 }) {
   // Parse relationship to show badges (deduplicated, cleaned, and in title case)
   const relationships = cleanRelationships(item.contact.relationship);
 
-  // Find email ContactDetail that matches the displayed email
-  // Only show purposes if there's a matching ContactDetail record
-  const displayedEmail = item.contact.email;
-  const matchingEmailDetail = item.details.find(
-    d => d.detailType === 'EMAIL' && d.value === displayedEmail
+  // Get company-specific email/phone for THIS company, otherwise fall back to contact's default detail
+  // Company-specific details must match the current company
+  // Default details have contactId but companyId is null
+  const companySpecificEmail = item.details.find(
+    d => d.detailType === 'EMAIL' && d.companyId === companyId
   );
-  const emailPurposes = matchingEmailDetail?.purposes || [];
+  const companySpecificPhone = item.details.find(
+    d => d.detailType === 'PHONE' && d.companyId === companyId
+  );
+  const defaultEmail = item.details.find(
+    d => d.detailType === 'EMAIL' && d.companyId === null
+  );
+  const defaultPhone = item.details.find(
+    d => d.detailType === 'PHONE' && d.companyId === null
+  );
+  const displayedEmail = companySpecificEmail?.value || defaultEmail?.value || null;
+  const displayedPhone = companySpecificPhone?.value || defaultPhone?.value || null;
+  const emailDetail = companySpecificEmail || defaultEmail;
+  const emailPurposes = emailDetail?.purposes || [];
 
   return (
     <div className="flex items-center gap-4 py-3 px-4 hover:bg-surface-secondary rounded-lg transition-colors group">
@@ -884,22 +387,13 @@ function ContactRow({
 
       {/* Email */}
       <div className="flex-1 min-w-0">
-        {item.contact.email ? (
+        {displayedEmail ? (
           <div className="flex items-center gap-1.5">
             <Mail className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" />
-            <span className="text-sm text-text-secondary truncate">{item.contact.email}</span>
-            <CopyButton value={item.contact.email} />
+            <span className="text-sm text-text-secondary truncate">{displayedEmail}</span>
+            <CopyButton value={displayedEmail} />
             {emailPurposes.length > 0 && (
-              <div className="flex gap-1 flex-shrink-0">
-                {emailPurposes.slice(0, 2).map((purpose) => (
-                  <span key={purpose} className="text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                    {purpose}
-                  </span>
-                ))}
-                {emailPurposes.length > 2 && (
-                  <span className="text-[10px] text-text-muted">+{emailPurposes.length - 2}</span>
-                )}
-              </div>
+              <PurposeBadges purposes={emailPurposes} className="flex-shrink-0" />
             )}
           </div>
         ) : (
@@ -909,11 +403,11 @@ function ContactRow({
 
       {/* Phone */}
       <div className="flex-shrink-0 w-[120px]">
-        {item.contact.phone ? (
+        {displayedPhone ? (
           <div className="flex items-center gap-1.5">
             <Phone className="w-3.5 h-3.5 text-text-tertiary" />
-            <span className="text-sm text-text-secondary">{item.contact.phone}</span>
-            <CopyButton value={item.contact.phone} />
+            <span className="text-sm text-text-secondary">{displayedPhone}</span>
+            <CopyButton value={displayedPhone} />
           </div>
         ) : (
           <span className="text-xs text-text-muted italic">No phone</span>
@@ -922,7 +416,7 @@ function ContactRow({
 
       {/* Actions */}
       {canEdit && (
-        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={onAddDetail}
             className="text-oak-light hover:text-oak-dark p-1.5 rounded hover:bg-surface-tertiary"
@@ -930,6 +424,15 @@ function ContactRow({
           >
             <Plus className="w-4 h-4" />
           </button>
+          {onUnlink && (
+            <button
+              onClick={onUnlink}
+              className="text-text-muted hover:text-status-error p-1.5 rounded hover:bg-status-error/10"
+              title="Unlink contact"
+            >
+              <Unlink className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -953,14 +456,17 @@ export function ContactDetailsModal({
   const createDetailMutation = useCreateContactDetail(companyId);
   const updateDetailMutation = useUpdateContactDetail(companyId);
   const deleteDetailMutation = useDeleteContactDetail(companyId);
-  const createContactMutation = useCreateContactWithDetails(companyId);
-
-  // State for expanded contacts
-  const [expandedContacts, setExpandedContacts] = useState<Set<string>>(new Set());
+  const linkContactMutation = useLinkContactToCompany();
+  const unlinkContactMutation = useUnlinkContactFromCompany();
 
   // State for add detail modal
   const [showAddDetailModal, setShowAddDetailModal] = useState(false);
-  const [addDetailTarget, setAddDetailTarget] = useState<{ type: 'company' | 'contact'; id?: string; name: string }>({
+  const [addDetailTarget, setAddDetailTarget] = useState<{
+    type: 'company' | 'contact';
+    id?: string;
+    name: string;
+    existingDetails?: ContactDetail[];
+  }>({
     type: 'company',
     name: companyName,
   });
@@ -988,23 +494,45 @@ export function ContactDetailsModal({
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; value: string } | null>(null);
   const [deletingDetailId, setDeletingDetailId] = useState<string | null>(null);
 
-  const toggleContact = useCallback((contactId: string) => {
-    setExpandedContacts(prev => {
-      const newExpanded = new Set(prev);
-      if (newExpanded.has(contactId)) {
-        newExpanded.delete(contactId);
-      } else {
-        newExpanded.add(contactId);
-      }
-      return newExpanded;
-    });
-  }, []);
+  // State for unlink confirmation
+  const [unlinkConfirm, setUnlinkConfirm] = useState<{
+    contactId: string;
+    contactName: string;
+    relationship: string;
+  } | null>(null);
 
   const handleAddDetail = async (input: CreateContactDetailInput) => {
     try {
       await createDetailMutation.mutateAsync(input);
       success('Contact detail added');
       setShowAddDetailModal(false);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleUpdateDetailFromModal = async (detailId: string, data: { value: string; label?: string | null; purposes?: string[] }) => {
+    try {
+      await updateDetailMutation.mutateAsync({
+        detailId,
+        data: {
+          value: data.value,
+          label: data.label,
+          purposes: data.purposes,
+        },
+      });
+      success('Contact detail updated');
+      setShowAddDetailModal(false);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleDeleteDetailFromModal = async (detailId: string) => {
+    try {
+      await deleteDetailMutation.mutateAsync(detailId);
+      success('Contact detail deleted');
+      // Don't close modal - let user continue editing other field
     } catch {
       // Error handled by mutation
     }
@@ -1046,11 +574,31 @@ export function ContactDetailsModal({
     }
   };
 
-  const handleAddContact = async (input: CreateContactWithDetailsInput) => {
+  const handleLinkContact = async (contactId: string, relationship: string) => {
     try {
-      await createContactMutation.mutateAsync(input);
-      success('Contact created and linked');
+      await linkContactMutation.mutateAsync({
+        contactId,
+        companyId,
+        relationship,
+      });
+      success('Contact linked successfully');
       setShowAddContactModal(false);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleUnlinkContact = async () => {
+    if (!unlinkConfirm) return;
+
+    try {
+      await unlinkContactMutation.mutateAsync({
+        contactId: unlinkConfirm.contactId,
+        companyId,
+        relationship: unlinkConfirm.relationship,
+      });
+      success('Contact unlinked successfully');
+      setUnlinkConfirm(null);
     } catch {
       // Error handled by mutation
     }
@@ -1081,8 +629,13 @@ export function ContactDetailsModal({
     setShowAddDetailModal(true);
   };
 
-  const openAddDetailForContact = (contact: ContactWithDetails['contact']) => {
-    setAddDetailTarget({ type: 'contact', id: contact.id, name: contact.fullName });
+  const openAddDetailForContact = (item: ContactWithDetails) => {
+    setAddDetailTarget({
+      type: 'contact',
+      id: item.contact.id,
+      name: item.contact.fullName,
+      existingDetails: item.details,
+    });
     setShowAddDetailModal(true);
   };
 
@@ -1115,22 +668,12 @@ export function ContactDetailsModal({
 
             {/* Loading state */}
             {isLoading && (
-              <div className="py-12 text-center">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto text-oak-light" />
-                <p className="text-sm text-text-secondary mt-2">Loading contact details...</p>
-              </div>
+              <LoadingState message="Loading contact details..." size="lg" />
             )}
 
             {/* Error state */}
             {error && (
-              <div className="py-8 text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-status-error/10 text-status-error rounded-lg">
-                  <X className="w-4 h-4" />
-                  <span className="text-sm">
-                    {error instanceof Error ? error.message : 'Failed to load contact details'}
-                  </span>
-                </div>
-              </div>
+              <ErrorState error={error} size="lg" />
             )}
 
             {data && (
@@ -1226,8 +769,14 @@ export function ContactDetailsModal({
                             <ContactRow
                               key={item.contact.id}
                               item={item}
+                              companyId={companyId}
                               canEdit={canEdit}
-                              onAddDetail={() => openAddDetailForContact(item.contact)}
+                              onAddDetail={() => openAddDetailForContact(item)}
+                              onUnlink={() => setUnlinkConfirm({
+                                contactId: item.contact.id,
+                                contactName: item.contact.fullName,
+                                relationship: item.contact.relationship || '',
+                              })}
                             />
                           ))}
                         </div>
@@ -1260,18 +809,24 @@ export function ContactDetailsModal({
         isOpen={showAddDetailModal}
         onClose={() => setShowAddDetailModal(false)}
         onSubmit={handleAddDetail}
-        isLoading={createDetailMutation.isPending}
+        onUpdate={handleUpdateDetailFromModal}
+        onDelete={handleDeleteDetailFromModal}
+        isLoading={createDetailMutation.isPending || updateDetailMutation.isPending}
         targetName={addDetailTarget.name}
         targetType={addDetailTarget.type}
         contactId={addDetailTarget.id}
+        companyId={companyId}
+        companyName={companyName}
+        existingDetails={addDetailTarget.existingDetails}
       />
 
-      {/* Add Contact Modal */}
-      <AddContactModal
+      {/* Link Contact Modal */}
+      <LinkContactModal
         isOpen={showAddContactModal}
         onClose={() => setShowAddContactModal(false)}
-        onSubmit={handleAddContact}
-        isLoading={createContactMutation.isPending}
+        onSubmit={handleLinkContact}
+        isLoading={linkContactMutation.isPending}
+        companyName={companyName}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -1284,6 +839,18 @@ export function ContactDetailsModal({
         variant="danger"
         confirmLabel="Delete"
         isLoading={deleteDetailMutation.isPending}
+      />
+
+      {/* Unlink Contact Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!unlinkConfirm}
+        onClose={() => setUnlinkConfirm(null)}
+        onConfirm={handleUnlinkContact}
+        title="Unlink Contact"
+        description={`Are you sure you want to unlink "${unlinkConfirm?.contactName}" from this company? This will remove their relationship as "${unlinkConfirm?.relationship}".`}
+        variant="danger"
+        confirmLabel="Unlink"
+        isLoading={unlinkContactMutation.isPending}
       />
     </>
   );

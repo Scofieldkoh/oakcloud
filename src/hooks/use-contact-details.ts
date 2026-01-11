@@ -20,14 +20,13 @@ export interface ContactDetail {
   description: string | null;
   displayOrder: number;
   isPrimary: boolean;
+  isPoc: boolean;
   createdAt: string;
   updatedAt: string;
   contact?: {
     id: string;
     fullName: string;
     contactType: string;
-    email: string | null;
-    phone: string | null;
   } | null;
   company?: {
     id: string;
@@ -41,8 +40,6 @@ export interface ContactWithDetails {
     id: string;
     fullName: string;
     contactType: string;
-    email: string | null;
-    phone: string | null;
     relationship?: string;
   };
   details: ContactDetail[];
@@ -51,6 +48,7 @@ export interface ContactWithDetails {
 export interface CompanyContactDetailsResponse {
   companyDetails: ContactDetail[];
   contactDetails: ContactWithDetails[];
+  hasPoc: boolean;  // Whether any contact detail is marked as POC
 }
 
 export interface CreateContactDetailInput {
@@ -61,7 +59,10 @@ export interface CreateContactDetailInput {
   description?: string;
   displayOrder?: number;
   isPrimary?: boolean;
+  isPoc?: boolean;
   contactId?: string;
+  isCompanySpecific?: boolean;  // If true, the API will set companyId
+  selectedCompanyId?: string;   // For standalone mode: selected company for company-specific details
 }
 
 export interface UpdateContactDetailInput {
@@ -72,6 +73,7 @@ export interface UpdateContactDetailInput {
   description?: string | null;
   displayOrder?: number;
   isPrimary?: boolean;
+  isPoc?: boolean;
 }
 
 export interface CreateContactWithDetailsInput {
@@ -377,8 +379,22 @@ export function useExportContactDetails() {
 export const contactLevelDetailKeys = {
   all: ['contact-level-details'] as const,
   contact: (contactId: string) => [...contactLevelDetailKeys.all, 'contact', contactId] as const,
+  contactGrouped: (contactId: string) => [...contactLevelDetailKeys.all, 'contact', contactId, 'grouped'] as const,
   detail: (contactId: string, detailId: string) => [...contactLevelDetailKeys.contact(contactId), detailId] as const,
 };
+
+/**
+ * Response type for grouped contact details
+ */
+export interface GroupedContactDetailsResponse {
+  defaultDetails: ContactDetail[];
+  companyDetails: Array<{
+    companyId: string;
+    companyName: string;
+    companyUen: string;
+    details: ContactDetail[];
+  }>;
+}
 
 /**
  * Get all contact details for a specific contact
@@ -396,6 +412,34 @@ export function useContactDetails(contactId: string | null) {
       const url = activeTenantId
         ? `/api/contacts/${contactId}/contact-details?tenantId=${activeTenantId}`
         : `/api/contacts/${contactId}/contact-details`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch contact details');
+      }
+      return response.json();
+    },
+    enabled: !!contactId,
+  });
+}
+
+/**
+ * Get contact details for a contact, grouped by company
+ * Returns default details (not company-specific) and company-specific details per company
+ */
+export function useContactDetailsGrouped(contactId: string | null) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useQuery({
+    queryKey: contactLevelDetailKeys.contactGrouped(contactId ?? ''),
+    queryFn: async (): Promise<GroupedContactDetailsResponse> => {
+      const url = activeTenantId
+        ? `/api/contacts/${contactId}/contact-details?tenantId=${activeTenantId}&grouped=true`
+        : `/api/contacts/${contactId}/contact-details?grouped=true`;
       const response = await fetch(url);
       if (!response.ok) {
         const error = await response.json();

@@ -5,12 +5,12 @@ import { Search, Filter, X, ChevronDown, Tag, Calendar, Eye, Copy, Building2 } f
 import { cn } from '@/lib/utils';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
-import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui/async-search-select';
+import { AsyncSearchSelect } from '@/components/ui/async-search-select';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { TagChip, TagManager } from '@/components/processing/document-tags';
 import { TAG_COLORS } from '@/lib/validations/document-tag';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
-import { useCompanies } from '@/hooks/use-companies';
+import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, TagColor, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import type { AmountFilterValue } from '@/components/ui/amount-filter';
 
@@ -69,11 +69,6 @@ interface ProcessingFiltersProps {
   rightActions?: React.ReactNode;
 }
 
-// Company option type for AsyncSearchSelect
-interface CompanyOption extends AsyncSearchSelectOption {
-  uen?: string | null;
-}
-
 // Status configurations
 const PIPELINE_STATUS_OPTIONS: SelectOption[] = [
   { value: 'UPLOADED', label: 'Uploaded' },
@@ -119,38 +114,13 @@ export function ProcessingFilters({
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Company search state with debounce
-  const [companySearchQuery, setCompanySearchQuery] = useState('');
-  const [debouncedCompanyQuery, setDebouncedCompanyQuery] = useState('');
-
-  // Debounce company search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedCompanyQuery(companySearchQuery);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [companySearchQuery]);
-
-  // Fetch companies with server-side search
-  const { data: companiesData, isLoading: companiesLoading } = useCompanies({
-    query: debouncedCompanyQuery || undefined,
-    tenantId: activeTenantId,
-    limit: 50,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  });
-
-  // Transform companies to AsyncSearchSelect options
-  const companyOptions: CompanyOption[] = useMemo(
-    () =>
-      (companiesData?.companies || []).map((c) => ({
-        id: c.id,
-        label: c.name,
-        description: c.uen || undefined,
-        uen: c.uen,
-      })),
-    [companiesData?.companies]
-  );
+  // Company search using shared hook
+  const {
+    searchQuery: companySearchQuery,
+    setSearchQuery: setCompanySearchQuery,
+    options: companyOptions,
+    isLoading: companiesLoading,
+  } = useCompanySearch();
 
   // Serialize initialFilters for comparison to avoid object reference issues
   const initialFiltersKey = useMemo(() => JSON.stringify(initialFilters), [initialFilters]);
@@ -507,7 +477,7 @@ export function ProcessingFilters({
             {/* Row 2: Company & Date Filters */}
             <div>
               <label className="label">Company</label>
-              <AsyncSearchSelect<CompanyOption>
+              <AsyncSearchSelect<CompanySearchOption>
                 value={filters.companyId || ''}
                 onChange={(id) => handleFilterChange('companyId', id)}
                 options={companyOptions}

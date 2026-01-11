@@ -1,0 +1,388 @@
+'use client';
+
+import { useState } from 'react';
+import { Plus, Loader2, FileText, ScrollText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/toast';
+import {
+  useCompanyContracts,
+  useCreateContract,
+  useDeleteContract,
+  type Contract,
+  type CreateContractInput,
+  type UpdateContractInput,
+} from '@/hooks/use-contracts';
+import {
+  type CreateContractServiceInput,
+  type UpdateContractServiceInput,
+} from '@/hooks/use-contract-services';
+import { ContractCard } from './contract-card';
+import { ContractModal } from './contract-modal';
+import { ServiceModal } from './service-modal';
+import { ScopeModal } from './scope-modal';
+
+interface ContractsTabProps {
+  companyId: string;
+  canEdit: boolean;
+}
+
+export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
+  const { success } = useToast();
+  const { data, isLoading, error } = useCompanyContracts(companyId);
+
+  // Contract mutations
+  const createContractMutation = useCreateContract(companyId);
+  const deleteContractMutation = useDeleteContract(companyId);
+
+  // Modal states
+  const [showContractModal, setShowContractModal] = useState(false);
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [editingService, setEditingService] = useState<{
+    contractId: string;
+    service?: Contract['services'][0];
+  } | null>(null);
+  const [showScopeModal, setShowScopeModal] = useState<{
+    serviceName: string;
+    scope: string;
+  } | null>(null);
+
+  // Delete confirmation
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: 'contract' | 'service';
+    id: string;
+    name: string;
+    contractId?: string;
+  } | null>(null);
+
+  // Expanded contracts for accordion
+  const [expandedContracts, setExpandedContracts] = useState<Set<string>>(new Set());
+
+  const toggleContract = (contractId: string) => {
+    setExpandedContracts((prev) => {
+      const next = new Set(prev);
+      if (next.has(contractId)) {
+        next.delete(contractId);
+      } else {
+        next.add(contractId);
+      }
+      return next;
+    });
+  };
+
+  // Contract handlers
+  const handleCreateContract = async (input: CreateContractInput) => {
+    try {
+      const contract = await createContractMutation.mutateAsync(input);
+      setShowContractModal(false);
+      // Auto-expand the newly created contract
+      setExpandedContracts((prev) => new Set([...prev, contract.id]));
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleUpdateContract = async (input: UpdateContractInput) => {
+    if (!editingContract) return;
+    // Use a dynamic hook call pattern - create the mutation inline
+    try {
+      const response = await fetch(
+        `/api/companies/${companyId}/contracts/${editingContract.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(input),
+        }
+      );
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update contract');
+      }
+      success('Contract updated successfully');
+      setEditingContract(null);
+      // Refetch by invalidating query
+      window.location.reload();
+    } catch (err) {
+      if (err instanceof Error) {
+        throw err;
+      }
+    }
+  };
+
+  const handleDeleteContract = async (reason?: string) => {
+    if (!deleteConfirm || deleteConfirm.type !== 'contract' || !reason?.trim()) return;
+    try {
+      await deleteContractMutation.mutateAsync({
+        contractId: deleteConfirm.id,
+        reason: reason.trim(),
+      });
+      setDeleteConfirm(null);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  // Service handlers
+  const handleCreateService = async (contractId: string, input: CreateContractServiceInput) => {
+    try {
+      const response = await fetch(
+        `/api/companies/${companyId}/contracts/${contractId}/services`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(input),
+        }
+      );
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to create service');
+      }
+      success('Service added successfully');
+      setShowServiceModal(false);
+      setEditingService(null);
+      // Refetch
+      window.location.reload();
+    } catch {
+      // Error handled
+    }
+  };
+
+  const handleUpdateService = async (contractId: string, serviceId: string, input: UpdateContractServiceInput) => {
+    try {
+      const response = await fetch(
+        `/api/companies/${companyId}/contracts/${contractId}/services/${serviceId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(input),
+        }
+      );
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update service');
+      }
+      success('Service updated successfully');
+      setShowServiceModal(false);
+      setEditingService(null);
+      // Refetch
+      window.location.reload();
+    } catch {
+      // Error handled
+    }
+  };
+
+  const handleDeleteService = async () => {
+    if (!deleteConfirm || deleteConfirm.type !== 'service' || !deleteConfirm.contractId) return;
+    try {
+      const response = await fetch(
+        `/api/companies/${companyId}/contracts/${deleteConfirm.contractId}/services/${deleteConfirm.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete service');
+      }
+      success('Service deleted successfully');
+      setDeleteConfirm(null);
+      // Refetch
+      window.location.reload();
+    } catch {
+      // Error handled
+    }
+  };
+
+  const contracts = data?.contracts ?? [];
+  const totalServices = contracts.reduce((sum, c) => sum + c.services.length, 0);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 text-text-muted">
+        Failed to load contracts. Please try again.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Contracts Card */}
+      <div className="card overflow-hidden">
+        {/* Card Header */}
+        <div className="px-4 py-3 border-b border-border-primary">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-medium text-text-primary flex items-center gap-2">
+                <ScrollText className="w-4 h-4 text-text-tertiary" />
+                Contracts & Services
+              </h4>
+              <p className="text-xs text-text-secondary mt-1">
+                Manage contracts and billable services for this company
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {canEdit && (
+                <Button variant="secondary" size="xs" onClick={() => setShowContractModal(true)}>
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Add Contract
+                </Button>
+              )}
+              <span className="text-xs text-text-muted">
+                {contracts.length} contract{contracts.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card Body */}
+        {contracts.length === 0 ? (
+          <div className="text-center py-6">
+            <FileText className="w-8 h-8 text-text-muted mx-auto mb-2" />
+            <p className="text-sm text-text-muted">No contracts yet</p>
+            {canEdit && (
+              <button
+                onClick={() => setShowContractModal(true)}
+                className="text-sm text-oak-light hover:text-oak-dark mt-2 inline-flex items-center gap-1"
+              >
+                <Plus className="w-4 h-4" />
+                Add first contract
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="divide-y divide-border-primary">
+            {contracts.map((contract) => (
+              <ContractCard
+                key={contract.id}
+                contract={contract}
+                isExpanded={expandedContracts.has(contract.id)}
+                onToggle={() => toggleContract(contract.id)}
+                canEdit={canEdit}
+                onEditContract={() => setEditingContract(contract)}
+                onDeleteContract={() =>
+                  setDeleteConfirm({
+                    type: 'contract',
+                    id: contract.id,
+                    name: contract.title,
+                  })
+                }
+                onAddService={() => {
+                  setEditingService({ contractId: contract.id });
+                  setShowServiceModal(true);
+                }}
+                onEditService={(service) => {
+                  setEditingService({ contractId: contract.id, service });
+                  setShowServiceModal(true);
+                }}
+                onDeleteService={(service) =>
+                  setDeleteConfirm({
+                    type: 'service',
+                    id: service.id,
+                    name: service.name,
+                    contractId: contract.id,
+                  })
+                }
+                onViewScope={(service) =>
+                  setShowScopeModal({
+                    serviceName: service.name,
+                    scope: service.scope || '',
+                  })
+                }
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Contract Modal */}
+      {(showContractModal || editingContract) && (
+        <ContractModal
+          isOpen={true}
+          onClose={() => {
+            setShowContractModal(false);
+            setEditingContract(null);
+          }}
+          contract={editingContract}
+          companyId={companyId}
+          onSubmit={async (data) => {
+            if (editingContract) {
+              await handleUpdateContract(data as UpdateContractInput);
+            } else {
+              await handleCreateContract(data as CreateContractInput);
+            }
+          }}
+          isLoading={createContractMutation.isPending}
+        />
+      )}
+
+      {/* Service Modal */}
+      {showServiceModal && editingService && (
+        <ServiceModal
+          isOpen={true}
+          onClose={() => {
+            setShowServiceModal(false);
+            setEditingService(null);
+          }}
+          service={editingService.service}
+          onSubmit={async (input) => {
+            if (editingService.service) {
+              await handleUpdateService(editingService.contractId, editingService.service.id, input as UpdateContractServiceInput);
+            } else {
+              await handleCreateService(editingService.contractId, input as CreateContractServiceInput);
+            }
+          }}
+        />
+      )}
+
+      {/* Scope Modal */}
+      {showScopeModal && (
+        <ScopeModal
+          isOpen={true}
+          onClose={() => setShowScopeModal(null)}
+          serviceName={showScopeModal.serviceName}
+          scope={showScopeModal.scope}
+        />
+      )}
+
+      {/* Delete Contract Confirmation */}
+      {deleteConfirm?.type === 'contract' && (
+        <ConfirmDialog
+          isOpen={true}
+          onClose={() => setDeleteConfirm(null)}
+          title="Delete Contract"
+          description={`Are you sure you want to delete the contract "${deleteConfirm.name}"? This will also delete all services under this contract.`}
+          confirmLabel="Delete Contract"
+          variant="danger"
+          isLoading={deleteContractMutation.isPending}
+          onConfirm={handleDeleteContract}
+          requireReason
+          reasonLabel="Reason for deletion"
+          reasonPlaceholder="Enter reason (min 10 characters)"
+          reasonMinLength={10}
+        />
+      )}
+
+      {/* Delete Service Confirmation */}
+      {deleteConfirm?.type === 'service' && (
+        <ConfirmDialog
+          isOpen={true}
+          onClose={() => setDeleteConfirm(null)}
+          title="Delete Service"
+          description={`Are you sure you want to delete the service "${deleteConfirm.name}"?`}
+          confirmLabel="Delete Service"
+          variant="danger"
+          onConfirm={handleDeleteService}
+        />
+      )}
+    </div>
+  );
+}

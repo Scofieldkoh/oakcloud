@@ -1,20 +1,16 @@
 import { z } from 'zod';
+import { AUTOMATION_PURPOSES } from '@/lib/constants/automation-purposes';
 
 // Contact detail types enum
 export const contactDetailTypeEnum = z.enum(['EMAIL', 'PHONE', 'WEBSITE', 'OTHER']);
 export type ContactDetailTypeEnum = z.infer<typeof contactDetailTypeEnum>;
 
-// Available purposes for automation
-export const contactPurposes = [
-  'INVOICE',      // Send invoices
-  'STATEMENT',    // Send account statements
-  'TAX_NOTICE',   // Send tax-related notices
-  'RECEIPT',      // Send payment receipts
-  'REMINDER',     // Send payment reminders
-  'GENERAL',      // General correspondence
-] as const;
-export type ContactPurpose = typeof contactPurposes[number];
-export const contactPurposeEnum = z.enum(['INVOICE', 'STATEMENT', 'TAX_NOTICE', 'RECEIPT', 'REMINDER', 'GENERAL']);
+// Available purposes for automation - derived from centralized constant
+// To add/remove purposes, update AUTOMATION_PURPOSES in @/lib/constants/automation-purposes.ts
+const purposeValues = AUTOMATION_PURPOSES.map(p => p.value) as [string, ...string[]];
+export const contactPurposes = purposeValues;
+export type ContactPurpose = typeof purposeValues[number];
+export const contactPurposeEnum = z.enum(purposeValues);
 
 // Email validation
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,6 +48,7 @@ export const createContactDetailSchema = z.object({
   description: z.string().max(500, 'Description too long').optional(),
   displayOrder: z.number().int().min(0).max(1000).optional(),
   isPrimary: z.boolean().optional(),
+  isPoc: z.boolean().optional(),
 }).refine(
   (data) => data.contactId || data.companyId,
   { message: 'Must provide either contactId or companyId' }
@@ -72,6 +69,7 @@ export const updateContactDetailSchema = z.object({
   description: z.string().max(500, 'Description too long').optional().nullable(),
   displayOrder: z.number().int().min(0).max(1000).optional(),
   isPrimary: z.boolean().optional(),
+  isPoc: z.boolean().optional(),
 });
 
 export type UpdateContactDetailInput = z.infer<typeof updateContactDetailSchema>;

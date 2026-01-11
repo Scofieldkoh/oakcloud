@@ -44,8 +44,8 @@ interface TestCompanyData {
     cessationDate: Date | null;
     isCurrent: boolean;
     contact: {
-      email: string | null;
-      phone: string | null;
+      id: string;
+      contactDetails?: Array<{ detailType: string; value: string }>;
     } | null;
   }[];
   shareholders: {
@@ -57,8 +57,8 @@ interface TestCompanyData {
     shareClass: string | null;
     isCurrent: boolean;
     contact: {
-      email: string | null;
-      phone: string | null;
+      id: string;
+      contactDetails?: Array<{ detailType: string; value: string }>;
     } | null;
   }[];
 }
@@ -101,8 +101,11 @@ const SAMPLE_COMPANY_DATA: TestCompanyData = {
       cessationDate: null,
       isCurrent: true,
       contact: {
-        email: 'john.tan@example.com',
-        phone: '+65 9123 4567',
+        id: 'sample-contact-1',
+        contactDetails: [
+          { detailType: 'EMAIL', value: 'john.tan@example.com' },
+          { detailType: 'PHONE', value: '+65 9123 4567' },
+        ],
       },
     },
     {
@@ -114,8 +117,11 @@ const SAMPLE_COMPANY_DATA: TestCompanyData = {
       cessationDate: null,
       isCurrent: true,
       contact: {
-        email: 'mary.lee@example.com',
-        phone: '+65 9234 5678',
+        id: 'sample-contact-2',
+        contactDetails: [
+          { detailType: 'EMAIL', value: 'mary.lee@example.com' },
+          { detailType: 'PHONE', value: '+65 9234 5678' },
+        ],
       },
     },
     {
@@ -127,8 +133,11 @@ const SAMPLE_COMPANY_DATA: TestCompanyData = {
       cessationDate: null,
       isCurrent: true,
       contact: {
-        email: 'secretary@corpsec.com',
-        phone: '+65 6123 4567',
+        id: 'sample-contact-3',
+        contactDetails: [
+          { detailType: 'EMAIL', value: 'secretary@corpsec.com' },
+          { detailType: 'PHONE', value: '+65 6123 4567' },
+        ],
       },
     },
   ],
@@ -142,8 +151,11 @@ const SAMPLE_COMPANY_DATA: TestCompanyData = {
       shareClass: 'Ordinary',
       isCurrent: true,
       contact: {
-        email: 'john.tan@example.com',
-        phone: '+65 9123 4567',
+        id: 'sample-contact-1',
+        contactDetails: [
+          { detailType: 'EMAIL', value: 'john.tan@example.com' },
+          { detailType: 'PHONE', value: '+65 9123 4567' },
+        ],
       },
     },
     {
@@ -155,8 +167,11 @@ const SAMPLE_COMPANY_DATA: TestCompanyData = {
       shareClass: 'Ordinary',
       isCurrent: true,
       contact: {
-        email: 'mary.lee@example.com',
-        phone: '+65 9234 5678',
+        id: 'sample-contact-2',
+        contactDetails: [
+          { detailType: 'EMAIL', value: 'mary.lee@example.com' },
+          { detailType: 'PHONE', value: '+65 9234 5678' },
+        ]
       },
     },
   ],
@@ -272,7 +287,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             fullAddress: a.fullAddress,
             isCurrent: a.isCurrent,
           })),
-          officers: realCompany.officers.map((o: { name: string; role: string; nationality: string | null; address: string | null; appointmentDate: Date | null; cessationDate: Date | null; isCurrent: boolean; contact: { email: string | null; phone: string | null } | null }) => ({
+          officers: realCompany.officers.map((o: { name: string; role: string; nationality: string | null; address: string | null; appointmentDate: Date | null; cessationDate: Date | null; isCurrent: boolean; contact: { id: string; contactDetails?: Array<{ detailType: string; value: string }> } | null }) => ({
             name: o.name,
             role: o.role,
             nationality: o.nationality,
@@ -280,9 +295,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             appointmentDate: o.appointmentDate,
             cessationDate: o.cessationDate,
             isCurrent: o.isCurrent,
-            contact: o.contact ? { email: o.contact.email, phone: o.contact.phone } : null,
+            contact: o.contact ? { id: o.contact.id, contactDetails: o.contact.contactDetails } : null,
           })),
-          shareholders: realCompany.shareholders.map((s: { name: string; shareholderType: string | null; nationality: string | null; numberOfShares: number; percentageHeld: unknown; shareClass: string | null; isCurrent: boolean; contact: { email: string | null; phone: string | null } | null }) => ({
+          shareholders: realCompany.shareholders.map((s: { name: string; shareholderType: string | null; nationality: string | null; numberOfShares: number; percentageHeld: unknown; shareClass: string | null; isCurrent: boolean; contact: { id: string; contactDetails?: Array<{ detailType: string; value: string }> } | null }) => ({
             name: s.name,
             shareholderType: s.shareholderType,
             nationality: s.nationality,
@@ -290,7 +305,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             percentageHeld: s.percentageHeld ? Number(s.percentageHeld) : null,
             shareClass: s.shareClass,
             isCurrent: s.isCurrent,
-            contact: s.contact ? { email: s.contact.email, phone: s.contact.phone } : null,
+            contact: s.contact ? { id: s.contact.id, contactDetails: s.contact.contactDetails } : null,
           })),
         };
         usingSampleData = false;

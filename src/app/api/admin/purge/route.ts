@@ -97,7 +97,6 @@ export async function GET() {
         select: {
           id: true,
           fullName: true,
-          email: true,
           deletedAt: true,
           tenant: {
             select: { name: true },

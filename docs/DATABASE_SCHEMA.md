@@ -8,6 +8,8 @@ Oakcloud implements a multi-tenant architecture where data is isolated by tenant
 
 - **Companies** - `tenantId` (required)
 - **Contacts** - `tenantId` (required)
+- **Contracts** - `tenantId` (required)
+- **ContractServices** - `tenantId` (required)
 - **Documents** - `tenantId` (required)
 - **AuditLogs** - `tenantId` (optional, for system-level events)
 - **Roles** - `tenantId` (optional, null for global SUPER_ADMIN role)
@@ -321,13 +323,15 @@ Unified contact management for individuals and corporates. Each contact belongs 
 | date_of_birth | DATE | Yes | Date of birth |
 | corporate_name | VARCHAR(200) | Yes | Corporate name |
 | corporate_uen | VARCHAR(10) | Yes | Corporate UEN |
-| email | VARCHAR(200) | Yes | Email address (optional) |
-| phone | VARCHAR(20) | Yes | Phone number |
 | full_address | VARCHAR(500) | Yes | Complete address |
 | is_active | BOOLEAN | No | Active status |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Notes:**
+- Email and phone are stored in the `contact_details` table, not directly on contacts
+- Use `contact_details` with `companyId = null` for default email/phone
 
 **Indexes:**
 - `contacts_tenant_id_id_type_number_key` UNIQUE on (tenant_id, identification_type, identification_number)
@@ -421,6 +425,82 @@ Many-to-many relationship between companies and contacts.
 **Indexes:**
 - `company_contacts_unique` UNIQUE on (company_id, contact_id, relationship)
 - `company_contacts_deleted_at_idx` on deleted_at
+
+---
+
+### contracts
+
+Master contract/agreement records. Each contract belongs to a company and tenant.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
+| company_id | UUID | No | FK to companies (CASCADE on delete) |
+| title | VARCHAR(200) | No | Contract title (e.g., "Annual Engagement 2024") |
+| contract_type | ENUM | No | Contract type (see ContractType enum, default: OTHER) |
+| status | ENUM | No | Contract status (see ContractStatus enum, default: DRAFT) |
+| start_date | DATE | No | Contract effective start date |
+| signed_date | DATE | Yes | Date when contract was signed |
+| document_id | UUID | Yes | FK to documents (optional attachment, UNIQUE, SET NULL on delete) |
+| internal_notes | TEXT | Yes | Internal notes for the contract |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+| deleted_reason | TEXT | Yes | Reason for deletion |
+
+**Notes:**
+- A contract has no end date - it's a master agreement shell
+- Services under the contract have their own start/end dates
+- Document attachment is optional and doesn't trigger processing pipeline
+
+**Indexes:**
+- `contracts_tenant_id_idx` on tenant_id
+- `contracts_company_id_idx` on company_id
+- `contracts_status_idx` on status
+- `contracts_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+- `contracts_tenant_id_company_id_idx` on (tenant_id, company_id)
+
+---
+
+### contract_services
+
+Billable service line items under a contract. Each service has its own dates, rates, and scope.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
+| contract_id | UUID | No | FK to contracts (CASCADE on delete) |
+| name | VARCHAR(200) | No | Service name (e.g., "Monthly Bookkeeping") |
+| service_type | ENUM | No | Service type (see ServiceType enum, default: RECURRING) |
+| status | ENUM | No | Service status (see ServiceStatus enum, default: ACTIVE) |
+| rate | DECIMAL(18,2) | Yes | Service rate amount |
+| currency | VARCHAR(3) | No | Currency code (default: SGD) |
+| frequency | ENUM | No | Billing frequency (see BillingFrequency enum, default: MONTHLY) |
+| start_date | DATE | No | Service start date |
+| end_date | DATE | Yes | Service end date (null for ongoing) |
+| next_billing_date | DATE | Yes | Next billing date |
+| scope | TEXT | Yes | Scope of work / statement of work (rich text) |
+| auto_renewal | BOOLEAN | No | Auto-renewal enabled (default: false) |
+| renewal_period_months | INT | Yes | Renewal period in months |
+| display_order | INT | No | Display ordering (default: 0) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Notes:**
+- Services inherit tenant from parent contract
+- Scope field supports rich text (TipTap HTML)
+- Display order controls order within a contract
+
+**Indexes:**
+- `contract_services_tenant_id_idx` on tenant_id
+- `contract_services_contract_id_idx` on contract_id
+- `contract_services_status_idx` on status
+- `contract_services_end_date_idx` on end_date
+- `contract_services_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+- `contract_services_tenant_id_contract_id_idx` on (tenant_id, contract_id)
 
 ---
 
@@ -670,6 +750,46 @@ FAX
 MOBILE
 WEBSITE
 OTHER
+```
+
+### ContractType
+```sql
+ENGAGEMENT_LETTER    -- Engagement letters for professional services
+SERVICE_AGREEMENT    -- General service agreements
+RETAINER_CONTRACT    -- Retainer arrangements
+NDA                  -- Non-disclosure agreements
+VENDOR_AGREEMENT     -- Agreements with vendors
+OTHER                -- Other contract types
+```
+
+### ContractStatus
+```sql
+DRAFT                -- Contract in draft, not yet active
+ACTIVE               -- Active contract
+TERMINATED           -- Contract has been terminated
+```
+
+### ServiceType
+```sql
+RECURRING            -- Recurring service (monthly, quarterly, annually)
+ONE_TIME             -- One-time service
+```
+
+### ServiceStatus
+```sql
+ACTIVE               -- Service is currently active
+COMPLETED            -- Service has been completed
+CANCELLED            -- Service was cancelled
+PENDING              -- Service is pending activation
+```
+
+### BillingFrequency
+```sql
+MONTHLY              -- Monthly billing
+QUARTERLY            -- Quarterly billing
+SEMI_ANNUALLY        -- Semi-annual billing
+ANNUALLY             -- Annual billing
+ONE_TIME             -- One-time billing (for one-time services)
 ```
 
 ### AuditAction

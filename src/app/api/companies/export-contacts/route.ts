@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Add borders to all cells
-    worksheet.eachRow((row, rowNumber) => {
+    worksheet.eachRow((row) => {
       row.eachCell((cell) => {
         cell.border = {
           top: { style: 'thin', color: { argb: 'FFE2E4E9' } },

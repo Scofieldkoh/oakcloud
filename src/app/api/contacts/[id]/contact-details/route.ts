@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
 import {
   getContactDetails,
+  getContactDetailsGrouped,
   createContactDetail,
 } from '@/services/contact-detail.service';
 import { prisma } from '@/lib/prisma';
@@ -10,6 +11,10 @@ import { prisma } from '@/lib/prisma';
 /**
  * GET /api/contacts/[id]/contact-details
  * Get all contact details for a contact
+ *
+ * Query params:
+ * - tenantId: (super admin only) specify tenant context
+ * - grouped: if "true", returns details grouped by company (default vs company-specific)
  */
 export async function GET(
   request: NextRequest,
@@ -33,6 +38,14 @@ export async function GET(
     const canView = await hasPermission(session.id, 'contact', 'read', id);
     if (!canView) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+    }
+
+    // Check if grouped format is requested
+    const grouped = searchParams.get('grouped') === 'true';
+
+    if (grouped) {
+      const groupedDetails = await getContactDetailsGrouped(id, tenantId);
+      return NextResponse.json(groupedDetails);
     }
 
     const details = await getContactDetails(id, tenantId);
@@ -82,7 +95,18 @@ export async function POST(
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
     }
 
-    const { detailType, value, label, purposes, description, displayOrder, isPrimary } = body;
+    const {
+      detailType,
+      value,
+      label,
+      purposes,
+      description,
+      displayOrder,
+      isPrimary,
+      // For company-specific details from standalone modal
+      selectedCompanyId,
+      isCompanySpecific,
+    } = body;
 
     if (!detailType || !value) {
       return NextResponse.json(
@@ -91,9 +115,24 @@ export async function POST(
       );
     }
 
+    // Determine if this should be a company-specific detail
+    // selectedCompanyId comes from standalone modal when user selects a company
+    const companyId = selectedCompanyId || (isCompanySpecific ? body.companyId : undefined);
+
+    // Validate company if companyId is provided
+    if (companyId) {
+      const company = await prisma.company.findFirst({
+        where: { id: companyId, tenantId, deletedAt: null },
+      });
+      if (!company) {
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+      }
+    }
+
     const detail = await createContactDetail(
       {
         contactId: id,
+        companyId,
         detailType,
         value,
         label,

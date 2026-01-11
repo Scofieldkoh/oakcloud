@@ -31,5 +31,5 @@ You can read the MD files of the docs for information; they are documented and c
 - [ ] Letterhead issues
 - [ ] Share button >> format issue, comment issue, notification issue
 
-Column details and filter options, export details, preview next page navigation have to be more obvious, company name consistency, option without line item/ AI extraction.
+export details, option without line item/ AI extraction.
 

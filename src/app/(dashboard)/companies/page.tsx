@@ -199,7 +199,7 @@ export default function CompaniesPage() {
     try {
       await exportContactDetails.mutateAsync(Array.from(selectedIds));
       success('Contact details exported successfully');
-    } catch (err) {
+    } catch {
       // Error handled by mutation
     }
   };

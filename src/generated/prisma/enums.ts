@@ -231,6 +231,56 @@ export const ConnectorProvider = {
 export type ConnectorProvider = (typeof ConnectorProvider)[keyof typeof ConnectorProvider]
 
 
+export const ContractType = {
+  ENGAGEMENT_LETTER: 'ENGAGEMENT_LETTER',
+  SERVICE_AGREEMENT: 'SERVICE_AGREEMENT',
+  RETAINER_CONTRACT: 'RETAINER_CONTRACT',
+  NDA: 'NDA',
+  VENDOR_AGREEMENT: 'VENDOR_AGREEMENT',
+  OTHER: 'OTHER'
+} as const
+
+export type ContractType = (typeof ContractType)[keyof typeof ContractType]
+
+
+export const ContractStatus = {
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  TERMINATED: 'TERMINATED'
+} as const
+
+export type ContractStatus = (typeof ContractStatus)[keyof typeof ContractStatus]
+
+
+export const ServiceType = {
+  RECURRING: 'RECURRING',
+  ONE_TIME: 'ONE_TIME'
+} as const
+
+export type ServiceType = (typeof ServiceType)[keyof typeof ServiceType]
+
+
+export const ServiceStatus = {
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  PENDING: 'PENDING'
+} as const
+
+export type ServiceStatus = (typeof ServiceStatus)[keyof typeof ServiceStatus]
+
+
+export const BillingFrequency = {
+  MONTHLY: 'MONTHLY',
+  QUARTERLY: 'QUARTERLY',
+  SEMI_ANNUALLY: 'SEMI_ANNUALLY',
+  ANNUALLY: 'ANNUALLY',
+  ONE_TIME: 'ONE_TIME'
+} as const
+
+export type BillingFrequency = (typeof BillingFrequency)[keyof typeof BillingFrequency]
+
+
 export const DocumentTemplateCategory = {
   RESOLUTION: 'RESOLUTION',
   CONTRACT: 'CONTRACT',

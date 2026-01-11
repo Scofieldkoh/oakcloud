@@ -225,6 +225,45 @@ enum ConnectorProvider {
 }
 
 // ============================================================================
+// CONTRACTS & SERVICES
+// ============================================================================
+
+enum ContractType {
+  ENGAGEMENT_LETTER
+  SERVICE_AGREEMENT
+  RETAINER_CONTRACT
+  NDA
+  VENDOR_AGREEMENT
+  OTHER
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  TERMINATED
+}
+
+enum ServiceType {
+  RECURRING
+  ONE_TIME
+}
+
+enum ServiceStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  PENDING
+}
+
+enum BillingFrequency {
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUALLY
+  ANNUALLY
+  ONE_TIME
+}
+
+// ============================================================================
 // TENANT (Multi-Tenancy Core)
 // ============================================================================
 
@@ -287,6 +326,10 @@ model Tenant {
 
   // Contact Details
   contactDetails       ContactDetail[]
+
+  // Contracts & Services
+  contracts            Contract[]
+  contractServices     ContractService[]
 
   @@index([slug])
   @@index([status])
@@ -555,6 +598,9 @@ model Company {
   // Contact Details
   contactDetails        ContactDetail[]
 
+  // Contracts
+  contracts             Contract[]
+
   @@unique([tenantId, uen]) // UEN unique within tenant
   @@index([tenantId])
   @@index([uen])
@@ -641,10 +687,6 @@ model Contact {
   corporateName       String?
   corporateUen        String?
 
-  // Contact Info
-  email               String?
-  phone               String?
-
   // Address
   fullAddress         String?
 
@@ -730,6 +772,9 @@ model ContactDetail {
 
   // Whether this is the primary detail of this type
   isPrimary      Boolean           @default(false)
+
+  // Whether this contact detail is a Point of Contact (POC) for the company
+  isPoc          Boolean           @default(false)
 
   // Timestamps
   createdAt      DateTime          @default(now())
@@ -941,6 +986,9 @@ model Document {
   shareholders    CompanyShareholder[]
   charges         CompanyCharge[]
   processingDocument ProcessingDocument?
+
+  // Contract attachment (one-to-one, optional)
+  contract        Contract?
 
   @@index([tenantId])
   @@index([companyId])
@@ -3090,4 +3138,86 @@ model ChartOfAccountsMapping {
   @@index([provider])
   @@index([companyId, provider]) // For getting all mappings for a company by provider
   @@map("chart_of_accounts_mappings")
+}
+
+// ============================================================================
+// CONTRACTS & SERVICES
+// ============================================================================
+
+model Contract {
+  id              String         @id @default(uuid())
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id])
+  companyId       String
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title           String
+  contractType    ContractType   @default(OTHER)
+  status          ContractStatus @default(DRAFT)
+  startDate       DateTime
+  signedDate      DateTime?
+
+  // Optional document attachment (simple storage, no processing pipeline)
+  documentId      String?        @unique
+  document        Document?      @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  internalNotes   String?        @db.Text
+
+  // Services under this contract
+  services        ContractService[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  deletedReason   String?
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([status])
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, companyId])
+  @@map("contracts")
+}
+
+model ContractService {
+  id                  String           @id @default(uuid())
+  tenantId            String
+  tenant              Tenant           @relation(fields: [tenantId], references: [id])
+  contractId          String
+  contract            Contract         @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  name                String
+  serviceType         ServiceType      @default(RECURRING)
+  status              ServiceStatus    @default(ACTIVE)
+
+  // Pricing
+  rate                Decimal?         @db.Decimal(18, 2)
+  currency            String           @default("SGD")
+  frequency           BillingFrequency @default(MONTHLY)
+
+  // Service-level dates
+  startDate           DateTime
+  endDate             DateTime?
+  nextBillingDate     DateTime?
+
+  // Scope / Statement of Work (rich text)
+  scope               String?          @db.Text
+
+  // Renewal tracking
+  autoRenewal         Boolean          @default(false)
+  renewalPeriodMonths Int?
+
+  displayOrder        Int              @default(0)
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  deletedAt           DateTime?
+
+  @@index([tenantId])
+  @@index([contractId])
+  @@index([status])
+  @@index([endDate])
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, contractId])
+  @@map("contract_services")
 }

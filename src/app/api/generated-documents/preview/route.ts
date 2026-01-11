@@ -93,8 +93,12 @@ export async function POST(request: NextRequest) {
               isCurrent: true,
               contact: {
                 select: {
-                  email: true,
-                  phone: true,
+                  id: true,
+                  contactDetails: {
+                    where: { deletedAt: null, companyId: null },
+                    select: { detailType: true, value: true },
+                    take: 2,
+                  },
                 },
               },
             },
@@ -110,8 +114,12 @@ export async function POST(request: NextRequest) {
               isCurrent: true,
               contact: {
                 select: {
-                  email: true,
-                  phone: true,
+                  id: true,
+                  contactDetails: {
+                    where: { deletedAt: null, companyId: null },
+                    select: { detailType: true, value: true },
+                    take: 2,
+                  },
                 },
               },
             },
@@ -156,25 +164,29 @@ export async function POST(request: NextRequest) {
           id: true,
           firstName: true,
           lastName: true,
-          email: true,
-          phone: true,
           fullAddress: true,
           nationality: true,
           identificationNumber: true,
           contactType: true,
+          contactDetails: {
+            where: { deletedAt: null, companyId: null },
+            select: { detailType: true, value: true },
+          },
         },
       });
 
       if (contacts.length > 0) {
         const firstContact = contacts[0];
+        const emailDetail = firstContact.contactDetails?.find(d => d.detailType === 'EMAIL');
+        const phoneDetail = firstContact.contactDetails?.find(d => d.detailType === 'PHONE');
         context.contact = {
           id: firstContact.id,
           fullName: `${firstContact.firstName || ''} ${firstContact.lastName || ''}`.trim(),
           firstName: firstContact.firstName,
           lastName: firstContact.lastName,
           contactType: firstContact.contactType,
-          email: firstContact.email,
-          phone: firstContact.phone,
+          email: emailDetail?.value || null,
+          phone: phoneDetail?.value || null,
           fullAddress: firstContact.fullAddress,
           nationality: firstContact.nationality,
           identificationNumber: firstContact.identificationNumber,
@@ -183,17 +195,21 @@ export async function POST(request: NextRequest) {
         // Add all contacts to custom data for iteration
         context.custom = {
           ...context.custom,
-          contacts: contacts.map(c => ({
-            id: c.id,
-            fullName: `${c.firstName || ''} ${c.lastName || ''}`.trim(),
-            firstName: c.firstName,
-            lastName: c.lastName,
-            email: c.email,
-            phone: c.phone,
-            address: c.fullAddress,
-            nationality: c.nationality,
-            identificationNumber: c.identificationNumber,
-          })),
+          contacts: contacts.map(c => {
+            const email = c.contactDetails?.find(d => d.detailType === 'EMAIL');
+            const phone = c.contactDetails?.find(d => d.detailType === 'PHONE');
+            return {
+              id: c.id,
+              fullName: `${c.firstName || ''} ${c.lastName || ''}`.trim(),
+              firstName: c.firstName,
+              lastName: c.lastName,
+              email: email?.value || null,
+              phone: phone?.value || null,
+              address: c.fullAddress,
+              nationality: c.nationality,
+              identificationNumber: c.identificationNumber,
+            };
+          }),
         };
       }
     }

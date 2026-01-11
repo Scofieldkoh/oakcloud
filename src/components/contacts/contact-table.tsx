@@ -13,6 +13,10 @@ interface ContactWithCount extends Contact {
   _count?: {
     companyRelations: number;
   };
+  /** Default email from ContactDetail (where companyId is null) */
+  defaultEmail?: string | null;
+  /** Default phone from ContactDetail (where companyId is null) */
+  defaultPhone?: string | null;
 }
 
 interface ContactTableProps {
@@ -327,8 +331,18 @@ export function ContactTable({
               }
               details={
                 <CardDetailsGrid>
-                  {contact.email && <CardDetailItem label="Email" value={contact.email} fullWidth />}
-                  {contact.phone && <CardDetailItem label="Phone" value={contact.phone} />}
+                  {contact.defaultEmail && (
+                    <CardDetailItem
+                      label="Email"
+                      value={<span className="truncate">{contact.defaultEmail}</span>}
+                    />
+                  )}
+                  {contact.defaultPhone && (
+                    <CardDetailItem
+                      label="Phone"
+                      value={contact.defaultPhone}
+                    />
+                  )}
                   <CardDetailItem
                     label="Companies"
                     value={
@@ -441,10 +455,20 @@ export function ContactTable({
                   )}
                 </td>
                 <td className="text-text-secondary">
-                  {contact.email || <span className="text-text-muted">-</span>}
+                  {contact.defaultEmail ? (
+                    <span className="truncate max-w-[180px] block" title={contact.defaultEmail}>
+                      {contact.defaultEmail}
+                    </span>
+                  ) : (
+                    <span className="text-text-muted">-</span>
+                  )}
                 </td>
                 <td className="text-text-secondary">
-                  {contact.phone || <span className="text-text-muted">-</span>}
+                  {contact.defaultPhone ? (
+                    <span>{contact.defaultPhone}</span>
+                  ) : (
+                    <span className="text-text-muted">-</span>
+                  )}
                 </td>
                 <td>
                   <div className="flex items-center gap-1.5 text-text-secondary">

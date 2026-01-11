@@ -310,38 +310,6 @@ export default function NewContactPage() {
           </div>
         </div>
 
-        {/* Contact Details */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Contact Details</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Email</label>
-                <input
-                  type="email"
-                  {...register('email')}
-                  placeholder="john@example.com"
-                  className={`input input-sm ${errors.email ? 'input-error' : ''}`}
-                />
-                {errors.email && (
-                  <p className="text-xs text-status-error mt-1.5">{errors.email.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="label">Phone</label>
-                <input
-                  type="tel"
-                  {...register('phone')}
-                  placeholder="+65 9123 4567"
-                  className="input input-sm"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Address */}
         <div className="card">
           <div className="p-4 border-b border-border-primary">

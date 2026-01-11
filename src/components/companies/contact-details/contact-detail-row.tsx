@@ -1,9 +1,9 @@
 'use client';
 
-import { Pencil, Trash2, Star, X, Check, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Pencil, Trash2, X, Check, Loader2, Star } from 'lucide-react';
 import { AUTOMATION_PURPOSES } from '@/lib/constants/automation-purposes';
-import { detailTypeConfig, labelSuggestions, type ContactDetail, type EditFormState } from './types';
+import { detailTypeConfig, type ContactDetail, type EditFormState } from './types';
+import { CopyButton } from './copy-button';
 
 interface ContactDetailRowProps {
   detail: ContactDetail;
@@ -37,117 +37,173 @@ export function ContactDetailRow({
 
   if (isEditing && canEdit) {
     return (
-      <div className="flex flex-col gap-2 p-3 bg-surface-secondary rounded-lg border border-oak-light/30">
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={editForm.detailType}
-            onChange={(e) => {
-              const newType = e.target.value;
-              onUpdateForm('detailType', newType);
-              // Clear purposes when switching away from EMAIL
-              if (newType !== 'EMAIL') {
-                onUpdateForm('purposes', []);
-              }
-            }}
-            className="input input-xs w-24"
-          >
-            {Object.entries(detailTypeConfig).map(([type, cfg]) => (
-              <option key={type} value={type}>{cfg.label}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            value={editForm.value}
-            onChange={(e) => onUpdateForm('value', e.target.value)}
-            className="input input-xs flex-1 min-w-[150px]"
-            placeholder="Value"
-          />
-          <input
-            type="text"
-            value={editForm.label}
-            onChange={(e) => onUpdateForm('label', e.target.value)}
-            className="input input-xs w-28"
-            placeholder="Label"
-            list="label-suggestions-edit"
-          />
-          <button
-            onClick={() => onUpdateForm('isPrimary', !editForm.isPrimary)}
-            className={`p-1.5 rounded ${editForm.isPrimary ? 'text-status-warning bg-status-warning/10' : 'text-text-muted hover:text-text-secondary'}`}
-            title={editForm.isPrimary ? 'Primary' : 'Set as primary'}
-          >
-            <Star className="w-4 h-4" fill={editForm.isPrimary ? 'currentColor' : 'none'} />
-          </button>
+      <div className="flex flex-col gap-2 py-3 px-4 bg-surface-secondary">
+        {/* Main row with inputs */}
+        <div className="flex items-center gap-4">
+          {/* Label column - w-[360px] */}
+          <div className="flex-shrink-0 w-[360px]">
+            <input
+              type="text"
+              value={editForm.label}
+              onChange={(e) => onUpdateForm('label', e.target.value)}
+              className="input input-xs w-full"
+              placeholder="Label (optional)"
+            />
+          </div>
+
+          {/* Type column - w-[300px] */}
+          <div className="flex-shrink-0 w-[300px]">
+            <select
+              value={editForm.detailType}
+              onChange={(e) => {
+                const newType = e.target.value;
+                onUpdateForm('detailType', newType);
+                if (newType !== 'EMAIL') {
+                  onUpdateForm('purposes', []);
+                }
+              }}
+              className="input input-xs w-full"
+            >
+              {Object.entries(detailTypeConfig).map(([type, cfg]) => (
+                <option key={type} value={type}>{cfg.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* POC column - w-[80px] */}
+          <div className="flex-shrink-0 w-[80px] flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => onUpdateForm('isPoc', !editForm.isPoc)}
+              className={`p-1.5 rounded transition-colors ${
+                editForm.isPoc
+                  ? 'text-amber-500 hover:text-amber-600'
+                  : 'text-text-muted hover:text-amber-500'
+              }`}
+              title={editForm.isPoc ? 'Remove POC' : 'Set as POC'}
+            >
+              <Star className={`w-4 h-4 ${editForm.isPoc ? 'fill-current' : ''}`} />
+            </button>
+          </div>
+
+          {/* Value column - flex-1 */}
+          <div className="flex-1 min-w-0">
+            <input
+              type="text"
+              value={editForm.value}
+              onChange={(e) => onUpdateForm('value', e.target.value)}
+              className="input input-xs w-full"
+              placeholder="Value"
+            />
+          </div>
+
+          {/* Actions column - w-[56px] */}
+          <div className="flex-shrink-0 w-[56px] flex items-center gap-1">
+            <button
+              onClick={onCancelEdit}
+              disabled={isSaving}
+              className="text-text-muted hover:text-status-error p-1 rounded hover:bg-surface-tertiary"
+              title="Cancel"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onSaveEdit}
+              disabled={isSaving || !editForm.value.trim()}
+              className="text-text-muted hover:text-oak-light p-1 rounded hover:bg-surface-tertiary disabled:opacity-50"
+              title="Save"
+            >
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
-        {/* Purposes in edit mode - only for EMAIL type */}
+
+        {/* Purposes row - only for EMAIL type */}
         {editForm.detailType === 'EMAIL' && (
-          <div className="flex flex-wrap gap-1.5">
-            {AUTOMATION_PURPOSES.map((purpose) => (
-              <button
-                key={purpose.value}
-                type="button"
-                onClick={() => {
-                  const newPurposes = editForm.purposes.includes(purpose.value)
-                    ? editForm.purposes.filter(p => p !== purpose.value)
-                    : [...editForm.purposes, purpose.value];
-                  onUpdateForm('purposes', newPurposes);
-                }}
-                className={`text-xs px-2 py-1 rounded transition-colors ${
-                  editForm.purposes.includes(purpose.value)
-                    ? 'bg-oak-light text-white'
-                    : 'bg-surface-tertiary text-text-secondary hover:bg-surface-secondary'
-                }`}
-              >
-                {purpose.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-4">
+            {/* Empty spacers for Label, Type, and POC columns */}
+            <div className="flex-shrink-0 w-[360px]" />
+            <div className="flex-shrink-0 w-[300px]" />
+            <div className="flex-shrink-0 w-[80px]" />
+            {/* Automation aligned with Value column */}
+            <div className="flex-1 flex items-center gap-2 min-w-0">
+              <span className="text-xs text-text-muted flex-shrink-0">Automation:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {AUTOMATION_PURPOSES.map((purpose) => (
+                  <button
+                    key={purpose.value}
+                    type="button"
+                    onClick={() => {
+                      const newPurposes = editForm.purposes.includes(purpose.value)
+                        ? editForm.purposes.filter(p => p !== purpose.value)
+                        : [...editForm.purposes, purpose.value];
+                      onUpdateForm('purposes', newPurposes);
+                    }}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                      editForm.purposes.includes(purpose.value)
+                        ? 'bg-oak-light text-white'
+                        : 'bg-surface-tertiary text-text-secondary hover:bg-border-secondary'
+                    }`}
+                  >
+                    {purpose.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Empty spacer for Actions column */}
+            <div className="flex-shrink-0 w-[56px]" />
           </div>
         )}
-        <div className="flex justify-end gap-2 pt-1">
-          <Button variant="ghost" size="xs" onClick={onCancelEdit} disabled={isSaving}>
-            <X className="w-3.5 h-3.5 mr-1" />
-            Cancel
-          </Button>
-          <Button variant="primary" size="xs" onClick={onSaveEdit} disabled={isSaving || !editForm.value.trim()}>
-            {isSaving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1" />}
-            Save
-          </Button>
-        </div>
-        <datalist id="label-suggestions-edit">
-          {labelSuggestions.map((label) => (
-            <option key={label} value={label} />
-          ))}
-        </datalist>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-surface-secondary transition-colors group">
-      <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" />
-      <span className="text-sm text-text-primary flex-1 truncate">{detail.value}</span>
-      {detail.label && (
-        <span className="text-xs text-text-muted bg-surface-tertiary px-1.5 py-0.5 rounded flex-shrink-0">
-          {detail.label}
+    <div className="flex items-center gap-4 py-2.5 px-4 hover:bg-surface-secondary transition-colors group">
+      {/* Label column - aligned with Name (360px) */}
+      <div className="flex-shrink-0 w-[360px]">
+        <span className="text-sm text-text-primary truncate">
+          {detail.label || <span className="text-text-muted italic">No label</span>}
         </span>
-      )}
-      {/* Only show purposes for EMAIL type */}
-      {detail.detailType === 'EMAIL' && detail.purposes && detail.purposes.length > 0 && (
-        <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
-          {detail.purposes.slice(0, 2).map((purpose) => (
-            <span key={purpose} className="text-xs text-oak-light bg-oak-light/10 px-1.5 py-0.5 rounded">
-              {purpose}
-            </span>
-          ))}
-          {detail.purposes.length > 2 && (
-            <span className="text-xs text-text-muted">+{detail.purposes.length - 2}</span>
-          )}
-        </div>
-      )}
-      {detail.isPrimary && (
-        <Star className="w-3.5 h-3.5 text-status-warning flex-shrink-0" fill="currentColor" />
-      )}
+      </div>
+
+      {/* Type column - w-[300px] */}
+      <div className="flex-shrink-0 w-[300px] flex items-center gap-1.5">
+        <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+        <span className="text-sm text-text-secondary">{config.label}</span>
+      </div>
+
+      {/* POC column - w-[80px] */}
+      <div className="flex-shrink-0 w-[80px] flex items-center justify-center">
+        {detail.isPoc && (
+          <span className="text-amber-500" title="Point of Contact">
+            <Star className="w-4 h-4 fill-current" />
+          </span>
+        )}
+      </div>
+
+      {/* Value column - aligned with Phone+Email */}
+      <div className="flex-1 flex items-center gap-1.5 min-w-0">
+        <span className="text-sm text-text-primary truncate">{detail.value}</span>
+        <CopyButton value={detail.value} />
+        {/* Only show purposes for EMAIL type - pill badge design */}
+        {detail.detailType === 'EMAIL' && detail.purposes && detail.purposes.length > 0 && (
+          <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+            {detail.purposes.slice(0, 2).map((purpose) => (
+              <span key={purpose} className="text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                {purpose}
+              </span>
+            ))}
+            {detail.purposes.length > 2 && (
+              <span className="text-[10px] text-text-muted">+{detail.purposes.length - 2}</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Actions column */}
       {canEdit && (
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 flex-shrink-0">
+        <div className="flex-shrink-0 flex items-center gap-1">
           <button
             onClick={onStartEdit}
             className="text-text-muted hover:text-oak-light p-1 rounded hover:bg-surface-tertiary"

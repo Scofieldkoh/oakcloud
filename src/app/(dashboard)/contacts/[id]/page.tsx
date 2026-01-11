@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   User,
-  Mail,
   MapPin,
   Calendar,
   History,
@@ -25,6 +24,7 @@ import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui/async-search-select';
 import { useToast } from '@/components/ui/toast';
 import { CompanyRelationships } from '@/components/contacts/company-relationships';
+import { ContactDetailsSection } from '@/components/contacts/contact-details-section';
 import { InternalNotes } from '@/components/notes/internal-notes';
 import type { ContactType, IdentificationType } from '@/generated/prisma';
 
@@ -446,41 +446,8 @@ export default function ContactDetailPage({
             </div>
           </div>
 
-          {/* Contact Details */}
-          <div className="card">
-            <div className="p-4 border-b border-border-primary">
-              <h2 className="font-medium text-text-primary flex items-center gap-2">
-                <Mail className="w-4 h-4 text-text-tertiary" />
-                Contact Details
-              </h2>
-            </div>
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-text-tertiary uppercase mb-1">Email</p>
-                <p className="text-text-primary">
-                  {contact.email ? (
-                    <a href={`mailto:${contact.email}`} className="text-oak-light hover:underline">
-                      {contact.email}
-                    </a>
-                  ) : (
-                    '-'
-                  )}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-text-tertiary uppercase mb-1">Phone</p>
-                <p className="text-text-primary">
-                  {contact.phone ? (
-                    <a href={`tel:${contact.phone}`} className="text-oak-light hover:underline">
-                      {contact.phone}
-                    </a>
-                  ) : (
-                    '-'
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Contact Details - Full grouped view with default and company-specific */}
+          <ContactDetailsSection contactId={id} contactName={contact.fullName} canEdit={can.updateContact} />
 
           {/* Address */}
           {contact.fullAddress && (

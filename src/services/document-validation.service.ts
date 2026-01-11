@@ -167,8 +167,12 @@ async function fetchCompanyData(companyId: string, tenantId: string): Promise<Co
           isCurrent: true,
           contact: {
             select: {
-              email: true,
-              phone: true,
+              id: true,
+              contactDetails: {
+                where: { deletedAt: null, companyId: null },
+                select: { detailType: true, value: true },
+                take: 2,
+              },
             },
           },
         },
@@ -184,8 +188,12 @@ async function fetchCompanyData(companyId: string, tenantId: string): Promise<Co
           isCurrent: true,
           contact: {
             select: {
-              email: true,
-              phone: true,
+              id: true,
+              contactDetails: {
+                where: { deletedAt: null, companyId: null },
+                select: { detailType: true, value: true },
+                take: 2,
+              },
             },
           },
         },

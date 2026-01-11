@@ -117,7 +117,9 @@ export const ModelName = {
   TenantBackup: 'TenantBackup',
   BackupSchedule: 'BackupSchedule',
   ChartOfAccount: 'ChartOfAccount',
-  ChartOfAccountsMapping: 'ChartOfAccountsMapping'
+  ChartOfAccountsMapping: 'ChartOfAccountsMapping',
+  Contract: 'Contract',
+  ContractService: 'ContractService'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -343,8 +345,6 @@ export const ContactScalarFieldEnum = {
   dateOfBirth: 'dateOfBirth',
   corporateName: 'corporateName',
   corporateUen: 'corporateUen',
-  email: 'email',
-  phone: 'phone',
   fullAddress: 'fullAddress',
   isActive: 'isActive',
   createdAt: 'createdAt',
@@ -380,6 +380,7 @@ export const ContactDetailScalarFieldEnum = {
   description: 'description',
   displayOrder: 'displayOrder',
   isPrimary: 'isPrimary',
+  isPoc: 'isPoc',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -1449,6 +1450,51 @@ export const ChartOfAccountsMappingScalarFieldEnum = {
 } as const
 
 export type ChartOfAccountsMappingScalarFieldEnum = (typeof ChartOfAccountsMappingScalarFieldEnum)[keyof typeof ChartOfAccountsMappingScalarFieldEnum]
+
+
+export const ContractScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  title: 'title',
+  contractType: 'contractType',
+  status: 'status',
+  startDate: 'startDate',
+  signedDate: 'signedDate',
+  documentId: 'documentId',
+  internalNotes: 'internalNotes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
+  deletedReason: 'deletedReason'
+} as const
+
+export type ContractScalarFieldEnum = (typeof ContractScalarFieldEnum)[keyof typeof ContractScalarFieldEnum]
+
+
+export const ContractServiceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  contractId: 'contractId',
+  name: 'name',
+  serviceType: 'serviceType',
+  status: 'status',
+  rate: 'rate',
+  currency: 'currency',
+  frequency: 'frequency',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  nextBillingDate: 'nextBillingDate',
+  scope: 'scope',
+  autoRenewal: 'autoRenewal',
+  renewalPeriodMonths: 'renewalPeriodMonths',
+  displayOrder: 'displayOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type ContractServiceScalarFieldEnum = (typeof ContractServiceScalarFieldEnum)[keyof typeof ContractServiceScalarFieldEnum]
 
 
 export const SortOrder = {

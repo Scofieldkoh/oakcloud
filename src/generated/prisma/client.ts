@@ -374,3 +374,13 @@ export type ChartOfAccount = Prisma.ChartOfAccountModel
  * 
  */
 export type ChartOfAccountsMapping = Prisma.ChartOfAccountsMappingModel
+/**
+ * Model Contract
+ * 
+ */
+export type Contract = Prisma.ContractModel
+/**
+ * Model ContractService
+ * 
+ */
+export type ContractService = Prisma.ContractServiceModel

@@ -77,15 +77,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
 
     // Resolve tenant context - SUPER_ADMIN can specify via body
-    const { tenantId: bodyTenantId, ...detailData } = body;
+    const { tenantId: bodyTenantId, isCompanySpecific, ...detailData } = body;
     const tenantResult = await requireTenantContext(session, bodyTenantId);
     if (tenantResult.error) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 
     // Parse and validate input
+    // If isCompanySpecific is true and contactId is provided, this creates a company-specific detail
+    // (both contactId and companyId will be set)
+    // If isCompanySpecific is false/undefined, and contactId is provided, this creates a default contact detail
+    // (only contactId will be set, companyId will be null)
+    const shouldSetCompanyId = isCompanySpecific && detailData.contactId;
     const data = createContactDetailSchema.parse({
       ...detailData,
-      companyId,
+      // Only set companyId if:
+      // 1. No contactId (company-level detail), OR
+      // 2. isCompanySpecific is true (company-specific contact detail)
+      companyId: (!detailData.contactId || shouldSetCompanyId) ? companyId : undefined,
     });
 
     const contactDetail = await createContactDetail(data, {

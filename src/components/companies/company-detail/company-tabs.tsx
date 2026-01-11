@@ -2,10 +2,10 @@
 
 import { useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Building2, Contact } from 'lucide-react';
+import { Building2, Contact, FileText, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-export type TabId = 'profile' | 'contacts';
+export type TabId = 'profile' | 'contacts' | 'contracts';
 
 interface Tab {
   id: TabId;
@@ -16,19 +16,23 @@ interface Tab {
 const tabs: Tab[] = [
   { id: 'profile', label: 'Company Profile', icon: Building2 },
   { id: 'contacts', label: 'Contact Details', icon: Contact },
+  { id: 'contracts', label: 'Contracts', icon: FileText },
 ];
 
 interface CompanyTabsProps {
   activeTab: TabId;
   onTabChange: (tabId: TabId) => void;
+  hasPoc?: boolean;
 }
 
-export function CompanyTabs({ activeTab, onTabChange }: CompanyTabsProps) {
+export function CompanyTabs({ activeTab, onTabChange, hasPoc }: CompanyTabsProps) {
   return (
     <div className="flex items-center border-b border-border-primary mb-6">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
+        // Show warning for contacts tab when no POC
+        const showWarning = tab.id === 'contacts' && hasPoc === false;
         return (
           <button
             key={tab.id}
@@ -41,6 +45,11 @@ export function CompanyTabs({ activeTab, onTabChange }: CompanyTabsProps) {
           >
             <Icon className="w-4 h-4" />
             {tab.label}
+            {showWarning && (
+              <span className="text-amber-500" title="POC required">
+                <AlertTriangle className="w-4 h-4" />
+              </span>
+            )}
           </button>
         );
       })}
@@ -56,7 +65,8 @@ export function useTabState(): [TabId, (tabId: TabId) => void] {
 
   // Get current tab from URL, default to 'profile'
   const currentTab = (searchParams.get('tab') as TabId) || 'profile';
-  const validTab: TabId = currentTab === 'contacts' ? 'contacts' : 'profile';
+  const validTabs: TabId[] = ['profile', 'contacts', 'contracts'];
+  const validTab: TabId = validTabs.includes(currentTab) ? currentTab : 'profile';
 
   // Update URL when tab changes
   const setTab = useCallback((tabId: TabId) => {

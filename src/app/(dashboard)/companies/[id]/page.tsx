@@ -18,7 +18,7 @@ import {
   useDeleteCompany,
   useCompanyLinkInfo,
 } from '@/hooks/use-companies';
-import { usePrefetchCompanyContactDetails } from '@/hooks/use-contact-details';
+import { useCompanyContactDetails, usePrefetchCompanyContactDetails } from '@/hooks/use-contact-details';
 import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate } from '@/lib/utils';
 import { getEntityTypeLabel } from '@/lib/constants';
@@ -31,6 +31,8 @@ import {
   CompanyTabs,
   useTabState,
 } from '@/components/companies/company-detail';
+import { ContractsTab } from '@/components/companies/contracts';
+import { usePrefetchCompanyContracts } from '@/hooks/use-contracts';
 
 // Inner component that uses useSearchParams (needs Suspense boundary)
 function CompanyDetailContent({ id }: { id: string }) {
@@ -46,9 +48,13 @@ function CompanyDetailContent({ id }: { id: string }) {
   // URL-persisted tab state
   const [activeTab, setActiveTab] = useTabState();
 
-  // Prefetch contact details in background after profile loads
+  // Prefetch contact details and contracts in background after profile loads
   // This runs the query but with lower priority, so it doesn't block the main content
   usePrefetchCompanyContactDetails(id, !isLoading && !!company);
+  usePrefetchCompanyContracts(id, !isLoading && !!company);
+
+  // Get contact details to check hasPoc for the warning icon
+  const { data: contactDetailsData } = useCompanyContactDetails(id);
 
   // Fetch link info when delete dialog opens
   const { data: linkInfo } = useCompanyLinkInfo(deleteDialogOpen ? id : null);
@@ -203,19 +209,26 @@ function CompanyDetailContent({ id }: { id: string }) {
       </div>
 
       {/* Tabs */}
-      <CompanyTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <CompanyTabs activeTab={activeTab} onTabChange={setActiveTab} hasPoc={contactDetailsData?.hasPoc} />
 
       {/* Tab Content */}
-      {activeTab === 'profile' ? (
+      {activeTab === 'profile' && (
         <CompanyProfileTab
           company={company}
           companyId={id}
           can={can}
         />
-      ) : (
+      )}
+      {activeTab === 'contacts' && (
         <ContactDetailsTab
           companyId={id}
           companyName={company.name}
+          canEdit={can.updateCompany}
+        />
+      )}
+      {activeTab === 'contracts' && (
+        <ContractsTab
+          companyId={id}
           canEdit={can.updateCompany}
         />
       )}

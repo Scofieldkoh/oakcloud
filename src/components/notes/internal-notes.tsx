@@ -309,12 +309,12 @@ export function InternalNotes({
               {canEdit && (
                 <Button
                   variant="secondary"
-                  size="sm"
+                  size="xs"
                   onClick={handleAddTab}
                   className="mt-2"
                   disabled={createMutation.isPending}
                 >
-                  <Plus className="w-4 h-4 mr-1" />
+                  <Plus className="w-3.5 h-3.5 mr-1" />
                   Add Tab
                 </Button>
               )}

@@ -37,8 +37,6 @@ export type ContactMinAggregateOutputType = {
   dateOfBirth: Date | null
   corporateName: string | null
   corporateUen: string | null
-  email: string | null
-  phone: string | null
   fullAddress: string | null
   isActive: boolean | null
   createdAt: Date | null
@@ -59,8 +57,6 @@ export type ContactMaxAggregateOutputType = {
   dateOfBirth: Date | null
   corporateName: string | null
   corporateUen: string | null
-  email: string | null
-  phone: string | null
   fullAddress: string | null
   isActive: boolean | null
   createdAt: Date | null
@@ -81,8 +77,6 @@ export type ContactCountAggregateOutputType = {
   dateOfBirth: number
   corporateName: number
   corporateUen: number
-  email: number
-  phone: number
   fullAddress: number
   isActive: number
   createdAt: number
@@ -105,8 +99,6 @@ export type ContactMinAggregateInputType = {
   dateOfBirth?: true
   corporateName?: true
   corporateUen?: true
-  email?: true
-  phone?: true
   fullAddress?: true
   isActive?: true
   createdAt?: true
@@ -127,8 +119,6 @@ export type ContactMaxAggregateInputType = {
   dateOfBirth?: true
   corporateName?: true
   corporateUen?: true
-  email?: true
-  phone?: true
   fullAddress?: true
   isActive?: true
   createdAt?: true
@@ -149,8 +139,6 @@ export type ContactCountAggregateInputType = {
   dateOfBirth?: true
   corporateName?: true
   corporateUen?: true
-  email?: true
-  phone?: true
   fullAddress?: true
   isActive?: true
   createdAt?: true
@@ -244,8 +232,6 @@ export type ContactGroupByOutputType = {
   dateOfBirth: Date | null
   corporateName: string | null
   corporateUen: string | null
-  email: string | null
-  phone: string | null
   fullAddress: string | null
   isActive: boolean
   createdAt: Date
@@ -287,8 +273,6 @@ export type ContactWhereInput = {
   dateOfBirth?: Prisma.DateTimeNullableFilter<"Contact"> | Date | string | null
   corporateName?: Prisma.StringNullableFilter<"Contact"> | string | null
   corporateUen?: Prisma.StringNullableFilter<"Contact"> | string | null
-  email?: Prisma.StringNullableFilter<"Contact"> | string | null
-  phone?: Prisma.StringNullableFilter<"Contact"> | string | null
   fullAddress?: Prisma.StringNullableFilter<"Contact"> | string | null
   isActive?: Prisma.BoolFilter<"Contact"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Contact"> | Date | string
@@ -316,8 +300,6 @@ export type ContactOrderByWithRelationInput = {
   dateOfBirth?: Prisma.SortOrderInput | Prisma.SortOrder
   corporateName?: Prisma.SortOrderInput | Prisma.SortOrder
   corporateUen?: Prisma.SortOrderInput | Prisma.SortOrder
-  email?: Prisma.SortOrderInput | Prisma.SortOrder
-  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   fullAddress?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -349,8 +331,6 @@ export type ContactWhereUniqueInput = Prisma.AtLeast<{
   dateOfBirth?: Prisma.DateTimeNullableFilter<"Contact"> | Date | string | null
   corporateName?: Prisma.StringNullableFilter<"Contact"> | string | null
   corporateUen?: Prisma.StringNullableFilter<"Contact"> | string | null
-  email?: Prisma.StringNullableFilter<"Contact"> | string | null
-  phone?: Prisma.StringNullableFilter<"Contact"> | string | null
   fullAddress?: Prisma.StringNullableFilter<"Contact"> | string | null
   isActive?: Prisma.BoolFilter<"Contact"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Contact"> | Date | string
@@ -378,8 +358,6 @@ export type ContactOrderByWithAggregationInput = {
   dateOfBirth?: Prisma.SortOrderInput | Prisma.SortOrder
   corporateName?: Prisma.SortOrderInput | Prisma.SortOrder
   corporateUen?: Prisma.SortOrderInput | Prisma.SortOrder
-  email?: Prisma.SortOrderInput | Prisma.SortOrder
-  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   fullAddress?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -406,8 +384,6 @@ export type ContactScalarWhereWithAggregatesInput = {
   dateOfBirth?: Prisma.DateTimeNullableWithAggregatesFilter<"Contact"> | Date | string | null
   corporateName?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
   corporateUen?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
-  email?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
-  phone?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
   fullAddress?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"Contact"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Contact"> | Date | string
@@ -427,8 +403,6 @@ export type ContactCreateInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -456,8 +430,6 @@ export type ContactUncheckedCreateInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -483,8 +455,6 @@ export type ContactUpdateInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -512,8 +482,6 @@ export type ContactUncheckedUpdateInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -540,8 +508,6 @@ export type ContactCreateManyInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -561,8 +527,6 @@ export type ContactUpdateManyMutationInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -583,8 +547,6 @@ export type ContactUncheckedUpdateManyInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -621,8 +583,6 @@ export type ContactCountOrderByAggregateInput = {
   dateOfBirth?: Prisma.SortOrder
   corporateName?: Prisma.SortOrder
   corporateUen?: Prisma.SortOrder
-  email?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
   fullAddress?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -643,8 +603,6 @@ export type ContactMaxOrderByAggregateInput = {
   dateOfBirth?: Prisma.SortOrder
   corporateName?: Prisma.SortOrder
   corporateUen?: Prisma.SortOrder
-  email?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
   fullAddress?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -665,8 +623,6 @@ export type ContactMinOrderByAggregateInput = {
   dateOfBirth?: Prisma.SortOrder
   corporateName?: Prisma.SortOrder
   corporateUen?: Prisma.SortOrder
-  email?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
   fullAddress?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -840,8 +796,6 @@ export type ContactCreateWithoutTenantInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -867,8 +821,6 @@ export type ContactUncheckedCreateWithoutTenantInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -924,8 +876,6 @@ export type ContactScalarWhereInput = {
   dateOfBirth?: Prisma.DateTimeNullableFilter<"Contact"> | Date | string | null
   corporateName?: Prisma.StringNullableFilter<"Contact"> | string | null
   corporateUen?: Prisma.StringNullableFilter<"Contact"> | string | null
-  email?: Prisma.StringNullableFilter<"Contact"> | string | null
-  phone?: Prisma.StringNullableFilter<"Contact"> | string | null
   fullAddress?: Prisma.StringNullableFilter<"Contact"> | string | null
   isActive?: Prisma.BoolFilter<"Contact"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Contact"> | Date | string
@@ -945,8 +895,6 @@ export type ContactCreateWithoutCompanyRelationsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -973,8 +921,6 @@ export type ContactUncheckedCreateWithoutCompanyRelationsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1015,8 +961,6 @@ export type ContactUpdateWithoutCompanyRelationsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1043,8 +987,6 @@ export type ContactUncheckedUpdateWithoutCompanyRelationsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1069,8 +1011,6 @@ export type ContactCreateWithoutContactDetailsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1097,8 +1037,6 @@ export type ContactUncheckedCreateWithoutContactDetailsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1139,8 +1077,6 @@ export type ContactUpdateWithoutContactDetailsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1167,8 +1103,6 @@ export type ContactUncheckedUpdateWithoutContactDetailsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1193,8 +1127,6 @@ export type ContactCreateWithoutOfficerPositionsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1221,8 +1153,6 @@ export type ContactUncheckedCreateWithoutOfficerPositionsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1263,8 +1193,6 @@ export type ContactUpdateWithoutOfficerPositionsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1291,8 +1219,6 @@ export type ContactUncheckedUpdateWithoutOfficerPositionsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1317,8 +1243,6 @@ export type ContactCreateWithoutShareholdingsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1345,8 +1269,6 @@ export type ContactUncheckedCreateWithoutShareholdingsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1387,8 +1309,6 @@ export type ContactUpdateWithoutShareholdingsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1415,8 +1335,6 @@ export type ContactUncheckedUpdateWithoutShareholdingsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1441,8 +1359,6 @@ export type ContactCreateWithoutChargeHoldingsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1469,8 +1385,6 @@ export type ContactUncheckedCreateWithoutChargeHoldingsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1511,8 +1425,6 @@ export type ContactUpdateWithoutChargeHoldingsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1539,8 +1451,6 @@ export type ContactUncheckedUpdateWithoutChargeHoldingsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1565,8 +1475,6 @@ export type ContactCreateWithoutNoteTabsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1593,8 +1501,6 @@ export type ContactUncheckedCreateWithoutNoteTabsInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1635,8 +1541,6 @@ export type ContactUpdateWithoutNoteTabsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1663,8 +1567,6 @@ export type ContactUncheckedUpdateWithoutNoteTabsInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1689,8 +1591,6 @@ export type ContactCreateManyTenantInput = {
   dateOfBirth?: Date | string | null
   corporateName?: string | null
   corporateUen?: string | null
-  email?: string | null
-  phone?: string | null
   fullAddress?: string | null
   isActive?: boolean
   createdAt?: Date | string
@@ -1710,8 +1610,6 @@ export type ContactUpdateWithoutTenantInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1737,8 +1635,6 @@ export type ContactUncheckedUpdateWithoutTenantInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1764,8 +1660,6 @@ export type ContactUncheckedUpdateManyWithoutTenantInput = {
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1862,8 +1756,6 @@ export type ContactSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   dateOfBirth?: boolean
   corporateName?: boolean
   corporateUen?: boolean
-  email?: boolean
-  phone?: boolean
   fullAddress?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -1892,8 +1784,6 @@ export type ContactSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   dateOfBirth?: boolean
   corporateName?: boolean
   corporateUen?: boolean
-  email?: boolean
-  phone?: boolean
   fullAddress?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -1915,8 +1805,6 @@ export type ContactSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   dateOfBirth?: boolean
   corporateName?: boolean
   corporateUen?: boolean
-  email?: boolean
-  phone?: boolean
   fullAddress?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -1938,8 +1826,6 @@ export type ContactSelectScalar = {
   dateOfBirth?: boolean
   corporateName?: boolean
   corporateUen?: boolean
-  email?: boolean
-  phone?: boolean
   fullAddress?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -1947,7 +1833,7 @@ export type ContactSelectScalar = {
   deletedAt?: boolean
 }
 
-export type ContactOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contactType" | "firstName" | "lastName" | "fullName" | "identificationType" | "identificationNumber" | "nationality" | "dateOfBirth" | "corporateName" | "corporateUen" | "email" | "phone" | "fullAddress" | "isActive" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contact"]>
+export type ContactOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contactType" | "firstName" | "lastName" | "fullName" | "identificationType" | "identificationNumber" | "nationality" | "dateOfBirth" | "corporateName" | "corporateUen" | "fullAddress" | "isActive" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contact"]>
 export type ContactInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   companyRelations?: boolean | Prisma.Contact$companyRelationsArgs<ExtArgs>
@@ -1989,8 +1875,6 @@ export type $ContactPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     dateOfBirth: Date | null
     corporateName: string | null
     corporateUen: string | null
-    email: string | null
-    phone: string | null
     fullAddress: string | null
     isActive: boolean
     createdAt: Date
@@ -2438,8 +2322,6 @@ export interface ContactFieldRefs {
   readonly dateOfBirth: Prisma.FieldRef<"Contact", 'DateTime'>
   readonly corporateName: Prisma.FieldRef<"Contact", 'String'>
   readonly corporateUen: Prisma.FieldRef<"Contact", 'String'>
-  readonly email: Prisma.FieldRef<"Contact", 'String'>
-  readonly phone: Prisma.FieldRef<"Contact", 'String'>
   readonly fullAddress: Prisma.FieldRef<"Contact", 'String'>
   readonly isActive: Prisma.FieldRef<"Contact", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Contact", 'DateTime'>

@@ -13,7 +13,6 @@ import {
   Shield,
   Building2,
   CreditCard,
-  Globe,
   User,
   Filter,
   Trash2,
@@ -326,7 +325,12 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
                 </h2>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-text-tertiary">
-                    {company._count?.officers || 0} total
+                    {(() => {
+                      const officers = company.officers || [];
+                      const activeCount = officers.filter(o => o.isCurrent).length;
+                      const pastCount = officers.filter(o => !o.isCurrent).length;
+                      return `${activeCount} active; ${pastCount} past`;
+                    })()}
                   </span>
                   {company.officers && company.officers.length > 0 && (
                     <button

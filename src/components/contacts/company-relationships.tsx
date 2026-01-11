@@ -459,7 +459,7 @@ export function CompanyRelationships({
                 </div>
 
                 <div className="flex items-center gap-2 ml-4">
-                  {/* Only show Unlink for pure general relationships (no officers/shareholders) */}
+                  {/* Only show Remove for pure general relationships (no officers/shareholders) */}
                   {canUpdate && rel.generalRelationship &&
                     rel.officerPositions.length === 0 &&
                     rel.shareholdings.length === 0 && (
@@ -468,9 +468,10 @@ export function CompanyRelationships({
                         e.stopPropagation();
                         onUnlinkCompany(rel.companyId, rel.generalRelationship!);
                       }}
-                      className="btn-ghost btn-xs text-status-error hover:bg-status-error/10"
+                      className="text-text-muted hover:text-status-error transition-colors p-1"
+                      title="Remove relationship"
                     >
-                      Unlink
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                   {hasDetailInfo && (

@@ -8,7 +8,6 @@ import type { Contact } from '@/generated/prisma';
 
 // Extend the base option interface with Contact-specific fields
 interface ContactOption extends AsyncSearchSelectOption {
-  email?: string | null;
   contact: Contact;
 }
 
@@ -52,8 +51,7 @@ export function ContactSearchSelect({
   const options: ContactOption[] = (contactsData?.contacts || []).map((contact) => ({
     id: contact.id,
     label: contact.fullName,
-    description: contact.email || undefined,
-    email: contact.email,
+    description: contact.identificationNumber || undefined,
     contact,
   }));
 

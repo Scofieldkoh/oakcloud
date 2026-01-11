@@ -619,8 +619,6 @@ export async function getCompanyById(
             select: {
               id: true,
               fullName: true,
-              email: true,
-              phone: true,
               nationality: true,
               fullAddress: true,
               identificationType: true,
@@ -652,8 +650,6 @@ export async function getCompanyById(
             select: {
               id: true,
               fullName: true,
-              email: true,
-              phone: true,
               nationality: true,
               fullAddress: true,
               identificationType: true,
@@ -912,8 +908,6 @@ export async function getCompanyFullDetails(
             select: {
               id: true,
               fullName: true,
-              email: true,
-              phone: true,
               nationality: true,
               fullAddress: true,
               identificationType: true,
@@ -929,8 +923,6 @@ export async function getCompanyFullDetails(
             select: {
               id: true,
               fullName: true,
-              email: true,
-              phone: true,
               nationality: true,
               fullAddress: true,
               identificationType: true,

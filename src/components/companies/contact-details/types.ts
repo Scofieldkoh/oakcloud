@@ -1,50 +1,20 @@
-import type { ContactDetailType } from '@/generated/prisma';
-import type { ContactDetail, ContactWithDetails } from '@/hooks/use-contact-details';
-import { Mail, Phone, Globe, FileText } from 'lucide-react';
+/**
+ * Types and constants for contact details components.
+ *
+ * This file re-exports from centralized locations for backward compatibility.
+ * New code should import directly from:
+ * - @/lib/constants/contact-details
+ * - @/types/contact
+ */
 
-// Detail type icons and labels
-export const detailTypeConfig: Record<ContactDetailType, { icon: typeof Mail; label: string; placeholder: string }> = {
-  EMAIL: { icon: Mail, label: 'Email', placeholder: 'email@example.com' },
-  PHONE: { icon: Phone, label: 'Phone', placeholder: '+65 1234 5678' },
-  WEBSITE: { icon: Globe, label: 'Website', placeholder: 'https://example.com' },
-  OTHER: { icon: FileText, label: 'Other', placeholder: 'Enter value' },
-};
+// Re-export from centralized constants
+export {
+  DETAIL_TYPE_CONFIG as detailTypeConfig,
+  LABEL_SUGGESTIONS as labelSuggestions,
+  RELATIONSHIP_OPTIONS as relationshipOptions,
+  type ContactDetailFormState as EditFormState,
+  type DetailTypeConfig,
+} from '@/lib/constants/contact-details';
 
-// Common label suggestions
-export const labelSuggestions = [
-  'Main Office',
-  'Account Receivable',
-  'Account Payable',
-  'Human Resources',
-  'Sales',
-  'Support',
-  'Personal',
-  'Work',
-  'Home',
-  'Emergency',
-];
-
-// Relationship options
-export const relationshipOptions = [
-  'Agent',
-  'Authorized Representative',
-  'Accountant',
-  'Lawyer',
-  'Consultant',
-  'Vendor',
-  'Customer',
-  'Partner',
-  'Other',
-];
-
-// Edit form type
-export interface EditFormState {
-  detailType: ContactDetailType;
-  value: string;
-  label: string;
-  purposes: string[];
-  isPrimary: boolean;
-}
-
-// Re-export types
-export type { ContactDetail, ContactWithDetails };
+// Re-export types from hooks for backward compatibility
+export type { ContactDetail, ContactWithDetails } from '@/hooks/use-contact-details';

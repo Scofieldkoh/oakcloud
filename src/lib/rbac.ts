@@ -27,6 +27,7 @@ export const RESOURCES = [
   'audit_log',
   'connector',
   'chart_of_accounts',
+  'contract',
 ] as const;
 
 export type Resource = (typeof RESOURCES)[number];
@@ -104,6 +105,10 @@ export const SYSTEM_ROLES = {
       'chart_of_accounts:delete',
       'chart_of_accounts:export',
       'chart_of_accounts:import',
+      'contract:create',
+      'contract:read',
+      'contract:update',
+      'contract:delete',
     ] as PermissionString[],
   },
   COMPANY_ADMIN: {
@@ -131,6 +136,10 @@ export const SYSTEM_ROLES = {
       'audit_log:read',
       'chart_of_accounts:read',
       'chart_of_accounts:update',
+      'contract:create',
+      'contract:read',
+      'contract:update',
+      'contract:delete',
     ] as PermissionString[],
   },
   COMPANY_USER: {
@@ -144,6 +153,7 @@ export const SYSTEM_ROLES = {
       'shareholder:read',
       'audit_log:read',
       'chart_of_accounts:read',
+      'contract:read',
     ] as PermissionString[],
   },
 } as const;
@@ -166,6 +176,7 @@ export const DEFAULT_CUSTOM_ROLES = [
       'shareholder:read',
       'audit_log:read',
       'audit_log:export',
+      'contract:read',
     ] as PermissionString[],
   },
   {
@@ -177,6 +188,7 @@ export const DEFAULT_CUSTOM_ROLES = [
       'document:create', 'document:read', 'document:update',
       'officer:create', 'officer:read', 'officer:update',
       'shareholder:create', 'shareholder:read', 'shareholder:update',
+      'contract:create', 'contract:read', 'contract:update',
     ] as PermissionString[],
   },
   {
@@ -189,6 +201,7 @@ export const DEFAULT_CUSTOM_ROLES = [
       'officer:read', 'officer:export',
       'shareholder:read', 'shareholder:export',
       'audit_log:read', 'audit_log:export',
+      'contract:read', 'contract:export',
     ] as PermissionString[],
   },
   {
@@ -200,6 +213,7 @@ export const DEFAULT_CUSTOM_ROLES = [
       'document:create', 'document:read', 'document:update', 'document:delete', 'document:export', 'document:manage',
       'officer:read',
       'shareholder:read',
+      'contract:read',
     ] as PermissionString[],
   },
   {
@@ -212,6 +226,7 @@ export const DEFAULT_CUSTOM_ROLES = [
       'officer:create', 'officer:read', 'officer:update', 'officer:delete', 'officer:export',
       'shareholder:create', 'shareholder:read', 'shareholder:update', 'shareholder:delete', 'shareholder:export',
       'audit_log:read', 'audit_log:export',
+      'contract:create', 'contract:read', 'contract:update', 'contract:delete', 'contract:export',
     ] as PermissionString[],
   },
 ] as const;
