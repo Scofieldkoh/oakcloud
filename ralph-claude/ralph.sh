@@ -36,7 +36,7 @@ if [ -f "$LAST_BRANCH_FILE" ]; then
     FOLDER_NAME=$(echo "$LAST_BRANCH" | sed 's|^ralph/||')
     ARCHIVE_FOLDER="$ARCHIVE_DIR/$DATE-$FOLDER_NAME"
 
-    echo "Archiving previous run: $LAST_BRANCH → $ARCHIVE_FOLDER"
+    echo "Archiving previous run: $LAST_BRANCH -> $ARCHIVE_FOLDER"
     mkdir -p "$ARCHIVE_FOLDER"
     [ -f "$PRD_FILE" ] && cp "$PRD_FILE" "$ARCHIVE_FOLDER/"
     [ -f "$PROGRESS_FILE" ] && cp "$PROGRESS_FILE" "$ARCHIVE_FOLDER/"
