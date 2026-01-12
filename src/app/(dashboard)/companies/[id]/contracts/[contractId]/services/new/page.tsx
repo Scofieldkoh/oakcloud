@@ -121,32 +121,26 @@ export default function NewServicePage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background-secondary">
+    <div className="p-4 sm:p-6 max-w-4xl">
       {/* Header */}
-      <div className="bg-background-primary border-b border-border-primary">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href={`/companies/${companyId}?tab=contracts`}
-              className="p-2 -ml-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-background-secondary transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-semibold text-text-primary">
-                Add Service
-              </h1>
-              <p className="text-sm text-text-secondary mt-0.5">
-                {company?.name} &bull; {contract?.title || 'Contract'}
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="mb-6">
+        <Link
+          href={`/companies/${companyId}?tab=contracts`}
+          className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Contracts
+        </Link>
+        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
+          Add Service
+        </h1>
+        <p className="text-sm text-text-secondary mt-1">
+          {company?.name} &bull; {contract?.title || 'Contract'}
+        </p>
       </div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <form onSubmit={handleSubmit}>
+      {/* Form */}
+      <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Scope of Work */}
             <div className="card p-6">
@@ -387,7 +381,6 @@ export default function NewServicePage({ params }: PageProps) {
             </div>
           </div>
         </form>
-      </div>
     </div>
   );
 }

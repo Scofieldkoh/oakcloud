@@ -127,11 +127,22 @@ for i in $(seq 1 $MAX_ITERATIONS); do
 
   echo "✅ Quality gates passed"
 
+  # Update PRD - mark completed story as passes: true
+  COMPLETED_STORY_ID=$(echo "$OUTPUT" | grep -oP '"storyId"\s*:\s*"\K[^"]+' | head -1 || echo "")
+  IS_DONE=$(echo "$OUTPUT" | grep -q '"status"\s*:\s*"done"' && echo "yes" || echo "no")
+
+  if [ -n "$COMPLETED_STORY_ID" ] && [ "$IS_DONE" = "yes" ]; then
+    echo "Marking story $COMPLETED_STORY_ID as complete..."
+    # Update prd.json using jq
+    jq --arg id "$COMPLETED_STORY_ID" '(.userStories[] | select(.id == $id) | .passes) = true' "$PRD_FILE" > "$PRD_FILE.tmp" && mv "$PRD_FILE.tmp" "$PRD_FILE"
+    echo "✅ Updated $COMPLETED_STORY_ID passes = true"
+  fi
+
   # Commit on success (if there are changes)
   if [ -n "$(git status --porcelain)" ]; then
     git add -A
     # Extract story ID from output
-    STORY_ID=$(echo "$OUTPUT" | grep -oP '"storyId":\s*"\K[^"]+' | head -1 || echo "")
+    STORY_ID=$(echo "$OUTPUT" | grep -oP '"storyId"\s*:\s*"\K[^"]+' | head -1 || echo "")
     STORY_TITLE=$(echo "$OUTPUT" | grep -oP '"title":\s*"\K[^"]+' | head -1 || echo "iteration $i")
 
     if [ -n "$STORY_ID" ]; then

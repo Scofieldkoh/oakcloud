@@ -142,14 +142,30 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
 
     Write-Host "Quality gates passed" -ForegroundColor Green
 
+    # Update PRD - mark completed story as passes: true
+    if ($output -match '"storyId"\s*:\s*"([^"]+)"' -and $output -match '"status"\s*:\s*"done"') {
+        $completedStoryId = $Matches[1]
+        Write-Host "Marking story $completedStoryId as complete..." -ForegroundColor Cyan
+
+        # Read and update prd.json
+        $prdData = Get-Content $PrdFile -Raw | ConvertFrom-Json
+        foreach ($story in $prdData.userStories) {
+            if ($story.id -eq $completedStoryId) {
+                $story.passes = $true
+                Write-Host "Updated $completedStoryId passes = true" -ForegroundColor Green
+            }
+        }
+        $prdData | ConvertTo-Json -Depth 10 | Out-File $PrdFile -Encoding utf8
+    }
+
     # Commit
     $status = git status --porcelain
     if ($status) {
         git add -A
 
-        # Try to extract story ID from output
-        if ($output -match '"storyId":\s*"([^"]+)"') {
-            $storyId = $matches[1]
+        # Try to extract story ID from output (handle spaces in JSON)
+        if ($output -match '"storyId"\s*:\s*"([^"]+)"') {
+            $storyId = $Matches[1]
             git commit -m "feat: [$storyId] - Ralph iteration $i"
         } else {
             git commit -m "feat: Ralph iteration $i"
