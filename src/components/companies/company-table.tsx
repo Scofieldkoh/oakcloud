@@ -74,18 +74,23 @@ function SortableHeader({
     return <th>{label}</th>;
   }
 
+  const sortLabel = isActive
+    ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}`
+    : `Sort by ${label}`;
+
   return (
-    <th className="cursor-pointer select-none">
+    <th className="cursor-pointer select-none" aria-sort={isActive ? (sortOrder === 'asc' ? 'ascending' : 'descending') : undefined}>
       <button
         type="button"
         onClick={() => onSort(field)}
+        aria-label={sortLabel}
         className={cn(
           'inline-flex items-center gap-1 hover:text-text-primary transition-colors',
           isActive ? 'text-text-primary' : ''
         )}
       >
         <span>{label}</span>
-        <span className="flex-shrink-0">
+        <span className="flex-shrink-0" aria-hidden="true">
           {isActive ? (
             sortOrder === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5" />
@@ -116,12 +121,13 @@ const statusConfig: Record<CompanyStatus, { color: string; label: string }> = {
 
 interface CompanyActionsDropdownProps {
   companyId: string;
+  companyName?: string;
   onDelete?: (id: string) => void;
   canEdit?: boolean;
   canDelete?: boolean;
 }
 
-const CompanyActionsDropdown = memo(function CompanyActionsDropdown({ companyId, onDelete, canEdit, canDelete }: CompanyActionsDropdownProps) {
+const CompanyActionsDropdown = memo(function CompanyActionsDropdown({ companyId, companyName, onDelete, canEdit, canDelete }: CompanyActionsDropdownProps) {
   // If user can only view, don't show the dropdown at all - just provide the view link
   const hasAnyAction = canEdit || canDelete;
 
@@ -131,9 +137,9 @@ const CompanyActionsDropdown = memo(function CompanyActionsDropdown({ companyId,
 
   return (
     <Dropdown>
-      <DropdownTrigger asChild>
+      <DropdownTrigger asChild aria-label={`Actions for ${companyName || 'company'}`}>
         <button className="p-1 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors">
-          <MoreHorizontal className="w-4 h-4" />
+          <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
         </button>
       </DropdownTrigger>
       <DropdownMenu>
@@ -257,14 +263,15 @@ export function CompanyTable({
             <button
               onClick={onToggleAll}
               className="p-2 hover:bg-background-secondary rounded transition-colors flex items-center gap-2"
-              title={isAllSelected ? 'Deselect all' : 'Select all'}
+              aria-label={isAllSelected ? 'Deselect all companies' : 'Select all companies'}
+              aria-pressed={isAllSelected}
             >
               {isAllSelected ? (
-                <CheckSquare className="w-5 h-5 text-oak-primary" />
+                <CheckSquare className="w-5 h-5 text-oak-primary" aria-hidden="true" />
               ) : isIndeterminate ? (
-                <MinusSquare className="w-5 h-5 text-oak-light" />
+                <MinusSquare className="w-5 h-5 text-oak-light" aria-hidden="true" />
               ) : (
-                <Square className="w-5 h-5 text-text-muted" />
+                <Square className="w-5 h-5 text-text-muted" aria-hidden="true" />
               )}
               <span className="text-sm text-text-secondary">
                 {isAllSelected ? 'Deselect all' : 'Select all'}
@@ -296,9 +303,11 @@ export function CompanyTable({
                   {statusConfig[company.status].label}
                 </span>
               }
+              selectionLabel={isSelected ? `Deselect ${company.name}` : `Select ${company.name}`}
               actions={
                 <CompanyActionsDropdown
                   companyId={company.id}
+                  companyName={company.name}
                   onDelete={onDelete}
                   canEdit={checkCanEdit(company.id)}
                   canDelete={checkCanDelete(company.id)}
@@ -328,14 +337,15 @@ export function CompanyTable({
                   <button
                     onClick={onToggleAll}
                     className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                    title={isAllSelected ? 'Deselect all' : 'Select all'}
+                    aria-label={isAllSelected ? 'Deselect all companies' : 'Select all companies'}
+                    aria-pressed={isAllSelected}
                   >
                     {isAllSelected ? (
-                      <CheckSquare className="w-4 h-4 text-oak-primary" />
+                      <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
                     ) : isIndeterminate ? (
-                      <MinusSquare className="w-4 h-4 text-oak-light" />
+                      <MinusSquare className="w-4 h-4 text-oak-light" aria-hidden="true" />
                     ) : (
-                      <Square className="w-4 h-4 text-text-muted" />
+                      <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
                     )}
                   </button>
                 </th>
@@ -367,11 +377,13 @@ export function CompanyTable({
                     <button
                       onClick={() => onToggleOne?.(company.id)}
                       className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                      aria-label={isSelected ? `Deselect ${company.name}` : `Select ${company.name}`}
+                      aria-pressed={isSelected}
                     >
                       {isSelected ? (
-                        <CheckSquare className="w-4 h-4 text-oak-primary" />
+                        <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
                       ) : (
-                        <Square className="w-4 h-4 text-text-muted" />
+                        <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
                       )}
                     </button>
                   </td>
@@ -411,6 +423,7 @@ export function CompanyTable({
                 <td>
                   <CompanyActionsDropdown
                     companyId={company.id}
+                    companyName={company.name}
                     onDelete={onDelete}
                     canEdit={checkCanEdit(company.id)}
                     canDelete={checkCanDelete(company.id)}

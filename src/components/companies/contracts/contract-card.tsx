@@ -16,6 +16,7 @@ import {
   getContractStatusLabel,
   getContractStatusColor,
 } from '@/lib/constants/contracts';
+import { formatDateShort } from '@/lib/utils';
 import { ServiceRow } from './service-row';
 
 interface ContractCardProps {
@@ -45,30 +46,35 @@ export function ContractCard({
 }: ContractCardProps) {
   const statusColor = getContractStatusColor(contract.status);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-SG', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
     <div className="bg-background-primary">
       {/* Contract Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-background-secondary transition-colors"
+        role="button"
+        tabIndex={0}
+        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-background-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
         onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
+        aria-expanded={isExpanded}
+        aria-label={`${contract.title} contract, ${getContractStatusLabel(contract.status)}, ${isExpanded ? 'collapse' : 'expand'} to ${isExpanded ? 'hide' : 'show'} services`}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <button className="text-text-muted hover:text-text-primary transition-colors">
+          <span
+            className="text-text-muted"
+            aria-hidden="true"
+          >
             {isExpanded ? (
               <ChevronDown className="w-5 h-5" />
             ) : (
               <ChevronRight className="w-5 h-5" />
             )}
-          </button>
-          <FileText className="w-5 h-5 text-text-muted flex-shrink-0" />
+          </span>
+          <FileText className="w-5 h-5 text-text-muted flex-shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-medium text-text-primary truncate">
@@ -81,7 +87,7 @@ export function ContractCard({
             <div className="flex items-center gap-2 text-sm text-text-muted mt-0.5">
               <span>{getContractTypeLabel(contract.contractType)}</span>
               <span>&bull;</span>
-              <span>Started {formatDate(contract.startDate)}</span>
+              <span>Started {formatDateShort(contract.startDate)}</span>
               {contract.services.length > 0 && (
                 <>
                   <span>&bull;</span>
@@ -102,25 +108,28 @@ export function ContractCard({
             onClick={(e) => e.stopPropagation()}
           >
             <button
+              type="button"
               onClick={onAddService}
               className="p-1.5 rounded text-text-muted hover:text-oak-light hover:bg-background-secondary transition-colors"
-              title="Add service"
+              aria-label={`Add service to ${contract.title}`}
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={onEditContract}
               className="p-1.5 rounded text-text-muted hover:text-oak-light hover:bg-background-secondary transition-colors"
-              title="Edit contract"
+              aria-label={`Edit ${contract.title} contract`}
             >
-              <Pencil className="w-3.5 h-3.5" />
+              <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={onDeleteContract}
               className="p-1.5 rounded text-text-muted hover:text-status-error hover:bg-background-secondary transition-colors"
-              title="Delete contract"
+              aria-label={`Delete ${contract.title} contract`}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -133,12 +142,13 @@ export function ContractCard({
             href={`/api/companies/${contract.companyId}/documents/${contract.document.id}/download`}
             className="inline-flex items-center gap-1.5 text-sm text-oak-light hover:text-oak-dark transition-colors"
             onClick={(e) => e.stopPropagation()}
+            aria-label={`Download ${contract.document.originalFileName}`}
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4" aria-hidden="true" />
             <span className="truncate max-w-[200px]">
               {contract.document.originalFileName}
             </span>
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink className="w-3 h-3" aria-hidden="true" />
           </a>
         </div>
       )}
@@ -164,7 +174,7 @@ export function ContractCard({
                     onAddService();
                   }}
                 >
-                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  <Plus className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                   Add Service
                 </Button>
               )}

@@ -66,18 +66,23 @@ function SortableHeader({
     return <th>{label}</th>;
   }
 
+  const sortLabel = isActive
+    ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}`
+    : `Sort by ${label}`;
+
   return (
-    <th className="cursor-pointer select-none">
+    <th className="cursor-pointer select-none" aria-sort={isActive ? (sortOrder === 'asc' ? 'ascending' : 'descending') : undefined}>
       <button
         type="button"
         onClick={() => onSort(field)}
+        aria-label={sortLabel}
         className={cn(
           'inline-flex items-center gap-1 hover:text-text-primary transition-colors',
           isActive ? 'text-text-primary' : ''
         )}
       >
         <span>{label}</span>
-        <span className="flex-shrink-0">
+        <span className="flex-shrink-0" aria-hidden="true">
           {isActive ? (
             sortOrder === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5" />
@@ -108,6 +113,7 @@ const idTypeLabels: Record<IdentificationType, string> = {
 
 interface ContactActionsDropdownProps {
   contactId: string;
+  contactName?: string;
   onDelete?: (id: string) => void;
   canEdit?: boolean;
   canDelete?: boolean;
@@ -115,6 +121,7 @@ interface ContactActionsDropdownProps {
 
 const ContactActionsDropdown = memo(function ContactActionsDropdown({
   contactId,
+  contactName,
   onDelete,
   canEdit,
   canDelete,
@@ -127,9 +134,9 @@ const ContactActionsDropdown = memo(function ContactActionsDropdown({
 
   return (
     <Dropdown>
-      <DropdownTrigger asChild>
+      <DropdownTrigger asChild aria-label={`Actions for ${contactName || 'contact'}`}>
         <button className="p-1 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors">
-          <MoreHorizontal className="w-4 h-4" />
+          <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
         </button>
       </DropdownTrigger>
       <DropdownMenu>
@@ -282,14 +289,15 @@ export function ContactTable({
             <button
               onClick={onToggleAll}
               className="p-2 hover:bg-background-secondary rounded transition-colors flex items-center gap-2"
-              title={isAllSelected ? 'Deselect all' : 'Select all'}
+              aria-label={isAllSelected ? 'Deselect all contacts' : 'Select all contacts'}
+              aria-pressed={isAllSelected}
             >
               {isAllSelected ? (
-                <CheckSquare className="w-5 h-5 text-oak-primary" />
+                <CheckSquare className="w-5 h-5 text-oak-primary" aria-hidden="true" />
               ) : isIndeterminate ? (
-                <MinusSquare className="w-5 h-5 text-oak-light" />
+                <MinusSquare className="w-5 h-5 text-oak-light" aria-hidden="true" />
               ) : (
-                <Square className="w-5 h-5 text-text-muted" />
+                <Square className="w-5 h-5 text-text-muted" aria-hidden="true" />
               )}
               <span className="text-sm text-text-secondary">
                 {isAllSelected ? 'Deselect all' : 'Select all'}
@@ -321,9 +329,11 @@ export function ContactTable({
                   {contactTypeConfig[contact.contactType].label}
                 </span>
               }
+              selectionLabel={isSelected ? `Deselect ${contact.fullName}` : `Select ${contact.fullName}`}
               actions={
                 <ContactActionsDropdown
                   contactId={contact.id}
+                  contactName={contact.fullName}
                   onDelete={onDelete}
                   canEdit={checkCanEdit(contact.id)}
                   canDelete={checkCanDelete(contact.id)}
@@ -369,14 +379,15 @@ export function ContactTable({
                   <button
                     onClick={onToggleAll}
                     className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                    title={isAllSelected ? 'Deselect all' : 'Select all'}
+                    aria-label={isAllSelected ? 'Deselect all contacts' : 'Select all contacts'}
+                    aria-pressed={isAllSelected}
                   >
                     {isAllSelected ? (
-                      <CheckSquare className="w-4 h-4 text-oak-primary" />
+                      <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
                     ) : isIndeterminate ? (
-                      <MinusSquare className="w-4 h-4 text-oak-light" />
+                      <MinusSquare className="w-4 h-4 text-oak-light" aria-hidden="true" />
                     ) : (
-                      <Square className="w-4 h-4 text-text-muted" />
+                      <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
                     )}
                   </button>
                 </th>
@@ -408,11 +419,13 @@ export function ContactTable({
                     <button
                       onClick={() => onToggleOne?.(contact.id)}
                       className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                      aria-label={isSelected ? `Deselect ${contact.fullName}` : `Select ${contact.fullName}`}
+                      aria-pressed={isSelected}
                     >
                       {isSelected ? (
-                        <CheckSquare className="w-4 h-4 text-oak-primary" />
+                        <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
                       ) : (
-                        <Square className="w-4 h-4 text-text-muted" />
+                        <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
                       )}
                     </button>
                   </td>
@@ -472,13 +485,14 @@ export function ContactTable({
                 </td>
                 <td>
                   <div className="flex items-center gap-1.5 text-text-secondary">
-                    <Building2 className="w-3.5 h-3.5" />
+                    <Building2 className="w-3.5 h-3.5" aria-hidden="true" />
                     <span>{contact._count?.companyRelations || 0}</span>
                   </div>
                 </td>
                 <td>
                   <ContactActionsDropdown
                     contactId={contact.id}
+                    contactName={contact.fullName}
                     onDelete={onDelete}
                     canEdit={checkCanEdit(contact.id)}
                     canDelete={checkCanDelete(contact.id)}

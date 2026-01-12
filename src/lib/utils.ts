@@ -27,6 +27,16 @@ export function formatDate(date: Date | string | null | undefined): string {
   });
 }
 
+export function formatDateShort(date: Date | string | null | undefined): string {
+  if (!date) return '-';
+  const d = new Date(date);
+  return d.toLocaleDateString('en-SG', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export function formatDateTime(date: Date | string | null | undefined): string {
   if (!date) return '-';
   const d = new Date(date);

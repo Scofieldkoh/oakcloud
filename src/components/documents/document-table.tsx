@@ -79,6 +79,7 @@ const statusConfig: Record<string, { color: string; label: string; icon: typeof 
 
 interface DocumentActionsProps {
   documentId: string;
+  documentTitle: string;
   status: string;
   onDelete?: (id: string) => void;
   onExport?: (id: string) => void;
@@ -90,6 +91,7 @@ interface DocumentActionsProps {
 
 function DocumentActions({
   documentId,
+  documentTitle,
   status,
   onDelete,
   onExport,
@@ -104,9 +106,9 @@ function DocumentActions({
       <Link
         href={`/generated-documents/${documentId}`}
         className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
-        title="View"
+        aria-label={`View ${documentTitle}`}
       >
-        <Eye className="w-4 h-4" />
+        <Eye className="w-4 h-4" aria-hidden="true" />
       </Link>
 
       {/* Edit (only for drafts) */}
@@ -114,9 +116,9 @@ function DocumentActions({
         <Link
           href={`/generated-documents/${documentId}/edit`}
           className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
-          title="Edit"
+          aria-label={`Edit ${documentTitle}`}
         >
-          <Pencil className="w-4 h-4" />
+          <Pencil className="w-4 h-4" aria-hidden="true" />
         </Link>
       )}
 
@@ -126,9 +128,9 @@ function DocumentActions({
           type="button"
           onClick={() => onExport?.(documentId)}
           className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
-          title="Export PDF"
+          aria-label={`Export ${documentTitle} as PDF`}
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-4 h-4" aria-hidden="true" />
         </button>
       )}
 
@@ -137,9 +139,9 @@ function DocumentActions({
         <Link
           href={`/generated-documents/${documentId}/share`}
           className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
-          title="Share"
+          aria-label={`Share ${documentTitle}`}
         >
-          <Share2 className="w-4 h-4" />
+          <Share2 className="w-4 h-4" aria-hidden="true" />
         </Link>
       )}
 
@@ -149,9 +151,9 @@ function DocumentActions({
           type="button"
           onClick={() => onDelete?.(documentId)}
           className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors"
-          title="Delete"
+          aria-label={`Delete ${documentTitle}`}
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-4 h-4" aria-hidden="true" />
         </button>
       )}
     </div>
@@ -273,17 +275,17 @@ export function DocumentTable({
                   <Link
                     href={`/generated-documents/${doc.id}`}
                     className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    title="View"
+                    aria-label={`View ${doc.title}`}
                   >
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4" aria-hidden="true" />
                   </Link>
                   {canEdit && doc.status === 'DRAFT' && (
                     <Link
                       href={`/generated-documents/${doc.id}/edit`}
                       className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Edit"
+                      aria-label={`Edit ${doc.title}`}
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-4 h-4" aria-hidden="true" />
                     </Link>
                   )}
                   {canExport && (
@@ -291,18 +293,18 @@ export function DocumentTable({
                       type="button"
                       onClick={() => onExport?.(doc.id)}
                       className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Export PDF"
+                      aria-label={`Export ${doc.title} as PDF`}
                     >
-                      <Download className="w-4 h-4" />
+                      <Download className="w-4 h-4" aria-hidden="true" />
                     </button>
                   )}
                   {canShare && (
                     <Link
                       href={`/generated-documents/${doc.id}/share`}
                       className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Share"
+                      aria-label={`Share ${doc.title}`}
                     >
-                      <Share2 className="w-4 h-4" />
+                      <Share2 className="w-4 h-4" aria-hidden="true" />
                     </Link>
                   )}
                   {canDelete && (
@@ -310,9 +312,9 @@ export function DocumentTable({
                       type="button"
                       onClick={() => onDelete?.(doc.id)}
                       className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Delete"
+                      aria-label={`Delete ${doc.title}`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" aria-hidden="true" />
                     </button>
                   )}
                 </div>
@@ -364,7 +366,7 @@ export function DocumentTable({
                   </td>
                   <td>
                     <span className={`badge ${status.color} inline-flex items-center gap-1`}>
-                      <StatusIcon className="w-3 h-3" />
+                      <StatusIcon className="w-3 h-3" aria-hidden="true" />
                       {status.label}
                     </span>
                   </td>
@@ -377,6 +379,7 @@ export function DocumentTable({
                   <td className="text-right">
                     <DocumentActions
                       documentId={doc.id}
+                      documentTitle={doc.title}
                       status={doc.status}
                       onDelete={onDelete}
                       onExport={onExport}

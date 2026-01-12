@@ -8,6 +8,7 @@ import {
   getServiceStatusLabel,
   getServiceStatusColor,
 } from '@/lib/constants/contracts';
+import { formatDateShort } from '@/lib/utils';
 
 interface ServiceRowProps {
   service: Contract['services'][0];
@@ -25,14 +26,6 @@ export function ServiceRow({
   onViewScope,
 }: ServiceRowProps) {
   const statusColor = getServiceStatusColor(service.status);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-SG', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
 
   const formatRate = (rate: number | null, currency: string, frequency: string) => {
     if (rate === null) return null;
@@ -126,16 +119,20 @@ export function ServiceRow({
         {canEdit && (
           <>
             <button
+              type="button"
               onClick={onEdit}
               className="p-1.5 rounded text-text-muted hover:text-oak-light hover:bg-background-elevated transition-colors"
               title="Edit service"
+              aria-label="Edit service"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               onClick={onDelete}
               className="p-1.5 rounded text-text-muted hover:text-status-error hover:bg-background-elevated transition-colors"
               title="Delete service"
+              aria-label="Delete service"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>

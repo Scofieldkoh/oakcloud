@@ -55,33 +55,36 @@ export function ContactFilters({
     <div className="space-y-3">
       {/* Search and Filter Toggle */}
       <div className="flex items-center gap-3">
-        <form onSubmit={handleSearch} className="flex-1 relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+        <form onSubmit={handleSearch} className="flex-1 relative" role="search">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" aria-hidden="true" />
           <input
             type="text"
             placeholder="Search by name, email, ID number, UEN, phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input input-sm pl-10"
+            aria-label="Search contacts"
           />
         </form>
         <button
           onClick={() => setShowFilters(!showFilters)}
           aria-expanded={showFilters}
           aria-controls="contact-filter-panel"
+          aria-label={`${showFilters ? 'Hide' : 'Show'} filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
           className={`btn-secondary btn-sm flex items-center gap-2 ${
             activeFilterCount > 0 ? 'border-oak-primary' : ''
           }`}
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-4 h-4" aria-hidden="true" />
           <span className="hidden sm:inline">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="bg-oak-primary text-white text-2xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+            <span className="bg-oak-primary text-white text-2xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center" aria-hidden="true">
               {activeFilterCount}
             </span>
           )}
           <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`}
+            aria-hidden="true"
           />
         </button>
       </div>
@@ -95,8 +98,9 @@ export function ContactFilters({
               <button
                 onClick={clearFilters}
                 className="btn-ghost btn-xs flex items-center gap-1.5 text-text-secondary hover:text-text-primary"
+                aria-label="Clear all filters"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
                 Clear all
               </button>
             )}

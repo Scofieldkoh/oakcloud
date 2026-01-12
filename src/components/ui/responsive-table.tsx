@@ -55,14 +55,15 @@ export function ResponsiveTable<T>({
             <button
               onClick={onToggleAll}
               className="p-2 hover:bg-background-secondary rounded transition-colors flex items-center gap-2"
-              title={isAllSelected ? 'Deselect all' : 'Select all'}
+              aria-label={isAllSelected ? 'Deselect all items' : 'Select all items'}
+              aria-pressed={isAllSelected}
             >
               {isAllSelected ? (
-                <CheckSquare className="w-5 h-5 text-oak-primary" />
+                <CheckSquare className="w-5 h-5 text-oak-primary" aria-hidden="true" />
               ) : isIndeterminate ? (
-                <MinusSquare className="w-5 h-5 text-oak-light" />
+                <MinusSquare className="w-5 h-5 text-oak-light" aria-hidden="true" />
               ) : (
-                <Square className="w-5 h-5 text-text-muted" />
+                <Square className="w-5 h-5 text-text-muted" aria-hidden="true" />
               )}
               <span className="text-sm text-text-secondary">
                 {isAllSelected ? 'Deselect all' : 'Select all'}
@@ -91,14 +92,15 @@ export function ResponsiveTable<T>({
                   <button
                     onClick={onToggleAll}
                     className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                    title={isAllSelected ? 'Deselect all' : 'Select all'}
+                    aria-label={isAllSelected ? 'Deselect all items' : 'Select all items'}
+                    aria-pressed={isAllSelected}
                   >
                     {isAllSelected ? (
-                      <CheckSquare className="w-4 h-4 text-oak-primary" />
+                      <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
                     ) : isIndeterminate ? (
-                      <MinusSquare className="w-4 h-4 text-oak-light" />
+                      <MinusSquare className="w-4 h-4 text-oak-light" aria-hidden="true" />
                     ) : (
-                      <Square className="w-4 h-4 text-text-muted" />
+                      <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
                     )}
                   </button>
                 </th>
@@ -127,11 +129,13 @@ export function ResponsiveTable<T>({
                       <button
                         onClick={() => onToggleOne?.(key)}
                         className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                        aria-label={isSelected ? 'Deselect item' : 'Select item'}
+                        aria-pressed={isSelected}
                       >
                         {isSelected ? (
-                          <CheckSquare className="w-4 h-4 text-oak-primary" />
+                          <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
                         ) : (
-                          <Square className="w-4 h-4 text-text-muted" />
+                          <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
                         )}
                       </button>
                     </td>
@@ -169,6 +173,8 @@ interface MobileCardProps {
   details?: ReactNode;
   /** Optional className */
   className?: string;
+  /** Accessible label for selection button */
+  selectionLabel?: string;
 }
 
 export function MobileCard({
@@ -181,6 +187,7 @@ export function MobileCard({
   actions,
   details,
   className,
+  selectionLabel,
 }: MobileCardProps) {
   return (
     <div
@@ -196,11 +203,13 @@ export function MobileCard({
             <button
               onClick={onToggle}
               className="p-1 hover:bg-background-secondary rounded transition-colors flex-shrink-0 mt-0.5"
+              aria-label={selectionLabel || (isSelected ? 'Deselect item' : 'Select item')}
+              aria-pressed={isSelected}
             >
               {isSelected ? (
-                <CheckSquare className="w-5 h-5 text-oak-primary" />
+                <CheckSquare className="w-5 h-5 text-oak-primary" aria-hidden="true" />
               ) : (
-                <Square className="w-5 h-5 text-text-muted" />
+                <Square className="w-5 h-5 text-text-muted" aria-hidden="true" />
               )}
             </button>
           )}

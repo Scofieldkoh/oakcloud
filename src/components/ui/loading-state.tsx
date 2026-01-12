@@ -46,16 +46,26 @@ export function LoadingState({
 
   if (inline) {
     return (
-      <div className={cn('flex items-center gap-2', className)}>
-        <Loader2 className={cn(config.spinner, 'animate-spin text-oak-light')} />
+      <div
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        className={cn('flex items-center gap-2', className)}
+      >
+        <Loader2 className={cn(config.spinner, 'animate-spin text-oak-light')} aria-hidden="true" />
         {message && <span className={cn(config.text, 'text-text-muted')}>{message}</span>}
       </div>
     );
   }
 
   return (
-    <div className={cn('text-center', config.padding, className)}>
-      <Loader2 className={cn(config.spinner, 'animate-spin mx-auto text-oak-light')} />
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className={cn('text-center', config.padding, className)}
+    >
+      <Loader2 className={cn(config.spinner, 'animate-spin mx-auto text-oak-light')} aria-hidden="true" />
       {message && <p className={cn(config.text, 'text-text-muted mt-2')}>{message}</p>}
     </div>
   );
@@ -72,5 +82,10 @@ export function LoadingSpinner({
   className?: string;
 }) {
   const spinnerSize = sizeConfig[size].spinner;
-  return <Loader2 className={cn(spinnerSize, 'animate-spin text-oak-light', className)} />;
+  return (
+    <Loader2
+      className={cn(spinnerSize, 'animate-spin text-oak-light', className)}
+      aria-hidden="true"
+    />
+  );
 }

@@ -89,7 +89,7 @@ function LinkContactModal({ isOpen, onClose, onSubmit, isLoading, companyName }:
       <ModalBody className="space-y-4">
         {/* Company indicator */}
         <div className="flex items-center gap-2 p-3 bg-surface-tertiary rounded-lg">
-          <Building2 className="w-4 h-4 text-text-tertiary" />
+          <Building2 className="w-4 h-4 text-text-tertiary" aria-hidden="true" />
           <span className="text-sm text-text-secondary">Linking to:</span>
           <span className="text-sm font-medium text-text-primary">{companyName}</span>
         </div>
@@ -209,9 +209,10 @@ function ContactDetailRow({
           <button
             onClick={() => onUpdateForm('isPrimary', !editForm.isPrimary)}
             className={`p-1.5 rounded ${editForm.isPrimary ? 'text-status-warning bg-status-warning/10' : 'text-text-muted hover:text-text-secondary'}`}
-            title={editForm.isPrimary ? 'Primary' : 'Set as primary'}
+            aria-label={editForm.isPrimary ? 'Remove primary status' : 'Set as primary'}
+            aria-pressed={editForm.isPrimary}
           >
-            <Star className="w-4 h-4" fill={editForm.isPrimary ? 'currentColor' : 'none'} />
+            <Star className="w-4 h-4" fill={editForm.isPrimary ? 'currentColor' : 'none'} aria-hidden="true" />
           </button>
         </div>
         {/* Purposes in edit mode - only for EMAIL type */}
@@ -243,7 +244,7 @@ function ContactDetailRow({
 
   return (
     <div className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-surface-secondary transition-colors group">
-      <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+      <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" aria-hidden="true" />
       <span className="text-sm text-text-primary flex-1 truncate">{detail.value}</span>
       {detail.label && (
         <span className="text-xs text-text-muted bg-surface-tertiary px-1.5 py-0.5 rounded flex-shrink-0">
@@ -255,24 +256,24 @@ function ContactDetailRow({
         <PurposeBadges purposes={detail.purposes} className="hidden sm:flex flex-shrink-0" />
       )}
       {detail.isPrimary && (
-        <Star className="w-3.5 h-3.5 text-status-warning flex-shrink-0" fill="currentColor" />
+        <Star className="w-3.5 h-3.5 text-status-warning flex-shrink-0" fill="currentColor" aria-label="Primary contact detail" />
       )}
       {canEdit && (
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 flex-shrink-0">
+        <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center gap-1 flex-shrink-0">
           <button
             onClick={onStartEdit}
             className="text-text-muted hover:text-oak-light p-1 rounded hover:bg-surface-tertiary"
-            title="Edit"
+            aria-label={`Edit ${detail.value}`}
           >
-            <Pencil className="w-3.5 h-3.5" />
+            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
           <button
             onClick={onDelete}
             className="text-text-muted hover:text-status-error p-1 rounded hover:bg-surface-tertiary"
-            title="Delete"
+            aria-label={`Delete ${detail.value}`}
             disabled={isDeleting}
           >
-            {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />}
           </button>
         </div>
       )}
@@ -357,9 +358,9 @@ function ContactRow({
           className="font-medium text-text-primary hover:text-oak-light flex items-center gap-1.5 truncate"
         >
           {item.contact.contactType === 'CORPORATE' ? (
-            <Building2 className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+            <Building2 className="w-4 h-4 text-text-tertiary flex-shrink-0" aria-hidden="true" />
           ) : (
-            <User className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+            <User className="w-4 h-4 text-text-tertiary flex-shrink-0" aria-hidden="true" />
           )}
           <span className="truncate">{item.contact.fullName}</span>
         </Link>
@@ -398,9 +399,9 @@ function ContactRow({
       <div className="flex-1 min-w-0">
         {displayedEmail ? (
           <div className="flex items-center gap-1.5">
-            <Mail className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" />
+            <Mail className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" aria-hidden="true" />
             <span className="text-sm text-text-secondary truncate">{displayedEmail}</span>
-            <CopyButton value={displayedEmail} />
+            <CopyButton value={displayedEmail} label="email address" />
             {emailPurposes.length > 0 && (
               <PurposeBadges purposes={emailPurposes} className="flex-shrink-0" />
             )}
@@ -414,9 +415,9 @@ function ContactRow({
       <div className="flex-shrink-0 w-[120px]">
         {displayedPhone ? (
           <div className="flex items-center gap-1.5">
-            <Phone className="w-3.5 h-3.5 text-text-tertiary" />
+            <Phone className="w-3.5 h-3.5 text-text-tertiary" aria-hidden="true" />
             <span className="text-sm text-text-secondary">{displayedPhone}</span>
-            <CopyButton value={displayedPhone} />
+            <CopyButton value={displayedPhone} label="phone number" />
           </div>
         ) : (
           <span className="text-xs text-text-muted italic">No phone</span>
@@ -425,21 +426,21 @@ function ContactRow({
 
       {/* Actions */}
       {canEdit && (
-        <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           <button
             onClick={onAddDetail}
             className="text-oak-light hover:text-oak-dark p-1.5 rounded hover:bg-surface-tertiary"
-            title="Add contact detail"
+            aria-label={`Add contact detail for ${item.contact.fullName}`}
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" aria-hidden="true" />
           </button>
           {onUnlink && (
             <button
               onClick={onUnlink}
               className="text-text-muted hover:text-status-error p-1.5 rounded hover:bg-status-error/10"
-              title="Unlink contact"
+              aria-label={`Unlink ${item.contact.fullName} from company`}
             >
-              <Unlink className="w-4 h-4" />
+              <Unlink className="w-4 h-4" aria-hidden="true" />
             </button>
           )}
         </div>
@@ -693,7 +694,7 @@ export function ContactDetailsModal({
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium text-text-primary flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-text-tertiary" />
+                          <Building2 className="w-4 h-4 text-text-tertiary" aria-hidden="true" />
                           Company Contact Details
                         </h4>
                         <p className="text-xs text-text-secondary mt-1">
@@ -727,14 +728,14 @@ export function ContactDetailsModal({
                       </div>
                     ) : (
                       <div className="text-center py-6">
-                        <Building2 className="w-8 h-8 text-text-muted mx-auto mb-2" />
+                        <Building2 className="w-8 h-8 text-text-muted mx-auto mb-2" aria-hidden="true" />
                         <p className="text-sm text-text-muted">No company-level contact details</p>
                         {canEdit && (
                           <button
                             onClick={openAddDetailForCompany}
                             className="text-sm text-oak-light hover:text-oak-dark mt-2 inline-flex items-center gap-1"
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-4 h-4" aria-hidden="true" />
                             Add first detail
                           </button>
                         )}
@@ -749,7 +750,7 @@ export function ContactDetailsModal({
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium text-text-primary flex items-center gap-2">
-                          <User className="w-4 h-4 text-text-tertiary" />
+                          <User className="w-4 h-4 text-text-tertiary" aria-hidden="true" />
                           Linked Contacts
                         </h4>
                         <p className="text-xs text-text-secondary mt-1">
@@ -792,14 +793,14 @@ export function ContactDetailsModal({
                       </>
                     ) : (
                       <div className="text-center py-8">
-                        <User className="w-8 h-8 text-text-muted mx-auto mb-2" />
+                        <User className="w-8 h-8 text-text-muted mx-auto mb-2" aria-hidden="true" />
                         <p className="text-sm text-text-muted">No linked contacts</p>
                         {canEdit && (
                           <button
                             onClick={() => setShowAddContactModal(true)}
                             className="text-sm text-oak-light hover:text-oak-dark mt-2 inline-flex items-center gap-1"
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-4 h-4" aria-hidden="true" />
                             Add first contact
                           </button>
                         )}

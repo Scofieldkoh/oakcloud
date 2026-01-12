@@ -119,9 +119,9 @@ export function ContactRow({
           className="font-medium text-text-primary hover:text-oak-light flex items-center gap-1.5 truncate"
         >
           {item.contact.contactType === 'CORPORATE' ? (
-            <Building2 className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+            <Building2 className="w-4 h-4 text-text-tertiary flex-shrink-0" aria-hidden="true" />
           ) : (
-            <User className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+            <User className="w-4 h-4 text-text-tertiary flex-shrink-0" aria-hidden="true" />
           )}
           <span className="truncate">{item.contact.fullName}</span>
         </Link>
@@ -167,17 +167,18 @@ export function ContactRow({
                 ? 'text-amber-500 hover:text-amber-600'
                 : 'text-text-muted hover:text-amber-500'
             } disabled:opacity-50`}
-            title={hasPoc ? 'Remove POC' : 'Set as POC'}
+            aria-label={hasPoc ? `Remove ${item.contact.fullName} as point of contact` : `Set ${item.contact.fullName} as point of contact`}
+            aria-pressed={hasPoc}
           >
             {isTogglingPoc ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Star className={`w-4 h-4 ${hasPoc ? 'fill-current' : ''}`} />
+              <Star className={`w-4 h-4 ${hasPoc ? 'fill-current' : ''}`} aria-hidden="true" />
             )}
           </button>
         ) : hasPoc ? (
-          <span className="text-amber-500" title="Point of Contact">
-            <Star className="w-4 h-4 fill-current" />
+          <span className="text-amber-500" aria-label={`${item.contact.fullName} is point of contact`}>
+            <Star className="w-4 h-4 fill-current" aria-hidden="true" />
           </span>
         ) : null}
       </div>
@@ -186,9 +187,9 @@ export function ContactRow({
       <div className="flex-shrink-0 w-[210px]">
         {displayedPhone ? (
           <div className="flex items-center gap-1.5">
-            <Phone className="w-3.5 h-3.5 text-text-tertiary" />
+            <Phone className="w-3.5 h-3.5 text-text-tertiary" aria-hidden="true" />
             <span className="text-sm text-text-primary">{displayedPhone}</span>
-            <CopyButton value={displayedPhone} />
+            <CopyButton value={displayedPhone} label="phone number" />
           </div>
         ) : (
           <span className="text-xs text-text-muted italic">No phone</span>
@@ -199,9 +200,9 @@ export function ContactRow({
       <div className="flex-1 min-w-0">
         {displayedEmail ? (
           <div className="flex items-center gap-1.5">
-            <Mail className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" />
+            <Mail className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" aria-hidden="true" />
             <span className="text-sm text-text-primary truncate">{displayedEmail}</span>
-            <CopyButton value={displayedEmail} />
+            <CopyButton value={displayedEmail} label="email address" />
             {emailPurposes.length > 0 && (
               <div className="flex gap-1 flex-shrink-0">
                 {emailPurposes.slice(0, 2).map((purpose) => (
@@ -226,17 +227,17 @@ export function ContactRow({
           <button
             onClick={onAddDetail}
             className="text-text-muted hover:text-oak-light transition-colors"
-            title="Edit contact details"
+            aria-label={`Edit contact details for ${item.contact.fullName}`}
           >
-            <Pencil className="w-3.5 h-3.5" />
+            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
           {onUnlink && !hasProtectedRole && (
             <button
               onClick={onUnlink}
               className="text-text-muted hover:text-status-error transition-colors"
-              title="Remove contact"
+              aria-label={`Remove ${item.contact.fullName} from company`}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           )}
         </div>

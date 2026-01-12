@@ -73,16 +73,20 @@ export function ErrorState({
 
   if (inline) {
     return (
-      <div className={cn('flex items-center', config.gap, 'text-status-error', className)}>
-        <AlertCircle className={cn(config.icon, 'flex-shrink-0')} />
+      <div
+        role="alert"
+        aria-live="assertive"
+        className={cn('flex items-center', config.gap, 'text-status-error', className)}
+      >
+        <AlertCircle className={cn(config.icon, 'flex-shrink-0')} aria-hidden="true" />
         <span className={config.text}>{displayMessage}</span>
         {onRetry && (
           <button
             onClick={onRetry}
             className="text-status-error hover:text-status-error/80 p-1 rounded hover:bg-status-error/10"
-            title={retryLabel}
+            aria-label={`${retryLabel}: ${displayMessage}`}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -90,7 +94,11 @@ export function ErrorState({
   }
 
   return (
-    <div className={cn('text-center', config.padding, className)}>
+    <div
+      role="alert"
+      aria-live="assertive"
+      className={cn('text-center', config.padding, className)}
+    >
       <div
         className={cn(
           'inline-flex items-center',
@@ -98,13 +106,13 @@ export function ErrorState({
           'px-4 py-2 bg-status-error/10 text-status-error rounded-lg'
         )}
       >
-        <X className={cn(config.icon, 'flex-shrink-0')} />
+        <X className={cn(config.icon, 'flex-shrink-0')} aria-hidden="true" />
         <span className={config.text}>{displayMessage}</span>
       </div>
       {onRetry && (
         <div className="mt-3">
-          <Button variant="secondary" size="sm" onClick={onRetry}>
-            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+          <Button variant="secondary" size="sm" onClick={onRetry} aria-label={retryLabel}>
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
             {retryLabel}
           </Button>
         </div>
@@ -124,8 +132,12 @@ export function InlineError({
   className?: string;
 }) {
   return (
-    <div className={cn('flex items-start gap-2 mt-1.5 text-status-error', className)}>
-      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+    <div
+      role="alert"
+      aria-live="polite"
+      className={cn('flex items-start gap-2 mt-1.5 text-status-error', className)}
+    >
+      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" />
       <span className="text-xs">{message}</span>
     </div>
   );

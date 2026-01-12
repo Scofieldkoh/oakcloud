@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext, useContext, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, createContext, useContext, useRef, useEffect, useCallback, useId, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,11 @@ interface DropdownContextValue {
   setIsOpen: (open: boolean) => void;
   close: () => void;
   triggerRef: React.RefObject<HTMLDivElement | null>;
+  menuId: string;
+  activeIndex: number;
+  setActiveIndex: (index: number) => void;
+  menuItemsRef: React.RefObject<HTMLButtonElement[]>;
+  registerMenuItem: (index: number, element: HTMLButtonElement | null) => void;
 }
 
 const DropdownContext = createContext<DropdownContextValue | null>(null);
@@ -31,10 +36,30 @@ interface DropdownProps {
 
 export function Dropdown({ children, className }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const triggerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuItemsRef = useRef<HTMLButtonElement[]>([]);
+  const menuId = useId();
 
-  const close = useCallback(() => setIsOpen(false), []);
+  const close = useCallback(() => {
+    setIsOpen(false);
+    setActiveIndex(-1);
+  }, []);
+
+  const registerMenuItem = useCallback((index: number, element: HTMLButtonElement | null) => {
+    if (element) {
+      menuItemsRef.current[index] = element;
+    }
+  }, []);
+
+  // Reset active index when opening
+  useEffect(() => {
+    if (isOpen) {
+      setActiveIndex(-1);
+      menuItemsRef.current = [];
+    }
+  }, [isOpen]);
 
   // Handle click outside
   useEffect(() => {
@@ -52,23 +77,36 @@ export function Dropdown({ children, className }: DropdownProps) {
       }
     };
 
-    const handleEscape = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         close();
+        // Return focus to trigger
+        const triggerButton = triggerRef.current?.querySelector('button');
+        triggerButton?.focus();
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, close]);
 
   return (
-    <DropdownContext.Provider value={{ isOpen, setIsOpen, close, triggerRef }}>
+    <DropdownContext.Provider value={{
+      isOpen,
+      setIsOpen,
+      close,
+      triggerRef,
+      menuId,
+      activeIndex,
+      setActiveIndex,
+      menuItemsRef,
+      registerMenuItem
+    }}>
       <div ref={containerRef} className={cn('relative', className)}>
         {children}
       </div>
@@ -81,20 +119,39 @@ interface DropdownTriggerProps {
   children: ReactNode;
   className?: string;
   asChild?: boolean;
+  'aria-label'?: string;
 }
 
-export function DropdownTrigger({ children, className, asChild }: DropdownTriggerProps) {
-  const { isOpen, setIsOpen, triggerRef } = useDropdownContext();
+export function DropdownTrigger({ children, className, asChild, 'aria-label': ariaLabel }: DropdownTriggerProps) {
+  const { isOpen, setIsOpen, triggerRef, menuId } = useDropdownContext();
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsOpen(!isOpen);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setIsOpen(true);
+    }
+  };
+
   if (asChild) {
     // Clone the child and add onClick
     return (
-      <div ref={triggerRef} onClick={handleClick} className={cn('cursor-pointer inline-flex', className)}>
+      <div
+        ref={triggerRef}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        className={cn('cursor-pointer inline-flex', className)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-controls={isOpen ? menuId : undefined}
+        aria-label={ariaLabel}
+      >
         {children}
       </div>
     );
@@ -105,6 +162,11 @@ export function DropdownTrigger({ children, className, asChild }: DropdownTrigge
       <button
         type="button"
         onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-controls={isOpen ? menuId : undefined}
+        aria-label={ariaLabel}
         className={cn(
           'inline-flex items-center gap-2 px-3 py-2.5 sm:py-2 text-sm rounded-md min-h-[44px] sm:min-h-0',
           'bg-background-elevated border border-border-primary',
@@ -119,6 +181,7 @@ export function DropdownTrigger({ children, className, asChild }: DropdownTrigge
             'w-4 h-4 text-text-muted transition-transform',
             isOpen && 'rotate-180'
           )}
+          aria-hidden="true"
         />
       </button>
     </div>
@@ -139,7 +202,7 @@ export function DropdownMenu({
   align = 'right',
   sideOffset = 4,
 }: DropdownMenuProps) {
-  const { isOpen, triggerRef } = useDropdownContext();
+  const { isOpen, triggerRef, menuId, activeIndex, setActiveIndex, menuItemsRef, close } = useDropdownContext();
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -186,12 +249,52 @@ export function DropdownMenu({
     }
   }, [isOpen, triggerRef, align, sideOffset]);
 
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+    const items = menuItemsRef.current.filter(Boolean);
+    const itemCount = items.length;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        setActiveIndex((prev) => (prev + 1) % itemCount);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        setActiveIndex((prev) => (prev - 1 + itemCount) % itemCount);
+        break;
+      case 'Home':
+        event.preventDefault();
+        setActiveIndex(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        setActiveIndex(itemCount - 1);
+        break;
+      case 'Tab':
+        close();
+        break;
+    }
+  }, [setActiveIndex, menuItemsRef, close]);
+
+  // Focus active item when activeIndex changes
+  useEffect(() => {
+    if (isOpen && activeIndex >= 0) {
+      const items = menuItemsRef.current.filter(Boolean);
+      items[activeIndex]?.focus();
+    }
+  }, [isOpen, activeIndex, menuItemsRef]);
+
   if (!isOpen || !mounted) return null;
 
   const menuContent = (
     <div
       ref={menuRef}
+      id={menuId}
+      role="menu"
+      aria-orientation="vertical"
       data-dropdown-menu
+      onKeyDown={handleKeyDown}
       className={cn(
         'fixed z-[100] min-w-[180px] py-1.5 rounded-xl',
         'bg-background-elevated border border-border-primary shadow-elevation-2',
@@ -225,7 +328,16 @@ export function DropdownItem({
   destructive,
   icon,
 }: DropdownItemProps) {
-  const { close } = useDropdownContext();
+  const { close, registerMenuItem, menuItemsRef } = useDropdownContext();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Register this item with the menu for keyboard navigation
+  useEffect(() => {
+    if (buttonRef.current) {
+      const currentIndex = menuItemsRef.current.length;
+      registerMenuItem(currentIndex, buttonRef.current);
+    }
+  }, [registerMenuItem, menuItemsRef]);
 
   const handleClick = () => {
     if (disabled) return;
@@ -233,20 +345,31 @@ export function DropdownItem({
     close();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   return (
     <button
+      ref={buttonRef}
       type="button"
+      role="menuitem"
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
       disabled={disabled}
+      tabIndex={-1}
       className={cn(
         'w-full flex items-center gap-2.5 px-3.5 py-2.5 sm:py-2 text-sm text-left min-h-[44px] sm:min-h-0',
-        'hover:bg-background-tertiary transition-colors',
+        'hover:bg-background-tertiary focus:bg-background-tertiary focus:outline-none transition-colors',
         disabled && 'opacity-50 cursor-not-allowed',
         destructive ? 'text-status-error' : 'text-text-primary',
         className
       )}
     >
-      {icon && <span className="w-4 h-4 flex-shrink-0">{icon}</span>}
+      {icon && <span className="w-4 h-4 flex-shrink-0" aria-hidden="true">{icon}</span>}
       {children}
     </button>
   );

@@ -265,22 +265,23 @@ function NavGroupHeader({
   return (
     <button
       onClick={onToggle}
+      aria-expanded={!isCollapsed}
+      aria-label={sidebarCollapsed ? `${group.name} menu` : undefined}
       className={cn(
         'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors',
         isActive
           ? 'bg-oak-primary/10 text-oak-light'
           : 'text-text-secondary hover:bg-background-tertiary hover:text-text-primary'
       )}
-      title={sidebarCollapsed ? group.name : undefined}
     >
-      <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+      <Icon className="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true" />
       {!sidebarCollapsed && (
         <>
           <span className="flex-1 text-left">{group.name}</span>
           {isCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-text-muted" />
+            <ChevronRight className="w-4 h-4 text-text-muted" aria-hidden="true" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-text-muted" />
+            <ChevronDown className="w-4 h-4 text-text-muted" aria-hidden="true" />
           )}
         </>
       )}
@@ -373,7 +374,7 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
   const showAdminSection = filteredUngroupedItems.length > 0 || filteredGroups.length > 0;
 
   return (
-    <nav className="p-2.5 space-y-1">
+    <nav aria-label="Main menu" className="p-2.5 space-y-1">
       {navigation.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
@@ -468,12 +469,12 @@ function ThemeToggleButton({ collapsed }: { collapsed: boolean }) {
         'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors w-full',
         'text-text-secondary hover:bg-background-tertiary hover:text-text-primary'
       )}
-      title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
       {theme === 'light' ? (
-        <Moon className="w-[18px] h-[18px] flex-shrink-0" />
+        <Moon className="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true" />
       ) : (
-        <Sun className="w-[18px] h-[18px] flex-shrink-0" />
+        <Sun className="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true" />
       )}
       {!collapsed && (
         <span className="flex-1 text-left">
@@ -549,9 +550,9 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
             <button
               onClick={handleLogout}
               className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-status-error transition-colors"
-              title="Sign out"
+              aria-label="Sign out"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4" aria-hidden="true" />
             </button>
           )}
         </div>
@@ -559,9 +560,9 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
           <button
             onClick={handleLogout}
             className="w-full mt-1.5 p-2 rounded hover:bg-background-tertiary text-text-muted hover:text-status-error transition-colors flex items-center justify-center"
-            title="Sign out"
+            aria-label="Sign out"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -575,6 +576,7 @@ function DesktopSidebar() {
 
   return (
     <aside
+      aria-label="Main navigation"
       className={cn(
         'fixed left-0 top-0 h-screen bg-background-secondary border-r border-border-primary transition-all duration-200 z-40 hidden lg:flex lg:flex-col',
         sidebarCollapsed ? 'w-14' : 'w-56'
@@ -689,7 +691,12 @@ function MobileDrawer() {
       />
 
       {/* Drawer */}
-      <aside className="absolute left-0 top-0 h-full w-64 bg-background-secondary border-r border-border-primary animate-slide-in-left flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+        className="absolute left-0 top-0 h-full w-64 bg-background-secondary border-r border-border-primary animate-slide-in-left flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+      >
         {/* Header */}
         <div className="h-14 flex items-center justify-between px-3 border-b border-border-primary flex-shrink-0">
           <Link href="/" className="flex items-center gap-2.5" onClick={() => setMobileSidebarOpen(false)}>

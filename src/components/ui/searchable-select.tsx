@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useCallback,
   useMemo,
+  useId,
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
@@ -72,6 +73,11 @@ export function SearchableSelect({
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0, inputTop: 0 });
   const [openAbove, setOpenAbove] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Generate unique IDs for ARIA relationships
+  const baseId = useId();
+  const listboxId = `${baseId}-listbox`;
+  const labelId = label ? `${baseId}-label` : undefined;
 
   // Mount check for portal
   useEffect(() => {
@@ -296,10 +302,15 @@ export function SearchableSelect({
   // Display value in input: show search when typing, otherwise show selected label
   const inputValue = isOpen ? search : (selectedOption?.label || '');
 
+  // Get the active option ID for aria-activedescendant
+  const activeOptionId = filteredOptions[highlightedIndex]
+    ? `${baseId}-option-${filteredOptions[highlightedIndex].value}`
+    : undefined;
+
   return (
     <div className={cn('relative', className)}>
       {label && (
-        <label className="block text-sm font-medium text-text-primary mb-1.5">
+        <label id={labelId} className="block text-sm font-medium text-text-primary mb-1.5">
           {label}
         </label>
       )}
@@ -320,6 +331,14 @@ export function SearchableSelect({
         <input
           ref={inputRef}
           type="text"
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-controls={isOpen ? listboxId : undefined}
+          aria-activedescendant={isOpen ? activeOptionId : undefined}
+          aria-autocomplete="list"
+          aria-labelledby={labelId}
+          aria-label={!label ? placeholder : undefined}
           value={inputValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
@@ -336,9 +355,10 @@ export function SearchableSelect({
           <button
             type="button"
             onClick={handleClear}
+            aria-label="Clear selection"
             className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
           >
-            <X className="w-3.5 h-3.5 text-text-muted" />
+            <X className="w-3.5 h-3.5 text-text-muted" aria-hidden="true" />
           </button>
         )}
         {showChevron && (
@@ -347,6 +367,7 @@ export function SearchableSelect({
             onClick={() => !disabled && setIsOpen(!isOpen)}
             className="pr-3 flex items-center"
             tabIndex={-1}
+            aria-hidden="true"
           >
             <ChevronDown
               className={cn(
@@ -384,10 +405,13 @@ export function SearchableSelect({
             {/* Options List */}
             <div
               ref={listRef}
+              id={listboxId}
+              role="listbox"
+              aria-label={label || placeholder}
               className="flex-1 overflow-y-auto py-1"
             >
               {loading ? (
-                <div className="px-3 py-6 text-center text-sm text-text-muted">
+                <div className="px-3 py-6 text-center text-sm text-text-muted" role="status">
                   Loading...
                 </div>
               ) : options.length === 0 ? (
@@ -402,6 +426,9 @@ export function SearchableSelect({
                 filteredOptions.map((option, index) => (
                   <div
                     key={option.value}
+                    id={`${baseId}-option-${option.value}`}
+                    role="option"
+                    aria-selected={option.value === value}
                     data-index={index}
                     onClick={() => handleSelect(option.value)}
                     className={cn(
@@ -422,7 +449,7 @@ export function SearchableSelect({
                       )}
                     </div>
                     {option.value === value && (
-                      <Check className="w-4 h-4 text-oak-primary flex-shrink-0" />
+                      <Check className="w-4 h-4 text-oak-primary flex-shrink-0" aria-hidden="true" />
                     )}
                   </div>
                 ))

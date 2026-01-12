@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
+import { useState, useId, ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -41,12 +41,17 @@ export function CollapsibleSection({
     return window.innerWidth < 768 ? defaultCollapsedMobile : defaultCollapsedDesktop;
   });
 
+  // Generate unique IDs for ARIA relationships
+  const contentId = useId();
+
   return (
     <div className={cn('mb-6', className)}>
       {/* Header - always visible */}
       <button
         type="button"
         onClick={() => setIsCollapsed(!isCollapsed)}
+        aria-expanded={!isCollapsed}
+        aria-controls={contentId}
         className="w-full flex items-center justify-between gap-2 py-2 text-left group"
       >
         <div className="flex items-center gap-2">
@@ -60,15 +65,18 @@ export function CollapsibleSection({
         <div className="flex items-center gap-1 text-text-muted group-hover:text-text-secondary transition-colors">
           <span className="text-xs">{isCollapsed ? 'Show' : 'Hide'}</span>
           {isCollapsed ? (
-            <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="w-4 h-4" aria-hidden="true" />
           ) : (
-            <ChevronUp className="w-4 h-4" />
+            <ChevronUp className="w-4 h-4" aria-hidden="true" />
           )}
         </div>
       </button>
 
       {/* Content - collapsible */}
       <div
+        id={contentId}
+        role="region"
+        aria-label={title}
         className={cn(
           'transition-all duration-200 overflow-hidden',
           isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1000px] opacity-100',
@@ -96,6 +104,7 @@ export function MobileCollapsibleSection({
   defaultCollapsed?: boolean;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const contentId = useId();
 
   return (
     <div className={cn('mb-6', className)}>
@@ -103,6 +112,8 @@ export function MobileCollapsibleSection({
       <button
         type="button"
         onClick={() => setIsCollapsed(!isCollapsed)}
+        aria-expanded={!isCollapsed}
+        aria-controls={contentId}
         className="md:hidden w-full flex items-center justify-between gap-2 py-2 text-left group"
       >
         <div className="flex items-center gap-2">
@@ -116,15 +127,18 @@ export function MobileCollapsibleSection({
         <div className="flex items-center gap-1 text-text-muted group-hover:text-text-secondary transition-colors">
           <span className="text-xs">{isCollapsed ? 'Show' : 'Hide'}</span>
           {isCollapsed ? (
-            <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="w-4 h-4" aria-hidden="true" />
           ) : (
-            <ChevronUp className="w-4 h-4" />
+            <ChevronUp className="w-4 h-4" aria-hidden="true" />
           )}
         </div>
       </button>
 
       {/* Content - collapsible on mobile, always visible on desktop */}
       <div
+        id={contentId}
+        role="region"
+        aria-label={title}
         className={cn(
           'md:block',
           // Mobile: animate collapse/expand
