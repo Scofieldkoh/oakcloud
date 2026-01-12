@@ -1,6 +1,15 @@
 # RBAC, Authentication & Multi-Tenancy Implementation Guidelines
 
+> **Last Updated**: 2025-01-12
+> **Audience**: Developers
+
 This document provides comprehensive guidelines for implementing Role-Based Access Control (RBAC), authentication, and multi-tenancy in Oakcloud. Follow these patterns to ensure consistent security across all features.
+
+## Related Documents
+
+- [Architecture](../ARCHITECTURE.md) - System design overview
+- [Service Patterns](./SERVICE_PATTERNS.md) - Service layer conventions
+- [API Reference](../reference/API_REFERENCE.md) - API endpoints
 
 ## Table of Contents
 
@@ -932,9 +941,9 @@ External users can access shared documents without authentication:
 
 ---
 
-## Related Documentation
+## Related Documents
 
-- [Database Schema](./database-schema.md) - Entity relationships and Document Generation tables
-- [Document Generation Design](./DOCUMENT_GENERATION_MODULE_DESIGN.md) - Module design and implementation details
-- [README](./README.md) - System overview and API reference
-- [CLAUDE.md](../CLAUDE.md) - Development guidelines
+- [Database Schema](../reference/DATABASE_SCHEMA.md) - Entity relationships and tables
+- [Document Generation](../features/document-generation/OVERVIEW.md) - Module design and implementation
+- [README](../README.md) - System overview
+- [Service Patterns](./SERVICE_PATTERNS.md) - Service layer conventions

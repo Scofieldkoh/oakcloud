@@ -1,6 +1,14 @@
 # Oakcloud Design Guidelines
 
+> **Last Updated**: 2025-01-12
+> **Audience**: Developers, Designers
+
 This document outlines the design system, UI components, and styling standards for the Oakcloud application.
+
+## Related Documents
+
+- [Architecture](../ARCHITECTURE.md) - System design overview
+- [RBAC Guideline](./RBAC_GUIDELINE.md) - Permission patterns
 
 ## Table of Contents
 

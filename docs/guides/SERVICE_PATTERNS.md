@@ -1,6 +1,16 @@
-# Service Layer Documentation
+# Service Layer Patterns
+
+> **Last Updated**: 2025-01-12
+> **Audience**: Developers
 
 This document describes the service layer architecture, patterns, and conventions used in Oakcloud.
+
+## Related Documents
+
+- [Architecture](../ARCHITECTURE.md) - System design overview
+- [RBAC Guideline](./RBAC_GUIDELINE.md) - Permission patterns
+- [Audit Logging](./AUDIT_LOGGING.md) - Change tracking
+- [Database Schema](../reference/DATABASE_SCHEMA.md) - Tables and relationships
 
 ## Overview
 

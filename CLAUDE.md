@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## User Instruction
 
-This web app is in development and testing stage, all data are dummy, and it's ok to refactor and redesign, no backward compatibility required. Remember to keep the code clean, efficient, modular, reusable and consistent. Ensure documentations are kept up to date, updating where applicable (under docs) instead of creating new documentation every time. If you encounter error or any potential improvement unrelated to current implementation, update TODO.md.
+This web app is in development and testing stage, all data are dummy, and it's ok to refactor and redesign, no backward compatibility required. Remember to keep the code clean, efficient, modular, reusable and consistent. Ensure documentations are kept up to date, updating where applicable (under `docs/`) instead of creating new documentation every time. If you encounter error or any potential improvement unrelated to current implementation, update `docs/TODO.md`.
 
-ALWAYS remember to keep the code clean, efficient, modular and reusable. Ensure documentations (README and database-schema) are kept up to date, updating where applicable instead of creating new documentation every time. 
+ALWAYS remember to keep the code clean, efficient, modular and reusable. Ensure documentations are kept up to date, updating where applicable instead of creating new documentation every time. See the Documentation section below for all available docs. 
 
 ## Project Overview
 
@@ -210,6 +210,44 @@ log.error('message'); log.warn('message'); log.info('message'); log.debug('messa
 
 - Super Admin: `admin@oakcloud.local` / `admin123`
 - Tenant Admin: `tenant@oakcloud.local` / `admin123`
-- Remember to keep the code clean, efficient, modular, reusable and consistent. Ensure documentations are kept up to date, updating where applicable (README.md under docs; database-schema, RBAC_GUIDELINE, DESIGN_GUIDELINE under docs) instead of creating new documentation every time. 
 
-you can read "README.md" inside of docs, it contains the latest information on the codebase, RBAC_GUIDELINE and DESIGN_GUIDELINE before implementing. If you encounter error or any potential improvement, raise it up to user.
+## Documentation
+
+All documentation is under `docs/`. Start with the **[Documentation Index](docs/INDEX.md)** for navigation.
+
+### Key Documents
+
+| Document | Path | Description |
+|----------|------|-------------|
+| Index | `docs/INDEX.md` | Central navigation hub |
+| Getting Started | `docs/GETTING_STARTED.md` | Installation and setup |
+| Architecture | `docs/ARCHITECTURE.md` | System design overview |
+| TODO / Roadmap | `docs/TODO.md` | Issues and planned features |
+
+### Guides
+| Document | Path | Description |
+|----------|------|-------------|
+| RBAC Guideline | `docs/guides/RBAC_GUIDELINE.md` | Authentication and permissions |
+| Design Guideline | `docs/guides/DESIGN_GUIDELINE.md` | UI components and styling |
+| Service Patterns | `docs/guides/SERVICE_PATTERNS.md` | Service layer conventions |
+| Audit Logging | `docs/guides/AUDIT_LOGGING.md` | Activity tracking |
+
+### Reference
+| Document | Path | Description |
+|----------|------|-------------|
+| Database Schema | `docs/reference/DATABASE_SCHEMA.md` | All tables and relationships |
+| API Reference | `docs/reference/API_REFERENCE.md` | REST API endpoints |
+| Environment Variables | `docs/reference/ENVIRONMENT_VARIABLES.md` | Configuration options |
+
+### Feature Specifications
+| Feature | Path | Description |
+|---------|------|-------------|
+| Document Generation | `docs/features/document-generation/` | Templates, PDF export, sharing |
+| Document Processing | `docs/features/document-processing/` | AI extraction, revisions |
+
+### Debug
+| Document | Path | Description |
+|----------|------|-------------|
+| AI Debug | `docs/debug/AI_DEBUG.md` | AI extraction debugging |
+
+**Before implementing features**, read relevant documentation. If you encounter errors or potential improvements, update `docs/TODO.md`.

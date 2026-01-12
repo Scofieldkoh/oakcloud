@@ -1,6 +1,15 @@
 # Oakcloud Database Schema
 
+> **Last Updated**: 2025-01-12
+> **Audience**: Developers
+
 This document provides a detailed reference for the Oakcloud database schema.
+
+## Related Documents
+
+- [Architecture](../ARCHITECTURE.md) - System design overview
+- [Service Patterns](../guides/SERVICE_PATTERNS.md) - Service layer conventions
+- [API Reference](./API_REFERENCE.md) - REST API endpoints
 
 ## Multi-Tenancy Architecture
 

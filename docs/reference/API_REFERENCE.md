@@ -1,6 +1,15 @@
 # API Reference
 
+> **Last Updated**: 2025-01-12
+> **Audience**: Developers
+
 This document provides a comprehensive reference for all API endpoints in the Oakcloud application.
+
+## Related Documents
+
+- [RBAC Guideline](../guides/RBAC_GUIDELINE.md) - Authentication and permissions
+- [Database Schema](./DATABASE_SCHEMA.md) - Tables and relationships
+- [Service Patterns](../guides/SERVICE_PATTERNS.md) - Service layer conventions
 
 ## Base URL
 
