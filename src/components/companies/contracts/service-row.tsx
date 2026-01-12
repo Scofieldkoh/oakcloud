@@ -8,7 +8,7 @@ import {
   getServiceStatusLabel,
   getServiceStatusColor,
 } from '@/lib/constants/contracts';
-import { formatDateShort } from '@/lib/utils';
+import { formatDateShort as formatDate } from '@/lib/utils';
 
 interface ServiceRowProps {
   service: Contract['services'][0];

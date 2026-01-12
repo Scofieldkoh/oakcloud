@@ -13,7 +13,7 @@ interface DropdownContextValue {
   triggerRef: React.RefObject<HTMLDivElement | null>;
   menuId: string;
   activeIndex: number;
-  setActiveIndex: (index: number) => void;
+  setActiveIndex: React.Dispatch<React.SetStateAction<number>>;
   menuItemsRef: React.RefObject<HTMLButtonElement[]>;
   registerMenuItem: (index: number, element: HTMLButtonElement | null) => void;
 }

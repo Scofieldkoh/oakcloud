@@ -1,0 +1,33 @@
+{
+  "project": "Oakcloud",
+  "branchName": "ralph/feature-name",
+  "description": "Brief description of what this sprint implements",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add feature X to page Y",
+      "description": "As a user, I want feature X so I can achieve benefit Y",
+      "acceptanceCriteria": [
+        "Feature X appears on page Y",
+        "Feature X does specific thing",
+        "TypeScript typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Implementation hints go here"
+    },
+    {
+      "id": "US-002",
+      "title": "Second story that depends on US-001",
+      "description": "As a user, I want...",
+      "acceptanceCriteria": [
+        "Criterion 1",
+        "TypeScript typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
