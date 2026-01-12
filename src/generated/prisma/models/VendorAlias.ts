@@ -206,7 +206,7 @@ export type VendorAliasGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 export type VendorAliasGroupByOutputType = {
   id: string
   tenantId: string
-  companyId: string
+  companyId: string | null
   rawName: string
   normalizedContactId: string
   confidence: number
@@ -241,7 +241,7 @@ export type VendorAliasWhereInput = {
   NOT?: Prisma.VendorAliasWhereInput | Prisma.VendorAliasWhereInput[]
   id?: Prisma.StringFilter<"VendorAlias"> | string
   tenantId?: Prisma.StringFilter<"VendorAlias"> | string
-  companyId?: Prisma.StringFilter<"VendorAlias"> | string
+  companyId?: Prisma.StringNullableFilter<"VendorAlias"> | string | null
   rawName?: Prisma.StringFilter<"VendorAlias"> | string
   normalizedContactId?: Prisma.StringFilter<"VendorAlias"> | string
   confidence?: Prisma.FloatFilter<"VendorAlias"> | number
@@ -253,7 +253,7 @@ export type VendorAliasWhereInput = {
 export type VendorAliasOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
-  companyId?: Prisma.SortOrder
+  companyId?: Prisma.SortOrderInput | Prisma.SortOrder
   rawName?: Prisma.SortOrder
   normalizedContactId?: Prisma.SortOrder
   confidence?: Prisma.SortOrder
@@ -268,7 +268,7 @@ export type VendorAliasWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.VendorAliasWhereInput[]
   NOT?: Prisma.VendorAliasWhereInput | Prisma.VendorAliasWhereInput[]
   tenantId?: Prisma.StringFilter<"VendorAlias"> | string
-  companyId?: Prisma.StringFilter<"VendorAlias"> | string
+  companyId?: Prisma.StringNullableFilter<"VendorAlias"> | string | null
   rawName?: Prisma.StringFilter<"VendorAlias"> | string
   normalizedContactId?: Prisma.StringFilter<"VendorAlias"> | string
   confidence?: Prisma.FloatFilter<"VendorAlias"> | number
@@ -280,7 +280,7 @@ export type VendorAliasWhereUniqueInput = Prisma.AtLeast<{
 export type VendorAliasOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
-  companyId?: Prisma.SortOrder
+  companyId?: Prisma.SortOrderInput | Prisma.SortOrder
   rawName?: Prisma.SortOrder
   normalizedContactId?: Prisma.SortOrder
   confidence?: Prisma.SortOrder
@@ -300,7 +300,7 @@ export type VendorAliasScalarWhereWithAggregatesInput = {
   NOT?: Prisma.VendorAliasScalarWhereWithAggregatesInput | Prisma.VendorAliasScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"VendorAlias"> | string
   tenantId?: Prisma.StringWithAggregatesFilter<"VendorAlias"> | string
-  companyId?: Prisma.StringWithAggregatesFilter<"VendorAlias"> | string
+  companyId?: Prisma.StringNullableWithAggregatesFilter<"VendorAlias"> | string | null
   rawName?: Prisma.StringWithAggregatesFilter<"VendorAlias"> | string
   normalizedContactId?: Prisma.StringWithAggregatesFilter<"VendorAlias"> | string
   confidence?: Prisma.FloatWithAggregatesFilter<"VendorAlias"> | number
@@ -312,7 +312,7 @@ export type VendorAliasScalarWhereWithAggregatesInput = {
 export type VendorAliasCreateInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   rawName: string
   normalizedContactId: string
   confidence?: number
@@ -324,7 +324,7 @@ export type VendorAliasCreateInput = {
 export type VendorAliasUncheckedCreateInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   rawName: string
   normalizedContactId: string
   confidence?: number
@@ -336,7 +336,7 @@ export type VendorAliasUncheckedCreateInput = {
 export type VendorAliasUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rawName?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedContactId?: Prisma.StringFieldUpdateOperationsInput | string
   confidence?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -348,7 +348,7 @@ export type VendorAliasUpdateInput = {
 export type VendorAliasUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rawName?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedContactId?: Prisma.StringFieldUpdateOperationsInput | string
   confidence?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -360,7 +360,7 @@ export type VendorAliasUncheckedUpdateInput = {
 export type VendorAliasCreateManyInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   rawName: string
   normalizedContactId: string
   confidence?: number
@@ -372,7 +372,7 @@ export type VendorAliasCreateManyInput = {
 export type VendorAliasUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rawName?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedContactId?: Prisma.StringFieldUpdateOperationsInput | string
   confidence?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -384,7 +384,7 @@ export type VendorAliasUpdateManyMutationInput = {
 export type VendorAliasUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rawName?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedContactId?: Prisma.StringFieldUpdateOperationsInput | string
   confidence?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -503,7 +503,7 @@ export type $VendorAliasPayload<ExtArgs extends runtime.Types.Extensions.Interna
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     tenantId: string
-    companyId: string
+    companyId: string | null
     rawName: string
     normalizedContactId: string
     confidence: number

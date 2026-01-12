@@ -13,6 +13,7 @@ import {
   Trash2,
   AlertCircle,
   Building2,
+  Tags,
 } from 'lucide-react';
 import { useContact, useDeleteContact, useLinkContactToCompany, useUnlinkContactFromCompany, useRemoveOfficerPosition, useRemoveShareholding, useUpdateOfficerPosition, useUpdateShareholding, useContactLinkInfo } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
@@ -25,6 +26,7 @@ import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui
 import { useToast } from '@/components/ui/toast';
 import { CompanyRelationships } from '@/components/contacts/company-relationships';
 import { ContactDetailsSection } from '@/components/contacts/contact-details-section';
+import { ContactAliasesModal } from '@/components/contacts/contact-aliases-modal';
 import { InternalNotes } from '@/components/notes/internal-notes';
 import type { ContactType, IdentificationType } from '@/generated/prisma';
 
@@ -114,6 +116,7 @@ export default function ContactDetailPage({
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [aliasesModalOpen, setAliasesModalOpen] = useState(false);
   const [editOfficerModalOpen, setEditOfficerModalOpen] = useState(false);
   const [editShareholderModalOpen, setEditShareholderModalOpen] = useState(false);
   const [selectedOfficer, setSelectedOfficer] = useState<{
@@ -604,6 +607,27 @@ export default function ContactDetailPage({
               </Link>
             </div>
           </div>
+
+          {/* Aliases */}
+          <div className="card">
+            <div className="p-4 border-b border-border-primary">
+              <h2 className="font-medium text-text-primary flex items-center gap-2">
+                <Tags className="w-4 h-4 text-text-tertiary" />
+                Aliases
+              </h2>
+            </div>
+            <div className="p-4">
+              <p className="text-xs text-text-muted mb-3">
+                Manage vendor/customer name aliases for document processing
+              </p>
+              <button
+                onClick={() => setAliasesModalOpen(true)}
+                className="btn-secondary btn-sm w-full justify-center"
+              >
+                Manage Aliases
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -898,6 +922,15 @@ export default function ContactDetailPage({
           </button>
         </ModalFooter>
       </Modal>
+
+      {/* Contact Aliases Modal */}
+      <ContactAliasesModal
+        isOpen={aliasesModalOpen}
+        onClose={() => setAliasesModalOpen(false)}
+        contactId={id}
+        contactName={contact.fullName}
+        canEdit={can.updateContact}
+      />
     </div>
   );
 }

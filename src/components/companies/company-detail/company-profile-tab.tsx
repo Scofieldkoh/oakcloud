@@ -20,6 +20,7 @@ import {
   X,
   Plus,
   Layers,
+  ExternalLink,
 } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -41,12 +42,21 @@ type Officer = NonNullable<CompanyWithRelations['officers']>[number];
 type Shareholder = NonNullable<CompanyWithRelations['shareholders']>[number];
 
 // Helper to convert UPPER_CASE or UPPERCASE to Title Case
+// Preserves known acronyms like CEO, CFO
+const KNOWN_ACRONYMS = ['CEO', 'CFO'];
 function toTitleCase(str: string): string {
   if (!str) return '';
   return str
-    .toLowerCase()
     .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .split(' ')
+    .map(word => {
+      const upper = word.toUpperCase();
+      // Keep known acronyms uppercase
+      if (KNOWN_ACRONYMS.includes(upper)) return upper;
+      // Otherwise title case
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
 }
 
 // Helper to format address with proper punctuation
@@ -897,12 +907,33 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
                 {company._count?.documents || 0}
               </span>
             </div>
-            <div className="p-4">
+            <div className="p-4 space-y-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/companies/${companyId}/bizfile`);
+                    if (res.ok) {
+                      const data = await res.json();
+                      window.open(data.pdfUrl, '_blank');
+                    } else if (res.status === 404) {
+                      toastError('No BizFile found for this company');
+                    } else {
+                      toastError('Failed to fetch BizFile');
+                    }
+                  } catch {
+                    toastError('Failed to fetch BizFile');
+                  }
+                }}
+                className="btn-primary btn-sm w-full justify-center flex items-center gap-2"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                View BizFile
+              </button>
               <Link
                 href={`/companies/${companyId}/documents`}
                 className="btn-secondary btn-sm w-full justify-center"
               >
-                View Documents
+                View All Documents
               </Link>
             </div>
           </div>

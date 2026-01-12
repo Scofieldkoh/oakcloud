@@ -285,8 +285,17 @@ function ContactDetailRow({
 // ============================================================================
 
 // Helper to convert UPPERCASE to Title Case
+// Preserves known acronyms like CEO, CFO
+const KNOWN_ACRONYMS = ['CEO', 'CFO'];
 function toTitleCase(str: string): string {
-  return str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  return str
+    .split(' ')
+    .map(word => {
+      const upper = word.toUpperCase();
+      if (KNOWN_ACRONYMS.includes(upper)) return upper;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
 }
 
 // Helper to deduplicate and clean up relationships

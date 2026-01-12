@@ -79,6 +79,7 @@ import { useRateLookup } from '@/hooks/use-exchange-rates';
 import { useAccountsForSelect } from '@/hooks/use-chart-of-accounts';
 import { useCompany } from '@/hooks/use-companies';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 
 // Status display configs
 const pipelineStatusConfig: Record<
@@ -2287,24 +2288,16 @@ function ExtractedHeaderFields({
 
         {/* Dates */}
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-text-muted mb-1">Document date</label>
-            <input
-              type="date"
-              value={editFormData.documentDate}
-              onChange={(e) => setEditFormData({ ...editFormData, documentDate: e.target.value })}
-              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-text-muted mb-1">Due date</label>
-            <input
-              type="date"
-              value={editFormData.dueDate}
-              onChange={(e) => setEditFormData({ ...editFormData, dueDate: e.target.value })}
-              className="w-full px-2.5 py-1.5 text-sm bg-background-secondary border border-border-primary rounded focus:border-oak-light focus:outline-none"
-            />
-          </div>
+          <SingleDateInput
+            label="Document date"
+            value={editFormData.documentDate}
+            onChange={(value) => setEditFormData({ ...editFormData, documentDate: value })}
+          />
+          <SingleDateInput
+            label="Due date"
+            value={editFormData.dueDate}
+            onChange={(value) => setEditFormData({ ...editFormData, dueDate: value })}
+          />
         </div>
       </div>
     );

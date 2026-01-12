@@ -106,7 +106,9 @@ export async function POST(
         documentId,
         extractionResult.data,
         session.id,
-        document.tenantId
+        document.tenantId,
+        document.storageKey || undefined,
+        document.mimeType
       );
 
       // Calculate estimated cost

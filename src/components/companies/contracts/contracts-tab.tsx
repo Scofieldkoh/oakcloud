@@ -1,25 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Loader2, FileText, ScrollText } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { Plus, Loader2, FileText, ScrollText, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import {
   useCompanyContracts,
   useCreateContract,
+  useUpdateContract,
   useDeleteContract,
+  contractKeys,
   type Contract,
   type CreateContractInput,
   type UpdateContractInput,
 } from '@/hooks/use-contracts';
-import {
-  type CreateContractServiceInput,
-  type UpdateContractServiceInput,
-} from '@/hooks/use-contract-services';
+import { serviceKeys } from '@/hooks/use-contract-services';
 import { ContractCard } from './contract-card';
 import { ContractModal } from './contract-modal';
-import { ServiceModal } from './service-modal';
 import { ScopeModal } from './scope-modal';
 
 interface ContractsTabProps {
@@ -28,21 +31,30 @@ interface ContractsTabProps {
 }
 
 export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
-  const { success } = useToast();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { success, error: toastError } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
   const { data, isLoading, error } = useCompanyContracts(companyId);
 
   // Contract mutations
   const createContractMutation = useCreateContract(companyId);
   const deleteContractMutation = useDeleteContract(companyId);
 
+  // Track which contract is being edited for the update mutation
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
+  const updateContractMutation = useUpdateContract(companyId, editingContract?.id ?? '');
+
+  // Track service deletion state
+  const [isDeletingService, setIsDeletingService] = useState(false);
+
   // Modal states
   const [showContractModal, setShowContractModal] = useState(false);
-  const [editingContract, setEditingContract] = useState<Contract | null>(null);
-  const [showServiceModal, setShowServiceModal] = useState(false);
-  const [editingService, setEditingService] = useState<{
-    contractId: string;
-    service?: Contract['services'][0];
-  } | null>(null);
   const [showScopeModal, setShowScopeModal] = useState<{
     serviceName: string;
     scope: string;
@@ -58,6 +70,10 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
 
   // Expanded contracts for accordion
   const [expandedContracts, setExpandedContracts] = useState<Set<string>>(new Set());
+
+  // Filter state
+  const [showFilters, setShowFilters] = useState(false);
+  const [showTerminated, setShowTerminated] = useState(false);
 
   const toggleContract = (contractId: string) => {
     setExpandedContracts((prev) => {
@@ -85,28 +101,11 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
 
   const handleUpdateContract = async (input: UpdateContractInput) => {
     if (!editingContract) return;
-    // Use a dynamic hook call pattern - create the mutation inline
     try {
-      const response = await fetch(
-        `/api/companies/${companyId}/contracts/${editingContract.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(input),
-        }
-      );
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to update contract');
-      }
-      success('Contract updated successfully');
+      await updateContractMutation.mutateAsync(input);
       setEditingContract(null);
-      // Refetch by invalidating query
-      window.location.reload();
-    } catch (err) {
-      if (err instanceof Error) {
-        throw err;
-      }
+    } catch {
+      // Error handled by mutation
     }
   };
 
@@ -123,79 +122,57 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
     }
   };
 
-  // Service handlers
-  const handleCreateService = async (contractId: string, input: CreateContractServiceInput) => {
-    try {
-      const response = await fetch(
-        `/api/companies/${companyId}/contracts/${contractId}/services`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(input),
-        }
-      );
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to create service');
-      }
-      success('Service added successfully');
-      setShowServiceModal(false);
-      setEditingService(null);
-      // Refetch
-      window.location.reload();
-    } catch {
-      // Error handled
-    }
+  // Service navigation
+  const handleAddService = (contractId: string) => {
+    router.push(`/companies/${companyId}/contracts/${contractId}/services/new`);
   };
 
-  const handleUpdateService = async (contractId: string, serviceId: string, input: UpdateContractServiceInput) => {
-    try {
-      const response = await fetch(
-        `/api/companies/${companyId}/contracts/${contractId}/services/${serviceId}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(input),
-        }
-      );
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to update service');
-      }
-      success('Service updated successfully');
-      setShowServiceModal(false);
-      setEditingService(null);
-      // Refetch
-      window.location.reload();
-    } catch {
-      // Error handled
-    }
+  const handleEditService = (contractId: string, serviceId: string) => {
+    router.push(`/companies/${companyId}/contracts/${contractId}/services/${serviceId}`);
   };
 
   const handleDeleteService = async () => {
     if (!deleteConfirm || deleteConfirm.type !== 'service' || !deleteConfirm.contractId) return;
+
+    const { id: serviceId, contractId } = deleteConfirm;
+    setIsDeletingService(true);
+
     try {
-      const response = await fetch(
-        `/api/companies/${companyId}/contracts/${deleteConfirm.contractId}/services/${deleteConfirm.id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const url = activeTenantId
+        ? `/api/companies/${companyId}/contracts/${contractId}/services/${serviceId}?tenantId=${activeTenantId}`
+        : `/api/companies/${companyId}/contracts/${contractId}/services/${serviceId}`;
+
+      const response = await fetch(url, { method: 'DELETE' });
+
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Failed to delete service');
       }
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: contractKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: contractKeys.detail(companyId, contractId) });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.contract(contractId) });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.all });
+
       success('Service deleted successfully');
       setDeleteConfirm(null);
-      // Refetch
-      window.location.reload();
-    } catch {
-      // Error handled
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to delete service');
+    } finally {
+      setIsDeletingService(false);
     }
   };
 
-  const contracts = data?.contracts ?? [];
-  const totalServices = contracts.reduce((sum, c) => sum + c.services.length, 0);
+  const allContracts = data?.contracts ?? [];
+
+  // Filter contracts based on status
+  const contracts = allContracts.filter((contract) => {
+    if (!showTerminated && contract.status === 'TERMINATED') return false;
+    return true;
+  });
+
+  const terminatedCount = allContracts.filter((c) => c.status === 'TERMINATED').length;
 
   if (isLoading) {
     return (
@@ -230,6 +207,19 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {terminatedCount > 0 && (
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`p-1.5 rounded transition-colors ${
+                    showFilters || showTerminated
+                      ? 'bg-oak-light/10 text-oak-light'
+                      : 'text-text-muted hover:text-text-primary hover:bg-background-secondary'
+                  }`}
+                  title="Filter contracts"
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                </button>
+              )}
               {canEdit && (
                 <Button variant="secondary" size="xs" onClick={() => setShowContractModal(true)}>
                   <Plus className="w-3.5 h-3.5 mr-1" />
@@ -238,9 +228,38 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
               )}
               <span className="text-xs text-text-muted">
                 {contracts.length} contract{contracts.length !== 1 ? 's' : ''}
+                {!showTerminated && terminatedCount > 0 && (
+                  <span className="ml-1">({terminatedCount} hidden)</span>
+                )}
               </span>
             </div>
           </div>
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="mt-3 pt-3 border-t border-border-secondary animate-fade-in">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="show-terminated-contracts"
+                    checked={showTerminated}
+                    onChange={(e) => setShowTerminated(e.target.checked)}
+                    size="sm"
+                  />
+                  <label htmlFor="show-terminated-contracts" className="text-xs text-text-secondary cursor-pointer">
+                    Show terminated
+                  </label>
+                </div>
+                {showTerminated && (
+                  <button
+                    onClick={() => setShowTerminated(false)}
+                    className="btn-ghost btn-xs text-text-muted hover:text-text-primary"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Card Body */}
@@ -275,14 +294,8 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
                     name: contract.title,
                   })
                 }
-                onAddService={() => {
-                  setEditingService({ contractId: contract.id });
-                  setShowServiceModal(true);
-                }}
-                onEditService={(service) => {
-                  setEditingService({ contractId: contract.id, service });
-                  setShowServiceModal(true);
-                }}
+                onAddService={() => handleAddService(contract.id)}
+                onEditService={(service) => handleEditService(contract.id, service.id)}
                 onDeleteService={(service) =>
                   setDeleteConfirm({
                     type: 'service',
@@ -320,26 +333,7 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
               await handleCreateContract(data as CreateContractInput);
             }
           }}
-          isLoading={createContractMutation.isPending}
-        />
-      )}
-
-      {/* Service Modal */}
-      {showServiceModal && editingService && (
-        <ServiceModal
-          isOpen={true}
-          onClose={() => {
-            setShowServiceModal(false);
-            setEditingService(null);
-          }}
-          service={editingService.service}
-          onSubmit={async (input) => {
-            if (editingService.service) {
-              await handleUpdateService(editingService.contractId, editingService.service.id, input as UpdateContractServiceInput);
-            } else {
-              await handleCreateService(editingService.contractId, input as CreateContractServiceInput);
-            }
-          }}
+          isLoading={createContractMutation.isPending || updateContractMutation.isPending}
         />
       )}
 
@@ -380,6 +374,7 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
           description={`Are you sure you want to delete the service "${deleteConfirm.name}"?`}
           confirmLabel="Delete Service"
           variant="danger"
+          isLoading={isDeletingService}
           onConfirm={handleDeleteService}
         />
       )}

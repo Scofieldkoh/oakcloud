@@ -97,7 +97,7 @@ Return a JSON object with the following structure (include only fields that have
   }],
   "officers": [{
     "name": "string",
-    "role": "DIRECTOR | ALTERNATE_DIRECTOR | SECRETARY | CEO | CFO | AUDITOR | LIQUIDATOR | RECEIVER | JUDICIAL_MANAGER",
+    "role": "DIRECTOR | MANAGING_DIRECTOR | ALTERNATE_DIRECTOR | SECRETARY | CEO | CFO | AUDITOR | LIQUIDATOR | RECEIVER | JUDICIAL_MANAGER",
     "identificationType": "NRIC | FIN | PASSPORT",
     "identificationNumber": "string",
     "nationality": "string",
@@ -131,7 +131,11 @@ Return a JSON object with the following structure (include only fields that have
     "currency": "SGD",
     "registrationDate": "YYYY-MM-DD (from 'date_registered')",
     "dischargeDate": "YYYY-MM-DD or null if not discharged"
-  }]
+  }],
+  "documentMetadata": {
+    "receiptNo": "string - The ACRA receipt number (e.g., 'ACRA250807001467')",
+    "receiptDate": "YYYY-MM-DD - Date the BizFile was generated"
+  }
 }
 
 Important:
@@ -147,6 +151,11 @@ Important:
 - Extract status_date as the date when the company status became effective
 - Read text carefully from the document image, even if it appears small or faded
 - If text is unclear, make reasonable inferences based on document context
+- IMPORTANT: Extract the receipt number and date from the END of the document, typically formatted as:
+  RECEIPT NO. : ACRA250807001467
+  DATE : 07 AUG 2025
+  Parse the date format (DD MMM YYYY) into YYYY-MM-DD format for receiptDate
+- For FREE BUSINESS PROFILE documents (no receipt number), use "FREE" as the receiptNo value
 
 Respond ONLY with valid JSON, no markdown or explanation.`;
 

@@ -206,7 +206,7 @@ export type CustomerAliasGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
 export type CustomerAliasGroupByOutputType = {
   id: string
   tenantId: string
-  companyId: string
+  companyId: string | null
   rawName: string
   normalizedContactId: string
   confidence: number
@@ -241,7 +241,7 @@ export type CustomerAliasWhereInput = {
   NOT?: Prisma.CustomerAliasWhereInput | Prisma.CustomerAliasWhereInput[]
   id?: Prisma.StringFilter<"CustomerAlias"> | string
   tenantId?: Prisma.StringFilter<"CustomerAlias"> | string
-  companyId?: Prisma.StringFilter<"CustomerAlias"> | string
+  companyId?: Prisma.StringNullableFilter<"CustomerAlias"> | string | null
   rawName?: Prisma.StringFilter<"CustomerAlias"> | string
   normalizedContactId?: Prisma.StringFilter<"CustomerAlias"> | string
   confidence?: Prisma.FloatFilter<"CustomerAlias"> | number
@@ -253,7 +253,7 @@ export type CustomerAliasWhereInput = {
 export type CustomerAliasOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
-  companyId?: Prisma.SortOrder
+  companyId?: Prisma.SortOrderInput | Prisma.SortOrder
   rawName?: Prisma.SortOrder
   normalizedContactId?: Prisma.SortOrder
   confidence?: Prisma.SortOrder
@@ -268,7 +268,7 @@ export type CustomerAliasWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.CustomerAliasWhereInput[]
   NOT?: Prisma.CustomerAliasWhereInput | Prisma.CustomerAliasWhereInput[]
   tenantId?: Prisma.StringFilter<"CustomerAlias"> | string
-  companyId?: Prisma.StringFilter<"CustomerAlias"> | string
+  companyId?: Prisma.StringNullableFilter<"CustomerAlias"> | string | null
   rawName?: Prisma.StringFilter<"CustomerAlias"> | string
   normalizedContactId?: Prisma.StringFilter<"CustomerAlias"> | string
   confidence?: Prisma.FloatFilter<"CustomerAlias"> | number
@@ -280,7 +280,7 @@ export type CustomerAliasWhereUniqueInput = Prisma.AtLeast<{
 export type CustomerAliasOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
-  companyId?: Prisma.SortOrder
+  companyId?: Prisma.SortOrderInput | Prisma.SortOrder
   rawName?: Prisma.SortOrder
   normalizedContactId?: Prisma.SortOrder
   confidence?: Prisma.SortOrder
@@ -300,7 +300,7 @@ export type CustomerAliasScalarWhereWithAggregatesInput = {
   NOT?: Prisma.CustomerAliasScalarWhereWithAggregatesInput | Prisma.CustomerAliasScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"CustomerAlias"> | string
   tenantId?: Prisma.StringWithAggregatesFilter<"CustomerAlias"> | string
-  companyId?: Prisma.StringWithAggregatesFilter<"CustomerAlias"> | string
+  companyId?: Prisma.StringNullableWithAggregatesFilter<"CustomerAlias"> | string | null
   rawName?: Prisma.StringWithAggregatesFilter<"CustomerAlias"> | string
   normalizedContactId?: Prisma.StringWithAggregatesFilter<"CustomerAlias"> | string
   confidence?: Prisma.FloatWithAggregatesFilter<"CustomerAlias"> | number
@@ -312,7 +312,7 @@ export type CustomerAliasScalarWhereWithAggregatesInput = {
 export type CustomerAliasCreateInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   rawName: string
   normalizedContactId: string
   confidence?: number
@@ -324,7 +324,7 @@ export type CustomerAliasCreateInput = {
 export type CustomerAliasUncheckedCreateInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   rawName: string
   normalizedContactId: string
   confidence?: number
@@ -336,7 +336,7 @@ export type CustomerAliasUncheckedCreateInput = {
 export type CustomerAliasUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rawName?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedContactId?: Prisma.StringFieldUpdateOperationsInput | string
   confidence?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -348,7 +348,7 @@ export type CustomerAliasUpdateInput = {
 export type CustomerAliasUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rawName?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedContactId?: Prisma.StringFieldUpdateOperationsInput | string
   confidence?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -360,7 +360,7 @@ export type CustomerAliasUncheckedUpdateInput = {
 export type CustomerAliasCreateManyInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   rawName: string
   normalizedContactId: string
   confidence?: number
@@ -372,7 +372,7 @@ export type CustomerAliasCreateManyInput = {
 export type CustomerAliasUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rawName?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedContactId?: Prisma.StringFieldUpdateOperationsInput | string
   confidence?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -384,7 +384,7 @@ export type CustomerAliasUpdateManyMutationInput = {
 export type CustomerAliasUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rawName?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedContactId?: Prisma.StringFieldUpdateOperationsInput | string
   confidence?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -495,7 +495,7 @@ export type $CustomerAliasPayload<ExtArgs extends runtime.Types.Extensions.Inter
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     tenantId: string
-    companyId: string
+    companyId: string | null
     rawName: string
     normalizedContactId: string
     confidence: number

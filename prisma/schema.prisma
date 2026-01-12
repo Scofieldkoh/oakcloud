@@ -2213,12 +2213,13 @@ model DocumentRevisionLineItem {
 
 // ============================================================================
 // VENDOR ALIAS - Vendor name normalization
+// When companyId is null, the alias applies tenant-wide
 // ============================================================================
 
 model VendorAlias {
   id                    String    @id @default(uuid())
   tenantId              String    @map("tenant_id")
-  companyId             String    @map("company_id")
+  companyId             String?   @map("company_id")  // null = tenant-wide alias
 
   rawName               String    @map("raw_name")
   normalizedContactId   String    @map("normalized_contact_id")
@@ -2229,18 +2230,20 @@ model VendorAlias {
   deletedAt             DateTime? @map("deleted_at")
 
   @@index([tenantId, companyId])
+  @@index([tenantId, rawName])  // For tenant-wide alias lookups
   @@index([companyId, rawName])
   @@map("vendor_aliases")
 }
 
 // ============================================================================
 // CUSTOMER ALIAS - Customer name normalization
+// When companyId is null, the alias applies tenant-wide
 // ============================================================================
 
 model CustomerAlias {
   id                    String    @id @default(uuid())
   tenantId              String    @map("tenant_id")
-  companyId             String    @map("company_id")
+  companyId             String?   @map("company_id")  // null = tenant-wide alias
 
   rawName               String    @map("raw_name")
   normalizedContactId   String    @map("normalized_contact_id")
@@ -2251,6 +2254,7 @@ model CustomerAlias {
   deletedAt             DateTime? @map("deleted_at")
 
   @@index([tenantId, companyId])
+  @@index([tenantId, rawName])  // For tenant-wide alias lookups
   @@index([companyId, rawName])
   @@map("customer_aliases")
 }

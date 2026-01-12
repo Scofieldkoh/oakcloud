@@ -1,8 +1,7 @@
 'use client';
 
-import { Edit2, Trash2, Eye, RotateCcw, Calendar, MoreHorizontal } from 'lucide-react';
+import { Pencil, Trash2, Eye, RotateCcw, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import type { Contract } from '@/hooks/use-contracts';
 import {
   getServiceTypeLabel,
@@ -111,36 +110,36 @@ export function ServiceRow({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 ml-4">
+      <div className="flex items-center gap-1 ml-4">
         {service.scope && (
-          <span title="View scope of work">
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={onViewScope}
-            >
-              <Eye className="w-4 h-4" />
-              <span className="ml-1 hidden sm:inline">Scope</span>
-            </Button>
-          </span>
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={onViewScope}
+            aria-label="View scope of work"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span className="ml-1 hidden sm:inline">Scope</span>
+          </Button>
         )}
 
         {canEdit && (
-          <Dropdown>
-            <DropdownTrigger asChild>
-              <button className="p-1 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors">
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
-            </DropdownTrigger>
-            <DropdownMenu>
-              <DropdownItem icon={<Edit2 className="w-4 h-4" />} onClick={onEdit}>
-                Edit Service
-              </DropdownItem>
-              <DropdownItem icon={<Trash2 className="w-4 h-4" />} onClick={onDelete} destructive>
-                Delete Service
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
+          <>
+            <button
+              onClick={onEdit}
+              className="p-1.5 rounded text-text-muted hover:text-oak-light hover:bg-background-elevated transition-colors"
+              title="Edit service"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-1.5 rounded text-text-muted hover:text-status-error hover:bg-background-elevated transition-colors"
+              title="Delete service"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </>
         )}
       </div>
     </div>

@@ -3,7 +3,11 @@
  *
  * Generates standardized filenames for approved documents.
  * Format: [Sub Category]_[Document Date]_[Contact Name]_[Document No]_[Amount].ext
- * Example: Vendor Invoice_2024-01-15_Acme_INV-2024-001_SGD 1,234.56.pdf
+ * Amount is omitted when zero.
+ *
+ * Examples:
+ * - With amount: Vendor Invoice_2024-01-15_Acme_INV-2024-001_SGD 1,234.56.pdf
+ * - Zero amount: Bizfile_2025-08-07_ACRA_ACRA250807001467.pdf
  */
 
 import type { DocumentSubCategory } from '@/generated/prisma';
@@ -167,10 +171,10 @@ export interface ApprovedDocumentFilenameInput {
  *
  * Format: [Sub Category]_[Document Date]_[Contact Name]_[Document No]_[Amount].ext
  *
- * Parts are omitted if not available:
+ * Parts are omitted if not available or zero (for amount):
  * - With all parts: Vendor Invoice_2024-01-15_Acme_INV-2024-001_SGD 1,234.56.pdf
  * - Missing date: Vendor Invoice_Acme_INV-2024-001_SGD 1,234.56.pdf
- * - Minimal: SGD 1,234.56.pdf
+ * - Zero amount: Bizfile_2025-08-07_ACRA_ACRA250807001467.pdf
  */
 export function generateApprovedDocumentFilename(input: ApprovedDocumentFilenameInput): string {
   const parts: string[] = [];
@@ -204,13 +208,17 @@ export function generateApprovedDocumentFilename(input: ApprovedDocumentFilename
     }
   }
 
-  // 5. Currency and Amount (always present)
-  const formattedAmount = formatAmountForFilename(input.totalAmount);
-  if (formattedAmount) {
-    parts.push(`${input.currency} ${formattedAmount}`);
-  } else {
-    // Fallback if amount parsing fails
-    parts.push(input.currency);
+  // 5. Currency and Amount (only if amount != 0)
+  const numericAmount =
+    typeof input.totalAmount === 'object'
+      ? parseFloat(input.totalAmount.toString())
+      : parseFloat(String(input.totalAmount));
+
+  if (!isNaN(numericAmount) && numericAmount !== 0) {
+    const formattedAmount = formatAmountForFilename(input.totalAmount);
+    if (formattedAmount) {
+      parts.push(`${input.currency} ${formattedAmount}`);
+    }
   }
 
   // Join parts with underscores and add extension

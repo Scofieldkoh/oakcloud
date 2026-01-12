@@ -17,6 +17,12 @@ import type {
 import { mapEntityType, mapCompanyStatus, mapOfficerRole, mapContactType, mapIdentificationType } from './types';
 import { normalizeExtractedData, buildFullAddress } from './normalizer';
 import { generateBizFileDiff } from './diff';
+import { prepareDocumentPages } from '../document-processing.service';
+import { generateApprovedDocumentFilename, buildApprovedStorageKey, getFileExtension } from '@/lib/storage/filename';
+import { storage } from '@/lib/storage';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('bizfile-processor');
 
 // ============================================================================
 // Selective Processing (Update existing company with changed fields only)
@@ -45,15 +51,64 @@ export async function processBizFileExtractionSelective(
   const shareholderChanges = { added: 0, updated: 0, removed: 0 };
 
   if (!diffResult.hasDifferences) {
-    // No changes needed, just update document reference
-    await prisma.document.update({
-      where: { id: documentId },
-      data: {
-        companyId: existingCompanyId,
-        extractionStatus: 'COMPLETED',
-        extractedAt: new Date(),
-        extractedData: normalizedData as object,
-      },
+    // No changes needed, just update document reference and create ProcessingDocument/Revision
+    await prisma.$transaction(async (tx) => {
+      await tx.document.update({
+        where: { id: documentId },
+        data: {
+          companyId: existingCompanyId,
+          extractionStatus: 'COMPLETED',
+          extractedAt: new Date(),
+          extractedData: normalizedData as object,
+        },
+      });
+
+      // Create ProcessingDocument and DocumentRevision if they don't exist
+      const existingProcessingDoc = await tx.processingDocument.findUnique({
+        where: { documentId },
+      });
+
+      if (!existingProcessingDoc) {
+        // Create ProcessingDocument for this BizFile
+        const processingDoc = await tx.processingDocument.create({
+          data: {
+            documentId,
+            isContainer: true,
+            pipelineStatus: 'EXTRACTION_DONE',
+            processingPriority: 'NORMAL',
+            uploadSource: 'WEB',
+          },
+        });
+
+        // Create DocumentRevision with BizFile metadata
+        const revision = await tx.documentRevision.create({
+          data: {
+            processingDocumentId: processingDoc.id,
+            revisionNumber: 1,
+            revisionType: 'EXTRACTION',
+            status: 'APPROVED',
+            reason: 'BizFile extraction auto-approved',
+            documentCategory: 'CORPORATE_SECRETARIAL',
+            documentSubCategory: 'BIZFILE',
+            vendorName: 'Accounting and Corporate Regulatory Authority',
+            documentNumber: normalizedData.documentMetadata?.receiptNo || null,
+            documentDate: normalizedData.documentMetadata?.receiptDate
+              ? new Date(normalizedData.documentMetadata.receiptDate)
+              : null,
+            currency: 'SGD',
+            totalAmount: 0,
+            createdById: userId,
+            approvedById: userId,
+            approvedAt: new Date(),
+          },
+        });
+
+        // Link revision to processing document
+        await tx.processingDocument.update({
+          where: { id: processingDoc.id },
+          data: { currentRevisionId: revision.id },
+        });
+      }
     });
 
     return { companyId: existingCompanyId, created: false, updatedFields: [], officerChanges, shareholderChanges };
@@ -382,6 +437,53 @@ export async function processBizFileExtractionSelective(
         extractedData: normalizedData as object,
       },
     });
+
+    // Create ProcessingDocument and DocumentRevision if they don't exist
+    const existingProcessingDoc = await tx.processingDocument.findUnique({
+      where: { documentId },
+    });
+
+    if (!existingProcessingDoc) {
+      // Create ProcessingDocument for this BizFile
+      const processingDoc = await tx.processingDocument.create({
+        data: {
+          documentId,
+          isContainer: true,
+          pipelineStatus: 'EXTRACTION_DONE',
+          processingPriority: 'NORMAL',
+          uploadSource: 'WEB',
+        },
+      });
+
+      // Create DocumentRevision with BizFile metadata
+      const revision = await tx.documentRevision.create({
+        data: {
+          processingDocumentId: processingDoc.id,
+          revisionNumber: 1,
+          revisionType: 'EXTRACTION',
+          status: 'APPROVED',
+          reason: 'BizFile extraction auto-approved',
+          documentCategory: 'CORPORATE_SECRETARIAL',
+          documentSubCategory: 'BIZFILE',
+          vendorName: 'Accounting and Corporate Regulatory Authority',
+          documentNumber: normalizedData.documentMetadata?.receiptNo || null,
+          documentDate: normalizedData.documentMetadata?.receiptDate
+            ? new Date(normalizedData.documentMetadata.receiptDate)
+            : null,
+          currency: 'SGD',
+          totalAmount: 0,
+          createdById: userId,
+          approvedById: userId,
+          approvedAt: new Date(),
+        },
+      });
+
+      // Link revision to processing document
+      await tx.processingDocument.update({
+        where: { id: processingDoc.id },
+        data: { currentRevisionId: revision.id },
+      });
+    }
   });
 
   // Create audit log with specific changed fields
@@ -471,7 +573,9 @@ export async function processBizFileExtraction(
   documentId: string,
   extractedData: ExtractedBizFileData,
   userId: string,
-  tenantId: string
+  tenantId: string,
+  storageKey?: string,
+  mimeType?: string
 ): Promise<ProcessingResult> {
   // Normalize all text fields before processing
   const normalizedData = normalizeExtractedData(extractedData);
@@ -660,6 +764,8 @@ export async function processBizFileExtraction(
     // Process share capital
     if (normalizedData.shareCapital?.length) {
       for (const capital of normalizedData.shareCapital) {
+        // Calculate totalValue if not provided (numberOfShares * parValue, or use 0 as fallback)
+        const totalValue = capital.totalValue ?? (capital.parValue ? capital.numberOfShares * capital.parValue : 0);
         await tx.shareCapital.create({
           data: {
             companyId: company.id,
@@ -667,7 +773,7 @@ export async function processBizFileExtraction(
             currency: capital.currency,
             numberOfShares: capital.numberOfShares,
             parValue: capital.parValue,
-            totalValue: capital.totalValue,
+            totalValue,
             isPaidUp: capital.isPaidUp,
             isTreasury: capital.isTreasury || false,
             effectiveDate: new Date(),
@@ -855,18 +961,116 @@ export async function processBizFileExtraction(
       }
     }
 
-    return company;
+    // Create ProcessingDocument for this BizFile
+    const processingDoc = await tx.processingDocument.create({
+      data: {
+        documentId,
+        isContainer: true,
+        pipelineStatus: 'EXTRACTION_DONE',
+        processingPriority: 'NORMAL',
+        uploadSource: 'WEB',
+      },
+    });
+
+    // Create DocumentRevision with BizFile metadata
+    const revision = await tx.documentRevision.create({
+      data: {
+        processingDocumentId: processingDoc.id,
+        revisionNumber: 1,
+        revisionType: 'EXTRACTION',
+        status: 'APPROVED',
+        reason: 'BizFile extraction auto-approved',
+        documentCategory: 'CORPORATE_SECRETARIAL',
+        documentSubCategory: 'BIZFILE',
+        vendorName: 'Accounting and Corporate Regulatory Authority',
+        documentNumber: normalizedData.documentMetadata?.receiptNo || null,
+        documentDate: normalizedData.documentMetadata?.receiptDate
+          ? new Date(normalizedData.documentMetadata.receiptDate)
+          : null,
+        currency: 'SGD',
+        totalAmount: 0,
+        createdById: userId,
+        approvedById: userId,
+        approvedAt: new Date(),
+      },
+    });
+
+    // Link revision to processing document
+    await tx.processingDocument.update({
+      where: { id: processingDoc.id },
+      data: { currentRevisionId: revision.id },
+    });
+
+    return { company, processingDocId: processingDoc.id };
   });
+
+  // Prepare document pages for the page sidebar (outside transaction)
+  if (storageKey && mimeType) {
+    await prepareDocumentPages(result.processingDocId, storageKey, mimeType);
+  }
+
+  // Rename document file to standardized format (outside transaction)
+  if (storageKey) {
+    try {
+      // Get the document record to get current filename
+      const document = await prisma.document.findUnique({
+        where: { id: documentId },
+        select: { fileName: true, storageKey: true },
+      });
+
+      if (document?.storageKey) {
+        const extension = getFileExtension(document.fileName || document.storageKey);
+        const newFilename = generateApprovedDocumentFilename({
+          documentSubCategory: 'BIZFILE',
+          documentDate: normalizedData.documentMetadata?.receiptDate
+            ? new Date(normalizedData.documentMetadata.receiptDate)
+            : null,
+          contactName: 'Accounting and Corporate Regulatory Authority',
+          documentNumber: normalizedData.documentMetadata?.receiptNo || null,
+          currency: 'SGD',
+          totalAmount: 0,
+          originalExtension: extension,
+        });
+
+        const newStorageKey = buildApprovedStorageKey(document.storageKey, newFilename);
+
+        if (newStorageKey !== document.storageKey) {
+          const fileExists = await storage.exists(document.storageKey);
+
+          if (fileExists) {
+            await storage.move(document.storageKey, newStorageKey);
+            await prisma.document.update({
+              where: { id: documentId },
+              data: {
+                fileName: newFilename,
+                storageKey: newStorageKey,
+              },
+            });
+            log.info(`Renamed BizFile document to: ${newFilename}`);
+          } else {
+            // File doesn't exist, still update filename for display
+            await prisma.document.update({
+              where: { id: documentId },
+              data: { fileName: newFilename },
+            });
+          }
+        }
+      }
+    } catch (error) {
+      // Log error but don't fail the extraction
+      log.error(`Failed to rename BizFile document: ${error}`);
+    }
+  }
 
   // Create audit log - MUST include tenantId for proper scoping
   const actionVerb = isNewCompany ? 'Created' : 'Updated';
   await createAuditLog({
     tenantId,
     userId,
-    companyId: result.id,
+    companyId: result.company.id,
     action: isNewCompany ? 'CREATE' : 'UPDATE',
     entityType: 'Company',
-    entityId: result.id,
+    entityId: result.company.id,
     entityName: entityDetails.name,
     summary: `${actionVerb} company "${entityDetails.name}" (UEN: ${entityDetails.uen}) from BizFile extraction`,
     changeSource: 'BIZFILE_UPLOAD',
@@ -877,5 +1081,5 @@ export async function processBizFileExtraction(
     },
   });
 
-  return { companyId: result.id, created: isNewCompany };
+  return { companyId: result.company.id, created: isNewCompany };
 }

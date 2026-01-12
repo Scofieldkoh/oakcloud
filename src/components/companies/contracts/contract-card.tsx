@@ -3,14 +3,13 @@
 import {
   ChevronDown,
   ChevronRight,
-  Edit2,
+  Pencil,
   Trash2,
   Plus,
   FileText,
   ExternalLink,
 } from 'lucide-react';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
-import { MoreHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { Contract } from '@/hooks/use-contracts';
 import {
   getContractTypeLabel,
@@ -99,31 +98,30 @@ export function ContractCard({
         {/* Actions */}
         {canEdit && (
           <div
-            className="flex items-center gap-2"
+            className="flex items-center gap-1"
             onClick={(e) => e.stopPropagation()}
           >
-            <Dropdown>
-              <DropdownTrigger asChild>
-                <button className="p-1 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors">
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem
-                  icon={<Edit2 className="w-4 h-4" />}
-                  onClick={onEditContract}
-                >
-                  Edit Contract
-                </DropdownItem>
-                <DropdownItem
-                  icon={<Trash2 className="w-4 h-4" />}
-                  onClick={onDeleteContract}
-                  destructive
-                >
-                  Delete Contract
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+            <button
+              onClick={onAddService}
+              className="p-1.5 rounded text-text-muted hover:text-oak-light hover:bg-background-secondary transition-colors"
+              title="Add service"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onEditContract}
+              className="p-1.5 rounded text-text-muted hover:text-oak-light hover:bg-background-secondary transition-colors"
+              title="Edit contract"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onDeleteContract}
+              className="p-1.5 rounded text-text-muted hover:text-status-error hover:bg-background-secondary transition-colors"
+              title="Delete contract"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
       </div>
@@ -149,42 +147,31 @@ export function ContractCard({
       {isExpanded && (
         <div className="ml-8 mr-4 mb-3">
           {/* Services Header */}
-          <div className="flex items-center justify-between py-2">
+          <div className="flex items-center py-2">
             <span className="text-xs font-medium text-text-tertiary uppercase tracking-wider">Services</span>
-            {canEdit && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddService();
-                }}
-                className="text-xs text-oak-light hover:text-oak-dark inline-flex items-center gap-1"
-              >
-                <Plus className="w-3 h-3" />
-                Add Service
-              </button>
-            )}
           </div>
 
           {/* Services List */}
-          <div className="border border-border-primary rounded-lg divide-y divide-border-primary overflow-hidden">
-            {contract.services.length === 0 ? (
-              <div className="px-4 py-4 text-center text-sm text-text-muted bg-background-secondary">
-                No services added yet
-                {canEdit && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddService();
-                    }}
-                    className="text-sm text-oak-light hover:text-oak-dark mt-1 inline-flex items-center gap-1 mx-auto block"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Add first service
-                  </button>
-                )}
-              </div>
-            ) : (
-              contract.services.map((service) => (
+          {contract.services.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-4">
+              <p className="text-sm text-text-muted mb-3">No services added yet</p>
+              {canEdit && (
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddService();
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Add Service
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="border border-border-primary rounded-lg divide-y divide-border-primary overflow-hidden">
+              {contract.services.map((service) => (
                 <ServiceRow
                   key={service.id}
                   service={service}
@@ -193,9 +180,9 @@ export function ContractCard({
                   onDelete={() => onDeleteService(service)}
                   onViewScope={() => onViewScope(service)}
                 />
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

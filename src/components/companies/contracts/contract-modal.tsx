@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Modal } from '@/components/ui/modal';
+import { useState, useEffect, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
+import { format, parse, isValid } from 'date-fns';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import type { Contract, CreateContractInput, UpdateContractInput } from '@/hooks/use-contracts';
-import { CONTRACT_TYPES, CONTRACT_STATUSES } from '@/lib/constants/contracts';
+import { CONTRACT_TYPES, CONTRACT_STATUSES, getContractTypeLabel } from '@/lib/constants/contracts';
 import type { ContractType, ContractStatus } from '@/generated/prisma';
 
 interface ContractModalProps {
@@ -15,6 +18,13 @@ interface ContractModalProps {
   companyId: string;
   onSubmit: (data: CreateContractInput | UpdateContractInput) => Promise<void>;
   isLoading?: boolean;
+}
+
+// Format start date for display in title: "11 January 2026"
+function formatTitleDate(dateString: string): string {
+  if (!dateString) return '';
+  const parsed = parse(dateString, 'yyyy-MM-dd', new Date());
+  return isValid(parsed) ? format(parsed, 'd MMMM yyyy') : '';
 }
 
 export function ContractModal({
@@ -36,7 +46,7 @@ export function ContractModal({
     internalNotes: string;
   }>({
     title: '',
-    contractType: 'OTHER',
+    contractType: 'SERVICE_AGREEMENT',
     status: 'DRAFT',
     startDate: new Date().toISOString().split('T')[0],
     signedDate: '',
@@ -45,6 +55,20 @@ export function ContractModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Generate dynamic placeholder based on contract type and start date
+  const titlePlaceholder = useMemo(() => {
+    const typeLabel = getContractTypeLabel(formData.contractType);
+    const dateLabel = formData.startDate ? formatTitleDate(formData.startDate) : '[Start Date]';
+    return `${typeLabel} - ${dateLabel}`;
+  }, [formData.contractType, formData.startDate]);
+
+  // Generate auto title when saving if title is empty
+  const generateAutoTitle = () => {
+    const typeLabel = getContractTypeLabel(formData.contractType);
+    const dateLabel = formData.startDate ? formatTitleDate(formData.startDate) : '';
+    return dateLabel ? `${typeLabel} - ${dateLabel}` : typeLabel;
+  };
 
   useEffect(() => {
     if (contract) {
@@ -59,7 +83,7 @@ export function ContractModal({
     } else {
       setFormData({
         title: '',
-        contractType: 'OTHER',
+        contractType: 'SERVICE_AGREEMENT',
         status: 'DRAFT',
         startDate: new Date().toISOString().split('T')[0],
         signedDate: '',
@@ -72,9 +96,7 @@ export function ContractModal({
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    }
+    // Title validation removed - will auto-generate if empty
 
     if (!formData.startDate) {
       newErrors.startDate = 'Start date is required';
@@ -89,10 +111,13 @@ export function ContractModal({
 
     if (!validate()) return;
 
+    // Use entered title or auto-generate if empty
+    const finalTitle = formData.title.trim() || generateAutoTitle();
+
     setIsSubmitting(true);
     try {
       await onSubmit({
-        title: formData.title.trim(),
+        title: finalTitle,
         contractType: formData.contractType,
         status: formData.status,
         startDate: formData.startDate,
@@ -104,125 +129,135 @@ export function ContractModal({
     }
   };
 
+  const submitting = isSubmitting || isLoading;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Edit Contract' : 'New Contract'}
-      size="md"
+      size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Title */}
-        <FormInput
-          label="Contract Title"
-          value={formData.title}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, title: e.target.value }))
-          }
-          placeholder="e.g., Annual Engagement 2024"
-          error={errors.title}
-          required
-        />
+      <form onSubmit={handleSubmit}>
+        <ModalBody className="space-y-4">
+          {/* Title */}
+          <FormInput
+            label="Contract Title"
+            value={formData.title}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, title: e.target.value }))
+            }
+            placeholder={titlePlaceholder}
+            error={errors.title}
+            disabled={submitting}
+            hint="Leave empty to auto-generate from contract type and start date"
+          />
 
-        {/* Contract Type & Status */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
-              Contract Type
-            </label>
-            <select
-              value={formData.contractType}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  contractType: e.target.value as typeof formData.contractType,
-                }))
-              }
-              className="w-full px-3 py-2 border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-light"
-            >
-              {CONTRACT_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
+          {/* Contract Type & Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-text-secondary">
+                Contract Type
+              </label>
+              <select
+                value={formData.contractType}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contractType: e.target.value as typeof formData.contractType,
+                  }))
+                }
+                className="input input-sm w-full"
+                disabled={submitting}
+              >
+                {CONTRACT_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-text-secondary">
+                Status
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    status: e.target.value as typeof formData.status,
+                  }))
+                }
+                className="input input-sm w-full"
+                disabled={submitting}
+              >
+                {CONTRACT_STATUSES.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
-              Status
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  status: e.target.value as typeof formData.status,
-                }))
+          {/* Dates */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <SingleDateInput
+              label="Start Date"
+              value={formData.startDate}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, startDate: value }))
               }
-              className="w-full px-3 py-2 border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-light"
-            >
-              {CONTRACT_STATUSES.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
+              error={errors.startDate}
+              required
+              disabled={submitting}
+            />
+
+            <SingleDateInput
+              label="Signed Date"
+              value={formData.signedDate}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, signedDate: value }))
+              }
+              disabled={submitting}
+            />
           </div>
-        </div>
 
-        {/* Dates */}
-        <div className="grid grid-cols-2 gap-4">
-          <FormInput
-            label="Start Date"
-            type="date"
-            value={formData.startDate}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, startDate: e.target.value }))
-            }
-            error={errors.startDate}
-            required
-          />
+          {/* Internal Notes */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-text-secondary">
+              Internal Notes
+            </label>
+            <textarea
+              value={formData.internalNotes}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, internalNotes: e.target.value }))
+              }
+              className="w-full px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-primary dark:bg-background-secondary text-text-primary placeholder-text-muted focus:outline-none focus:border-oak-primary focus:ring-1 focus:ring-oak-primary resize-none"
+              rows={5}
+              placeholder="Optional notes about this contract..."
+              disabled={submitting}
+            />
+          </div>
+        </ModalBody>
 
-          <FormInput
-            label="Signed Date"
-            type="date"
-            value={formData.signedDate}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, signedDate: e.target.value }))
-            }
-          />
-        </div>
-
-        {/* Internal Notes */}
-        <div>
-          <label className="block text-sm font-medium text-text-primary mb-1">
-            Internal Notes
-          </label>
-          <textarea
-            value={formData.internalNotes}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, internalNotes: e.target.value }))
-            }
-            className="w-full px-3 py-2 border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-light"
-            rows={3}
-            placeholder="Optional notes about this contract..."
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-border-primary">
-          <Button type="button" variant="secondary" onClick={onClose}>
+        <ModalFooter>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            isLoading={isSubmitting || isLoading}
-          >
+          <Button type="submit" variant="primary" size="sm" disabled={submitting}>
+            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {isEditing ? 'Update Contract' : 'Create Contract'}
           </Button>
-        </div>
+        </ModalFooter>
       </form>
     </Modal>
   );

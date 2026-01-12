@@ -121,6 +121,13 @@ export interface ExtractedBizFileData {
     registrationDate?: string;
     dischargeDate?: string;
   }>;
+  /** Document metadata from the BizFile receipt (at end of document) */
+  documentMetadata?: {
+    /** ACRA receipt number (e.g., 'ACRA250807001467') */
+    receiptNo?: string;
+    /** Date the BizFile was generated (YYYY-MM-DD format) */
+    receiptDate?: string;
+  };
 }
 
 // ============================================================================
