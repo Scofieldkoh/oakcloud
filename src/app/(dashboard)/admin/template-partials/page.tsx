@@ -375,7 +375,7 @@ function DocumentTemplatesTab({
 
       {/* Error */}
       {error && (
-        <div className="card p-4 border-status-error bg-status-error/5 mb-6">
+        <div className="card border-status-error bg-status-error/5 mb-4">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
             <p>{error instanceof Error ? error.message : 'Failed to load templates'}</p>
@@ -409,7 +409,7 @@ function DocumentTemplatesTab({
           {templates.map((template) => (
             <div
               key={template.id}
-              className="card p-4 hover:border-accent-primary transition-colors"
+              className="card hover:border-accent-primary transition-colors"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -774,7 +774,7 @@ function TemplatePartialsTab({
           <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
         </div>
       ) : error ? (
-        <div className="card p-4 border-status-error bg-status-error/5 mb-6">
+        <div className="card border-status-error bg-status-error/5 mb-4">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
             <p>{error instanceof Error ? error.message : 'Failed to load partials'}</p>
@@ -802,7 +802,7 @@ function TemplatePartialsTab({
             {partials.map((partial) => (
               <div
                 key={partial.id}
-                className="card p-4 hover:border-accent-primary transition-colors"
+                className="card hover:border-accent-primary transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">

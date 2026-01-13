@@ -157,7 +157,7 @@ function CompanyDetailContent({ id }: { id: string }) {
               </span>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2 text-sm text-text-secondary">
+          <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-text-secondary">
             <span className="flex items-center gap-1.5">
               <Hash className="w-4 h-4 text-text-tertiary" />
               {company.uen}
@@ -178,21 +178,21 @@ function CompanyDetailContent({ id }: { id: string }) {
           <div className="flex items-center gap-2 sm:gap-3">
             {can.updateCompany && (
               <Link
+                href={`/companies/${id}/edit`}
+                className="btn-primary btn-sm flex items-center gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit
+              </Link>
+            )}
+            {can.updateDocument && (
+              <Link
                 href={`/companies/upload?companyId=${id}`}
                 className="btn-secondary btn-sm flex items-center gap-2"
               >
                 <Upload className="w-4 h-4" />
                 <span className="hidden sm:inline">Update via BizFile</span>
                 <span className="sm:hidden">BizFile</span>
-              </Link>
-            )}
-            {can.updateCompany && (
-              <Link
-                href={`/companies/${id}/edit`}
-                className="btn-secondary btn-sm flex items-center gap-2"
-              >
-                <Pencil className="w-4 h-4" />
-                Edit
               </Link>
             )}
             {can.deleteCompany && (

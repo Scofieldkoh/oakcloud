@@ -478,10 +478,10 @@ function Toolbar({
       }}
       disabled={disabled}
       className={cn(
-        'p-1.5 rounded text-gray-700 dark:text-gray-300 transition-colors',
+        'p-1.5 rounded text-text-secondary transition-colors',
         disabled
-          ? 'opacity-40 cursor-not-allowed'
-          : 'hover:bg-gray-200 dark:hover:bg-gray-700',
+          ? 'opacity-50 cursor-not-allowed'
+          : 'hover:bg-background-tertiary',
       )}
       title={title}
     >
@@ -490,8 +490,8 @@ function Toolbar({
   );
 
   const selectClass = cn(
-    'px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300',
-    disabled && 'opacity-40 cursor-not-allowed',
+    'px-2 py-1 text-xs border rounded bg-background-elevated border-border-primary text-text-secondary',
+    disabled && 'opacity-50 cursor-not-allowed',
   );
 
   const handleSelectMouseDown = () => {
@@ -501,17 +501,17 @@ function Toolbar({
   return (
     <div
       className={cn(
-        'flex items-center gap-1 p-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex-wrap',
+        'flex items-center gap-1 p-2 bg-background-secondary border-b border-border-primary flex-wrap',
         disabled && 'opacity-60',
       )}
     >
       <Button cmd="undo" icon={Undo} title="Undo (Ctrl+Z)" />
       <Button cmd="redo" icon={Redo} title="Redo (Ctrl+Y)" />
 
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+      <div className="w-px h-5 bg-border-primary mx-1" />
 
       <div className="flex items-center gap-1">
-        <Type className="w-4 h-4 text-gray-500" />
+        <Type className="w-4 h-4 text-text-muted" />
         <select
           onMouseDown={handleSelectMouseDown}
           onChange={(e) => onCommand('fontName', e.target.value)}
@@ -543,29 +543,29 @@ function Toolbar({
         ))}
       </select>
 
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+      <div className="w-px h-5 bg-border-primary mx-1" />
 
       <Button cmd="bold" icon={Bold} title="Bold (Ctrl+B)" />
       <Button cmd="italic" icon={Italic} title="Italic (Ctrl+I)" />
       <Button cmd="underline" icon={Underline} title="Underline (Ctrl+U)" />
 
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+      <div className="w-px h-5 bg-border-primary mx-1" />
 
       <Button cmd="insertUnorderedList" icon={List} title="Bullet List" />
       <Button cmd="insertOrderedList" icon={ListOrdered} title="Numbered List" />
 
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+      <div className="w-px h-5 bg-border-primary mx-1" />
 
       <Button cmd="justifyLeft" icon={AlignLeft} title="Align Left" />
       <Button cmd="justifyCenter" icon={AlignCenter} title="Align Center" />
       <Button cmd="justifyRight" icon={AlignRight} title="Align Right" />
 
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+      <div className="w-px h-5 bg-border-primary mx-1" />
 
       <Button cmd="outdent" icon={Outdent} title="Decrease Indent" />
       <Button cmd="indent" icon={Indent} title="Increase Indent" />
 
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+      <div className="w-px h-5 bg-border-primary mx-1" />
 
       <select
         onMouseDown={handleSelectMouseDown}
@@ -582,7 +582,7 @@ function Toolbar({
         ))}
       </select>
 
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+      <div className="w-px h-5 bg-border-primary mx-1" />
 
       <Button cmd="pageBreak" icon={SeparatorHorizontal} title="Insert Page Break" />
     </div>
@@ -1493,17 +1493,17 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const currentPageIdx = displayPages.findIndex((p) => p.id === activePageId);
 
     return (
-      <div className={cn('flex flex-col h-full bg-gray-200 dark:bg-gray-800', className)}>
-        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className={cn('flex flex-col h-full bg-background-secondary', className)}>
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-background-elevated border-b border-border-primary">
           <div className="flex items-center gap-3">
-            <FileText className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium">Document Editor</span>
-            <span className="text-xs text-gray-500">
+            <FileText className="w-4 h-4 text-text-muted" />
+            <span className="text-sm font-medium text-text-primary">Document Editor</span>
+            <span className="text-xs text-text-muted">
               {displayPages.length} page{displayPages.length !== 1 ? 's' : ''}
             </span>
 
             {readOnly && (
-              <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded">
+              <span className="px-2 py-0.5 text-xs font-medium bg-background-tertiary text-text-secondary rounded">
                 View Only
               </span>
             )}
@@ -1520,23 +1520,23 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               type="button"
               onClick={() => scrollToPage('up')}
               disabled={currentPageIdx === 0}
-              className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+              className="p-1.5 rounded text-text-secondary hover:bg-background-tertiary disabled:opacity-50"
             >
               <ChevronUp className="w-4 h-4" />
             </button>
-            <span className="text-xs font-medium w-12 text-center">
+            <span className="text-xs font-medium w-12 text-center text-text-secondary">
               {currentPageIdx + 1}/{displayPages.length}
             </span>
             <button
               type="button"
               onClick={() => scrollToPage('down')}
               disabled={currentPageIdx === displayPages.length - 1}
-              className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+              className="p-1.5 rounded text-text-secondary hover:bg-background-tertiary disabled:opacity-50"
             >
               <ChevronDown className="w-4 h-4" />
             </button>
 
-            <div className="w-px h-5 bg-gray-300 mx-1" />
+            <div className="w-px h-5 bg-border-primary mx-1" />
 
             {!readOnly && !isPreviewMode && (
               <button
@@ -1583,7 +1583,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-gray-100 hover:bg-gray-200"
+              className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-background-tertiary text-text-secondary hover:bg-background-secondary"
             >
               <Printer className="w-4 h-4" />
               Print
@@ -1626,7 +1626,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               <button
                 type="button"
                 onClick={handleAddPage}
-                className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-400 text-gray-500 hover:border-gray-500 hover:text-gray-600 transition-colors"
+                className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border-primary text-text-muted hover:border-text-muted hover:text-text-secondary transition-colors"
               >
                 <Plus className="w-5 h-5" />
                 Add New Page
@@ -1635,7 +1635,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           </div>
         </div>
 
-        <div className="flex-shrink-0 px-4 py-1.5 bg-white dark:bg-gray-900 border-t text-xs text-gray-500 flex justify-between">
+        <div className="flex-shrink-0 px-4 py-1.5 bg-background-elevated border-t border-border-primary text-xs text-text-muted flex justify-between">
           <span>
             A4: {A4.WIDTH_PX}Ã—{A4.HEIGHT_PX}px ({A4.MARGIN_MM}mm margins)
           </span>

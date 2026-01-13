@@ -351,7 +351,7 @@ export default function ContactDetailPage({
             </h1>
             <span className={`badge ${currentTypeConfig.color}`}>{currentTypeConfig.label}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2 text-sm text-text-secondary">
+          <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-text-secondary">
             {contact.identificationType && contact.identificationNumber && (
               <span>
                 {idTypeLabels[contact.identificationType]}: {contact.identificationNumber}

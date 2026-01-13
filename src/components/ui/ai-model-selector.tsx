@@ -285,7 +285,7 @@ export function AIModelSelector({
   if (error) {
     return (
       <div className={`mb-6 ${className}`}>
-        <div className="card p-4 border-status-error bg-status-error/5">
+        <div className="card border-status-error bg-status-error/5">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
             <p className="text-sm">{error}</p>
@@ -391,7 +391,7 @@ export function AIModelSelector({
 
   return (
     <div className={`mb-6 ${className}`}>
-      <div className="card p-4">
+      <div className="card">
         <div className="flex items-center gap-3">
           <Sparkles className="w-5 h-5 text-oak-light" />
           <div className="flex-1">

@@ -261,7 +261,7 @@ export default function GeneratedDocumentsPage() {
 
       {/* Error state */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
           <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
             <AlertCircle className="w-5 h-5" />
             <p>{error}</p>
@@ -270,7 +270,7 @@ export default function GeneratedDocumentsPage() {
       )}
 
       {/* Document Table */}
-      <div className="mb-6">
+      <div>
         <DocumentTable
           documents={documents}
           onDelete={(id) => {
@@ -289,7 +289,8 @@ export default function GeneratedDocumentsPage() {
 
       {/* Pagination */}
       {!isLoading && totalPages > 0 && (
-        <Pagination
+        <div className="mt-4">
+          <Pagination
           page={page}
           totalPages={totalPages}
           total={total}
@@ -300,7 +301,8 @@ export default function GeneratedDocumentsPage() {
             // Note: limit is a const, so we need to refetch with new limit
             // For now, we'll keep the current behavior
           }}
-        />
+          />
+        </div>
       )}
 
       {/* Delete confirmation dialog */}

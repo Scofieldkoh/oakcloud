@@ -132,7 +132,7 @@ function AuditLogCard({ log }: { log: AuditLog }) {
   const hasDetails = (log.changes && Object.keys(log.changes).length > 0) || log.reason || log.metadata;
 
   return (
-    <div className="card p-4">
+    <div className="card">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -403,14 +403,14 @@ export default function AuditLogsPage() {
       {stats && (
         <MobileCollapsibleSection title="Statistics" count={4} className="mb-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="card p-4">
+            <div className="card">
               <div className="text-2xl font-semibold text-text-primary">
                 {stats.totalLogs?.toLocaleString() || 0}
               </div>
               <div className="text-xs text-text-secondary mt-1">Total Events</div>
             </div>
             {stats.actionCounts?.slice(0, 3).map((stat: { action: string; count: number }) => (
-              <div key={stat.action} className="card p-4">
+              <div key={stat.action} className="card">
                 <div className="text-2xl font-semibold text-text-primary">
                   {stat.count.toLocaleString()}
                 </div>
@@ -435,7 +435,7 @@ export default function AuditLogsPage() {
 
       {/* Filters */}
       {showFilters && (
-        <div className="card p-4 mb-6">
+        <div className="card mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="label">Action</label>

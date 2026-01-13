@@ -16,7 +16,7 @@ export default function CompaniesLoading() {
       {/* Stats skeleton */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="card p-4">
+          <div key={i} className="card">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 skeleton rounded" />
               <div className="flex-1">

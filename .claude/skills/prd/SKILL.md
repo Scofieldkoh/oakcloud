@@ -74,6 +74,6 @@ Write for junior developers or AI agents:
 
 ## Output
 
-Save to: `ralph-claude/prd-[feature-name].md`
+Save to: `docs/prd-[feature-name].md`
 
 Use kebab-case for the filename (e.g., `prd-dark-mode-toggle.md`)

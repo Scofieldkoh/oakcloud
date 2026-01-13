@@ -54,8 +54,8 @@ export function ServiceModal({
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     scope: '',
-    autoRenewal: false,
-    renewalPeriodMonths: '',
+    autoRenewal: true,
+    renewalPeriodMonths: '12',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -89,8 +89,8 @@ export function ServiceModal({
         startDate: new Date().toISOString().split('T')[0],
         endDate: '',
         scope: '',
-        autoRenewal: false,
-        renewalPeriodMonths: '',
+        autoRenewal: true,
+        renewalPeriodMonths: '12',
       });
     }
     setErrors({});
@@ -172,9 +172,7 @@ export function ServiceModal({
         {/* Type & Status */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
-              Service Type
-            </label>
+            <label className="label">Service Type</label>
             <select
               value={formData.serviceType}
               onChange={(e) =>
@@ -183,7 +181,7 @@ export function ServiceModal({
                   serviceType: e.target.value as typeof formData.serviceType,
                 }))
               }
-              className="w-full px-3 py-2 border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-light"
+              className="input input-sm"
             >
               {SERVICE_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -194,9 +192,7 @@ export function ServiceModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
-              Status
-            </label>
+            <label className="label">Status</label>
             <select
               value={formData.status}
               onChange={(e) =>
@@ -205,7 +201,7 @@ export function ServiceModal({
                   status: e.target.value as typeof formData.status,
                 }))
               }
-              className="w-full px-3 py-2 border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-light"
+              className="input input-sm"
             >
               {SERVICE_STATUSES.map((status) => (
                 <option key={status.value} value={status.value}>
@@ -232,15 +228,13 @@ export function ServiceModal({
           />
 
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
-              Currency
-            </label>
+            <label className="label">Currency</label>
             <select
               value={formData.currency}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, currency: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-light"
+              className="input input-sm"
             >
               <option value="SGD">SGD</option>
               <option value="USD">USD</option>
@@ -252,9 +246,7 @@ export function ServiceModal({
 
           {formData.serviceType === 'RECURRING' && (
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">
-                Frequency
-              </label>
+              <label className="label">Frequency</label>
               <select
                 value={formData.frequency}
                 onChange={(e) =>
@@ -263,7 +255,7 @@ export function ServiceModal({
                     frequency: e.target.value as typeof formData.frequency,
                   }))
                 }
-                className="w-full px-3 py-2 border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-light"
+                className="input input-sm"
               >
                 {BILLING_FREQUENCIES.filter((f) => f.value !== 'ONE_TIME').map(
                   (freq) => (
@@ -349,18 +341,16 @@ export function ServiceModal({
 
         {/* Scope / Statement of Work */}
         <div>
-          <label className="block text-sm font-medium text-text-primary mb-1">
-            Scope of Work
-          </label>
+          <label className="label">Scope of Work</label>
           <RichTextEditor
             value={formData.scope}
             onChange={(value) =>
               setFormData((prev) => ({ ...prev, scope: value }))
             }
             placeholder="Describe the scope of work for this service..."
-            minHeight={150}
+            minHeight={200}
           />
-          <p className="text-xs text-text-muted mt-1">
+          <p className="text-xs text-text-muted mt-1.5">
             Optional. Detailed description of what this service includes.
           </p>
         </div>

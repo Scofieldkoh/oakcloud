@@ -176,7 +176,7 @@ export default function EditContactPage({
 
       {/* Error */}
       {submitError && (
-        <div className="card p-4 border-status-error bg-status-error/5 mb-6">
+        <div className="card border-status-error bg-status-error/5 mb-4">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
             <p>{submitError}</p>
@@ -189,7 +189,7 @@ export default function EditContactPage({
         {/* Contact Type */}
         <div className="card">
           <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Contact Type</h2>
+            <h2 className="text-lg font-semibold text-text-primary">Contact Type</h2>
           </div>
           <div className="p-4">
             <div className="flex gap-4">
@@ -223,7 +223,7 @@ export default function EditContactPage({
         {/* Personal/Corporate Information */}
         <div className="card">
           <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">
+            <h2 className="text-lg font-semibold text-text-primary">
               {contactType === 'INDIVIDUAL' ? 'Personal Information' : 'Corporate Information'}
             </h2>
           </div>
@@ -336,7 +336,7 @@ export default function EditContactPage({
         {/* Address */}
         <div className="card">
           <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Address</h2>
+            <h2 className="text-lg font-semibold text-text-primary">Address</h2>
           </div>
           <div className="p-4">
             <div>

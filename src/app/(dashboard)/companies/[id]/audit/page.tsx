@@ -92,7 +92,7 @@ export default function CompanyAuditPage({
       {isLoading && (
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="card p-4">
+            <div key={i} className="card">
               <div className="flex gap-4">
                 <div className="skeleton w-10 h-10 rounded-full" />
                 <div className="flex-1 space-y-2">
@@ -122,7 +122,7 @@ export default function CompanyAuditPage({
             const colorClass = actionColors[log.action] || 'text-text-tertiary';
 
             return (
-              <div key={log.id} className="card p-4">
+              <div key={log.id} className="card">
                 <div className="flex gap-4">
                   <div className={`p-2 rounded-full bg-background-elevated ${colorClass}`}>
                     <Icon className="w-5 h-5" />

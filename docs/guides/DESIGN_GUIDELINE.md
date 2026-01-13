@@ -15,10 +15,28 @@ This document outlines the design system, UI components, and styling standards f
 - [Design Philosophy](#design-philosophy)
 - [Design Principles](#design-principles)
 - [Typography](#typography)
+  - [Typography Nesting Rules](#typography-nesting-rules)
 - [Color Palette](#color-palette)
+  - [Semantic Color Usage Guide](#semantic-color-usage-guide)
 - [Spacing System](#spacing-system)
+  - [Spacing Enforcement Guide](#spacing-enforcement-guide)
+  - [4px Grid System Reality](#4px-grid-system-reality)
+  - [Component Padding Standards](#component-padding-standards)
 - [Component Specifications](#component-specifications)
+  - [Buttons](#buttons)
+  - [Button Hierarchy and Usage](#button-hierarchy-and-usage)
+  - [Component State Patterns](#component-state-patterns)
+  - [Inputs](#inputs)
+  - [Form Element Sizing Contexts](#form-element-sizing-contexts)
+  - [Icon Sizing Standards](#icon-sizing-standards)
+- [Form Layout Patterns](#form-layout-patterns)
+- [Empty State Patterns](#empty-state-patterns)
+- [Alert and Banner Hierarchy](#alert-and-banner-hierarchy)
+- [Filter Action Patterns](#filter-action-patterns)
 - [CSS Classes Reference](#css-classes-reference)
+  - [Badge and Pill Conventions](#badge-and-pill-conventions)
+  - [Tables](#tables)
+  - [Table Design Patterns](#table-design-patterns)
 - [UI Consistency Standards](#ui-consistency-standards)
   - [Page Layout Patterns](#page-layout-patterns)
   - [Button Icon Pattern](#button-icon-pattern)
@@ -29,6 +47,8 @@ This document outlines the design system, UI components, and styling standards f
 - [Layout Guidelines](#layout-guidelines)
 - [Component Examples](#component-examples)
 - [Best Practices](#best-practices)
+  - [CSS Utility Classes vs React Components](#css-utility-classes-vs-react-components)
+- [Mobile Responsiveness](#mobile-responsiveness)
 
 ---
 
@@ -69,6 +89,278 @@ Balanced font sizes for modern, readable interfaces:
 
 - **Sans**: Inter (UI text)
 - **Mono**: JetBrains Mono (code blocks, technical IDs)
+
+### Typography Nesting Rules
+
+Typography hierarchy varies by context. Choose heading sizes based on the container and semantic importance.
+
+#### Heading Scale by Context
+
+| Context | H1 | H2 | H3 | H4 |
+|---------|----|----|----|----|
+| **Page Level** | `text-2xl` (20px) | `text-xl` (18px) | `text-lg` (16px) | `text-base` (14px) |
+| **Card/Section** | `text-lg` (16px) | `text-base` (14px) | `text-sm` (13px) | - |
+| **Modal** | `text-lg` (16px) | `text-base` (14px) | `text-sm` (13px) | - |
+| **Table/Dense UI** | `text-base` (14px) | `text-sm` (13px) | `text-xs` (12px) | - |
+
+**Responsive Scaling**: Page-level headings can scale up on larger screens:
+```tsx
+// Page title scales from text-xl to text-2xl
+<h1 className="text-xl sm:text-2xl font-semibold">
+  Company Details
+</h1>
+
+// Section headers stay consistent (no responsive scaling)
+<h2 className="text-lg font-semibold">
+  Basic Information
+</h2>
+```
+
+#### Context-Specific Examples
+
+##### Page Headers
+```tsx
+// Main page title - largest in hierarchy
+<div className="mb-6">
+  <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
+    Companies
+  </h1>
+  <p className="text-sm text-text-secondary mt-1">
+    Manage company records and documentation
+  </p>
+</div>
+
+// Page sections use smaller headings
+<section className="mb-6">
+  <h2 className="text-xl font-semibold mb-4">
+    Active Companies
+  </h2>
+  {/* Content */}
+</section>
+```
+
+##### Form Section Headers
+```tsx
+// Full-page form (e.g., Add Company)
+<form>
+  <h2 className="text-lg font-semibold mb-4">
+    Basic Information
+  </h2>
+  <FormInput label="Company Name" />
+  <FormInput label="Registration Number" />
+
+  <h2 className="text-lg font-semibold mb-4 mt-6">
+    Contact Details
+  </h2>
+  <FormInput label="Email" />
+  <FormInput label="Phone" />
+</form>
+```
+
+##### Card Headers
+```tsx
+// Card within a page
+<Card>
+  <h3 className="text-lg font-semibold mb-3">
+    Recent Activity
+  </h3>
+  <div className="space-y-2">
+    {/* Activity items */}
+  </div>
+</Card>
+
+// Stats card (no explicit heading, just value + label)
+<Card className="p-4">
+  <div className="text-2xl font-bold text-text-primary">
+    142
+  </div>
+  <div className="text-xs text-text-secondary mt-1">
+    Total Companies
+  </div>
+</Card>
+```
+
+##### Modal Headers
+```tsx
+// Modal title - text-lg is standard
+<Modal>
+  <ModalHeader>
+    <h2 className="text-lg font-semibold">
+      Add New Company
+    </h2>
+  </ModalHeader>
+  <ModalBody>
+    <FormInput label="Company Name" />
+  </ModalBody>
+</Modal>
+
+// Confirmation dialog - slightly smaller
+<ConfirmDialog>
+  <h3 className="text-base font-semibold mb-2">
+    Delete Company?
+  </h3>
+  <p className="text-sm text-text-secondary">
+    This action cannot be undone.
+  </p>
+</ConfirmDialog>
+```
+
+##### Table Headers
+```tsx
+// Table column headers use text-xs with font-medium
+<thead>
+  <tr className="bg-bg-secondary">
+    <th className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+      Name
+    </th>
+    <th className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+      Status
+    </th>
+  </tr>
+</thead>
+```
+
+#### Font Weight Hierarchy
+
+Use font weight to establish visual hierarchy within the same size:
+
+| Weight | Class | Usage |
+|--------|-------|-------|
+| **Semibold** | `font-semibold` (600) | Headings (h1-h4), emphasized labels |
+| **Medium** | `font-medium` (500) | Form labels, table headers, button text |
+| **Normal** | `font-normal` (400) | Body text, descriptions, input values |
+
+```tsx
+// Heading with semibold weight
+<h2 className="text-lg font-semibold">Section Title</h2>
+
+// Form label with medium weight
+<label className="text-xs font-medium text-text-secondary">
+  Company Name
+</label>
+
+// Body text with normal weight
+<p className="text-sm text-text-secondary">
+  This is a description paragraph with normal weight.
+</p>
+```
+
+#### Form Label Typography
+
+Form labels use consistent styling across all contexts:
+
+```tsx
+// Standard form label
+<label className="text-xs font-medium text-text-secondary mb-1.5 block">
+  Email Address
+</label>
+
+// Required field indicator
+<label className="text-xs font-medium text-text-secondary mb-1.5 block">
+  Company Name
+  <span className="text-error ml-1">*</span>
+</label>
+
+// Optional field hint
+<label className="text-xs font-medium text-text-secondary mb-1.5 flex items-center justify-between">
+  <span>Phone Number</span>
+  <span className="text-2xs text-text-muted font-normal">(optional)</span>
+</label>
+```
+
+**Label Spacing**: Always use `mb-1.5` (6px) or `mb-2` (8px) gap between label and input for clear association.
+
+#### Body Text Sizing
+
+| Size | Class | Usage |
+|------|-------|-------|
+| **Small** | `text-sm` (13px) | Default body text, descriptions, helper text |
+| **Base** | `text-base` (14px) | Emphasis body text, list items |
+| **Extra Small** | `text-xs` (12px) | Fine print, metadata, timestamps |
+
+```tsx
+// Standard paragraph
+<p className="text-sm text-text-secondary">
+  This company was registered in 2020 and has 5 active contracts.
+</p>
+
+// Emphasized paragraph
+<p className="text-base text-text-primary">
+  Important notice: Please review the following changes.
+</p>
+
+// Metadata text
+<span className="text-xs text-text-muted">
+  Last updated 2 hours ago
+</span>
+```
+
+#### Typography Nesting Best Practices
+
+**✅ Good: Clear hierarchy**
+```tsx
+<div>
+  {/* Page title */}
+  <h1 className="text-xl sm:text-2xl font-semibold mb-6">
+    Company Details
+  </h1>
+
+  {/* Card with nested heading */}
+  <Card>
+    <h2 className="text-lg font-semibold mb-3">
+      Basic Information
+    </h2>
+    <dl className="space-y-2">
+      <dt className="text-xs font-medium text-text-secondary">Name</dt>
+      <dd className="text-sm text-text-primary">Acme Corp</dd>
+    </dl>
+  </Card>
+</div>
+```
+
+**❌ Bad: Inconsistent sizing**
+```tsx
+<div>
+  {/* Page title too small */}
+  <h1 className="text-lg font-semibold mb-6">
+    Company Details
+  </h1>
+
+  {/* Card heading same size as page title - no hierarchy */}
+  <Card>
+    <h2 className="text-lg font-semibold mb-3">
+      Basic Information
+    </h2>
+  </Card>
+</div>
+```
+
+**✅ Good: Semantic HTML with appropriate sizing**
+```tsx
+<article>
+  <h1 className="text-2xl font-semibold">Article Title</h1>
+  <section>
+    <h2 className="text-xl font-semibold">Section 1</h2>
+    <h3 className="text-lg font-semibold">Subsection 1.1</h3>
+    <p className="text-sm">Content here...</p>
+  </section>
+</article>
+```
+
+**❌ Bad: Wrong semantic element**
+```tsx
+<div>
+  <div className="text-2xl font-semibold">Not a heading</div>
+  <span className="text-xl font-semibold">Also not a heading</span>
+</div>
+```
+
+**Key Rules**:
+- Use semantic HTML (`h1`-`h6`, `p`, `label`, etc.)
+- Size headings relative to their container, not just their semantic level
+- Maintain clear visual hierarchy: page > section > card > element
+- Keep font sizes within 2-3 steps apart for readability
+- Form labels always use `text-xs font-medium`
 
 ---
 
@@ -151,6 +443,106 @@ The application supports both light and dark modes with CSS variables. Light mod
 --status-info: #3b82f6;    /* Info states */
 ```
 
+### Semantic Color Usage Guide
+
+Use colors consistently to communicate meaning across the application:
+
+#### Status & State Colors
+
+| Color | Usage | Badge Example | Text Example |
+|-------|-------|---------------|--------------|
+| **Success (Green)** | Completed actions, active status, positive states | `status="success"`, "Live", "Active", "Enabled", "OK" | Confirmation messages |
+| **Warning (Yellow)** | Caution, pending review, attention needed | `status="warning"`, "Pending", "Review", "Overdue" | Warning alerts, notices |
+| **Error (Red)** | Failures, critical issues, destructive actions | `status="error"`, "Failed", "Rejected", "Error" | Error messages, delete actions |
+| **Info (Blue)** | Neutral information, metadata, secondary states | `status="info"`, "Draft", "Pending Setup", scope badges | Informational alerts |
+
+#### Brand & Accent Colors
+
+| Color | Usage | Examples |
+|-------|-------|----------|
+| **Oak Primary** | Primary actions, active navigation, selected states | Primary buttons, active sidebar items, checkboxes |
+| **Oak Light** | Links, interactive text, accent highlights | Clickable text, icon accents |
+| **Oak Hover** | Hover states for primary elements | Button hover backgrounds |
+
+#### Badge Color Conventions
+
+Different badge types use colors to convey semantic meaning:
+
+```tsx
+// Status badges - Use status colors
+<Badge variant="success">Active</Badge>
+<Badge variant="warning">Pending</Badge>
+<Badge variant="error">Rejected</Badge>
+
+// Type badges - Use neutral colors
+<Badge variant="default">Individual</Badge>
+<Badge variant="default">Corporate</Badge>
+
+// Scope badges - Use info color with icon
+<Badge variant="info">
+  <Icon name="building" />
+  Tenant
+</Badge>
+
+// Pipeline/workflow badges - Use success with icon
+<Badge variant="success">
+  <Icon name="check" />
+  Extracted
+</Badge>
+```
+
+#### Text Color Hierarchy
+
+| Color | Usage | CSS Variable |
+|-------|-------|--------------|
+| **Primary** | Headings, important content | `text-text-primary` |
+| **Secondary** | Body text, descriptions | `text-text-secondary` |
+| **Tertiary** | Placeholders, disabled text | `text-text-tertiary` |
+| **Muted** | Decorative text, metadata | `text-text-muted` |
+
+#### Stats Card Icon Colors
+
+Stats cards can use themed icon colors to indicate status or category:
+
+```tsx
+// Neutral (default) - Standard metrics
+<StatsCard icon={<Users />} iconColor="text-text-secondary" />
+
+// Status-themed - Match the metric meaning
+<StatsCard icon={<CheckCircle />} iconColor="text-status-success" /> // Positive metric
+<StatsCard icon={<AlertCircle />} iconColor="text-status-warning" /> // Needs attention
+<StatsCard icon={<XCircle />} iconColor="text-status-error" /> // Problem metric
+<StatsCard icon={<InfoCircle />} iconColor="text-status-info" /> // Informational metric
+```
+
+**Best Practice**: Use themed colors sparingly in stats cards. Reserve color for metrics that truly indicate status (errors, warnings, completions). Most stats should use neutral colors to avoid visual noise.
+
+#### Multiple Status Indicators
+
+When displaying multiple status types in the same context (e.g., Connectors table showing both "Enabled" status and "Test OK" status):
+
+- Use separate columns or clear visual grouping
+- Ensure color combinations don't conflict or confuse
+- Consider using icons to differentiate status types
+- Keep color meanings consistent across the application
+
+**Example**:
+```tsx
+// Good: Separate columns with distinct meanings
+<TableCell>
+  <Badge variant="success">Enabled</Badge> // Operational status
+</TableCell>
+<TableCell>
+  <Badge variant="success"><Icon name="check" />OK</Badge> // Test status
+</TableCell>
+```
+
+**See Also:**
+- [Badge and Pill Conventions](#badge-and-pill-conventions) for semantic badge colors
+- [Alert and Banner Hierarchy](#alert-and-banner-hierarchy) for alert color usage
+- [Component State Patterns](#component-state-patterns) for focus ring colors
+- [Table Design Patterns](#table-design-patterns) for selected row colors
+
 ### Theme Toggle
 
 Users can switch themes via the toggle in the sidebar. The preference is persisted to localStorage.
@@ -165,12 +557,152 @@ Based on a 4px grid system:
 |-------|-------|-------|
 | `p-1` | 4px | Icon padding |
 | `p-2` | 8px | Compact elements |
-| `p-3` | 12px | Card padding, nav items |
-| `p-4` | 16px | Section padding |
+| `p-3` | 12px | Card padding, nav items, alerts |
+| `p-4` | 16px | Section padding, modal headers |
 | `p-6` | 24px | Page padding |
 | `gap-1` | 4px | Icon + text |
-| `gap-2` | 8px | Related elements |
+| `gap-2` | 8px | Related elements, form labels |
 | `gap-4` | 16px | Sections |
+| `mb-4` | 16px | Sub-element spacing within sections |
+| `mb-6` | 24px | Major section spacing |
+
+### Spacing Enforcement Guide
+
+#### 4px Grid System Reality
+
+**Important Note**: While we document a 4px grid system as the ideal, the application currently uses a **mixed approach** due to Chakra UI integration. This is intentional and acceptable:
+
+**Why Mixed Spacing Exists:**
+- Chakra UI components (Button, Input, etc.) have their own internal spacing that doesn't align to 4px
+- Button heights: 28px (xs), 32px (sm), 36px (md), 44px (lg) - only xs aligns to 4px
+- Input heights follow the same non-4px scale
+- Forcing 4px alignment would require forking Chakra components (not worth the effort)
+
+**The Practical Standard:**
+- **Chakra Components**: Accept their built-in spacing (see scale below)
+- **Custom Components**: Strictly follow 4px grid (p-2, p-3, p-4, gap-2, gap-4, mb-4, mb-6)
+- **Layout & Sections**: Always use 4px grid (gap-4, mb-6, p-4)
+
+#### 4px Grid System with Chakra UI
+
+While we aim for a 4px grid system, Chakra UI components use their own spacing scale. This is acceptable when using Chakra components, but custom components should follow the 4px grid strictly:
+
+**Chakra Spacing Scale** (for Chakra components only):
+- 7 units = 28px (buttons, inputs xs) ✅ 4px-aligned
+- 8 units = 32px (buttons, inputs sm) ❌ Not 4px-aligned
+- 9 units = 36px (buttons, inputs md) ✅ 4px-aligned
+- 11 units = 44px (buttons, inputs lg) ✅ 4px-aligned
+
+**Tailwind 4px Grid** (for custom components):
+- Use: `p-1, p-2, p-3, p-4, p-6, p-8`
+- Avoid: `p-2.5, p-3.5, p-5, p-7` (not 4px-aligned)
+
+#### Component Padding Standards
+
+Maintain consistent padding across similar component types:
+
+| Component | Padding | Rationale |
+|-----------|---------|-----------|
+| **Alert** | `p-3` (12px) | Compact but readable |
+| **Card** | `p-4` (16px) | Standard content padding |
+| **Card Compact** | `p-3` (12px) | Dense layouts (dashboards) |
+| **Modal Header** | `p-4` (16px) | Prominent, clear separation |
+| **Modal Body** | `p-4` (16px) | Consistent with header |
+| **Table Cell** | `px-3 py-2` (12px/8px) | Standard tables |
+| **Table Cell Dense** | `px-2 py-1.5` (8px/6px) | Complex tables (document processing) |
+| **Sidebar Item** | `px-3 py-2` (12px/8px) | Navigation items |
+
+**Example**:
+```tsx
+// ✅ Good: Consistent component padding
+<Alert className="p-3">Warning message</Alert>
+<div className="card p-4">Card content</div>
+<div className="card card-compact p-3">Dense card</div>
+
+// ❌ Bad: Mixed padding values
+<Alert className="p-2.5">Warning</Alert> // Not grid-aligned
+<div className="card p-5">Card</div> // Use p-4 or p-6
+```
+
+#### Section Spacing
+
+Use consistent spacing between major page sections:
+
+```tsx
+// ✅ Good: Single mb-6 between major sections
+<div className="mb-6">
+  <PageHeader />
+</div>
+<div className="mb-6">
+  <StatsCards />
+</div>
+<div>
+  <DataTable />
+</div>
+
+// ❌ Bad: Multiple mb-6 creating 48px gaps
+<div className="mb-6">
+  <PageHeader className="mb-6" /> {/* Double spacing! */}
+</div>
+<div className="mb-6">
+  <StatsCards />
+</div>
+```
+
+**Rule**: Use `mb-6` for major section gaps, `mb-4` for related sub-elements within a section.
+
+#### Responsive Grid Gaps
+
+Grid gaps should stay consistent or get smaller on larger screens (never larger):
+
+```tsx
+// ✅ Good: Consistent gap
+<div className="grid gap-4">
+
+// ✅ Good: Larger gap on mobile (for touch targets)
+<div className="grid gap-4 sm:gap-3">
+
+// ❌ Bad: Gap increases on desktop (inverted pattern)
+<div className="grid gap-3 sm:gap-4">
+```
+
+**Rationale**: Desktop users can handle denser layouts. Mobile users need more spacing for touch targets.
+
+#### Form Label Spacing
+
+Form labels should have consistent spacing from their inputs:
+
+```tsx
+// ✅ Good: gap-2 (8px) between label and input
+<Box display="flex" flexDirection="column" gap="2">
+  <FormLabel>Email</FormLabel>
+  <Input />
+</Box>
+
+// ❌ Bad: gap-1.5 (6px) too small, not grid-aligned
+<Box display="flex" flexDirection="column" gap="1.5">
+  <FormLabel>Email</FormLabel>
+  <Input />
+</Box>
+```
+
+#### Avoiding Negative Margins
+
+Negative margins create confusion and break the grid system:
+
+```tsx
+// ✅ Good: Proper padding without negative margin
+<Button className="p-2">
+  <Icon />
+</Button>
+
+// ❌ Bad: Negative margin to compensate for padding
+<Button className="p-2 -m-1">
+  <Icon />
+</Button>
+```
+
+**Rule**: If you need negative margins to fix spacing, the padding is wrong. Adjust the padding instead.
 
 ---
 
@@ -185,6 +717,148 @@ Based on a 4px grid system:
 | `md` | 36px | 20px | 13px | 4px | Primary actions, forms |
 | `lg` | 40px | 24px | 14px | 6px | Hero CTAs |
 
+#### Button Hierarchy and Usage
+
+Use button variants consistently to establish clear visual hierarchy:
+
+##### Variant Selection Guide
+
+| Variant | Visual Style | When to Use | Examples |
+|---------|-------------|-------------|----------|
+| **Primary** | Oak green background, white text | Main action on the page, call-to-action | "Add Company", "Save", "Create", "Submit" |
+| **Secondary** | White/gray background, border, text | Supporting actions, less emphasis | "Cancel", "Back", "View Details" |
+| **Ghost** | Transparent background, text only | Tertiary actions, inline operations | "Edit", "Delete", table row actions |
+| **Danger** | Red tint, destructive emphasis | Destructive actions (delete, remove) | "Delete Company", "Remove User" |
+
+##### Button Combinations
+
+Follow these patterns for common action groups:
+
+```tsx
+// ✅ Good: Clear hierarchy
+<div className="flex gap-2">
+  <Button variant="primary">Save Changes</Button>
+  <Button variant="secondary">Cancel</Button>
+</div>
+
+// ✅ Good: Destructive action with confirmation
+<div className="flex gap-2">
+  <Button variant="danger">Delete</Button>
+  <Button variant="secondary">Cancel</Button>
+</div>
+
+// ❌ Bad: Multiple primary buttons (confusing)
+<div className="flex gap-2">
+  <Button variant="primary">Save</Button>
+  <Button variant="primary">Save & Close</Button>
+  <Button variant="secondary">Cancel</Button>
+</div>
+```
+
+**Rule**: One primary action per section. All other actions should be secondary or ghost.
+
+##### Page Header Button Patterns
+
+Consistent button usage in page headers:
+
+```tsx
+// ✅ Good: Primary CTA on right, secondary actions on left
+<PageHeader>
+  <div className="flex items-center justify-between">
+    <div className="flex gap-2">
+      <Button variant="ghost" leftIcon={<RefreshIcon />}>Refresh</Button>
+      <Button variant="secondary" leftIcon={<UploadIcon />}>Import</Button>
+    </div>
+    <Button variant="primary" leftIcon={<PlusIcon />}>Add Company</Button>
+  </div>
+</PageHeader>
+
+// ❌ Bad: Multiple primary actions, unclear hierarchy
+<PageHeader>
+  <Button variant="primary">Upload</Button>
+  <Button variant="primary">Add Company</Button>
+</PageHeader>
+```
+
+##### Icon Button Sizing
+
+Icon-only buttons should maintain consistent icon sizing:
+
+| Button Size | Icon Size | Example |
+|-------------|-----------|---------|
+| `xs` | 14px (`w-3.5 h-3.5`) | Table row actions |
+| `sm` | 16px (`w-4 h-4`) | Standard icon buttons |
+| `md` | 16px (`w-4 h-4`) | Form actions |
+| `lg` | 20px (`w-5 h-5`) | Hero CTAs |
+
+```tsx
+// ✅ Good: Icon size matches button size
+<Button size="sm" variant="ghost">
+  <Icon className="w-4 h-4" />
+</Button>
+
+// ❌ Bad: Icon too large for button
+<Button size="sm" variant="ghost">
+  <Icon className="w-6 h-6" /> {/* Too large! */}
+</Button>
+```
+
+##### Keyboard Shortcuts Display
+
+When buttons have keyboard shortcuts, display them consistently:
+
+```tsx
+// ✅ Good: Keyboard shortcut in subtle badge
+<Button variant="ghost" rightIcon={<Badge variant="subtle">R</Badge>}>
+  Refresh
+</Button>
+
+// ✅ Good: Keyboard shortcut in parentheses (simpler approach)
+<Button variant="ghost">Refresh (R)</Button>
+
+// ❌ Bad: Inconsistent formatting
+<Button variant="ghost">Refresh - R</Button>
+<Button variant="ghost">Upload [F2]</Button>
+```
+
+**Recommendation**: Use parentheses format for simplicity: `Action (Key)`. Reserve badge format for complex shortcuts.
+
+##### Button Loading States
+
+Show loading feedback for async operations:
+
+```tsx
+// ✅ Good: Loading state with spinner
+<Button
+  variant="primary"
+  isLoading={isSubmitting}
+  loadingText="Saving..."
+>
+  Save Changes
+</Button>
+
+// ❌ Bad: No loading feedback
+<Button variant="primary" onClick={handleSubmit}>
+  Save Changes
+</Button>
+```
+
+##### Disabled State Guidance
+
+Use disabled states sparingly and provide context:
+
+```tsx
+// ✅ Good: Disabled with tooltip explaining why
+<Tooltip label="Select a tenant first">
+  <Button variant="primary" isDisabled={!selectedTenant}>
+    Continue
+  </Button>
+</Tooltip>
+
+// ❌ Bad: Disabled with no explanation
+<Button variant="primary" isDisabled>Continue</Button>
+```
+
 ### Inputs
 
 | Size | Height | Padding | Font | Border Radius | Use Case |
@@ -193,6 +867,1548 @@ Based on a 4px grid system:
 | `sm` | 32px | 12px | 13px | 4px | Table inline edit |
 | `md` | 36px | 14px | 13px | 4px | Default forms |
 | `lg` | 40px | 16px | 14px | 6px | Login, prominent inputs |
+
+#### Form Element Sizing Contexts
+
+Choose input size based on context and importance to maintain visual hierarchy and usability.
+
+##### Size Selection Guide
+
+| Context | Recommended Size | Rationale | Examples |
+|---------|------------------|-----------|----------|
+| **Login / Auth Forms** | `lg` (40px) | High importance, prominent placement, generous touch targets | Email, password fields on login page |
+| **Standard Forms** | `md` (36px) | Default for most form inputs, balanced size | Company name, contact fields, settings |
+| **Table Filters** | `xs` (28px) | Compact to fit in dense layouts, minimize vertical space | Dropdown filters in table headers, search in tables |
+| **Inline Edit** | `sm` (32px) | Slightly larger than filters, but still compact | Editable cells in tables, quick edit modals |
+| **Search Bars** | `md` or `lg` | Depends on prominence - `lg` for hero search, `md` for page search | Global search (lg), page-level search (md) |
+| **Settings Pages** | `md` (36px) | Standard size, consistency with other forms | Configuration inputs, preferences |
+
+##### Contextual Examples
+
+###### Login Page
+```tsx
+// Use lg size for prominent, important inputs
+<FormInput
+  size="lg"
+  label="Email"
+  type="email"
+  placeholder="you@company.com"
+/>
+
+<FormInput
+  size="lg"
+  label="Password"
+  type="password"
+/>
+
+<Button size="lg" variant="primary" className="w-full">
+  Sign In
+</Button>
+```
+
+###### Standard Form (Add Company)
+```tsx
+// Use md size for standard forms
+<FormInput
+  size="md"
+  label="Company Name"
+  placeholder="Enter company name"
+  required
+/>
+
+<FormInput
+  size="md"
+  label="Registration Number"
+  placeholder="e.g., 201234567K"
+/>
+
+<FormInput
+  size="md"
+  label="Email"
+  type="email"
+  placeholder="contact@company.com"
+/>
+```
+
+###### Table Filter (Document Processing)
+```tsx
+// Use xs size for compact table header filters
+<thead>
+  <tr className="bg-bg-secondary">
+    <th>
+      <FormInput
+        size="xs"
+        type="search"
+        placeholder="Search..."
+        className="min-w-[120px]"
+      />
+    </th>
+    <th>
+      <Select size="xs" placeholder="All statuses">
+        <option>Extracted</option>
+        <option>Approved</option>
+      </Select>
+    </th>
+  </tr>
+</thead>
+```
+
+###### Inline Edit (Table Cell)
+```tsx
+// Use sm size for inline editing in tables
+<TableCell>
+  <FormInput
+    size="sm"
+    defaultValue={row.amount}
+    onBlur={handleSave}
+  />
+</TableCell>
+```
+
+##### Context-Specific Dropdown Styling
+
+Dropdown styling varies by context to match visual density:
+
+**Form Selects (Standard Context)**
+```tsx
+// Bordered, clear boundaries
+<Select
+  size="md"
+  className="border border-border-primary bg-bg-primary"
+>
+  <option>Option 1</option>
+</Select>
+```
+
+**Table Header Filters (Dense Context)**
+```tsx
+// Transparent background, no border until focused
+// Blends with table header background
+<Select
+  size="xs"
+  className="bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
+>
+  <option>All</option>
+</Select>
+```
+
+**Rationale**: Table filters use transparent styling to reduce visual noise in dense layouts. The border appears on focus to indicate interactivity.
+
+##### Mobile Touch Targets
+
+All interactive form elements must meet minimum touch target size of **44px** on mobile:
+
+```tsx
+// Inputs automatically meet touch target with padding
+<FormInput
+  size="md"  // 36px height + padding = 44px+ touch target
+  className="min-h-[44px]"
+/>
+
+// Small inputs need explicit min-height on mobile
+<FormInput
+  size="xs"  // 28px height
+  className="min-h-[44px] sm:min-h-0"  // 44px on mobile, auto on desktop
+/>
+```
+
+**Best Practice**: Avoid using `xs` or `sm` sizes on mobile unless within a scrollable container (like a table) where the entire row is tappable.
+
+##### Size Consistency Guidelines
+
+- **Within a form**: Use the same size for all inputs (typically `md`)
+- **Within a table**: Use the same size for all filters (typically `xs`)
+- **Within a modal**: Match the form type (standard form = `md`, quick edit = `sm`)
+- **Exception**: Login/auth pages use `lg` for prominence
+
+```tsx
+// ✅ Good: Consistent sizing within form
+<form>
+  <FormInput size="md" label="Name" />
+  <FormInput size="md" label="Email" />
+  <Select size="md" label="Type" />
+</form>
+
+// ❌ Bad: Mixed sizes create visual inconsistency
+<form>
+  <FormInput size="lg" label="Name" />
+  <FormInput size="md" label="Email" />
+  <Select size="sm" label="Type" />
+</form>
+```
+
+### Icon Sizing Standards
+
+Use consistent icon sizing across the application:
+
+#### Icon Size Reference
+
+| Size | Pixels | Tailwind Class | Use Case |
+|------|--------|----------------|----------|
+| **XS** | 12px | `w-3 h-3` | Inline text, dense badges, small buttons |
+| **SM** | 14px | `w-3.5 h-3.5` | Form inputs xs, table row actions, compact UI |
+| **MD** | 16px | `w-4 h-4` | Default buttons, form inputs sm/md, navigation |
+| **LG** | 20px | `w-5 h-5` | Large buttons, page headers, empty states |
+| **XL** | 24px | `w-6 h-6` | Prominent actions, hero sections |
+| **2XL** | 32px | `w-8 h-8` | Large empty states, standalone icons |
+| **3XL** | 48px | `w-12 h-12` | Empty state illustrations |
+
+#### Implementation Patterns by Context
+
+##### Button Icons
+
+Match icon size to button size (see Button Hierarchy section for details):
+
+```tsx
+// Button xs - Icon 14px (w-3.5 h-3.5)
+<Button size="xs" leftIcon={<PlusIcon className="w-3.5 h-3.5" />}>
+  Add
+</Button>
+
+// Button sm - Icon 16px (w-4 h-4)
+<Button size="sm" leftIcon={<PlusIcon className="w-4 h-4" />}>
+  Add
+</Button>
+
+// Button md - Icon 16px (w-4 h-4)
+<Button size="md" leftIcon={<PlusIcon className="w-4 h-4" />}>
+  Add
+</Button>
+
+// Button lg - Icon 20px (w-5 h-5)
+<Button size="lg" leftIcon={<PlusIcon className="w-5 h-5" />}>
+  Add
+</Button>
+```
+
+##### Form Input Icons
+
+Input icons should match or be slightly smaller than the input text:
+
+```tsx
+// Input xs - Icon 14px
+<FormInput
+  size="xs"
+  leftIcon={<SearchIcon className="w-3.5 h-3.5" />}
+  placeholder="Search..."
+/>
+
+// Input sm/md - Icon 16px (default)
+<FormInput
+  size="md"
+  leftIcon={<EmailIcon className="w-4 h-4" />}
+  placeholder="Email"
+/>
+
+// Input lg - Icon 20px
+<FormInput
+  size="lg"
+  leftIcon={<LockIcon className="w-5 h-5" />}
+  placeholder="Password"
+/>
+```
+
+##### Navigation Icons
+
+Sidebar and menu icons use consistent 16px (w-4 h-4):
+
+```tsx
+// Sidebar navigation
+<NavItem icon={<HomeIcon className="w-4 h-4" />}>
+  Home
+</NavItem>
+
+// Dropdown menu items
+<MenuItem icon={<EditIcon className="w-4 h-4" />}>
+  Edit
+</MenuItem>
+```
+
+##### Badge Icons
+
+Badge icons should be compact (12-14px):
+
+```tsx
+// Badge with icon - 12px
+<Badge variant="success">
+  <Icon name="check" className="w-3 h-3" />
+  Approved
+</Badge>
+
+// Larger badge - 14px
+<Badge size="lg" variant="info">
+  <Icon name="building" className="w-3.5 h-3.5" />
+  Tenant
+</Badge>
+```
+
+##### Empty State Icons
+
+Empty states use large icons (48px) for visual impact:
+
+```tsx
+// Empty state icon - 48px (w-12 h-12)
+<div className="flex flex-col items-center justify-center p-12">
+  <Icon name="inbox" className="w-12 h-12 text-text-tertiary mb-4" />
+  <h3 className="text-lg font-semibold">No items found</h3>
+  <p className="text-sm text-text-secondary">Get started by creating your first item</p>
+</div>
+```
+
+##### Brand/Provider Icons
+
+Brand logos in tables use 32px with circular backgrounds:
+
+```tsx
+// Provider icon with brand color background
+<div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+  <OpenAIIcon className="w-5 h-5 text-green-600" />
+</div>
+```
+
+#### Icon Alignment
+
+Icons should be vertically centered with adjacent text:
+
+```tsx
+// ✅ Good: Icon centered with flexbox
+<div className="flex items-center gap-2">
+  <Icon className="w-4 h-4" />
+  <span>Label text</span>
+</div>
+
+// ❌ Bad: Icon not aligned
+<div>
+  <Icon className="w-4 h-4" />
+  <span>Label text</span>
+</div>
+```
+
+#### Avoid Inline Pixel Sizing
+
+Use Tailwind classes instead of inline styles for consistency:
+
+```tsx
+// ✅ Good: Tailwind classes
+<Icon className="w-4 h-4" />
+
+// ❌ Bad: Inline pixel sizing
+<Icon style={{ width: 16, height: 16 }} />
+```
+
+**Exception**: Chakra UI components may use unit-based sizing (`'4'`, `'5'`), which is acceptable for Chakra components only.
+
+**See Also:**
+- [Button Hierarchy and Usage](#button-hierarchy-and-usage) for button size/icon pairings
+- [Form Element Sizing Contexts](#form-element-sizing-contexts) for input icon sizing
+- [Empty State Patterns](#empty-state-patterns) for empty state icon sizing (48px standard)
+- [Badge and Pill Conventions](#badge-and-pill-conventions) for badge icon sizing
+
+### Component State Patterns
+
+All interactive components should implement consistent visual feedback across these states:
+
+#### Interactive State Standards
+
+| State | Visual Treatment | Transition | When to Apply |
+|-------|-----------------|------------|---------------|
+| **Default** | Base styling | N/A | Component at rest |
+| **Hover** | Subtle background change, cursor pointer | 150ms ease | Mouse over interactive element |
+| **Active/Pressed** | Darker background, slight scale | 100ms ease | Mouse down or touch |
+| **Focus** | Oak primary ring (2px), ring-offset-2 | Instant | Keyboard navigation, programmatic focus |
+| **Disabled** | Reduced opacity (0.5), cursor not-allowed | N/A | Non-interactive state |
+| **Loading** | Spinner overlay, reduced opacity | Fade 200ms | Async operation in progress |
+
+#### Button State Examples
+
+```tsx
+// Complete button state implementation
+<Button
+  variant="primary"
+  className="
+    /* Default */
+    bg-oak-primary text-white
+
+    /* Hover */
+    hover:bg-oak-hover
+
+    /* Active */
+    active:bg-oak-dark active:scale-[0.98]
+
+    /* Focus */
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2
+
+    /* Disabled */
+    disabled:opacity-50 disabled:cursor-not-allowed
+
+    /* Transition */
+    transition-all duration-150 ease-in-out
+  "
+>
+  Save
+</Button>
+```
+
+#### Input State Examples
+
+```tsx
+// Complete input state implementation
+<Input
+  className="
+    /* Default */
+    border border-border-primary bg-bg-elevated
+
+    /* Hover */
+    hover:border-border-secondary
+
+    /* Focus */
+    focus:outline-none focus:ring-2 focus:ring-oak-primary/30 focus:ring-offset-2 focus:border-oak-primary
+
+    /* Error */
+    data-[error]:border-status-error data-[error]:focus:ring-status-error/30
+
+    /* Disabled */
+    disabled:bg-bg-tertiary disabled:cursor-not-allowed disabled:opacity-50
+
+    /* Transition */
+    transition-all duration-150 ease-in-out
+  "
+/>
+```
+
+#### Card State Examples
+
+Cards can be interactive (clickable) or display-only:
+
+```tsx
+// Interactive card
+<div className="
+  card p-4
+
+  /* Hover - only for interactive cards */
+  hover:bg-bg-tertiary hover:border-border-secondary hover:shadow-elevation-2
+  cursor-pointer
+
+  /* Active */
+  active:scale-[0.99]
+
+  /* Transition */
+  transition-all duration-150 ease-in-out
+">
+  Card content
+</div>
+
+// Display-only card (no hover states)
+<div className="card p-4">
+  Card content
+</div>
+```
+
+**Rule**: Only add hover states to actually interactive elements. Display-only cards, stats cards, and informational components should not have hover effects.
+
+#### Table Row State Examples
+
+Table rows have distinct states for selection and interaction:
+
+```tsx
+// Table row with states
+<tr className="
+  /* Default */
+  bg-bg-secondary border-b border-border-primary
+
+  /* Hover - subtle */
+  hover:bg-bg-tertiary
+
+  /* Selected */
+  data-[selected]:bg-oak-row-selected hover:data-[selected]:bg-oak-row-selected-hover
+
+  /* Transition */
+  transition-colors duration-150 ease-in-out
+">
+  <td>...</td>
+</tr>
+
+// Alternate row styling (zebra striping) - optional
+<tr className="
+  odd:bg-bg-secondary even:bg-oak-row-alt
+  hover:bg-bg-tertiary
+  ...
+">
+```
+
+**Document Processing Table Pattern**: For complex tables with dense information (e.g., [/processing](../src/app/(dashboard)/processing/page.tsx)), use:
+- Compact cell padding: `px-2 py-1.5`
+- Subtle hover states to avoid overwhelming the dense layout
+- Focus ring on interactive cells (filters, inputs)
+- Clear selected row highlighting with oak-row-selected
+
+#### Focus Ring Standards
+
+Focus rings are critical for accessibility (keyboard navigation):
+
+```tsx
+// ✅ Good: Visible focus ring with offset
+<button className="
+  focus:outline-none
+  focus-visible:ring-2
+  focus-visible:ring-oak-primary/30
+  focus-visible:ring-offset-2
+">
+  Click me
+</button>
+
+// ❌ Bad: No focus indicator
+<button className="focus:outline-none">
+  Click me
+</button>
+```
+
+**Focus Ring Offset Rationale**:
+- **React/Chakra Components**: Use `ring-offset-2` (8px offset). Chakra components have built-in padding that creates visual space, requiring larger offset for visibility.
+- **CSS-Only Elements**: Use `ring-offset-1` (4px offset) in `globals.css`. Native HTML elements without framework padding need smaller offset to avoid excessive spacing.
+- This intentional difference ensures consistent visual appearance across component types.
+
+#### Loading State Patterns
+
+Show loading feedback without blocking the UI:
+
+```tsx
+// Button loading
+<Button isLoading={isSubmitting} loadingText="Saving...">
+  Save
+</Button>
+
+// Card loading (skeleton)
+<Card>
+  {isLoading ? (
+    <div className="space-y-3">
+      <div className="h-4 bg-bg-tertiary rounded animate-pulse" />
+      <div className="h-4 bg-bg-tertiary rounded animate-pulse w-3/4" />
+    </div>
+  ) : (
+    <CardContent />
+  )}
+</Card>
+
+// Table loading (overlay)
+<div className="relative">
+  <Table data={data} />
+  {isLoading && (
+    <div className="absolute inset-0 bg-bg-primary/50 flex items-center justify-center">
+      <Spinner />
+    </div>
+  )}
+</div>
+```
+
+#### Disabled vs Hidden
+
+Choose the appropriate pattern for unavailable actions:
+
+| Pattern | When to Use | Example |
+|---------|-------------|---------|
+| **Disabled** | Action will become available (with explanation) | "Submit" button disabled until form is valid |
+| **Hidden** | Action is not applicable in current context | "Delete" action hidden for users without permission |
+
+```tsx
+// ✅ Good: Disabled with tooltip
+<Tooltip label="Fill in all required fields first">
+  <Button isDisabled={!formValid}>Submit</Button>
+</Tooltip>
+
+// ✅ Good: Hidden based on permission
+{hasPermission('company:delete') && (
+  <Button variant="danger">Delete</Button>
+)}
+
+// ❌ Bad: Disabled without explanation
+<Button isDisabled>Submit</Button>
+```
+
+---
+
+## Form Layout Patterns
+
+Consistent patterns for different form contexts across the application.
+
+### Form Layout Types
+
+| Type | Layout | Spacing | Use Case | Example |
+|------|--------|---------|----------|---------|
+| **Full-Page Form** | Single column, sections with headers | `mb-6` between sections | Complex multi-section forms | Add Company, Edit Settings |
+| **Modal Form** | Compact, minimal sections | `mb-4` between fields | Quick edits, simple creation | Add Contact, Edit Name |
+| **Inline Form** | Horizontal or compact | `gap-2` between fields | Table row edit, search bars | Inline table edit |
+| **Multi-Column Form** | 2-column grid | `gap-4` between columns | Wide forms with many fields | Advanced filters |
+
+### Full-Page Form Pattern
+
+Use for complex forms with multiple sections (Add Company, Edit Profile, Settings):
+
+```tsx
+<div className="max-w-3xl mx-auto p-6">
+  {/* Page header */}
+  <div className="mb-6">
+    <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
+      Add New Company
+    </h1>
+    <p className="text-sm text-text-secondary mt-1">
+      Enter company information and registration details
+    </p>
+  </div>
+
+  <form className="space-y-6">
+    {/* Section 1: Basic Information */}
+    <section>
+      <h2 className="text-lg font-semibold text-text-primary mb-4">
+        Basic Information
+      </h2>
+      <div className="space-y-4">
+        <FormInput
+          label="Company Name"
+          placeholder="Acme Corporation"
+          required
+        />
+        <FormInput
+          label="Registration Number"
+          placeholder="201234567K"
+          required
+        />
+        <FormInput
+          label="Industry"
+          placeholder="Technology"
+        />
+      </div>
+    </section>
+
+    {/* Section 2: Contact Details */}
+    <section>
+      <h2 className="text-lg font-semibold text-text-primary mb-4">
+        Contact Details
+      </h2>
+      <div className="space-y-4">
+        <FormInput
+          label="Email"
+          type="email"
+          placeholder="contact@acme.com"
+          required
+        />
+        <FormInput
+          label="Phone"
+          type="tel"
+          placeholder="+65 1234 5678"
+        />
+      </div>
+    </section>
+
+    {/* Form actions */}
+    <div className="flex items-center justify-end gap-3 pt-4 border-t border-border-primary">
+      <Button variant="secondary" onClick={handleCancel}>
+        Cancel
+      </Button>
+      <Button variant="primary" type="submit">
+        Create Company
+      </Button>
+    </div>
+  </form>
+</div>
+```
+
+**Key Elements:**
+- Page header with title and description: `mb-6`
+- Section headers: `text-lg font-semibold mb-4`
+- Fields within section: `space-y-4` (16px gap)
+- Sections separated by: `space-y-6` (24px gap) on form
+- Form actions: Border top, right-aligned buttons with `gap-3`
+
+### Modal Form Pattern
+
+Use for quick edits or simple creation forms within modals:
+
+```tsx
+<Modal isOpen={isOpen} onClose={onClose}>
+  <ModalHeader>
+    <h2 className="text-lg font-semibold">Add New Contact</h2>
+  </ModalHeader>
+
+  <ModalBody>
+    <form className="space-y-4">
+      <FormInput
+        label="Full Name"
+        placeholder="John Doe"
+        required
+      />
+      <FormInput
+        label="Email"
+        type="email"
+        placeholder="john@company.com"
+        required
+      />
+      <FormInput
+        label="Phone"
+        type="tel"
+        placeholder="+65 1234 5678"
+      />
+    </form>
+  </ModalBody>
+
+  <ModalFooter>
+    <Button variant="secondary" onClick={onClose}>
+      Cancel
+    </Button>
+    <Button variant="primary" onClick={handleSubmit}>
+      Add Contact
+    </Button>
+  </ModalFooter>
+</Modal>
+```
+
+**Key Elements:**
+- No section headers (keep it simple)
+- Fields: `space-y-4` (16px gap)
+- Modal header: `text-lg font-semibold`
+- Actions in ModalFooter (right-aligned by default)
+
+### Multi-Column Form Pattern
+
+Use for forms with many related fields that can be organized in columns:
+
+```tsx
+<form className="space-y-6">
+  <section>
+    <h2 className="text-lg font-semibold mb-4">Company Details</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <FormInput label="Company Name" required />
+      <FormInput label="Registration Number" required />
+      <FormInput label="Industry" />
+      <FormInput label="Website" type="url" />
+      <FormInput label="Email" type="email" />
+      <FormInput label="Phone" type="tel" />
+    </div>
+  </section>
+</form>
+```
+
+**Key Elements:**
+- Grid layout: `grid-cols-1 md:grid-cols-2` (single column on mobile, two columns on desktop)
+- Field gaps: `gap-4` (16px between fields)
+- Fields span full width of their grid cell
+
+### Section Grouping Rules
+
+**When to use sections:**
+- Forms with 6+ fields → Group into logical sections
+- Forms with diverse field types → Group by category (Basic Info, Contact, Address)
+- Settings pages → Group by feature area (Account, Security, Notifications)
+
+**When to skip sections:**
+- Forms with 1-5 related fields → Use single form with no section headers
+- Quick edit modals → No sections, just fields
+- Search/filter forms → No sections needed
+
+**Section Spacing:**
+```tsx
+// ✅ Good: Clear section separation with consistent spacing
+<form className="space-y-6">
+  <section>
+    <h2 className="text-lg font-semibold mb-4">Section 1</h2>
+    <div className="space-y-4">{/* Fields */}</div>
+  </section>
+
+  <section>
+    <h2 className="text-lg font-semibold mb-4">Section 2</h2>
+    <div className="space-y-4">{/* Fields */}</div>
+  </section>
+</form>
+
+// ❌ Bad: Inconsistent spacing, too tight
+<form className="space-y-3">
+  <h2 className="text-base font-semibold mb-2">Section 1</h2>
+  <div className="space-y-2">{/* Fields */}</div>
+
+  <h2 className="text-base font-semibold mb-2 mt-5">Section 2</h2>
+  <div className="space-y-2">{/* Fields */}</div>
+</form>
+```
+
+### Form Validation States
+
+Display validation errors clearly with consistent styling:
+
+```tsx
+// Field-level error
+<FormInput
+  label="Email"
+  type="email"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  error={errors.email}  // "Please enter a valid email address"
+  required
+/>
+
+// Form-level error (at top of form)
+{formError && (
+  <Alert variant="error" className="mb-4">
+    <Icon name="alert-circle" className="w-4 h-4" />
+    {formError}
+  </Alert>
+)}
+
+// Success message after submission
+{showSuccess && (
+  <Alert variant="success" className="mb-4">
+    <Icon name="check-circle" className="w-4 h-4" />
+    Company created successfully!
+  </Alert>
+)}
+```
+
+**Error Display Guidelines:**
+- Field errors appear below the input in red text
+- Form-level errors appear at the top of the form in an Alert
+- Success messages use Alert variant="success"
+- Validate on blur or on submit, not on every keystroke (reduces friction)
+
+### Form Action Button Placement
+
+| Context | Placement | Alignment | Spacing |
+|---------|-----------|-----------|---------|
+| **Full-Page Form** | Below form, border-top separator | Right-aligned | `gap-3` between buttons |
+| **Modal Form** | ModalFooter component | Right-aligned | `gap-3` between buttons |
+| **Inline Form** | Same row as fields | Left or right based on layout | `gap-2` for compact |
+
+```tsx
+// Full-page form actions
+<div className="flex items-center justify-end gap-3 pt-4 border-t border-border-primary">
+  <Button variant="secondary">Cancel</Button>
+  <Button variant="primary" type="submit">Save</Button>
+</div>
+
+// Modal form actions (ModalFooter handles styling)
+<ModalFooter>
+  <Button variant="secondary" onClick={onClose}>Cancel</Button>
+  <Button variant="primary" onClick={handleSave}>Save</Button>
+</ModalFooter>
+
+// Inline form actions (compact)
+<div className="flex items-center gap-2">
+  <FormInput size="sm" />
+  <Button size="sm" variant="primary">Save</Button>
+  <Button size="sm" variant="ghost">Cancel</Button>
+</div>
+```
+
+**Button Order:** Always place primary action on the right (Save, Submit, Create), secondary/cancel on the left.
+
+---
+
+## Empty State Patterns
+
+Consistent patterns for displaying empty states when no data is available.
+
+### Empty State Anatomy
+
+All empty states should follow this structure:
+
+1. **Icon** (48px, muted color)
+2. **Heading** (text-lg font-semibold)
+3. **Description** (text-sm, max-w-md)
+4. **Action Button** (optional, only when user can add data)
+
+### Standard Empty State
+
+Use for lists, tables, and collections with no items:
+
+```tsx
+<div className="flex flex-col items-center justify-center py-12 text-center">
+  {/* Icon */}
+  <Icon name="briefcase" className="w-12 h-12 text-text-muted mb-4" />
+
+  {/* Heading */}
+  <h3 className="text-lg font-semibold text-text-primary mb-2">
+    No companies found
+  </h3>
+
+  {/* Description */}
+  <p className="text-sm text-text-secondary mb-4 max-w-md">
+    Get started by adding your first company to begin managing your portfolio.
+  </p>
+
+  {/* Action button */}
+  <Button size="md" variant="primary" onClick={handleAdd}>
+    <Icon name="plus" className="w-4 h-4 mr-2" />
+    Add Company
+  </Button>
+</div>
+```
+
+**Spacing:**
+- Icon to heading: `mb-4` (16px)
+- Heading to description: `mb-2` (8px)
+- Description to action: `mb-4` (16px)
+- Container padding: `py-12` (48px vertical)
+
+### Empty State with Filters Applied
+
+When a table/list is empty because of active filters, adjust the message:
+
+```tsx
+<div className="flex flex-col items-center justify-center py-12 text-center">
+  <Icon name="search" className="w-12 h-12 text-text-muted mb-4" />
+
+  <h3 className="text-lg font-semibold text-text-primary mb-2">
+    No results found
+  </h3>
+
+  <p className="text-sm text-text-secondary mb-4 max-w-md">
+    Try adjusting your filters or search query to find what you're looking for.
+  </p>
+
+  {/* Action: Clear filters instead of add button */}
+  <Button size="md" variant="secondary" onClick={handleClearFilters}>
+    <Icon name="x" className="w-4 h-4 mr-2" />
+    Clear Filters
+  </Button>
+</div>
+```
+
+**Key Differences:**
+- Icon: Search icon instead of content-specific icon
+- Message: "No results found" instead of "No {items} found"
+- Action: "Clear Filters" instead of "Add" button
+
+### Conditional Empty State
+
+Dynamically choose between "add new" and "clear filters" messages:
+
+```tsx
+function EmptyState({ hasFilters, onAdd, onClearFilters }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Icon
+        name={hasFilters ? 'search' : 'briefcase'}
+        className="w-12 h-12 text-text-muted mb-4"
+      />
+
+      <h3 className="text-lg font-semibold text-text-primary mb-2">
+        {hasFilters ? 'No results found' : 'No companies found'}
+      </h3>
+
+      <p className="text-sm text-text-secondary mb-4 max-w-md">
+        {hasFilters
+          ? 'Try adjusting your filters or search query.'
+          : 'Get started by adding your first company.'}
+      </p>
+
+      {hasFilters ? (
+        <Button size="md" variant="secondary" onClick={onClearFilters}>
+          <Icon name="x" className="w-4 h-4 mr-2" />
+          Clear Filters
+        </Button>
+      ) : (
+        <Button size="md" variant="primary" onClick={onAdd}>
+          <Icon name="plus" className="w-4 h-4 mr-2" />
+          Add Company
+        </Button>
+      )}
+    </div>
+  );
+}
+```
+
+### Empty State Variants
+
+Different contexts may need different icon and message combinations:
+
+| Context | Icon | Heading | Action |
+|---------|------|---------|--------|
+| **No Companies** | `briefcase` (w-12 h-12) | "No companies found" | "Add Company" (primary) |
+| **No Contacts** | `users` (w-12 h-12) | "No contacts found" | "Add Contact" (primary) |
+| **No Documents** | `file-text` (w-12 h-12) | "No documents found" | "Upload Document" (primary) |
+| **No Services** | `package` (w-12 h-12) | "No services found" | "Add Service" (primary) |
+| **Search Results** | `search` (w-12 h-12) | "No results found" | "Clear Filters" (secondary) |
+| **Permission Denied** | `lock` (w-12 h-12) | "Access denied" | No action button |
+| **Error State** | `alert-triangle` (w-12 h-12) | "Failed to load" | "Try Again" (secondary) |
+
+### Icon Selection Guidelines
+
+**Use semantic icons that match the content type:**
+- Collections/lists: Use content-specific icons (briefcase, users, file-text)
+- Search/filters: Use search icon
+- Errors: Use alert-triangle or x-circle
+- Permissions: Use lock or shield
+- Empty state after action: Use check-circle with success message
+
+**Icon Sizing:**
+- Always use `w-12 h-12` (48px) for consistency
+- Always use `text-text-muted` color for subtle appearance
+
+### Empty State Loading Pattern
+
+When initially loading, show skeleton instead of empty state:
+
+```tsx
+{isLoading ? (
+  <div className="space-y-2">
+    <div className="skeleton h-12 w-full" />
+    <div className="skeleton h-12 w-full" />
+    <div className="skeleton h-12 w-full" />
+  </div>
+) : items.length === 0 ? (
+  <EmptyState hasFilters={hasFilters} onAdd={handleAdd} onClearFilters={handleClearFilters} />
+) : (
+  <DataTable items={items} />
+)}
+```
+
+**Loading Sequence:**
+1. Initial load → Skeleton/loading state
+2. Data loaded, no items → Empty state
+3. Data loaded, has items → Display data
+
+### Compact Empty State (for Cards)
+
+For empty states within cards or smaller containers, use a more compact version:
+
+```tsx
+<Card className="p-6">
+  <div className="flex flex-col items-center justify-center text-center">
+    <Icon name="calendar" className="w-8 h-8 text-text-muted mb-3" />
+    <p className="text-sm text-text-secondary mb-3">
+      No upcoming events
+    </p>
+    <Button size="sm" variant="ghost" onClick={handleAdd}>
+      <Icon name="plus" className="w-3.5 h-3.5 mr-2" />
+      Add Event
+    </Button>
+  </div>
+</Card>
+```
+
+**Differences from Standard:**
+- Smaller icon: `w-8 h-8` (32px) instead of 48px
+- No heading, just description
+- Smaller button: `size="sm"`
+- Less vertical padding: `py-6` or based on card padding
+
+### Inline Empty State (for Sections)
+
+For empty sections within a page (not full-page empty state):
+
+```tsx
+<section className="mb-6">
+  <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+
+  <Card className="p-8">
+    <div className="flex flex-col items-center justify-center text-center">
+      <Icon name="activity" className="w-10 h-10 text-text-muted mb-3" />
+      <p className="text-sm text-text-secondary">
+        No recent activity to display
+      </p>
+    </div>
+  </Card>
+</section>
+```
+
+**Key Points:**
+- Medium icon: `w-10 h-10` (40px)
+- Single line description, no heading
+- No action button (not always needed for secondary sections)
+
+---
+
+## Alert and Banner Hierarchy
+
+Consistent patterns for displaying alerts, banners, and notifications across the application.
+
+### Alert Types and Usage
+
+| Type | Color | Icon | Use Case | Example |
+|------|-------|------|----------|---------|
+| **Success** | Green | `check-circle` | Successful actions, confirmations | "Company created successfully" |
+| **Warning** | Yellow | `alert-triangle` | Caution, attention needed | "Please select a tenant before continuing" |
+| **Error** | Red | `x-circle` or `alert-circle` | Errors, failures, blocked actions | "Failed to save. Please try again" |
+| **Info** | Blue | `info` | Informational messages, tips | "This action requires admin permission" |
+
+### Standard Alert Pattern
+
+Use the `<Alert>` component for inline messages:
+
+```tsx
+// Success alert
+<Alert variant="success">
+  <Icon name="check-circle" className="w-4 h-4" />
+  <span>Company created successfully!</span>
+</Alert>
+
+// Warning alert
+<Alert variant="warning">
+  <Icon name="alert-triangle" className="w-4 h-4" />
+  <span>Please select a tenant before continuing</span>
+</Alert>
+
+// Error alert
+<Alert variant="error">
+  <Icon name="x-circle" className="w-4 h-4" />
+  <span>Failed to save changes. Please try again.</span>
+</Alert>
+
+// Info alert
+<Alert variant="info">
+  <Icon name="info" className="w-4 h-4" />
+  <span>This action cannot be undone</span>
+</Alert>
+```
+
+**Standard Alert Styling:**
+- Padding: `p-3` (12px) for compact but readable
+- Icon size: `w-4 h-4` (16px)
+- Text: `text-sm` (13px)
+- Border radius: `rounded-md`
+- Background: Tinted with variant color (light green, yellow, red, blue)
+
+### Complex Alert with Heading
+
+For alerts with more content, add a heading and multi-line description:
+
+```tsx
+<Alert variant="warning" className="p-4">
+  <div className="flex items-start gap-3">
+    <Icon name="alert-triangle" className="w-5 h-5 flex-shrink-0 mt-0.5" />
+    <div>
+      <h4 className="font-semibold text-sm mb-1">
+        Permanent Deletion Warning
+      </h4>
+      <p className="text-sm text-text-secondary leading-relaxed">
+        Items in the recycle bin will be permanently deleted after 30 days.
+        This action cannot be undone. Please ensure you have backups of any
+        important data.
+      </p>
+    </div>
+  </div>
+</Alert>
+```
+
+**Complex Alert Characteristics:**
+- Larger padding: `p-4` (16px) for multi-line content
+- Larger icon: `w-5 h-5` (20px)
+- Icon positioned at top with `mt-0.5` for alignment
+- Heading: `font-semibold text-sm mb-1`
+- Description: `text-sm text-text-secondary leading-relaxed`
+
+### Banner Pattern (Full-Width)
+
+For page-level messages that need prominence, use full-width banners:
+
+```tsx
+{/* Error banner - tenant context required */}
+<div className="bg-error/10 border-l-4 border-error p-4 mb-6">
+  <div className="flex items-center gap-3">
+    <Icon name="x-circle" className="w-5 h-5 text-error flex-shrink-0" />
+    <div>
+      <p className="text-sm font-medium text-error">
+        Tenant context required
+      </p>
+      <p className="text-sm text-text-secondary mt-1">
+        Please select a tenant from the sidebar to continue.
+      </p>
+    </div>
+  </div>
+</div>
+
+{/* Warning banner - tenant selection */}
+<div className="bg-warning/10 border-l-4 border-warning p-4 mb-6">
+  <div className="flex items-center gap-3">
+    <Icon name="alert-triangle" className="w-5 h-5 text-warning flex-shrink-0" />
+    <p className="text-sm font-medium text-warning">
+      Please select a tenant to view templates
+    </p>
+  </div>
+</div>
+```
+
+**Banner Styling:**
+- Background: Variant color at 10% opacity (`bg-error/10`)
+- Border: Left border 4px with variant color (`border-l-4 border-error`)
+- Padding: `p-4` (16px)
+- Margin: `mb-6` (24px) to separate from content below
+- Icon: Colored with variant color (`text-error`, `text-warning`)
+
+### Alert Placement Guidelines
+
+| Context | Placement | Example |
+|---------|-----------|---------|
+| **Form Validation Error** | Top of form, above all fields | "Please fix the errors below" |
+| **Page-Level Message** | Below page header, above content | "Tenant context required" |
+| **Section Message** | Top of section/card | "No data available for this period" |
+| **Inline Field Error** | Below field with error styling | Field-specific error via FormInput `error` prop |
+| **Toast Notification** | Top-right corner, auto-dismiss | "Saved successfully" (temporary) |
+
+### Alert with Actions
+
+Add action buttons to alerts when user can take immediate action:
+
+```tsx
+<Alert variant="warning" className="p-4">
+  <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start gap-3">
+      <Icon name="alert-triangle" className="w-5 h-5 flex-shrink-0 mt-0.5" />
+      <div>
+        <p className="text-sm font-medium mb-1">
+          Your session will expire soon
+        </p>
+        <p className="text-sm text-text-secondary">
+          Click "Continue" to stay logged in.
+        </p>
+      </div>
+    </div>
+    <div className="flex items-center gap-2">
+      <Button size="sm" variant="secondary" onClick={handleLogout}>
+        Logout
+      </Button>
+      <Button size="sm" variant="primary" onClick={handleExtendSession}>
+        Continue
+      </Button>
+    </div>
+  </div>
+</Alert>
+```
+
+**Action Button Guidelines:**
+- Use `size="sm"` for buttons in alerts
+- Place buttons on the right side
+- Primary action on the right, secondary on the left
+- Use `gap-2` between buttons
+
+### Dismissible Alerts
+
+Allow users to dismiss alerts that don't require action:
+
+```tsx
+<Alert variant="info" className="p-3">
+  <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center gap-2">
+      <Icon name="info" className="w-4 h-4" />
+      <span className="text-sm">You have 3 pending invitations</span>
+    </div>
+    <button
+      onClick={handleDismiss}
+      className="p-1 rounded hover:bg-bg-tertiary transition-colors"
+      aria-label="Dismiss"
+    >
+      <Icon name="x" className="w-4 h-4 text-text-secondary" />
+    </button>
+  </div>
+</Alert>
+```
+
+**Dismissible Alert Elements:**
+- Close button: `p-1 rounded` with hover state
+- Close icon: `w-4 h-4` (16px)
+- Button positioned on right with `justify-between`
+
+### Toast Notifications
+
+For temporary success/error messages, use toast notifications (auto-dismiss):
+
+```tsx
+import { toast } from '@/components/ui/toast';
+
+// Success toast
+toast.success('Company created successfully');
+
+// Error toast
+toast.error('Failed to save changes');
+
+// Warning toast
+toast.warning('Changes not saved');
+
+// Info toast
+toast.info('New updates available');
+```
+
+**Toast Characteristics:**
+- Position: Top-right corner of viewport
+- Auto-dismiss: 3-5 seconds (success/info), 7 seconds (error/warning)
+- Animation: Slide in from right, fade out
+- Max width: `max-w-sm` (384px)
+- Use for: Feedback after actions (save, delete, create)
+
+### Alert Hierarchy Guidelines
+
+**Use Error Alerts when:**
+- Action failed and user needs to retry
+- Required field validation failed
+- Permission denied
+- Server error occurred
+
+**Use Warning Alerts when:**
+- Action has consequences user should know about
+- Missing context (e.g., "select a tenant")
+- Data might be lost
+- Action is irreversible
+
+**Use Success Alerts when:**
+- Action completed successfully
+- Data saved
+- Item created/updated/deleted
+- Process completed
+
+**Use Info Alerts when:**
+- Providing contextual information
+- Explaining feature or limitation
+- Showing tips or recommendations
+- Displaying status updates
+
+### Alert vs Toast Decision
+
+| Use Alert | Use Toast |
+|-----------|-----------|
+| Message requires user action | Message is informational only |
+| Error blocks workflow | Success confirmation |
+| Warning about consequences | Quick feedback after action |
+| Persistent until dismissed/resolved | Auto-dismiss after 3-5 seconds |
+| Part of page content | Temporary overlay |
+
+**Example Decision Flow:**
+- Form validation error → Alert (persistent, blocks submit)
+- Company created → Toast (temporary, confirms action)
+- Missing permissions → Alert (persistent, blocks access)
+- Settings saved → Toast (temporary, confirms save)
+
+---
+
+## Filter Action Patterns
+
+Consistent patterns for filter buttons, quick actions, and view controls in data tables and lists.
+
+### Filter Button Groups
+
+Use filter button groups for quick filtering of table data:
+
+```tsx
+<div className="flex items-center gap-2 mb-4">
+  <Button
+    size="sm"
+    variant={filter === 'today' ? 'default' : 'ghost'}
+    onClick={() => setFilter('today')}
+  >
+    <Icon name="calendar" className="w-4 h-4 mr-2" />
+    Today
+  </Button>
+
+  <Button
+    size="sm"
+    variant={filter === 'review' ? 'default' : 'ghost'}
+    onClick={() => setFilter('review')}
+  >
+    <Icon name="eye" className="w-4 h-4 mr-2" />
+    Review
+  </Button>
+
+  <Button
+    size="sm"
+    variant={filter === 'duplicates' ? 'default' : 'ghost'}
+    onClick={() => setFilter('duplicates')}
+  >
+    <Icon name="copy" className="w-4 h-4 mr-2" />
+    Duplicates
+  </Button>
+</div>
+```
+
+**Filter Button Characteristics:**
+- Size: `size="sm"` for compact appearance
+- Variant: `default` when active, `ghost` when inactive
+- Icon: `w-4 h-4` (16px) with `mr-2` spacing
+- Spacing: `gap-2` between buttons
+- Placement: Above table, below page header
+
+### Filter Buttons with Count Badges
+
+Show item counts in filter buttons for better context:
+
+```tsx
+<Button
+  size="sm"
+  variant={showDuplicates ? 'default' : 'ghost'}
+  onClick={() => setShowDuplicates(!showDuplicates)}
+>
+  <Icon name="copy" className="w-4 h-4 mr-2" />
+  Duplicates
+  {duplicateCount > 0 && (
+    <Badge size="sm" variant="default" className="ml-2">
+      {duplicateCount}
+    </Badge>
+  )}
+</Button>
+```
+
+**Count Badge Guidelines:**
+- Size: `size="sm"` to match button size
+- Placement: After button text with `ml-2`
+- Only show when count > 0
+- Use neutral badge color (`variant="default"`)
+
+### Column Visibility Toggle
+
+Allow users to show/hide table columns:
+
+```tsx
+<Button
+  size="sm"
+  variant="ghost"
+  onClick={openColumnSelector}
+>
+  <Icon name="columns" className="w-4 h-4 mr-2" />
+  Columns
+  <Badge size="sm" variant="default" className="ml-2">
+    {visibleColumnCount}
+  </Badge>
+</Button>
+```
+
+**Column Toggle Pattern:**
+- Shows count of visible columns
+- Opens modal or dropdown with column checkboxes
+- Persists selection to local storage
+- Default: All columns visible
+
+### View Mode Toggle (List/Grid)
+
+Toggle between different view modes:
+
+```tsx
+<div className="flex items-center gap-1 p-1 bg-bg-secondary rounded">
+  <Button
+    size="xs"
+    variant={viewMode === 'list' ? 'default' : 'ghost'}
+    onClick={() => setViewMode('list')}
+    className="px-2"
+  >
+    <Icon name="list" className="w-4 h-4" />
+  </Button>
+  <Button
+    size="xs"
+    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+    onClick={() => setViewMode('grid')}
+    className="px-2"
+  >
+    <Icon name="grid" className="w-4 h-4" />
+  </Button>
+</div>
+```
+
+**View Toggle Styling:**
+- Contained in rounded background (`bg-bg-secondary rounded`)
+- Icon-only buttons with minimal padding
+- Active button uses `variant="default"`
+- Tight spacing: `gap-1` between buttons
+
+### Quick Action Buttons with Keyboard Shortcuts
+
+Display keyboard shortcuts for frequently used actions:
+
+```tsx
+<div className="flex items-center gap-2 mb-4">
+  <Button
+    size="sm"
+    variant="ghost"
+    onClick={handleRefresh}
+  >
+    <Icon name="refresh" className="w-4 h-4 mr-2" />
+    Refresh (R)
+  </Button>
+
+  <Button
+    size="sm"
+    variant="ghost"
+    onClick={handleUpload}
+  >
+    <Icon name="upload" className="w-4 h-4 mr-2" />
+    Upload (F2)
+  </Button>
+
+  <Button
+    size="sm"
+    variant="primary"
+    onClick={handleAdd}
+  >
+    <Icon name="plus" className="w-4 h-4 mr-2" />
+    Add New (A)
+  </Button>
+</div>
+
+// Implement keyboard listener
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Only trigger if not in input field
+    if (document.activeElement?.tagName === 'INPUT') return;
+
+    if (e.key === 'r') handleRefresh();
+    if (e.key === 'F2') handleUpload();
+    if (e.key === 'a') handleAdd();
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, []);
+```
+
+**Keyboard Shortcut Guidelines:**
+- Show shortcuts in button text: `Action (Key)`
+- Use single letters for common actions (R, A, E)
+- Use function keys for less common actions (F2, F3)
+- Don't trigger when input fields are focused
+- Use uppercase in display, lowercase in listener
+
+### Filter Pill Groups (see Reusable Components)
+
+For multi-select category filters, use the FilterPillGroup component documented in [Reusable Components → FilterPillGroup](#filter-components).
+
+### Combined Filter Bar Pattern
+
+Complete example of a filter bar with multiple controls:
+
+```tsx
+<div className="flex items-center justify-between mb-4">
+  {/* Left: Quick filters */}
+  <div className="flex items-center gap-2">
+    <Button size="sm" variant={filter === 'today' ? 'default' : 'ghost'} onClick={() => setFilter('today')}>
+      Today
+    </Button>
+    <Button size="sm" variant={filter === 'week' ? 'default' : 'ghost'} onClick={() => setFilter('week')}>
+      This Week
+    </Button>
+    <Button size="sm" variant={filter === 'all' ? 'default' : 'ghost'} onClick={() => setFilter('all')}>
+      All
+    </Button>
+  </div>
+
+  {/* Right: Actions and view controls */}
+  <div className="flex items-center gap-2">
+    <Button size="sm" variant="ghost" onClick={openColumnSelector}>
+      <Icon name="columns" className="w-4 h-4 mr-2" />
+      Columns
+    </Button>
+
+    <Button size="sm" variant="ghost" onClick={handleRefresh}>
+      <Icon name="refresh" className="w-4 h-4 mr-2" />
+      Refresh (R)
+    </Button>
+
+    <Button size="sm" variant="primary" onClick={handleAdd}>
+      <Icon name="plus" className="w-4 h-4 mr-2" />
+      Add New
+    </Button>
+  </div>
+</div>
+```
+
+**Filter Bar Layout:**
+- Quick filters on the left
+- Actions and controls on the right
+- Use `justify-between` to separate groups
+- All buttons use `size="sm"` for consistency
 
 ---
 
@@ -246,6 +2462,197 @@ Based on a 4px grid system:
 .badge-info     /* Blue - informational */
 .badge-neutral  /* Gray - inactive, default */
 ```
+
+#### Badge and Pill Conventions
+
+Use badges consistently to communicate status, type, and metadata:
+
+##### Badge vs Pill vs Chip
+
+| Component | Size | Shape | Use Case | Example |
+|-----------|------|-------|----------|---------|
+| **Badge** | Small (10-12px text) | Pill-shaped, compact | Status indicators, counts | "Active", "3", "Live" |
+| **Pill** | Medium (12-13px text) | Rounded rectangle, more padding | Tags, categories, types | "Individual", "Corporate" |
+| **Chip** | Medium with icon | Rounded, dismissible | Filters, selections | "Category: Finance ×" |
+
+##### Status Badge Patterns
+
+Status badges communicate the current state:
+
+```tsx
+// Status badges - Use semantic colors
+<Badge variant="success">Active</Badge>       // Green - positive state
+<Badge variant="success">Live</Badge>         // Green - operational
+<Badge variant="warning">Pending</Badge>      // Yellow - needs attention
+<Badge variant="warning">Review</Badge>       // Yellow - action required
+<Badge variant="error">Failed</Badge>         // Red - error state
+<Badge variant="error">Rejected</Badge>       // Red - negative outcome
+<Badge variant="info">Draft</Badge>           // Blue - informational
+```
+
+##### Type Indicator Badges
+
+Type badges categorize entities (neutral colors):
+
+```tsx
+// Type badges - Use neutral/muted colors
+<Badge variant="neutral">Individual</Badge>
+<Badge variant="neutral">Corporate</Badge>
+<Badge variant="neutral">Partnership</Badge>
+```
+
+##### Scope Badges
+
+Scope badges indicate the level or context (use info with icon):
+
+```tsx
+// Scope badges - Blue with descriptive icon
+<Badge variant="info">
+  <Icon name="building" className="w-3 h-3" />
+  Tenant
+</Badge>
+
+<Badge variant="info">
+  <Icon name="globe" className="w-3 h-3" />
+  Global
+</Badge>
+```
+
+##### Pipeline/Workflow Badges
+
+Pipeline badges show progress in a workflow (use success with icon):
+
+```tsx
+// Pipeline badges - Green with checkmark/status icon
+<Badge variant="success">
+  <Icon name="check" className="w-3 h-3" />
+  Extracted
+</Badge>
+
+<Badge variant="success">
+  <Icon name="check-circle" className="w-3 h-3" />
+  Approved
+</Badge>
+
+<Badge variant="warning">
+  <Icon name="clock" className="w-3 h-3" />
+  Processing
+</Badge>
+```
+
+##### Badge Sizing
+
+Match badge size to context:
+
+```tsx
+// Small badges (10px text) - Compact contexts like table cells
+<Badge size="sm">Active</Badge>
+
+// Default badges (12px text) - Standard usage
+<Badge>Active</Badge>
+
+// Large badges (13px text) - Prominent display
+<Badge size="lg">Active</Badge>
+```
+
+##### Multiple Badges in Context
+
+When displaying multiple badge types together:
+
+**Good Practice**:
+- Group similar badge types together
+- Use consistent spacing (gap-2)
+- Don't overload with too many badges
+- Prioritize most important information
+
+```tsx
+// ✅ Good: Organized badge groups
+<div className="flex items-center gap-3">
+  {/* Status badges group */}
+  <div className="flex gap-2">
+    <Badge variant="success">Enabled</Badge>
+    <Badge variant="success"><Icon name="check" />OK</Badge>
+  </div>
+
+  {/* Type badge */}
+  <Badge variant="neutral">Tenant</Badge>
+</div>
+
+// ❌ Bad: Too many badges, unclear hierarchy
+<div className="flex gap-1">
+  <Badge>Active</Badge>
+  <Badge>Live</Badge>
+  <Badge>OK</Badge>
+  <Badge>Verified</Badge>
+  <Badge>Premium</Badge>
+</div>
+```
+
+##### Badge Density in Tables
+
+For data-heavy tables (e.g., document processing), use compact badges with icons:
+
+```tsx
+// Dense table cell with multiple status indicators
+<TableCell>
+  <div className="flex items-center gap-2">
+    <Badge size="sm" variant="success">
+      <Icon name="check" className="w-3 h-3" />
+      Extracted
+    </Badge>
+    <Badge size="sm" variant="info">
+      <Icon name="shield-check" className="w-3 h-3" />
+      None
+    </Badge>
+  </div>
+</TableCell>
+```
+
+**Guidelines**:
+- Use `size="sm"` in dense tables
+- Include icons only when they add meaning
+- Limit to 2-3 badges per cell
+- Use muted colors to reduce visual noise
+
+##### Badge Icon Placement
+
+Icons in badges should be consistently positioned:
+
+```tsx
+// ✅ Good: Icon before text (left)
+<Badge variant="success">
+  <Icon name="check" />
+  Approved
+</Badge>
+
+// ✅ Good: Icon only (no text)
+<Badge variant="info">
+  <Icon name="building" />
+</Badge>
+
+// ❌ Bad: Inconsistent icon placement
+<Badge>Approved<Icon name="check" /></Badge>
+```
+
+##### Count Badges
+
+Count badges show numerical values:
+
+```tsx
+// Count badges on buttons (filter counts, notifications)
+<Button variant="ghost">
+  Today
+  <Badge variant="info" className="ml-2">5</Badge>
+</Button>
+
+// Count badges in tabs
+<Tab>
+  All Documents
+  <Badge variant="neutral" className="ml-2">127</Badge>
+</Tab>
+```
+
+**Rule**: Count badges should always use neutral or info variants unless the count indicates a specific status.
 
 ### Toggle Switch
 
@@ -591,6 +2998,888 @@ return (
 - Animation: `animate-in slide-in-from-bottom-4`
 - Z-index: `z-40` (above content, below modals)
 - Position: `fixed bottom-6 left-1/2 -translate-x-1/2`
+
+#### Table Design Patterns
+
+Comprehensive patterns for data tables, from simple lists to complex data grids with advanced filtering.
+
+##### Table Types
+
+| Type | Use Case | Characteristics | Example |
+|------|----------|-----------------|---------|
+| **Simple Table** | Basic lists (companies, contacts) | Sortable columns, row selection, pagination | Companies list |
+| **Compact Table** | Dense data (logs, audit trails) | Smaller padding, compact text | Audit logs |
+| **Data Grid** | Complex data with advanced filtering | Multi-row headers, inline filters, resizable columns | Document processing |
+
+##### Cell Padding Standards
+
+| Table Type | Cell Padding | Font Size | Row Height |
+|------------|-------------|-----------|------------|
+| **Standard** | `px-3 py-2` (12px/8px) | `text-sm` (13px) | ~40px |
+| **Dense/Compact** | `px-2 py-1.5` (8px/6px) | `text-sm` (13px) | ~32px |
+
+```tsx
+// Standard table
+<table className="table">
+  <thead>
+    <tr className="bg-bg-secondary">
+      <th className="px-3 py-2 text-xs font-medium text-text-secondary uppercase">Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td className="px-3 py-2 text-sm text-text-primary">Acme Corp</td>
+    </tr>
+  </tbody>
+</table>
+
+// Dense table (document processing)
+<table className="table-compact">
+  <thead>
+    <tr className="bg-bg-secondary">
+      <th className="px-2 py-1.5 text-xs font-medium text-text-secondary uppercase">Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td className="px-2 py-1.5 text-sm text-text-primary">Acme Corp</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+##### Complex Table Pattern (Document Processing Reference)
+
+The document processing table is the **reference implementation** for advanced data grids:
+
+**Key Features:**
+1. Multi-row header (filter row + column headers)
+2. Mixed filter types (combobox, text input, date picker, amount filter)
+3. Resizable columns with drag handles
+4. Sortable column headers with indicators
+5. Dense badge usage in cells
+6. Context-specific dropdown styling (transparent in headers)
+7. Keyboard shortcuts for actions
+8. Pagination with page info
+
+###### Multi-Row Filter Headers
+
+Use two rows in `<thead>` for tables with inline filters:
+
+```tsx
+<thead>
+  {/* Row 1: Filter controls */}
+  <tr className="bg-bg-secondary border-b border-border-primary">
+    <th className="px-2 py-1.5">
+      {/* Checkbox column has no filter */}
+    </th>
+    <th className="px-2 py-1.5">
+      <FormInput
+        size="xs"
+        type="search"
+        placeholder="Search..."
+        value={filters.name}
+        onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+        className="min-w-[120px] bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
+      />
+    </th>
+    <th className="px-2 py-1.5">
+      <Select
+        size="xs"
+        value={filters.status}
+        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+        className="min-w-[100px] bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
+      >
+        <option value="">All statuses</option>
+        <option value="extracted">Extracted</option>
+        <option value="approved">Approved</option>
+      </Select>
+    </th>
+    <th className="px-2 py-1.5">
+      <div className="flex items-center gap-1">
+        <FormInput
+          size="xs"
+          type="date"
+          value={filters.dateFrom}
+          onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+          className="bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
+        />
+        <span className="text-text-muted">-</span>
+        <FormInput
+          size="xs"
+          type="date"
+          value={filters.dateTo}
+          onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+          className="bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
+        />
+      </div>
+    </th>
+  </tr>
+
+  {/* Row 2: Column headers with sort */}
+  <tr className="bg-bg-secondary">
+    <th className="w-10 px-2 py-2">
+      <Checkbox size="sm" checked={isAllSelected} indeterminate={isIndeterminate} onChange={toggleSelectAll} />
+    </th>
+    <SortableHeader label="Company Name" field="name" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+    <SortableHeader label="Status" field="status" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+    <SortableHeader label="Date" field="date" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+    <th className="px-2 py-2 text-xs font-medium text-text-secondary uppercase">Actions</th>
+  </tr>
+</thead>
+```
+
+**Key Points:**
+- Filter row has `border-b border-border-primary` to separate from column headers
+- Filter inputs use `bg-transparent border-0` to blend with header background
+- Focus state adds border: `focus:border focus:border-border-primary`
+- Column headers row uses standard table header styling
+
+###### Resizable Columns
+
+For tables with many columns, allow users to resize column widths:
+
+```tsx
+import { useDraggable } from '@/hooks/use-draggable';
+
+function ResizableColumn({ children, minWidth = 80, onResize }) {
+  const [width, setWidth] = useState(200);
+  const handleRef = useRef(null);
+
+  const handleDrag = useDraggable(handleRef, {
+    onDrag: (deltaX) => {
+      const newWidth = Math.max(minWidth, width + deltaX);
+      setWidth(newWidth);
+      onResize?.(newWidth);
+    }
+  });
+
+  return (
+    <th style={{ width, minWidth, position: 'relative' }}>
+      {children}
+      <div
+        ref={handleRef}
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-oak-primary transition-colors"
+      />
+    </th>
+  );
+}
+```
+
+**Usage:**
+```tsx
+<thead>
+  <tr>
+    <ResizableColumn minWidth={120}>Name</ResizableColumn>
+    <ResizableColumn minWidth={100}>Status</ResizableColumn>
+  </tr>
+</thead>
+```
+
+###### Dense Badge Layout in Cells
+
+Complex tables often display multiple status indicators per cell:
+
+```tsx
+<TableCell className="px-2 py-1.5">
+  <div className="flex items-center gap-2 flex-wrap">
+    <Badge size="sm" variant="success">
+      <Icon name="check" className="w-3 h-3" />
+      Extracted
+    </Badge>
+    <Badge size="sm" variant="info">
+      Approved
+    </Badge>
+    <Badge size="sm" variant="default">
+      <Icon name="copy" className="w-3 h-3" />
+      Not Duplicate
+    </Badge>
+  </div>
+</TableCell>
+```
+
+**Guidelines for Badge Density:**
+- Use `size="sm"` for all badges in dense tables
+- Limit to 2-3 badges per cell to avoid overwhelming the layout
+- Use `gap-2` (8px) between badges for readability
+- Include icons only when they add semantic meaning (not decorative)
+- Use `flex-wrap` to handle overflow gracefully
+
+###### Keyboard Shortcuts in Tables
+
+Display keyboard shortcuts in table action buttons:
+
+```tsx
+<div className="flex items-center gap-2 mb-4">
+  <Button size="sm" variant="ghost" onClick={handleRefresh}>
+    <Icon name="refresh" className="w-4 h-4 mr-2" />
+    Refresh (R)
+  </Button>
+  <Button size="sm" variant="ghost" onClick={handleUpload}>
+    <Icon name="upload" className="w-4 h-4 mr-2" />
+    Upload (F2)
+  </Button>
+</div>
+
+// Implement keyboard listener
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      handleRefresh();
+    }
+    if (e.key === 'F2') {
+      e.preventDefault();
+      handleUpload();
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, []);
+```
+
+**Best Practices:**
+- Show shortcuts in button text: `Action (Key)`
+- Use single letters for common actions (R = Refresh, A = Add)
+- Use function keys (F2, F3) for less common actions
+- Don't trigger when input fields are focused
+- Document shortcuts in tooltip or help text
+
+##### Table Row States
+
+| State | Background | Border | Hover | Use Case |
+|-------|-----------|--------|-------|----------|
+| **Default** | `bg-bg-secondary` | `border-b border-border-primary` | `hover:bg-bg-tertiary` | Standard row |
+| **Selected** | `bg-oak-row-selected` | Same | `hover:bg-oak-row-selected-hover` | Row checkbox checked |
+| **Focused** | Same as default | `ring-2 ring-oak-primary` | Same | Keyboard navigation |
+| **Disabled** | `bg-bg-tertiary` | Same | No hover | Archived/inactive items |
+
+```tsx
+<tr
+  className={cn(
+    'border-b border-border-primary transition-colors duration-150',
+    selectedIds.has(row.id)
+      ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
+      : 'bg-bg-secondary hover:bg-bg-tertiary',
+    isFocused && 'ring-2 ring-oak-primary',
+    row.isDisabled && 'bg-bg-tertiary opacity-60 pointer-events-none'
+  )}
+  data-selected={selectedIds.has(row.id)}
+>
+  {/* Cell content */}
+</tr>
+```
+
+##### Context-Specific Dropdown Styling
+
+Dropdown styling varies by context to match visual density:
+
+**Standard Form Context (Bordered)**
+```tsx
+<Select
+  size="md"
+  className="border border-border-primary bg-bg-primary focus:ring-2 focus:ring-oak-primary"
+>
+  <option>Option 1</option>
+</Select>
+```
+
+**Table Header Filter Context (Transparent)**
+```tsx
+<Select
+  size="xs"
+  className="bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
+>
+  <option>All</option>
+  <option>Active</option>
+</Select>
+```
+
+**Rationale**: Table filters use transparent styling to reduce visual noise in dense layouts. The border appears on focus to clearly indicate the active filter.
+
+---
+
+###### Real-World Implementation: Document Processing Table
+
+**Reference**: [src/app/(dashboard)/processing/page.tsx](../../src/app/(dashboard)/processing/page.tsx)
+
+This is the **production reference implementation** showcasing all advanced table patterns in action.
+
+**Complete Feature Set:**
+- ✅ Multi-row filter headers (filter row + column headers)
+- ✅ 15+ filter types (text, searchable select, date, amount)
+- ✅ Resizable columns with Pointer Events API
+- ✅ Sortable headers with visual indicators
+- ✅ Row selection (none/partial/all states)
+- ✅ Dense badge layouts (pipeline, status, duplicate, tags)
+- ✅ Click-to-navigate rows with modifier key support
+- ✅ Column visibility toggle
+- ✅ User preference persistence (widths, visibility)
+- ✅ Keyboard shortcuts (Refresh: R, Upload: F2)
+- ✅ Pagination with page info
+
+**1. Multi-Row Header Structure** (Lines 1842-2263)
+
+```tsx
+<thead className="bg-background-tertiary border-b border-border-primary">
+  {/* Row 1: Filter Controls */}
+  <tr className="bg-background-secondary/50">
+    <th className="px-4 py-2"></th> {/* Checkbox column */}
+    {visibleColumns.map((col) => (
+      <th key={col.id} className="px-4 py-2 max-w-0">
+        {/* Render appropriate filter for column type */}
+        {col.filterType === 'text' && (
+          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
+            <input
+              type="text"
+              value={filters[col.id] || ''}
+              onChange={(e) => handleFilterChange(col.id, e.target.value)}
+              placeholder="All"
+              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
+            />
+            {filters[col.id] && (
+              <button onClick={() => handleFilterChange(col.id, undefined)}>
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+        {col.filterType === 'select' && (
+          <SearchableSelect
+            options={col.options}
+            value={filters[col.id] || ''}
+            onChange={(value) => handleFilterChange(col.id, value)}
+            className="text-xs"
+            showChevron={false}
+            showKeyboardHints={false}
+          />
+        )}
+      </th>
+    ))}
+  </tr>
+
+  {/* Row 2: Column Headers with Sort */}
+  <tr className="border-t border-border-primary">
+    <th className="w-10 px-4 py-2.5">
+      <button onClick={toggleSelectAll}>
+        {selectionState === 'all' ? (
+          <CheckSquare className="w-4 h-4 text-oak-primary" />
+        ) : selectionState === 'partial' ? (
+          <MinusSquare className="w-4 h-4 text-oak-light" />
+        ) : (
+          <Square className="w-4 h-4 text-text-muted" />
+        )}
+      </button>
+    </th>
+    {visibleColumns.map((col) => (
+      <th key={col.id} className="relative text-xs font-medium text-text-secondary px-4 py-2.5">
+        {col.sortable ? (
+          <button
+            onClick={() => handleSort(col.sortField)}
+            className={cn(
+              'inline-flex items-center gap-1 hover:text-text-primary',
+              sortBy === col.sortField && 'text-text-primary'
+            )}
+          >
+            {col.label}
+            {sortBy === col.sortField ? (
+              sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+            ) : (
+              <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
+            )}
+          </button>
+        ) : (
+          <span>{col.label}</span>
+        )}
+        {/* Resize handle */}
+        <div
+          onPointerDown={(e) => startResize(e, col.id)}
+          className="absolute top-0 -right-2 h-full w-4 cursor-col-resize hover:bg-border-secondary/60 z-10 touch-none"
+        />
+      </th>
+    ))}
+  </tr>
+</thead>
+```
+
+**Key Implementation Details:**
+- Filter row: `bg-background-secondary/50` (50% opacity for subtle distinction)
+- Column header row: `border-t border-border-primary` (visual separator)
+- Text filters: `h-9` height (36px, matches button height)
+- Filter inputs: `bg-background-secondary/30` with `border-border-primary`
+- Focus state: `focus-within:ring-2 focus-within:ring-oak-primary/30`
+- Clear button: Only shown when filter has value (`{filters[col.id] && ...}`)
+- Searchable selects: `showChevron={false}` and `showKeyboardHints={false}` for compact inline display
+
+**2. Resizable Columns Implementation** (Lines 712-765)
+
+```tsx
+// State
+const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+const isResizingRef = useRef(false);
+
+// Resize handler
+const startResize = useCallback((e: React.PointerEvent, columnId: string) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const handle = e.currentTarget as HTMLElement;
+  const th = handle.closest('th') as HTMLTableCellElement;
+  const startWidth = columnWidths[columnId] ?? th.getBoundingClientRect().width ?? 120;
+  const startX = e.clientX;
+  const pointerId = e.pointerId;
+
+  isResizingRef.current = true;
+  document.body.style.userSelect = 'none';
+  document.body.style.cursor = 'col-resize';
+
+  try {
+    handle.setPointerCapture(pointerId);
+  } catch {}
+
+  const onMove = (ev: globalThis.PointerEvent) => {
+    const nextWidth = Math.max(40, startWidth + (ev.clientX - startX));
+    setColumnWidths((prev) => ({ ...prev, [columnId]: nextWidth }));
+  };
+
+  const onUp = () => {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    try {
+      handle.releasePointerCapture(pointerId);
+    } catch {}
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+    isResizingRef.current = false;
+
+    // Persist to user preferences
+    saveColumnWidths.mutate({ columnWidths });
+  };
+
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+}, [columnWidths, saveColumnWidths]);
+
+// Apply widths with <colgroup>
+<colgroup>
+  <col style={{ width: '40px' }} />
+  {visibleColumns.map((col) => (
+    <col
+      key={col.id}
+      style={columnWidths[col.id] ? { width: `${columnWidths[col.id]}px` } : undefined}
+    />
+  ))}
+</colgroup>
+```
+
+**Key Features:**
+- Uses **Pointer Events API** (not MouseEvent) for cross-device support
+- `setPointerCapture(pointerId)` ensures drag continues even if cursor leaves element
+- Minimum width: **40px** (prevents columns from becoming unusable)
+- Resize handle: `absolute top-0 -right-2 h-full w-4` (4px wide, offset 2px left)
+- Touch-friendly: `touch-none` class prevents scrolling during resize
+- `isResizingRef` prevents row navigation clicks during resize operation
+- Persists widths to user preferences for session continuity
+
+**3. Inline Filter Styling Patterns**
+
+```tsx
+// Text Input Filter (compact, transparent)
+<div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
+  <input
+    className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs"
+  />
+</div>
+
+// Searchable Select (no chevron, no hints)
+<SearchableSelect
+  className="text-xs"
+  showChevron={false}
+  showKeyboardHints={false}
+/>
+
+// Amount Filter (range or single value)
+<AmountFilter
+  size="sm"
+  className="text-xs"
+  showChevron={false}
+/>
+```
+
+**Styling Rules:**
+| Property | Standard Form | Table Header Filter |
+|----------|--------------|-------------------|
+| Background | `bg-background-primary` | `bg-background-secondary/30` |
+| Border | `border-border-primary` (visible) | `border-border-primary` (visible) |
+| Border Hover | `hover:border-oak-light` | `hover:border-oak-primary/50` |
+| Focus Ring | `ring-2 ring-oak-primary` | `ring-2 ring-oak-primary/30` |
+| Height | `h-10` (40px) | `h-9` (36px) |
+| Font Size | `text-sm` (13px) | `text-xs` (12px) |
+| Chevron | Visible | Hidden (`showChevron={false}`) |
+| Keyboard Hints | Visible | Hidden (`showKeyboardHints={false}`) |
+
+**4. Dense Badge Layouts** (Lines 192-205, 519-579)
+
+```tsx
+// Badge Component for Status
+function StatusBadge({ config }: { config: BadgeConfig }) {
+  const Icon = config.icon;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium max-w-full',
+        config.color
+      )}
+      title={config.label}
+    >
+      <Icon className="w-3 h-3 flex-shrink-0" />
+      <span className="truncate">{config.label}</span>
+    </span>
+  );
+}
+
+// Badge Configuration
+const pipelineStatusConfig: Record<PipelineStatus, BadgeConfig> = {
+  UPLOADED: { label: 'Uploaded', color: 'text-text-secondary bg-background-tertiary', icon: Upload },
+  EXTRACTION_DONE: { label: 'Extracted', color: 'text-status-success bg-status-success/10', icon: CheckCircle },
+  FAILED_PERMANENT: { label: 'Failed', color: 'text-status-error bg-status-error/10', icon: XCircle },
+  // ...
+};
+
+// Cell Rendering
+<td className="px-4 py-3 max-w-0">
+  <div className="min-w-0">
+    <StatusBadge config={pipelineStatusConfig[doc.pipelineStatus]} />
+  </div>
+</td>
+
+// Tags with Overflow
+<td className="px-4 py-3 max-w-0">
+  <div className="flex flex-wrap items-center gap-1 min-w-0">
+    {tags.slice(0, 3).map((tag) => (
+      <TagChip key={tag.id} name={tag.name} color={tag.color} size="xs" />
+    ))}
+    {tags.length > 3 && (
+      <span className="text-xs text-text-muted">+{tags.length - 3}</span>
+    )}
+  </div>
+</td>
+```
+
+**Badge Sizing:**
+- Padding: `px-2 py-0.5` (8px horizontal, 2px vertical)
+- Font: `text-xs font-medium` (12px)
+- Icon: `w-3 h-3` (12px, same as text)
+- Gap: `gap-1` (4px between icon and text)
+- Overflow: `truncate` on text span, `flex-shrink-0` on icon
+
+**Color Pattern:**
+- Success: `text-status-success bg-status-success/10`
+- Warning: `text-status-warning bg-status-warning/10`
+- Error: `text-status-error bg-status-error/10`
+- Info: `text-status-info bg-status-info/10`
+- Neutral: `text-text-secondary bg-background-tertiary`
+
+**5. Row Navigation with Modifier Keys** (Lines 848-862)
+
+```tsx
+const handleRowNavigate = useCallback((e: MouseEvent, docId: string) => {
+  // Only handle plain left-clicks
+  if (e.defaultPrevented) return;
+  if (isResizingRef.current) return; // Don't navigate during resize
+  if (e.button !== 0) return; // Only left mouse button
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // Allow Ctrl+click for new tab
+
+  // Don't navigate if clicking interactive elements
+  const target = e.target as HTMLElement;
+  if (target.closest('a,button,input,select,textarea,[role="button"]')) return;
+
+  router.push(`/processing/${docId}`);
+}, [router]);
+
+// Row rendering
+<tr
+  onClick={(e) => handleRowNavigate(e, doc.id)}
+  className={cn(
+    'border-b border-border-primary transition-colors cursor-pointer',
+    isSelected
+      ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
+      : isAlternate
+        ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
+        : 'hover:bg-background-tertiary/50'
+  )}
+>
+```
+
+**Navigation Rules:**
+- ✅ Plain left-click → Navigate to detail page
+- ✅ Ctrl/Cmd + click → Open in new tab (browser default)
+- ✅ Right-click → Context menu (browser default)
+- ✅ Clicking buttons/links/inputs → Execute that action (don't navigate)
+- ✅ During column resize → Don't navigate
+- ✅ Shift/Alt + click → Ignore (reserved for future selection features)
+
+**6. Selection State Management** (Lines 825-927)
+
+```tsx
+const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+const toggleSelectAll = useCallback(() => {
+  const allIds = data?.documents.map((d) => d.id) || [];
+  const allSelected = allIds.every((id) => selectedIds.includes(id));
+  setSelectedIds(allSelected ? [] : allIds);
+}, [data, selectedIds]);
+
+const toggleSelect = useCallback((id: string) => {
+  setSelectedIds((prev) =>
+    prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+  );
+}, []);
+
+const selectionState = useMemo(() => {
+  if (!data?.documents || data.documents.length === 0) return 'none';
+  const allIds = data.documents.map((d) => d.id);
+  const selectedCount = allIds.filter((id) => selectedIds.includes(id)).length;
+  if (selectedCount === 0) return 'none';
+  if (selectedCount === allIds.length) return 'all';
+  return 'partial';
+}, [data, selectedIds]);
+
+// Clear selection when filters change
+useEffect(() => {
+  setSelectedIds([]);
+}, [params]); // params includes filters, page, sortBy, sortOrder
+```
+
+**Selection States:**
+- **none**: No rows selected → `Square` icon (empty checkbox)
+- **partial**: Some rows selected → `MinusSquare` icon (indeterminate)
+- **all**: All rows selected → `CheckSquare` icon (filled checkbox)
+
+**Key Behaviors:**
+- Selection persists during sorting
+- Selection **clears** when filters/page changes (prevents selecting invisible rows)
+- `toggleSelectAll` checks current state: if all selected → deselect all, otherwise select all
+- Individual row selection toggles on/off
+
+---
+
+**Implementation Checklist** for creating similar advanced tables:
+
+- [ ] Multi-row header (filters above, headers with sort below)
+- [ ] Column width persistence (user preferences)
+- [ ] Resizable columns with Pointer Events API
+- [ ] Inline filter styling (transparent background, compact height)
+- [ ] Sortable headers (three states: asc/desc/none)
+- [ ] Row selection (none/partial/all checkbox states)
+- [ ] Click-to-navigate with modifier key support
+- [ ] Dense badge layouts with overflow handling
+- [ ] Keyboard shortcuts for common actions
+- [ ] Responsive mobile view (card layout fallback)
+- [ ] Pagination with page info and per-page selector
+- [ ] Column visibility toggle (show/hide columns)
+- [ ] Accessibility: ARIA labels, keyboard navigation, focus management
+
+##### Table Pagination Pattern
+
+Standard pagination for all tables:
+
+```tsx
+<div className="flex items-center justify-between px-4 py-3 border-t border-border-primary bg-bg-secondary">
+  {/* Left: Results info */}
+  <div className="text-sm text-text-secondary">
+    Showing <span className="font-medium text-text-primary">{start}</span> to{' '}
+    <span className="font-medium text-text-primary">{end}</span> of{' '}
+    <span className="font-medium text-text-primary">{total}</span> results
+  </div>
+
+  {/* Center: Page numbers */}
+  <div className="flex items-center gap-1">
+    <Button
+      size="sm"
+      variant="ghost"
+      disabled={currentPage === 1}
+      onClick={() => setPage(currentPage - 1)}
+    >
+      <Icon name="chevron-left" className="w-4 h-4" />
+      Previous
+    </Button>
+
+    {pageNumbers.map((pageNum) => (
+      <Button
+        key={pageNum}
+        size="sm"
+        variant={pageNum === currentPage ? 'default' : 'ghost'}
+        onClick={() => setPage(pageNum)}
+        className="min-w-[36px]"
+      >
+        {pageNum}
+      </Button>
+    ))}
+
+    <Button
+      size="sm"
+      variant="ghost"
+      disabled={currentPage === totalPages}
+      onClick={() => setPage(currentPage + 1)}
+    >
+      Next
+      <Icon name="chevron-right" className="w-4 h-4" />
+    </Button>
+  </div>
+
+  {/* Right: Per page selector */}
+  <div className="flex items-center gap-2">
+    <span className="text-sm text-text-secondary">Per page:</span>
+    <Select
+      size="xs"
+      value={perPage}
+      onChange={(e) => setPerPage(Number(e.target.value))}
+      className="w-20"
+    >
+      <option value={10}>10</option>
+      <option value={25}>25</option>
+      <option value={50}>50</option>
+      <option value={100}>100</option>
+    </Select>
+  </div>
+</div>
+```
+
+**Key Elements:**
+- Results info on left shows range and total
+- Page buttons in center with active state highlighting
+- Per-page selector on right for adjusting results
+- Previous/Next buttons with icons and disabled states
+
+##### Table Empty State
+
+When tables have no data, display an empty state:
+
+```tsx
+{items.length === 0 ? (
+  <div className="flex flex-col items-center justify-center py-12 text-center">
+    <Icon name="briefcase" className="w-12 h-12 text-text-muted mb-4" />
+    <h3 className="text-lg font-semibold text-text-primary mb-2">
+      No items found
+    </h3>
+    <p className="text-sm text-text-secondary mb-4 max-w-md">
+      {hasFilters
+        ? 'Try adjusting your filters or search query.'
+        : 'Get started by creating your first item.'}
+    </p>
+    {!hasFilters && (
+      <Button size="md" variant="primary" onClick={handleCreate}>
+        <Icon name="plus" className="w-4 h-4 mr-2" />
+        Add Item
+      </Button>
+    )}
+  </div>
+) : (
+  <table className="table">
+    {/* Table content */}
+  </table>
+)}
+```
+
+**Empty State Components:**
+- Icon: 48px (w-12 h-12) in muted color
+- Heading: text-lg font-semibold
+- Description: text-sm, max-w-md for readability
+- Action button: Only when no filters applied (otherwise show "adjust filters" message)
+
+##### Table Accessibility
+
+Ensure tables are accessible to all users:
+
+**ARIA Labels:**
+```tsx
+<table aria-label="Companies list" className="table">
+  <thead>
+    <tr>
+      <th scope="col">Name</th>
+      <th scope="col">Status</th>
+      <th scope="col">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>{name}</td>
+      <td>{status}</td>
+      <td>
+        <Button aria-label={`Edit ${name}`}>Edit</Button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+```
+
+**Keyboard Navigation:**
+- `Tab`: Navigate between interactive elements (checkboxes, buttons, inputs)
+- `Enter` / `Space`: Activate buttons and checkboxes
+- `Arrow keys`: Navigate between rows (when implementing roving tabindex)
+- `Cmd/Ctrl + A`: Select all rows (when implemented)
+
+**Screen Reader Support:**
+- Use `scope="col"` on `<th>` elements
+- Use `aria-label` for icon-only buttons
+- Announce selection changes with `aria-live` regions
+- Use `aria-sort` on sortable column headers
+
+##### Table Performance Optimization
+
+For large datasets, optimize table rendering:
+
+**Virtualization:**
+```tsx
+import { useVirtualizer } from '@tanstack/react-virtual';
+
+function VirtualTable({ rows }) {
+  const parentRef = useRef(null);
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 40, // Row height in pixels
+    overscan: 5, // Render extra rows for smooth scrolling
+  });
+
+  return (
+    <div ref={parentRef} className="h-[600px] overflow-auto">
+      <table className="table">
+        <thead>{/* Column headers */}</thead>
+        <tbody style={{ height: virtualizer.getTotalSize() }}>
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const row = rows[virtualRow.index];
+            return (
+              <tr
+                key={row.id}
+                style={{
+                  height: virtualRow.size,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                {/* Row content */}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+```
+
+**When to Use Virtualization:**
+- Tables with 100+ rows
+- Rows with complex content (images, badges, nested elements)
+- Mobile devices (limited memory and CPU)
+
+**Alternative: Pagination** (simpler, recommended for most cases)
+- Limit rows per page (10, 25, 50, 100)
+- Use server-side pagination for large datasets
+- Show loading states during page transitions
 
 ### Navigation
 
@@ -1443,6 +4732,135 @@ The `SidebarTenantButton` component is automatically rendered in the sidebar for
 ---
 
 ## Best Practices
+
+### CSS Utility Classes vs React Components
+
+The application uses both CSS utility classes (in `globals.css`) and React components. Understanding when to use each approach ensures consistency.
+
+#### When to Use React Components
+
+**Prefer React components for:**
+- **Interactive elements**: Button, Input, Modal, Dropdown, Toast
+- **State management**: Components with open/closed, selected, disabled states
+- **Props/variants**: When you need size, variant, or other props
+- **Composition**: Components that wrap children or other components
+- **Accessibility**: Components that manage ARIA attributes, focus, keyboard navigation
+
+**Examples:**
+```tsx
+// ✅ Good: Using React Button component with variants
+<Button size="md" variant="primary" onClick={handleSave}>
+  Save Changes
+</Button>
+
+// ✅ Good: Using FormInput with validation state
+<FormInput
+  label="Email"
+  type="email"
+  error={errors.email}
+  required
+/>
+
+// ✅ Good: Modal with state management
+<Modal isOpen={isOpen} onClose={onClose}>
+  <ModalHeader>Edit Company</ModalHeader>
+  <ModalBody>{/* Content */}</ModalBody>
+</Modal>
+```
+
+#### When to Use CSS Utility Classes
+
+**Prefer CSS utility classes for:**
+- **Layout containers**: Cards, sections, grids
+- **Static elements**: Dividers, headings, text blocks
+- **Simple styling**: Background colors, borders, spacing
+- **Performance**: Avoid component overhead for simple elements
+
+**Examples:**
+```tsx
+// ✅ Good: Using card CSS class for layout
+<div className="card p-4">
+  <h3 className="section-title mb-3">Recent Activity</h3>
+  <div className="space-y-2">{/* Content */}</div>
+</div>
+
+// ✅ Good: Using divider class
+<hr className="divider" />
+
+// ✅ Good: Using badge CSS classes
+<span className="badge badge-success">Active</span>
+```
+
+#### Mixing Both Approaches
+
+You can combine React components with CSS classes for styling:
+
+```tsx
+// ✅ Good: Button component with additional CSS classes
+<Button
+  size="md"
+  variant="primary"
+  className="w-full mt-4"  // Tailwind utilities for layout
+>
+  Submit
+</Button>
+
+// ✅ Good: Card container with FormInput component
+<div className="card p-4">
+  <FormInput label="Name" />
+  <FormInput label="Email" />
+</div>
+```
+
+#### Component vs CSS Class Reference
+
+| Feature | React Component | CSS Class |
+|---------|----------------|-----------|
+| **Buttons** | `<Button>` | `.btn-*` (deprecated) |
+| **Inputs** | `<FormInput>` | `.input` (for custom inputs only) |
+| **Cards** | N/A | `.card`, `.card-compact` |
+| **Alerts** | `<Alert>` component recommended | `.alert` (deprecated) |
+| **Badges** | `<Badge>` | `.badge` (for simple cases) |
+| **Modals** | `<Modal>` | N/A |
+| **Tables** | N/A | `.table`, `.table-compact` |
+| **Navigation** | N/A | `.nav-item`, `.nav-item-active` |
+
+#### Deprecation Status
+
+Some CSS classes in `globals.css` are **deprecated** in favor of React components:
+
+**Deprecated (use React component instead):**
+- `.btn-xs`, `.btn-sm`, `.btn-md`, `.btn-lg` → Use `<Button size="xs|sm|md|lg">`
+- `.alert-*` variants → Use `<Alert variant="success|warning|error|info">`
+
+**Reason**: React components provide better state management, accessibility, and consistency. CSS classes were used before components existed.
+
+**Still Valid:**
+- `.card`, `.card-compact` → No React component needed (simple containers)
+- `.table`, `.table-compact` → Tables are semantic HTML, CSS classes appropriate
+- `.nav-item`, `.nav-item-active` → Navigation is simple, CSS classes sufficient
+- `.divider`, `.section-title` → Static elements, no component needed
+
+#### Migration Path
+
+If you encounter deprecated CSS classes in existing code:
+
+1. **Buttons**: Replace `.btn-*` with `<Button>` component
+2. **Alerts**: Replace `.alert-*` with `<Alert>` component
+3. **Keep**: `.card`, `.table`, `.nav-item` classes (not deprecated)
+
+**Example Migration:**
+```tsx
+// ❌ Old: Using deprecated CSS classes
+<button className="btn btn-primary btn-md">
+  Save
+</button>
+
+// ✅ New: Using React component
+<Button size="md" variant="primary">
+  Save
+</Button>
+```
 
 ### Number Input Fields (Controlled Components)
 

@@ -584,7 +584,7 @@ export default function ProcessingUploadPage() {
       )}
 
       {/* Company Selection */}
-      <div className="card p-4 mb-6">
+      <div className="card mb-6">
         <label className="block text-sm font-medium text-text-primary mb-2">
           <Building2 className="w-4 h-4 inline-block mr-2" />
           Select Company <span className="text-status-error">*</span>
@@ -818,7 +818,7 @@ export default function ProcessingUploadPage() {
       )}
 
       {/* Company Context - Auto-populated, always visible */}
-      <div className="card p-4 mb-4">
+      <div className="card mb-4">
         <div className="flex items-start gap-3">
           <Building2 className="w-4 h-4 text-text-tertiary mt-0.5 flex-shrink-0" />
           <div className="flex-1">

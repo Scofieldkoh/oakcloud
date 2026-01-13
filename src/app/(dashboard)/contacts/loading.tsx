@@ -11,9 +11,9 @@ export default function ContactsLoading() {
       </div>
 
       {/* Stats Cards Skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="card p-3 sm:p-4">
+          <div key={i} className="card card-compact sm:p-4">
             <div className="flex items-center gap-3">
               <div className="skeleton h-10 w-10 rounded" />
               <div>

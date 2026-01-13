@@ -120,7 +120,7 @@ export default function LoginPage() {
             <FormInput
               label="Email"
               type="email"
-              inputSize="md"
+              inputSize="lg"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
@@ -135,7 +135,7 @@ export default function LoginPage() {
               <FormInput
                 label="Password"
                 type="password"
-                inputSize="md"
+                inputSize="lg"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"

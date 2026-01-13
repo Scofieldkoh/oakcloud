@@ -235,8 +235,8 @@ export default function CompaniesPage() {
       {/* Stats Cards */}
       {stats && !statsError && (
         <MobileCollapsibleSection title="Statistics" count={4} className="mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="card p-3 sm:p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="card card-compact sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-oak-primary/10">
                   <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-oak-light" />
@@ -248,7 +248,7 @@ export default function CompaniesPage() {
               </div>
             </div>
 
-            <div className="card p-3 sm:p-4">
+            <div className="card card-compact sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-status-success/10">
                   <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-status-success" />
@@ -262,7 +262,7 @@ export default function CompaniesPage() {
               </div>
             </div>
 
-            <div className="card p-3 sm:p-4">
+            <div className="card card-compact sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-status-info/10">
                   <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
@@ -276,7 +276,7 @@ export default function CompaniesPage() {
               </div>
             </div>
 
-            <div className="card p-3 sm:p-4">
+            <div className="card card-compact sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-status-warning/10">
                   <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
@@ -309,7 +309,7 @@ export default function CompaniesPage() {
 
       {/* Error State */}
       {error && (
-        <div className="card p-4 border-status-error bg-status-error/5 mb-6">
+        <div className="card border-status-error bg-status-error/5 mb-4">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
             <p>{error instanceof Error ? error.message : 'Failed to load companies'}</p>
@@ -319,7 +319,7 @@ export default function CompaniesPage() {
 
 
       {/* Table */}
-      <div className="mb-6">
+      <div>
         <CompanyTable
           companies={data?.companies || []}
           onDelete={handleDeleteClick}
@@ -341,14 +341,16 @@ export default function CompaniesPage() {
 
       {/* Pagination */}
       {data && data.totalPages > 0 && (
-        <Pagination
-          page={data.page}
-          totalPages={data.totalPages}
-          total={data.total}
-          limit={data.limit}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-        />
+        <div className="mt-4">
+          <Pagination
+            page={data.page}
+            totalPages={data.totalPages}
+            total={data.total}
+            limit={data.limit}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+          />
+        </div>
       )}
 
       {/* Floating Bulk Actions Toolbar */}

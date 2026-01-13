@@ -424,7 +424,7 @@ export function ProcessingFilters({
 
       {/* Expandable Filter Panel */}
       {showFilters && (
-        <div className="card p-4 animate-fade-in">
+        <div className="card animate-fade-in">
           <h3 className="text-sm font-medium text-text-primary mb-4">Filters</h3>
 
           {/* Filter Grid - Responsive layout */}

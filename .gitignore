@@ -34,6 +34,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Test/debug scripts (keep in __tests__/debug/)
+/check_*.js
+/test-*.ts
+/test-*.js
+
 # Prisma
 prisma/migrations/**/migration_lock.toml
 
@@ -48,3 +53,6 @@ uploads/*
 # Logs
 logs
 *.log
+
+# Ralph (deprecated)
+ralph-claude

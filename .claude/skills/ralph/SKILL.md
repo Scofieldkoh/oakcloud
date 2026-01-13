@@ -94,7 +94,7 @@ Before saving prd.json, verify:
 
 ## Output
 
-Save to: `ralph-claude/prd.json`
+Save to: `docs/prd.json`
 
 ## Example Conversion
 

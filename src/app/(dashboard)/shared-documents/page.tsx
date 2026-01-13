@@ -301,7 +301,7 @@ export default function SharedDocumentsPage() {
 
       {/* Error state */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
           <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
             <AlertCircle className="w-5 h-5" />
             <p>{error}</p>
@@ -632,14 +632,16 @@ export default function SharedDocumentsPage() {
 
       {/* Pagination */}
       {!isLoading && totalPages > 0 && (
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          limit={limit}
-          onPageChange={setPage}
-          onLimitChange={() => {}}
-        />
+        <div className="mt-4">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={() => {}}
+          />
+        </div>
       )}
 
       {/* Revoke dialog */}

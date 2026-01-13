@@ -7,6 +7,8 @@ import { Link as TiptapLink } from '@tiptap/extension-link';
 import { Underline } from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
+import { FontFamily } from '@tiptap/extension-font-family';
+import { TextAlign } from '@tiptap/extension-text-align';
 import DOMPurify from 'dompurify';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
@@ -24,6 +26,14 @@ import {
   Heading1,
   Minus,
   RemoveFormatting,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Indent,
+  Outdent,
+  Undo,
+  Redo,
+  Type,
 } from 'lucide-react';
 
 // ============================================================================
@@ -55,6 +65,21 @@ interface ToolbarButtonProps {
 
 const FONT_SIZES = [
   '8', '9', '10', '11', '12', '14', '16', '18', '20', '22', '24', '26', '28', '36'
+];
+
+const FONT_FAMILIES = [
+  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+  { value: "'Times New Roman', Times, serif", label: 'Times New Roman' },
+  { value: "'Courier New', Courier, monospace", label: 'Courier New' },
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: 'Verdana, Geneva, sans-serif', label: 'Verdana' },
+];
+
+const LINE_SPACING_OPTIONS = [
+  { value: '1', label: 'Single' },
+  { value: '1.15', label: '1.15' },
+  { value: '1.5', label: '1.5' },
+  { value: '2', label: 'Double' },
 ];
 
 const TEXT_COLORS = [
@@ -148,7 +173,9 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [showFontSize, setShowFontSize] = useState(false);
+  const [showFontFamily, setShowFontFamily] = useState(false);
   const [showColor, setShowColor] = useState(false);
+  const [showLineSpacing, setShowLineSpacing] = useState(false);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -184,6 +211,18 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     setShowFontSize(false);
   };
 
+  const setFontFamilyValue = (fontFamily: string) => {
+    if (!editor) return;
+    editor.chain().focus().setFontFamily(fontFamily).run();
+    setShowFontFamily(false);
+  };
+
+  const setLineSpacing = (lineHeight: string) => {
+    if (!editor) return;
+    editor.chain().focus().setMark('textStyle', { lineHeight }).run();
+    setShowLineSpacing(false);
+  };
+
   const setColor = (color: string) => {
     if (!editor) return;
     if (color === '') {
@@ -215,6 +254,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       .unsetUnderline()
       .unsetStrike()
       .unsetColor()
+      .unsetFontFamily()
+      .setTextAlign('left')
       .unsetMark('textStyle')
       .run();
   };
@@ -228,6 +269,45 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
   return (
     <div className="flex items-center gap-0.5 p-1 border-b border-border-primary bg-background-secondary flex-wrap">
+      {/* Undo/Redo */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!editor.can().undo()}
+        title="Undo (Ctrl+Z)"
+      >
+        <Undo className="w-4 h-4" />
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!editor.can().redo()}
+        title="Redo (Ctrl+Y)"
+      >
+        <Redo className="w-4 h-4" />
+      </ToolbarButton>
+
+      <div className="w-px h-5 bg-border-primary mx-1" />
+
+      {/* Font Family */}
+      <Dropdown
+        trigger={<Type className="w-4 h-4" />}
+        isOpen={showFontFamily}
+        onToggle={() => setShowFontFamily(!showFontFamily)}
+        onClose={() => setShowFontFamily(false)}
+      >
+        {FONT_FAMILIES.map((font) => (
+          <button
+            key={font.value}
+            type="button"
+            onClick={() => setFontFamilyValue(font.value)}
+            className="w-full px-3 py-1.5 text-left text-xs hover:bg-background-tertiary transition-colors"
+            style={{ fontFamily: font.value }}
+          >
+            {font.label}
+          </button>
+        ))}
+      </Dropdown>
+
       {/* Font Size */}
       <Dropdown
         trigger={<ALargeSmall className="w-4 h-4" />}
@@ -282,30 +362,6 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         ))}
       </Dropdown>
 
-      {/* H1 Style */}
-      <ToolbarButton
-        onClick={applyH1Style}
-        title="Heading Style (24px Blue)"
-      >
-        <Heading1 className="w-4 h-4" />
-      </ToolbarButton>
-
-      {/* Divider */}
-      <ToolbarButton
-        onClick={insertDivider}
-        title="Insert Divider"
-      >
-        <Minus className="w-4 h-4" />
-      </ToolbarButton>
-
-      {/* Reset to Normal */}
-      <ToolbarButton
-        onClick={resetToNormal}
-        title="Reset to Normal Text"
-      >
-        <RemoveFormatting className="w-4 h-4" />
-      </ToolbarButton>
-
       <div className="w-px h-5 bg-border-primary mx-1" />
 
       <ToolbarButton
@@ -346,6 +402,37 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
       <div className="w-px h-5 bg-border-primary mx-1" />
 
+      {/* Text Alignment */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+        isActive={editor.isActive({ textAlign: 'left' })}
+        isToggle
+        title="Align Left"
+      >
+        <AlignLeft className="w-4 h-4" />
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+        isActive={editor.isActive({ textAlign: 'center' })}
+        isToggle
+        title="Align Center"
+      >
+        <AlignCenter className="w-4 h-4" />
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+        isActive={editor.isActive({ textAlign: 'right' })}
+        isToggle
+        title="Align Right"
+      >
+        <AlignRight className="w-4 h-4" />
+      </ToolbarButton>
+
+      <div className="w-px h-5 bg-border-primary mx-1" />
+
+      {/* Lists */}
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         isActive={editor.isActive('bulletList')}
@@ -364,8 +451,49 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <ListOrdered className="w-4 h-4" />
       </ToolbarButton>
 
+      {/* Indent/Outdent */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().sinkListItem('listItem').run()}
+        disabled={!editor.can().sinkListItem('listItem')}
+        title="Increase Indent"
+      >
+        <Indent className="w-4 h-4" />
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={() => editor.chain().focus().liftListItem('listItem').run()}
+        disabled={!editor.can().liftListItem('listItem')}
+        title="Decrease Indent"
+      >
+        <Outdent className="w-4 h-4" />
+      </ToolbarButton>
+
       <div className="w-px h-5 bg-border-primary mx-1" />
 
+      {/* Line Spacing */}
+      <Dropdown
+        trigger={
+          <span className="text-xs font-medium px-1">1.5</span>
+        }
+        isOpen={showLineSpacing}
+        onToggle={() => setShowLineSpacing(!showLineSpacing)}
+        onClose={() => setShowLineSpacing(false)}
+      >
+        {LINE_SPACING_OPTIONS.map((spacing) => (
+          <button
+            key={spacing.value}
+            type="button"
+            onClick={() => setLineSpacing(spacing.value)}
+            className="w-full px-3 py-1.5 text-left text-xs hover:bg-background-tertiary transition-colors"
+          >
+            {spacing.label}
+          </button>
+        ))}
+      </Dropdown>
+
+      <div className="w-px h-5 bg-border-primary mx-1" />
+
+      {/* Links */}
       {showLinkInput ? (
         <div className="flex items-center gap-1">
           <input
@@ -424,15 +552,41 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           )}
         </>
       )}
+
+      <div className="w-px h-5 bg-border-primary mx-1" />
+
+      {/* H1 Style */}
+      <ToolbarButton
+        onClick={applyH1Style}
+        title="Heading Style (24px Blue)"
+      >
+        <Heading1 className="w-4 h-4" />
+      </ToolbarButton>
+
+      {/* Divider */}
+      <ToolbarButton
+        onClick={insertDivider}
+        title="Insert Divider"
+      >
+        <Minus className="w-4 h-4" />
+      </ToolbarButton>
+
+      {/* Reset to Normal */}
+      <ToolbarButton
+        onClick={resetToNormal}
+        title="Reset to Normal Text"
+      >
+        <RemoveFormatting className="w-4 h-4" />
+      </ToolbarButton>
     </div>
   );
 }
 
 // ============================================================================
-// Font Size Extension
+// Custom Text Style Extension (Font Size + Line Height)
 // ============================================================================
 
-const FontSize = TextStyle.extend({
+const CustomTextStyle = TextStyle.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -442,6 +596,14 @@ const FontSize = TextStyle.extend({
         renderHTML: (attributes) => {
           if (!attributes.fontSize) return {};
           return { style: `font-size: ${attributes.fontSize}` };
+        },
+      },
+      lineHeight: {
+        default: null,
+        parseHTML: (element) => element.style.lineHeight || null,
+        renderHTML: (attributes) => {
+          if (!attributes.lineHeight) return {};
+          return { style: `line-height: ${attributes.lineHeight}` };
         },
       },
     };
@@ -469,8 +631,14 @@ export function RichTextEditor({
         blockquote: false,
       }),
       Underline,
-      FontSize,
+      CustomTextStyle,
       Color,
+      FontFamily.configure({
+        types: ['textStyle'],
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
       TiptapLink.configure({
         openOnClick: true,
         HTMLAttributes: {
@@ -544,9 +712,10 @@ export function RichTextEditor({
   return (
     <div
       className={`border border-border-primary rounded-md bg-background-elevated flex flex-col focus-within:border-accent-primary focus-within:ring-1 focus-within:ring-accent-primary ${className}`}
+      style={className?.includes('h-full') ? { height: '100%' } : undefined}
     >
       <EditorToolbar editor={editor} />
-      <div className="flex-1">
+      <div className="flex-1 overflow-auto">
         <EditorContent editor={editor} />
       </div>
     </div>

@@ -91,7 +91,7 @@ export function ContactFilters({
 
       {/* Filter Panel */}
       {showFilters && (
-        <div id="contact-filter-panel" className="card p-4 animate-fade-in">
+        <div id="contact-filter-panel" className="card animate-fade-in">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Filters</h3>
             {activeFilterCount > 0 && (

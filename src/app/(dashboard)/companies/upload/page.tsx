@@ -402,7 +402,7 @@ export default function UploadBizFilePage() {
 
       {/* Update Mode Notice */}
       {isUpdateMode && existingCompany && (
-        <div className="card p-4 border-oak-primary/50 bg-oak-primary/5 mb-6">
+        <div className="card border-oak-primary/50 bg-oak-primary/5 mb-6">
           <div className="flex items-start gap-3">
             <Building2 className="w-5 h-5 text-oak-primary flex-shrink-0 mt-0.5" />
             <div>
@@ -428,7 +428,7 @@ export default function UploadBizFilePage() {
 
       {/* Error */}
       {error && (
-        <div className="card p-4 border-status-error bg-status-error/5 mb-6">
+        <div className="card border-status-error bg-status-error/5 mb-4">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
             <p>{error}</p>
@@ -459,7 +459,7 @@ export default function UploadBizFilePage() {
           </div>
 
           {file && (
-            <div className="card p-4">
+            <div className="card">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <File className="w-8 h-8 text-oak-light" />
@@ -531,7 +531,7 @@ export default function UploadBizFilePage() {
       {/* Step: Preview */}
       {step === 'preview' && extractedData && (
         <div className="space-y-6">
-          <div className="card p-4 bg-status-success/5 border-status-success">
+          <div className="card bg-status-success/5 border-status-success">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 text-status-success">
                 <CheckCircle className="w-5 h-5" />
@@ -698,7 +698,7 @@ export default function UploadBizFilePage() {
       {/* Step: Diff Preview (Update Mode) */}
       {step === 'diff-preview' && extractedData && diffResult && (
         <div className="space-y-6">
-          <div className="card p-4 bg-status-success/5 border-status-success">
+          <div className="card bg-status-success/5 border-status-success">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 text-status-success">
                 <CheckCircle className="w-5 h-5" />

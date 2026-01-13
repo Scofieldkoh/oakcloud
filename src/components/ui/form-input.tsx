@@ -14,10 +14,10 @@ export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
 }
 
 const sizeConfig = {
-  xs: { h: '7', fontSize: 'xs', px: '3', iconSize: 14, iconPadding: '8' },
-  sm: { h: '8', fontSize: 'sm', px: '3', iconSize: 16, iconPadding: '9' },
-  md: { h: '9', fontSize: 'sm', px: '3.5', iconSize: 16, iconPadding: '10' },
-  lg: { h: '10', fontSize: 'md', px: '4', iconSize: 20, iconPadding: '11' },
+  xs: { h: '7', fontSize: 'xs', px: '3', iconSize: 14, iconClass: 'w-3.5 h-3.5', iconPadding: '8' },
+  sm: { h: '8', fontSize: 'sm', px: '3', iconSize: 16, iconClass: 'w-4 h-4', iconPadding: '9' },
+  md: { h: '9', fontSize: 'sm', px: '3.5', iconSize: 16, iconClass: 'w-4 h-4', iconPadding: '10' },
+  lg: { h: '10', fontSize: 'md', px: '4', iconSize: 20, iconClass: 'w-5 h-5', iconPadding: '11' },
 };
 
 export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
@@ -30,7 +30,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
     const config = sizeConfig[inputSize];
 
     return (
-      <Box display="flex" flexDirection="column" gap="1.5">
+      <Box display="flex" flexDirection="column" gap="2">
         {label && (
           <label
             htmlFor={inputId}
@@ -51,8 +51,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               alignItems="center"
               justifyContent="center"
               zIndex="1"
-              className="text-text-muted"
-              style={{ width: config.iconSize, height: config.iconSize }}
+              className={`text-text-muted ${config.iconClass}`}
             >
               {leftIcon}
             </Box>
@@ -87,11 +86,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               onClick={() => setShowPassword(!showPassword)}
               tabIndex={-1}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center bg-transparent border-none cursor-pointer text-text-muted hover:text-text-secondary transition-colors"
-              style={{
-                width: config.iconSize,
-                height: config.iconSize,
-              }}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center bg-transparent border-none cursor-pointer text-text-muted hover:text-text-secondary transition-colors ${config.iconClass}`}
             >
               {showPassword ? <EyeOff size={config.iconSize} /> : <Eye size={config.iconSize} />}
             </button>
@@ -107,8 +102,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               alignItems="center"
               justifyContent="center"
               zIndex="1"
-              className="text-text-muted"
-              style={{ width: config.iconSize, height: config.iconSize }}
+              className={`text-text-muted ${config.iconClass}`}
             >
               {rightIcon}
             </Box>

@@ -70,5 +70,10 @@ export const updateServiceSchema = createServiceSchema.extend({
 // Type Exports
 // ============================================================================
 
+/** Output type after Zod transforms (rate and renewalPeriodMonths are numbers) */
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;
 export type UpdateServiceInput = z.infer<typeof updateServiceSchema>;
+
+/** Input type for forms before Zod transforms (rate and renewalPeriodMonths are strings) */
+export type CreateServiceFormInput = z.input<typeof createServiceSchema>;
+export type UpdateServiceFormInput = z.input<typeof updateServiceSchema>;

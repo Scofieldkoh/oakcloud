@@ -3,18 +3,27 @@
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Copy } from 'lucide-react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { Checkbox } from '@/components/ui/checkbox';
+import { FormInput } from '@/components/ui/form-input';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { SingleDateInput } from '@/components/ui/single-date-input';
+import { Toggle } from '@/components/ui/toggle';
+import { CopyServiceModal } from '@/components/companies/contracts/copy-service-modal';
 import { useCompany } from '@/hooks/use-companies';
 import { useCompanyContracts } from '@/hooks/use-contracts';
 import { useCreateContractService } from '@/hooks/use-contract-services';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { createServiceSchema, type CreateServiceInput } from '@/lib/validations/service';
 import {
   SERVICE_TYPES,
   SERVICE_STATUSES,
   BILLING_FREQUENCIES,
 } from '@/lib/constants/contracts';
-import type { ServiceType, ServiceStatus, BillingFrequency } from '@/generated/prisma';
 
 interface PageProps {
   params: Promise<{ id: string; contractId: string }>;
@@ -23,6 +32,8 @@ interface PageProps {
 export default function NewServicePage({ params }: PageProps) {
   const { id: companyId, contractId } = use(params);
   const router = useRouter();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showCopyModal, setShowCopyModal] = useState(false);
 
   // Fetch company and contract data for display
   const { data: company } = useCompany(companyId);
@@ -32,91 +43,107 @@ export default function NewServicePage({ params }: PageProps) {
   // Use the mutation hook
   const createServiceMutation = useCreateContractService(companyId, contractId);
 
-  const [formData, setFormData] = useState<{
+  // Form type uses string for rate/renewalPeriodMonths since they're inputs
+  // Zod schema transforms them to numbers on validation
+  type ServiceFormValues = {
     name: string;
-    serviceType: ServiceType;
-    status: ServiceStatus;
+    serviceType: 'RECURRING' | 'ONE_TIME';
+    status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'PENDING';
     rate: string;
     currency: string;
-    frequency: BillingFrequency;
+    frequency: 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUALLY' | 'ANNUALLY' | 'ONE_TIME';
     startDate: string;
     endDate: string;
     scope: string;
     autoRenewal: boolean;
     renewalPeriodMonths: string;
-  }>({
-    name: '',
-    serviceType: 'RECURRING',
-    status: 'ACTIVE',
-    rate: '',
-    currency: 'SGD',
-    frequency: 'MONTHLY',
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: '',
-    scope: '',
-    autoRenewal: false,
-    renewalPeriodMonths: '',
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Service name is required';
-    }
-
-    if (!formData.startDate) {
-      newErrors.startDate = 'Start date is required';
-    }
-
-    if (formData.rate && isNaN(parseFloat(formData.rate))) {
-      newErrors.rate = 'Rate must be a valid number';
-    }
-
-    if (
-      formData.renewalPeriodMonths &&
-      isNaN(parseInt(formData.renewalPeriodMonths))
-    ) {
-      newErrors.renewalPeriodMonths = 'Must be a valid number';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    setValue,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<ServiceFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(createServiceSchema) as any,
+    defaultValues: {
+      name: '',
+      serviceType: 'RECURRING',
+      status: 'ACTIVE',
+      rate: '',
+      currency: 'SGD',
+      frequency: 'MONTHLY',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: '',
+      scope: '',
+      autoRenewal: true,
+      renewalPeriodMonths: '12',
+    },
+  });
 
-    if (!validate()) return;
+  // Handle copying service data
+  const handleCopyService = (service: {
+    name: string;
+    serviceType: string;
+    status: string;
+    rate: number;
+    currency: string;
+    frequency: string;
+    scope: string | null;
+    autoRenewal: boolean;
+    renewalPeriodMonths: number | null;
+  }) => {
+    setValue('name', service.name);
+    setValue('serviceType', service.serviceType as 'RECURRING' | 'ONE_TIME');
+    setValue('status', service.status as 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'PENDING');
+    setValue('rate', service.rate.toString());
+    setValue('currency', service.currency);
+    setValue('frequency', service.frequency as ServiceFormValues['frequency']);
+    setValue('scope', service.scope || '');
+    setValue('autoRenewal', service.autoRenewal);
+    setValue('renewalPeriodMonths', service.renewalPeriodMonths?.toString() || '');
+  };
+
+  // Warn about unsaved changes when leaving the page
+  useUnsavedChangesWarning(isDirty, !isSubmitting);
+
+  // Watch fields for conditional rendering
+  const serviceType = watch('serviceType');
+  const autoRenewal = watch('autoRenewal');
+
+  // Note: Zod transforms string rate/renewalPeriodMonths to numbers
+  // so data here has the transformed (output) types
+  const onSubmit = async (data: unknown) => {
+    setSubmitError(null);
+    const validatedData = data as CreateServiceInput;
 
     try {
       await createServiceMutation.mutateAsync({
-        name: formData.name.trim(),
-        serviceType: formData.serviceType,
-        status: formData.status,
-        rate: formData.rate ? parseFloat(formData.rate) : null,
-        currency: formData.currency,
-        frequency: formData.frequency,
-        startDate: formData.startDate,
-        endDate: formData.endDate || null,
-        scope: formData.scope.trim() || null,
-        autoRenewal: formData.autoRenewal,
-        renewalPeriodMonths: formData.renewalPeriodMonths
-          ? parseInt(formData.renewalPeriodMonths)
-          : null,
+        name: validatedData.name.trim(),
+        serviceType: validatedData.serviceType,
+        status: validatedData.status,
+        rate: validatedData.rate,
+        currency: validatedData.currency,
+        frequency: validatedData.frequency,
+        startDate: validatedData.startDate,
+        endDate: validatedData.endDate,
+        scope: validatedData.scope?.trim() || null,
+        autoRenewal: validatedData.autoRenewal,
+        renewalPeriodMonths: validatedData.renewalPeriodMonths,
       });
       router.push(`/companies/${companyId}?tab=contracts`);
-    } catch {
-      // Error handled by mutation hook
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to create service');
     }
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="mb-6">
+      <div className="p-4 sm:p-6 pb-0">
         <Link
           href={`/companies/${companyId}?tab=contracts`}
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
@@ -124,281 +151,282 @@ export default function NewServicePage({ params }: PageProps) {
           <ArrowLeft className="w-4 h-4" />
           Back to Contracts
         </Link>
-        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
-          Add Service
-        </h1>
-        <p className="text-sm text-text-secondary mt-1">
-          {company?.name} &bull; {contract?.title || 'Contract'}
-        </p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
+              Add Service
+            </h1>
+            <p className="text-sm text-text-secondary mt-1">
+              {company?.name} &bull; {contract?.title || 'Contract'}
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Copy className="w-4 h-4" />}
+            onClick={() => setShowCopyModal(true)}
+            type="button"
+          >
+            Copy from Existing
+          </Button>
+        </div>
       </div>
 
+      {/* Error */}
+      {submitError && (
+        <div className="px-4 sm:px-6">
+          <Alert variant="error" className="mb-6">
+            {submitError}
+          </Alert>
+        </div>
+      )}
+
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Section 1: Service Information */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Service Information</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            <div>
-              <label className="label">Service Name *</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="e.g., Monthly Bookkeeping"
-                className={`input input-sm ${errors.name ? 'input-error' : ''}`}
-              />
-              {errors.name && (
-                <p className="text-xs text-status-error mt-1.5">{errors.name}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Service Type</label>
-                <select
-                  value={formData.serviceType}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      serviceType: e.target.value as ServiceType,
-                    }))
-                  }
-                  className="input input-sm"
-                >
-                  {SERVICE_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col p-4 sm:p-6 pt-4">
+        {/* Two-column layout: Left side sections (2/5), Right side Scope (3/5) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 flex-1">
+          {/* Left column: Main form sections (2/5 width on large screens) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Section 1: Service Information */}
+            <div className="card">
+              <div className="p-4 border-b border-border-primary">
+                <h2 className="font-medium text-text-primary">Service Information</h2>
               </div>
-
-              <div>
-                <label className="label">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      status: e.target.value as ServiceStatus,
-                    }))
-                  }
-                  className="input input-sm"
-                >
-                  {SERVICE_STATUSES.map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 2: Billing Details */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Billing Details</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Rate</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.rate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, rate: e.target.value }))
-                  }
-                  placeholder="0.00"
-                  className={`input input-sm ${errors.rate ? 'input-error' : ''}`}
+              <div className="p-4 space-y-4">
+                <FormInput
+                  label="Service Name *"
+                  placeholder="e.g., Monthly Bookkeeping"
+                  error={errors.name?.message}
+                  inputSize="sm"
+                  {...register('name')}
                 />
-                {errors.rate && (
-                  <p className="text-xs text-status-error mt-1.5">{errors.rate}</p>
-                )}
-              </div>
 
-              <div>
-                <label className="label">Currency</label>
-                <select
-                  value={formData.currency}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, currency: e.target.value }))
-                  }
-                  className="input input-sm"
-                >
-                  <option value="SGD">SGD</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="MYR">MYR</option>
-                </select>
-              </div>
-            </div>
-
-            {formData.serviceType === 'RECURRING' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Billing Frequency</label>
-                  <select
-                    value={formData.frequency}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        frequency: e.target.value as BillingFrequency,
-                      }))
-                    }
-                    className="input input-sm"
-                  >
-                    {BILLING_FREQUENCIES.filter((f) => f.value !== 'ONE_TIME').map(
-                      (freq) => (
-                        <option key={freq.value} value={freq.value}>
-                          {freq.label}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Section 3: Schedule */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Schedule</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Start Date *</label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, startDate: e.target.value }))
-                  }
-                  className={`input input-sm ${errors.startDate ? 'input-error' : ''}`}
-                />
-                {errors.startDate && (
-                  <p className="text-xs text-status-error mt-1.5">{errors.startDate}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="label">End Date</label>
-                <input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, endDate: e.target.value }))
-                  }
-                  className="input input-sm"
-                />
-                {formData.serviceType === 'RECURRING' && (
-                  <p className="text-xs text-text-muted mt-1.5">Leave empty for ongoing services</p>
-                )}
-              </div>
-            </div>
-
-            {formData.serviceType === 'RECURRING' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="auto-renewal"
-                    checked={formData.autoRenewal}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        autoRenewal: e.target.checked,
-                      }))
-                    }
-                    size="sm"
-                  />
-                  <label
-                    htmlFor="auto-renewal"
-                    className="text-sm text-text-primary cursor-pointer"
-                  >
-                    Auto-renewal
-                  </label>
-                </div>
-
-                {formData.autoRenewal && (
-                  <div>
-                    <label className="label">Renewal Period</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="1"
-                        max="120"
-                        value={formData.renewalPeriodMonths}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            renewalPeriodMonths: e.target.value,
-                          }))
-                        }
-                        placeholder="12"
-                        className={`input input-sm w-24 ${errors.renewalPeriodMonths ? 'input-error' : ''}`}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Controller
+                    name="serviceType"
+                    control={control}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        label="Service Type"
+                        options={SERVICE_TYPES as unknown as { value: string; label: string }[]}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        size="sm"
+                        clearable={false}
                       />
-                      <span className="text-sm text-text-muted">months</span>
-                    </div>
-                    {errors.renewalPeriodMonths && (
-                      <p className="text-xs text-status-error mt-1.5">{errors.renewalPeriodMonths}</p>
                     )}
+                  />
+
+                  <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        label="Status"
+                        options={SERVICE_STATUSES as unknown as { value: string; label: string }[]}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        size="sm"
+                        clearable={false}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Billing Details */}
+            <div className="card">
+              <div className="p-4 border-b border-border-primary">
+                <h2 className="font-medium text-text-primary">Billing Details</h2>
+              </div>
+              <div className="p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormInput
+                    label="Rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    error={errors.rate?.message}
+                    inputSize="sm"
+                    {...register('rate')}
+                  />
+
+                  <Controller
+                    name="currency"
+                    control={control}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        label="Currency"
+                        options={[
+                          { value: 'SGD', label: 'SGD' },
+                          { value: 'USD', label: 'USD' },
+                          { value: 'EUR', label: 'EUR' },
+                          { value: 'GBP', label: 'GBP' },
+                          { value: 'MYR', label: 'MYR' },
+                        ]}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        size="sm"
+                        clearable={false}
+                      />
+                    )}
+                  />
+                </div>
+
+                {serviceType === 'RECURRING' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Controller
+                      name="frequency"
+                      control={control}
+                      render={({ field }) => (
+                        <SearchableSelect
+                          label="Billing Frequency"
+                          options={BILLING_FREQUENCIES.filter((f) => f.value !== 'ONE_TIME')}
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          size="sm"
+                          clearable={false}
+                        />
+                      )}
+                    />
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Section 4: Scope of Work (Optional) */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="font-medium text-text-primary">Scope of Work</h2>
+            {/* Section 3: Schedule */}
+            <div className="card">
+              <div className="p-4 border-b border-border-primary">
+                <h2 className="font-medium text-text-primary">Schedule</h2>
+              </div>
+              <div className="p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Controller
+                    name="startDate"
+                    control={control}
+                    render={({ field }) => (
+                      <SingleDateInput
+                        label="Start Date"
+                        value={field.value}
+                        onChange={field.onChange}
+                        error={errors.startDate?.message}
+                        required
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="endDate"
+                    control={control}
+                    render={({ field }) => (
+                      <SingleDateInput
+                        label="End Date"
+                        value={field.value}
+                        onChange={field.onChange}
+                        hint={serviceType === 'RECURRING' ? 'Leave empty for ongoing services' : undefined}
+                      />
+                    )}
+                  />
+                </div>
+
+                {serviceType === 'RECURRING' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                    <Controller
+                      name="autoRenewal"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="pt-2">
+                          <Toggle
+                            label="Auto-renewal"
+                            checked={field.value || false}
+                            onChange={field.onChange}
+                            size="sm"
+                          />
+                        </div>
+                      )}
+                    />
+
+                    <div className={autoRenewal ? 'opacity-100' : 'opacity-0 pointer-events-none'}>
+                      <div className="flex items-center gap-2">
+                        <FormInput
+                          type="number"
+                          min="1"
+                          max="120"
+                          placeholder="12"
+                          error={errors.renewalPeriodMonths?.message}
+                          inputSize="sm"
+                          className="w-24"
+                          {...register('renewalPeriodMonths')}
+                          disabled={!autoRenewal}
+                        />
+                        <span className="text-sm text-text-muted">months</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="p-4">
-            <RichTextEditor
-              value={formData.scope}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, scope: value }))
-              }
-              placeholder="Describe the scope of work for this service..."
-              minHeight={200}
-            />
-            <p className="text-xs text-text-muted mt-2">
-              Optional. Detailed description of what this service includes.
-            </p>
+
+          {/* Right column: Scope of Work (3/5 width on large screens) */}
+          <div className="lg:col-span-3 flex flex-col min-h-0">
+            <div className="card flex flex-col flex-1 min-h-0">
+              <div className="p-4 border-b border-border-primary flex-shrink-0">
+                <h2 className="font-medium text-text-primary">Scope of Work</h2>
+              </div>
+              <div className="p-4 flex flex-col flex-1 min-h-0">
+                <div className="flex-1 min-h-0 flex flex-col">
+                  <Controller
+                    name="scope"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="h-full">
+                        <RichTextEditor
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="Describe the scope of work for this service..."
+                          className="h-full"
+                        />
+                      </div>
+                    )}
+                  />
+                </div>
+                <p className="text-xs text-text-muted mt-2 flex-shrink-0">
+                  Optional. Detailed description of what this service includes.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Link
-            href={`/companies/${companyId}?tab=contracts`}
-            className="btn-secondary btn-sm"
-          >
-            Cancel
+        <div className="flex items-center justify-end gap-3 pt-6 flex-shrink-0">
+          <Link href={`/companies/${companyId}?tab=contracts`}>
+            <Button variant="secondary" size="sm">
+              Cancel
+            </Button>
           </Link>
-          <button
+          <Button
             type="submit"
-            disabled={createServiceMutation.isPending}
-            className="btn-primary btn-sm flex items-center gap-2"
+            variant="primary"
+            size="sm"
+            isLoading={isSubmitting}
+            leftIcon={<Save className="w-4 h-4" />}
           >
-            <Save className="w-4 h-4" />
-            {createServiceMutation.isPending ? 'Creating...' : 'Add Service'}
-          </button>
+            {isSubmitting ? 'Creating...' : 'Add Service'}
+          </Button>
         </div>
       </form>
+
+      {/* Copy Service Modal */}
+      <CopyServiceModal
+        isOpen={showCopyModal}
+        onClose={() => setShowCopyModal(false)}
+        onCopy={handleCopyService}
+        currentCompanyId={companyId}
+      />
     </div>
   );
 }

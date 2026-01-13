@@ -1972,7 +1972,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         <ModalBody>
           <div className="space-y-4">
             {/* Company Context - Auto-populated, read-only */}
-            <div className="card p-4">
+            <div className="card">
               <div className="flex items-start gap-3">
                 <Building2 className="w-4 h-4 text-text-tertiary mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
@@ -2205,7 +2205,7 @@ function ExtractedHeaderFields({
 
   if (isEditing) {
     return (
-      <div className="card p-4 space-y-4">
+      <div className="card space-y-4">
         <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
           <FileStack className="w-4 h-4" />
           Extracted Data

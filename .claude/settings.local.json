@@ -37,7 +37,9 @@
       "mcp__browsermcp__browser_execute_js",
       "mcp__browsermcp__browser_save_hint",
       "mcp__browsermcp__browser_get_hints",
-      "mcp__browsermcp__browser_detect_file_inputs"
+      "mcp__browsermcp__browser_detect_file_inputs",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_handle_dialog"
     ],
     "deny": [],
     "ask": []
