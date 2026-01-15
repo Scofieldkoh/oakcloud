@@ -23,12 +23,17 @@ Service Templates serve as pre-configured templates when adding services to cont
 
 All statutory deadlines MUST anchor to stable reference points:
 - **FYE** - Financial Year End
-- **INCORPORATION** - Company incorporation date
 - **FIXED_CALENDAR** - Fixed date each year (e.g., 30 Nov for Corp Tax)
 - **QUARTER_END** / **MONTH_END** - For GST/periodic filings
 - **SERVICE_START** - For renewals only
 
 **Never use**: Task dependencies (e.g., AR depends on AGM completion). Each deadline stands independently.
+
+### Dormant Company Handling
+
+**Important**: Dormant status does NOT automatically exempt companies from compliance obligations:
+- **AGM**: Dormant companies follow the same AGM waiver process (send FS to members within 5 months)
+- **Tax Filing**: Requires IRAS approval to be exempted. Use `dormantTaxExemptionApproved` flag only after IRAS grants exemption.
 
 ---
 
@@ -55,7 +60,6 @@ interface ServiceTemplate {
   entityTypes: EntityType[] | null;        // Applicable entity types (null = all)
   excludeEntityTypes: EntityType[] | null; // Excluded entity types
   requiresGstRegistered: boolean | null;   // GST requirement (null = N/A)
-  requiresActiveStatus: boolean;           // If true, skipped for dormant companies
 
   // Service-specific parameters (user must fill when adding)
   requiredFields: ServiceField[];
@@ -74,21 +78,15 @@ interface DeadlineTemplate {
   optionalNote: string | null;     // Explanation if optional
 
   // Applicability
-  requiresActiveStatus: boolean;   // If true, skipped for dormant companies
+  isTaxFiling: boolean;            // If true, skipped when dormantTaxExemptionApproved = true
 
   // Deadline calculation
-  anchorType: 'FYE' | 'INCORPORATION' | 'SERVICE_START' | 'FIXED_CALENDAR' | 'QUARTER_END' | 'MONTH_END';
+  anchorType: 'FYE' | 'SERVICE_START' | 'FIXED_CALENDAR' | 'QUARTER_END' | 'MONTH_END';
   offsetMonths: number;
   offsetDays: number;
   offsetBusinessDays: boolean;     // If true, skip weekends/holidays in calculation
   fixedMonth: number | null;       // For FIXED_CALENDAR
   fixedDay: number | null;
-
-  // First Year Special Rules
-  isFirstYearSpecialRule: boolean; // Different calculation for first year
-  firstYearAnchorType: 'INCORPORATION' | null;
-  firstYearOffsetMonths: number | null;
-  firstYearOffsetDays: number | null;
 
   // Recurrence
   frequency: 'ANNUALLY' | 'QUARTERLY' | 'MONTHLY' | 'ONE_TIME';
@@ -126,7 +124,7 @@ interface DeadlineTemplate {
 entityTypes: [PRIVATE_LIMITED, EXEMPTED_PRIVATE_LIMITED, PUBLIC_LIMITED]
 excludeEntityTypes: null
 requiresGstRegistered: null
-requiresActiveStatus: false  // Service can apply to dormant companies
+// Note: Service applies to dormant companies - they still need corp sec services
 ```
 
 ### Required Fields When Adding Service
@@ -160,7 +158,7 @@ Annual corporate secretarial services including:
 | **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
-| **Requires Active Status** | false |
+| **Is Tax Filing** | false |
 
 **Calculation:**
 ```
@@ -193,7 +191,7 @@ Action required:
 | **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
-| **Requires Active Status** | false |
+| **Is Tax Filing** | false |
 
 **Calculation:**
 ```
@@ -246,7 +244,7 @@ Late filing penalty: $300 + $50 per month thereafter
 | **Billable** | No |
 | **Is Optional** | Yes |
 | **Optional Note** | "XBRL exempt if: revenue ≤ $500K, assets ≤ $500K, employees ≤ 5, or dormant company" |
-| **Requires Active Status** | true |
+| **Is Tax Filing** | true |
 
 **Calculation:**
 ```
@@ -294,7 +292,7 @@ Exempt from XBRL if ALL:
 | **Billable** | No |
 | **Is Optional** | Yes |
 | **Optional Note** | "Enable to waive AGM requirement. FS must be sent within 5 months of FYE." |
-| **Requires Active Status** | true |
+| **Is Tax Filing** | true |
 
 **Calculation:**
 ```
@@ -338,28 +336,17 @@ Reference: Companies Act Section 175A (Amendment 2017, effective 31 Aug 2018)
 | **Billable** | No |
 | **Is Optional** | No (default required) |
 | **Optional Note** | "AGM can be waived if 'Send FS to Members' is completed. Skipped if company.agmDispensed = true." |
-| **Requires Active Status** | true |
+| **Is Tax Filing** | false |
 
-**Calculation (Standard - Subsequent Years):**
+**Calculation:**
 ```
 anchorType: FYE
 offsetMonths: 6   // Within 6 months from FYE
 offsetDays: 0
 frequency: ANNUALLY
-```
 
-**First Year Special Rule:**
-```
-isFirstYearSpecialRule: true
-firstYearAnchorType: INCORPORATION
-firstYearOffsetMonths: 18   // First AGM within 18 months of incorporation
-firstYearOffsetDays: 0
-
-// Logic:
-// If (Today - IncorporationDate) < 18 months:
-//   Use: IncorporationDate + 18 months
-// Else:
-//   Use: FYE + 6 months
+// Note: For companies incorporated after 31 Aug 2018, the first AGM
+// deadline is also 6 months from FYE (no special 18-month rule).
 ```
 
 **Period:**
@@ -384,9 +371,7 @@ Can be marked as WAIVED if:
 ```
 Annual General Meeting for FY ending {FYE_DATE}.
 
-Statutory Due Date:
-• First AGM: Within 18 months from incorporation
-• Subsequent AGMs: Within 6 months from FYE ({STATUTORY_DUE_DATE})
+Statutory Due Date: Within 6 months from FYE ({STATUTORY_DUE_DATE})
 
 AGM can be waived if:
 • Financial Statements sent to all members within 5 months of FYE, AND
@@ -395,6 +380,9 @@ AGM can be waived if:
 AGM can be dispensed if:
 • Company has elected to dispense with AGMs under Companies Act
 • Set company.agmDispensed = true to suppress future AGM deadlines
+
+Note: Dormant companies must still follow the AGM waiver process (send FS to members).
+Dormant status does NOT automatically exempt from AGM requirements.
 
 If holding AGM:
 • Send notice to shareholders (14 days for private company, 21 days for public)
@@ -432,7 +420,8 @@ entityTypes: [PRIVATE_LIMITED, EXEMPTED_PRIVATE_LIMITED, PUBLIC_LIMITED,
               LIMITED_LIABILITY_PARTNERSHIP, FOREIGN_COMPANY, VARIABLE_CAPITAL_COMPANY]
 excludeEntityTypes: [SOLE_PROPRIETORSHIP, PARTNERSHIP]  // Use Personal Tax instead
 requiresGstRegistered: null
-requiresActiveStatus: true  // Dormant companies have different filing requirements
+// Note: Dormant companies still need tax filing unless IRAS grants exemption
+// Use dormantTaxExemptionApproved flag to skip tax deadline generation
 ```
 
 ### Required Fields When Adding Service
@@ -464,7 +453,7 @@ Annual tax compliance services including:
 | **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
-| **Requires Active Status** | false |
+| **Is Tax Filing** | false |
 
 **Calculation:**
 ```
@@ -486,7 +475,7 @@ frequency: ANNUALLY
 | **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
-| **Requires Active Status** | true |
+| **Is Tax Filing** | true |
 
 **Calculation:**
 ```
@@ -533,7 +522,7 @@ Statutory Due Date: {STATUTORY_DUE_DATE} (3 months from FYE)
 | **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
-| **Requires Active Status** | true |
+| **Is Tax Filing** | true |
 
 **Calculation:**
 ```
@@ -603,7 +592,7 @@ Extension of Time (EOT):
 ```
 entityTypes: null  // All entity types
 requiresGstRegistered: true  // MUST be GST registered
-requiresActiveStatus: true   // Dormant companies may be de-registered
+// Note: GST-registered dormant companies may apply for voluntary de-registration
 ```
 
 ### Required Fields When Adding Service
@@ -636,7 +625,7 @@ GST return preparation and filing services including:
 | **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
-| **Requires Active Status** | false |
+| **Is Tax Filing** | false |
 
 **Calculation:**
 ```
@@ -659,7 +648,7 @@ frequency: ANNUALLY
 | **Billable** | No |
 | **Is Optional** | No |
 | **Condition** | Only generated if `gstFilingFrequency = QUARTERLY` |
-| **Requires Active Status** | true |
+| **Is Tax Filing** | true |
 
 **Calculation:**
 ```
@@ -711,7 +700,7 @@ Important: Ensure all tax invoices are recorded before filing.
 | **Billable** | No |
 | **Is Optional** | No |
 | **Condition** | Only generated if `gstFilingFrequency = MONTHLY` |
-| **Requires Active Status** | true |
+| **Is Tax Filing** | true |
 
 **Calculation:**
 ```
@@ -766,7 +755,7 @@ Late filing penalty: $200 per return
 ```
 entityTypes: [SOLE_PROPRIETORSHIP, PARTNERSHIP]
 requiresGstRegistered: null
-requiresActiveStatus: true
+// Note: Personal tax filing still required for dormant sole props/partnerships
 ```
 
 ### Required Fields When Adding Service
@@ -798,7 +787,7 @@ Personal income tax services for sole proprietor/partner including:
 | **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
-| **Requires Active Status** | false |
+| **Is Tax Filing** | false |
 
 **Calculation:**
 ```
@@ -820,7 +809,7 @@ frequency: ANNUALLY
 | **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
-| **Requires Active Status** | true |
+| **Is Tax Filing** | true |
 
 **Calculation:**
 ```
@@ -892,7 +881,7 @@ Note: Late filing may result in estimated assessment and penalties from IRAS.
 ```
 entityTypes: null  // All entity types
 requiresGstRegistered: null
-requiresActiveStatus: false  // Dormant companies may still need minimal bookkeeping
+// Note: Dormant companies may still need minimal bookkeeping
 ```
 
 ### Required Fields When Adding Service
@@ -925,7 +914,7 @@ Monthly accounting services including:
 | **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
-| **Requires Active Status** | false |
+| **Is Tax Filing** | false |
 
 **Calculation:**
 ```
@@ -947,7 +936,7 @@ frequency: ANNUALLY
 | **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
-| **Requires Active Status** | false |
+| **Is Tax Filing** | false |
 
 **Calculation:**
 ```
@@ -1004,7 +993,7 @@ Internal deadline: {INTERNAL_DUE_DATE}
 // NOT auto-suggested. User manually adds if company requires audit.
 entityTypes: [PRIVATE_LIMITED, PUBLIC_LIMITED]
 requiresGstRegistered: null
-requiresActiveStatus: true  // Dormant companies typically exempt from audit
+// Note: Dormant companies are typically exempt from audit requirements
 
 // Note: Small company exemption criteria (must meet 2 of 3 for 2 consecutive FYs):
 // - Total revenue ≤ $10 million
@@ -1044,7 +1033,7 @@ Annual statutory audit services including:
 | **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
-| **Requires Active Status** | false |
+| **Is Tax Filing** | false |
 
 **Calculation:**
 ```
@@ -1066,7 +1055,7 @@ frequency: ANNUALLY
 | **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
-| **Requires Active Status** | true |
+| **Is Tax Filing** | true |
 
 **Calculation:**
 ```
@@ -1135,13 +1124,13 @@ Audit completion required before Annual Return can be filed.
 
 ### Corporate Secretarial (Annual)
 
-| Code | Deadline Name | Anchor | Offset | First Year Rule | Billable |
-|------|---------------|--------|--------|-----------------|----------|
-| `CORP_SEC_RENEWAL` | Service Renewal | Service Start | -30 days | No | Yes |
-| `ANNUAL_RETURN` | Annual Return | FYE | +7 months | No | No |
-| `XBRL` | XBRL Filing | FYE | +7 months | No | No |
-| `FS_TO_MEMBERS` | Send FS to Members | FYE | +5 months | No | No |
-| `AGM` | Annual General Meeting | FYE / Incorp | +6 months / +18 months | **Yes** | No |
+| Code | Deadline Name | Anchor | Offset | Billable |
+|------|---------------|--------|--------|----------|
+| `CORP_SEC_RENEWAL` | Service Renewal | Service Start | -30 days | Yes |
+| `ANNUAL_RETURN` | Annual Return | FYE | +7 months | No |
+| `XBRL` | XBRL Filing | FYE | +7 months | No |
+| `FS_TO_MEMBERS` | Send FS to Members | FYE | +5 months | No |
+| `AGM` | Annual General Meeting | FYE | +6 months | No |
 
 ### Tax Compliance (Annual)
 
@@ -1189,8 +1178,14 @@ Audit completion required before Annual Return can be filed.
 | Field | Type | Description |
 |-------|------|-------------|
 | `gstFilingFrequency` | Enum | QUARTERLY \| MONTHLY (if GST registered) |
-| `agmDispensed` | Boolean | Company has dispensed with AGMs |
-| `isDormant` | Boolean | Company is dormant |
+| `agmDispensed` | Boolean | Company has dispensed with AGMs (resolution passed) |
+| `isDormant` | Boolean | Company is dormant (informational flag only) |
+| `dormantTaxExemptionApproved` | Boolean | IRAS approved exemption from tax filing |
+
+**Note on Dormant Companies:**
+- `isDormant` is informational only - does NOT automatically skip any deadlines
+- For AGM exemption: Use standard waiver process (send FS to members within 5 months)
+- For tax filing exemption: Apply to IRAS, then set `dormantTaxExemptionApproved = true`
 
 ### ContractService Model
 

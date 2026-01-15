@@ -38,7 +38,6 @@ Service Template (e.g., "Corporate Secretarial Annual")
 
 **Solution**: All statutory deadlines MUST anchor to stable reference points:
 - **FYE (Financial Year End)** - For AGM, AR, XBRL, ECI, Audit
-- **INCORPORATION** - For first-year special rules
 - **FIXED_CALENDAR** - For tax returns (Form C by 30 Nov)
 - **SERVICE_START** - For renewals
 
@@ -303,19 +302,24 @@ DeadlineTemplate (Default)
 
 ### Epic 3: Auto-Generation
 
-#### US-3.1: Generate deadlines when service is added
-> As a **Staff**, when I add a service to a contract, I want deadlines to be auto-generated so that I don't have to create them manually.
+#### US-3.1: Preview and generate deadlines when service is added
+> As a **Staff**, when I add a service to a contract, I want to preview the deadlines that will be generated before saving, so that I can verify and adjust before committing.
 
 **Acceptance Criteria:**
-- After adding service (e.g., "Corporate Secretarial"):
+- When adding service (e.g., "Corporate Secretarial") on the Add Service page:
   - System identifies linked template bundle
-  - Modal: "Generate compliance deadlines for this service?"
-    - Shows list of applicable templates based on company attributes
-    - Checkboxes to include/exclude each template
+  - **Before saving**, show "Deadline Preview" section:
+    - List of deadlines that will be generated based on company attributes
+    - For each deadline: Title, Period Label, Calculated Due Date, Billable indicator
+    - Checkboxes to include/exclude each deadline template
     - Date range: "Generate from" (default: current FYE) "to" (default: +18 months)
     - Option: "Include backlog periods" with backlog note field
-  - On confirm: Create deadline instances
-- Skip if user declines (can generate later manually)
+  - Preview updates dynamically when date range changes
+- On "Save Service":
+  - Service is created
+  - Selected deadlines are generated
+  - Confirmation: "Service added with X deadlines generated"
+- If user unchecks all deadlines, service is saved without generating deadlines (can generate later manually)
 
 ---
 
@@ -507,19 +511,14 @@ DeadlineTemplate (Default)
 | `excludeEntityTypes` | JSON | No | null | Excluded entity types |
 | `requiresGstRegistered` | Boolean | No | null | GST requirement |
 | `requiresAudit` | Boolean | No | null | Audit requirement |
-| `requiresActiveStatus` | Boolean | No | true | Skipped if company is dormant |
+| `isTaxFiling` | Boolean | No | false | If true, skipped when dormantTaxExemptionApproved = true |
 | **Deadline Calculation** |
-| `anchorType` | Enum | Yes | - | FYE, INCORPORATION, FIXED_CALENDAR, QUARTER_END, MONTH_END, SERVICE_START |
+| `anchorType` | Enum | Yes | - | FYE, FIXED_CALENDAR, QUARTER_END, MONTH_END, SERVICE_START |
 | `offsetMonths` | Int | No | 0 | Months from anchor |
 | `offsetDays` | Int | No | 0 | Days from anchor |
 | `offsetBusinessDays` | Boolean | No | false | Skip weekends/holidays when calculating |
 | `fixedMonth` | Int | No | null | For FIXED_CALENDAR |
 | `fixedDay` | Int | No | null | For FIXED_CALENDAR |
-| **First Year Special Rules** |
-| `isFirstYearSpecialRule` | Boolean | No | false | Different calculation for first year |
-| `firstYearAnchorType` | Enum | No | null | Anchor for first year (e.g., INCORPORATION) |
-| `firstYearOffsetMonths` | Int | No | null | Months from anchor for first year |
-| `firstYearOffsetDays` | Int | No | null | Days from anchor for first year |
 | **Recurrence** |
 | `frequency` | Enum | Yes | - | ANNUALLY, QUARTERLY, MONTHLY, ONE_TIME |
 | `generateMonthsAhead` | Int | Yes | 18 | Generation horizon |
@@ -543,9 +542,15 @@ DeadlineTemplate (Default)
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `agmDispensed` | Boolean | No | false | Company has dispensed with AGMs |
-| `isDormant` | Boolean | No | false | Company is dormant |
+| `agmDispensed` | Boolean | No | false | Company has dispensed with AGMs (resolution passed) |
+| `isDormant` | Boolean | No | false | Company is dormant (informational flag only) |
+| `dormantTaxExemptionApproved` | Boolean | No | false | IRAS approved exemption from tax filing |
 | `gstFilingFrequency` | Enum | No | null | QUARTERLY or MONTHLY (if GST registered) |
+
+**Note on Dormant Companies:**
+- Dormant status does NOT automatically exempt from AGM - standard waiver process applies (send FS to members)
+- Dormant status does NOT automatically exempt from tax filing - requires IRAS approval
+- Use `dormantTaxExemptionApproved` flag only after IRAS grants exemption
 
 ### TenantSettings Entity (New Fields)
 
@@ -565,8 +570,8 @@ When `triggerDeadlineGeneration(companyId)` is called:
 └─────────────────────────────────────────────────────────────────┘
 
 1. FETCH CONTEXT
-   ├── Company: FYE, Incorp Date, Entity Type, GST Status
-   ├── Company Flags: isDormant, agmDispensed
+   ├── Company: FYE, Entity Type, GST Status
+   ├── Company Flags: agmDispensed, dormantTaxExemptionApproved
    └── Active ContractServices with linked ServiceTemplates
 
 2. FETCH TEMPLATES
@@ -581,9 +586,10 @@ When `triggerDeadlineGeneration(companyId)` is called:
    │   └── If template.requiresGstRegistered = true
    │       └── Is company.gstRegistered = true?
    │
-   ├── Dormant Check
-   │   └── If template.requiresActiveStatus = true
-   │       └── Is company.isDormant = false?
+   ├── Tax Exemption Check (Dormant)
+   │   └── If template is tax-related (ECI, CORP_TAX)
+   │       └── If company.dormantTaxExemptionApproved = true
+   │           └── Skip generation (IRAS exemption granted)
    │
    ├── AGM Dispensed Check
    │   └── If template.code = 'AGM'
@@ -599,14 +605,8 @@ When `triggerDeadlineGeneration(companyId)` is called:
 5. FOR EACH APPLICABLE TEMPLATE
    │
    ├── Calculate Target Date
-   │   ├── First Year Check
-   │   │   └── If template.isFirstYearSpecialRule = true
-   │   │       AND (Today - Company.incorporationDate) < firstYearThreshold
-   │   │       └── Use firstYearAnchorType + firstYearOffsetMonths
-   │   │
-   │   └── Standard Calculation
-   │       └── Use anchorType + offsetMonths + offsetDays
-   │       └── If offsetBusinessDays = true, skip weekends/holidays
+   │   └── Use anchorType + offsetMonths + offsetDays
+   │   └── If offsetBusinessDays = true, skip weekends/holidays
    │
    ├── Check Existence
    │   └── Does deadline already exist for this:
@@ -624,34 +624,6 @@ When `triggerDeadlineGeneration(companyId)` is called:
    └── Record what was created, skipped, and why
 ```
 
-### First Year vs. Subsequent Years Example (AGM)
-
-```typescript
-// First AGM: 18 months from Incorporation
-// Subsequent AGMs: 6 months from FYE
-
-const agmTemplate = {
-  code: 'AGM',
-  anchorType: 'FYE',
-  offsetMonths: 6,
-  isFirstYearSpecialRule: true,
-  firstYearAnchorType: 'INCORPORATION',
-  firstYearOffsetMonths: 18,
-};
-
-function calculateDueDate(company, template) {
-  const monthsSinceIncorp = monthsBetween(company.incorporationDate, today);
-
-  if (template.isFirstYearSpecialRule && monthsSinceIncorp < 18) {
-    // First year: 18 months from incorporation
-    return addMonths(company.incorporationDate, template.firstYearOffsetMonths);
-  } else {
-    // Subsequent years: 6 months from FYE
-    return addMonths(company.financialYearEnd, template.offsetMonths);
-  }
-}
-```
-
 ---
 
 ## Edge Cases & Handling
@@ -665,7 +637,8 @@ function calculateDueDate(company, template) {
 | **Company entity type changes** | Prompt: "Entity type changed. Some deadlines may no longer apply. Review?" |
 | **Company becomes inactive** | Prompt: "Company status changed. Cancel all pending deadlines?" |
 | **Company deleted** | Soft delete all related deadlines (cascade) |
-| **Company marked dormant** | 1. Set company.isDormant = true<br>2. Prompt: "Company is dormant. Cancel pending tax filings?"<br>3. Skip future generation of templates requiring active status<br>4. Generate dormant-specific templates if applicable |
+| **Company marked dormant** | 1. Set company.isDormant = true (informational only)<br>2. **No automatic changes** - dormant companies still require AGM (use standard waiver) and tax filing (unless IRAS exemption)<br>3. To skip tax filing: Apply to IRAS for exemption, then set company.dormantTaxExemptionApproved = true |
+| **IRAS grants dormant tax exemption** | 1. Set company.dormantTaxExemptionApproved = true<br>2. Cancel pending ECI and CORP_TAX deadlines<br>3. Skip future tax deadline generation |
 | **Company AGM dispensed** | 1. Set company.agmDispensed = true<br>2. Cancel pending AGM deadlines<br>3. Skip future AGM generation<br>4. AR deadlines continue unchanged |
 
 ### Service Changes
@@ -861,6 +834,7 @@ Always display period labels prominently to avoid confusion:
 |---------|-----|---------|
 | Deadline model (with EOT support) | ✓ | |
 | Template bundles (SG) | ✓ | |
+| Deadline preview before saving service | ✓ | |
 | Auto-generation on service add | ✓ | |
 | Manual trigger | ✓ | |
 | Backlog support | ✓ | |
@@ -873,8 +847,7 @@ Always display period labels prominently to avoid confusion:
 | In-app alerts | ✓ | |
 | Dashboard | ✓ | |
 | Bulk operations | ✓ | |
-| First-year special rules | ✓ | |
-| Dormant company handling | ✓ | |
+| Dormant tax exemption flag (IRAS approved) | ✓ | |
 | AGM dispensed flag | ✓ | |
 | Business days calculation | | ✓ |
 | Kanban board | | ✓ |
