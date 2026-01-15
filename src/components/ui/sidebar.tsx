@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { getSidebarWidth as getSidebarWidthFn } from '@/lib/constants/layout';
 import { SidebarTenantButton } from '@/components/ui/tenant-selector';
 import { SidebarCompanyButton } from '@/components/ui/company-selector';
+import { PetToggleButton } from '@/components/ui/pet-toggle-button';
 
 interface NavItem {
   name: string;
@@ -508,27 +509,25 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
       // Mobile: relative positioned, stays in flow
       isMobile ? "relative mt-auto" : "absolute bottom-0 left-0 right-0"
     )}>
-      {/* Tenant selector for SUPER_ADMIN */}
-      {user?.isSuperAdmin && (
-        <div className="p-2.5 pb-0">
+      {/* All items use consistent p-2.5 with space-y-1 for uniform spacing */}
+      <div className="p-2.5 space-y-1">
+        {/* Tenant selector for SUPER_ADMIN */}
+        {user?.isSuperAdmin && (
           <SidebarTenantButton collapsed={collapsed} />
-        </div>
-      )}
+        )}
 
-      {/* Company selector - available to all users */}
-      <div className="p-2.5 pb-0">
+        {/* Company selector - available to all users */}
         <SidebarCompanyButton collapsed={collapsed} />
-      </div>
 
-      {/* Theme toggle - hidden on mobile since it's in the header */}
-      {!isMobile && (
-        <div className="p-2.5 pb-0">
-          <ThemeToggleButton collapsed={collapsed} />
-        </div>
-      )}
+        {/* Theme toggle - hidden on mobile since it's in the header */}
+        {!isMobile && (
+          <>
+            <ThemeToggleButton collapsed={collapsed} />
+            <PetToggleButton collapsed={collapsed} />
+          </>
+        )}
 
-      {/* User info */}
-      <div className="p-2.5">
+        {/* User info */}
         <div
           className={cn(
             'flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-background-secondary',
@@ -559,7 +558,7 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
         {collapsed && (
           <button
             onClick={handleLogout}
-            className="w-full mt-1.5 p-2 rounded hover:bg-background-tertiary text-text-muted hover:text-status-error transition-colors flex items-center justify-center"
+            className="w-full p-2 rounded hover:bg-background-tertiary text-text-muted hover:text-status-error transition-colors flex items-center justify-center"
             aria-label="Sign out"
           >
             <LogOut className="w-4 h-4" aria-hidden="true" />

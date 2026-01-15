@@ -118,7 +118,7 @@ export default function ForgotPasswordPage() {
             <FormInput
               label="Email"
               type="email"
-              inputSize="md"
+              inputSize="lg"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
@@ -131,7 +131,7 @@ export default function ForgotPasswordPage() {
 
             <Button
               type="submit"
-              size="md"
+              size="lg"
               isLoading={isLoading}
               leftIcon={<Send />}
               className="w-full"

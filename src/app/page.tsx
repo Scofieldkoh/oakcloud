@@ -137,7 +137,7 @@ export default function HomePage() {
                 <Link
                   key={module.name}
                   href={isActive ? module.href : '#'}
-                  className={`card p-4 transition-all duration-150 ${
+                  className={`card transition-all duration-150 ${
                     isActive
                       ? 'hover:border-oak-primary hover:shadow-elevation-2 cursor-pointer'
                       : 'opacity-50 cursor-not-allowed'

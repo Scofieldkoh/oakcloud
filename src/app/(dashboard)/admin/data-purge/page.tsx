@@ -189,7 +189,7 @@ export default function DataPurgePage() {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    'card p-4 text-left transition-all hover:shadow-md',
+                    'card card-interactive p-4 text-left',
                     activeTab === tab.id && 'ring-2 ring-oak-primary'
                   )}
                 >

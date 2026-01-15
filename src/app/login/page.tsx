@@ -156,7 +156,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              size="md"
+              size="lg"
               isLoading={login.isPending}
               leftIcon={<LogIn />}
               className="w-full"

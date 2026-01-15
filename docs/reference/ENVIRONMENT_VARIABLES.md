@@ -28,15 +28,18 @@ Configuration options for the Oakcloud application.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DATABASE_URL` | - | PostgreSQL connection string |
+| `DATABASE_SSL` | `true` (prod) | Enable SSL for database connections |
 
 **Example:**
 ```
 DATABASE_URL="postgresql://oakcloud:oakcloud_password@localhost:5433/oakcloud?schema=public"
 ```
 
-For production with SSL:
+For production with SSL (auto-enabled in production):
 ```
-DATABASE_URL="postgresql://...?sslmode=require"
+DATABASE_URL="postgresql://user:pass@host:5432/db"
+# SSL is enabled automatically in production
+# Set DATABASE_SSL=false to disable if using local DB in production
 ```
 
 ---

@@ -2223,6 +2223,100 @@ Use filter button groups for quick filtering of table data:
 - Spacing: `gap-2` between buttons
 - Placement: Above table, below page header
 
+#### Reference Implementation: ProcessingToolbar
+
+The document processing page has the reference implementation of quick filter buttons:
+
+**File**: `src/components/processing/processing-toolbar.tsx`
+
+```tsx
+// Toggle filter - clicking an active filter clears it
+const toggleQuickFilter = (key: 'needsReview' | 'uploadDatePreset' | 'duplicateStatus', value: boolean | 'TODAY' | DuplicateStatus) => {
+  const currentValue = quickFilters[key];
+  onQuickFilterChange({
+    [key]: currentValue === value ? undefined : value,
+  });
+};
+
+// Quick Filter Buttons with CSS classes
+<div className="flex items-center gap-2">
+  <button
+    onClick={() => toggleQuickFilter('uploadDatePreset', 'TODAY')}
+    className={`btn-sm flex items-center gap-1.5 ${
+      quickFilters.uploadDatePreset === 'TODAY'
+        ? 'bg-oak-primary text-white'
+        : 'btn-ghost'
+    }`}
+    title="Uploaded today"
+  >
+    <Calendar className="w-4 h-4" />
+    <span className="hidden lg:inline">Today</span>
+  </button>
+
+  <button
+    onClick={() => toggleQuickFilter('needsReview', true)}
+    className={`btn-sm flex items-center gap-1.5 ${
+      quickFilters.needsReview
+        ? 'bg-oak-primary text-white'
+        : 'btn-ghost'
+    }`}
+    title="Needs review"
+  >
+    <Eye className="w-4 h-4" />
+    <span className="hidden lg:inline">Review</span>
+  </button>
+
+  <button
+    onClick={() => toggleQuickFilter('duplicateStatus', 'SUSPECTED')}
+    className={`btn-sm flex items-center gap-1.5 ${
+      quickFilters.duplicateStatus === 'SUSPECTED'
+        ? 'bg-oak-primary text-white'
+        : 'btn-ghost'
+    }`}
+    title="Show duplicates"
+  >
+    <Copy className="w-4 h-4" />
+    <span className="hidden lg:inline">Duplicates</span>
+  </button>
+</div>
+```
+
+**Key Implementation Details:**
+- **Toggle behavior**: Clicking an active filter clears it (toggles off)
+- **Active state**: `bg-oak-primary text-white` (uses brand color)
+- **Inactive state**: `btn-ghost` class (transparent background)
+- **Responsive labels**: `<span className="hidden lg:inline">` hides text on smaller screens
+- **Icon spacing**: `gap-1.5` between icon and text
+- **Accessibility**: `title` attribute provides tooltip for icon-only state
+
+**When to Create a Reusable Component:**
+The ProcessingToolbar is tightly coupled to the document processing page. If you need similar quick filter buttons on another page, consider extracting a `<QuickFilterButton>` component:
+
+```tsx
+interface QuickFilterButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  title?: string;
+}
+
+function QuickFilterButton({ icon, label, active, onClick, title }: QuickFilterButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`btn-sm flex items-center gap-1.5 ${
+        active ? 'bg-oak-primary text-white' : 'btn-ghost'
+      }`}
+      title={title || label}
+    >
+      {icon}
+      <span className="hidden lg:inline">{label}</span>
+    </button>
+  );
+}
+```
+
 ### Filter Buttons with Count Badges
 
 Show item counts in filter buttons for better context:
@@ -2739,10 +2833,37 @@ Use toggle switches for binary on/off settings. Prefer toggle switches over chec
 ### Tables
 
 ```css
-.table-container  /* Scrollable wrapper */
+.table-container  /* Scrollable wrapper with border and rounded corners */
 .table            /* Full table styles */
-.table th         /* Uppercase, 10px, tertiary */
-.table td         /* 13px, primary text */
+.table th         /* Header: px-4 py-2.5, uppercase, xs font, text-text-secondary */
+.table td         /* Cell: px-4 py-3, sm font, text-text-primary */
+.table-compact    /* Compact: px-3 py-2 for both th and td */
+.table-dense      /* Dense: px-2 py-1.5 for very tight layouts */
+```
+
+#### Table Padding Tiers
+
+| Tier | Header Padding | Cell Padding | Use Case |
+|------|----------------|--------------|----------|
+| **Default** | `px-4 py-2.5` | `px-4 py-3` | Standard data tables (companies, contacts, documents) |
+| **Compact** | `px-3 py-2` | `px-3 py-2` | Dense data (audit logs, processing tables) |
+| **Dense** | `px-2 py-1.5` | `px-2 py-1.5` | Very tight layouts, embedded tables |
+
+```tsx
+// Default table - comfortable padding
+<div className="table-container">
+  <table className="table">...</table>
+</div>
+
+// Compact table for dense data
+<div className="table-container">
+  <table className="table table-compact">...</table>
+</div>
+
+// Dense table for embedded/nested tables
+<div className="table-container">
+  <table className="table table-dense">...</table>
+</div>
 ```
 
 #### Sortable Table Headers
@@ -3881,6 +4002,313 @@ function VirtualTable({ rows }) {
 - Use server-side pagination for large datasets
 - Show loading states during page transitions
 
+##### Multi-Section Tables
+
+When displaying related but distinct data groups, use section headers within a page:
+
+```tsx
+<div className="space-y-6">
+  {/* AI Providers Section */}
+  {aiProviders.length > 0 && (
+    <div className="card">
+      <div className="p-4 border-b border-border-primary">
+        <h2 className="font-medium text-text-primary flex items-center gap-2">
+          <Brain className="w-5 h-5 text-oak-light" />
+          AI Providers
+        </h2>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="table">{/* Table content */}</table>
+      </div>
+    </div>
+  )}
+
+  {/* Storage Section */}
+  {storageProviders.length > 0 && (
+    <div className="card">
+      <div className="p-4 border-b border-border-primary">
+        <h2 className="font-medium text-text-primary flex items-center gap-2">
+          <Cloud className="w-5 h-5 text-sky-500" />
+          Storage
+        </h2>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="table">{/* Table content */}</table>
+      </div>
+    </div>
+  )}
+</div>
+```
+
+**Multi-Section Table Pattern:**
+- Wrap each section in a `.card` container
+- Section header: `p-4 border-b border-border-primary` with icon + title
+- Icon: `w-5 h-5` with semantic color (oak-light for primary, sky-500 for secondary, etc.)
+- Title: `font-medium text-text-primary`
+- Spacing between sections: `space-y-6` on parent container
+- Each table shares the same column structure when appropriate
+- Only render sections that have data (conditional rendering)
+
+**Reference Implementation:** [connectors/page.tsx](../src/app/(dashboard)/admin/connectors/page.tsx)
+
+##### Multi-Line Cell Content
+
+For cells that display multiple related data points, use vertical stacking with consistent spacing:
+
+```tsx
+{/* Contact Information Cell - Multiple items */}
+<td>
+  <div className="text-xs space-y-0.5">
+    {email && (
+      <div className="flex items-center gap-1.5 text-text-secondary">
+        <Mail className="w-3 h-3 flex-shrink-0" />
+        <span className="truncate max-w-[160px]">{email}</span>
+      </div>
+    )}
+    {phone && (
+      <div className="flex items-center gap-1.5 text-text-secondary">
+        <Phone className="w-3 h-3 flex-shrink-0" />
+        <span>{phone}</span>
+      </div>
+    )}
+    {!email && !phone && (
+      <span className="text-text-muted">—</span>
+    )}
+  </div>
+</td>
+
+{/* Usage Metrics Cell - With progress bars */}
+<td>
+  <div className="space-y-2 min-w-[140px]">
+    {/* Users metric */}
+    <div>
+      <div className="flex items-center justify-between text-xs mb-0.5">
+        <span className="text-text-muted flex items-center gap-1">
+          <Users className="w-3 h-3" />
+          Users
+        </span>
+        <span className="text-text-secondary font-medium">
+          {current}/{max}
+        </span>
+      </div>
+      <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+        <div
+          className={cn(
+            'h-full rounded-full transition-all',
+            percent >= 90 ? 'bg-red-500' : percent >= 70 ? 'bg-amber-500' : 'bg-oak-primary'
+          )}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+    {/* Additional metrics... */}
+  </div>
+</td>
+```
+
+**Multi-Line Cell Guidelines:**
+| Content Type | Spacing | Icon Size | Text Size |
+|--------------|---------|-----------|-----------|
+| Simple list (email, phone) | `space-y-0.5` | `w-3 h-3` | `text-xs` |
+| Metrics with progress bars | `space-y-2` | `w-3 h-3` | `text-xs` |
+| Primary + secondary info | `space-y-1` | `w-4 h-4` | `text-sm` / `text-xs` |
+
+**Best Practices:**
+- Use `flex-shrink-0` on icons to prevent compression
+- Set `min-w-[Xpx]` on container to prevent column collapse
+- Show em-dash (`—`) when all values are empty
+- Use `truncate` with `max-w-[Xpx]` for potentially long text
+- Group related items (contact info together, metrics together)
+
+**Reference Implementation:** [tenants/page.tsx](../src/app/(dashboard)/admin/tenants/page.tsx)
+
+##### Stats Card Variations
+
+Stats cards use semantic colors based on the metric's meaning:
+
+```tsx
+<div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+  {/* Primary/Total metric - Brand color */}
+  <div className="card card-compact sm:p-4">
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded bg-oak-primary/10">
+        <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-oak-light" />
+      </div>
+      <div>
+        <p className="text-xl sm:text-2xl font-semibold text-text-primary">{total}</p>
+        <p className="text-xs sm:text-sm text-text-tertiary">Total</p>
+      </div>
+    </div>
+  </div>
+
+  {/* In-progress/Pending metric - Info color */}
+  <div className="card card-compact sm:p-4">
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded bg-status-info/10">
+        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
+      </div>
+      <div>
+        <p className="text-xl sm:text-2xl font-semibold text-text-primary">{queued}</p>
+        <p className="text-xs sm:text-sm text-text-tertiary">Queued</p>
+      </div>
+    </div>
+  </div>
+
+  {/* Needs attention metric - Warning color */}
+  <div className="card card-compact sm:p-4">
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded bg-status-warning/10">
+        <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
+      </div>
+      <div>
+        <p className="text-xl sm:text-2xl font-semibold text-text-primary">{pendingReview}</p>
+        <p className="text-xs sm:text-sm text-text-tertiary">Pending Review</p>
+      </div>
+    </div>
+  </div>
+
+  {/* Success metric - Success color */}
+  <div className="card card-compact sm:p-4">
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded bg-status-success/10">
+        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-status-success" />
+      </div>
+      <div>
+        <p className="text-xl sm:text-2xl font-semibold text-text-primary">{approved}</p>
+        <p className="text-xs sm:text-sm text-text-tertiary">Approved</p>
+      </div>
+    </div>
+  </div>
+
+  {/* Error/Failed metric - Error color */}
+  <div className="card card-compact sm:p-4">
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded bg-status-error/10">
+        <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-status-error" />
+      </div>
+      <div>
+        <p className="text-xl sm:text-2xl font-semibold text-text-primary">{failed}</p>
+        <p className="text-xs sm:text-sm text-text-tertiary">Failed</p>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+**Stats Card Color Semantics:**
+| Metric Type | Background | Icon Color | Use Case |
+|-------------|------------|------------|----------|
+| **Primary/Total** | `bg-oak-primary/10` | `text-oak-light` | Total counts, primary metrics |
+| **In Progress** | `bg-status-info/10` | `text-status-info` | Queued, processing, pending |
+| **Needs Attention** | `bg-status-warning/10` | `text-status-warning` | Pending review, expiring soon |
+| **Success** | `bg-status-success/10` | `text-status-success` | Approved, completed, active |
+| **Error/Failed** | `bg-status-error/10` | `text-status-error` | Failed, errors, overdue |
+| **Neutral/Info** | `bg-background-tertiary` | `text-text-muted` | General info, non-status metrics |
+
+**Stats Card Structure:**
+- Container: `.card.card-compact` or `.card` with `p-4`
+- Layout: `flex items-center gap-3`
+- Icon wrapper: `p-2 rounded` with semantic background
+- Icon size: `w-4 h-4 sm:w-5 sm:h-5` (responsive)
+- Number: `text-xl sm:text-2xl font-semibold text-text-primary`
+- Label: `text-xs sm:text-sm text-text-tertiary`
+
+**Grid Layout for Stats:**
+- Mobile: `grid-cols-2` (2 cards per row)
+- Desktop: `grid-cols-4` to `grid-cols-6` depending on count
+- Gap: `gap-4` (16px)
+
+**Reference Implementation:** [processing/page.tsx](../src/app/(dashboard)/processing/page.tsx)
+
+##### DataGrid Component
+
+The `DataGrid` component provides a feature-rich, reusable table component for complex data displays.
+
+**File:** `src/components/ui/data-grid.tsx`
+
+```tsx
+import { DataGrid, DataGridColumn, useDataGridSort, useDataGridSelection, useDataGridPagination } from '@/components/ui/data-grid';
+
+// Define columns
+const columns: DataGridColumn<User>[] = [
+  { id: 'name', label: 'Name', sortField: 'name', render: (row) => row.name },
+  { id: 'email', label: 'Email', render: (row) => row.email },
+  { id: 'balance', label: 'Balance', rightAligned: true, render: (row) => formatCurrency(row.balance) },
+];
+
+// Use in component
+function UsersTable() {
+  const { sortBy, sortOrder, handleSort } = useDataGridSort('name');
+  const { selectedKeys, setSelectedKeys } = useDataGridSelection();
+  const { page, setPage, limit, setLimit } = useDataGridPagination(20);
+
+  return (
+    <DataGrid
+      data={users}
+      columns={columns}
+      getRowKey={(user) => user.id}
+      sortBy={sortBy}
+      sortOrder={sortOrder}
+      onSort={handleSort}
+      selectable
+      selectedKeys={selectedKeys}
+      onSelectionChange={setSelectedKeys}
+      page={page}
+      totalPages={data.totalPages}
+      total={data.total}
+      limit={limit}
+      onPageChange={setPage}
+      onLimitChange={setLimit}
+    />
+  );
+}
+```
+
+**DataGrid Features:**
+- **Sortable columns** with direction indicators (ArrowUp/ArrowDown/ArrowUpDown)
+- **Resizable columns** with drag handles and width persistence
+- **Row selection** with checkbox support (none/some/all states)
+- **Pagination** integration with the `Pagination` component
+- **Column visibility** control for hiding/showing columns
+- **Mobile responsive** with optional card view rendering
+- **Loading states** with skeleton rows
+- **Variants**: `default` and `compact` padding modes
+
+**DataGridColumn Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique column identifier |
+| `label` | `string` | Column header label |
+| `sortField` | `string?` | Field name for sorting (if sortable) |
+| `rightAligned` | `boolean?` | Right-align cell content (for numbers) |
+| `defaultWidth` | `number?` | Default width in pixels |
+| `minWidth` | `number?` | Minimum width in pixels |
+| `fixedWidth` | `number?` | Fixed width (prevents resizing) |
+| `defaultVisible` | `boolean?` | Visible by default (default: true) |
+| `showOnMobile` | `boolean?` | Show on mobile card view |
+| `render` | `(row, index) => ReactNode` | Cell content renderer |
+| `renderHeader` | `() => ReactNode?` | Custom header renderer |
+
+**Utility Hooks:**
+
+```tsx
+// Sorting state management
+const { sortBy, sortOrder, handleSort } = useDataGridSort('createdAt', 'desc');
+
+// Selection state management
+const { selectedKeys, setSelectedKeys, clearSelection, selectAll } = useDataGridSelection();
+
+// Pagination state management
+const { page, setPage, limit, setLimit, resetPage } = useDataGridPagination(20);
+```
+
+**When to Use DataGrid vs Custom Table:**
+- Use `DataGrid` for: Standard data tables needing sorting, selection, pagination
+- Use custom table for: Highly specialized layouts (like document processing with inline filters)
+
+**Reference:** [src/components/ui/data-grid.tsx](../src/components/ui/data-grid.tsx)
+
 ### Navigation
 
 ```css
@@ -4232,6 +4660,71 @@ const { data } = useData({ page, limit, ...filters });
 - Shows "Showing X to Y of Z results" with page size dropdown
 - Page numbers with ellipsis for large page counts
 - Previous/Next arrows disabled at boundaries
+
+#### Pagination Button Styling
+
+Pagination uses custom styling that aligns with the button hierarchy:
+
+**Reference Implementation**: `src/components/ui/pagination.tsx`
+
+| Element | Active State | Inactive State | Disabled State |
+|---------|-------------|----------------|----------------|
+| Page numbers | `bg-oak-primary text-white font-medium` | `text-text-primary hover:bg-background-tertiary` | N/A |
+| Previous/Next | N/A | `text-text-primary hover:bg-background-tertiary` | `text-text-muted cursor-not-allowed` |
+| Page size dropdown | N/A | `border-border-primary hover:border-oak-primary/50` | N/A |
+
+```tsx
+// Page number button styling
+<button
+  className={cn(
+    'min-w-[32px] h-8 px-2 text-sm rounded-lg transition-colors',
+    pageNum === page
+      ? 'bg-oak-primary text-white font-medium'      // Active: primary color
+      : 'text-text-primary hover:bg-background-tertiary'  // Inactive: ghost-like
+  )}
+  aria-current={pageNum === page ? 'page' : undefined}
+>
+  {pageNum}
+</button>
+
+// Previous/Next button styling
+<button
+  disabled={page === 1}
+  className={cn(
+    'flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors',
+    page === 1
+      ? 'text-text-muted cursor-not-allowed'          // Disabled state
+      : 'text-text-primary hover:bg-background-tertiary'  // Enabled state
+  )}
+  aria-label="Previous page"
+>
+  <ChevronLeft className="w-4 h-4" />
+  <span className="hidden sm:inline">Previous</span>
+</button>
+```
+
+**Key Styling Guidelines:**
+- **Active page**: Uses `bg-oak-primary text-white` to match primary button styling
+- **Inactive pages**: Uses ghost-like styling with hover state (not actual `btn-ghost` class)
+- **Disabled navigation**: Uses `text-text-muted cursor-not-allowed` for clear disabled state
+- **Responsive text**: Previous/Next labels hidden on mobile with `hidden sm:inline`
+- **Minimum width**: `min-w-[32px]` ensures consistent button sizing
+- **Icon sizing**: `w-4 h-4` (16px) matches button size `sm` guidelines
+
+#### Pagination Accessibility
+
+- Use `aria-label` on Previous/Next buttons
+- Use `aria-current="page"` on the active page button
+- Disabled buttons use `disabled` attribute (not just styling)
+- Page size `<select>` should have associated `<label>` with `htmlFor`
+
+#### Legacy Pagination Component
+
+Note: There are two pagination components in the codebase:
+- `src/components/ui/pagination.tsx` - **Recommended** (documented above)
+- `src/components/companies/pagination.tsx` - Legacy, similar functionality
+
+Both have equivalent functionality. New pages should use the UI pagination component.
 
 ### Filter Components
 

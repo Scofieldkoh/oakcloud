@@ -132,7 +132,7 @@ function ResetPasswordForm() {
             <FormInput
               label="New Password"
               type="password"
-              inputSize="md"
+              inputSize="lg"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter new password"
@@ -147,7 +147,7 @@ function ResetPasswordForm() {
             <FormInput
               label="Confirm Password"
               type="password"
-              inputSize="md"
+              inputSize="lg"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm new password"
@@ -159,7 +159,7 @@ function ResetPasswordForm() {
 
             <Button
               type="submit"
-              size="md"
+              size="lg"
               isLoading={isLoading}
               className="w-full"
             >

@@ -136,7 +136,7 @@ function ChangePasswordContent() {
             <FormInput
               label="Current Password"
               type="password"
-              inputSize="md"
+              inputSize="lg"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="Enter current password"
@@ -150,7 +150,7 @@ function ChangePasswordContent() {
             <FormInput
               label="New Password"
               type="password"
-              inputSize="md"
+              inputSize="lg"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Enter new password"
@@ -164,7 +164,7 @@ function ChangePasswordContent() {
             <FormInput
               label="Confirm New Password"
               type="password"
-              inputSize="md"
+              inputSize="lg"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm new password"
@@ -176,7 +176,7 @@ function ChangePasswordContent() {
 
             <Button
               type="submit"
-              size="md"
+              size="lg"
               isLoading={isLoading}
               className="w-full"
             >

@@ -192,7 +192,7 @@ export function MobileCard({
   return (
     <div
       className={cn(
-        'card p-4 transition-colors',
+        'card transition-colors',
         isSelected && 'ring-2 ring-oak-primary/50 bg-oak-row-selected',
         className
       )}

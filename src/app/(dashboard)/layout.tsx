@@ -3,6 +3,7 @@
 import { Sidebar } from '@/components/ui/sidebar';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { PetMascotProvider } from '@/game/PetMascotProvider';
 import { useUIStore } from '@/stores/ui-store';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
@@ -26,18 +27,20 @@ export default function DashboardLayout({
       </a>
       <div className="min-h-screen bg-background-primary">
         <Sidebar />
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className={cn(
-            'min-h-screen transition-all duration-200 focus:outline-none',
-            isMobile ? 'pt-12' : sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-56'
-          )}
-        >
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </main>
+        <PetMascotProvider>
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className={cn(
+              'min-h-screen transition-all duration-200 focus:outline-none',
+              isMobile ? 'pt-12' : sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-56'
+            )}
+          >
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </main>
+        </PetMascotProvider>
       </div>
     </AuthGuard>
   );

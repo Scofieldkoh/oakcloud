@@ -33,6 +33,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+import { UsageMetric } from '@/components/ui/usage-metric';
 
 const TENANT_STATUSES = [
   { value: 'ACTIVE', label: 'Active', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
@@ -318,8 +319,6 @@ export default function TenantsPage() {
             data.tenants.map((tenant: Tenant) => {
               const userCount = tenant._count?.users || 0;
               const companyCount = tenant._count?.companies || 0;
-              const userPercent = Math.min((userCount / tenant.maxUsers) * 100, 100);
-              const companyPercent = Math.min((companyCount / tenant.maxCompanies) * 100, 100);
 
               return (
                 <MobileCard
@@ -353,48 +352,8 @@ export default function TenantsPage() {
 
                       {/* Usage Bars */}
                       <div className="space-y-2">
-                        {/* Users */}
-                        <div>
-                          <div className="flex items-center justify-between text-xs mb-0.5">
-                            <span className="text-text-muted flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              Users
-                            </span>
-                            <span className="text-text-secondary font-medium">
-                              {userCount}/{tenant.maxUsers}
-                            </span>
-                          </div>
-                          <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
-                            <div
-                              className={cn(
-                                'h-full rounded-full transition-all',
-                                userPercent >= 90 ? 'bg-red-500' : userPercent >= 70 ? 'bg-amber-500' : 'bg-oak-primary'
-                              )}
-                              style={{ width: `${userPercent}%` }}
-                            />
-                          </div>
-                        </div>
-                        {/* Companies */}
-                        <div>
-                          <div className="flex items-center justify-between text-xs mb-0.5">
-                            <span className="text-text-muted flex items-center gap-1">
-                              <Building2 className="w-3 h-3" />
-                              Companies
-                            </span>
-                            <span className="text-text-secondary font-medium">
-                              {companyCount}/{tenant.maxCompanies}
-                            </span>
-                          </div>
-                          <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
-                            <div
-                              className={cn(
-                                'h-full rounded-full transition-all',
-                                companyPercent >= 90 ? 'bg-red-500' : companyPercent >= 70 ? 'bg-amber-500' : 'bg-oak-primary'
-                              )}
-                              style={{ width: `${companyPercent}%` }}
-                            />
-                          </div>
-                        </div>
+                        <UsageMetric label="Users" current={userCount} max={tenant.maxUsers} icon={Users} />
+                        <UsageMetric label="Companies" current={companyCount} max={tenant.maxCompanies} icon={Building2} />
                       </div>
 
                       <CardDetailsGrid>
@@ -503,8 +462,6 @@ export default function TenantsPage() {
                     data.tenants.map((tenant: Tenant) => {
                       const userCount = tenant._count?.users || 0;
                       const companyCount = tenant._count?.companies || 0;
-                      const userPercent = Math.min((userCount / tenant.maxUsers) * 100, 100);
-                      const companyPercent = Math.min((companyCount / tenant.maxCompanies) * 100, 100);
 
                       return (
                         <tr key={tenant.id}>
@@ -540,48 +497,8 @@ export default function TenantsPage() {
                           </td>
                           <td>
                             <div className="space-y-2 min-w-[140px]">
-                              {/* Users */}
-                              <div>
-                                <div className="flex items-center justify-between text-xs mb-0.5">
-                                  <span className="text-text-muted flex items-center gap-1">
-                                    <Users className="w-3 h-3" />
-                                    Users
-                                  </span>
-                                  <span className="text-text-secondary font-medium">
-                                    {userCount}/{tenant.maxUsers}
-                                  </span>
-                                </div>
-                                <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
-                                  <div
-                                    className={cn(
-                                      'h-full rounded-full transition-all',
-                                      userPercent >= 90 ? 'bg-red-500' : userPercent >= 70 ? 'bg-amber-500' : 'bg-oak-primary'
-                                    )}
-                                    style={{ width: `${userPercent}%` }}
-                                  />
-                                </div>
-                              </div>
-                              {/* Companies */}
-                              <div>
-                                <div className="flex items-center justify-between text-xs mb-0.5">
-                                  <span className="text-text-muted flex items-center gap-1">
-                                    <Building2 className="w-3 h-3" />
-                                    Companies
-                                  </span>
-                                  <span className="text-text-secondary font-medium">
-                                    {companyCount}/{tenant.maxCompanies}
-                                  </span>
-                                </div>
-                                <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
-                                  <div
-                                    className={cn(
-                                      'h-full rounded-full transition-all',
-                                      companyPercent >= 90 ? 'bg-red-500' : companyPercent >= 70 ? 'bg-amber-500' : 'bg-oak-primary'
-                                    )}
-                                    style={{ width: `${companyPercent}%` }}
-                                  />
-                                </div>
-                              </div>
+                              <UsageMetric label="Users" current={userCount} max={tenant.maxUsers} icon={Users} />
+                              <UsageMetric label="Companies" current={companyCount} max={tenant.maxCompanies} icon={Building2} />
                               {/* Storage */}
                               <div className="flex items-center gap-1 text-xs text-text-muted">
                                 <HardDrive className="w-3 h-3" />

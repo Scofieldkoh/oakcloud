@@ -7,14 +7,10 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
   },
-  turbopack: {
-    resolveAlias: {
-      canvas: './empty-module.js',
-    },
-  },
+  // Turbopack and webpack configurations removed
+  // Phaser requires real canvas support
   webpack: (config) => {
-    // Fallback for non-Turbopack builds
-    config.resolve.alias.canvas = false;
+    // No canvas aliasing - Phaser needs real canvas
     return config;
   },
 };

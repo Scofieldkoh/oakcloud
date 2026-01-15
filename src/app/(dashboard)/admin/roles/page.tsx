@@ -567,7 +567,7 @@ export default function RolesPage() {
 
       {/* Permission Legend */}
       {activeTenantId && (
-        <div className="mt-8 card p-4">
+        <div className="mt-8 card">
           <h3 className="text-sm font-medium text-text-primary mb-3">Permission Actions</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div>

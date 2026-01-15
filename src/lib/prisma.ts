@@ -1,6 +1,6 @@
 import { PrismaClient } from '@/generated/prisma';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import { Pool, PoolConfig } from 'pg';
 import { getPrismaLogConfig, createLogger } from './logger';
 
 const prismaLogger = createLogger('prisma');
@@ -21,12 +21,22 @@ function createPool(): Pool {
     throw new Error('DATABASE_URL environment variable is required');
   }
 
-  return new Pool({
+  const poolConfig: PoolConfig = {
     connectionString,
     max: 10, // Maximum connections in pool
     idleTimeoutMillis: 30000, // Close idle connections after 30s
     connectionTimeoutMillis: 5000, // Timeout for new connections
-  });
+  };
+
+  // Enable SSL for production environments (most cloud databases require it)
+  // Can be disabled by setting DATABASE_SSL=false
+  if (process.env.NODE_ENV === 'production' && process.env.DATABASE_SSL !== 'false') {
+    poolConfig.ssl = {
+      rejectUnauthorized: false, // Allow self-signed certs (common in cloud DBs)
+    };
+  }
+
+  return new Pool(poolConfig);
 }
 
 /**
@@ -37,11 +47,9 @@ function createPrismaClient(): PrismaClient {
   const logConfig = getPrismaLogConfig();
   prismaLogger.debug(`Initializing Prisma 7 with log levels: ${logConfig.join(', ') || 'none'}`);
 
-  // Create or reuse connection pool
+  // Create or reuse connection pool (reuse in both dev and production)
   const pool = globalForPrisma.pool ?? createPool();
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.pool = pool;
-  }
+  globalForPrisma.pool = pool;
 
   // Create adapter with the pool
   const adapter = new PrismaPg(pool);
@@ -54,8 +62,7 @@ function createPrismaClient(): PrismaClient {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+// Store prisma instance globally to prevent multiple instances
+globalForPrisma.prisma = prisma;
 
 export default prisma;

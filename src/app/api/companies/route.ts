@@ -4,6 +4,9 @@ import { requirePermission } from '@/lib/rbac';
 import { createCompanySchema, companySearchSchema } from '@/lib/validations/company';
 import { createCompany, searchCompanies, getCompanyByUen } from '@/services/company.service';
 import { getTenantById } from '@/services/tenant.service';
+import { createLogger, sanitizeError } from '@/lib/logger';
+
+const log = createLogger('api:companies');
 
 export async function GET(request: NextRequest) {
   try {
@@ -93,8 +96,15 @@ export async function GET(request: NextRequest) {
       if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
+      // Check for Prisma/database errors (they have a 'code' property)
+      if ('code' in error) {
+        log.error('GET /companies database error:', sanitizeError(error));
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
+      // Validation and business logic errors
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+    log.error('GET /companies failed with unexpected error:', sanitizeError(error));
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -140,8 +150,15 @@ export async function POST(request: NextRequest) {
       if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
+      // Check for Prisma/database errors (they have a 'code' property)
+      if ('code' in error) {
+        log.error('POST /companies database error:', sanitizeError(error));
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
+      // Validation and business logic errors
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+    log.error('POST /companies failed with unexpected error:', sanitizeError(error));
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

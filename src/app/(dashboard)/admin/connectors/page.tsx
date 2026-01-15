@@ -34,6 +34,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/toast';
 import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { ScopeBadge } from '@/components/ui/scope-badge';
+import { ProviderIcon } from '@/components/ui/provider-icon';
 import { subDays } from 'date-fns';
 import {
   Plus,
@@ -43,7 +46,6 @@ import {
   Check,
   X,
   Zap,
-  Settings,
   Cloud,
   Brain,
   RefreshCw,
@@ -108,56 +110,6 @@ const INITIAL_CREATE_FORM: CreateFormData = {
 // ============================================================================
 // Helper Components
 // ============================================================================
-
-function StatusBadge({ isEnabled }: { isEnabled: boolean }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-        isEnabled
-          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-          : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-      )}
-    >
-      {isEnabled ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-      {isEnabled ? 'Enabled' : 'Disabled'}
-    </span>
-  );
-}
-
-function ScopeBadge({ isSystem }: { isSystem: boolean }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs',
-        isSystem
-          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-      )}
-    >
-      {isSystem ? <Shield className="w-3 h-3" /> : <Settings className="w-3 h-3" />}
-      {isSystem ? 'System' : 'Tenant'}
-    </span>
-  );
-}
-
-function ProviderIcon({ provider }: { provider: ConnectorProvider }) {
-  const iconClass = 'w-5 h-5';
-  switch (provider) {
-    case 'OPENAI':
-      return <Brain className={cn(iconClass, 'text-green-600')} />;
-    case 'ANTHROPIC':
-      return <Brain className={cn(iconClass, 'text-orange-600')} />;
-    case 'GOOGLE':
-      return <Brain className={cn(iconClass, 'text-blue-600')} />;
-    case 'ONEDRIVE':
-      return <Cloud className={cn(iconClass, 'text-sky-600')} />;
-    case 'SHAREPOINT':
-      return <Cloud className={cn(iconClass, 'text-purple-600')} />;
-    default:
-      return <Zap className={iconClass} />;
-  }
-}
 
 function TestResultBadge({ result }: { result: string | null }) {
   const parsed = parseTestResult(result);
@@ -438,7 +390,7 @@ export default function ConnectorsPage() {
           </div>
         }
         subtitle={getProviderDisplayName(connector.provider)}
-        badge={<StatusBadge isEnabled={connector.isEnabled} />}
+        badge={<StatusBadge status={connector.isEnabled} />}
         actions={
           <div className="flex items-center gap-1">
             <Button
@@ -506,7 +458,7 @@ export default function ConnectorsPage() {
         }
         details={
           <CardDetailsGrid>
-            <CardDetailItem label="Scope" value={<ScopeBadge isSystem={isSystem} />} />
+            <CardDetailItem label="Scope" value={<ScopeBadge scope={isSystem} />} />
             <CardDetailItem label="Test" value={<TestResultBadge result={connector.lastTestResult} />} />
             <CardDetailItem label="Calls" value={connector.callCount.toLocaleString()} />
             <CardDetailItem
@@ -540,10 +492,10 @@ export default function ConnectorsPage() {
           </div>
         </td>
         <td className="px-4 py-3">
-          <ScopeBadge isSystem={isSystem} />
+          <ScopeBadge scope={isSystem} />
         </td>
         <td className="px-4 py-3">
-          <StatusBadge isEnabled={connector.isEnabled} />
+          <StatusBadge status={connector.isEnabled} />
         </td>
         <td className="px-4 py-3">
           <TestResultBadge result={connector.lastTestResult} />

@@ -319,7 +319,7 @@ export function LineItemEditor({
 
   if (isLoading) {
     return (
-      <div className={cn('card p-4', className)}>
+      <div className={cn('card', className)}>
         <div className="animate-pulse space-y-3">
           <div className="h-4 bg-background-tertiary rounded w-1/4" />
           <div className="h-10 bg-background-tertiary rounded" />
@@ -331,7 +331,7 @@ export function LineItemEditor({
 
   if (error) {
     return (
-      <div className={cn('card p-4 border-status-error bg-status-error/5', className)}>
+      <div className={cn('card border-status-error bg-status-error/5', className)}>
         <div className="flex items-center gap-2 text-status-error">
           <AlertTriangle className="w-4 h-4" />
           <span className="text-sm">Failed to load line items</span>
