@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { format } from 'date-fns';
+import { useMemo } from 'react';
 import {
   Calendar,
   Building2,
@@ -13,7 +12,7 @@ import {
   Edit,
   Eye,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDateShort } from '@/lib/utils';
 import { DataGrid, type DataGridColumn } from '@/components/ui/data-grid';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import {
@@ -117,11 +116,6 @@ export function DeadlineList({
         defaultWidth: 140,
         minWidth: 120,
         render: (deadline) => {
-          const statutoryDate = new Date(deadline.statutoryDueDate);
-          const extendedDate = deadline.extendedDueDate
-            ? new Date(deadline.extendedDueDate)
-            : null;
-
           return (
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5">
@@ -129,15 +123,15 @@ export function DeadlineList({
                 <span
                   className={cn(
                     'text-sm',
-                    extendedDate ? 'line-through text-text-muted' : 'text-text-primary'
+                    deadline.extendedDueDate ? 'line-through text-text-muted' : 'text-text-primary'
                   )}
                 >
-                  {format(statutoryDate, 'dd MMM yyyy')}
+                  {formatDateShort(deadline.statutoryDueDate)}
                 </span>
               </div>
-              {extendedDate && (
+              {deadline.extendedDueDate && (
                 <span className="text-sm text-green-700 dark:text-green-400 ml-5">
-                  {format(extendedDate, 'dd MMM yyyy')}
+                  {formatDateShort(deadline.extendedDueDate)}
                   {deadline.eotReference && (
                     <span className="text-xs text-text-muted ml-1">
                       (EOT: {deadline.eotReference})
@@ -345,7 +339,7 @@ export function DeadlineCompactList({
             <div className="flex items-center gap-2 mt-0.5">
               <DeadlineCategoryBadge category={deadline.category} size="xs" />
               <span className="text-xs text-text-muted">
-                Due {format(new Date(deadline.statutoryDueDate), 'dd MMM yyyy')}
+                Due {formatDateShort(deadline.statutoryDueDate)}
               </span>
               {showCompany && deadline.company && (
                 <>
