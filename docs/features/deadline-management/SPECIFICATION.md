@@ -1,7 +1,7 @@
 # Deadline Management - Feature Specification
 
 > **Status**: Draft
-> **Version**: 1.0
+> **Version**: 1.1
 > **Last Updated**: 2025-01-15
 
 ## Overview
@@ -11,17 +11,21 @@ Deadline Management is a compliance task engine that auto-generates recurring de
 ### Core Concept
 
 ```
-Service (e.g., "Corporate Secretarial")
-    └── triggers → Deadline Template Bundle
-                      ├── AGM (billable)
-                      ├── Annual Return (billable)
-                      ├── XBRL (billable)
-                      └── Business Profile Renewal (not billable, just a reminder)
+Service Template (e.g., "Corporate Secretarial Annual")
+    └── When added to contract, generates:
+        ├── Service Renewal Reminder (billable - next year's fee)
+        ├── Annual Return (not billable - covered by annual fee)
+        ├── XBRL Filing (not billable - covered by annual fee)
+        ├── Send FS to Members (optional - waives AGM if completed)
+        └── AGM (not billable - covered by annual fee, can be waived)
 ```
+
+**Key Principle**: Service templates define both the **contract service parameters** AND the **deadlines** that are auto-generated. Compliance deadlines (AR, AGM, Tax filings) are NOT separately billable - they are covered by the annual service fee. Only the **Service Renewal** deadline is billable (for the next period's fee).
 
 ### Key Distinctions
 
-- **Compliance deadlines** (AGM, AR, Tax) → auto-generated, statutory dates
+- **Compliance deadlines** (AGM, AR, Tax) → auto-generated, statutory dates, NOT billable (covered by service fee)
+- **Service renewals** → annual reminder to renew service, BILLABLE (next year's fee)
 - **Operational tasks** (Onboarding, KYC/CDD, RORC, ROND) → out of scope for MVP (future workflow/checklist feature)
 
 ---
