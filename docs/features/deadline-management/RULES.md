@@ -1091,6 +1091,575 @@ Audit completion required before Annual Return can be filed.
 
 ---
 
+## Service Template 7: CLG Corporate Secretarial
+
+> For Company Limited by Guarantee (public company) - typically used by non-profits, charities, professional bodies
+
+### Service Definition
+
+| Field | Value |
+|-------|-------|
+| **Code** | `CLG_CORP_SEC` |
+| **Name** | CLG Corporate Secretarial (Annual) |
+| **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
+| **Service Type** | RECURRING |
+| **Frequency** | ANNUALLY |
+| **Default Rate** | null |
+| **Currency** | SGD |
+| **Auto Renewal** | true |
+| **Renewal Period** | 12 months |
+
+### Applicability
+
+```
+entityTypes: [PUBLIC_COMPANY_LIMITED_BY_GUARANTEE]
+excludeEntityTypes: null
+requiresGstRegistered: null
+// Note: CLGs are public companies - different AGM/AR timelines from private companies
+```
+
+### Required Fields When Adding Service
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `rate` | Decimal | Annual service fee |
+| `startDate` | Date | Service start date |
+
+### Default Scope
+
+```
+Annual corporate secretarial services for Company Limited by Guarantee including:
+• Maintenance of statutory registers and records
+• Annual Return filing with ACRA
+• Financial statements preparation (XBRL key data + PDF)
+• AGM coordination and documentation
+• Minutes and resolutions preparation
+• Registered office services
+• Member register maintenance
+```
+
+### Generated Deadlines
+
+#### 7.1 CLG Service Renewal
+
+| Field | Value |
+|-------|-------|
+| **Code** | `CLG_SEC_RENEWAL` |
+| **Name** | CLG Corporate Secretarial Service Renewal |
+| **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
+| **Billable** | Yes |
+| **Is Optional** | No |
+| **Is Tax Filing** | false |
+
+**Calculation:**
+```
+anchorType: SERVICE_START
+offsetMonths: 0
+offsetDays: -30
+frequency: ANNUALLY
+```
+
+---
+
+#### 7.2 CLG Annual Return
+
+| Field | Value |
+|-------|-------|
+| **Code** | `CLG_ANNUAL_RETURN` |
+| **Name** | CLG Annual Return Filing |
+| **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
+| **Billable** | No |
+| **Is Optional** | No |
+| **Is Tax Filing** | false |
+
+**Calculation:**
+```
+anchorType: FYE
+offsetMonths: 7   // Public companies: 7 months from FYE (same as private)
+offsetDays: 0
+frequency: ANNUALLY
+
+// Note: CLGs file key financial data in XBRL + PDF of full financial statements
+```
+
+**Period:**
+```
+periodLabel: "FY{FYE_YEAR}"
+periodStart: financialYearStart
+periodEnd: financialYearEnd
+```
+
+**Description:**
+```
+Annual Return filing with ACRA for financial year ending {FYE_DATE}.
+
+CLGs file:
+• Key financial data in XBRL format
+• Full signed PDF copy of financial statements
+
+Filing via BizFile+:
+• Update registered office address (if changed)
+• Update company officers (if changed)
+• Update member information
+
+Statutory Due Date: {STATUTORY_DUE_DATE} (7 months from FYE)
+Late filing penalty: $300 + $50 per month thereafter
+```
+
+---
+
+#### 7.3 CLG Annual General Meeting
+
+| Field | Value |
+|-------|-------|
+| **Code** | `CLG_AGM` |
+| **Name** | CLG Annual General Meeting |
+| **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
+| **Billable** | No |
+| **Is Optional** | No |
+| **Is Tax Filing** | false |
+
+**Calculation:**
+```
+anchorType: FYE
+offsetMonths: 6   // Public companies: Within 6 months from FYE
+offsetDays: 0
+frequency: ANNUALLY
+
+// Note: CLGs are public companies - AGM exemption does NOT apply
+// AGM must be held every year (no waiver option like private companies)
+```
+
+**Period:**
+```
+periodLabel: "FY{FYE_YEAR}"
+```
+
+**Description:**
+```
+Annual General Meeting for CLG for FY ending {FYE_DATE}.
+
+Statutory Due Date: Within 6 months from FYE ({STATUTORY_DUE_DATE})
+
+IMPORTANT: Unlike private companies, CLGs (as public companies) cannot
+dispense with AGMs. AGM must be held every year.
+
+AGM Requirements:
+• Send notice to members (21 days for public company)
+• Prepare directors' statement and financial statements
+• Table financial statements for adoption
+• Appoint/re-appoint auditors
+• Elect/re-elect governing board members
+• Any other business
+
+Reference: Companies Act Section 175
+```
+
+---
+
+## Service Template 8: Charity Compliance (COC)
+
+> For registered charities - annual submission to Commissioner of Charities
+
+### Service Definition
+
+| Field | Value |
+|-------|-------|
+| **Code** | `CHARITY_COMPLIANCE` |
+| **Name** | Charity Compliance (Annual) |
+| **Category** | COMPLIANCE |
+| **Jurisdiction** | SG |
+| **Service Type** | RECURRING |
+| **Frequency** | ANNUALLY |
+| **Default Rate** | null |
+| **Currency** | SGD |
+| **Auto Renewal** | true |
+| **Renewal Period** | 12 months |
+
+### Applicability
+
+```
+// Only for entities registered as charities with Commissioner of Charities
+requiresCharityStatus: true
+requiresGstRegistered: null
+// Note: This is in ADDITION to ACRA filings for CLGs
+// CLGs that are charities need BOTH CLG_CORP_SEC and CHARITY_COMPLIANCE
+```
+
+### Required Fields When Adding Service
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `rate` | Decimal | Annual service fee |
+| `startDate` | Date | Service start date |
+| `charityRegistrationDate` | Date | Date charity status was granted |
+
+### Default Scope
+
+```
+Annual charity compliance services including:
+• Annual Report preparation (per Charities Regulations)
+• Financial statements preparation (Charities Accounting Standard)
+• Governance Evaluation Checklist completion
+• Charity Portal submissions
+• Liaison with Commissioner of Charities
+```
+
+### Generated Deadlines
+
+#### 8.1 Charity Compliance Service Renewal
+
+| Field | Value |
+|-------|-------|
+| **Code** | `CHARITY_RENEWAL` |
+| **Name** | Charity Compliance Service Renewal |
+| **Category** | COMPLIANCE |
+| **Jurisdiction** | SG |
+| **Billable** | Yes |
+| **Is Optional** | No |
+| **Is Tax Filing** | false |
+
+**Calculation:**
+```
+anchorType: SERVICE_START
+offsetMonths: 0
+offsetDays: -30
+frequency: ANNUALLY
+```
+
+---
+
+#### 8.2 Charity Annual Report (COC)
+
+| Field | Value |
+|-------|-------|
+| **Code** | `CHARITY_ANNUAL_REPORT` |
+| **Name** | Charity Annual Report to COC |
+| **Category** | COMPLIANCE |
+| **Jurisdiction** | SG |
+| **Billable** | No |
+| **Is Optional** | No |
+| **Is Tax Filing** | false |
+
+**Calculation:**
+```
+anchorType: FYE
+offsetMonths: 6   // Within 6 months from FYE
+offsetDays: 0
+frequency: ANNUALLY
+```
+
+**Period:**
+```
+periodLabel: "FY{FYE_YEAR}"
+periodStart: financialYearStart
+periodEnd: financialYearEnd
+```
+
+**Description:**
+```
+Annual Report submission to Commissioner of Charities for FY ending {FYE_DATE}.
+
+Submit via Charity Portal within 6 months from FYE.
+
+Required submissions:
+1. Annual Report (including Financial Statements)
+2. Governance Evaluation Checklist
+
+Financial Statements Requirements:
+• Prepare per Charities Accounting Standard (CAS) or FRS
+• Audit requirements based on gross income/expenditure:
+
+  ≤ $250,000: Independent examiner (any capable person)
+  $250,001 - $500,000: Independent examiner (ISCA member)
+  > $500,000: Public accountant audit required
+
+  CLGs and IPCs: Always require public accountant audit
+
+Note: Annual Report is published on Charity Portal for public viewing.
+
+Statutory Due Date: {STATUTORY_DUE_DATE}
+Reference: Charities (Accounts and Annual Report) Regulations 2011
+```
+
+---
+
+#### 8.3 Governance Evaluation Checklist
+
+| Field | Value |
+|-------|-------|
+| **Code** | `CHARITY_GEC` |
+| **Name** | Governance Evaluation Checklist |
+| **Category** | COMPLIANCE |
+| **Jurisdiction** | SG |
+| **Billable** | No |
+| **Is Optional** | No |
+| **Is Tax Filing** | false |
+
+**Calculation:**
+```
+anchorType: FYE
+offsetMonths: 6   // Submitted together with Annual Report
+offsetDays: 0
+frequency: ANNUALLY
+```
+
+**Period:**
+```
+periodLabel: "FY{FYE_YEAR}"
+```
+
+**Description:**
+```
+Governance Evaluation Checklist submission for FY ending {FYE_DATE}.
+
+Submit via Charity Portal together with Annual Report.
+
+The checklist evaluates:
+• Board governance and oversight
+• Conflict of interest policies
+• Strategic planning
+• Programme management
+• Human resource and volunteer management
+• Financial management and controls
+• Fundraising practices
+• Disclosure and transparency
+
+Use the appropriate checklist version:
+• For FY starting on/after 1 Jan 2024: Use updated checklist
+• Published results contribute to charity's transparency score
+
+Statutory Due Date: {STATUTORY_DUE_DATE}
+```
+
+---
+
+## Service Template 9: IPC Compliance
+
+> For Institutions of Public Character - additional requirements beyond charity compliance
+
+### Service Definition
+
+| Field | Value |
+|-------|-------|
+| **Code** | `IPC_COMPLIANCE` |
+| **Name** | IPC Compliance (Annual) |
+| **Category** | COMPLIANCE |
+| **Jurisdiction** | SG |
+| **Service Type** | RECURRING |
+| **Frequency** | ANNUALLY |
+| **Default Rate** | null |
+| **Currency** | SGD |
+| **Auto Renewal** | true |
+| **Renewal Period** | 12 months |
+
+### Applicability
+
+```
+// Only for charities with IPC status
+requiresIPCStatus: true
+requiresCharityStatus: true  // IPC must be charity first
+// Note: IPC compliance is IN ADDITION to Charity Compliance
+// IPCs need: CLG_CORP_SEC (if CLG) + CHARITY_COMPLIANCE + IPC_COMPLIANCE
+```
+
+### Required Fields When Adding Service
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `rate` | Decimal | Annual service fee |
+| `startDate` | Date | Service start date |
+| `ipcEffectiveDate` | Date | Date IPC status was granted |
+| `ipcExpiryDate` | Date | IPC status expiry date |
+
+### Default Scope
+
+```
+Annual IPC compliance services including:
+• Tax-deductible donation record management
+• Annual TDD return submission to IRAS
+• Donation receipt issuance and tracking
+• IPC renewal preparation (if applicable)
+• Compliance with Sector Administrator requirements
+```
+
+### Generated Deadlines
+
+#### 9.1 IPC Compliance Service Renewal
+
+| Field | Value |
+|-------|-------|
+| **Code** | `IPC_RENEWAL` |
+| **Name** | IPC Compliance Service Renewal |
+| **Category** | COMPLIANCE |
+| **Jurisdiction** | SG |
+| **Billable** | Yes |
+| **Is Optional** | No |
+| **Is Tax Filing** | false |
+
+**Calculation:**
+```
+anchorType: SERVICE_START
+offsetMonths: 0
+offsetDays: -30
+frequency: ANNUALLY
+```
+
+---
+
+#### 9.2 Annual TDD Return to IRAS
+
+| Field | Value |
+|-------|-------|
+| **Code** | `IPC_TDD_RETURN` |
+| **Name** | Annual Tax-Deductible Donation Return |
+| **Category** | COMPLIANCE |
+| **Jurisdiction** | SG |
+| **Billable** | No |
+| **Is Optional** | No |
+| **Is Tax Filing** | true |
+
+**Calculation:**
+```
+anchorType: FIXED_CALENDAR
+fixedMonth: 1    // January
+fixedDay: 31     // 31 January
+// Reports donations for PREVIOUS calendar year
+frequency: ANNUALLY
+```
+
+**Period:**
+```
+// Calendar year basis (not FYE)
+periodLabel: "CY{PREVIOUS_YEAR}"  // e.g., "CY2024" for return due 31 Jan 2025
+periodStart: {PREVIOUS_YEAR}-01-01
+periodEnd: {PREVIOUS_YEAR}-12-31
+```
+
+**Description:**
+```
+Annual Return for Tax-Deductible Donations to IRAS.
+
+Report all tax-deductible donations received in calendar year {PREVIOUS_YEAR}.
+
+Submission deadline: 31 January {CURRENT_YEAR}
+
+Required information for each donation:
+• Donor identification (NRIC/FIN for individuals, UEN for companies)
+• Donation amount
+• Date of donation
+• Type of donation (cash, shares, artefacts, etc.)
+
+Submit via IRAS Donation Management System (DMS).
+
+IMPORTANT:
+• Donor tax deductions (250%) are auto-included in assessments based on this return
+• Late/incorrect submissions affect donors' tax deductions
+• Encourage early submission before deadline
+
+Reference: IRAS Tax-Deductible Donations guidelines
+```
+
+---
+
+#### 9.3 IPC Status Renewal
+
+| Field | Value |
+|-------|-------|
+| **Code** | `IPC_STATUS_RENEWAL` |
+| **Name** | IPC Status Renewal Application |
+| **Category** | COMPLIANCE |
+| **Jurisdiction** | SG |
+| **Billable** | No |
+| **Is Optional** | Yes |
+| **Optional Note** | "Only if IPC status is expiring. Check ipcExpiryDate." |
+| **Is Tax Filing** | false |
+
+**Calculation:**
+```
+// IPC status validity varies - calculate from expiry date
+anchorType: IPC_EXPIRY  // Special anchor: uses ipcExpiryDate
+offsetMonths: -3        // 3 months before expiry
+offsetDays: 0
+frequency: ONE_TIME     // Regenerates based on new expiry date if renewed
+```
+
+**Description:**
+```
+IPC Status Renewal Application.
+
+IPC status expiry date: {IPC_EXPIRY_DATE}
+Recommended submission: At least 3 months before expiry
+
+Renewal requirements:
+• Continue to meet IPC criteria
+• Good compliance track record
+• No adverse findings from COC
+• Sector Administrator approval
+
+Application via Charity Portal.
+Processing time: Approximately 2 months.
+
+Note: If IPC status lapses, donors will no longer receive tax deductions
+for donations made after expiry date.
+```
+
+---
+
+## Charity Status Transition Compliance
+
+> Special deadlines when a CLG first obtains charity status
+
+### Charity Registration Deadline
+
+| Field | Value |
+|-------|-------|
+| **Code** | `CHARITY_REGISTRATION` |
+| **Name** | Charity Status Application |
+| **Category** | COMPLIANCE |
+| **Jurisdiction** | SG |
+| **Billable** | No |
+| **Is Optional** | Yes |
+| **Optional Note** | "Required if CLG is established for exclusively charitable purposes" |
+| **Is Tax Filing** | false |
+
+**Calculation:**
+```
+// For new CLGs with charitable purposes
+anchorType: INCORPORATION
+offsetMonths: 3   // Must apply within 3 months of incorporation
+offsetDays: 0
+frequency: ONE_TIME
+```
+
+**Description:**
+```
+Charity Status Application to Commissioner of Charities.
+
+Deadline: Within 3 months of CLG incorporation ({INCORPORATION_DATE})
+
+A CLG established for exclusively charitable purposes in Singapore MUST
+apply to register as a charity within 3 months of incorporation.
+
+Application requirements:
+• Signed governing instrument (Memorandum & Articles of Association)
+• At least 3 governing board members
+• At least 2 must be Singapore Citizens or Permanent Residents
+• Objects must be exclusively charitable
+• Objects must benefit Singapore community
+
+Submit via Charity Portal.
+Processing time: 3-6 months.
+
+Note: Tax exemption only applies from date of charity registration.
+```
+
+---
+
 ## Summary: Service Templates
 
 | Code | Service Name | Type | Frequency | Entity Types | Deadlines Generated |
@@ -1101,6 +1670,9 @@ Audit completion required before Annual Return can be filed.
 | `PERSONAL_TAX_SP` | Personal Tax (Sole Prop) | RECURRING | ANNUALLY | Sole Prop, Partnership | Renewal, Personal Tax (Form B/B1) |
 | `ACCOUNTING_MONTHLY` | Accounting (Monthly) | RECURRING | MONTHLY | All | Renewal, Monthly Bookkeeping |
 | `AUDIT_ANNUAL` | Statutory Audit | RECURRING | ANNUALLY | Pte Ltd, Public (if required) | Renewal, Audit Completion |
+| `CLG_CORP_SEC` | CLG Corporate Secretarial | RECURRING | ANNUALLY | CLG | Renewal, AR, AGM |
+| `CHARITY_COMPLIANCE` | Charity Compliance | RECURRING | ANNUALLY | Registered Charities | Renewal, Annual Report, GEC |
+| `IPC_COMPLIANCE` | IPC Compliance | RECURRING | ANNUALLY | IPCs | Renewal, TDD Return, Status Renewal* |
 
 *Optional deadlines
 †Skipped if company.agmDispensed = true
@@ -1109,14 +1681,22 @@ Audit completion required before Annual Return can be filed.
 
 ## Entity Type Applicability Matrix
 
-| Service Template | Private Ltd | Exempt Private | Public Ltd | Sole Prop | Partnership | LLP | Foreign Co |
-|-----------------|-------------|----------------|------------|-----------|-------------|-----|------------|
-| Corp Sec Annual | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| Tax Annual | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
-| GST Filing | If GST reg | If GST reg | If GST reg | If GST reg | If GST reg | If GST reg | If GST reg |
-| Personal Tax SP | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ |
-| Accounting Monthly | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Audit Annual | If required | If required | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Service Template | Private Ltd | Exempt Private | Public Ltd | CLG | Sole Prop | Partnership | LLP | Foreign Co |
+|-----------------|-------------|----------------|------------|-----|-----------|-------------|-----|------------|
+| Corp Sec Annual | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| CLG Corp Sec | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Tax Annual | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| GST Filing | If GST reg | If GST reg | If GST reg | If GST reg | If GST reg | If GST reg | If GST reg | If GST reg |
+| Personal Tax SP | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✗ | ✗ |
+| Accounting Monthly | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Audit Annual | If required | If required | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Charity Compliance | If charity | If charity | If charity | If charity | ✗ | ✗ | ✗ | ✗ |
+| IPC Compliance | If IPC | If IPC | If IPC | If IPC | ✗ | ✗ | ✗ | ✗ |
+
+**Notes:**
+- CLGs always require audit (public company requirement)
+- Charity Compliance applies to any entity type registered with Commissioner of Charities
+- IPC Compliance applies to charities granted IPC status
 
 ---
 
@@ -1131,6 +1711,14 @@ Audit completion required before Annual Return can be filed.
 | `XBRL` | XBRL Filing | FYE | +7 months | No |
 | `FS_TO_MEMBERS` | Send FS to Members | FYE | +5 months | No |
 | `AGM` | Annual General Meeting | FYE | +6 months | No |
+
+### CLG Corporate Secretarial
+
+| Code | Deadline Name | Anchor | Offset | Billable |
+|------|---------------|--------|--------|----------|
+| `CLG_SEC_RENEWAL` | Service Renewal | Service Start | -30 days | Yes |
+| `CLG_ANNUAL_RETURN` | Annual Return | FYE | +7 months | No |
+| `CLG_AGM` | Annual General Meeting | FYE | +6 months | No |
 
 ### Tax Compliance (Annual)
 
@@ -1169,6 +1757,28 @@ Audit completion required before Annual Return can be filed.
 | `AUDIT_RENEWAL` | Service Renewal | Service Start | -30 days | Yes |
 | `AUDIT_COMPLETION` | Statutory Audit | FYE | +6 months | No |
 
+### Charity Compliance (COC)
+
+| Code | Deadline Name | Anchor | Offset | Billable |
+|------|---------------|--------|--------|----------|
+| `CHARITY_RENEWAL` | Service Renewal | Service Start | -30 days | Yes |
+| `CHARITY_ANNUAL_REPORT` | Annual Report to COC | FYE | +6 months | No |
+| `CHARITY_GEC` | Governance Evaluation Checklist | FYE | +6 months | No |
+
+### IPC Compliance
+
+| Code | Deadline Name | Anchor | Offset | Billable |
+|------|---------------|--------|--------|----------|
+| `IPC_RENEWAL` | Service Renewal | Service Start | -30 days | Yes |
+| `IPC_TDD_RETURN` | TDD Return to IRAS | Fixed 31 Jan | CY | No |
+| `IPC_STATUS_RENEWAL` | IPC Status Renewal | IPC Expiry | -3 months | No |
+
+### Charity Transition
+
+| Code | Deadline Name | Anchor | Offset | Billable |
+|------|---------------|--------|--------|----------|
+| `CHARITY_REGISTRATION` | Charity Status Application | Incorporation | +3 months | No |
+
 ---
 
 ## New Fields Required
@@ -1181,11 +1791,22 @@ Audit completion required before Annual Return can be filed.
 | `agmDispensed` | Boolean | Company has dispensed with AGMs (resolution passed) |
 | `isDormant` | Boolean | Company is dormant (informational flag only) |
 | `dormantTaxExemptionApproved` | Boolean | IRAS approved exemption from tax filing |
+| `isRegisteredCharity` | Boolean | Registered with Commissioner of Charities |
+| `charityRegistrationDate` | Date | Date charity status was granted |
+| `isIPC` | Boolean | Has Institution of Public Character status |
+| `ipcEffectiveDate` | Date | Date IPC status was granted |
+| `ipcExpiryDate` | Date | IPC status expiry date |
 
 **Note on Dormant Companies:**
 - `isDormant` is informational only - does NOT automatically skip any deadlines
 - For AGM exemption: Use standard waiver process (send FS to members within 5 months)
 - For tax filing exemption: Apply to IRAS, then set `dormantTaxExemptionApproved = true`
+
+**Note on Charities and IPCs:**
+- `isRegisteredCharity` enables CHARITY_COMPLIANCE service
+- `isIPC` enables IPC_COMPLIANCE service (requires `isRegisteredCharity = true`)
+- CLGs that are charities need BOTH CLG_CORP_SEC and CHARITY_COMPLIANCE services
+- IPCs need all three: CLG_CORP_SEC (if CLG) + CHARITY_COMPLIANCE + IPC_COMPLIANCE
 
 ### ContractService Model
 

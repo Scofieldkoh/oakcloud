@@ -546,11 +546,25 @@ DeadlineTemplate (Default)
 | `isDormant` | Boolean | No | false | Company is dormant (informational flag only) |
 | `dormantTaxExemptionApproved` | Boolean | No | false | IRAS approved exemption from tax filing |
 | `gstFilingFrequency` | Enum | No | null | QUARTERLY or MONTHLY (if GST registered) |
+| **Charity/IPC Fields** |
+| `isRegisteredCharity` | Boolean | No | false | Registered with Commissioner of Charities |
+| `charityRegistrationDate` | Date | No | null | Date charity status was granted |
+| `charityUEN` | String | No | null | Charity UEN if different from company UEN |
+| `isIPC` | Boolean | No | false | Has Institution of Public Character status |
+| `ipcEffectiveDate` | Date | No | null | Date IPC status was granted |
+| `ipcExpiryDate` | Date | No | null | IPC status expiry date (requires renewal) |
+| `annualReceiptsOrExpenditure` | Decimal | No | null | Higher of gross annual receipts or expenditure (for audit threshold) |
 
 **Note on Dormant Companies:**
 - Dormant status does NOT automatically exempt from AGM - standard waiver process applies (send FS to members)
 - Dormant status does NOT automatically exempt from tax filing - requires IRAS approval
 - Use `dormantTaxExemptionApproved` flag only after IRAS grants exemption
+
+**Note on CLG/Charity Companies:**
+- CLGs are public companies - AGM is ALWAYS required (no exemption or dispensation)
+- CLGs with exclusively charitable purposes MUST register with COC within 3 months of incorporation
+- IPC status is separate from charity status and has expiry dates requiring renewal
+- Audit requirements depend on annual receipts/expenditure thresholds
 
 ### TenantSettings Entity (New Fields)
 
@@ -594,6 +608,17 @@ When `triggerDeadlineGeneration(companyId)` is called:
    ├── AGM Dispensed Check
    │   └── If template.code = 'AGM'
    │       └── Is company.agmDispensed = false?
+   │   └── Note: CLG companies (PUBLIC_COMPANY_LIMITED_BY_GUARANTEE)
+   │       └── Cannot dispense with AGM - always generate
+   │
+   ├── Charity Status Check
+   │   └── If template requires charity status (CHARITY_*)
+   │       └── Is company.isRegisteredCharity = true?
+   │
+   ├── IPC Status Check
+   │   └── If template requires IPC status (IPC_*)
+   │       └── Is company.isIPC = true?
+   │       └── Is ipcExpiryDate not past?
    │
    └── Audit Check
        └── If template.requiresAudit = true
@@ -640,6 +665,11 @@ When `triggerDeadlineGeneration(companyId)` is called:
 | **Company marked dormant** | 1. Set company.isDormant = true (informational only)<br>2. **No automatic changes** - dormant companies still require AGM (use standard waiver) and tax filing (unless IRAS exemption)<br>3. To skip tax filing: Apply to IRAS for exemption, then set company.dormantTaxExemptionApproved = true |
 | **IRAS grants dormant tax exemption** | 1. Set company.dormantTaxExemptionApproved = true<br>2. Cancel pending ECI and CORP_TAX deadlines<br>3. Skip future tax deadline generation |
 | **Company AGM dispensed** | 1. Set company.agmDispensed = true<br>2. Cancel pending AGM deadlines<br>3. Skip future AGM generation<br>4. AR deadlines continue unchanged |
+| **CLG incorporated** | 1. Entity type = PUBLIC_COMPANY_LIMITED_BY_GUARANTEE<br>2. agmDispensed always false (CLGs cannot dispense with AGM)<br>3. Generate CHARITY_REGISTRATION deadline (3 months from incorporation) if charitable purpose |
+| **Charity registration granted** | 1. Set company.isRegisteredCharity = true<br>2. Set company.charityRegistrationDate<br>3. Add Charity Compliance service<br>4. Generate CHARITY_ANNUAL_REPORT and CHARITY_GEC deadlines |
+| **IPC status granted** | 1. Set company.isIPC = true<br>2. Set company.ipcEffectiveDate and ipcExpiryDate<br>3. Add IPC Compliance service<br>4. Generate IPC_TDD_RETURN deadlines (31 January annually) |
+| **IPC status expires** | 1. If not renewed, set company.isIPC = false<br>2. Cancel pending IPC-related deadlines<br>3. Notify user of status change |
+| **Charity deregistered** | 1. Set company.isRegisteredCharity = false<br>2. Cancel pending charity compliance deadlines<br>3. Retain historical records |
 
 ### Service Changes
 
@@ -849,6 +879,10 @@ Always display period labels prominently to avoid confusion:
 | Bulk operations | ✓ | |
 | Dormant tax exemption flag (IRAS approved) | ✓ | |
 | AGM dispensed flag | ✓ | |
+| CLG compliance templates | ✓ | |
+| Charity compliance (COC) | ✓ | |
+| IPC compliance | ✓ | |
+| Charity status transition handling | ✓ | |
 | Business days calculation | | ✓ |
 | Kanban board | | ✓ |
 | Email reminders | | ✓ |
