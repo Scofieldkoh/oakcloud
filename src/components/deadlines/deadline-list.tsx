@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import {
   Calendar,
   Building2,
-  User,
   ChevronRight,
   MoreHorizontal,
   CheckCircle,
@@ -13,7 +12,6 @@ import {
   Trash2,
   Edit,
   Eye,
-  ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DataGrid, type DataGridColumn } from '@/components/ui/data-grid';

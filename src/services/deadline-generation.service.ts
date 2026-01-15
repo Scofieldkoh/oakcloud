@@ -417,6 +417,45 @@ export async function generateDeadlinesForCompany(
   let created = 0;
   let skipped = 0;
 
+  // Fetch all existing deadlines for this company upfront to avoid N+1 queries
+  const existingDeadlines = await db.deadline.findMany({
+    where: {
+      tenantId,
+      companyId,
+      deletedAt: null,
+    },
+    select: {
+      periodLabel: true,
+      referenceCode: true,
+    },
+  });
+
+  // Create a Set for fast lookup of existing deadline keys
+  const existingDeadlineKeys = new Set(
+    existingDeadlines.map(d => `${d.periodLabel}|${d.referenceCode || ''}`)
+  );
+
+  // Collect all deadlines to create
+  const deadlinesToCreate: Array<{
+    tenantId: string;
+    companyId: string;
+    contractServiceId: string | null;
+    deadlineTemplateId: string | null;
+    title: string;
+    description: string | null;
+    category: DeadlineCategory;
+    referenceCode: string | null;
+    periodLabel: string;
+    periodStart: Date | null;
+    periodEnd: Date | null;
+    statutoryDueDate: Date;
+    status: 'UPCOMING';
+    isBillable: boolean;
+    amount: number | null;
+    currency: string;
+    generationType: 'AUTO';
+  }> = [];
+
   for (const template of templates) {
     // Check if template applies to this company
     if (!templateAppliesToCompany(template, context)) {
@@ -433,47 +472,45 @@ export async function generateDeadlinesForCompany(
     );
 
     for (const deadlineData of deadlines) {
-      // Check if deadline already exists (prevent duplicates)
-      const existing = await db.deadline.findFirst({
-        where: {
-          tenantId,
-          companyId,
-          periodLabel: deadlineData.periodLabel,
-          referenceCode: deadlineData.referenceCode,
-          deletedAt: null,
-        },
-      });
-
-      if (existing) {
+      // Check if deadline already exists using the pre-fetched set
+      const key = `${deadlineData.periodLabel}|${deadlineData.referenceCode || ''}`;
+      if (existingDeadlineKeys.has(key)) {
         skipped++;
         continue;
       }
 
-      // Create the deadline
-      await db.deadline.create({
-        data: {
-          tenantId,
-          companyId,
-          contractServiceId: options?.serviceId || null,
-          deadlineTemplateId: null, // Could link to template if stored in DB
-          title: deadlineData.title,
-          description: deadlineData.description,
-          category: deadlineData.category,
-          referenceCode: deadlineData.referenceCode,
-          periodLabel: deadlineData.periodLabel,
-          periodStart: deadlineData.periodStart,
-          periodEnd: deadlineData.periodEnd,
-          statutoryDueDate: deadlineData.statutoryDueDate,
-          status: 'UPCOMING',
-          isBillable: deadlineData.isBillable,
-          amount: deadlineData.amount,
-          currency: 'SGD',
-          generationType: 'AUTO',
-        },
+      // Add to list of deadlines to create
+      deadlinesToCreate.push({
+        tenantId,
+        companyId,
+        contractServiceId: options?.serviceId || null,
+        deadlineTemplateId: null,
+        title: deadlineData.title,
+        description: deadlineData.description,
+        category: deadlineData.category,
+        referenceCode: deadlineData.referenceCode,
+        periodLabel: deadlineData.periodLabel,
+        periodStart: deadlineData.periodStart,
+        periodEnd: deadlineData.periodEnd,
+        statutoryDueDate: deadlineData.statutoryDueDate,
+        status: 'UPCOMING',
+        isBillable: deadlineData.isBillable,
+        amount: deadlineData.amount,
+        currency: 'SGD',
+        generationType: 'AUTO',
       });
 
-      created++;
+      // Add to set to prevent duplicates within the same batch
+      existingDeadlineKeys.add(key);
     }
+  }
+
+  // Batch create all deadlines at once for better performance
+  if (deadlinesToCreate.length > 0) {
+    await db.deadline.createMany({
+      data: deadlinesToCreate,
+    });
+    created = deadlinesToCreate.length;
   }
 
   // Create audit log

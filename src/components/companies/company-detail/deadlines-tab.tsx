@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import {
-  Plus,
   RefreshCw,
   Wand2,
   AlertTriangle,
@@ -14,9 +13,9 @@ import {
 import { cn } from '@/lib/utils';
 import {
   useCompanyDeadlines,
+  useDeadlineStats,
   useGenerateDeadlines,
   useCompleteDeadline,
-  useDeleteDeadline,
 } from '@/hooks/use-deadlines';
 import { usePermissions } from '@/hooks/use-permissions';
 import { DeadlineCompactList } from '@/components/deadlines/deadline-list';
@@ -27,7 +26,6 @@ import {
 } from '@/components/deadlines/deadline-status-badge';
 import { Modal } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useToast } from '@/components/ui/toast';
 import type { DeadlineWithRelations } from '@/hooks/use-deadlines';
 import type { DeadlineStatus } from '@/generated/prisma';
 
@@ -207,7 +205,6 @@ function DeadlineDetailModal({
 
 export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
   const { can } = usePermissions(companyId);
-  const { success: toastSuccess, error: toastError } = useToast();
   const canUpdate = can.updateCompany;
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'completed'>('active');
@@ -226,10 +223,12 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
     status: statusFilter,
   });
 
+  // Use separate stats query for accurate counts
+  const { data: stats } = useDeadlineStats(companyId);
+
   // Mutations
   const generateDeadlines = useGenerateDeadlines();
   const completeDeadline = useCompleteDeadline(selectedDeadline?.id || '');
-  const deleteDeadline = useDeleteDeadline();
 
   const handleGenerateDeadlines = async () => {
     try {
@@ -252,16 +251,12 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
     }
   };
 
-  // Statistics
-  const activeCount = deadlines?.filter(
-    (d) => ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'].includes(d.status)
-  ).length || 0;
-  const completedCount = deadlines?.filter((d) => d.status === 'COMPLETED').length || 0;
-  const overdueCount = deadlines?.filter((d) => {
-    if (['COMPLETED', 'CANCELLED', 'WAIVED'].includes(d.status)) return false;
-    const dueDate = d.extendedDueDate || d.statutoryDueDate;
-    return new Date(dueDate) < new Date();
-  }).length || 0;
+  // Statistics from dedicated stats query (more accurate)
+  const activeCount = stats
+    ? (stats.byStatus.UPCOMING || 0) + (stats.byStatus.DUE_SOON || 0) + (stats.byStatus.IN_PROGRESS || 0)
+    : 0;
+  const completedCount = stats?.byStatus.COMPLETED || 0;
+  const overdueCount = stats?.overdue || 0;
 
   return (
     <div className="space-y-6">

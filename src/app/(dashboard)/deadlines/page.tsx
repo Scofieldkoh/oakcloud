@@ -3,7 +3,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Plus,
   Clock,
   AlertTriangle,
   CheckCircle,
@@ -21,7 +20,6 @@ import {
   useBulkUpdateStatus,
   useBulkDeleteDeadlines,
 } from '@/hooks/use-deadlines';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSelection } from '@/hooks/use-selection';
@@ -63,8 +61,7 @@ const CATEGORY_OPTIONS: { value: DeadlineCategory; label: string }[] = [
 export default function DeadlinesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { success: toastSuccess, error: toastError } = useToast();
-  const { can } = usePermissions();
+  const { success: toastSuccess } = useToast();
   const { data: session } = useSession();
 
   const activeTenantId = useActiveTenantId(
