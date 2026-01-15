@@ -178,11 +178,14 @@ export interface UpdateDeadlineInput {
 export const deadlineKeys = {
   all: ['deadlines'] as const,
   list: (params?: DeadlineSearchParams) => [...deadlineKeys.all, 'list', params] as const,
-  company: (companyId: string) => [...deadlineKeys.all, 'company', companyId] as const,
+  company: (companyId: string, options?: { status?: DeadlineStatus | DeadlineStatus[]; category?: DeadlineCategory; limit?: number }) =>
+    [...deadlineKeys.all, 'company', companyId, options] as const,
   detail: (id: string) => [...deadlineKeys.all, 'detail', id] as const,
-  stats: (companyId?: string) => [...deadlineKeys.all, 'stats', companyId] as const,
-  upcoming: (daysAhead?: number) => [...deadlineKeys.all, 'upcoming', daysAhead] as const,
-  overdue: () => [...deadlineKeys.all, 'overdue'] as const,
+  stats: (companyId?: string, assigneeId?: string) => [...deadlineKeys.all, 'stats', { companyId, assigneeId }] as const,
+  upcoming: (daysAhead?: number, options?: { companyId?: string; assigneeId?: string; category?: DeadlineCategory; limit?: number }) =>
+    [...deadlineKeys.all, 'upcoming', daysAhead, options] as const,
+  overdue: (options?: { companyId?: string; assigneeId?: string; limit?: number }) =>
+    [...deadlineKeys.all, 'overdue', options] as const,
   templates: () => [...deadlineKeys.all, 'templates'] as const,
 };
 
@@ -258,7 +261,7 @@ export function useCompanyDeadlines(companyId: string | null, options?: {
   );
 
   return useQuery({
-    queryKey: deadlineKeys.company(companyId ?? ''),
+    queryKey: deadlineKeys.company(companyId ?? '', options),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (activeTenantId) searchParams.set('tenantId', activeTenantId);
@@ -323,7 +326,7 @@ export function useDeadlineStats(companyId?: string, assigneeId?: string) {
   );
 
   return useQuery({
-    queryKey: deadlineKeys.stats(companyId),
+    queryKey: deadlineKeys.stats(companyId, assigneeId),
     queryFn: async () => {
       const searchParams = new URLSearchParams({ action: 'stats' });
       if (activeTenantId) searchParams.set('tenantId', activeTenantId);
@@ -357,7 +360,7 @@ export function useUpcomingDeadlines(daysAhead = 30, options?: {
   );
 
   return useQuery({
-    queryKey: deadlineKeys.upcoming(daysAhead),
+    queryKey: deadlineKeys.upcoming(daysAhead, options),
     queryFn: async () => {
       const searchParams = new URLSearchParams({
         action: 'upcoming',
@@ -395,7 +398,7 @@ export function useOverdueDeadlines(options?: {
   );
 
   return useQuery({
-    queryKey: deadlineKeys.overdue(),
+    queryKey: deadlineKeys.overdue(options),
     queryFn: async () => {
       const searchParams = new URLSearchParams({ action: 'overdue' });
       if (activeTenantId) searchParams.set('tenantId', activeTenantId);

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
+import { prisma } from '@/lib/prisma';
 import {
   createDeadline,
   searchDeadlines,
@@ -22,6 +23,13 @@ import {
   generateDeadlinesForCompany,
   getAllDeadlineTemplates,
 } from '@/services/deadline-generation.service';
+import {
+  createDeadlineSchema,
+  bulkAssignSchema,
+  bulkStatusSchema,
+  bulkDeleteSchema,
+  generateDeadlinesSchema,
+} from '@/lib/validations/deadline';
 import type { DeadlineCategory, DeadlineStatus, DeadlineBillingStatus } from '@/generated/prisma';
 
 export async function GET(req: NextRequest) {
@@ -143,63 +151,125 @@ export async function POST(req: NextRequest) {
     if (body.action) {
       switch (body.action) {
         case 'bulk-assign': {
-          if (!Array.isArray(body.deadlineIds) || body.deadlineIds.length === 0) {
-            return NextResponse.json({ error: 'deadlineIds array is required' }, { status: 400 });
+          // Validate input
+          const parseResult = bulkAssignSchema.safeParse(body);
+          if (!parseResult.success) {
+            return NextResponse.json(
+              { error: parseResult.error.errors[0]?.message || 'Invalid input' },
+              { status: 400 }
+            );
           }
+          const { deadlineIds, assigneeId } = parseResult.data;
+
+          // Verify permission for all affected deadlines
+          const deadlines = await prisma.deadline.findMany({
+            where: { id: { in: deadlineIds }, tenantId, deletedAt: null },
+            select: { id: true, companyId: true },
+          });
+
+          // Check permissions for each unique company
+          const uniqueCompanyIds = [...new Set(deadlines.map((d) => d.companyId))];
+          for (const companyId of uniqueCompanyIds) {
+            const canUpdate = await hasPermission(session.id, 'company', 'update', companyId);
+            if (!canUpdate) {
+              return NextResponse.json({ error: 'Permission denied for one or more deadlines' }, { status: 403 });
+            }
+          }
+
           const count = await bulkAssignDeadlines(
-            body.deadlineIds,
-            body.assigneeId || null,
+            deadlineIds,
+            assigneeId,
             { tenantId: tenantId, userId: session.id }
           );
           return NextResponse.json({ success: true, count });
         }
 
         case 'bulk-status': {
-          if (!Array.isArray(body.deadlineIds) || body.deadlineIds.length === 0) {
-            return NextResponse.json({ error: 'deadlineIds array is required' }, { status: 400 });
+          // Validate input
+          const parseResult = bulkStatusSchema.safeParse(body);
+          if (!parseResult.success) {
+            return NextResponse.json(
+              { error: parseResult.error.errors[0]?.message || 'Invalid input' },
+              { status: 400 }
+            );
           }
-          if (!body.status) {
-            return NextResponse.json({ error: 'status is required' }, { status: 400 });
+          const { deadlineIds, status } = parseResult.data;
+
+          // Verify permission for all affected deadlines
+          const deadlines = await prisma.deadline.findMany({
+            where: { id: { in: deadlineIds }, tenantId, deletedAt: null },
+            select: { id: true, companyId: true },
+          });
+
+          const uniqueCompanyIds = [...new Set(deadlines.map((d) => d.companyId))];
+          for (const companyId of uniqueCompanyIds) {
+            const canUpdate = await hasPermission(session.id, 'company', 'update', companyId);
+            if (!canUpdate) {
+              return NextResponse.json({ error: 'Permission denied for one or more deadlines' }, { status: 403 });
+            }
           }
+
           const count = await bulkUpdateStatus(
-            body.deadlineIds,
-            body.status,
+            deadlineIds,
+            status,
             { tenantId: tenantId, userId: session.id }
           );
           return NextResponse.json({ success: true, count });
         }
 
         case 'bulk-delete': {
-          if (!Array.isArray(body.deadlineIds) || body.deadlineIds.length === 0) {
-            return NextResponse.json({ error: 'deadlineIds array is required' }, { status: 400 });
+          // Validate input
+          const parseResult = bulkDeleteSchema.safeParse(body);
+          if (!parseResult.success) {
+            return NextResponse.json(
+              { error: parseResult.error.errors[0]?.message || 'Invalid input' },
+              { status: 400 }
+            );
           }
+          const { deadlineIds } = parseResult.data;
+
+          // Verify permission for all affected deadlines
+          const deadlines = await prisma.deadline.findMany({
+            where: { id: { in: deadlineIds }, tenantId, deletedAt: null },
+            select: { id: true, companyId: true },
+          });
+
+          const uniqueCompanyIds = [...new Set(deadlines.map((d) => d.companyId))];
+          for (const companyId of uniqueCompanyIds) {
+            const canUpdate = await hasPermission(session.id, 'company', 'update', companyId);
+            if (!canUpdate) {
+              return NextResponse.json({ error: 'Permission denied for one or more deadlines' }, { status: 403 });
+            }
+          }
+
           const count = await bulkDeleteDeadlines(
-            body.deadlineIds,
+            deadlineIds,
             { tenantId: tenantId, userId: session.id }
           );
           return NextResponse.json({ success: true, count });
         }
 
         case 'generate': {
-          // Generate deadlines for a company
-          if (!body.companyId) {
-            return NextResponse.json({ error: 'companyId is required' }, { status: 400 });
+          // Validate input
+          const parseResult = generateDeadlinesSchema.safeParse(body);
+          if (!parseResult.success) {
+            return NextResponse.json(
+              { error: parseResult.error.errors[0]?.message || 'Invalid input' },
+              { status: 400 }
+            );
           }
+          const { companyId, templateCodes, monthsAhead, serviceId } = parseResult.data;
 
           // Check permission
-          const canCreate = await hasPermission(session.id, 'company', 'update', body.companyId);
+          const canCreate = await hasPermission(session.id, 'company', 'update', companyId);
           if (!canCreate) {
             return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
           }
 
           const result = await generateDeadlinesForCompany(
-            body.companyId,
+            companyId,
             { tenantId: tenantId, userId: session.id },
-            {
-              templateCodes: body.templateCodes,
-              monthsAhead: body.monthsAhead,
-              serviceId: body.serviceId,
-            }
+            { templateCodes, monthsAhead, serviceId }
           );
           return NextResponse.json({ success: true, ...result });
         }
@@ -209,30 +279,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Create single deadline
-    if (!body.companyId) {
-      return NextResponse.json({ error: 'companyId is required' }, { status: 400 });
+    // Create single deadline - validate with Zod
+    const parseResult = createDeadlineSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: parseResult.error.errors[0]?.message || 'Invalid input' },
+        { status: 400 }
+      );
     }
-    if (!body.title) {
-      return NextResponse.json({ error: 'title is required' }, { status: 400 });
-    }
-    if (!body.category) {
-      return NextResponse.json({ error: 'category is required' }, { status: 400 });
-    }
-    if (!body.periodLabel) {
-      return NextResponse.json({ error: 'periodLabel is required' }, { status: 400 });
-    }
-    if (!body.statutoryDueDate) {
-      return NextResponse.json({ error: 'statutoryDueDate is required' }, { status: 400 });
-    }
+    const validatedData = parseResult.data;
 
     // Check permission
-    const canCreate = await hasPermission(session.id, 'company', 'update', body.companyId);
+    const canCreate = await hasPermission(session.id, 'company', 'update', validatedData.companyId);
     if (!canCreate) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
     }
 
-    const deadline = await createDeadline(body, {
+    const deadline = await createDeadline(validatedData, {
       tenantId: tenantId,
       userId: session.id,
     });

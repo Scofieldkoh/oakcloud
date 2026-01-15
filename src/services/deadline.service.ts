@@ -387,6 +387,29 @@ export async function completeDeadline(
 }
 
 /**
+ * Calculate the appropriate status for a deadline based on its due date
+ */
+function calculateDeadlineStatus(
+  statutoryDueDate: Date,
+  extendedDueDate: Date | null
+): DeadlineStatus {
+  const now = new Date();
+  const effectiveDueDate = extendedDueDate || statutoryDueDate;
+  const daysUntilDue = Math.ceil(
+    (effectiveDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (daysUntilDue < 0) {
+    // Overdue - keep as DUE_SOON to indicate urgency
+    return 'DUE_SOON';
+  } else if (daysUntilDue <= 14) {
+    return 'DUE_SOON';
+  } else {
+    return 'UPCOMING';
+  }
+}
+
+/**
  * Reopen a completed deadline
  */
 export async function reopenDeadline(
@@ -409,10 +432,16 @@ export async function reopenDeadline(
     throw new Error('Deadline is not completed');
   }
 
+  // Calculate the appropriate status based on due date
+  const newStatus = calculateDeadlineStatus(
+    existing.statutoryDueDate,
+    existing.extendedDueDate
+  );
+
   const deadline = await db.deadline.update({
     where: { id },
     data: {
-      status: 'UPCOMING',
+      status: newStatus,
       completedAt: null,
       completedById: null,
       completionNote: null,
@@ -799,6 +828,7 @@ export async function getUpcomingDeadlines(
 
 /**
  * Get overdue deadlines
+ * A deadline is considered overdue if the effective due date is before today (not including today)
  */
 export async function getOverdueDeadlines(
   tenantId: string,
@@ -808,20 +838,24 @@ export async function getOverdueDeadlines(
     limit?: number;
   }
 ): Promise<DeadlineWithRelations[]> {
+  // Use start of today for comparison (deadlines due today are not overdue yet)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const where: Prisma.DeadlineWhereInput = {
     tenantId,
     deletedAt: null,
     status: { in: ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'] },
     isInScope: true,
     OR: [
-      // Overdue based on statutory due date
+      // Overdue based on statutory due date (no extension)
       {
         extendedDueDate: null,
-        statutoryDueDate: { lt: new Date() },
+        statutoryDueDate: { lt: today },
       },
       // Overdue based on extended due date
       {
-        extendedDueDate: { lt: new Date() },
+        extendedDueDate: { lt: today },
       },
     ],
     ...(options?.companyId && { companyId: options.companyId }),
@@ -890,7 +924,10 @@ export async function getDeadlineStats(
     ...(options?.assigneeId && { assigneeId: options.assigneeId }),
   };
 
-  const now = new Date();
+  // Use start of today for overdue calculation
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const dueSoonDate = new Date();
   dueSoonDate.setDate(dueSoonDate.getDate() + 14);
 
@@ -923,24 +960,24 @@ export async function getDeadlineStats(
       _count: true,
     }),
 
-    // Overdue
+    // Overdue (due before today, not including today)
     prisma.deadline.count({
       where: {
         ...baseWhere,
         status: { in: ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'] },
         OR: [
-          { extendedDueDate: null, statutoryDueDate: { lt: now } },
-          { extendedDueDate: { lt: now } },
+          { extendedDueDate: null, statutoryDueDate: { lt: today } },
+          { extendedDueDate: { lt: today } },
         ],
       },
     }),
 
-    // Due soon (within 14 days)
+    // Due soon (within 14 days, including today)
     prisma.deadline.count({
       where: {
         ...baseWhere,
         status: { in: ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'] },
-        statutoryDueDate: { gte: now, lte: dueSoonDate },
+        statutoryDueDate: { gte: today, lte: dueSoonDate },
       },
     }),
 

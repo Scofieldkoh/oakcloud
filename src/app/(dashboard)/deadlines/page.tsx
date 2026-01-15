@@ -3,7 +3,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Plus,
   Clock,
   AlertTriangle,
   CheckCircle,
@@ -14,6 +13,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
+import { Button } from '@/components/ui/button';
 import {
   useDeadlines,
   useDeadlineStats,
@@ -21,13 +21,13 @@ import {
   useBulkUpdateStatus,
   useBulkDeleteDeadlines,
 } from '@/hooks/use-deadlines';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSelection } from '@/hooks/use-selection';
 import { DeadlineList } from '@/components/deadlines/deadline-list';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
+import { ErrorState } from '@/components/ui/error-state';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
@@ -63,8 +63,7 @@ const CATEGORY_OPTIONS: { value: DeadlineCategory; label: string }[] = [
 export default function DeadlinesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { success: toastSuccess, error: toastError } = useToast();
-  const { can } = usePermissions();
+  const { success: toastSuccess } = useToast();
   const { data: session } = useSession();
 
   const activeTenantId = useActiveTenantId(
@@ -284,13 +283,15 @@ export default function DeadlinesPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => refetch()}
-              className="p-2 rounded-md hover:bg-background-secondary transition-colors"
-              title="Refresh"
+              aria-label="Refresh"
+              iconOnly
             >
-              <RefreshCw className="w-4 h-4 text-text-muted" />
-            </button>
+              <RefreshCw className="w-4 h-4" />
+            </Button>
 
             {/* View mode toggle */}
             <div className="flex rounded-md border border-border-default overflow-hidden">
@@ -424,12 +425,13 @@ export default function DeadlinesPage() {
             </Dropdown>
 
             {hasActiveFilters && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleClearFilters}
-                className="px-3 py-1.5 text-sm text-text-muted hover:text-text-primary transition-colors"
               >
                 Clear filters
-              </button>
+              </Button>
             )}
           </div>
         </MobileCollapsibleSection>
@@ -460,17 +462,12 @@ export default function DeadlinesPage() {
         )}
 
         {error ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
-            <h3 className="text-lg font-medium text-text-primary">Failed to load deadlines</h3>
-            <p className="text-sm text-text-muted mt-1">{error.message}</p>
-            <button
-              onClick={() => refetch()}
-              className="mt-4 px-4 py-2 text-sm bg-oak-primary text-white rounded-md hover:bg-oak-primary/90 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
+          <ErrorState
+            error={error}
+            message="Failed to load deadlines"
+            onRetry={() => refetch()}
+            size="lg"
+          />
         ) : viewMode === 'list' ? (
           <div className="px-4 md:px-6 py-4">
             <DeadlineList

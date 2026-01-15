@@ -195,9 +195,15 @@ export function UrgencyIndicator({
     return null;
   }
 
+  // Normalize dates to start of day for consistent comparison across timezones
   const effectiveDue = extendedDueDate ? new Date(extendedDueDate) : new Date(dueDate);
-  const now = new Date();
-  const daysUntilDue = Math.ceil((effectiveDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  effectiveDue.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Calculate days difference using normalized dates
+  const daysUntilDue = Math.round((effectiveDue.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
   if (daysUntilDue < 0) {
     // Overdue

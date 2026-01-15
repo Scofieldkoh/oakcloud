@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { format } from 'date-fns';
 import {
-  Plus,
   RefreshCw,
   Wand2,
   AlertTriangle,
@@ -11,12 +9,12 @@ import {
   Clock,
   Calendar,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDateShort } from '@/lib/utils';
 import {
   useCompanyDeadlines,
+  useDeadlineStats,
   useGenerateDeadlines,
   useCompleteDeadline,
-  useDeleteDeadline,
 } from '@/hooks/use-deadlines';
 import { usePermissions } from '@/hooks/use-permissions';
 import { DeadlineCompactList } from '@/components/deadlines/deadline-list';
@@ -25,9 +23,11 @@ import {
   DeadlineCategoryBadge,
   UrgencyIndicator,
 } from '@/components/deadlines/deadline-status-badge';
-import { Modal } from '@/components/ui/modal';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useToast } from '@/components/ui/toast';
+import { ErrorState } from '@/components/ui/error-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import type { DeadlineWithRelations } from '@/hooks/use-deadlines';
 import type { DeadlineStatus } from '@/generated/prisma';
 
@@ -60,14 +60,13 @@ function DeadlineDetailModal({
 }: DeadlineDetailModalProps) {
   if (!deadline) return null;
 
-  const effectiveDueDate = deadline.extendedDueDate || deadline.statutoryDueDate;
   const isCompleted = deadline.status === 'COMPLETED';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={deadline.title} size="lg">
-      <div className="space-y-6">
+      <ModalBody className="space-y-5">
         {/* Status & Category */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <DeadlineStatusBadge status={deadline.status} />
           <DeadlineCategoryBadge category={deadline.category} />
           <UrgencyIndicator
@@ -80,19 +79,19 @@ function DeadlineDetailModal({
         {/* Period & Reference */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-text-muted uppercase tracking-wider">Period</label>
-            <p className="mt-1 text-sm font-medium text-text-primary">{deadline.periodLabel}</p>
+            <label className="label">Period</label>
+            <p className="text-sm font-medium text-text-primary">{deadline.periodLabel}</p>
           </div>
           {deadline.referenceCode && (
             <div>
-              <label className="text-xs text-text-muted uppercase tracking-wider">Reference</label>
-              <p className="mt-1 text-sm text-text-primary">{deadline.referenceCode}</p>
+              <label className="label">Reference</label>
+              <p className="text-sm text-text-primary">{deadline.referenceCode}</p>
             </div>
           )}
         </div>
 
         {/* Due Dates */}
-        <div className="bg-background-secondary rounded-lg p-4 space-y-3">
+        <div className="bg-background-tertiary rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-text-muted" />
@@ -106,7 +105,7 @@ function DeadlineDetailModal({
                   : 'text-text-primary'
               )}
             >
-              {format(new Date(deadline.statutoryDueDate), 'dd MMM yyyy')}
+              {formatDateShort(deadline.statutoryDueDate)}
             </span>
           </div>
 
@@ -117,7 +116,7 @@ function DeadlineDetailModal({
                 <span className="text-sm text-green-700 dark:text-green-400">Extended Due Date</span>
               </div>
               <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                {format(new Date(deadline.extendedDueDate), 'dd MMM yyyy')}
+                {formatDateShort(deadline.extendedDueDate)}
               </span>
             </div>
           )}
@@ -125,7 +124,7 @@ function DeadlineDetailModal({
           {deadline.eotReference && (
             <div className="text-xs text-text-muted border-t border-border-default pt-2 mt-2">
               EOT Reference: {deadline.eotReference}
-              {deadline.eotNote && <span className="block">{deadline.eotNote}</span>}
+              {deadline.eotNote && <span className="block mt-1">{deadline.eotNote}</span>}
             </div>
           )}
         </div>
@@ -133,8 +132,8 @@ function DeadlineDetailModal({
         {/* Description */}
         {deadline.description && (
           <div>
-            <label className="text-xs text-text-muted uppercase tracking-wider">Description</label>
-            <p className="mt-1 text-sm text-text-primary whitespace-pre-wrap">
+            <label className="label">Description</label>
+            <p className="text-sm text-text-primary whitespace-pre-wrap">
               {deadline.description}
             </p>
           </div>
@@ -151,14 +150,14 @@ function DeadlineDetailModal({
             </div>
             {deadline.completedAt && (
               <p className="text-sm text-text-muted">
-                Completed on {format(new Date(deadline.completedAt), 'dd MMM yyyy')}
+                Completed on {formatDateShort(deadline.completedAt)}
                 {deadline.completedBy &&
                   ` by ${deadline.completedBy.firstName} ${deadline.completedBy.lastName}`}
               </p>
             )}
             {deadline.filingDate && (
               <p className="text-sm text-text-muted">
-                Filed on {format(new Date(deadline.filingDate), 'dd MMM yyyy')}
+                Filed on {formatDateShort(deadline.filingDate)}
                 {deadline.filingReference && ` (Ref: ${deadline.filingReference})`}
               </p>
             )}
@@ -171,8 +170,8 @@ function DeadlineDetailModal({
         {/* Assignee */}
         {deadline.assignee && (
           <div>
-            <label className="text-xs text-text-muted uppercase tracking-wider">Assigned To</label>
-            <div className="mt-1 flex items-center gap-2">
+            <label className="label">Assigned To</label>
+            <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-oak-primary/10 text-oak-primary flex items-center justify-center text-xs font-medium">
                 {deadline.assignee.firstName[0]}
                 {deadline.assignee.lastName[0]}
@@ -183,20 +182,19 @@ function DeadlineDetailModal({
             </div>
           </div>
         )}
+      </ModalBody>
 
-        {/* Actions */}
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Close
+        </Button>
         {canEdit && !isCompleted && (
-          <div className="flex justify-end gap-2 pt-4 border-t border-border-default">
-            <button onClick={onClose} className="btn-secondary btn-sm">
-              Close
-            </button>
-            <button onClick={onComplete} className="btn-primary btn-sm">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Mark Complete
-            </button>
-          </div>
+          <Button variant="primary" onClick={onComplete}>
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Mark Complete
+          </Button>
         )}
-      </div>
+      </ModalFooter>
     </Modal>
   );
 }
@@ -207,7 +205,6 @@ function DeadlineDetailModal({
 
 export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
   const { can } = usePermissions(companyId);
-  const { success: toastSuccess, error: toastError } = useToast();
   const canUpdate = can.updateCompany;
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'completed'>('active');
@@ -226,10 +223,12 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
     status: statusFilter,
   });
 
+  // Use separate stats query for accurate counts
+  const { data: stats } = useDeadlineStats(companyId);
+
   // Mutations
   const generateDeadlines = useGenerateDeadlines();
   const completeDeadline = useCompleteDeadline(selectedDeadline?.id || '');
-  const deleteDeadline = useDeleteDeadline();
 
   const handleGenerateDeadlines = async () => {
     try {
@@ -252,16 +251,12 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
     }
   };
 
-  // Statistics
-  const activeCount = deadlines?.filter(
-    (d) => ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'].includes(d.status)
-  ).length || 0;
-  const completedCount = deadlines?.filter((d) => d.status === 'COMPLETED').length || 0;
-  const overdueCount = deadlines?.filter((d) => {
-    if (['COMPLETED', 'CANCELLED', 'WAIVED'].includes(d.status)) return false;
-    const dueDate = d.extendedDueDate || d.statutoryDueDate;
-    return new Date(dueDate) < new Date();
-  }).length || 0;
+  // Statistics from dedicated stats query (more accurate)
+  const activeCount = stats
+    ? (stats.byStatus.UPCOMING || 0) + (stats.byStatus.DUE_SOON || 0) + (stats.byStatus.IN_PROGRESS || 0)
+    : 0;
+  const completedCount = stats?.byStatus.COMPLETED || 0;
+  const overdueCount = stats?.overdue || 0;
 
   return (
     <div className="space-y-6">
@@ -275,21 +270,23 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => refetch()}
-            className="p-2 rounded-md hover:bg-background-secondary transition-colors"
             title="Refresh"
           >
-            <RefreshCw className="w-4 h-4 text-text-muted" />
-          </button>
+            <RefreshCw className="w-4 h-4" />
+          </Button>
           {canUpdate && (
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setShowGenerateConfirm(true)}
-              className="btn-secondary btn-sm"
             >
               <Wand2 className="w-4 h-4 mr-2" />
               Auto-Generate
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -346,18 +343,14 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
 
       {/* Deadline List */}
       {error ? (
-        <div className="py-8 text-center">
-          <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-          <p className="text-sm text-text-muted">Failed to load deadlines</p>
-        </div>
+        <ErrorState
+          error={error}
+          message="Failed to load deadlines"
+          onRetry={() => refetch()}
+          size="md"
+        />
       ) : isLoading ? (
-        <div className="py-8">
-          <div className="animate-pulse space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 skeleton rounded-lg" />
-            ))}
-          </div>
-        </div>
+        <LoadingState message="Loading deadlines..." size="md" />
       ) : deadlines && deadlines.length > 0 ? (
         <DeadlineCompactList
           deadlines={deadlines}
@@ -376,13 +369,15 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
                 : 'No deadlines found'}
           </p>
           {canUpdate && (
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => setShowGenerateConfirm(true)}
-              className="btn-primary btn-sm mt-4"
+              className="mt-4"
             >
               <Wand2 className="w-4 h-4 mr-2" />
               Generate Deadlines
-            </button>
+            </Button>
           )}
         </div>
       )}

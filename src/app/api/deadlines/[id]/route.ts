@@ -17,6 +17,11 @@ import {
   reopenDeadline,
   updateBillingStatus,
 } from '@/services/deadline.service';
+import {
+  updateDeadlineSchema,
+  completeDeadlineSchema,
+  updateBillingSchema,
+} from '@/lib/validations/deadline';
 
 interface RouteParams {
   params: Promise<{
@@ -87,13 +92,17 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     // Handle special actions
     if (body.action === 'complete') {
+      // Validate complete input
+      const parseResult = completeDeadlineSchema.safeParse({ id, ...body });
+      if (!parseResult.success) {
+        return NextResponse.json(
+          { error: parseResult.error.errors[0]?.message || 'Invalid input' },
+          { status: 400 }
+        );
+      }
+
       const deadline = await completeDeadline(
-        {
-          id,
-          completionNote: body.completionNote,
-          filingDate: body.filingDate,
-          filingReference: body.filingReference,
-        },
+        parseResult.data,
         { tenantId, userId }
       );
       return NextResponse.json(deadline);
@@ -108,23 +117,33 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
 
     if (body.action === 'update-billing') {
-      if (!body.billingStatus) {
-        return NextResponse.json({ error: 'billingStatus is required' }, { status: 400 });
+      // Validate billing input
+      const parseResult = updateBillingSchema.safeParse({ id, ...body });
+      if (!parseResult.success) {
+        return NextResponse.json(
+          { error: parseResult.error.errors[0]?.message || 'Invalid input' },
+          { status: 400 }
+        );
       }
+
       const deadline = await updateBillingStatus(
-        {
-          id,
-          billingStatus: body.billingStatus,
-          invoiceReference: body.invoiceReference,
-        },
+        parseResult.data,
         { tenantId, userId }
       );
       return NextResponse.json(deadline);
     }
 
-    // Regular update
+    // Regular update - validate with Zod
+    const parseResult = updateDeadlineSchema.safeParse({ id, ...body });
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: parseResult.error.errors[0]?.message || 'Invalid input' },
+        { status: 400 }
+      );
+    }
+
     const deadline = await updateDeadline(
-      { id, ...body },
+      parseResult.data,
       { tenantId, userId }
     );
 
