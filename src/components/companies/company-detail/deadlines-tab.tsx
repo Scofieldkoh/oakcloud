@@ -26,6 +26,8 @@ import {
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ErrorState } from '@/components/ui/error-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import type { DeadlineWithRelations } from '@/hooks/use-deadlines';
 import type { DeadlineStatus } from '@/generated/prisma';
 
@@ -268,21 +270,23 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => refetch()}
-            className="p-2 rounded-md hover:bg-background-secondary transition-colors"
             title="Refresh"
           >
-            <RefreshCw className="w-4 h-4 text-text-muted" />
-          </button>
+            <RefreshCw className="w-4 h-4" />
+          </Button>
           {canUpdate && (
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setShowGenerateConfirm(true)}
-              className="btn-secondary btn-sm"
             >
               <Wand2 className="w-4 h-4 mr-2" />
               Auto-Generate
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -339,18 +343,14 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
 
       {/* Deadline List */}
       {error ? (
-        <div className="py-8 text-center">
-          <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-          <p className="text-sm text-text-muted">Failed to load deadlines</p>
-        </div>
+        <ErrorState
+          error={error}
+          message="Failed to load deadlines"
+          onRetry={() => refetch()}
+          size="md"
+        />
       ) : isLoading ? (
-        <div className="py-8">
-          <div className="animate-pulse space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 skeleton rounded-lg" />
-            ))}
-          </div>
-        </div>
+        <LoadingState message="Loading deadlines..." size="md" />
       ) : deadlines && deadlines.length > 0 ? (
         <DeadlineCompactList
           deadlines={deadlines}
@@ -369,13 +369,15 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
                 : 'No deadlines found'}
           </p>
           {canUpdate && (
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => setShowGenerateConfirm(true)}
-              className="btn-primary btn-sm mt-4"
+              className="mt-4"
             >
               <Wand2 className="w-4 h-4 mr-2" />
               Generate Deadlines
-            </button>
+            </Button>
           )}
         </div>
       )}
