@@ -1,8 +1,8 @@
 # Deadline Management - Feature Specification
 
 > **Status**: Draft
-> **Version**: 1.1
-> **Last Updated**: 2025-01-15
+> **Version**: 2.0
+> **Last Updated**: 2026-01-15
 
 ## Overview
 
@@ -17,7 +17,7 @@ Service Template (e.g., "Corporate Secretarial Annual")
         ├── Annual Return (not billable - covered by annual fee)
         ├── XBRL Filing (not billable - covered by annual fee)
         ├── Send FS to Members (optional - waives AGM if completed)
-        └── AGM (not billable - covered by annual fee, can be waived)
+        └── AGM (not billable - covered by annual fee, can be waived/dispensed)
 ```
 
 **Key Principle**: Service templates define both the **contract service parameters** AND the **deadlines** that are auto-generated. Compliance deadlines (AR, AGM, Tax filings) are NOT separately billable - they are covered by the annual service fee. Only the **Service Renewal** deadline is billable (for the next period's fee).
@@ -27,6 +27,61 @@ Service Template (e.g., "Corporate Secretarial Annual")
 - **Compliance deadlines** (AGM, AR, Tax) → auto-generated, statutory dates, NOT billable (covered by service fee)
 - **Service renewals** → annual reminder to renew service, BILLABLE (next year's fee)
 - **Operational tasks** (Onboarding, KYC/CDD, RORC, ROND) → out of scope for MVP (future workflow/checklist feature)
+
+---
+
+## Critical Design Principles
+
+### 1. No Daisy-Chaining for Statutory Deadlines
+
+**Problem**: Using `anchorType: PREVIOUS_TASK` (e.g., AR depends on AGM completion) creates fragile dependencies. If the AGM task is delayed, deleted, or not marked complete, the AR task may never generate or calculate an invalid date.
+
+**Solution**: All statutory deadlines MUST anchor to stable reference points:
+- **FYE (Financial Year End)** - For AGM, AR, XBRL, ECI, Audit
+- **INCORPORATION** - For first-year special rules
+- **FIXED_CALENDAR** - For tax returns (Form C by 30 Nov)
+- **SERVICE_START** - For renewals
+
+**Example (Singapore Private Company)**:
+```
+AGM Due:  FYE + 6 Months    (anchored to FYE)
+AR Due:   FYE + 7 Months    (anchored to FYE, NOT to AGM)
+```
+
+Both tasks appear on the calendar independently. If the AGM is late, the AR remains visible as a hard deadline.
+
+### 2. Statutory vs. Extended Due Dates
+
+Companies often apply for Extension of Time (EOT) from ACRA/IRAS. The system must track both dates:
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Annual Return - FY2024                              │
+│ Statutory Due: 30 Jun 2025                          │
+│ Extended Due:  30 Aug 2025 (EOT Granted)            │
+│ Status: In Progress                                 │
+└─────────────────────────────────────────────────────┘
+```
+
+- **statutoryDueDate**: The original calculated deadline (immutable reference)
+- **extendedDueDate**: If populated, overrides visual "Due Date" and overdue logic
+- **Display**: "Due: 30 Aug (EOT Granted)" or "Due: 30 Jun (Statutory)"
+
+### 3. Billing Override Layer
+
+The `isBillable` and `amount` on deadlines can be overridden at multiple levels:
+
+```
+DeadlineTemplate (Default)
+    └── ServiceTemplate (Bundle Override)
+        └── ContractService (Client-Specific Override)
+            └── Deadline Instance (One-Time Override)
+```
+
+**Resolution Order** (highest priority first):
+1. `Deadline.overrideAmount` / `Deadline.overrideBillable` - One-off adjustments
+2. `ContractService.overrideBillable` / `ContractService.customRate` - Client-level defaults
+3. `DeadlineTemplate.isBillable` / `DeadlineTemplate.defaultAmount` - System defaults
 
 ---
 
@@ -54,6 +109,7 @@ Service Template (e.g., "Corporate Secretarial Annual")
 - Sort by: Due Date (default), Category, Status
 - Clearly distinguish backlog items with visual indicator
 - Show "Not in Scope" items separately (greyed out)
+- Display period label clearly (e.g., "AGM (FY2023)" not just "AGM")
 
 ---
 
@@ -105,7 +161,8 @@ Service Template (e.g., "Corporate Secretarial Annual")
 - Modal prompts for:
   - Completion date (default: today)
   - Completion note (optional, e.g., "Filed via BizFile+")
-  - Filing reference (optional)
+  - Filing date (optional, distinct from completion date - when it was actually filed)
+  - Filing reference (optional, e.g., Transaction No "T241234567")
 - If billable + not yet invoiced → prompt "Mark as invoiced?" with optional invoice reference
 - System auto-generates next occurrence for recurring deadlines
 - Audit log entry created
@@ -145,8 +202,9 @@ Service Template (e.g., "Corporate Secretarial Annual")
   - Template (optional, dropdown - if selected, prefills fields)
   - Title (required)
   - Category (required, dropdown)
-  - Due Date (required)
-  - Period Label (optional, e.g., "FY2024")
+  - Statutory Due Date (required)
+  - Extended Due Date (optional, for EOT)
+  - Period Label (required, e.g., "FY2024", "YA2025", "Q1 2025")
   - Description (optional, rich text)
   - Is Billable (checkbox)
   - Amount (if billable)
@@ -179,14 +237,30 @@ Service Template (e.g., "Corporate Secretarial Annual")
 
 **Acceptance Criteria:**
 - Edit button on deadline detail modal
-- Editable fields: Title, Description, Due Date, Internal Due Date, Category, Assignee, Is Billable, Amount, Is In Scope, Scope Note
-- Non-editable: Company, Template (if generated from template)
-- Changing due date logs audit entry
+- Editable fields: Title, Description, Extended Due Date, Internal Due Date, Category, Assignee, Is Billable, Override Amount, Is In Scope, Scope Note
+- Non-editable: Company, Template (if generated from template), Statutory Due Date (immutable)
+- Changing extended due date logs audit entry
 - Cannot edit completed/cancelled deadlines (must reopen first)
 
 ---
 
-#### US-2.7: Cancel a deadline
+#### US-2.7: Grant Extension of Time (EOT)
+> As a **Staff**, I want to record an extension of time for a deadline so that the system reflects the approved extended deadline.
+
+**Acceptance Criteria:**
+- "Grant EOT" action on deadline
+- Modal prompts for:
+  - Extended Due Date (required)
+  - EOT Reference (optional, e.g., ACRA approval ref)
+  - EOT Note (optional)
+- Original statutory due date preserved
+- Display changes to show "(EOT Granted)"
+- Overdue logic now uses extended due date
+- Audit log entry created
+
+---
+
+#### US-2.8: Cancel a deadline
 > As a **Manager**, I want to cancel a deadline so that it no longer appears in active lists when it's no longer applicable.
 
 **Acceptance Criteria:**
@@ -200,7 +274,7 @@ Service Template (e.g., "Corporate Secretarial Annual")
 
 ---
 
-#### US-2.8: Mark deadline as not in scope
+#### US-2.9: Mark deadline as not in scope
 > As a **Staff**, I want to mark a deadline as "not in scope" so that we track it for client visibility but it doesn't count as our responsibility.
 
 **Acceptance Criteria:**
@@ -214,7 +288,7 @@ Service Template (e.g., "Corporate Secretarial Annual")
 
 ---
 
-#### US-2.9: Update billing status
+#### US-2.10: Update billing status
 > As a **Staff**, I want to update the billing status of a completed deadline so that we can track revenue.
 
 **Acceptance Criteria:**
@@ -370,33 +444,53 @@ Service Template (e.g., "Corporate Secretarial Annual")
 | `description` | Text | No | null | Rich text instructions |
 | `category` | Enum | Yes | - | CORPORATE_SECRETARY, TAX, ACCOUNTING, AUDIT, OTHER |
 | `referenceCode` | String | No | null | For grouping (e.g., "AGM-2024") |
-| `periodLabel` | String | No | null | Human-readable period (e.g., "FY2024") |
+| `periodLabel` | String | Yes | - | Human-readable period (e.g., "FY2024", "YA2025", "Q1 2025") |
 | `periodStart` | Date | No | null | Period start date |
 | `periodEnd` | Date | No | null | Period end date |
-| `dueDate` | Date | Yes | - | Statutory/target deadline |
-| `internalDueDate` | Date | No | null | Internal buffer date |
+| **Deadline Dates** |
+| `statutoryDueDate` | Date | Yes | - | Original calculated deadline (immutable) |
+| `extendedDueDate` | Date | No | null | EOT date (if granted, overrides due logic) |
+| `internalDueDate` | Date | No | null | Internal buffer date (firm's internal deadline) |
+| **EOT Tracking** |
+| `eotReference` | String | No | null | EOT approval reference |
+| `eotNote` | String | No | null | EOT notes |
+| `eotGrantedAt` | DateTime | No | null | When EOT was granted |
+| **Scope & Status** |
 | `isInScope` | Boolean | Yes | true | Are we responsible? |
 | `scopeNote` | String | No | null | Reason if not in scope |
 | `isBacklog` | Boolean | Yes | false | Inherited overdue? |
 | `backlogNote` | String | No | null | Required if isBacklog=true |
 | `status` | Enum | Yes | UPCOMING | UPCOMING, DUE_SOON, IN_PROGRESS, COMPLETED, CANCELLED, WAIVED |
-| `completedAt` | DateTime | No | null | When completed |
-| `completedBy` | UUID | No | null | Who completed |
+| **Completion** |
+| `completedAt` | DateTime | No | null | When marked complete internally |
+| `completedBy` | UUID | No | null | Who marked complete |
 | `completionNote` | Text | No | null | Completion details |
-| `filingReference` | String | No | null | External reference (e.g., BizFile) |
+| `filingDate` | Date | No | null | Actual filing date with authority (distinct from completedAt) |
+| `filingReference` | String | No | null | Filing reference (e.g., BizFile Transaction No "T241234567") |
+| **Billing** |
 | `isBillable` | Boolean | Yes | false | Is this chargeable? |
+| `overrideBillable` | Boolean | No | null | Override template billable setting |
 | `billingStatus` | Enum | No | null | NOT_APPLICABLE, PENDING, INVOICED, PAID |
-| `amount` | Decimal | No | null | Billing amount |
+| `amount` | Decimal | No | null | Default billing amount (from template) |
+| `overrideAmount` | Decimal | No | null | Override amount for this specific deadline |
 | `currency` | String | No | SGD | Currency code |
 | `invoiceReference` | String | No | null | Invoice number |
 | `invoicedAt` | DateTime | No | null | When invoiced |
+| **Assignment** |
 | `assigneeId` | UUID | No | null | Assigned staff |
 | `assignedAt` | DateTime | No | null | When assigned |
+| **Meta** |
 | `generationType` | Enum | Yes | MANUAL | AUTO, MANUAL |
 | `remindersSent` | JSON | No | [] | Array of reminder dates sent |
 | `createdAt` | DateTime | Yes | Now | Created timestamp |
 | `updatedAt` | DateTime | Yes | Now | Updated timestamp |
 | `deletedAt` | DateTime | No | null | Soft delete |
+
+**Computed Properties:**
+- `effectiveDueDate`: Returns `extendedDueDate ?? statutoryDueDate` (used for display and overdue logic)
+- `effectiveAmount`: Returns `overrideAmount ?? amount` (used for billing)
+- `effectiveBillable`: Returns `overrideBillable ?? isBillable`
+- `isOverdue`: `status not in [COMPLETED, CANCELLED, WAIVED] && effectiveDueDate < today && isInScope`
 
 ### DeadlineTemplate Entity
 
@@ -407,18 +501,29 @@ Service Template (e.g., "Corporate Secretarial Annual")
 | `name` | String | Yes | - | Display name |
 | `category` | Enum | Yes | - | Category enum |
 | `description` | Text | No | null | Default description |
+| `jurisdiction` | String | Yes | "SG" | Jurisdiction code (SG, HK, MY, etc.) |
+| **Applicability** |
 | `entityTypes` | JSON | No | null | Applicable entity types (null = all) |
 | `excludeEntityTypes` | JSON | No | null | Excluded entity types |
 | `requiresGstRegistered` | Boolean | No | null | GST requirement |
 | `requiresAudit` | Boolean | No | null | Audit requirement |
-| `anchorType` | Enum | Yes | - | FYE, INCORPORATION, PREVIOUS_TASK, FIXED_CALENDAR |
-| `anchorTaskCode` | String | No | null | If anchor is PREVIOUS_TASK |
+| `requiresActiveStatus` | Boolean | No | true | Skipped if company is dormant |
+| **Deadline Calculation** |
+| `anchorType` | Enum | Yes | - | FYE, INCORPORATION, FIXED_CALENDAR, QUARTER_END, MONTH_END, SERVICE_START |
 | `offsetMonths` | Int | No | 0 | Months from anchor |
 | `offsetDays` | Int | No | 0 | Days from anchor |
+| `offsetBusinessDays` | Boolean | No | false | Skip weekends/holidays when calculating |
 | `fixedMonth` | Int | No | null | For FIXED_CALENDAR |
 | `fixedDay` | Int | No | null | For FIXED_CALENDAR |
+| **First Year Special Rules** |
+| `isFirstYearSpecialRule` | Boolean | No | false | Different calculation for first year |
+| `firstYearAnchorType` | Enum | No | null | Anchor for first year (e.g., INCORPORATION) |
+| `firstYearOffsetMonths` | Int | No | null | Months from anchor for first year |
+| `firstYearOffsetDays` | Int | No | null | Days from anchor for first year |
+| **Recurrence** |
 | `frequency` | Enum | Yes | - | ANNUALLY, QUARTERLY, MONTHLY, ONE_TIME |
 | `generateMonthsAhead` | Int | Yes | 18 | Generation horizon |
+| **Billing** |
 | `isBillable` | Boolean | Yes | false | Default billable status |
 | `defaultAmount` | Decimal | No | null | Default amount |
 | `reminderDaysBefore` | JSON | Yes | [60,30,14,7] | Reminder intervals |
@@ -434,6 +539,119 @@ Service Template (e.g., "Corporate Secretarial Annual")
 | `templateIds` | JSON | Yes | [] | Array of template IDs |
 | `isActive` | Boolean | Yes | true | Is bundle active |
 
+### Company Entity (New Fields)
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `agmDispensed` | Boolean | No | false | Company has dispensed with AGMs |
+| `isDormant` | Boolean | No | false | Company is dormant |
+| `gstFilingFrequency` | Enum | No | null | QUARTERLY or MONTHLY (if GST registered) |
+
+### TenantSettings Entity (New Fields)
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `defaultInternalBufferDays` | Int | No | 14 | Default: Internal Deadline = Statutory Date - N Days |
+
+---
+
+## Deadline Generation State Machine
+
+When `triggerDeadlineGeneration(companyId)` is called:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    DEADLINE GENERATION FLOW                      │
+└─────────────────────────────────────────────────────────────────┘
+
+1. FETCH CONTEXT
+   ├── Company: FYE, Incorp Date, Entity Type, GST Status
+   ├── Company Flags: isDormant, agmDispensed
+   └── Active ContractServices with linked ServiceTemplates
+
+2. FETCH TEMPLATES
+   └── Get all DeadlineTemplates linked to Active ContractServices
+
+3. FILTER APPLICABILITY (for each template)
+   ├── Entity Type Check
+   │   └── Is company.entityType in template.entityTypes?
+   │   └── Is company.entityType NOT in template.excludeEntityTypes?
+   │
+   ├── GST Registration Check
+   │   └── If template.requiresGstRegistered = true
+   │       └── Is company.gstRegistered = true?
+   │
+   ├── Dormant Check
+   │   └── If template.requiresActiveStatus = true
+   │       └── Is company.isDormant = false?
+   │
+   ├── AGM Dispensed Check
+   │   └── If template.code = 'AGM'
+   │       └── Is company.agmDispensed = false?
+   │
+   └── Audit Check
+       └── If template.requiresAudit = true
+           └── Does company require audit?
+
+4. CALCULATE HORIZON
+   └── Today to (Today + generateMonthsAhead) typically 18 months
+
+5. FOR EACH APPLICABLE TEMPLATE
+   │
+   ├── Calculate Target Date
+   │   ├── First Year Check
+   │   │   └── If template.isFirstYearSpecialRule = true
+   │   │       AND (Today - Company.incorporationDate) < firstYearThreshold
+   │   │       └── Use firstYearAnchorType + firstYearOffsetMonths
+   │   │
+   │   └── Standard Calculation
+   │       └── Use anchorType + offsetMonths + offsetDays
+   │       └── If offsetBusinessDays = true, skip weekends/holidays
+   │
+   ├── Check Existence
+   │   └── Does deadline already exist for this:
+   │       - templateId + companyId + periodLabel?
+   │       └── If YES: Skip (don't create duplicate)
+   │       └── If NO: Proceed to create
+   │
+   └── Create Deadline Instance
+       ├── Set periodLabel (e.g., "FY2024", "YA2025")
+       ├── Set statutoryDueDate (calculated date)
+       ├── Set internalDueDate (statutoryDueDate - buffer)
+       └── Resolve billing (template → service → instance)
+
+6. LOG GENERATION
+   └── Record what was created, skipped, and why
+```
+
+### First Year vs. Subsequent Years Example (AGM)
+
+```typescript
+// First AGM: 18 months from Incorporation
+// Subsequent AGMs: 6 months from FYE
+
+const agmTemplate = {
+  code: 'AGM',
+  anchorType: 'FYE',
+  offsetMonths: 6,
+  isFirstYearSpecialRule: true,
+  firstYearAnchorType: 'INCORPORATION',
+  firstYearOffsetMonths: 18,
+};
+
+function calculateDueDate(company, template) {
+  const monthsSinceIncorp = monthsBetween(company.incorporationDate, today);
+
+  if (template.isFirstYearSpecialRule && monthsSinceIncorp < 18) {
+    // First year: 18 months from incorporation
+    return addMonths(company.incorporationDate, template.firstYearOffsetMonths);
+  } else {
+    // Subsequent years: 6 months from FYE
+    return addMonths(company.financialYearEnd, template.offsetMonths);
+  }
+}
+```
+
 ---
 
 ## Edge Cases & Handling
@@ -442,11 +660,13 @@ Service Template (e.g., "Corporate Secretarial Annual")
 
 | Scenario | Handling |
 |----------|----------|
-| **Company FYE changes** | Prompt: "FYE changed. Recalculate upcoming deadlines?" Options: Recalculate all / Keep existing / Choose which |
+| **Company FYE changes** | 1. Detect change in Company.financialYearEnd<br>2. Find all UPCOMING deadlines anchored to FYE<br>3. Prompt: "FYE changed. Recalculate upcoming deadlines?"<br>4. **Delete** future UPCOMING/DUE_SOON tasks<br>5. **Regenerate** based on new FYE<br>6. **Preserve** OVERDUE, IN_PROGRESS, COMPLETED tasks |
 | **Company becomes GST registered** | Prompt: "Company is now GST registered. Add GST return deadlines?" |
 | **Company entity type changes** | Prompt: "Entity type changed. Some deadlines may no longer apply. Review?" |
 | **Company becomes inactive** | Prompt: "Company status changed. Cancel all pending deadlines?" |
 | **Company deleted** | Soft delete all related deadlines (cascade) |
+| **Company marked dormant** | 1. Set company.isDormant = true<br>2. Prompt: "Company is dormant. Cancel pending tax filings?"<br>3. Skip future generation of templates requiring active status<br>4. Generate dormant-specific templates if applicable |
+| **Company AGM dispensed** | 1. Set company.agmDispensed = true<br>2. Cancel pending AGM deadlines<br>3. Skip future AGM generation<br>4. AR deadlines continue unchanged |
 
 ### Service Changes
 
@@ -461,7 +681,7 @@ Service Template (e.g., "Corporate Secretarial Annual")
 
 | Scenario | Handling |
 |----------|----------|
-| **Duplicate deadline exists** | Skip if same template + period + company exists |
+| **Duplicate deadline exists** | Skip if same template + periodLabel + company exists |
 | **Manual deadline overlaps** | Allow both, flag with warning |
 | **Multiple services generate same type** | Generate only once, link to first service |
 
@@ -473,6 +693,7 @@ Service Template (e.g., "Corporate Secretarial Annual")
 | **Reopen completed deadline** | Manager only, reverts to IN_PROGRESS |
 | **Cancel then reopen** | Manager only, reverts to previous status |
 | **Complete with past date** | Allow backdating |
+| **Waive AGM (FS sent to members)** | If FS_TO_MEMBERS completed for same period → can mark AGM as WAIVED |
 
 ### Billing Edge Cases
 
@@ -481,6 +702,7 @@ Service Template (e.g., "Corporate Secretarial Annual")
 | **Non-billable marked as invoiced** | Prevent with validation error |
 | **Billable → non-billable after invoiced** | Prevent, must clear billing status first |
 | **Cancelled after invoiced** | Allow, preserve billing status |
+| **Override amount for difficult year** | Use `overrideAmount` field |
 
 ### Backlog Scenarios
 
@@ -497,6 +719,15 @@ Service Template (e.g., "Corporate Secretarial Annual")
 | **Out of scope mid-progress** | Allow, status preserved |
 | **Out-of-scope becomes overdue** | No alert, excluded from metrics |
 
+### Extension of Time (EOT)
+
+| Scenario | Handling |
+|----------|----------|
+| **EOT granted** | Set `extendedDueDate`, preserve `statutoryDueDate` |
+| **EOT expired still not done** | Show as overdue based on `extendedDueDate` |
+| **EOT revoked** | Clear `extendedDueDate`, revert to statutory |
+| **Multiple EOT requests** | Update `extendedDueDate` to latest, log history |
+
 ---
 
 ## UI Specifications
@@ -505,13 +736,14 @@ Service Template (e.g., "Corporate Secretarial Annual")
 
 | Status | Color | Condition |
 |--------|-------|-----------|
-| Overdue | Red 🔴 | Past due date |
-| Due Soon | Yellow 🟡 | Within 14 days |
-| Upcoming | Green 🟢 | 15-60 days |
-| Later | Grey ⚪ | 60+ days |
-| In Progress | Blue 🔵 | Actively working |
+| Overdue | Red | Past effective due date |
+| Due Soon | Yellow | Within 14 days |
+| Upcoming | Green | 15-60 days |
+| Later | Grey | 60+ days |
+| In Progress | Blue | Actively working |
 | Completed | Green ✓ | Done |
 | Cancelled | Grey ⊘ | Cancelled |
+| Waived | Purple | Waived (e.g., AGM waived) |
 
 ### Deadline Card (List View)
 
@@ -520,10 +752,38 @@ Service Template (e.g., "Corporate Secretarial Annual")
 │ [●] AGM - FY2024                                    🔴 OVERDUE  [Backlog]   │
 │     ABC Pte Ltd • Corporate Secretary                                       │
 │     Due: 30 Jun 2025 (15 days overdue)              @Alice Chen    [$500]   │
+│     Statutory: 30 Jun 2025                                                  │
 │     ─────────────────────────────────────────────────────────────────────── │
-│     [Mark Complete]  [Assign]  [•••]                        Pending Invoice │
+│     [Mark Complete]  [Grant EOT]  [Assign]  [•••]         Pending Invoice   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ [●] Annual Return - FY2024                          🟡 DUE SOON [EOT]       │
+│     XYZ Pte Ltd • Corporate Secretary                                       │
+│     Due: 30 Aug 2025 (EOT Granted)                  @Bob Tan                │
+│     Statutory: 31 Jul 2025                                                  │
+│     ─────────────────────────────────────────────────────────────────────── │
+│     [Mark Complete]  [Assign]  [•••]                                        │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Period Labels Best Practice
+
+Always display period labels prominently to avoid confusion:
+
+| Deadline | Good Label | Bad Label |
+|----------|------------|-----------|
+| AGM | AGM (FY2024) | AGM |
+| Annual Return | AR - FY2024 | Annual Return |
+| ECI | ECI - YA2025 | ECI |
+| Corp Tax | Form C - YA2025 | Tax Return |
+| GST | GST - Q1 2025 | GST Return |
+
+### Internal vs. Statutory Dates
+
+- **Staff Dashboard**: Show `internalDueDate` (e.g., "Due: 15 Jun" when statutory is 30 Jun)
+- **Client Portal** (future): Show `statutoryDueDate`
+- **Tooltip/Detail**: Show both dates clearly
 
 ### Company Deadlines Tab
 
@@ -557,12 +817,15 @@ Service Template (e.g., "Corporate Secretarial Annual")
 | Title required | `title.length === 0` | "Title is required" |
 | Title max length | `title.length > 200` | "Title must be 200 characters or less" |
 | Company required | `!companyId` | "Company is required" |
-| Due date required | `!dueDate` | "Due date is required" |
+| Statutory due date required | `!statutoryDueDate` | "Statutory due date is required" |
+| Period label required | `!periodLabel` | "Period label is required (e.g., FY2024, YA2025)" |
 | Category required | `!category` | "Category is required" |
 | Backlog note required | `isBacklog && !backlogNote` | "Please provide a reason for marking as backlog" |
-| Amount required if billable | `isBillable && !amount` | "Amount is required for billable deadlines" |
+| Amount required if billable | `isBillable && !amount && !overrideAmount` | "Amount is required for billable deadlines" |
 | Period end after start | `periodEnd < periodStart` | "Period end must be after period start" |
-| Internal due before due | `internalDueDate > dueDate` | "Internal due date should be before the deadline" |
+| Internal due before statutory | `internalDueDate > statutoryDueDate` | "Internal due date should be before the statutory deadline" |
+| Extended due after statutory | `extendedDueDate && extendedDueDate < statutoryDueDate` | "Extended due date must be after statutory due date" |
+| Filing date in past | `filingDate > today` | "Filing date cannot be in the future" |
 
 ---
 
@@ -578,6 +841,8 @@ Service Template (e.g., "Corporate Secretarial Annual")
 | `POST` | `/api/deadlines/:id/complete` | Mark as complete |
 | `POST` | `/api/deadlines/:id/cancel` | Cancel deadline |
 | `POST` | `/api/deadlines/:id/reopen` | Reopen completed/cancelled |
+| `POST` | `/api/deadlines/:id/waive` | Waive deadline (e.g., AGM) |
+| `POST` | `/api/deadlines/:id/eot` | Grant extension of time |
 | `PATCH` | `/api/deadlines/:id/assign` | Assign to user |
 | `PATCH` | `/api/deadlines/:id/billing` | Update billing status |
 | `POST` | `/api/deadlines/bulk/assign` | Bulk assign |
@@ -594,12 +859,13 @@ Service Template (e.g., "Corporate Secretarial Annual")
 
 | Feature | MVP | Phase 2 |
 |---------|-----|---------|
-| Deadline model | ✓ | |
+| Deadline model (with EOT support) | ✓ | |
 | Template bundles (SG) | ✓ | |
 | Auto-generation on service add | ✓ | |
 | Manual trigger | ✓ | |
 | Backlog support | ✓ | |
 | Scope indicator | ✓ | |
+| EOT (Extension of Time) | ✓ | |
 | Company deadlines tab | ✓ | |
 | All-deadlines page (List + Calendar) | ✓ | |
 | Assignee | ✓ | |
@@ -607,9 +873,15 @@ Service Template (e.g., "Corporate Secretarial Annual")
 | In-app alerts | ✓ | |
 | Dashboard | ✓ | |
 | Bulk operations | ✓ | |
+| First-year special rules | ✓ | |
+| Dormant company handling | ✓ | |
+| AGM dispensed flag | ✓ | |
+| Business days calculation | | ✓ |
 | Kanban board | | ✓ |
 | Email reminders | | ✓ |
 | Configurable rule editor | | ✓ |
+| Multi-jurisdiction (HK, MY) | | ✓ |
+| Client portal (external view) | | ✓ |
 
 ---
 

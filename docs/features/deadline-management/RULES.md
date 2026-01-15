@@ -1,8 +1,8 @@
 # Deadline Management - Hard-coded Rules (Singapore)
 
 > **Status**: Draft
-> **Version**: 1.0
-> **Last Updated**: 2025-01-15
+> **Version**: 2.0
+> **Last Updated**: 2026-01-15
 > **Jurisdiction**: Singapore
 
 This document defines the hard-coded service templates and deadline rules for Singapore compliance.
@@ -17,6 +17,21 @@ Service Templates serve as pre-configured templates when adding services to cont
 
 ---
 
+## Critical Design Principles
+
+### No Daisy-Chaining
+
+All statutory deadlines MUST anchor to stable reference points:
+- **FYE** - Financial Year End
+- **INCORPORATION** - Company incorporation date
+- **FIXED_CALENDAR** - Fixed date each year (e.g., 30 Nov for Corp Tax)
+- **QUARTER_END** / **MONTH_END** - For GST/periodic filings
+- **SERVICE_START** - For renewals only
+
+**Never use**: Task dependencies (e.g., AR depends on AGM completion). Each deadline stands independently.
+
+---
+
 ## Service Template Structure
 
 ```typescript
@@ -25,6 +40,7 @@ interface ServiceTemplate {
   code: string;                    // Unique code (e.g., "CORP_SEC_ANNUAL")
   name: string;                    // Display name
   category: DeadlineCategory;      // CORPORATE_SECRETARY | TAX | ACCOUNTING | AUDIT
+  jurisdiction: string;            // "SG" for Singapore
 
   // Service Parameters (maps to ContractService)
   serviceType: 'RECURRING' | 'ONE_TIME';
@@ -39,6 +55,7 @@ interface ServiceTemplate {
   entityTypes: EntityType[] | null;        // Applicable entity types (null = all)
   excludeEntityTypes: EntityType[] | null; // Excluded entity types
   requiresGstRegistered: boolean | null;   // GST requirement (null = N/A)
+  requiresActiveStatus: boolean;           // If true, skipped for dormant companies
 
   // Service-specific parameters (user must fill when adding)
   requiredFields: ServiceField[];
@@ -51,16 +68,27 @@ interface DeadlineTemplate {
   code: string;
   name: string;
   category: DeadlineCategory;
+  jurisdiction: string;            // "SG" for Singapore
   isBillable: boolean;
   isOptional: boolean;             // If true, shown as optional checkbox when generating
   optionalNote: string | null;     // Explanation if optional
 
+  // Applicability
+  requiresActiveStatus: boolean;   // If true, skipped for dormant companies
+
   // Deadline calculation
-  anchorType: 'FYE' | 'SERVICE_START' | 'FIXED_CALENDAR' | 'QUARTER_END' | 'MONTH_END';
+  anchorType: 'FYE' | 'INCORPORATION' | 'SERVICE_START' | 'FIXED_CALENDAR' | 'QUARTER_END' | 'MONTH_END';
   offsetMonths: number;
   offsetDays: number;
+  offsetBusinessDays: boolean;     // If true, skip weekends/holidays in calculation
   fixedMonth: number | null;       // For FIXED_CALENDAR
   fixedDay: number | null;
+
+  // First Year Special Rules
+  isFirstYearSpecialRule: boolean; // Different calculation for first year
+  firstYearAnchorType: 'INCORPORATION' | null;
+  firstYearOffsetMonths: number | null;
+  firstYearOffsetDays: number | null;
 
   // Recurrence
   frequency: 'ANNUALLY' | 'QUARTERLY' | 'MONTHLY' | 'ONE_TIME';
@@ -84,6 +112,7 @@ interface DeadlineTemplate {
 | **Code** | `CORP_SEC_ANNUAL` |
 | **Name** | Corporate Secretarial (Annual) |
 | **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
 | **Service Type** | RECURRING |
 | **Frequency** | ANNUALLY |
 | **Default Rate** | null (user specifies) |
@@ -97,6 +126,7 @@ interface DeadlineTemplate {
 entityTypes: [PRIVATE_LIMITED, EXEMPTED_PRIVATE_LIMITED, PUBLIC_LIMITED]
 excludeEntityTypes: null
 requiresGstRegistered: null
+requiresActiveStatus: false  // Service can apply to dormant companies
 ```
 
 ### Required Fields When Adding Service
@@ -113,7 +143,7 @@ Annual corporate secretarial services including:
 • Maintenance of statutory registers and records
 • Annual Return filing with ACRA
 • XBRL financial statements preparation (if applicable)
-• AGM coordination (if required)
+• AGM coordination (if required and not dispensed)
 • Minutes and resolutions preparation
 • Registered office services
 ```
@@ -127,8 +157,10 @@ Annual corporate secretarial services including:
 | **Code** | `CORP_SEC_RENEWAL` |
 | **Name** | Corporate Secretarial Service Renewal |
 | **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
+| **Requires Active Status** | false |
 
 **Calculation:**
 ```
@@ -158,8 +190,10 @@ Action required:
 | **Code** | `ANNUAL_RETURN` |
 | **Name** | Annual Return Filing |
 | **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
+| **Requires Active Status** | false |
 
 **Calculation:**
 ```
@@ -168,7 +202,10 @@ offsetMonths: 7   // Private companies: 7 months from FYE
 offsetDays: 0
 frequency: ANNUALLY
 
-// Note: Public companies have 5 months, but most clients are private
+// Note:
+// - Private companies: 7 months from FYE
+// - Public companies: 5 months from FYE (handle via entity type)
+// - AR deadline is INDEPENDENT of AGM completion
 ```
 
 **Period:**
@@ -187,7 +224,12 @@ Filing via BizFile+:
 • Update company officers (if changed)
 • File financial statements (full/simplified based on company type)
 
-Deadline: {DUE_DATE} (7 months from FYE)
+Statutory Due Date: {STATUTORY_DUE_DATE} (7 months from FYE)
+
+Extension of Time (EOT):
+• Can apply to ACRA for 30-60 day extension if needed
+• Record EOT approval in system if granted
+
 Late filing penalty: $300 + $50 per month thereafter
 ```
 
@@ -200,9 +242,11 @@ Late filing penalty: $300 + $50 per month thereafter
 | **Code** | `XBRL` |
 | **Name** | XBRL Financial Statements |
 | **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | Yes |
 | **Optional Note** | "XBRL exempt if: revenue ≤ $500K, assets ≤ $500K, employees ≤ 5, or dormant company" |
+| **Requires Active Status** | true |
 
 **Calculation:**
 ```
@@ -246,9 +290,11 @@ Exempt from XBRL if ALL:
 | **Code** | `FS_TO_MEMBERS` |
 | **Name** | Send Financial Statements to Members |
 | **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | Yes |
 | **Optional Note** | "Enable to waive AGM requirement. FS must be sent within 5 months of FYE." |
+| **Requires Active Status** | true |
 
 **Calculation:**
 ```
@@ -267,7 +313,7 @@ periodLabel: "FY{FYE_YEAR}"
 ```
 Send Financial Statements to all members for FY ending {FYE_DATE}.
 
-If completed before {DUE_DATE} (5 months from FYE):
+If completed before {STATUTORY_DUE_DATE} (5 months from FYE):
 • Company is EXEMPT from holding AGM for this financial year
 • Members can still request AGM within 14 days before 6-month deadline
 
@@ -288,11 +334,13 @@ Reference: Companies Act Section 175A (Amendment 2017, effective 31 Aug 2018)
 | **Code** | `AGM` |
 | **Name** | Annual General Meeting |
 | **Category** | CORPORATE_SECRETARY |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No (default required) |
-| **Optional Note** | "AGM can be waived if 'Send FS to Members' is completed and no member requests AGM" |
+| **Optional Note** | "AGM can be waived if 'Send FS to Members' is completed. Skipped if company.agmDispensed = true." |
+| **Requires Active Status** | true |
 
-**Calculation:**
+**Calculation (Standard - Subsequent Years):**
 ```
 anchorType: FYE
 offsetMonths: 6   // Within 6 months from FYE
@@ -300,9 +348,29 @@ offsetDays: 0
 frequency: ANNUALLY
 ```
 
+**First Year Special Rule:**
+```
+isFirstYearSpecialRule: true
+firstYearAnchorType: INCORPORATION
+firstYearOffsetMonths: 18   // First AGM within 18 months of incorporation
+firstYearOffsetDays: 0
+
+// Logic:
+// If (Today - IncorporationDate) < 18 months:
+//   Use: IncorporationDate + 18 months
+// Else:
+//   Use: FYE + 6 months
+```
+
 **Period:**
 ```
 periodLabel: "FY{FYE_YEAR}"
+```
+
+**Company Flag Check:**
+```
+// Skip generation if company.agmDispensed = true
+// This is checked in the Generation State Machine before creating the deadline
 ```
 
 **Waiver Condition:**
@@ -316,11 +384,17 @@ Can be marked as WAIVED if:
 ```
 Annual General Meeting for FY ending {FYE_DATE}.
 
-Due: Within 6 months from FYE ({DUE_DATE})
+Statutory Due Date:
+• First AGM: Within 18 months from incorporation
+• Subsequent AGMs: Within 6 months from FYE ({STATUTORY_DUE_DATE})
 
 AGM can be waived if:
 • Financial Statements sent to all members within 5 months of FYE, AND
 • No member requests AGM (14 days before 6-month deadline)
+
+AGM can be dispensed if:
+• Company has elected to dispense with AGMs under Companies Act
+• Set company.agmDispensed = true to suppress future AGM deadlines
 
 If holding AGM:
 • Send notice to shareholders (14 days for private company, 21 days for public)
@@ -343,6 +417,7 @@ Reference: Companies Act Section 175 (as amended 31 Aug 2018)
 | **Code** | `TAX_ANNUAL` |
 | **Name** | Tax Compliance (Annual) |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Service Type** | RECURRING |
 | **Frequency** | ANNUALLY |
 | **Default Rate** | null |
@@ -357,6 +432,7 @@ entityTypes: [PRIVATE_LIMITED, EXEMPTED_PRIVATE_LIMITED, PUBLIC_LIMITED,
               LIMITED_LIABILITY_PARTNERSHIP, FOREIGN_COMPANY, VARIABLE_CAPITAL_COMPANY]
 excludeEntityTypes: [SOLE_PROPRIETORSHIP, PARTNERSHIP]  // Use Personal Tax instead
 requiresGstRegistered: null
+requiresActiveStatus: true  // Dormant companies have different filing requirements
 ```
 
 ### Required Fields When Adding Service
@@ -385,8 +461,10 @@ Annual tax compliance services including:
 | **Code** | `TAX_RENEWAL` |
 | **Name** | Tax Compliance Service Renewal |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
+| **Requires Active Status** | false |
 
 **Calculation:**
 ```
@@ -405,8 +483,10 @@ frequency: ANNUALLY
 | **Code** | `ECI` |
 | **Name** | Estimated Chargeable Income |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
+| **Requires Active Status** | true |
 
 **Calculation:**
 ```
@@ -438,7 +518,7 @@ Waiver of ECI filing (company need not file if BOTH):
 Note: Even if exempt from filing, company may choose to file to enjoy
 instalment payment plan for taxes.
 
-Deadline: {DUE_DATE} (3 months from FYE)
+Statutory Due Date: {STATUTORY_DUE_DATE} (3 months from FYE)
 ```
 
 ---
@@ -450,8 +530,10 @@ Deadline: {DUE_DATE} (3 months from FYE)
 | **Code** | `CORP_TAX` |
 | **Name** | Corporate Income Tax Return |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
+| **Requires Active Status** | true |
 
 **Calculation:**
 ```
@@ -491,6 +573,10 @@ Required documents:
 • Tax computation
 • Financial statements (audited/unaudited)
 • Supporting schedules (capital allowances, donations, etc.)
+
+Extension of Time (EOT):
+• Can apply to IRAS for extension if needed
+• Record EOT approval in system if granted
 ```
 
 ---
@@ -504,6 +590,7 @@ Required documents:
 | **Code** | `GST_FILING` |
 | **Name** | GST Filing |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Service Type** | RECURRING |
 | **Frequency** | QUARTERLY or MONTHLY (user selects) |
 | **Default Rate** | null |
@@ -516,6 +603,7 @@ Required documents:
 ```
 entityTypes: null  // All entity types
 requiresGstRegistered: true  // MUST be GST registered
+requiresActiveStatus: true   // Dormant companies may be de-registered
 ```
 
 ### Required Fields When Adding Service
@@ -545,8 +633,10 @@ GST return preparation and filing services including:
 | **Code** | `GST_RENEWAL` |
 | **Name** | GST Filing Service Renewal |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
+| **Requires Active Status** | false |
 
 **Calculation:**
 ```
@@ -565,9 +655,11 @@ frequency: ANNUALLY
 | **Code** | `GST_RETURN_Q` |
 | **Name** | GST Return (Quarterly) |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
 | **Condition** | Only generated if `gstFilingFrequency = QUARTERLY` |
+| **Requires Active Status** | true |
 
 **Calculation:**
 ```
@@ -600,7 +692,7 @@ Filing via myTax Portal:
 • Report input tax (GST paid on purchases)
 • Calculate net GST payable or refundable
 
-Deadline: {DUE_DATE} (1 month after quarter end)
+Statutory Due Date: {STATUTORY_DUE_DATE} (1 month after quarter end)
 Late filing penalty: $200 per return
 
 Important: Ensure all tax invoices are recorded before filing.
@@ -615,9 +707,11 @@ Important: Ensure all tax invoices are recorded before filing.
 | **Code** | `GST_RETURN_M` |
 | **Name** | GST Return (Monthly) |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
 | **Condition** | Only generated if `gstFilingFrequency = MONTHLY` |
+| **Requires Active Status** | true |
 
 **Calculation:**
 ```
@@ -644,7 +738,7 @@ Filing via myTax Portal:
 • Report input tax (GST paid)
 • Calculate net GST payable/refundable
 
-Deadline: {DUE_DATE} (1 month after month end)
+Statutory Due Date: {STATUTORY_DUE_DATE} (1 month after month end)
 Late filing penalty: $200 per return
 ```
 
@@ -659,6 +753,7 @@ Late filing penalty: $200 per return
 | **Code** | `PERSONAL_TAX_SP` |
 | **Name** | Personal Tax (Sole Proprietor) |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Service Type** | RECURRING |
 | **Frequency** | ANNUALLY |
 | **Default Rate** | null |
@@ -671,6 +766,7 @@ Late filing penalty: $200 per return
 ```
 entityTypes: [SOLE_PROPRIETORSHIP, PARTNERSHIP]
 requiresGstRegistered: null
+requiresActiveStatus: true
 ```
 
 ### Required Fields When Adding Service
@@ -699,8 +795,10 @@ Personal income tax services for sole proprietor/partner including:
 | **Code** | `PERSONAL_TAX_RENEWAL` |
 | **Name** | Personal Tax Service Renewal |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
+| **Requires Active Status** | false |
 
 **Calculation:**
 ```
@@ -719,8 +817,10 @@ frequency: ANNUALLY
 | **Code** | `PERSONAL_TAX` |
 | **Name** | Personal Income Tax (Form B/B1) |
 | **Category** | TAX |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
+| **Requires Active Status** | true |
 
 **Calculation:**
 ```
@@ -779,6 +879,7 @@ Note: Late filing may result in estimated assessment and penalties from IRAS.
 | **Code** | `ACCOUNTING_MONTHLY` |
 | **Name** | Accounting Services (Monthly) |
 | **Category** | ACCOUNTING |
+| **Jurisdiction** | SG |
 | **Service Type** | RECURRING |
 | **Frequency** | MONTHLY |
 | **Default Rate** | null |
@@ -791,6 +892,7 @@ Note: Late filing may result in estimated assessment and penalties from IRAS.
 ```
 entityTypes: null  // All entity types
 requiresGstRegistered: null
+requiresActiveStatus: false  // Dormant companies may still need minimal bookkeeping
 ```
 
 ### Required Fields When Adding Service
@@ -820,8 +922,10 @@ Monthly accounting services including:
 | **Code** | `ACCOUNTING_RENEWAL` |
 | **Name** | Accounting Service Renewal |
 | **Category** | ACCOUNTING |
+| **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
+| **Requires Active Status** | false |
 
 **Calculation:**
 ```
@@ -840,8 +944,10 @@ frequency: ANNUALLY
 | **Code** | `BOOKKEEPING_MONTHLY` |
 | **Name** | Monthly Bookkeeping |
 | **Category** | ACCOUNTING |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
+| **Requires Active Status** | false |
 
 **Calculation:**
 ```
@@ -870,7 +976,7 @@ Tasks:
 • Prepare month-end journal entries
 • Generate trial balance
 
-Internal deadline: {DUE_DATE}
+Internal deadline: {INTERNAL_DUE_DATE}
 ```
 
 ---
@@ -884,6 +990,7 @@ Internal deadline: {DUE_DATE}
 | **Code** | `AUDIT_ANNUAL` |
 | **Name** | Statutory Audit |
 | **Category** | AUDIT |
+| **Jurisdiction** | SG |
 | **Service Type** | RECURRING |
 | **Frequency** | ANNUALLY |
 | **Default Rate** | null |
@@ -897,6 +1004,7 @@ Internal deadline: {DUE_DATE}
 // NOT auto-suggested. User manually adds if company requires audit.
 entityTypes: [PRIVATE_LIMITED, PUBLIC_LIMITED]
 requiresGstRegistered: null
+requiresActiveStatus: true  // Dormant companies typically exempt from audit
 
 // Note: Small company exemption criteria (must meet 2 of 3 for 2 consecutive FYs):
 // - Total revenue ≤ $10 million
@@ -933,8 +1041,10 @@ Annual statutory audit services including:
 | **Code** | `AUDIT_RENEWAL` |
 | **Name** | Statutory Audit Service Renewal |
 | **Category** | AUDIT |
+| **Jurisdiction** | SG |
 | **Billable** | Yes |
 | **Is Optional** | No |
+| **Requires Active Status** | false |
 
 **Calculation:**
 ```
@@ -953,8 +1063,10 @@ frequency: ANNUALLY
 | **Code** | `AUDIT_COMPLETION` |
 | **Name** | Statutory Audit |
 | **Category** | AUDIT |
+| **Jurisdiction** | SG |
 | **Billable** | No |
 | **Is Optional** | No |
+| **Requires Active Status** | true |
 
 **Calculation:**
 ```
@@ -977,7 +1089,7 @@ periodEnd: financialYearEnd
 ```
 Statutory Audit for financial year ending {FYE_DATE}.
 
-Internal deadline: {DUE_DATE} (to allow time before AR filing)
+Internal deadline: {INTERNAL_DUE_DATE} (to allow time before AR filing)
 AR filing deadline: {FYE_DATE + 7 months}
 
 Deliverables:
@@ -994,7 +1106,7 @@ Audit completion required before Annual Return can be filed.
 
 | Code | Service Name | Type | Frequency | Entity Types | Deadlines Generated |
 |------|--------------|------|-----------|--------------|---------------------|
-| `CORP_SEC_ANNUAL` | Corporate Secretarial (Annual) | RECURRING | ANNUALLY | Pte Ltd, Exempt Pte, Public | Renewal, AR, XBRL*, FS to Members*, AGM |
+| `CORP_SEC_ANNUAL` | Corporate Secretarial (Annual) | RECURRING | ANNUALLY | Pte Ltd, Exempt Pte, Public | Renewal, AR, XBRL*, FS to Members*, AGM† |
 | `TAX_ANNUAL` | Tax Compliance (Annual) | RECURRING | ANNUALLY | Companies, LLP, Foreign | Renewal, ECI, Corp Tax Return |
 | `GST_FILING` | GST Filing | RECURRING | QUARTERLY/MONTHLY | All (GST registered) | Renewal, GST Returns |
 | `PERSONAL_TAX_SP` | Personal Tax (Sole Prop) | RECURRING | ANNUALLY | Sole Prop, Partnership | Renewal, Personal Tax (Form B/B1) |
@@ -1002,6 +1114,7 @@ Audit completion required before Annual Return can be filed.
 | `AUDIT_ANNUAL` | Statutory Audit | RECURRING | ANNUALLY | Pte Ltd, Public (if required) | Renewal, Audit Completion |
 
 *Optional deadlines
+†Skipped if company.agmDispensed = true
 
 ---
 
@@ -1022,13 +1135,13 @@ Audit completion required before Annual Return can be filed.
 
 ### Corporate Secretarial (Annual)
 
-| Code | Deadline Name | Anchor | Offset | Billable |
-|------|---------------|--------|--------|----------|
-| `CORP_SEC_RENEWAL` | Service Renewal | Service Start | -30 days | Yes |
-| `ANNUAL_RETURN` | Annual Return | FYE | +7 months | No |
-| `XBRL` | XBRL Filing | FYE | +7 months | No |
-| `FS_TO_MEMBERS` | Send FS to Members | FYE | +5 months | No |
-| `AGM` | Annual General Meeting | FYE | +6 months | No |
+| Code | Deadline Name | Anchor | Offset | First Year Rule | Billable |
+|------|---------------|--------|--------|-----------------|----------|
+| `CORP_SEC_RENEWAL` | Service Renewal | Service Start | -30 days | No | Yes |
+| `ANNUAL_RETURN` | Annual Return | FYE | +7 months | No | No |
+| `XBRL` | XBRL Filing | FYE | +7 months | No | No |
+| `FS_TO_MEMBERS` | Send FS to Members | FYE | +5 months | No | No |
+| `AGM` | Annual General Meeting | FYE / Incorp | +6 months / +18 months | **Yes** | No |
 
 ### Tax Compliance (Annual)
 
@@ -1076,6 +1189,8 @@ Audit completion required before Annual Return can be filed.
 | Field | Type | Description |
 |-------|------|-------------|
 | `gstFilingFrequency` | Enum | QUARTERLY \| MONTHLY (if GST registered) |
+| `agmDispensed` | Boolean | Company has dispensed with AGMs |
+| `isDormant` | Boolean | Company is dormant |
 
 ### ContractService Model
 
@@ -1083,6 +1198,30 @@ Audit completion required before Annual Return can be filed.
 |-------|------|-------------|
 | `serviceTemplateCode` | String | Reference to which template was used (optional) |
 | `gstFilingFrequency` | Enum | For GST services: QUARTERLY \| MONTHLY |
+| `overrideBillable` | Boolean | Override template billable setting for this client |
+| `customRate` | Decimal | Custom rate for this client (overrides template default) |
+
+### TenantSettings Model
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `defaultInternalBufferDays` | Int | Default: Internal Deadline = Statutory Date - N Days |
+
+---
+
+## Extension of Time (EOT) Notes
+
+EOT can be granted by ACRA/IRAS for various deadlines. When EOT is granted:
+
+1. **Preserve statutory due date** - The original calculated deadline remains unchanged
+2. **Record extended due date** - The new deadline granted by the authority
+3. **Update overdue logic** - Use extended due date for determining if deadline is overdue
+4. **Display both dates** - Show statutory date for reference, extended date as current deadline
+
+Common EOT scenarios:
+- **Annual Return**: ACRA may grant 30-60 day extension
+- **Corporate Tax**: IRAS may grant extension beyond 15 Dec
+- **AGM**: Court may grant extension in exceptional circumstances
 
 ---
 
