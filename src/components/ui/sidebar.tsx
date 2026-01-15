@@ -30,6 +30,7 @@ import {
   Lock,
   Calculator,
   Briefcase,
+  Clock,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -62,6 +63,7 @@ const navigation: NavItem[] = [
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Services', href: '/services', icon: Briefcase },
+  { name: 'Deadlines', href: '/deadlines', icon: Clock },
   { name: 'Document Processing', href: '/processing', icon: ScanText },
   { name: 'Document Generation', href: '/generated-documents', icon: FileText },
   { name: 'Shared Documents', href: '/shared-documents', icon: Share2 },

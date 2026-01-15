@@ -23,6 +23,7 @@ export const EntityType = {
   PRIVATE_LIMITED: 'PRIVATE_LIMITED',
   EXEMPTED_PRIVATE_LIMITED: 'EXEMPTED_PRIVATE_LIMITED',
   PUBLIC_LIMITED: 'PUBLIC_LIMITED',
+  PUBLIC_COMPANY_LIMITED_BY_GUARANTEE: 'PUBLIC_COMPANY_LIMITED_BY_GUARANTEE',
   SOLE_PROPRIETORSHIP: 'SOLE_PROPRIETORSHIP',
   PARTNERSHIP: 'PARTNERSHIP',
   LIMITED_PARTNERSHIP: 'LIMITED_PARTNERSHIP',
@@ -279,6 +280,71 @@ export const BillingFrequency = {
 } as const
 
 export type BillingFrequency = (typeof BillingFrequency)[keyof typeof BillingFrequency]
+
+
+export const DeadlineCategory = {
+  CORPORATE_SECRETARY: 'CORPORATE_SECRETARY',
+  TAX: 'TAX',
+  ACCOUNTING: 'ACCOUNTING',
+  AUDIT: 'AUDIT',
+  COMPLIANCE: 'COMPLIANCE',
+  OTHER: 'OTHER'
+} as const
+
+export type DeadlineCategory = (typeof DeadlineCategory)[keyof typeof DeadlineCategory]
+
+
+export const DeadlineStatus = {
+  UPCOMING: 'UPCOMING',
+  DUE_SOON: 'DUE_SOON',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  WAIVED: 'WAIVED'
+} as const
+
+export type DeadlineStatus = (typeof DeadlineStatus)[keyof typeof DeadlineStatus]
+
+
+export const DeadlineBillingStatus = {
+  NOT_APPLICABLE: 'NOT_APPLICABLE',
+  PENDING: 'PENDING',
+  INVOICED: 'INVOICED',
+  PAID: 'PAID'
+} as const
+
+export type DeadlineBillingStatus = (typeof DeadlineBillingStatus)[keyof typeof DeadlineBillingStatus]
+
+
+export const DeadlineAnchorType = {
+  FYE: 'FYE',
+  SERVICE_START: 'SERVICE_START',
+  FIXED_CALENDAR: 'FIXED_CALENDAR',
+  QUARTER_END: 'QUARTER_END',
+  MONTH_END: 'MONTH_END',
+  INCORPORATION: 'INCORPORATION',
+  IPC_EXPIRY: 'IPC_EXPIRY'
+} as const
+
+export type DeadlineAnchorType = (typeof DeadlineAnchorType)[keyof typeof DeadlineAnchorType]
+
+
+export const DeadlineFrequency = {
+  ANNUALLY: 'ANNUALLY',
+  QUARTERLY: 'QUARTERLY',
+  MONTHLY: 'MONTHLY',
+  ONE_TIME: 'ONE_TIME'
+} as const
+
+export type DeadlineFrequency = (typeof DeadlineFrequency)[keyof typeof DeadlineFrequency]
+
+
+export const DeadlineGenerationType = {
+  AUTO: 'AUTO',
+  MANUAL: 'MANUAL'
+} as const
+
+export type DeadlineGenerationType = (typeof DeadlineGenerationType)[keyof typeof DeadlineGenerationType]
 
 
 export const DocumentTemplateCategory = {

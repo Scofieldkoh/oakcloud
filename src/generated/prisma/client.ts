@@ -384,3 +384,13 @@ export type Contract = Prisma.ContractModel
  * 
  */
 export type ContractService = Prisma.ContractServiceModel
+/**
+ * Model DeadlineTemplate
+ * 
+ */
+export type DeadlineTemplate = Prisma.DeadlineTemplateModel
+/**
+ * Model Deadline
+ * 
+ */
+export type Deadline = Prisma.DeadlineModel

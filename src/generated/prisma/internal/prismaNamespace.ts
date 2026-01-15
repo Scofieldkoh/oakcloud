@@ -452,7 +452,9 @@ export const ModelName = {
   ChartOfAccount: 'ChartOfAccount',
   ChartOfAccountsMapping: 'ChartOfAccountsMapping',
   Contract: 'Contract',
-  ContractService: 'ContractService'
+  ContractService: 'ContractService',
+  DeadlineTemplate: 'DeadlineTemplate',
+  Deadline: 'Deadline'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -468,7 +470,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "contract" | "contractService"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "contract" | "contractService" | "deadlineTemplate" | "deadline"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -5578,6 +5580,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DeadlineTemplate: {
+      payload: Prisma.$DeadlineTemplatePayload<ExtArgs>
+      fields: Prisma.DeadlineTemplateFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineTemplateFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineTemplateFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineTemplateFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineTemplateFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineTemplateFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineTemplateCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineTemplateCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineTemplateCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineTemplateDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload>
+        }
+        update: {
+          args: Prisma.DeadlineTemplateUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineTemplateDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineTemplateUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineTemplateUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineTemplateUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineTemplatePayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineTemplateAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadlineTemplate>
+        }
+        groupBy: {
+          args: Prisma.DeadlineTemplateGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineTemplateGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineTemplateCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineTemplateCountAggregateOutputType> | number
+        }
+      }
+    }
+    Deadline: {
+      payload: Prisma.$DeadlinePayload<ExtArgs>
+      fields: Prisma.DeadlineFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload>
+        }
+        update: {
+          args: Prisma.DeadlineUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlinePayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadline>
+        }
+        groupBy: {
+          args: Prisma.DeadlineGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -5766,6 +5916,17 @@ export const CompanyScalarFieldEnum = {
   isGstRegistered: 'isGstRegistered',
   gstRegistrationNumber: 'gstRegistrationNumber',
   gstRegistrationDate: 'gstRegistrationDate',
+  agmDispensed: 'agmDispensed',
+  isDormant: 'isDormant',
+  dormantTaxExemptionApproved: 'dormantTaxExemptionApproved',
+  gstFilingFrequency: 'gstFilingFrequency',
+  isRegisteredCharity: 'isRegisteredCharity',
+  charityRegistrationDate: 'charityRegistrationDate',
+  charityUEN: 'charityUEN',
+  isIPC: 'isIPC',
+  ipcEffectiveDate: 'ipcEffectiveDate',
+  ipcExpiryDate: 'ipcExpiryDate',
+  annualReceiptsOrExpenditure: 'annualReceiptsOrExpenditure',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
@@ -6968,12 +7129,101 @@ export const ContractServiceScalarFieldEnum = {
   autoRenewal: 'autoRenewal',
   renewalPeriodMonths: 'renewalPeriodMonths',
   displayOrder: 'displayOrder',
+  serviceTemplateCode: 'serviceTemplateCode',
+  gstFilingFrequency: 'gstFilingFrequency',
+  overrideBillable: 'overrideBillable',
+  customRate: 'customRate',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
 } as const
 
 export type ContractServiceScalarFieldEnum = (typeof ContractServiceScalarFieldEnum)[keyof typeof ContractServiceScalarFieldEnum]
+
+
+export const DeadlineTemplateScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  code: 'code',
+  name: 'name',
+  category: 'category',
+  jurisdiction: 'jurisdiction',
+  description: 'description',
+  entityTypes: 'entityTypes',
+  excludeEntityTypes: 'excludeEntityTypes',
+  requiresGstRegistered: 'requiresGstRegistered',
+  requiresAudit: 'requiresAudit',
+  isTaxFiling: 'isTaxFiling',
+  requiresCharityStatus: 'requiresCharityStatus',
+  requiresIPCStatus: 'requiresIPCStatus',
+  anchorType: 'anchorType',
+  offsetMonths: 'offsetMonths',
+  offsetDays: 'offsetDays',
+  offsetBusinessDays: 'offsetBusinessDays',
+  fixedMonth: 'fixedMonth',
+  fixedDay: 'fixedDay',
+  frequency: 'frequency',
+  generateMonthsAhead: 'generateMonthsAhead',
+  isOptional: 'isOptional',
+  optionalNote: 'optionalNote',
+  isBillable: 'isBillable',
+  defaultAmount: 'defaultAmount',
+  reminderDaysBefore: 'reminderDaysBefore',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineTemplateScalarFieldEnum = (typeof DeadlineTemplateScalarFieldEnum)[keyof typeof DeadlineTemplateScalarFieldEnum]
+
+
+export const DeadlineScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  contractServiceId: 'contractServiceId',
+  deadlineTemplateId: 'deadlineTemplateId',
+  title: 'title',
+  description: 'description',
+  category: 'category',
+  referenceCode: 'referenceCode',
+  periodLabel: 'periodLabel',
+  periodStart: 'periodStart',
+  periodEnd: 'periodEnd',
+  statutoryDueDate: 'statutoryDueDate',
+  extendedDueDate: 'extendedDueDate',
+  internalDueDate: 'internalDueDate',
+  eotReference: 'eotReference',
+  eotNote: 'eotNote',
+  eotGrantedAt: 'eotGrantedAt',
+  isInScope: 'isInScope',
+  scopeNote: 'scopeNote',
+  isBacklog: 'isBacklog',
+  backlogNote: 'backlogNote',
+  status: 'status',
+  completedAt: 'completedAt',
+  completedById: 'completedById',
+  completionNote: 'completionNote',
+  filingDate: 'filingDate',
+  filingReference: 'filingReference',
+  isBillable: 'isBillable',
+  overrideBillable: 'overrideBillable',
+  billingStatus: 'billingStatus',
+  amount: 'amount',
+  overrideAmount: 'overrideAmount',
+  currency: 'currency',
+  invoiceReference: 'invoiceReference',
+  invoicedAt: 'invoicedAt',
+  assigneeId: 'assigneeId',
+  assignedAt: 'assignedAt',
+  generationType: 'generationType',
+  remindersSent: 'remindersSent',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type DeadlineScalarFieldEnum = (typeof DeadlineScalarFieldEnum)[keyof typeof DeadlineScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -7146,6 +7396,20 @@ export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  * Reference to a field of type 'Decimal[]'
  */
 export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+/**
+ * Reference to a field of type 'GstFilingFrequency'
+ */
+export type EnumGstFilingFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'GstFilingFrequency'>
+    
+
+
+/**
+ * Reference to a field of type 'GstFilingFrequency[]'
+ */
+export type ListEnumGstFilingFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'GstFilingFrequency[]'>
     
 
 
@@ -7974,6 +8238,90 @@ export type EnumBillingFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<
 export type ListEnumBillingFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingFrequency[]'>
     
 
+
+/**
+ * Reference to a field of type 'DeadlineCategory'
+ */
+export type EnumDeadlineCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineCategory'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineCategory[]'
+ */
+export type ListEnumDeadlineCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineCategory[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineAnchorType'
+ */
+export type EnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineAnchorType'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineAnchorType[]'
+ */
+export type ListEnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineAnchorType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineFrequency'
+ */
+export type EnumDeadlineFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineFrequency'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineFrequency[]'
+ */
+export type ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineFrequency[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineStatus'
+ */
+export type EnumDeadlineStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineStatus[]'
+ */
+export type ListEnumDeadlineStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineBillingStatus'
+ */
+export type EnumDeadlineBillingStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineBillingStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineBillingStatus[]'
+ */
+export type ListEnumDeadlineBillingStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineBillingStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineGenerationType'
+ */
+export type EnumDeadlineGenerationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineGenerationType'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineGenerationType[]'
+ */
+export type ListEnumDeadlineGenerationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineGenerationType[]'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -8138,6 +8486,8 @@ export type GlobalOmitConfig = {
   chartOfAccountsMapping?: Prisma.ChartOfAccountsMappingOmit
   contract?: Prisma.ContractOmit
   contractService?: Prisma.ContractServiceOmit
+  deadlineTemplate?: Prisma.DeadlineTemplateOmit
+  deadline?: Prisma.DeadlineOmit
 }
 
 /* Types for Logging */

@@ -1,6 +1,6 @@
 # Oakcloud Database Schema
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2025-01-15
 > **Audience**: Developers
 
 This document provides a detailed reference for the Oakcloud database schema.
@@ -19,6 +19,8 @@ Oakcloud implements a multi-tenant architecture where data is isolated by tenant
 - **Contacts** - `tenantId` (required)
 - **Contracts** - `tenantId` (required)
 - **ContractServices** - `tenantId` (required)
+- **DeadlineTemplates** - `tenantId` (optional, null for system templates)
+- **Deadlines** - `tenantId` (required)
 - **Documents** - `tenantId` (required)
 - **AuditLogs** - `tenantId` (optional, for system-level events)
 - **Roles** - `tenantId` (optional, null for global SUPER_ADMIN role)
@@ -253,6 +255,15 @@ Main company records with ACRA information. Each company belongs to a tenant.
 | is_gst_registered | BOOLEAN | No | GST registration status |
 | gst_registration_number | VARCHAR(20) | Yes | GST number |
 | gst_registration_date | DATE | Yes | GST registration date |
+| gst_filing_frequency | ENUM | Yes | GST filing frequency (MONTHLY, QUARTERLY) |
+| agm_dispensed | BOOLEAN | No | AGM dispensed (for private cos) |
+| is_dormant | BOOLEAN | No | Company is dormant |
+| dormant_tax_exemption_approved | BOOLEAN | No | Dormant tax exemption approved |
+| is_registered_charity | BOOLEAN | No | Registered charity status |
+| charity_registration_date | DATE | Yes | Charity registration date |
+| charity_registration_number | VARCHAR(50) | Yes | Charity registration number |
+| ipc_approval_date | DATE | Yes | IPC (Institution of Public Character) approval date |
+| ipc_expiry_date | DATE | Yes | IPC expiry date |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
@@ -260,6 +271,10 @@ Main company records with ACRA information. Each company belongs to a tenant.
 
 **Notes:**
 - UEN is unique within a tenant, not globally. Companies in different tenants may share the same UEN.
+- `agmDispensed` - Private companies can dispense with AGM if all shareholders agree
+- `isDormant` - Dormant companies have different compliance requirements
+- `isRegisteredCharity` - Registered charities have additional filing requirements with Commissioner of Charities
+- `ipcApprovalDate/ipcExpiryDate` - IPC status allows donors to claim tax deductions
 
 **Indexes:**
 - `companies_tenant_id_uen_key` UNIQUE on (tenant_id, uen)
@@ -513,6 +528,127 @@ Billable service line items under a contract. Each service has its own dates, ra
 
 ---
 
+### deadline_templates
+
+Deadline template definitions for auto-generating compliance deadlines. Supports both system-level templates (Singapore compliance rules) and tenant-specific custom templates.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | Yes | FK to tenants (null = system template) |
+| code | VARCHAR(50) | No | Template code (e.g., "AGM", "ECI", "GST_RETURN_Q") |
+| name | VARCHAR(200) | No | Template display name |
+| description | TEXT | Yes | Detailed description |
+| category | ENUM | No | DeadlineCategory (see enums) |
+| jurisdiction | VARCHAR(10) | No | Jurisdiction code (default: "SG") |
+| anchor_type | ENUM | No | DeadlineAnchorType (see enums) |
+| offset_months | INT | No | Months offset from anchor (default: 0) |
+| offset_days | INT | No | Days offset from anchor (default: 0) |
+| frequency | ENUM | No | DeadlineFrequency (see enums) |
+| generation_type | ENUM | No | DeadlineGenerationType (default: AUTO) |
+| statutory_reference | VARCHAR(200) | Yes | Legal reference (e.g., "Companies Act s175") |
+| penalty_info | TEXT | Yes | Penalty information for non-compliance |
+| applicable_entity_types | TEXT[] | Yes | Entity types this template applies to |
+| requires_gst_registration | BOOLEAN | Yes | Only for GST-registered companies |
+| requires_audit | BOOLEAN | Yes | Only for audit-required companies |
+| requires_charity_status | BOOLEAN | Yes | Only for registered charities |
+| requires_ipc_status | BOOLEAN | Yes | Only for IPC-approved charities |
+| service_template_code | VARCHAR(50) | Yes | Service code that triggers this deadline |
+| is_billable | BOOLEAN | No | Whether deadline work is billable (default: true) |
+| default_rate | DECIMAL(18,2) | Yes | Default billing rate |
+| default_currency | VARCHAR(3) | No | Currency (default: "SGD") |
+| is_active | BOOLEAN | No | Active status (default: true) |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Template Applicability:**
+Templates include rules for when they should apply:
+- **applicable_entity_types**: Array of EntityType values (e.g., ["PRIVATE_LIMITED", "EXEMPTED_PRIVATE_LIMITED"])
+- **requires_gst_registration**: Only generate if company.isGstRegistered = true
+- **requires_audit**: Only generate if company requires audit
+- **requires_charity_status**: Only generate if company.isRegisteredCharity = true
+- **requires_ipc_status**: Only generate if company.ipcApprovalDate is set
+
+**Indexes:**
+- `deadline_templates_tenant_id_code_key` UNIQUE on (tenant_id, code)
+- `deadline_templates_tenant_id_idx` on tenant_id
+- `deadline_templates_category_idx` on category
+- `deadline_templates_is_active_idx` on is_active
+- `deadline_templates_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+
+---
+
+### deadlines
+
+Individual deadline instances generated from templates or created manually.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (required) |
+| company_id | UUID | No | FK to companies (CASCADE on delete) |
+| deadline_template_id | UUID | Yes | FK to deadline_templates (SET NULL on delete) |
+| contract_service_id | UUID | Yes | FK to contract_services (SET NULL on delete) |
+| title | VARCHAR(300) | No | Deadline title |
+| description | TEXT | Yes | Detailed description |
+| category | ENUM | No | DeadlineCategory (see enums) |
+| reference_code | VARCHAR(100) | Yes | External reference (e.g., filing number) |
+| period_label | VARCHAR(50) | No | Period label (e.g., "FY2024", "Q1 2024", "YA2025") |
+| statutory_due_date | DATE | No | Original statutory deadline |
+| extended_due_date | DATE | Yes | Extended deadline (if EOT granted) |
+| eot_reference | VARCHAR(100) | Yes | Extension of time reference number |
+| eot_reason | TEXT | Yes | Reason for extension |
+| completed_date | DATE | Yes | Actual completion date |
+| status | ENUM | No | DeadlineStatus (default: UPCOMING) |
+| priority | INT | No | Priority level 1-5 (default: 3) |
+| reminder_days | INT[] | No | Days before due to send reminders (default: [30, 14, 7, 1]) |
+| last_reminder_sent_at | TIMESTAMP | Yes | Last reminder timestamp |
+| assignee_id | UUID | Yes | FK to users (assigned staff) |
+| billing_status | ENUM | No | DeadlineBillingStatus (default: NOT_BILLABLE) |
+| billed_amount | DECIMAL(18,2) | Yes | Amount billed |
+| billed_at | TIMESTAMP | Yes | When billed |
+| invoice_reference | VARCHAR(100) | Yes | Invoice reference |
+| notes | TEXT | Yes | Internal notes |
+| metadata | JSONB | Yes | Additional data |
+| created_by_id | UUID | Yes | FK to users who created |
+| completed_by_id | UUID | Yes | FK to users who completed |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Deadline Status Flow:**
+1. **UPCOMING** - Future deadline, not yet due
+2. **DUE_SOON** - Due within 30 days
+3. **OVERDUE** - Past due date without completion
+4. **IN_PROGRESS** - Work has started
+5. **COMPLETED** - Deadline met
+6. **WAIVED** - Deadline waived (not applicable)
+7. **CANCELLED** - Deadline cancelled
+
+**Period Label Format:**
+- Financial Year End: "FY2024" (for deadlines anchored to FYE)
+- Year of Assessment: "YA2025" (for tax deadlines)
+- Calendar Quarter: "Q1 2024", "Q2 2024"
+- Calendar Month: "Jan 2024", "Feb 2024"
+- One-time: "2024" or specific description
+
+**Indexes:**
+- `deadlines_tenant_id_company_id_template_id_period_key` UNIQUE on (tenant_id, company_id, deadline_template_id, period_label)
+- `deadlines_tenant_id_idx` on tenant_id
+- `deadlines_company_id_idx` on company_id
+- `deadlines_deadline_template_id_idx` on deadline_template_id
+- `deadlines_contract_service_id_idx` on contract_service_id
+- `deadlines_status_idx` on status
+- `deadlines_statutory_due_date_idx` on statutory_due_date
+- `deadlines_assignee_id_idx` on assignee_id
+- `deadlines_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+- `deadlines_tenant_id_company_id_idx` on (tenant_id, company_id)
+- `deadlines_tenant_id_status_idx` on (tenant_id, status)
+- `deadlines_tenant_id_statutory_due_date_idx` on (tenant_id, statutory_due_date)
+
+---
+
 ### company_officers
 
 Officer records with appointment history.
@@ -689,9 +825,10 @@ DEACTIVATED
 
 ### EntityType
 ```sql
-PRIVATE_LIMITED              -- Private Company Limited by Shares
-EXEMPTED_PRIVATE_LIMITED     -- Exempt Private Company Limited by Shares
-PUBLIC_LIMITED               -- Public Company Limited by Shares
+PRIVATE_LIMITED                       -- Private Company Limited by Shares
+EXEMPTED_PRIVATE_LIMITED              -- Exempt Private Company Limited by Shares
+PUBLIC_LIMITED                        -- Public Company Limited by Shares
+PUBLIC_COMPANY_LIMITED_BY_GUARANTEE   -- Public Company Limited by Guarantee (non-profit)
 SOLE_PROPRIETORSHIP
 PARTNERSHIP
 LIMITED_PARTNERSHIP
@@ -801,6 +938,68 @@ ANNUALLY             -- Annual billing
 ONE_TIME             -- One-time billing (for one-time services)
 ```
 
+### GstFilingFrequency
+```sql
+MONTHLY              -- Monthly GST filing (for higher revenue companies)
+QUARTERLY            -- Quarterly GST filing (default)
+```
+
+### DeadlineCategory
+```sql
+CORPORATE_SECRETARY  -- Corporate secretarial deadlines (AGM, AR, etc.)
+TAX                  -- Tax-related deadlines (ECI, Corporate Tax, etc.)
+ACCOUNTING           -- Accounting deadlines (accounts preparation)
+AUDIT                -- Audit deadlines
+COMPLIANCE           -- General compliance deadlines
+OTHER                -- Other deadlines
+```
+
+### DeadlineStatus
+```sql
+UPCOMING             -- Future deadline, not yet due
+DUE_SOON             -- Due within 30 days (system-calculated)
+OVERDUE              -- Past due date without completion
+IN_PROGRESS          -- Work has started
+COMPLETED            -- Deadline met
+WAIVED               -- Deadline waived (not applicable)
+CANCELLED            -- Deadline cancelled
+```
+
+### DeadlineBillingStatus
+```sql
+NOT_BILLABLE         -- Not billable work
+PENDING              -- Billable, not yet invoiced
+INVOICED             -- Invoice sent
+PAID                 -- Payment received
+WRITTEN_OFF          -- Written off (bad debt)
+```
+
+### DeadlineAnchorType
+```sql
+FYE                  -- Anchored to Financial Year End
+SERVICE_START        -- Anchored to service start date
+FIXED_CALENDAR       -- Fixed calendar date (e.g., Nov 30 for ECI)
+QUARTER_END          -- Quarter end date
+MONTH_END            -- Month end date
+INCORPORATION        -- Company incorporation date
+IPC_EXPIRY           -- IPC approval expiry date
+```
+
+### DeadlineFrequency
+```sql
+ANNUALLY             -- Annual deadline
+QUARTERLY            -- Quarterly deadline
+MONTHLY              -- Monthly deadline
+ONE_TIME             -- One-time deadline
+```
+
+### DeadlineGenerationType
+```sql
+AUTO                 -- Auto-generated based on company attributes
+SERVICE_LINKED       -- Generated when service is added to contract
+MANUAL               -- Manually created
+```
+
 ### AuditAction
 ```sql
 -- CRUD Operations
@@ -855,6 +1054,16 @@ CONNECTOR_TESTED
 CONNECTOR_ENABLED
 CONNECTOR_DISABLED
 CONNECTOR_ACCESS_UPDATED
+
+-- Deadline Operations
+DEADLINE_CREATED
+DEADLINE_UPDATED
+DEADLINE_COMPLETED
+DEADLINE_REOPENED
+DEADLINE_DELETED
+DEADLINE_BULK_ASSIGNED
+DEADLINE_BULK_STATUS_UPDATED
+DEADLINES_GENERATED
 ```
 
 ### ChangeSource
