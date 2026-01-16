@@ -64,6 +64,16 @@ This web app is in development and testing stage. All data are dummy, and it's a
 |----|----------|--------|-------------|-------|
 | UI-001 | P2 | Open | Mobile responsiveness improvements | General responsive issues across modules |
 
+### Performance
+
+| ID | Priority | Status | Description | Notes |
+|----|----------|--------|-------------|-------|
+| PERF-001 | P2 | Done | Fix hydration delay in providers.tsx | Removed mounted state check that delayed Chakra rendering |
+| PERF-002 | P2 | Done | Non-blocking AuthGuard | Show skeleton loaders while session is validated instead of blocking spinner |
+| PERF-003 | P3 | Open | Convert more pages to Server Components | Fetch data server-side to eliminate loading spinners (companies list done) |
+| PERF-004 | P3 | Open | Implement route-level data prefetching | Server-side session validation and data prefetch |
+| PERF-005 | P3 | Open | Optimize React Query staleTime | Consider longer staleTime (10-15 min) for less frequently changing data |
+
 ---
 
 ## Planned Features
