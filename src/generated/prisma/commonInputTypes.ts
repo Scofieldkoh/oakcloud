@@ -1540,6 +1540,57 @@ export type EnumDeadlineFrequencyWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumDeadlineFrequencyFilter<$PrismaModel>
 }
 
+export type EnumDeadlineRuleTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineRuleType | Prisma.EnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineRuleType[] | Prisma.ListEnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineRuleType[] | Prisma.ListEnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineRuleTypeFilter<$PrismaModel> | $Enums.DeadlineRuleType
+}
+
+export type EnumDeadlineAnchorTypeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineAnchorType | Prisma.EnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DeadlineAnchorType[] | Prisma.ListEnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DeadlineAnchorType[] | Prisma.ListEnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDeadlineAnchorTypeNullableFilter<$PrismaModel> | $Enums.DeadlineAnchorType | null
+}
+
+export type EnumDeadlineFrequencyNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineFrequency | Prisma.EnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DeadlineFrequency[] | Prisma.ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DeadlineFrequency[] | Prisma.ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDeadlineFrequencyNullableFilter<$PrismaModel> | $Enums.DeadlineFrequency | null
+}
+
+export type EnumDeadlineRuleTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineRuleType | Prisma.EnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineRuleType[] | Prisma.ListEnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineRuleType[] | Prisma.ListEnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineRuleTypeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineRuleType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineRuleTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineRuleTypeFilter<$PrismaModel>
+}
+
+export type EnumDeadlineAnchorTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineAnchorType | Prisma.EnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DeadlineAnchorType[] | Prisma.ListEnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DeadlineAnchorType[] | Prisma.ListEnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDeadlineAnchorTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineAnchorType | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineAnchorTypeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineAnchorTypeNullableFilter<$PrismaModel>
+}
+
+export type EnumDeadlineFrequencyNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineFrequency | Prisma.EnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DeadlineFrequency[] | Prisma.ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DeadlineFrequency[] | Prisma.ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDeadlineFrequencyNullableWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineFrequency | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineFrequencyNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineFrequencyNullableFilter<$PrismaModel>
+}
+
 export type EnumDeadlineStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.DeadlineStatus | Prisma.EnumDeadlineStatusFieldRefInput<$PrismaModel>
   in?: $Enums.DeadlineStatus[] | Prisma.ListEnumDeadlineStatusFieldRefInput<$PrismaModel>
@@ -3052,6 +3103,57 @@ export type NestedEnumDeadlineFrequencyWithAggregatesFilter<$PrismaModel = never
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumDeadlineFrequencyFilter<$PrismaModel>
   _max?: Prisma.NestedEnumDeadlineFrequencyFilter<$PrismaModel>
+}
+
+export type NestedEnumDeadlineRuleTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineRuleType | Prisma.EnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineRuleType[] | Prisma.ListEnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineRuleType[] | Prisma.ListEnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineRuleTypeFilter<$PrismaModel> | $Enums.DeadlineRuleType
+}
+
+export type NestedEnumDeadlineAnchorTypeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineAnchorType | Prisma.EnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DeadlineAnchorType[] | Prisma.ListEnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DeadlineAnchorType[] | Prisma.ListEnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDeadlineAnchorTypeNullableFilter<$PrismaModel> | $Enums.DeadlineAnchorType | null
+}
+
+export type NestedEnumDeadlineFrequencyNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineFrequency | Prisma.EnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DeadlineFrequency[] | Prisma.ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DeadlineFrequency[] | Prisma.ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDeadlineFrequencyNullableFilter<$PrismaModel> | $Enums.DeadlineFrequency | null
+}
+
+export type NestedEnumDeadlineRuleTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineRuleType | Prisma.EnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineRuleType[] | Prisma.ListEnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineRuleType[] | Prisma.ListEnumDeadlineRuleTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineRuleTypeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineRuleType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineRuleTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineRuleTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumDeadlineAnchorTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineAnchorType | Prisma.EnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DeadlineAnchorType[] | Prisma.ListEnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DeadlineAnchorType[] | Prisma.ListEnumDeadlineAnchorTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDeadlineAnchorTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineAnchorType | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineAnchorTypeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineAnchorTypeNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumDeadlineFrequencyNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineFrequency | Prisma.EnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  in?: $Enums.DeadlineFrequency[] | Prisma.ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.DeadlineFrequency[] | Prisma.ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumDeadlineFrequencyNullableWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineFrequency | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineFrequencyNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineFrequencyNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumDeadlineStatusFilter<$PrismaModel = never> = {

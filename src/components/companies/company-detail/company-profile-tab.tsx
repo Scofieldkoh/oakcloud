@@ -31,6 +31,7 @@ import {
   useUpdateShareholder,
   useRemoveOfficer,
   useRemoveShareholder,
+  useCompanyBizFile,
 } from '@/hooks/use-companies';
 import { formatDate, formatCurrency, formatPercentage } from '@/lib/utils';
 import type { CompanyWithRelations } from '@/services/company/types';
@@ -97,6 +98,9 @@ interface CompanyProfileTabProps {
 
 export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTabProps) {
   const { success, error: toastError } = useToast();
+
+  // Check if BizFile is available
+  const { data: bizFileInfo, isLoading: isBizFileLoading } = useCompanyBizFile(companyId);
 
   // Filter state for officers
   const [officerNameFilter, setOfficerNameFilter] = useState('');
@@ -908,27 +912,18 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
               </span>
             </div>
             <div className="p-4 space-y-2">
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch(`/api/companies/${companyId}/bizfile`);
-                    if (res.ok) {
-                      const data = await res.json();
-                      window.open(data.pdfUrl, '_blank');
-                    } else if (res.status === 404) {
-                      toastError('No BizFile found for this company');
-                    } else {
-                      toastError('Failed to fetch BizFile');
-                    }
-                  } catch {
-                    toastError('Failed to fetch BizFile');
-                  }
-                }}
-                className="btn-primary btn-sm w-full justify-center flex items-center gap-2"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                View BizFile
-              </button>
+              {/* Only show View BizFile button if BizFile is available */}
+              {!isBizFileLoading && bizFileInfo && (
+                <button
+                  onClick={() => {
+                    window.open(bizFileInfo.pdfUrl, '_blank');
+                  }}
+                  className="btn-primary btn-sm w-full justify-center flex items-center gap-2"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View BizFile
+                </button>
+              )}
               <Link
                 href={`/companies/${companyId}/documents`}
                 className="btn-secondary btn-sm w-full justify-center"

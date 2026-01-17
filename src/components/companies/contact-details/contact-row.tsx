@@ -45,7 +45,7 @@ interface ContactRowProps {
   canEdit: boolean;
   onAddDetail: () => void;
   onUnlink?: () => void;
-  onTogglePoc?: (detailId: string, isPoc: boolean) => void;
+  onTogglePoc?: (isPoc: boolean) => void;
   isTogglingPoc?: boolean;
 }
 
@@ -90,24 +90,13 @@ export function ContactRow({
   const emailDetail = companySpecificEmail || defaultEmail;
   const emailPurposes = emailDetail?.purposes || [];
 
-  // Check if any of this contact's details are marked as POC
-  const pocDetail = item.details.find(d => d.isPoc);
-  const hasPoc = !!pocDetail;
+  // POC status is now company-specific, stored on CompanyContact
+  const hasPoc = item.isPoc;
 
-  // Get the first detail to toggle POC on (prefer email, then phone, then any)
-  const primaryDetail = emailDetail || item.details.find(d => d.detailType === 'PHONE') || item.details[0];
-
-  // Handle POC toggle - toggle the current POC detail or set the primary detail as POC
+  // Handle POC toggle - toggle the company-specific POC status
   const handlePocClick = () => {
     if (!onTogglePoc || !canEdit) return;
-
-    if (hasPoc && pocDetail) {
-      // Turn off POC on the current POC detail
-      onTogglePoc(pocDetail.id, false);
-    } else if (primaryDetail) {
-      // Turn on POC on the primary detail
-      onTogglePoc(primaryDetail.id, true);
-    }
+    onTogglePoc(!hasPoc);
   };
 
   return (
@@ -158,7 +147,7 @@ export function ContactRow({
 
       {/* POC column - w-[80px] */}
       <div className="flex-shrink-0 w-[80px] flex items-center justify-center">
-        {canEdit && primaryDetail ? (
+        {canEdit ? (
           <button
             onClick={handlePocClick}
             disabled={isTogglingPoc}

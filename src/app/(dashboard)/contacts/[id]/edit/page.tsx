@@ -64,6 +64,7 @@ export default function EditContactPage({
         contactType: contact.contactType,
         firstName: contact.firstName || undefined,
         lastName: contact.lastName || undefined,
+        alias: contact.alias || undefined,
         identificationType: contact.identificationType || undefined,
         identificationNumber: contact.identificationNumber || undefined,
         nationality: contact.nationality || undefined,
@@ -230,7 +231,7 @@ export default function EditContactPage({
           <div className="p-4 space-y-4">
             {contactType === 'INDIVIDUAL' ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="label">First Name</label>
                     <input
@@ -255,9 +256,21 @@ export default function EditContactPage({
                       <p className="text-xs text-status-error mt-1.5">{errors.lastName.message}</p>
                     )}
                   </div>
+                  <div>
+                    <label className="label">Alias</label>
+                    <input
+                      type="text"
+                      {...register('alias')}
+                      placeholder="Known as..."
+                      className={`input input-sm ${errors.alias ? 'input-error' : ''}`}
+                    />
+                    {errors.alias && (
+                      <p className="text-xs text-status-error mt-1.5">{errors.alias.message}</p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="label">Nationality</label>
                     <input
@@ -268,17 +281,29 @@ export default function EditContactPage({
                     />
                   </div>
                   <div>
-                    <label className="label">Date of Birth</label>
+                    <label className="label">ID Type</label>
+                    <select {...register('identificationType')} className="input input-sm">
+                      <option value="">Select type</option>
+                      {availableIdTypes.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">ID Number</label>
                     <input
-                      type="date"
-                      {...register('dateOfBirth')}
+                      type="text"
+                      {...register('identificationNumber')}
+                      placeholder="S1234567A"
                       className="input input-sm"
                     />
                   </div>
                 </div>
               </>
             ) : (
-              <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Corporate Name</label>
                   <input
@@ -292,7 +317,7 @@ export default function EditContactPage({
                   )}
                 </div>
                 <div>
-                  <label className="label">Corporate UEN</label>
+                  <label className="label">UEN</label>
                   <input
                     type="text"
                     {...register('corporateUen')}
@@ -300,36 +325,8 @@ export default function EditContactPage({
                     className="input input-sm uppercase"
                   />
                 </div>
-              </>
+              </div>
             )}
-
-            {/* Identification */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">
-                  {contactType === 'INDIVIDUAL' ? 'ID Type' : 'Registration Type'}
-                </label>
-                <select {...register('identificationType')} className="input input-sm">
-                  <option value="">Select type</option>
-                  {availableIdTypes.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label">
-                  {contactType === 'INDIVIDUAL' ? 'ID Number' : 'Registration Number'}
-                </label>
-                <input
-                  type="text"
-                  {...register('identificationNumber')}
-                  placeholder={contactType === 'INDIVIDUAL' ? 'S1234567A' : 'Registration number'}
-                  className="input input-sm"
-                />
-              </div>
-            </div>
           </div>
         </div>
 

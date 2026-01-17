@@ -30,6 +30,7 @@ import {
   bulkDeleteSchema,
   generateDeadlinesSchema,
 } from '@/lib/validations/deadline';
+import { getTenantById } from '@/services/tenant.service';
 import type { DeadlineCategory, DeadlineStatus, DeadlineBillingStatus } from '@/generated/prisma';
 
 export async function GET(req: NextRequest) {
@@ -38,12 +39,25 @@ export async function GET(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+
+    const searchParams = req.nextUrl.searchParams;
+
+    // For SUPER_ADMIN, allow specifying tenantId via query param
+    const tenantIdParam = searchParams.get('tenantId');
+    let tenantId = session.tenantId;
+
+    if (session.isSuperAdmin && tenantIdParam) {
+      // Validate that the tenant exists before using it
+      const tenant = await getTenantById(tenantIdParam);
+      if (!tenant) {
+        return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+      }
+      tenantId = tenantIdParam;
     }
 
-    const tenantId = session.tenantId;
-    const searchParams = req.nextUrl.searchParams;
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
     const action = searchParams.get('action');
 
     // Special actions
@@ -140,12 +154,25 @@ export async function POST(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+
+    const body = await req.json();
+
+    // For SUPER_ADMIN, allow specifying tenantId via body
+    const tenantIdParam = body.tenantId;
+    let tenantId = session.tenantId;
+
+    if (session.isSuperAdmin && tenantIdParam) {
+      // Validate that the tenant exists before using it
+      const tenant = await getTenantById(tenantIdParam);
+      if (!tenant) {
+        return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+      }
+      tenantId = tenantIdParam;
     }
 
-    const tenantId = session.tenantId;
-    const body = await req.json();
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
 
     // Handle bulk operations
     if (body.action) {

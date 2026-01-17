@@ -70,6 +70,8 @@ export type DeadlineTemplateMinAggregateOutputType = {
   isBillable: boolean | null
   defaultAmount: runtime.Decimal | null
   isActive: boolean | null
+  isUserCreated: boolean | null
+  basedOnTemplateCode: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -100,6 +102,8 @@ export type DeadlineTemplateMaxAggregateOutputType = {
   isBillable: boolean | null
   defaultAmount: runtime.Decimal | null
   isActive: boolean | null
+  isUserCreated: boolean | null
+  basedOnTemplateCode: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -133,6 +137,8 @@ export type DeadlineTemplateCountAggregateOutputType = {
   defaultAmount: number
   reminderDaysBefore: number
   isActive: number
+  isUserCreated: number
+  basedOnTemplateCode: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -183,6 +189,8 @@ export type DeadlineTemplateMinAggregateInputType = {
   isBillable?: true
   defaultAmount?: true
   isActive?: true
+  isUserCreated?: true
+  basedOnTemplateCode?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -213,6 +221,8 @@ export type DeadlineTemplateMaxAggregateInputType = {
   isBillable?: true
   defaultAmount?: true
   isActive?: true
+  isUserCreated?: true
+  basedOnTemplateCode?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -246,6 +256,8 @@ export type DeadlineTemplateCountAggregateInputType = {
   defaultAmount?: true
   reminderDaysBefore?: true
   isActive?: true
+  isUserCreated?: true
+  basedOnTemplateCode?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -366,6 +378,8 @@ export type DeadlineTemplateGroupByOutputType = {
   defaultAmount: runtime.Decimal | null
   reminderDaysBefore: runtime.JsonValue
   isActive: boolean
+  isUserCreated: boolean
+  basedOnTemplateCode: string | null
   createdAt: Date
   updatedAt: Date
   _count: DeadlineTemplateCountAggregateOutputType | null
@@ -422,6 +436,8 @@ export type DeadlineTemplateWhereInput = {
   defaultAmount?: Prisma.DecimalNullableFilter<"DeadlineTemplate"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonFilter<"DeadlineTemplate">
   isActive?: Prisma.BoolFilter<"DeadlineTemplate"> | boolean
+  isUserCreated?: Prisma.BoolFilter<"DeadlineTemplate"> | boolean
+  basedOnTemplateCode?: Prisma.StringNullableFilter<"DeadlineTemplate"> | string | null
   createdAt?: Prisma.DateTimeFilter<"DeadlineTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DeadlineTemplate"> | Date | string
   tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
@@ -457,6 +473,8 @@ export type DeadlineTemplateOrderByWithRelationInput = {
   defaultAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   reminderDaysBefore?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  isUserCreated?: Prisma.SortOrder
+  basedOnTemplateCode?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
@@ -496,6 +514,8 @@ export type DeadlineTemplateWhereUniqueInput = Prisma.AtLeast<{
   defaultAmount?: Prisma.DecimalNullableFilter<"DeadlineTemplate"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonFilter<"DeadlineTemplate">
   isActive?: Prisma.BoolFilter<"DeadlineTemplate"> | boolean
+  isUserCreated?: Prisma.BoolFilter<"DeadlineTemplate"> | boolean
+  basedOnTemplateCode?: Prisma.StringNullableFilter<"DeadlineTemplate"> | string | null
   createdAt?: Prisma.DateTimeFilter<"DeadlineTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DeadlineTemplate"> | Date | string
   tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
@@ -531,6 +551,8 @@ export type DeadlineTemplateOrderByWithAggregationInput = {
   defaultAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   reminderDaysBefore?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  isUserCreated?: Prisma.SortOrder
+  basedOnTemplateCode?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.DeadlineTemplateCountOrderByAggregateInput
@@ -572,6 +594,8 @@ export type DeadlineTemplateScalarWhereWithAggregatesInput = {
   defaultAmount?: Prisma.DecimalNullableWithAggregatesFilter<"DeadlineTemplate"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonWithAggregatesFilter<"DeadlineTemplate">
   isActive?: Prisma.BoolWithAggregatesFilter<"DeadlineTemplate"> | boolean
+  isUserCreated?: Prisma.BoolWithAggregatesFilter<"DeadlineTemplate"> | boolean
+  basedOnTemplateCode?: Prisma.StringNullableWithAggregatesFilter<"DeadlineTemplate"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DeadlineTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"DeadlineTemplate"> | Date | string
 }
@@ -604,6 +628,8 @@ export type DeadlineTemplateCreateInput = {
   defaultAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant?: Prisma.TenantCreateNestedOneWithoutDeadlineTemplatesInput
@@ -639,6 +665,8 @@ export type DeadlineTemplateUncheckedCreateInput = {
   defaultAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutDeadlineTemplateInput
@@ -672,6 +700,8 @@ export type DeadlineTemplateUpdateInput = {
   defaultAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isUserCreated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  basedOnTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneWithoutDeadlineTemplatesNestedInput
@@ -707,6 +737,8 @@ export type DeadlineTemplateUncheckedUpdateInput = {
   defaultAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isUserCreated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  basedOnTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutDeadlineTemplateNestedInput
@@ -741,6 +773,8 @@ export type DeadlineTemplateCreateManyInput = {
   defaultAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -773,6 +807,8 @@ export type DeadlineTemplateUpdateManyMutationInput = {
   defaultAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isUserCreated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  basedOnTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -806,6 +842,8 @@ export type DeadlineTemplateUncheckedUpdateManyInput = {
   defaultAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isUserCreated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  basedOnTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -855,6 +893,8 @@ export type DeadlineTemplateCountOrderByAggregateInput = {
   defaultAmount?: Prisma.SortOrder
   reminderDaysBefore?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  isUserCreated?: Prisma.SortOrder
+  basedOnTemplateCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -894,6 +934,8 @@ export type DeadlineTemplateMaxOrderByAggregateInput = {
   isBillable?: Prisma.SortOrder
   defaultAmount?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  isUserCreated?: Prisma.SortOrder
+  basedOnTemplateCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -924,6 +966,8 @@ export type DeadlineTemplateMinOrderByAggregateInput = {
   isBillable?: Prisma.SortOrder
   defaultAmount?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  isUserCreated?: Prisma.SortOrder
+  basedOnTemplateCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -1040,6 +1084,8 @@ export type DeadlineTemplateCreateWithoutTenantInput = {
   defaultAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deadlines?: Prisma.DeadlineCreateNestedManyWithoutDeadlineTemplateInput
@@ -1073,6 +1119,8 @@ export type DeadlineTemplateUncheckedCreateWithoutTenantInput = {
   defaultAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutDeadlineTemplateInput
@@ -1136,6 +1184,8 @@ export type DeadlineTemplateScalarWhereInput = {
   defaultAmount?: Prisma.DecimalNullableFilter<"DeadlineTemplate"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonFilter<"DeadlineTemplate">
   isActive?: Prisma.BoolFilter<"DeadlineTemplate"> | boolean
+  isUserCreated?: Prisma.BoolFilter<"DeadlineTemplate"> | boolean
+  basedOnTemplateCode?: Prisma.StringNullableFilter<"DeadlineTemplate"> | string | null
   createdAt?: Prisma.DateTimeFilter<"DeadlineTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DeadlineTemplate"> | Date | string
 }
@@ -1168,6 +1218,8 @@ export type DeadlineTemplateCreateWithoutDeadlinesInput = {
   defaultAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant?: Prisma.TenantCreateNestedOneWithoutDeadlineTemplatesInput
@@ -1202,6 +1254,8 @@ export type DeadlineTemplateUncheckedCreateWithoutDeadlinesInput = {
   defaultAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1250,6 +1304,8 @@ export type DeadlineTemplateUpdateWithoutDeadlinesInput = {
   defaultAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isUserCreated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  basedOnTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneWithoutDeadlineTemplatesNestedInput
@@ -1284,6 +1340,8 @@ export type DeadlineTemplateUncheckedUpdateWithoutDeadlinesInput = {
   defaultAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isUserCreated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  basedOnTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1316,6 +1374,8 @@ export type DeadlineTemplateCreateManyTenantInput = {
   defaultAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1348,6 +1408,8 @@ export type DeadlineTemplateUpdateWithoutTenantInput = {
   defaultAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isUserCreated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  basedOnTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deadlines?: Prisma.DeadlineUpdateManyWithoutDeadlineTemplateNestedInput
@@ -1381,6 +1443,8 @@ export type DeadlineTemplateUncheckedUpdateWithoutTenantInput = {
   defaultAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isUserCreated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  basedOnTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutDeadlineTemplateNestedInput
@@ -1414,6 +1478,8 @@ export type DeadlineTemplateUncheckedUpdateManyWithoutTenantInput = {
   defaultAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   reminderDaysBefore?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isUserCreated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  basedOnTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1478,6 +1544,8 @@ export type DeadlineTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   defaultAmount?: boolean
   reminderDaysBefore?: boolean
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.DeadlineTemplate$tenantArgs<ExtArgs>
@@ -1514,6 +1582,8 @@ export type DeadlineTemplateSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   defaultAmount?: boolean
   reminderDaysBefore?: boolean
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.DeadlineTemplate$tenantArgs<ExtArgs>
@@ -1548,6 +1618,8 @@ export type DeadlineTemplateSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   defaultAmount?: boolean
   reminderDaysBefore?: boolean
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.DeadlineTemplate$tenantArgs<ExtArgs>
@@ -1582,11 +1654,13 @@ export type DeadlineTemplateSelectScalar = {
   defaultAmount?: boolean
   reminderDaysBefore?: boolean
   isActive?: boolean
+  isUserCreated?: boolean
+  basedOnTemplateCode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type DeadlineTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "code" | "name" | "category" | "jurisdiction" | "description" | "entityTypes" | "excludeEntityTypes" | "requiresGstRegistered" | "requiresAudit" | "isTaxFiling" | "requiresCharityStatus" | "requiresIPCStatus" | "anchorType" | "offsetMonths" | "offsetDays" | "offsetBusinessDays" | "fixedMonth" | "fixedDay" | "frequency" | "generateMonthsAhead" | "isOptional" | "optionalNote" | "isBillable" | "defaultAmount" | "reminderDaysBefore" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["deadlineTemplate"]>
+export type DeadlineTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "code" | "name" | "category" | "jurisdiction" | "description" | "entityTypes" | "excludeEntityTypes" | "requiresGstRegistered" | "requiresAudit" | "isTaxFiling" | "requiresCharityStatus" | "requiresIPCStatus" | "anchorType" | "offsetMonths" | "offsetDays" | "offsetBusinessDays" | "fixedMonth" | "fixedDay" | "frequency" | "generateMonthsAhead" | "isOptional" | "optionalNote" | "isBillable" | "defaultAmount" | "reminderDaysBefore" | "isActive" | "isUserCreated" | "basedOnTemplateCode" | "createdAt" | "updatedAt", ExtArgs["result"]["deadlineTemplate"]>
 export type DeadlineTemplateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.DeadlineTemplate$tenantArgs<ExtArgs>
   deadlines?: boolean | Prisma.DeadlineTemplate$deadlinesArgs<ExtArgs>
@@ -1634,6 +1708,8 @@ export type $DeadlineTemplatePayload<ExtArgs extends runtime.Types.Extensions.In
     defaultAmount: runtime.Decimal | null
     reminderDaysBefore: runtime.JsonValue
     isActive: boolean
+    isUserCreated: boolean
+    basedOnTemplateCode: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["deadlineTemplate"]>
@@ -2089,6 +2165,8 @@ export interface DeadlineTemplateFieldRefs {
   readonly defaultAmount: Prisma.FieldRef<"DeadlineTemplate", 'Decimal'>
   readonly reminderDaysBefore: Prisma.FieldRef<"DeadlineTemplate", 'Json'>
   readonly isActive: Prisma.FieldRef<"DeadlineTemplate", 'Boolean'>
+  readonly isUserCreated: Prisma.FieldRef<"DeadlineTemplate", 'Boolean'>
+  readonly basedOnTemplateCode: Prisma.FieldRef<"DeadlineTemplate", 'String'>
   readonly createdAt: Prisma.FieldRef<"DeadlineTemplate", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"DeadlineTemplate", 'DateTime'>
 }

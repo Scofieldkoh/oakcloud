@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { useLinkContactToCompany } from '@/hooks/use-contacts';
 import { useToast } from '@/components/ui/toast';
 import { ContactSearchSelect } from '@/components/ui/contact-search-select';
@@ -49,6 +50,23 @@ export function AddOfficerModal({ isOpen, onClose, companyId, companyName }: Add
       setAppointmentDate('');
     }
   }, [isOpen]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        if (selectedContactId && !linkContactMutation.isPending) {
+          handleSubmit();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, selectedContactId, linkContactMutation.isPending]);
 
   const handleContactChange = (contactId: string, contact: Contact | null) => {
     setSelectedContactId(contactId);
@@ -105,28 +123,25 @@ export function AddOfficerModal({ isOpen, onClose, companyId, companyName }: Add
           </div>
 
           {/* Appointment Date */}
-          <div>
-            <label className="label">Date of Appointment</label>
-            <input
-              type="date"
-              value={appointmentDate}
-              onChange={(e) => setAppointmentDate(e.target.value)}
-              className="input input-sm w-full"
-            />
-            <p className="text-xs text-text-muted mt-1">Optional</p>
-          </div>
+          <SingleDateInput
+            label="Date of Appointment"
+            value={appointmentDate}
+            onChange={setAppointmentDate}
+            placeholder="Select date..."
+            hint="Optional"
+          />
         </div>
       </ModalBody>
       <ModalFooter>
         <Button variant="secondary" onClick={onClose}>
-          Cancel
+          Cancel <span className="text-text-muted ml-1">(Esc)</span>
         </Button>
         <Button
           variant="primary"
           onClick={handleSubmit}
           disabled={!selectedContactId || linkContactMutation.isPending}
         >
-          {linkContactMutation.isPending ? 'Adding...' : 'Add Officer'}
+          {linkContactMutation.isPending ? 'Adding...' : 'Add Officer'} <span className="opacity-70 ml-1">(F1)</span>
         </Button>
       </ModalFooter>
     </Modal>

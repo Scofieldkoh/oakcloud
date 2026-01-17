@@ -48,6 +48,7 @@ export async function createContact(
       firstName: data.firstName,
       lastName: data.lastName,
       fullName,
+      alias: data.alias,
       identificationType: data.identificationType,
       identificationNumber: data.identificationNumber,
       nationality: data.nationality,
@@ -92,6 +93,7 @@ export async function updateContact(
   if (data.contactType !== undefined) updateData.contactType = data.contactType;
   if (data.firstName !== undefined) updateData.firstName = data.firstName;
   if (data.lastName !== undefined) updateData.lastName = data.lastName;
+  if (data.alias !== undefined) updateData.alias = data.alias;
   if (data.identificationType !== undefined) updateData.identificationType = data.identificationType;
   if (data.identificationNumber !== undefined)
     updateData.identificationNumber = data.identificationNumber;

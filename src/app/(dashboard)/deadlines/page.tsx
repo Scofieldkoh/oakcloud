@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Clock,
   AlertTriangle,
   CheckCircle,
-  Filter,
   Calendar,
   ListFilter,
   RefreshCw,
   Trash2,
+  AlertCircle,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { Button } from '@/components/ui/button';
@@ -25,36 +25,13 @@ import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSelection } from '@/hooks/use-selection';
 import { DeadlineList } from '@/components/deadlines/deadline-list';
+import { DeadlineFilters, type FilterValues } from '@/components/deadlines/deadline-filters';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
-import { ErrorState } from '@/components/ui/error-state';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import type { DeadlineCategory, DeadlineStatus } from '@/generated/prisma';
 import type { DeadlineWithRelations } from '@/hooks/use-deadlines';
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-const STATUS_OPTIONS: { value: DeadlineStatus; label: string }[] = [
-  { value: 'UPCOMING', label: 'Upcoming' },
-  { value: 'DUE_SOON', label: 'Due Soon' },
-  { value: 'IN_PROGRESS', label: 'In Progress' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'CANCELLED', label: 'Cancelled' },
-  { value: 'WAIVED', label: 'Waived' },
-];
-
-const CATEGORY_OPTIONS: { value: DeadlineCategory; label: string }[] = [
-  { value: 'CORPORATE_SECRETARY', label: 'Corporate Secretary' },
-  { value: 'TAX', label: 'Tax' },
-  { value: 'ACCOUNTING', label: 'Accounting' },
-  { value: 'AUDIT', label: 'Audit' },
-  { value: 'COMPLIANCE', label: 'Compliance' },
-  { value: 'OTHER', label: 'Other' },
-];
 
 // ============================================================================
 // COMPONENT
@@ -66,6 +43,7 @@ export default function DeadlinesPage() {
   const { success: toastSuccess } = useToast();
   const { data: session } = useSession();
 
+  // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
   const activeTenantId = useActiveTenantId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
@@ -105,9 +83,12 @@ export default function DeadlinesPage() {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
-  // Queries
-  const { data, isLoading, error, refetch } = useDeadlines(params);
-  const { data: stats } = useDeadlineStats();
+  // Queries - pass tenantId for SUPER_ADMIN support
+  const { data, isLoading, error, refetch } = useDeadlines({
+    ...params,
+    tenantId: activeTenantId,
+  });
+  const { data: stats, error: statsError } = useDeadlineStats(activeTenantId);
 
   // Mutations
   const deleteDeadline = useDeleteDeadline();
@@ -118,10 +99,7 @@ export default function DeadlinesPage() {
   const {
     selectedIds,
     selectedCount,
-    isAllSelected,
-    isIndeterminate,
     toggleOne,
-    toggleAll,
     clear: clearSelection,
   } = useSelection(data?.deadlines || []);
 
@@ -143,74 +121,67 @@ export default function DeadlinesPage() {
     return queryString ? `/deadlines?${queryString}` : '/deadlines';
   }, [params]);
 
-  // Update URL when params change
-  const updateParams = useCallback(
-    (newParams: Partial<typeof params>) => {
-      setParams((prev) => ({ ...prev, ...newParams }));
-    },
-    []
-  );
+  // Reset page and selection when tenant changes
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, page: 1 }));
+    clearSelection();
+  }, [activeTenantId, clearSelection]);
+
+  // Sync URL when params change
+  useEffect(() => {
+    if (window.location.pathname + window.location.search !== targetUrl) {
+      router.replace(targetUrl, { scroll: false });
+    }
+  }, [targetUrl, router]);
 
   // Handlers
   const handleSearch = useCallback(
     (query: string) => {
-      updateParams({ query, page: 1 });
+      setParams((prev) => ({ ...prev, query, page: 1 }));
     },
-    [updateParams]
+    []
+  );
+
+  const handleFilterChange = useCallback(
+    (filters: FilterValues) => {
+      setParams((prev) => ({
+        ...prev,
+        category: filters.category,
+        status: filters.status,
+        isInScope: filters.isInScope,
+        page: 1,
+      }));
+    },
+    []
   );
 
   const handlePageChange = useCallback(
     (page: number) => {
-      updateParams({ page });
+      setParams((prev) => ({ ...prev, page }));
     },
-    [updateParams]
+    []
   );
 
   const handleLimitChange = useCallback(
     (limit: number) => {
-      updateParams({ limit, page: 1 });
+      setParams((prev) => ({ ...prev, limit, page: 1 }));
     },
-    [updateParams]
+    []
   );
 
   const handleSort = useCallback(
     (field: string) => {
-      const isSameField = params.sortBy === field;
-      updateParams({
-        sortBy: field as typeof params.sortBy,
-        sortOrder: isSameField && params.sortOrder === 'asc' ? 'desc' : 'asc',
+      setParams((prev) => {
+        const isSameField = prev.sortBy === field;
+        return {
+          ...prev,
+          sortBy: field as typeof prev.sortBy,
+          sortOrder: isSameField && prev.sortOrder === 'asc' ? 'desc' : 'asc',
+        };
       });
     },
-    [params.sortBy, params.sortOrder, updateParams]
+    []
   );
-
-  const handleCategoryChange = useCallback(
-    (category: DeadlineCategory | undefined) => {
-      updateParams({ category, page: 1 });
-    },
-    [updateParams]
-  );
-
-  const handleStatusChange = useCallback(
-    (status: DeadlineStatus[] | undefined) => {
-      updateParams({ status, page: 1 });
-    },
-    [updateParams]
-  );
-
-  const handleClearFilters = useCallback(() => {
-    setParams({
-      query: '',
-      page: 1,
-      limit: 20,
-      sortBy: 'statutoryDueDate',
-      sortOrder: 'asc',
-      category: undefined,
-      status: undefined,
-      assigneeId: undefined,
-      isInScope: undefined,
-    });
-  }, []);
 
   const handleViewDeadline = useCallback(
     (deadline: DeadlineWithRelations) => {
@@ -267,256 +238,214 @@ export default function DeadlinesPage() {
     [selectedIds, bulkUpdateStatus, clearSelection, toastSuccess]
   );
 
-  const hasActiveFilters = params.category || (params.status && params.status.length > 0) ||
-                          params.assigneeId || params.isInScope !== undefined || params.query;
-
   return (
-    <div className="flex flex-col h-full">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background-primary border-b border-border-default px-4 md:px-6 py-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-text-primary">Deadlines</h1>
-            <p className="text-sm text-text-muted mt-1">
-              Manage compliance deadlines across all companies
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">Deadlines</h1>
+          <p className="text-text-secondary text-sm mt-1">
+            Manage compliance deadlines across all companies
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetch()}
+            aria-label="Refresh"
+            iconOnly
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => refetch()}
-              aria-label="Refresh"
-              iconOnly
+          {/* View mode toggle */}
+          <div className="flex rounded-md border border-border-default overflow-hidden">
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn(
+                'px-3 py-1.5 text-sm transition-colors',
+                viewMode === 'list'
+                  ? 'bg-oak-primary text-white'
+                  : 'bg-background-secondary text-text-muted hover:bg-background-tertiary'
+              )}
             >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-
-            {/* View mode toggle */}
-            <div className="flex rounded-md border border-border-default overflow-hidden">
-              <button
-                onClick={() => setViewMode('list')}
-                className={cn(
-                  'px-3 py-1.5 text-sm transition-colors',
-                  viewMode === 'list'
-                    ? 'bg-oak-primary text-white'
-                    : 'bg-background-secondary text-text-muted hover:bg-background-tertiary'
-                )}
-              >
-                <ListFilter className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('calendar')}
-                className={cn(
-                  'px-3 py-1.5 text-sm transition-colors',
-                  viewMode === 'calendar'
-                    ? 'bg-oak-primary text-white'
-                    : 'bg-background-secondary text-text-muted hover:bg-background-tertiary'
-                )}
-              >
-                <Calendar className="w-4 h-4" />
-              </button>
-            </div>
+              <ListFilter className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={cn(
+                'px-3 py-1.5 text-sm transition-colors',
+                viewMode === 'calendar'
+                  ? 'bg-oak-primary text-white'
+                  : 'bg-background-secondary text-text-muted hover:bg-background-tertiary'
+              )}
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-            <div className="p-3 bg-background-secondary rounded-lg">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-500" />
-                <span className="text-sm text-text-muted">Upcoming</span>
+      {/* Stats Cards */}
+      {stats && !statsError && (
+        <MobileCollapsibleSection title="Statistics" count={4} className="mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="card card-compact sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-info/10">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-status-info" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">
+                    {(stats.byStatus.UPCOMING || 0) + (stats.byStatus.DUE_SOON || 0) + (stats.byStatus.IN_PROGRESS || 0)}
+                  </p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Upcoming</p>
+                </div>
               </div>
-              <p className="text-xl font-semibold text-text-primary mt-1">
-                {stats.byStatus.UPCOMING + stats.byStatus.DUE_SOON + stats.byStatus.IN_PROGRESS}
-              </p>
             </div>
-            <div className="p-3 bg-background-secondary rounded-lg">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-500" />
-                <span className="text-sm text-text-muted">Overdue</span>
+
+            <div className="card card-compact sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-error/10">
+                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-status-error" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">
+                    {stats.overdue || 0}
+                  </p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Overdue</p>
+                </div>
               </div>
-              <p className="text-xl font-semibold text-red-600 dark:text-red-400 mt-1">
-                {stats.overdue}
-              </p>
             </div>
-            <div className="p-3 bg-background-secondary rounded-lg">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-                <span className="text-sm text-text-muted">Due Soon</span>
+
+            <div className="card card-compact sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-warning/10">
+                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-status-warning" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">
+                    {stats.dueSoon || 0}
+                  </p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Due Soon</p>
+                </div>
               </div>
-              <p className="text-xl font-semibold text-amber-600 dark:text-amber-400 mt-1">
-                {stats.dueSoon}
-              </p>
             </div>
-            <div className="p-3 bg-background-secondary rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-text-muted">Completed</span>
+
+            <div className="card card-compact sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-status-success/10">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-status-success" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-semibold text-text-primary">
+                    {stats.byStatus.COMPLETED || 0}
+                  </p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">Completed</p>
+                </div>
               </div>
-              <p className="text-xl font-semibold text-text-primary mt-1">
-                {stats.byStatus.COMPLETED}
-              </p>
             </div>
-          </div>
-        )}
-
-        {/* Filters */}
-        <MobileCollapsibleSection
-          title="Filters"
-          defaultCollapsed={!hasActiveFilters}
-          className="mt-4"
-        >
-          <div className="flex flex-wrap gap-2 pt-2">
-            {/* Search */}
-            <input
-              type="text"
-              placeholder="Search deadlines..."
-              value={params.query}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="px-3 py-1.5 text-sm border border-border-default rounded-md bg-background-primary focus:outline-none focus:ring-2 focus:ring-oak-primary"
-            />
-
-            {/* Category Filter */}
-            <Dropdown>
-              <DropdownTrigger>
-                <span className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-border-default rounded-md bg-background-primary hover:bg-background-secondary cursor-pointer">
-                  <Filter className="w-3.5 h-3.5" />
-                  Category: {params.category || 'All'}
-                </span>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem onClick={() => handleCategoryChange(undefined)}>
-                  All Categories
-                </DropdownItem>
-                <DropdownSeparator />
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <DropdownItem key={opt.value} onClick={() => handleCategoryChange(opt.value)}>
-                    {opt.label}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-
-            {/* Status Filter */}
-            <Dropdown>
-              <DropdownTrigger>
-                <span className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-border-default rounded-md bg-background-primary hover:bg-background-secondary cursor-pointer">
-                  <Filter className="w-3.5 h-3.5" />
-                  Status: {params.status?.join(', ') || 'All'}
-                </span>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem onClick={() => handleStatusChange(undefined)}>
-                  All Status
-                </DropdownItem>
-                <DropdownItem onClick={() => handleStatusChange(['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'])}>
-                  Active (Not Completed)
-                </DropdownItem>
-                <DropdownSeparator />
-                {STATUS_OPTIONS.map((opt) => (
-                  <DropdownItem key={opt.value} onClick={() => handleStatusChange([opt.value])}>
-                    {opt.label}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearFilters}
-              >
-                Clear filters
-              </Button>
-            )}
           </div>
         </MobileCollapsibleSection>
+      )}
+
+      {/* Filters */}
+      <div className="mb-6">
+        <DeadlineFilters
+          onSearch={handleSearch}
+          onFilterChange={handleFilterChange}
+          initialQuery={params.query}
+          initialFilters={{
+            category: params.category,
+            status: params.status,
+            isInScope: params.isInScope,
+          }}
+        />
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="card border-status-error bg-status-error/5 mb-4">
+          <div className="flex items-center gap-3 text-status-error">
+            <AlertCircle className="w-5 h-5" />
+            <p>{error instanceof Error ? error.message : 'Failed to load deadlines'}</p>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
-      <div className="flex-1 overflow-auto">
-        {/* Bulk Actions Toolbar */}
-        {selectedCount > 0 && (
-          <BulkActionsToolbar
-            selectedCount={selectedCount}
-            onClearSelection={clearSelection}
-            actions={[
-              {
-                id: 'complete',
-                label: 'Mark Complete',
-                icon: CheckCircle,
-              },
-              {
-                id: 'delete',
-                label: 'Delete',
-                icon: Trash2,
-                variant: 'danger',
-              },
-            ]}
-            onAction={handleBulkAction}
+      {viewMode === 'list' ? (
+        <div>
+          <DeadlineList
+            deadlines={data?.deadlines || []}
+            isLoading={isLoading}
+            onView={handleViewDeadline}
+            onDelete={(deadline) => {
+              setDeadlineToDelete(deadline.id);
+              setDeleteDialogOpen(true);
+            }}
+            showCompany={true}
+            selectable={true}
+            selectedIds={selectedIds}
+            onSelectionChange={(ids) => {
+              // Sync with selection hook
+              const currentIds = Array.from(selectedIds);
+              const newIds = Array.from(ids);
+
+              // Find added/removed
+              const added = newIds.filter((id) => !currentIds.includes(id));
+              const removed = currentIds.filter((id) => !newIds.includes(id));
+
+              added.forEach((id) => toggleOne(id));
+              removed.forEach((id) => toggleOne(id));
+            }}
+            sortBy={params.sortBy}
+            sortOrder={params.sortOrder}
+            onSort={handleSort}
+            page={params.page}
+            totalPages={data?.totalPages || 1}
+            total={data?.total || 0}
+            limit={params.limit}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+            emptyMessage="No deadlines found. Try adjusting your filters."
           />
-        )}
+        </div>
+      ) : (
+        <div className="bg-background-secondary rounded-lg p-8 text-center">
+          <Calendar className="w-12 h-12 text-text-muted mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-text-primary">Calendar View</h3>
+          <p className="text-sm text-text-muted mt-1">
+            Calendar view coming soon. Use list view for now.
+          </p>
+        </div>
+      )}
 
-        {error ? (
-          <ErrorState
-            error={error}
-            message="Failed to load deadlines"
-            onRetry={() => refetch()}
-            size="lg"
-          />
-        ) : viewMode === 'list' ? (
-          <div className="px-4 md:px-6 py-4">
-            <DeadlineList
-              deadlines={data?.deadlines || []}
-              isLoading={isLoading}
-              onView={handleViewDeadline}
-              onDelete={(deadline) => {
-                setDeadlineToDelete(deadline.id);
-                setDeleteDialogOpen(true);
-              }}
-              showCompany={true}
-              selectable={true}
-              selectedIds={selectedIds}
-              onSelectionChange={(ids) => {
-                // Sync with selection hook
-                const currentIds = Array.from(selectedIds);
-                const newIds = Array.from(ids);
-
-                // Find added/removed
-                const added = newIds.filter((id) => !currentIds.includes(id));
-                const removed = currentIds.filter((id) => !newIds.includes(id));
-
-                added.forEach((id) => toggleOne(id));
-                removed.forEach((id) => toggleOne(id));
-              }}
-              sortBy={params.sortBy}
-              sortOrder={params.sortOrder}
-              onSort={handleSort}
-              page={params.page}
-              totalPages={data?.totalPages || 1}
-              total={data?.total || 0}
-              limit={params.limit}
-              onPageChange={handlePageChange}
-              onLimitChange={handleLimitChange}
-              emptyMessage="No deadlines found. Try adjusting your filters."
-            />
-          </div>
-        ) : (
-          <div className="px-4 md:px-6 py-4">
-            <div className="bg-background-secondary rounded-lg p-8 text-center">
-              <Calendar className="w-12 h-12 text-text-muted mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-text-primary">Calendar View</h3>
-              <p className="text-sm text-text-muted mt-1">
-                Calendar view coming soon. Use list view for now.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Floating Bulk Actions Toolbar */}
+      <BulkActionsToolbar
+        selectedCount={selectedCount}
+        onClearSelection={clearSelection}
+        itemLabel="deadline"
+        actions={[
+          {
+            id: 'complete',
+            label: 'Mark Complete',
+            icon: CheckCircle,
+            description: 'Mark selected deadlines as completed',
+            isLoading: bulkUpdateStatus.isPending,
+          },
+          {
+            id: 'delete',
+            label: 'Delete',
+            icon: Trash2,
+            description: 'Delete selected deadlines',
+            variant: 'danger',
+            isLoading: bulkDeleteDeadlines.isPending,
+          },
+        ]}
+        onAction={handleBulkAction}
+      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

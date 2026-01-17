@@ -1055,13 +1055,12 @@ export default function UploadBizFilePage() {
                 return (
                   <button
                     onClick={handleApplyUpdate}
-                    disabled={!hasAnyChanges}
                     className="btn-primary btn-sm flex items-center gap-2"
                   >
                     <CheckCircle className="w-4 h-4" />
                     {hasAnyChanges
                       ? `Apply ${totalChanges} Change${totalChanges > 1 ? 's' : ''}`
-                      : 'No Changes to Apply'}
+                      : 'Confirm & Save Document'}
                   </button>
                 );
               })()}

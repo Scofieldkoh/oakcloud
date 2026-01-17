@@ -155,11 +155,39 @@ function formatISODate(date: Date): string {
   return format(date, 'yyyy-MM-dd');
 }
 
+// Normalize compact date strings like "28sep25" or "28sept25" to "28 Sep 25"
+function normalizeCompactDate(input: string): string {
+  // Match patterns like: 28sep25, 28sept25, 28 sep 25, 28 sept 25, 28sep2025
+  const compactPattern = /^(\d{1,2})\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s*(\d{2,4})$/i;
+  const match = input.match(compactPattern);
+
+  if (match) {
+    const day = match[1];
+    let month = match[2].toLowerCase();
+    const year = match[3];
+
+    // Normalize "sept" to "sep"
+    if (month === 'sept') {
+      month = 'sep';
+    }
+
+    // Capitalize first letter
+    month = month.charAt(0).toUpperCase() + month.slice(1);
+
+    return `${day} ${month} ${year}`;
+  }
+
+  return input;
+}
+
 // Try to parse various date formats from user input
 function parseUserInput(input: string): Date | undefined {
   if (!input.trim()) return undefined;
 
   const trimmed = input.trim();
+
+  // Normalize compact formats like "28sep25" to "28 Sep 25"
+  const normalized = normalizeCompactDate(trimmed);
 
   // Try various formats
   const formats = [
@@ -173,11 +201,12 @@ function parseUserInput(input: string): Date | undefined {
     'MM/dd/yyyy',    // 01/11/2026 (US format)
     'd/M/yy',        // 11/1/26
     'd-M-yy',        // 11-1-26
+    'd MMM yy',      // 11 Jan 26 (after normalization)
   ];
 
   for (const fmt of formats) {
     try {
-      const parsed = parse(trimmed, fmt, new Date());
+      const parsed = parse(normalized, fmt, new Date());
       if (isValid(parsed)) {
         // Sanity check: year should be reasonable (1900-2100)
         const year = parsed.getFullYear();
@@ -416,6 +445,7 @@ export function SingleDateInput({
           onBlur={handleInputBlur}
           placeholder={placeholder}
           disabled={disabled}
+          autoComplete="off"
           aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           className={cn(
             'flex-1 h-full px-3 bg-transparent text-sm text-text-primary placeholder-text-muted',

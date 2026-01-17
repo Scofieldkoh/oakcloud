@@ -454,6 +454,7 @@ export const ModelName = {
   Contract: 'Contract',
   ContractService: 'ContractService',
   DeadlineTemplate: 'DeadlineTemplate',
+  DeadlineRule: 'DeadlineRule',
   Deadline: 'Deadline'
 } as const
 
@@ -470,7 +471,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "contract" | "contractService" | "deadlineTemplate" | "deadline"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "contract" | "contractService" | "deadlineTemplate" | "deadlineRule" | "deadline"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -5654,6 +5655,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DeadlineRule: {
+      payload: Prisma.$DeadlineRulePayload<ExtArgs>
+      fields: Prisma.DeadlineRuleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineRuleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineRuleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineRuleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineRuleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineRuleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineRuleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineRuleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineRuleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineRuleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        update: {
+          args: Prisma.DeadlineRuleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineRuleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineRuleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineRuleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineRuleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineRuleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadlineRule>
+        }
+        groupBy: {
+          args: Prisma.DeadlineRuleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineRuleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineRuleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineRuleCountAggregateOutputType> | number
+        }
+      }
+    }
     Deadline: {
       payload: Prisma.$DeadlinePayload<ExtArgs>
       fields: Prisma.DeadlineFieldRefs
@@ -5979,6 +6054,7 @@ export const ContactScalarFieldEnum = {
   firstName: 'firstName',
   lastName: 'lastName',
   fullName: 'fullName',
+  alias: 'alias',
   identificationType: 'identificationType',
   identificationNumber: 'identificationNumber',
   nationality: 'nationality',
@@ -6001,6 +6077,7 @@ export const CompanyContactScalarFieldEnum = {
   contactId: 'contactId',
   relationship: 'relationship',
   isPrimary: 'isPrimary',
+  isPoc: 'isPoc',
   createdAt: 'createdAt',
   deletedAt: 'deletedAt'
 } as const
@@ -7133,6 +7210,7 @@ export const ContractServiceScalarFieldEnum = {
   gstFilingFrequency: 'gstFilingFrequency',
   overrideBillable: 'overrideBillable',
   customRate: 'customRate',
+  hasCustomDeadlines: 'hasCustomDeadlines',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -7170,11 +7248,45 @@ export const DeadlineTemplateScalarFieldEnum = {
   defaultAmount: 'defaultAmount',
   reminderDaysBefore: 'reminderDaysBefore',
   isActive: 'isActive',
+  isUserCreated: 'isUserCreated',
+  basedOnTemplateCode: 'basedOnTemplateCode',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type DeadlineTemplateScalarFieldEnum = (typeof DeadlineTemplateScalarFieldEnum)[keyof typeof DeadlineTemplateScalarFieldEnum]
+
+
+export const DeadlineRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  contractServiceId: 'contractServiceId',
+  taskName: 'taskName',
+  description: 'description',
+  category: 'category',
+  ruleType: 'ruleType',
+  anchorType: 'anchorType',
+  offsetMonths: 'offsetMonths',
+  offsetDays: 'offsetDays',
+  offsetBusinessDays: 'offsetBusinessDays',
+  fixedMonth: 'fixedMonth',
+  fixedDay: 'fixedDay',
+  specificDate: 'specificDate',
+  isRecurring: 'isRecurring',
+  frequency: 'frequency',
+  generateUntilDate: 'generateUntilDate',
+  generateOccurrences: 'generateOccurrences',
+  isBillable: 'isBillable',
+  amount: 'amount',
+  currency: 'currency',
+  displayOrder: 'displayOrder',
+  sourceTemplateCode: 'sourceTemplateCode',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type DeadlineRuleScalarFieldEnum = (typeof DeadlineRuleScalarFieldEnum)[keyof typeof DeadlineRuleScalarFieldEnum]
 
 
 export const DeadlineScalarFieldEnum = {
@@ -8282,6 +8394,20 @@ export type ListEnumDeadlineFrequencyFieldRefInput<$PrismaModel> = FieldRefInput
 
 
 /**
+ * Reference to a field of type 'DeadlineRuleType'
+ */
+export type EnumDeadlineRuleTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineRuleType'>
+    
+
+
+/**
+ * Reference to a field of type 'DeadlineRuleType[]'
+ */
+export type ListEnumDeadlineRuleTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineRuleType[]'>
+    
+
+
+/**
  * Reference to a field of type 'DeadlineStatus'
  */
 export type EnumDeadlineStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineStatus'>
@@ -8487,6 +8613,7 @@ export type GlobalOmitConfig = {
   contract?: Prisma.ContractOmit
   contractService?: Prisma.ContractServiceOmit
   deadlineTemplate?: Prisma.DeadlineTemplateOmit
+  deadlineRule?: Prisma.DeadlineRuleOmit
   deadline?: Prisma.DeadlineOmit
 }
 

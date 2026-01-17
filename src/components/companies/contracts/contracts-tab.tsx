@@ -185,7 +185,7 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
   if (error) {
     return (
       <div className="text-center py-12 text-text-muted">
-        Failed to load contracts. Please try again.
+        {error instanceof Error ? error.message : 'Failed to load contracts'}
       </div>
     );
   }

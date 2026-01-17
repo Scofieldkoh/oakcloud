@@ -367,24 +367,13 @@ export default function NewServicePage({ params }: PageProps) {
           <ArrowLeft className="w-4 h-4" />
           Back to Contracts
         </Link>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
-              Add Service
-            </h1>
-            <p className="text-sm text-text-secondary mt-1">
-              {company?.name} &bull; {contract?.title || 'Contract'}
-            </p>
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<Copy className="w-4 h-4" />}
-            onClick={() => setShowCopyModal(true)}
-            type="button"
-          >
-            Copy from Existing
-          </Button>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
+            Add Service
+          </h1>
+          <p className="text-sm text-text-secondary mt-1">
+            {company?.name} &bull; {contract?.title || 'Contract'}
+          </p>
         </div>
       </div>
 
@@ -435,10 +424,10 @@ export default function NewServicePage({ params }: PageProps) {
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} aria-label="Add new service form" className="flex-1 flex flex-col p-4 sm:p-6 pt-4 overflow-auto">
-        <div className="max-w-5xl mx-auto w-full space-y-4">
+        <div className="w-full space-y-4">
           {/* Quick Start: Service Template */}
           <div className="card overflow-hidden">
-            <div className="p-4 bg-gradient-to-r from-oak-primary/5 to-oak-primary/10 border-b border-border-primary">
+            <div className="p-4 bg-background-secondary/30 border-b border-border-primary">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-oak-primary/10">
                   <Sparkles className="w-5 h-5 text-oak-primary" />
@@ -452,15 +441,29 @@ export default function NewServicePage({ params }: PageProps) {
               </div>
             </div>
             <div className="p-4">
-              <SearchableSelect
-                placeholder="Search templates or start from scratch..."
-                options={templateOptions}
-                value={selectedTemplate || ''}
-                onChange={handleTemplateSelect}
-                size="sm"
-                clearable
-                groupBy="group"
-              />
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <SearchableSelect
+                    placeholder="Search templates or start from scratch..."
+                    options={templateOptions}
+                    value={selectedTemplate || ''}
+                    onChange={handleTemplateSelect}
+                    size="sm"
+                    clearable
+                    groupBy="group"
+                  />
+                </div>
+                <span className="text-xs text-text-muted">or</span>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Copy className="w-4 h-4" />}
+                  onClick={() => setShowCopyModal(true)}
+                  type="button"
+                >
+                  Copy from Existing
+                </Button>
+              </div>
               {selectedTemplate && (
                 <div
                   className={cn(
@@ -728,7 +731,7 @@ export default function NewServicePage({ params }: PageProps) {
 
           {/* Actions - Sticky Footer */}
           <div className="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 bg-background-primary/95 backdrop-blur-sm border-t border-border-primary">
-            <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 text-xs text-text-muted">
                 {isDirty && <span className="text-amber-600">• Unsaved changes</span>}
                 <span className="hidden sm:inline-flex items-center gap-1">

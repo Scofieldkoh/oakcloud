@@ -10,6 +10,7 @@ import {
   useCreateContactDetail,
   useUpdateContactDetail,
   useDeleteContactDetail,
+  useToggleContactPoc,
   type ContactDetail,
   type ContactWithDetails,
   type CreateContactDetailInput,
@@ -37,6 +38,7 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
   const createDetailMutation = useCreateContactDetail(companyId);
   const updateDetailMutation = useUpdateContactDetail(companyId);
   const deleteDetailMutation = useDeleteContactDetail(companyId);
+  const togglePocMutation = useToggleContactPoc(companyId);
   const linkContactMutation = useLinkContactToCompany();
   const unlinkContactMutation = useUnlinkContactFromCompany();
 
@@ -198,13 +200,10 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
     }
   };
 
-  const handleTogglePoc = async (contactId: string, detailId: string, isPoc: boolean) => {
+  const handleTogglePoc = async (contactId: string, isPoc: boolean) => {
     try {
       setTogglingPocContactId(contactId);
-      await updateDetailMutation.mutateAsync({
-        detailId,
-        data: { isPoc },
-      });
+      await togglePocMutation.mutateAsync({ contactId, isPoc });
       success(isPoc ? 'Set as Point of Contact' : 'Removed Point of Contact');
     } catch {
       // Error handled by mutation
@@ -401,7 +400,7 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                             contactName: item.contact.fullName,
                             relationship: item.contact.relationship || '',
                           })}
-                          onTogglePoc={(detailId, isPoc) => handleTogglePoc(item.contact.id, detailId, isPoc)}
+                          onTogglePoc={(isPoc) => handleTogglePoc(item.contact.id, isPoc)}
                           isTogglingPoc={togglingPocContactId === item.contact.id}
                         />
                       ))}

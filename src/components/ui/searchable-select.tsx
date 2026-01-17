@@ -19,6 +19,7 @@ export interface SelectOption {
   value: string;
   label: string;
   description?: string;
+  group?: string;
 }
 
 export interface SearchableSelectProps {
@@ -46,6 +47,8 @@ export interface SearchableSelectProps {
   showChevron?: boolean;
   /** Whether options are loading */
   loading?: boolean;
+  /** Group options by this field (must match option.group) */
+  groupBy?: string;
 }
 
 export function SearchableSelect({
@@ -61,10 +64,11 @@ export function SearchableSelect({
   showKeyboardHints = true,
   showChevron = true,
   loading = false,
+  groupBy,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -104,7 +108,7 @@ export function SearchableSelect({
 
   // Reset highlighted index when filtered options change
   useEffect(() => {
-    setHighlightedIndex(0);
+    setHighlightedIndex(-1);
   }, [filteredOptions.length]);
 
   // Focus input when opening
@@ -122,7 +126,7 @@ export function SearchableSelect({
   useEffect(() => {
     if (!isOpen) {
       setSearch('');
-      setHighlightedIndex(0);
+      setHighlightedIndex(-1);
     }
   }, [isOpen]);
 
@@ -272,7 +276,7 @@ export function SearchableSelect({
         case 'ArrowUp':
           e.preventDefault();
           if (isOpen) {
-            setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+            setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : -1));
           }
           break;
         case 'Enter':
@@ -423,36 +427,93 @@ export function SearchableSelect({
                   No matches found
                 </div>
               ) : (
-                filteredOptions.map((option, index) => (
-                  <div
-                    key={option.value}
-                    id={`${baseId}-option-${option.value}`}
-                    role="option"
-                    aria-selected={option.value === value}
-                    data-index={index}
-                    onClick={() => handleSelect(option.value)}
-                    className={cn(
-                      'px-3 py-2 cursor-pointer transition-colors flex items-center gap-2',
-                      index === highlightedIndex && 'bg-background-tertiary',
-                      option.value === value && 'text-oak-primary',
-                      index !== highlightedIndex &&
+                (() => {
+                  // Group options if groupBy is specified
+                  if (groupBy) {
+                    const groups = new Map<string, SelectOption[]>();
+                    filteredOptions.forEach((opt) => {
+                      const groupName = opt.group || 'Other';
+                      if (!groups.has(groupName)) {
+                        groups.set(groupName, []);
+                      }
+                      groups.get(groupName)!.push(opt);
+                    });
+
+                    let flatIndex = 0;
+                    return Array.from(groups.entries()).map(([groupName, groupOptions]) => (
+                      <div key={groupName}>
+                        <div className="px-3 py-1.5 text-xs font-medium text-white uppercase tracking-wide bg-oak-light">
+                          {groupName}
+                        </div>
+                        {groupOptions.map((option) => {
+                          const currentIndex = flatIndex++;
+                          return (
+                            <div
+                              key={option.value}
+                              id={`${baseId}-option-${option.value}`}
+                              role="option"
+                              aria-selected={option.value === value}
+                              data-index={currentIndex}
+                              onClick={() => handleSelect(option.value)}
+                              className={cn(
+                                'px-3 py-2 cursor-pointer transition-colors flex items-center gap-2',
+                                currentIndex === highlightedIndex && 'bg-background-tertiary',
+                                option.value === value && 'text-oak-primary',
+                                currentIndex !== highlightedIndex &&
+                                option.value !== value &&
+                                'hover:bg-background-secondary'
+                              )}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm truncate">{option.label}</div>
+                                {option.description && (
+                                  <div className="text-xs text-text-muted truncate">
+                                    {option.description}
+                                  </div>
+                                )}
+                              </div>
+                              {option.value === value && (
+                                <Check className="w-4 h-4 text-oak-primary flex-shrink-0" aria-hidden="true" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ));
+                  }
+
+                  // Regular ungrouped rendering
+                  return filteredOptions.map((option, index) => (
+                    <div
+                      key={option.value}
+                      id={`${baseId}-option-${option.value}`}
+                      role="option"
+                      aria-selected={option.value === value}
+                      data-index={index}
+                      onClick={() => handleSelect(option.value)}
+                      className={cn(
+                        'px-3 py-2 cursor-pointer transition-colors flex items-center gap-2',
+                        index === highlightedIndex && 'bg-background-tertiary',
+                        option.value === value && 'text-oak-primary',
+                        index !== highlightedIndex &&
                         option.value !== value &&
                         'hover:bg-background-secondary'
-                    )}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm truncate">{option.label}</div>
-                      {option.description && (
-                        <div className="text-xs text-text-muted truncate">
-                          {option.description}
-                        </div>
+                      )}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm truncate">{option.label}</div>
+                        {option.description && (
+                          <div className="text-xs text-text-muted truncate">
+                            {option.description}
+                          </div>
+                        )}
+                      </div>
+                      {option.value === value && (
+                        <Check className="w-4 h-4 text-oak-primary flex-shrink-0" aria-hidden="true" />
                       )}
                     </div>
-                    {option.value === value && (
-                      <Check className="w-4 h-4 text-oak-primary flex-shrink-0" aria-hidden="true" />
-                    )}
-                  </div>
-                ))
+                  ));
+                })()
               )}
             </div>
 

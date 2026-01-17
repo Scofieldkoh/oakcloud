@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { deadlineRuleInputSchema } from './service';
 
 // ============================================================================
 // Enums
@@ -110,6 +111,10 @@ export const createContractServiceSchema = z.object({
     (val) => (val === '' || val === null || val === undefined || Number.isNaN(val) ? 0 : val),
     z.number().min(0).default(0)
   ),
+  // Service template integration for deadline management
+  serviceTemplateCode: z.string().optional().nullable(),
+  // NEW: Custom deadline rules (replaces old template-based system)
+  deadlineRules: z.array(deadlineRuleInputSchema).optional().nullable(),
 });
 
 export const updateContractServiceSchema = createContractServiceSchema.partial().extend({

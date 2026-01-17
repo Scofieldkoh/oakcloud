@@ -1200,7 +1200,7 @@ export default function ConnectorsPage() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                <div className="overflow-auto max-h-[400px]">
                   <table className="table w-full text-sm">
                     <thead>
                       <tr>

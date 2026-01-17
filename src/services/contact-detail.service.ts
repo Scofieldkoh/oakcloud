@@ -303,6 +303,7 @@ export async function deleteContactDetail(
 /**
  * Get contact details for a company
  * Includes both company-level details and details of linked contacts
+ * POC status is company-specific (stored on CompanyContact)
  */
 export async function getCompanyContactDetails(
   companyId: string,
@@ -317,6 +318,7 @@ export async function getCompanyContactDetails(
       relationship?: string;
     };
     details: ContactDetailWithRelations[];
+    isPoc: boolean; // Company-specific POC status from CompanyContact
   }>;
   hasPoc: boolean;
 }> {
@@ -359,7 +361,7 @@ export async function getCompanyContactDetails(
     include: {
       companyRelations: {
         where: { companyId, deletedAt: null },
-        select: { relationship: true },
+        select: { id: true, relationship: true, isPoc: true },
       },
       officerPositions: {
         where: { companyId, isCurrent: true, cessationDate: null },
@@ -380,13 +382,16 @@ export async function getCompanyContactDetails(
     },
   });
 
-  // Format contact details with relationships
+  // Format contact details with relationships and company-specific POC status
   const contactDetails = linkedContacts.map((contact) => {
     // Determine the relationship
     const relationships: string[] = [];
     contact.companyRelations.forEach((r) => relationships.push(r.relationship));
     contact.officerPositions.forEach((o) => relationships.push(o.role));
     contact.shareholdings.forEach((s) => relationships.push(`${s.shareClass} Shareholder`));
+
+    // Get POC status from CompanyContact (company-specific)
+    const isPoc = contact.companyRelations.some((r) => r.isPoc);
 
     return {
       contact: {
@@ -396,18 +401,109 @@ export async function getCompanyContactDetails(
         relationship: relationships.join(', ') || undefined,
       },
       details: contact.contactDetails as ContactDetailWithRelations[],
+      isPoc,
     };
   });
 
-  // Check if any contact detail is marked as POC
-  const hasPoc = companyDetails.some((d) => d.isPoc) ||
-    contactDetails.some((c) => c.details.some((d) => d.isPoc));
+  // Check if any linked contact is marked as POC for this company
+  const hasPoc = contactDetails.some((c) => c.isPoc);
 
   return {
     companyDetails: companyDetails as ContactDetailWithRelations[],
     contactDetails,
     hasPoc,
   };
+}
+
+/**
+ * Toggle POC status for a contact linked to a company
+ * This sets isPoc on the CompanyContact relationship
+ * If the contact is linked via Officer/Shareholder but no CompanyContact exists,
+ * a CompanyContact entry will be created with relationship "Point of Contact"
+ */
+export async function toggleContactPoc(
+  companyId: string,
+  contactId: string,
+  isPoc: boolean,
+  params: TenantAwareParams
+): Promise<void> {
+  const { tenantId, userId, tx } = params;
+  const db = tx || prisma;
+
+  // Validate company belongs to tenant
+  const company = await db.company.findFirst({
+    where: { id: companyId, tenantId, deletedAt: null },
+  });
+
+  if (!company) {
+    throw new Error('Company not found');
+  }
+
+  // Get the contact info
+  const contact = await db.contact.findFirst({
+    where: { id: contactId, tenantId, deletedAt: null },
+    select: { fullName: true },
+  });
+
+  if (!contact) {
+    throw new Error('Contact not found');
+  }
+
+  // Find or create the CompanyContact relationship
+  let companyContact = await db.companyContact.findFirst({
+    where: {
+      companyId,
+      contactId,
+      deletedAt: null,
+    },
+  });
+
+  // If no CompanyContact exists, verify the contact is linked via other means
+  // (officer or shareholder), then create a CompanyContact for POC tracking
+  if (!companyContact) {
+    const hasOfficerRole = await db.companyOfficer.findFirst({
+      where: { companyId, contactId, isCurrent: true, cessationDate: null },
+    });
+    const hasShareholding = await db.companyShareholder.findFirst({
+      where: { companyId, contactId, isCurrent: true },
+    });
+
+    if (!hasOfficerRole && !hasShareholding) {
+      throw new Error('Contact is not linked to this company');
+    }
+
+    // Create a CompanyContact entry for POC tracking
+    companyContact = await db.companyContact.create({
+      data: {
+        companyId,
+        contactId,
+        relationship: 'Point of Contact',
+        isPoc: false, // Will be updated below
+      },
+    });
+  }
+
+  // Update the CompanyContact isPoc status (multiple POCs allowed per company)
+  await db.companyContact.update({
+    where: { id: companyContact.id },
+    data: { isPoc },
+  });
+
+  // Create audit log
+  await createAuditLog({
+    tenantId,
+    userId,
+    companyId,
+    action: 'UPDATE',
+    entityType: 'CompanyContact',
+    entityId: companyContact.id,
+    entityName: contact.fullName || 'Contact',
+    summary: isPoc
+      ? `Set ${contact.fullName} as Point of Contact`
+      : `Removed ${contact.fullName} as Point of Contact`,
+    changeSource: 'MANUAL',
+    metadata: { isPoc, contactId },
+  });
 }
 
 /**

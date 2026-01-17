@@ -43,6 +43,7 @@ export interface ContactWithDetails {
     relationship?: string;
   };
   details: ContactDetail[];
+  isPoc: boolean; // Company-specific POC status
 }
 
 export interface CompanyContactDetailsResponse {
@@ -269,6 +270,41 @@ export function useDeleteContactDetail(companyId: string) {
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Failed to delete contact detail');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contactDetailKeys.company(companyId) });
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+/**
+ * Toggle POC status for a contact linked to a company
+ * This sets isPoc on the CompanyContact relationship (company-specific)
+ */
+export function useToggleContactPoc(companyId: string) {
+  const queryClient = useQueryClient();
+  const { error } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async ({ contactId, isPoc }: { contactId: string; isPoc: boolean }) => {
+      const response = await fetch(`/api/companies/${companyId}/contact-details/toggle-poc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactId, isPoc, tenantId: activeTenantId }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to toggle POC');
       }
       return response.json();
     },

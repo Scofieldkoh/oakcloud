@@ -347,6 +347,14 @@ export const DeadlineGenerationType = {
 export type DeadlineGenerationType = (typeof DeadlineGenerationType)[keyof typeof DeadlineGenerationType]
 
 
+export const DeadlineRuleType = {
+  RULE_BASED: 'RULE_BASED',
+  FIXED_DATE: 'FIXED_DATE'
+} as const
+
+export type DeadlineRuleType = (typeof DeadlineRuleType)[keyof typeof DeadlineRuleType]
+
+
 export const DocumentTemplateCategory = {
   RESOLUTION: 'RESOLUTION',
   CONTRACT: 'CONTRACT',

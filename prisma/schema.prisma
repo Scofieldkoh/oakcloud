@@ -315,6 +315,11 @@ enum DeadlineGenerationType {
   MANUAL
 }
 
+enum DeadlineRuleType {
+  RULE_BASED    // Calculate from anchor + offset
+  FIXED_DATE    // Specific date, never recalculates
+}
+
 // ============================================================================
 // TENANT (Multi-Tenancy Core)
 // ============================================================================
@@ -386,6 +391,7 @@ model Tenant {
   // Deadline Management
   deadlineTemplates    DeadlineTemplate[]
   deadlines            Deadline[]
+  deadlineRules        DeadlineRule[]
 
   @@index([slug])
   @@index([status])
@@ -756,6 +762,7 @@ model Contact {
   firstName           String?
   lastName            String?
   fullName            String
+  alias               String?
   identificationType  IdentificationType?
   identificationNumber String?
   nationality         String?
@@ -799,6 +806,7 @@ model CompanyContact {
   contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
   relationship String   // E.g., "Director", "Shareholder", "Auditor"
   isPrimary   Boolean   @default(false)
+  isPoc       Boolean   @default(false) // Point of Contact for this company
   createdAt   DateTime  @default(now())
   deletedAt   DateTime? // For soft delete support
 
@@ -3296,9 +3304,11 @@ model ContractService {
   gstFilingFrequency     GstFilingFrequency?    // For GST services
   overrideBillable       Boolean?               // Override template billable setting
   customRate             Decimal?  @db.Decimal(18, 2)  // Custom rate for this client
+  hasCustomDeadlines     Boolean             @default(false)  // Has custom deadline rules
 
   // Generated deadlines
   deadlines              Deadline[]
+  deadlineRules          DeadlineRule[]
 
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
@@ -3362,6 +3372,10 @@ model DeadlineTemplate {
 
   isActive              Boolean             @default(true)
 
+  // Template metadata
+  isUserCreated         Boolean             @default(false)
+  basedOnTemplateCode   String?             // Which system template this was based on
+
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
@@ -3375,6 +3389,61 @@ model DeadlineTemplate {
   @@index([jurisdiction])
   @@index([isActive])
   @@map("deadline_templates")
+}
+
+model DeadlineRule {
+  id                    String              @id @default(uuid())
+  tenantId              String
+  tenant                Tenant              @relation(fields: [tenantId], references: [id])
+
+  // Link to contract service
+  contractServiceId     String
+  contractService       ContractService     @relation(fields: [contractServiceId], references: [id], onDelete: Cascade)
+
+  // Core fields
+  taskName              String              // "AGM", "Annual Return", etc.
+  description           String?             @db.Text
+  category              DeadlineCategory
+
+  // Rule Type: RULE_BASED or FIXED_DATE
+  ruleType              DeadlineRuleType    @default(RULE_BASED)
+
+  // RULE_BASED fields (offset calculation)
+  anchorType            DeadlineAnchorType?
+  offsetMonths          Int?                @default(0)
+  offsetDays            Int?                @default(0)
+  offsetBusinessDays    Boolean?            @default(false)
+  fixedMonth            Int?                // For FIXED_CALENDAR anchor (1-12)
+  fixedDay              Int?                // For FIXED_CALENDAR anchor (1-31)
+
+  // FIXED_DATE fields (specific date)
+  specificDate          DateTime?           // Direct date entry
+
+  // Recurrence configuration
+  isRecurring           Boolean             @default(false)
+  frequency             DeadlineFrequency?  // MONTHLY, QUARTERLY, ANNUALLY, ONE_TIME
+  generateUntilDate     DateTime?           // End date for generation
+  generateOccurrences   Int?                // Or number of occurrences
+
+  // Billing
+  isBillable            Boolean             @default(false)
+  amount                Decimal?            @db.Decimal(18, 2)
+  currency              String              @default("SGD")
+
+  // Display order
+  displayOrder          Int                 @default(0)
+
+  // Metadata
+  sourceTemplateCode    String?             // Track which template this came from
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  deletedAt             DateTime?
+
+  @@index([tenantId])
+  @@index([contractServiceId])
+  @@index([tenantId, contractServiceId])
+  @@map("deadline_rules")
 }
 
 model Deadline {

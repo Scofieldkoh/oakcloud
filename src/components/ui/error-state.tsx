@@ -69,7 +69,8 @@ export function ErrorState({
   retryLabel = 'Try again',
 }: ErrorStateProps) {
   const config = sizeConfig[size];
-  const displayMessage = message || getErrorMessage(error, 'An error occurred');
+  // Prioritize actual error message over generic fallback message
+  const displayMessage = getErrorMessage(error, message || 'An error occurred');
 
   if (inline) {
     return (

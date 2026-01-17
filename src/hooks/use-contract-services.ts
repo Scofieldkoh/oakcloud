@@ -3,7 +3,9 @@ import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { contractKeys, type ContractService } from '@/hooks/use-contracts';
+import { deadlineKeys } from '@/hooks/use-deadlines';
 import type { ServiceType, ServiceStatus, BillingFrequency } from '@/generated/prisma';
+import type { DeadlineRuleInput } from '@/lib/validations/service';
 
 // ============================================================================
 // TYPES
@@ -43,6 +45,11 @@ export interface CreateContractServiceInput {
   autoRenewal?: boolean;
   renewalPeriodMonths?: number | null;
   displayOrder?: number;
+  // Service template integration for deadline management
+  serviceTemplateCode?: string | null;
+  deadlineTemplateCodes?: string[] | null;
+  deadlineRules?: DeadlineRuleInput[] | null;
+  generateDeadlines?: boolean;
 }
 
 export interface UpdateContractServiceInput {
@@ -168,7 +175,7 @@ export function useCreateContractService(companyId: string, contractId: string) 
   );
 
   return useMutation({
-    mutationFn: async (data: CreateContractServiceInput) => {
+    mutationFn: async (data: CreateContractServiceInput): Promise<ContractService & { deadlinesGenerated?: number }> => {
       const response = await fetch(
         `/api/companies/${companyId}/contracts/${contractId}/services`,
         {
@@ -191,7 +198,14 @@ export function useCreateContractService(companyId: string, contractId: string) 
       });
       queryClient.invalidateQueries({ queryKey: serviceKeys.contract(contractId) });
       queryClient.invalidateQueries({ queryKey: serviceKeys.all });
-      success(`Service "${data.name}" created successfully`);
+      // If deadlines were generated, also invalidate deadline queries
+      if (data.deadlinesGenerated && data.deadlinesGenerated > 0) {
+        queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
+      }
+      // Only show basic toast if no deadlines were generated (custom message handled by caller)
+      if (!data.deadlinesGenerated) {
+        success(`Service "${data.name}" created successfully`);
+      }
     },
     onError: (err: Error) => {
       error(err.message);

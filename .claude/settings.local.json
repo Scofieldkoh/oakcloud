@@ -39,7 +39,16 @@
       "mcp__browsermcp__browser_get_hints",
       "mcp__browsermcp__browser_detect_file_inputs",
       "mcp__playwright__browser_close",
-      "mcp__playwright__browser_handle_dialog"
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__playwright__browser_network_requests",
+      "Skill(writing-plans)",
+      "Skill(writing-plans:*)",
+      "mcp__playwright__browser_press_key",
+      "Skill(superpowers:subagent-driven-development)",
+      "Skill(superpowers:subagent-driven-development:*)",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_run_code",
+      "mcp__playwright__browser_resize"
     ],
     "deny": [],
     "ask": []
@@ -47,5 +56,8 @@
   "enableAllProjectMcpServers": false,
   "enabledMcpjsonServers": [
     "browsermcp"
-  ]
+  ],
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
+  }
 }

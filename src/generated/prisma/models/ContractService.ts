@@ -61,6 +61,7 @@ export type ContractServiceMinAggregateOutputType = {
   gstFilingFrequency: $Enums.GstFilingFrequency | null
   overrideBillable: boolean | null
   customRate: runtime.Decimal | null
+  hasCustomDeadlines: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -87,6 +88,7 @@ export type ContractServiceMaxAggregateOutputType = {
   gstFilingFrequency: $Enums.GstFilingFrequency | null
   overrideBillable: boolean | null
   customRate: runtime.Decimal | null
+  hasCustomDeadlines: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -113,6 +115,7 @@ export type ContractServiceCountAggregateOutputType = {
   gstFilingFrequency: number
   overrideBillable: number
   customRate: number
+  hasCustomDeadlines: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -155,6 +158,7 @@ export type ContractServiceMinAggregateInputType = {
   gstFilingFrequency?: true
   overrideBillable?: true
   customRate?: true
+  hasCustomDeadlines?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -181,6 +185,7 @@ export type ContractServiceMaxAggregateInputType = {
   gstFilingFrequency?: true
   overrideBillable?: true
   customRate?: true
+  hasCustomDeadlines?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -207,6 +212,7 @@ export type ContractServiceCountAggregateInputType = {
   gstFilingFrequency?: true
   overrideBillable?: true
   customRate?: true
+  hasCustomDeadlines?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -320,6 +326,7 @@ export type ContractServiceGroupByOutputType = {
   gstFilingFrequency: $Enums.GstFilingFrequency | null
   overrideBillable: boolean | null
   customRate: runtime.Decimal | null
+  hasCustomDeadlines: boolean
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -369,12 +376,14 @@ export type ContractServiceWhereInput = {
   gstFilingFrequency?: Prisma.EnumGstFilingFrequencyNullableFilter<"ContractService"> | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.BoolNullableFilter<"ContractService"> | boolean | null
   customRate?: Prisma.DecimalNullableFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFilter<"ContractService"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContractService"> | Date | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   contract?: Prisma.XOR<Prisma.ContractScalarRelationFilter, Prisma.ContractWhereInput>
   deadlines?: Prisma.DeadlineListRelationFilter
+  deadlineRules?: Prisma.DeadlineRuleListRelationFilter
 }
 
 export type ContractServiceOrderByWithRelationInput = {
@@ -398,12 +407,14 @@ export type ContractServiceOrderByWithRelationInput = {
   gstFilingFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
   overrideBillable?: Prisma.SortOrderInput | Prisma.SortOrder
   customRate?: Prisma.SortOrderInput | Prisma.SortOrder
+  hasCustomDeadlines?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
   contract?: Prisma.ContractOrderByWithRelationInput
   deadlines?: Prisma.DeadlineOrderByRelationAggregateInput
+  deadlineRules?: Prisma.DeadlineRuleOrderByRelationAggregateInput
 }
 
 export type ContractServiceWhereUniqueInput = Prisma.AtLeast<{
@@ -430,12 +441,14 @@ export type ContractServiceWhereUniqueInput = Prisma.AtLeast<{
   gstFilingFrequency?: Prisma.EnumGstFilingFrequencyNullableFilter<"ContractService"> | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.BoolNullableFilter<"ContractService"> | boolean | null
   customRate?: Prisma.DecimalNullableFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFilter<"ContractService"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContractService"> | Date | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   contract?: Prisma.XOR<Prisma.ContractScalarRelationFilter, Prisma.ContractWhereInput>
   deadlines?: Prisma.DeadlineListRelationFilter
+  deadlineRules?: Prisma.DeadlineRuleListRelationFilter
 }, "id">
 
 export type ContractServiceOrderByWithAggregationInput = {
@@ -459,6 +472,7 @@ export type ContractServiceOrderByWithAggregationInput = {
   gstFilingFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
   overrideBillable?: Prisma.SortOrderInput | Prisma.SortOrder
   customRate?: Prisma.SortOrderInput | Prisma.SortOrder
+  hasCustomDeadlines?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -493,6 +507,7 @@ export type ContractServiceScalarWhereWithAggregatesInput = {
   gstFilingFrequency?: Prisma.EnumGstFilingFrequencyNullableWithAggregatesFilter<"ContractService"> | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.BoolNullableWithAggregatesFilter<"ContractService"> | boolean | null
   customRate?: Prisma.DecimalNullableWithAggregatesFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolWithAggregatesFilter<"ContractService"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ContractService"> | Date | string | null
@@ -517,12 +532,14 @@ export type ContractServiceCreateInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
   contract: Prisma.ContractCreateNestedOneWithoutServicesInput
   deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
 }
 
 export type ContractServiceUncheckedCreateInput = {
@@ -546,10 +563,12 @@ export type ContractServiceUncheckedCreateInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
 }
 
 export type ContractServiceUpdateInput = {
@@ -571,12 +590,14 @@ export type ContractServiceUpdateInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
   contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
   deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
 }
 
 export type ContractServiceUncheckedUpdateInput = {
@@ -600,10 +621,12 @@ export type ContractServiceUncheckedUpdateInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
 }
 
 export type ContractServiceCreateManyInput = {
@@ -627,6 +650,7 @@ export type ContractServiceCreateManyInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -651,6 +675,7 @@ export type ContractServiceUpdateManyMutationInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -677,6 +702,7 @@ export type ContractServiceUncheckedUpdateManyInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -713,6 +739,7 @@ export type ContractServiceCountOrderByAggregateInput = {
   gstFilingFrequency?: Prisma.SortOrder
   overrideBillable?: Prisma.SortOrder
   customRate?: Prisma.SortOrder
+  hasCustomDeadlines?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -746,6 +773,7 @@ export type ContractServiceMaxOrderByAggregateInput = {
   gstFilingFrequency?: Prisma.SortOrder
   overrideBillable?: Prisma.SortOrder
   customRate?: Prisma.SortOrder
+  hasCustomDeadlines?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -772,6 +800,7 @@ export type ContractServiceMinOrderByAggregateInput = {
   gstFilingFrequency?: Prisma.SortOrder
   overrideBillable?: Prisma.SortOrder
   customRate?: Prisma.SortOrder
+  hasCustomDeadlines?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -782,6 +811,11 @@ export type ContractServiceSumOrderByAggregateInput = {
   renewalPeriodMonths?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   customRate?: Prisma.SortOrder
+}
+
+export type ContractServiceScalarRelationFilter = {
+  is?: Prisma.ContractServiceWhereInput
+  isNot?: Prisma.ContractServiceWhereInput
 }
 
 export type ContractServiceNullableScalarRelationFilter = {
@@ -889,6 +923,20 @@ export type NullableBoolFieldUpdateOperationsInput = {
   set?: boolean | null
 }
 
+export type ContractServiceCreateNestedOneWithoutDeadlineRulesInput = {
+  create?: Prisma.XOR<Prisma.ContractServiceCreateWithoutDeadlineRulesInput, Prisma.ContractServiceUncheckedCreateWithoutDeadlineRulesInput>
+  connectOrCreate?: Prisma.ContractServiceCreateOrConnectWithoutDeadlineRulesInput
+  connect?: Prisma.ContractServiceWhereUniqueInput
+}
+
+export type ContractServiceUpdateOneRequiredWithoutDeadlineRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.ContractServiceCreateWithoutDeadlineRulesInput, Prisma.ContractServiceUncheckedCreateWithoutDeadlineRulesInput>
+  connectOrCreate?: Prisma.ContractServiceCreateOrConnectWithoutDeadlineRulesInput
+  upsert?: Prisma.ContractServiceUpsertWithoutDeadlineRulesInput
+  connect?: Prisma.ContractServiceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ContractServiceUpdateToOneWithWhereWithoutDeadlineRulesInput, Prisma.ContractServiceUpdateWithoutDeadlineRulesInput>, Prisma.ContractServiceUncheckedUpdateWithoutDeadlineRulesInput>
+}
+
 export type ContractServiceCreateNestedOneWithoutDeadlinesInput = {
   create?: Prisma.XOR<Prisma.ContractServiceCreateWithoutDeadlinesInput, Prisma.ContractServiceUncheckedCreateWithoutDeadlinesInput>
   connectOrCreate?: Prisma.ContractServiceCreateOrConnectWithoutDeadlinesInput
@@ -924,11 +972,13 @@ export type ContractServiceCreateWithoutTenantInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   contract: Prisma.ContractCreateNestedOneWithoutServicesInput
   deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
 }
 
 export type ContractServiceUncheckedCreateWithoutTenantInput = {
@@ -951,10 +1001,12 @@ export type ContractServiceUncheckedCreateWithoutTenantInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
 }
 
 export type ContractServiceCreateOrConnectWithoutTenantInput = {
@@ -1007,6 +1059,7 @@ export type ContractServiceScalarWhereInput = {
   gstFilingFrequency?: Prisma.EnumGstFilingFrequencyNullableFilter<"ContractService"> | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.BoolNullableFilter<"ContractService"> | boolean | null
   customRate?: Prisma.DecimalNullableFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFilter<"ContractService"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContractService"> | Date | string | null
@@ -1031,11 +1084,13 @@ export type ContractServiceCreateWithoutContractInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
   deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
 }
 
 export type ContractServiceUncheckedCreateWithoutContractInput = {
@@ -1058,10 +1113,12 @@ export type ContractServiceUncheckedCreateWithoutContractInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
 }
 
 export type ContractServiceCreateOrConnectWithoutContractInput = {
@@ -1090,6 +1147,134 @@ export type ContractServiceUpdateManyWithWhereWithoutContractInput = {
   data: Prisma.XOR<Prisma.ContractServiceUpdateManyMutationInput, Prisma.ContractServiceUncheckedUpdateManyWithoutContractInput>
 }
 
+export type ContractServiceCreateWithoutDeadlineRulesInput = {
+  id?: string
+  name: string
+  serviceType?: $Enums.ServiceType
+  status?: $Enums.ServiceStatus
+  rate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: string
+  frequency?: $Enums.BillingFrequency
+  startDate: Date | string
+  endDate?: Date | string | null
+  nextBillingDate?: Date | string | null
+  scope?: string | null
+  autoRenewal?: boolean
+  renewalPeriodMonths?: number | null
+  displayOrder?: number
+  serviceTemplateCode?: string | null
+  gstFilingFrequency?: $Enums.GstFilingFrequency | null
+  overrideBillable?: boolean | null
+  customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
+  contract: Prisma.ContractCreateNestedOneWithoutServicesInput
+  deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
+}
+
+export type ContractServiceUncheckedCreateWithoutDeadlineRulesInput = {
+  id?: string
+  tenantId: string
+  contractId: string
+  name: string
+  serviceType?: $Enums.ServiceType
+  status?: $Enums.ServiceStatus
+  rate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: string
+  frequency?: $Enums.BillingFrequency
+  startDate: Date | string
+  endDate?: Date | string | null
+  nextBillingDate?: Date | string | null
+  scope?: string | null
+  autoRenewal?: boolean
+  renewalPeriodMonths?: number | null
+  displayOrder?: number
+  serviceTemplateCode?: string | null
+  gstFilingFrequency?: $Enums.GstFilingFrequency | null
+  overrideBillable?: boolean | null
+  customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
+}
+
+export type ContractServiceCreateOrConnectWithoutDeadlineRulesInput = {
+  where: Prisma.ContractServiceWhereUniqueInput
+  create: Prisma.XOR<Prisma.ContractServiceCreateWithoutDeadlineRulesInput, Prisma.ContractServiceUncheckedCreateWithoutDeadlineRulesInput>
+}
+
+export type ContractServiceUpsertWithoutDeadlineRulesInput = {
+  update: Prisma.XOR<Prisma.ContractServiceUpdateWithoutDeadlineRulesInput, Prisma.ContractServiceUncheckedUpdateWithoutDeadlineRulesInput>
+  create: Prisma.XOR<Prisma.ContractServiceCreateWithoutDeadlineRulesInput, Prisma.ContractServiceUncheckedCreateWithoutDeadlineRulesInput>
+  where?: Prisma.ContractServiceWhereInput
+}
+
+export type ContractServiceUpdateToOneWithWhereWithoutDeadlineRulesInput = {
+  where?: Prisma.ContractServiceWhereInput
+  data: Prisma.XOR<Prisma.ContractServiceUpdateWithoutDeadlineRulesInput, Prisma.ContractServiceUncheckedUpdateWithoutDeadlineRulesInput>
+}
+
+export type ContractServiceUpdateWithoutDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceType?: Prisma.EnumServiceTypeFieldUpdateOperationsInput | $Enums.ServiceType
+  status?: Prisma.EnumServiceStatusFieldUpdateOperationsInput | $Enums.ServiceStatus
+  rate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  frequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextBillingDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  scope?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  autoRenewal?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  renewalPeriodMonths?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  serviceTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
+  overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
+  contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
+  deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
+}
+
+export type ContractServiceUncheckedUpdateWithoutDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  contractId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceType?: Prisma.EnumServiceTypeFieldUpdateOperationsInput | $Enums.ServiceType
+  status?: Prisma.EnumServiceStatusFieldUpdateOperationsInput | $Enums.ServiceStatus
+  rate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  frequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextBillingDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  scope?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  autoRenewal?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  renewalPeriodMonths?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  serviceTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
+  overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
+}
+
 export type ContractServiceCreateWithoutDeadlinesInput = {
   id?: string
   name: string
@@ -1109,11 +1294,13 @@ export type ContractServiceCreateWithoutDeadlinesInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
   contract: Prisma.ContractCreateNestedOneWithoutServicesInput
+  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
 }
 
 export type ContractServiceUncheckedCreateWithoutDeadlinesInput = {
@@ -1137,9 +1324,11 @@ export type ContractServiceUncheckedCreateWithoutDeadlinesInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
 }
 
 export type ContractServiceCreateOrConnectWithoutDeadlinesInput = {
@@ -1177,11 +1366,13 @@ export type ContractServiceUpdateWithoutDeadlinesInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
   contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
 }
 
 export type ContractServiceUncheckedUpdateWithoutDeadlinesInput = {
@@ -1205,9 +1396,11 @@ export type ContractServiceUncheckedUpdateWithoutDeadlinesInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
 }
 
 export type ContractServiceCreateManyTenantInput = {
@@ -1230,6 +1423,7 @@ export type ContractServiceCreateManyTenantInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1254,11 +1448,13 @@ export type ContractServiceUpdateWithoutTenantInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
   deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
 }
 
 export type ContractServiceUncheckedUpdateWithoutTenantInput = {
@@ -1281,10 +1477,12 @@ export type ContractServiceUncheckedUpdateWithoutTenantInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
 }
 
 export type ContractServiceUncheckedUpdateManyWithoutTenantInput = {
@@ -1307,6 +1505,7 @@ export type ContractServiceUncheckedUpdateManyWithoutTenantInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1332,6 +1531,7 @@ export type ContractServiceCreateManyContractInput = {
   gstFilingFrequency?: $Enums.GstFilingFrequency | null
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1356,11 +1556,13 @@ export type ContractServiceUpdateWithoutContractInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
   deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
 }
 
 export type ContractServiceUncheckedUpdateWithoutContractInput = {
@@ -1383,10 +1585,12 @@ export type ContractServiceUncheckedUpdateWithoutContractInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
 }
 
 export type ContractServiceUncheckedUpdateManyWithoutContractInput = {
@@ -1409,6 +1613,7 @@ export type ContractServiceUncheckedUpdateManyWithoutContractInput = {
   gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1421,10 +1626,12 @@ export type ContractServiceUncheckedUpdateManyWithoutContractInput = {
 
 export type ContractServiceCountOutputType = {
   deadlines: number
+  deadlineRules: number
 }
 
 export type ContractServiceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   deadlines?: boolean | ContractServiceCountOutputTypeCountDeadlinesArgs
+  deadlineRules?: boolean | ContractServiceCountOutputTypeCountDeadlineRulesArgs
 }
 
 /**
@@ -1442,6 +1649,13 @@ export type ContractServiceCountOutputTypeDefaultArgs<ExtArgs extends runtime.Ty
  */
 export type ContractServiceCountOutputTypeCountDeadlinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DeadlineWhereInput
+}
+
+/**
+ * ContractServiceCountOutputType without action
+ */
+export type ContractServiceCountOutputTypeCountDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineRuleWhereInput
 }
 
 
@@ -1466,12 +1680,14 @@ export type ContractServiceSelect<ExtArgs extends runtime.Types.Extensions.Inter
   gstFilingFrequency?: boolean
   overrideBillable?: boolean
   customRate?: boolean
+  hasCustomDeadlines?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contract?: boolean | Prisma.ContractDefaultArgs<ExtArgs>
   deadlines?: boolean | Prisma.ContractService$deadlinesArgs<ExtArgs>
+  deadlineRules?: boolean | Prisma.ContractService$deadlineRulesArgs<ExtArgs>
   _count?: boolean | Prisma.ContractServiceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["contractService"]>
 
@@ -1496,6 +1712,7 @@ export type ContractServiceSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   gstFilingFrequency?: boolean
   overrideBillable?: boolean
   customRate?: boolean
+  hasCustomDeadlines?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1524,6 +1741,7 @@ export type ContractServiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   gstFilingFrequency?: boolean
   overrideBillable?: boolean
   customRate?: boolean
+  hasCustomDeadlines?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1552,16 +1770,18 @@ export type ContractServiceSelectScalar = {
   gstFilingFrequency?: boolean
   overrideBillable?: boolean
   customRate?: boolean
+  hasCustomDeadlines?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type ContractServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contractId" | "name" | "serviceType" | "status" | "rate" | "currency" | "frequency" | "startDate" | "endDate" | "nextBillingDate" | "scope" | "autoRenewal" | "renewalPeriodMonths" | "displayOrder" | "serviceTemplateCode" | "gstFilingFrequency" | "overrideBillable" | "customRate" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contractService"]>
+export type ContractServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contractId" | "name" | "serviceType" | "status" | "rate" | "currency" | "frequency" | "startDate" | "endDate" | "nextBillingDate" | "scope" | "autoRenewal" | "renewalPeriodMonths" | "displayOrder" | "serviceTemplateCode" | "gstFilingFrequency" | "overrideBillable" | "customRate" | "hasCustomDeadlines" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contractService"]>
 export type ContractServiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contract?: boolean | Prisma.ContractDefaultArgs<ExtArgs>
   deadlines?: boolean | Prisma.ContractService$deadlinesArgs<ExtArgs>
+  deadlineRules?: boolean | Prisma.ContractService$deadlineRulesArgs<ExtArgs>
   _count?: boolean | Prisma.ContractServiceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ContractServiceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1579,6 +1799,7 @@ export type $ContractServicePayload<ExtArgs extends runtime.Types.Extensions.Int
     tenant: Prisma.$TenantPayload<ExtArgs>
     contract: Prisma.$ContractPayload<ExtArgs>
     deadlines: Prisma.$DeadlinePayload<ExtArgs>[]
+    deadlineRules: Prisma.$DeadlineRulePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1601,6 +1822,7 @@ export type $ContractServicePayload<ExtArgs extends runtime.Types.Extensions.Int
     gstFilingFrequency: $Enums.GstFilingFrequency | null
     overrideBillable: boolean | null
     customRate: runtime.Decimal | null
+    hasCustomDeadlines: boolean
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -2001,6 +2223,7 @@ export interface Prisma__ContractServiceClient<T, Null = never, ExtArgs extends 
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   contract<T extends Prisma.ContractDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ContractDefaultArgs<ExtArgs>>): Prisma.Prisma__ContractClient<runtime.Types.Result.GetResult<Prisma.$ContractPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   deadlines<T extends Prisma.ContractService$deadlinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ContractService$deadlinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  deadlineRules<T extends Prisma.ContractService$deadlineRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ContractService$deadlineRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2050,6 +2273,7 @@ export interface ContractServiceFieldRefs {
   readonly gstFilingFrequency: Prisma.FieldRef<"ContractService", 'GstFilingFrequency'>
   readonly overrideBillable: Prisma.FieldRef<"ContractService", 'Boolean'>
   readonly customRate: Prisma.FieldRef<"ContractService", 'Decimal'>
+  readonly hasCustomDeadlines: Prisma.FieldRef<"ContractService", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"ContractService", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ContractService", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"ContractService", 'DateTime'>
@@ -2470,6 +2694,30 @@ export type ContractService$deadlinesArgs<ExtArgs extends runtime.Types.Extensio
   take?: number
   skip?: number
   distinct?: Prisma.DeadlineScalarFieldEnum | Prisma.DeadlineScalarFieldEnum[]
+}
+
+/**
+ * ContractService.deadlineRules
+ */
+export type ContractService$deadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineRule
+   */
+  select?: Prisma.DeadlineRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineRule
+   */
+  omit?: Prisma.DeadlineRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineRuleInclude<ExtArgs> | null
+  where?: Prisma.DeadlineRuleWhereInput
+  orderBy?: Prisma.DeadlineRuleOrderByWithRelationInput | Prisma.DeadlineRuleOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineRuleScalarFieldEnum | Prisma.DeadlineRuleScalarFieldEnum[]
 }
 
 /**

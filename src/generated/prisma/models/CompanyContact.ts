@@ -30,6 +30,7 @@ export type CompanyContactMinAggregateOutputType = {
   contactId: string | null
   relationship: string | null
   isPrimary: boolean | null
+  isPoc: boolean | null
   createdAt: Date | null
   deletedAt: Date | null
 }
@@ -40,6 +41,7 @@ export type CompanyContactMaxAggregateOutputType = {
   contactId: string | null
   relationship: string | null
   isPrimary: boolean | null
+  isPoc: boolean | null
   createdAt: Date | null
   deletedAt: Date | null
 }
@@ -50,6 +52,7 @@ export type CompanyContactCountAggregateOutputType = {
   contactId: number
   relationship: number
   isPrimary: number
+  isPoc: number
   createdAt: number
   deletedAt: number
   _all: number
@@ -62,6 +65,7 @@ export type CompanyContactMinAggregateInputType = {
   contactId?: true
   relationship?: true
   isPrimary?: true
+  isPoc?: true
   createdAt?: true
   deletedAt?: true
 }
@@ -72,6 +76,7 @@ export type CompanyContactMaxAggregateInputType = {
   contactId?: true
   relationship?: true
   isPrimary?: true
+  isPoc?: true
   createdAt?: true
   deletedAt?: true
 }
@@ -82,6 +87,7 @@ export type CompanyContactCountAggregateInputType = {
   contactId?: true
   relationship?: true
   isPrimary?: true
+  isPoc?: true
   createdAt?: true
   deletedAt?: true
   _all?: true
@@ -165,6 +171,7 @@ export type CompanyContactGroupByOutputType = {
   contactId: string
   relationship: string
   isPrimary: boolean
+  isPoc: boolean
   createdAt: Date
   deletedAt: Date | null
   _count: CompanyContactCountAggregateOutputType | null
@@ -196,6 +203,7 @@ export type CompanyContactWhereInput = {
   contactId?: Prisma.StringFilter<"CompanyContact"> | string
   relationship?: Prisma.StringFilter<"CompanyContact"> | string
   isPrimary?: Prisma.BoolFilter<"CompanyContact"> | boolean
+  isPoc?: Prisma.BoolFilter<"CompanyContact"> | boolean
   createdAt?: Prisma.DateTimeFilter<"CompanyContact"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"CompanyContact"> | Date | string | null
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
@@ -208,6 +216,7 @@ export type CompanyContactOrderByWithRelationInput = {
   contactId?: Prisma.SortOrder
   relationship?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   company?: Prisma.CompanyOrderByWithRelationInput
@@ -224,6 +233,7 @@ export type CompanyContactWhereUniqueInput = Prisma.AtLeast<{
   contactId?: Prisma.StringFilter<"CompanyContact"> | string
   relationship?: Prisma.StringFilter<"CompanyContact"> | string
   isPrimary?: Prisma.BoolFilter<"CompanyContact"> | boolean
+  isPoc?: Prisma.BoolFilter<"CompanyContact"> | boolean
   createdAt?: Prisma.DateTimeFilter<"CompanyContact"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"CompanyContact"> | Date | string | null
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
@@ -236,6 +246,7 @@ export type CompanyContactOrderByWithAggregationInput = {
   contactId?: Prisma.SortOrder
   relationship?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.CompanyContactCountOrderByAggregateInput
@@ -252,6 +263,7 @@ export type CompanyContactScalarWhereWithAggregatesInput = {
   contactId?: Prisma.StringWithAggregatesFilter<"CompanyContact"> | string
   relationship?: Prisma.StringWithAggregatesFilter<"CompanyContact"> | string
   isPrimary?: Prisma.BoolWithAggregatesFilter<"CompanyContact"> | boolean
+  isPoc?: Prisma.BoolWithAggregatesFilter<"CompanyContact"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"CompanyContact"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"CompanyContact"> | Date | string | null
 }
@@ -260,6 +272,7 @@ export type CompanyContactCreateInput = {
   id?: string
   relationship: string
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   deletedAt?: Date | string | null
   company: Prisma.CompanyCreateNestedOneWithoutContactsInput
@@ -272,6 +285,7 @@ export type CompanyContactUncheckedCreateInput = {
   contactId: string
   relationship: string
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -280,6 +294,7 @@ export type CompanyContactUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneRequiredWithoutContactsNestedInput
@@ -292,6 +307,7 @@ export type CompanyContactUncheckedUpdateInput = {
   contactId?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -302,6 +318,7 @@ export type CompanyContactCreateManyInput = {
   contactId: string
   relationship: string
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -310,6 +327,7 @@ export type CompanyContactUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -320,6 +338,7 @@ export type CompanyContactUncheckedUpdateManyInput = {
   contactId?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -346,6 +365,7 @@ export type CompanyContactCountOrderByAggregateInput = {
   contactId?: Prisma.SortOrder
   relationship?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
 }
@@ -356,6 +376,7 @@ export type CompanyContactMaxOrderByAggregateInput = {
   contactId?: Prisma.SortOrder
   relationship?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
 }
@@ -366,6 +387,7 @@ export type CompanyContactMinOrderByAggregateInput = {
   contactId?: Prisma.SortOrder
   relationship?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
+  isPoc?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
 }
@@ -458,6 +480,7 @@ export type CompanyContactCreateWithoutCompanyInput = {
   id?: string
   relationship: string
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   deletedAt?: Date | string | null
   contact: Prisma.ContactCreateNestedOneWithoutCompanyRelationsInput
@@ -468,6 +491,7 @@ export type CompanyContactUncheckedCreateWithoutCompanyInput = {
   contactId: string
   relationship: string
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -507,6 +531,7 @@ export type CompanyContactScalarWhereInput = {
   contactId?: Prisma.StringFilter<"CompanyContact"> | string
   relationship?: Prisma.StringFilter<"CompanyContact"> | string
   isPrimary?: Prisma.BoolFilter<"CompanyContact"> | boolean
+  isPoc?: Prisma.BoolFilter<"CompanyContact"> | boolean
   createdAt?: Prisma.DateTimeFilter<"CompanyContact"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"CompanyContact"> | Date | string | null
 }
@@ -515,6 +540,7 @@ export type CompanyContactCreateWithoutContactInput = {
   id?: string
   relationship: string
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   deletedAt?: Date | string | null
   company: Prisma.CompanyCreateNestedOneWithoutContactsInput
@@ -525,6 +551,7 @@ export type CompanyContactUncheckedCreateWithoutContactInput = {
   companyId: string
   relationship: string
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -560,6 +587,7 @@ export type CompanyContactCreateManyCompanyInput = {
   contactId: string
   relationship: string
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -568,6 +596,7 @@ export type CompanyContactUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   contact?: Prisma.ContactUpdateOneRequiredWithoutCompanyRelationsNestedInput
@@ -578,6 +607,7 @@ export type CompanyContactUncheckedUpdateWithoutCompanyInput = {
   contactId?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -587,6 +617,7 @@ export type CompanyContactUncheckedUpdateManyWithoutCompanyInput = {
   contactId?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -596,6 +627,7 @@ export type CompanyContactCreateManyContactInput = {
   companyId: string
   relationship: string
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -604,6 +636,7 @@ export type CompanyContactUpdateWithoutContactInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneRequiredWithoutContactsNestedInput
@@ -614,6 +647,7 @@ export type CompanyContactUncheckedUpdateWithoutContactInput = {
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -623,6 +657,7 @@ export type CompanyContactUncheckedUpdateManyWithoutContactInput = {
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
   relationship?: Prisma.StringFieldUpdateOperationsInput | string
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -635,6 +670,7 @@ export type CompanyContactSelect<ExtArgs extends runtime.Types.Extensions.Intern
   contactId?: boolean
   relationship?: boolean
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: boolean
   deletedAt?: boolean
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -647,6 +683,7 @@ export type CompanyContactSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   contactId?: boolean
   relationship?: boolean
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: boolean
   deletedAt?: boolean
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -659,6 +696,7 @@ export type CompanyContactSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   contactId?: boolean
   relationship?: boolean
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: boolean
   deletedAt?: boolean
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -671,11 +709,12 @@ export type CompanyContactSelectScalar = {
   contactId?: boolean
   relationship?: boolean
   isPrimary?: boolean
+  isPoc?: boolean
   createdAt?: boolean
   deletedAt?: boolean
 }
 
-export type CompanyContactOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "companyId" | "contactId" | "relationship" | "isPrimary" | "createdAt" | "deletedAt", ExtArgs["result"]["companyContact"]>
+export type CompanyContactOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "companyId" | "contactId" | "relationship" | "isPrimary" | "isPoc" | "createdAt" | "deletedAt", ExtArgs["result"]["companyContact"]>
 export type CompanyContactInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   contact?: boolean | Prisma.ContactDefaultArgs<ExtArgs>
@@ -701,6 +740,7 @@ export type $CompanyContactPayload<ExtArgs extends runtime.Types.Extensions.Inte
     contactId: string
     relationship: string
     isPrimary: boolean
+    isPoc: boolean
     createdAt: Date
     deletedAt: Date | null
   }, ExtArgs["result"]["companyContact"]>
@@ -1133,6 +1173,7 @@ export interface CompanyContactFieldRefs {
   readonly contactId: Prisma.FieldRef<"CompanyContact", 'String'>
   readonly relationship: Prisma.FieldRef<"CompanyContact", 'String'>
   readonly isPrimary: Prisma.FieldRef<"CompanyContact", 'Boolean'>
+  readonly isPoc: Prisma.FieldRef<"CompanyContact", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"CompanyContact", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"CompanyContact", 'DateTime'>
 }

@@ -606,3 +606,45 @@ export function useRemoveShareholder(companyId: string) {
     },
   });
 }
+
+// ============================================================================
+// BizFile Availability Check
+// ============================================================================
+
+interface BizFileInfo {
+  processingDocumentId: string;
+  documentId: string;
+  fileName: string;
+  mimeType: string;
+  documentDate: string | null;
+  receiptNo: string | null;
+  pdfUrl: string;
+}
+
+async function fetchCompanyBizFile(companyId: string): Promise<BizFileInfo> {
+  const res = await fetch(`/api/companies/${companyId}/bizfile`);
+  if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error('NOT_FOUND');
+    }
+    throw new Error('Failed to fetch BizFile');
+  }
+  return res.json();
+}
+
+/**
+ * Hook to check if a company has a BizFile available
+ *
+ * @param companyId - Company ID to check
+ * @returns Query result with BizFile info if available, or null if not found
+ */
+export function useCompanyBizFile(companyId: string) {
+  return useQuery({
+    queryKey: ['company-bizfile', companyId],
+    queryFn: () => fetchCompanyBizFile(companyId),
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: false, // Don't retry on 404
+  });
+}

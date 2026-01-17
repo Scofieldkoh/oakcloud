@@ -21,10 +21,16 @@ export function buildFullAddress(addr: {
   const parts: string[] = [];
   if (addr.block) parts.push(addr.block);
   parts.push(addr.streetName);
-  if (addr.level && addr.unit) {
-    parts.push(`#${addr.level}-${addr.unit}`);
-  } else if (addr.unit) {
-    parts.push(`#${addr.unit}`);
+
+  // Handle unit - strip any existing # prefix to avoid duplication (e.g., ##09-355)
+  const cleanUnit = addr.unit?.replace(/^#/, '');
+  const cleanLevel = addr.level?.replace(/^#/, '');
+
+  if (cleanLevel && cleanUnit) {
+    parts.push(`#${cleanLevel}-${cleanUnit}`);
+  } else if (cleanUnit) {
+    // Unit might already include level (e.g., "09-355"), just add # prefix
+    parts.push(`#${cleanUnit}`);
   }
   if (addr.buildingName) parts.push(addr.buildingName);
   parts.push(`Singapore ${addr.postalCode}`);

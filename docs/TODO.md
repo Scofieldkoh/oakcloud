@@ -106,3 +106,6 @@ This web app is in development and testing stage. All data are dummy, and it's a
 - Add new issues with the next available ID in their category (DOC-XXX, GEN-XXX, UI-XXX)
 - Move items to "Completed" section when finished
 - Update status and notes as work progresses
+
+
+many pages without tenant are still showing records, companies, contacts, document processing etc.

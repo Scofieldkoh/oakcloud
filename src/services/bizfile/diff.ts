@@ -34,28 +34,64 @@ function formatDate(date: Date | string | null | undefined): string | null {
 
 /**
  * Match extracted officer to existing officers
+ *
+ * Important: A person can hold multiple officer roles (e.g., both DIRECTOR and MANAGING_DIRECTOR).
+ * We must match by both identity AND role to avoid incorrectly merging different positions.
  */
 function matchOfficer(
   extracted: ExtractedOfficerData,
-  existingOfficers: Array<{ id: string; name: string; role: OfficerRole; identificationType: IdentificationType | null; identificationNumber: string | null; isCurrent: boolean }>
+  existingOfficers: Array<{ id: string; name: string; role: OfficerRole; identificationType: IdentificationType | null; identificationNumber: string | null; isCurrent: boolean }>,
+  alreadyMatchedIds: Set<string> = new Set()
 ): { officer: typeof existingOfficers[number] | null; confidence: 'high' | 'medium' | 'low' } {
-  // Priority 1: Match by identification (NRIC/FIN/Passport)
+  const extractedRole = mapOfficerRole(extracted.role);
+
+  // Filter out already matched officers
+  const availableOfficers = existingOfficers.filter(o => !alreadyMatchedIds.has(o.id));
+
+  // Priority 1: Match by identification (NRIC/FIN/Passport) + SAME ROLE
+  // This handles the case where the same person holds multiple roles
   if (extracted.identificationNumber && extracted.identificationType) {
-    const idMatch = existingOfficers.find(o =>
+    const idAndRoleMatch = availableOfficers.find(o =>
       o.identificationNumber?.toUpperCase() === extracted.identificationNumber?.toUpperCase() &&
-      o.identificationType === mapIdentificationType(extracted.identificationType)
+      o.identificationType === mapIdentificationType(extracted.identificationType) &&
+      o.role === extractedRole
     );
-    if (idMatch) return { officer: idMatch, confidence: 'high' };
+    if (idAndRoleMatch) return { officer: idAndRoleMatch, confidence: 'high' };
   }
 
-  // Priority 2: Match by name + role
-  const extractedRole = mapOfficerRole(extracted.role);
-  const nameMatch = existingOfficers.find(o =>
+  // Priority 2: Match by name + role (for cases where ID might not match exactly)
+  const nameAndRoleMatch = availableOfficers.find(o =>
     normalizeName(o.name)?.toLowerCase() === normalizeName(extracted.name)?.toLowerCase() &&
     o.role === extractedRole &&
     o.isCurrent
   );
-  if (nameMatch) return { officer: nameMatch, confidence: 'medium' };
+  if (nameAndRoleMatch) return { officer: nameAndRoleMatch, confidence: 'medium' };
+
+  // Priority 3: Match by ID only (different role - this would be a role change for same position)
+  // Only use this if no role-specific match was found, and be careful about multi-role scenarios
+  if (extracted.identificationNumber && extracted.identificationType) {
+    const idOnlyMatch = availableOfficers.find(o =>
+      o.identificationNumber?.toUpperCase() === extracted.identificationNumber?.toUpperCase() &&
+      o.identificationType === mapIdentificationType(extracted.identificationType) &&
+      o.isCurrent
+    );
+    // Only treat as role change if it's a reasonable progression (e.g., DIRECTOR -> MANAGING_DIRECTOR)
+    // Don't match if the existing officer has a completely different role type
+    if (idOnlyMatch) {
+      // Check if this might be a multi-role situation by seeing if there are other records with same ID
+      const samePersonDifferentRoles = existingOfficers.filter(o =>
+        o.identificationNumber?.toUpperCase() === extracted.identificationNumber?.toUpperCase() &&
+        o.identificationType === mapIdentificationType(extracted.identificationType) &&
+        o.isCurrent
+      );
+      // If person has multiple roles in DB, don't match to wrong role - let it be treated as "not found"
+      // which will add the new role
+      if (samePersonDifferentRoles.length > 1) {
+        return { officer: null, confidence: 'low' };
+      }
+      return { officer: idOnlyMatch, confidence: 'medium' };
+    }
+  }
 
   return { officer: null, confidence: 'low' };
 }
@@ -212,20 +248,42 @@ export async function generateBizFileDiff(
   }
 
   // Compare share capital
-  if (extractedData.shareCapital?.length) {
-    // Calculate new capital values
-    const newPaidUp = extractedData.shareCapital
-      .filter((c) => c.isPaidUp && !c.isTreasury)
-      .reduce((sum, c) => sum + c.totalValue, 0);
-    const newIssued = extractedData.shareCapital
-      .filter((c) => !c.isTreasury)
-      .reduce((sum, c) => sum + c.totalValue, 0);
-    const newCurrency = extractedData.shareCapital[0]?.currency || 'SGD';
+  // Use direct paidUpCapital/issuedCapital if available, otherwise calculate from shareCapital array
+  const hasPaidUpCapital = extractedData.paidUpCapital?.amount != null;
+  const hasIssuedCapital = extractedData.issuedCapital?.amount != null;
+  const hasShareCapital = extractedData.shareCapital?.length;
+
+  if (hasPaidUpCapital || hasIssuedCapital || hasShareCapital) {
+    // Get new capital values - prefer direct values, fall back to calculation from shareCapital
+    let newPaidUp: number | null = null;
+    let newIssued: number | null = null;
+    let newCurrency = 'SGD';
+
+    if (hasPaidUpCapital) {
+      newPaidUp = extractedData.paidUpCapital!.amount;
+      newCurrency = extractedData.paidUpCapital!.currency || 'SGD';
+    } else if (hasShareCapital) {
+      const calculated = extractedData.shareCapital!
+        .filter((c) => c.isPaidUp && !c.isTreasury && typeof c.totalValue === 'number')
+        .reduce((sum, c) => sum + c.totalValue, 0);
+      if (!isNaN(calculated)) newPaidUp = calculated;
+      newCurrency = extractedData.shareCapital![0]?.currency || 'SGD';
+    }
+
+    if (hasIssuedCapital) {
+      newIssued = extractedData.issuedCapital!.amount;
+      newCurrency = extractedData.issuedCapital!.currency || newCurrency;
+    } else if (hasShareCapital) {
+      const calculated = extractedData.shareCapital!
+        .filter((c) => !c.isTreasury && typeof c.totalValue === 'number')
+        .reduce((sum, c) => sum + c.totalValue, 0);
+      if (!isNaN(calculated)) newIssued = calculated;
+    }
 
     const oldPaidUp = company.paidUpCapitalAmount ? Number(company.paidUpCapitalAmount) : null;
     const oldIssued = company.issuedCapitalAmount ? Number(company.issuedCapitalAmount) : null;
 
-    if (oldPaidUp !== newPaidUp) {
+    if (newPaidUp != null && oldPaidUp !== newPaidUp) {
       differences.push({
         field: 'paidUpCapital',
         label: 'Paid Up Capital',
@@ -235,7 +293,7 @@ export async function generateBizFileDiff(
       });
     }
 
-    if (oldIssued !== newIssued) {
+    if (newIssued != null && oldIssued !== newIssued) {
       differences.push({
         field: 'issuedCapital',
         label: 'Issued Capital',
@@ -256,12 +314,14 @@ export async function generateBizFileDiff(
     // Skip officers with cessation dates (they are already ceased)
     if (extractedOfficer.cessationDate) continue;
 
-    const matchResult = matchOfficer(extractedOfficer, existingOfficers);
+    const matchResult = matchOfficer(extractedOfficer, existingOfficers, matchedExistingOfficerIds);
 
     if (matchResult.officer) {
       matchedExistingOfficerIds.add(matchResult.officer.id);
 
       // Check for updates (role changes, dates)
+      // Note: With the updated matching logic, role changes should be rare here
+      // as we now match by ID + role combination for multi-role officers
       const changes: Array<{ field: string; label: string; oldValue: string | null; newValue: string | null }> = [];
       const extractedRole = mapOfficerRole(extractedOfficer.role);
 
@@ -286,7 +346,7 @@ export async function generateBizFileDiff(
         });
       }
     } else {
-      // New officer
+      // New officer (or new role for existing person)
       officerDiffs.push({
         type: 'added',
         name: extractedOfficer.name,

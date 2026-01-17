@@ -1,7 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/toast';
-import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import type {
   DeadlineCategory,
   DeadlineStatus,
@@ -119,6 +117,7 @@ export interface DeadlineSearchParams {
   limit?: number;
   sortBy?: 'title' | 'statutoryDueDate' | 'status' | 'category' | 'company' | 'createdAt' | 'updatedAt';
   sortOrder?: 'asc' | 'desc';
+  tenantId?: string; // For SUPER_ADMIN to filter by tenant
 }
 
 export interface CreateDeadlineInput {
@@ -197,17 +196,11 @@ export const deadlineKeys = {
  * Get all deadlines with search/filter support
  */
 export function useDeadlines(params?: DeadlineSearchParams) {
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
-
   return useQuery({
     queryKey: deadlineKeys.list(params),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
-      if (activeTenantId) searchParams.set('tenantId', activeTenantId);
+      if (params?.tenantId) searchParams.set('tenantId', params.tenantId);
       if (params?.companyId) searchParams.set('companyId', params.companyId);
       if (params?.contractServiceId) searchParams.set('contractServiceId', params.contractServiceId);
       if (params?.category) searchParams.set('category', params.category);
@@ -243,6 +236,7 @@ export function useDeadlines(params?: DeadlineSearchParams) {
         totalPages: number;
       }>;
     },
+    enabled: params?.tenantId !== undefined || true,
   });
 }
 
@@ -253,19 +247,14 @@ export function useCompanyDeadlines(companyId: string | null, options?: {
   status?: DeadlineStatus | DeadlineStatus[];
   category?: DeadlineCategory;
   limit?: number;
+  tenantId?: string;
 }) {
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
-
   return useQuery({
     queryKey: deadlineKeys.company(companyId ?? '', options),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
-      if (activeTenantId) searchParams.set('tenantId', activeTenantId);
       searchParams.set('companyId', companyId!);
+      if (options?.tenantId) searchParams.set('tenantId', options.tenantId);
       if (options?.status) {
         const statuses = Array.isArray(options.status) ? options.status : [options.status];
         statuses.forEach(s => searchParams.append('status', s));
@@ -292,19 +281,10 @@ export function useCompanyDeadlines(companyId: string | null, options?: {
  * Get a single deadline by ID
  */
 export function useDeadline(id: string | null) {
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
-
   return useQuery({
     queryKey: deadlineKeys.detail(id ?? ''),
     queryFn: async () => {
-      const url = activeTenantId
-        ? `/api/deadlines/${id}?tenantId=${activeTenantId}`
-        : `/api/deadlines/${id}`;
-      const response = await fetch(url);
+      const response = await fetch(`/api/deadlines/${id}`);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to fetch deadline');
@@ -318,18 +298,12 @@ export function useDeadline(id: string | null) {
 /**
  * Get deadline statistics
  */
-export function useDeadlineStats(companyId?: string, assigneeId?: string) {
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
-
+export function useDeadlineStats(tenantId?: string, companyId?: string, assigneeId?: string) {
   return useQuery({
     queryKey: deadlineKeys.stats(companyId, assigneeId),
     queryFn: async () => {
       const searchParams = new URLSearchParams({ action: 'stats' });
-      if (activeTenantId) searchParams.set('tenantId', activeTenantId);
+      if (tenantId) searchParams.set('tenantId', tenantId);
       if (companyId) searchParams.set('companyId', companyId);
       if (assigneeId) searchParams.set('assigneeId', assigneeId);
 
@@ -353,12 +327,6 @@ export function useUpcomingDeadlines(daysAhead = 30, options?: {
   category?: DeadlineCategory;
   limit?: number;
 }) {
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
-
   return useQuery({
     queryKey: deadlineKeys.upcoming(daysAhead, options),
     queryFn: async () => {
@@ -366,7 +334,6 @@ export function useUpcomingDeadlines(daysAhead = 30, options?: {
         action: 'upcoming',
         daysAhead: daysAhead.toString(),
       });
-      if (activeTenantId) searchParams.set('tenantId', activeTenantId);
       if (options?.companyId) searchParams.set('companyId', options.companyId);
       if (options?.assigneeId) searchParams.set('assigneeId', options.assigneeId);
       if (options?.category) searchParams.set('category', options.category);
@@ -391,17 +358,10 @@ export function useOverdueDeadlines(options?: {
   assigneeId?: string;
   limit?: number;
 }) {
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
-
   return useQuery({
     queryKey: deadlineKeys.overdue(options),
     queryFn: async () => {
       const searchParams = new URLSearchParams({ action: 'overdue' });
-      if (activeTenantId) searchParams.set('tenantId', activeTenantId);
       if (options?.companyId) searchParams.set('companyId', options.companyId);
       if (options?.assigneeId) searchParams.set('assigneeId', options.assigneeId);
       if (options?.limit) searchParams.set('limit', options.limit.toString());
@@ -423,18 +383,13 @@ export function useOverdueDeadlines(options?: {
 export function useCreateDeadline() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   return useMutation({
     mutationFn: async (data: CreateDeadlineInput) => {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
+        body: JSON.stringify(data),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -458,18 +413,13 @@ export function useCreateDeadline() {
 export function useUpdateDeadline(id: string) {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   return useMutation({
     mutationFn: async (data: UpdateDeadlineInput) => {
       const response = await fetch(`/api/deadlines/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
+        body: JSON.stringify(data),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -493,11 +443,6 @@ export function useUpdateDeadline(id: string) {
 export function useCompleteDeadline(id: string) {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   return useMutation({
     mutationFn: async (data: {
@@ -508,7 +453,7 @@ export function useCompleteDeadline(id: string) {
       const response = await fetch(`/api/deadlines/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'complete', ...data, tenantId: activeTenantId }),
+        body: JSON.stringify({ action: 'complete', ...data }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -532,18 +477,13 @@ export function useCompleteDeadline(id: string) {
 export function useReopenDeadline(id: string) {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   return useMutation({
     mutationFn: async () => {
       const response = await fetch(`/api/deadlines/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reopen', tenantId: activeTenantId }),
+        body: JSON.stringify({ action: 'reopen' }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -567,18 +507,10 @@ export function useReopenDeadline(id: string) {
 export function useDeleteDeadline() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const url = activeTenantId
-        ? `/api/deadlines/${id}?tenantId=${activeTenantId}`
-        : `/api/deadlines/${id}`;
-      const response = await fetch(url, { method: 'DELETE' });
+      const response = await fetch(`/api/deadlines/${id}`, { method: 'DELETE' });
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Failed to delete deadline');
@@ -601,11 +533,6 @@ export function useDeleteDeadline() {
 export function useGenerateDeadlines() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   return useMutation({
     mutationFn: async (data: {
@@ -617,7 +544,7 @@ export function useGenerateDeadlines() {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', ...data, tenantId: activeTenantId }),
+        body: JSON.stringify({ action: 'generate', ...data }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -641,18 +568,13 @@ export function useGenerateDeadlines() {
 export function useBulkAssignDeadlines() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   return useMutation({
     mutationFn: async (data: { deadlineIds: string[]; assigneeId: string | null }) => {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'bulk-assign', ...data, tenantId: activeTenantId }),
+        body: JSON.stringify({ action: 'bulk-assign', ...data }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -676,18 +598,13 @@ export function useBulkAssignDeadlines() {
 export function useBulkUpdateStatus() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   return useMutation({
     mutationFn: async (data: { deadlineIds: string[]; status: DeadlineStatus }) => {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'bulk-status', ...data, tenantId: activeTenantId }),
+        body: JSON.stringify({ action: 'bulk-status', ...data }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -711,18 +628,13 @@ export function useBulkUpdateStatus() {
 export function useBulkDeleteDeadlines() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   return useMutation({
     mutationFn: async (deadlineIds: string[]) => {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'bulk-delete', deadlineIds, tenantId: activeTenantId }),
+        body: JSON.stringify({ action: 'bulk-delete', deadlineIds }),
       });
       if (!response.ok) {
         const err = await response.json();

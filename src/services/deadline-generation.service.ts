@@ -20,6 +20,7 @@ import type {
   PrismaClient,
 } from '@/generated/prisma';
 import { ALL_DEADLINE_TEMPLATES, type DeadlineTemplateData } from '@/lib/constants/deadline-templates';
+import type { DeadlineRule, DeadlineRuleType } from '@/generated/prisma';
 
 /**
  * Type for Prisma transaction client
@@ -73,6 +74,7 @@ interface GeneratedDeadline {
   statutoryDueDate: Date;
   isBillable: boolean;
   amount: number | null;
+  currency: string;
   templateCode: string;
 }
 
@@ -576,6 +578,7 @@ function generateDeadlinesFromTemplate(
               periodEnd: anchorDate,
               statutoryDueDate: dueDate,
               isBillable: template.isBillable,
+              currency: 'SGD',
               amount: template.defaultAmount,
               templateCode: template.code,
             });
@@ -615,6 +618,7 @@ function generateDeadlinesFromTemplate(
                 periodEnd: anchorDate,
                 statutoryDueDate: dueDate,
                 isBillable: template.isBillable,
+              currency: 'SGD',
                 amount: template.defaultAmount,
                 templateCode: template.code,
               });
@@ -655,6 +659,7 @@ function generateDeadlinesFromTemplate(
                 periodEnd: anchorDate,
                 statutoryDueDate: dueDate,
                 isBillable: template.isBillable,
+              currency: 'SGD',
                 amount: template.defaultAmount,
                 templateCode: template.code,
               });
@@ -694,6 +699,7 @@ function generateDeadlinesFromTemplate(
               periodEnd: anchorDate,
               statutoryDueDate: dueDate,
               isBillable: template.isBillable,
+              currency: 'SGD',
               amount: template.defaultAmount,
               templateCode: template.code,
             });
@@ -959,6 +965,7 @@ export async function seedDeadlineTemplates(
       isOptional: template.isOptional,
       optionalNote: template.optionalNote,
       isBillable: template.isBillable,
+              currency: 'SGD',
       defaultAmount: template.defaultAmount,
       reminderDaysBefore: template.reminderDaysBefore as unknown as Prisma.InputJsonValue,
       isActive: true,
@@ -977,4 +984,404 @@ export async function seedDeadlineTemplates(
   }
 
   return { created, updated };
+}
+
+// ============================================================================
+// DEADLINE GENERATION FROM RULES (NEW)
+// ============================================================================
+
+/**
+ * Generate deadlines from DeadlineRule records for a contract service
+ */
+export async function generateDeadlinesFromRules(
+  contractServiceId: string,
+  companyId: string,
+  params: TenantAwareParams,
+  options?: {
+    monthsAhead?: number;
+    regenerate?: boolean; // Delete existing and recreate
+  }
+): Promise<{ created: number; skipped: number }> {
+  const { tenantId, userId, tx } = params;
+  const db = tx || prisma;
+  const monthsAhead = options?.monthsAhead ?? 18;
+
+  // Fetch company data
+  const company = await db.company.findFirst({
+    where: { id: companyId, tenantId, deletedAt: null },
+  });
+
+  if (!company) {
+    throw new Error('Company not found');
+  }
+
+  // Fetch contract service
+  const service = await db.contractService.findFirst({
+    where: { id: contractServiceId, tenantId, deletedAt: null },
+  });
+
+  if (!service) {
+    throw new Error('Contract service not found');
+  }
+
+  // Fetch deadline rules for this service
+  const rules = await db.deadlineRule.findMany({
+    where: {
+      contractServiceId,
+      tenantId,
+      deletedAt: null,
+    },
+    orderBy: {
+      displayOrder: 'asc',
+    },
+  });
+
+  if (rules.length === 0) {
+    return { created: 0, skipped: 0 };
+  }
+
+  // Build company context
+  const context: CompanyDeadlineContext = {
+    company,
+    fyeMonth: company.financialYearEndMonth,
+    fyeDay: company.financialYearEndDay,
+    incorporationDate: company.incorporationDate,
+    isGstRegistered: company.isGstRegistered,
+    gstFilingFrequency: company.gstFilingFrequency as GstFilingFrequency | null,
+    isRegisteredCharity: company.isRegisteredCharity,
+    isIPC: company.isIPC,
+    ipcExpiryDate: company.ipcExpiryDate,
+    agmDispensed: company.agmDispensed,
+    isDormant: company.isDormant,
+    dormantTaxExemptionApproved: company.dormantTaxExemptionApproved,
+    requiresAudit: determineAuditRequirement(company),
+    entityType: company.entityType,
+  };
+
+  // Service context
+  const serviceContext: ServiceContext = {
+    service,
+    serviceStartDate: service.startDate,
+    gstFilingFrequency: service.gstFilingFrequency as GstFilingFrequency | null,
+  };
+
+  // If regenerate, delete existing deadlines
+  if (options?.regenerate) {
+    await db.deadline.deleteMany({
+      where: {
+        contractServiceId,
+        tenantId,
+      },
+    });
+  }
+
+  // Generate deadlines
+  const now = new Date();
+  const endDate = new Date();
+  endDate.setMonth(endDate.getMonth() + monthsAhead);
+
+  let created = 0;
+  let skipped = 0;
+
+  // Fetch existing deadlines for deduplication
+  const existingDeadlines = await db.deadline.findMany({
+    where: {
+      tenantId,
+      companyId,
+      contractServiceId,
+      deletedAt: null,
+    },
+    select: {
+      periodLabel: true,
+      referenceCode: true,
+    },
+  });
+
+  const existingDeadlineKeys = new Set(
+    existingDeadlines.map(d => `${d.periodLabel}|${d.referenceCode || ''}`)
+  );
+
+  // Collect deadlines to create
+  const deadlinesToCreate: Array<{
+    tenantId: string;
+    companyId: string;
+    contractServiceId: string;
+    deadlineTemplateId: string | null;
+    title: string;
+    description: string | null;
+    category: DeadlineCategory;
+    referenceCode: string | null;
+    periodLabel: string;
+    periodStart: Date | null;
+    periodEnd: Date | null;
+    statutoryDueDate: Date;
+    status: 'UPCOMING';
+    isBillable: boolean;
+    amount: number | null;
+    currency: string;
+    generationType: 'AUTO';
+  }> = [];
+
+  for (const rule of rules) {
+    // Generate deadlines from this rule
+    const deadlines = generateDeadlinesFromRule(
+      rule,
+      context,
+      serviceContext,
+      now,
+      endDate
+    );
+
+    for (const deadlineData of deadlines) {
+      // Check if deadline already exists
+      const key = `${deadlineData.periodLabel}|${deadlineData.referenceCode || ''}`;
+      if (existingDeadlineKeys.has(key)) {
+        skipped++;
+        continue;
+      }
+
+      deadlinesToCreate.push({
+        tenantId,
+        companyId,
+        contractServiceId,
+        deadlineTemplateId: null,
+        title: deadlineData.title,
+        description: deadlineData.description,
+        category: deadlineData.category,
+        referenceCode: deadlineData.referenceCode,
+        periodLabel: deadlineData.periodLabel,
+        periodStart: deadlineData.periodStart,
+        periodEnd: deadlineData.periodEnd,
+        statutoryDueDate: deadlineData.statutoryDueDate,
+        status: 'UPCOMING',
+        isBillable: deadlineData.isBillable,
+        amount: deadlineData.amount,
+        currency: deadlineData.currency || 'SGD',
+        generationType: 'AUTO',
+      });
+
+      existingDeadlineKeys.add(key);
+    }
+  }
+
+  // Batch create deadlines
+  if (deadlinesToCreate.length > 0) {
+    await db.deadline.createMany({
+      data: deadlinesToCreate,
+    });
+    created = deadlinesToCreate.length;
+  }
+
+  // Create audit log
+  if (created > 0) {
+    await createAuditLog({
+      tenantId,
+      userId,
+      companyId,
+      action: 'CREATE',
+      entityType: 'Deadline',
+      entityId: companyId,
+      summary: `Auto-generated ${created} deadlines from rules for ${company.name}`,
+      changeSource: 'SYSTEM',
+      metadata: {
+        created,
+        skipped,
+        monthsAhead,
+        contractServiceId,
+      },
+    });
+  }
+
+  return { created, skipped };
+}
+
+/**
+ * Generate deadline instances from a DeadlineRule within a date range
+ */
+function generateDeadlinesFromRule(
+  rule: DeadlineRule,
+  context: CompanyDeadlineContext,
+  serviceContext: ServiceContext,
+  startDate: Date,
+  endDate: Date
+): GeneratedDeadline[] {
+  const deadlines: GeneratedDeadline[] = [];
+
+  if (rule.ruleType === 'FIXED_DATE') {
+    // Handle fixed-date rules
+    if (!rule.specificDate) {
+      console.warn(`Rule ${rule.taskName} is FIXED_DATE but missing specificDate`);
+      return [];
+    }
+
+    const baseDate = new Date(rule.specificDate);
+
+    if (rule.isRecurring && rule.frequency) {
+      // Recurring fixed-date deadlines
+      const occurrences = generateRecurringFromFixedDate(
+        rule,
+        baseDate,
+        startDate,
+        endDate
+      );
+
+      for (const occurrence of occurrences) {
+        deadlines.push({
+          title: rule.taskName,
+          description: rule.description,
+          category: rule.category,
+          referenceCode: `${rule.taskName.replace(/\s+/g, '_').toUpperCase()}-${occurrence.year}`,
+          periodLabel: `${occurrence.year}`,
+          periodStart: null,
+          periodEnd: null,
+          statutoryDueDate: occurrence.date,
+          isBillable: rule.isBillable,
+          amount: rule.amount ? Number(rule.amount) : null,
+          templateCode: rule.sourceTemplateCode || 'CUSTOM',
+        });
+      }
+    } else {
+      // One-time fixed-date deadline
+      if (baseDate >= startDate && baseDate <= endDate) {
+        deadlines.push({
+          title: rule.taskName,
+          description: rule.description,
+          category: rule.category,
+          referenceCode: `${rule.taskName.replace(/\s+/g, '_').toUpperCase()}-${baseDate.getFullYear()}`,
+          periodLabel: `${baseDate.getFullYear()}`,
+          periodStart: null,
+          periodEnd: null,
+          statutoryDueDate: baseDate,
+          isBillable: rule.isBillable,
+          amount: rule.amount ? Number(rule.amount) : null,
+          templateCode: rule.sourceTemplateCode || 'CUSTOM',
+        });
+      }
+    }
+  } else if (rule.ruleType === 'RULE_BASED') {
+    // Handle rule-based deadlines (use existing logic)
+    if (!rule.anchorType) {
+      console.warn(`Rule ${rule.taskName} is RULE_BASED but missing anchorType`);
+      return [];
+    }
+
+    // Convert DeadlineRule to DeadlineTemplateData format
+    const pseudoTemplate: DeadlineTemplateData = {
+      code: rule.sourceTemplateCode || 'CUSTOM',
+      name: rule.taskName,
+      category: rule.category,
+      jurisdiction: 'SG',
+      description: rule.description || '',
+      entityTypes: null,
+      excludeEntityTypes: null,
+      requiresGstRegistered: null,
+      requiresAudit: null,
+      isTaxFiling: false,
+      requiresCharityStatus: null,
+      requiresIPCStatus: null,
+      anchorType: rule.anchorType,
+      offsetMonths: rule.offsetMonths ?? 0,
+      offsetDays: rule.offsetDays ?? 0,
+      offsetBusinessDays: rule.offsetBusinessDays ?? false,
+      fixedMonth: rule.fixedMonth,
+      fixedDay: rule.fixedDay,
+      frequency: rule.frequency || 'ONE_TIME',
+      generateMonthsAhead: 18,
+      isOptional: false,
+      optionalNote: null,
+      isBillable: rule.isBillable,
+      defaultAmount: rule.amount ? Number(rule.amount) : null,
+      reminderDaysBefore: [60, 30, 14, 7],
+    };
+
+    // Use existing template generation logic
+    return generateDeadlinesFromTemplate(
+      pseudoTemplate,
+      context,
+      serviceContext,
+      startDate,
+      endDate
+    );
+  }
+
+  return deadlines;
+}
+
+/**
+ * Generate recurring occurrences from a fixed date
+ */
+function generateRecurringFromFixedDate(
+  rule: DeadlineRule,
+  baseDate: Date,
+  startDate: Date,
+  endDate: Date
+): Array<{ date: Date; year: number }> {
+  const occurrences: Array<{ date: Date; year: number }> = [];
+
+  if (!rule.frequency || rule.frequency === 'ONE_TIME') {
+    return [{ date: baseDate, year: baseDate.getFullYear() }];
+  }
+
+  const startYear = startDate.getFullYear();
+  const endYear = endDate.getFullYear();
+
+  // Determine occurrence limit
+  let maxOccurrences = rule.generateOccurrences || 999;
+  if (rule.generateUntilDate) {
+    const untilDate = new Date(rule.generateUntilDate);
+    // Override maxOccurrences based on date range
+    maxOccurrences = Math.min(maxOccurrences, (untilDate.getFullYear() - startYear + 1) * 12);
+  }
+
+  let occurrenceCount = 0;
+
+  if (rule.frequency === 'ANNUALLY') {
+    // Generate annually on the same month/day
+    for (let year = startYear; year <= endYear && occurrenceCount < maxOccurrences; year++) {
+      const occurrence = new Date(
+        year,
+        baseDate.getMonth(),
+        baseDate.getDate()
+      );
+
+      if (occurrence >= startDate && occurrence <= endDate) {
+        occurrences.push({ date: occurrence, year });
+        occurrenceCount++;
+      }
+    }
+  } else if (rule.frequency === 'QUARTERLY') {
+    // Generate quarterly
+    for (let year = startYear; year <= endYear && occurrenceCount < maxOccurrences; year++) {
+      for (let quarter = 0; quarter < 4; quarter++) {
+        const occurrence = new Date(
+          year,
+          baseDate.getMonth() + (quarter * 3),
+          baseDate.getDate()
+        );
+
+        if (occurrence >= startDate && occurrence <= endDate) {
+          occurrences.push({ date: occurrence, year: occurrence.getFullYear() });
+          occurrenceCount++;
+        }
+      }
+    }
+  } else if (rule.frequency === 'MONTHLY') {
+    // Generate monthly
+    const currentDate = new Date(baseDate);
+    currentDate.setFullYear(startYear);
+
+    while (currentDate <= endDate && occurrenceCount < maxOccurrences) {
+      if (currentDate >= startDate) {
+        occurrences.push({
+          date: new Date(currentDate),
+          year: currentDate.getFullYear(),
+        });
+        occurrenceCount++;
+      }
+
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+  }
+
+  return occurrences;
 }

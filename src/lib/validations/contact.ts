@@ -14,6 +14,7 @@ const contactBaseSchema = z.object({
   // Individual fields
   firstName: z.string().max(100).optional().nullable(),
   lastName: z.string().max(100).optional().nullable(),
+  alias: z.string().max(100).optional().nullable(),
   identificationType: identificationTypeEnum.optional().nullable(),
   identificationNumber: z.string().max(50).optional().nullable(),
   nationality: z.string().max(100).optional().nullable(),

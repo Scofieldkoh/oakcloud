@@ -396,7 +396,7 @@ export default function ContactDetailPage({
                 Contact Information
               </h2>
             </div>
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {contact.contactType === 'INDIVIDUAL' ? (
                 <>
                   <div>
@@ -407,22 +407,30 @@ export default function ContactDetailPage({
                     <p className="text-xs text-text-tertiary uppercase mb-1">Last Name</p>
                     <p className="text-text-primary">{contact.lastName || '-'}</p>
                   </div>
-                  {contact.dateOfBirth && (
-                    <div>
-                      <p className="text-xs text-text-tertiary uppercase mb-1">Date of Birth</p>
-                      <p className="text-text-primary">{formatDate(contact.dateOfBirth)}</p>
-                    </div>
-                  )}
-                  {contact.nationality && (
-                    <div>
-                      <p className="text-xs text-text-tertiary uppercase mb-1">Nationality</p>
-                      <p className="text-text-primary">{contact.nationality}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-xs text-text-tertiary uppercase mb-1">Alias</p>
+                    <p className="text-text-primary">{contact.alias || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-tertiary uppercase mb-1">Nationality</p>
+                    <p className="text-text-primary">{contact.nationality || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-tertiary uppercase mb-1">ID Type</p>
+                    <p className="text-text-primary">
+                      {contact.identificationType
+                        ? idTypeLabels[contact.identificationType]
+                        : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-tertiary uppercase mb-1">ID Number</p>
+                    <p className="text-text-primary">{contact.identificationNumber || '-'}</p>
+                  </div>
                 </>
               ) : (
                 <>
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-2 lg:col-span-2">
                     <p className="text-xs text-text-tertiary uppercase mb-1">Corporate Name</p>
                     <p className="text-text-primary">{contact.corporateName || '-'}</p>
                   </div>
@@ -432,20 +440,6 @@ export default function ContactDetailPage({
                   </div>
                 </>
               )}
-              <div>
-                <p className="text-xs text-text-tertiary uppercase mb-1">
-                  {contact.contactType === 'INDIVIDUAL' ? 'ID Type' : 'Registration Type'}
-                </p>
-                <p className="text-text-primary">
-                  {contact.identificationType
-                    ? idTypeLabels[contact.identificationType]
-                    : '-'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-text-tertiary uppercase mb-1">ID Number</p>
-                <p className="text-text-primary">{contact.identificationNumber || '-'}</p>
-              </div>
             </div>
           </div>
 

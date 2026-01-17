@@ -43,6 +43,23 @@ export function AddShareholderModal({ isOpen, onClose, companyId, companyName }:
     }
   }, [isOpen]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        if (selectedContactId && numberOfShares && !linkContactMutation.isPending) {
+          handleSubmit();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, selectedContactId, numberOfShares, linkContactMutation.isPending]);
+
   const handleContactChange = (contactId: string, contact: Contact | null) => {
     setSelectedContactId(contactId);
     setSelectedContact(contact);
@@ -120,14 +137,14 @@ export function AddShareholderModal({ isOpen, onClose, companyId, companyName }:
       </ModalBody>
       <ModalFooter>
         <Button variant="secondary" onClick={onClose}>
-          Cancel
+          Cancel <span className="text-text-muted ml-1">(Esc)</span>
         </Button>
         <Button
           variant="primary"
           onClick={handleSubmit}
           disabled={!selectedContactId || !numberOfShares || linkContactMutation.isPending}
         >
-          {linkContactMutation.isPending ? 'Adding...' : 'Add Shareholder'}
+          {linkContactMutation.isPending ? 'Adding...' : 'Add Shareholder'} <span className="opacity-70 ml-1">(F1)</span>
         </Button>
       </ModalFooter>
     </Modal>

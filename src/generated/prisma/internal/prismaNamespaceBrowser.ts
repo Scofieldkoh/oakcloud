@@ -121,6 +121,7 @@ export const ModelName = {
   Contract: 'Contract',
   ContractService: 'ContractService',
   DeadlineTemplate: 'DeadlineTemplate',
+  DeadlineRule: 'DeadlineRule',
   Deadline: 'Deadline'
 } as const
 
@@ -352,6 +353,7 @@ export const ContactScalarFieldEnum = {
   firstName: 'firstName',
   lastName: 'lastName',
   fullName: 'fullName',
+  alias: 'alias',
   identificationType: 'identificationType',
   identificationNumber: 'identificationNumber',
   nationality: 'nationality',
@@ -374,6 +376,7 @@ export const CompanyContactScalarFieldEnum = {
   contactId: 'contactId',
   relationship: 'relationship',
   isPrimary: 'isPrimary',
+  isPoc: 'isPoc',
   createdAt: 'createdAt',
   deletedAt: 'deletedAt'
 } as const
@@ -1506,6 +1509,7 @@ export const ContractServiceScalarFieldEnum = {
   gstFilingFrequency: 'gstFilingFrequency',
   overrideBillable: 'overrideBillable',
   customRate: 'customRate',
+  hasCustomDeadlines: 'hasCustomDeadlines',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -1543,11 +1547,45 @@ export const DeadlineTemplateScalarFieldEnum = {
   defaultAmount: 'defaultAmount',
   reminderDaysBefore: 'reminderDaysBefore',
   isActive: 'isActive',
+  isUserCreated: 'isUserCreated',
+  basedOnTemplateCode: 'basedOnTemplateCode',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type DeadlineTemplateScalarFieldEnum = (typeof DeadlineTemplateScalarFieldEnum)[keyof typeof DeadlineTemplateScalarFieldEnum]
+
+
+export const DeadlineRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  contractServiceId: 'contractServiceId',
+  taskName: 'taskName',
+  description: 'description',
+  category: 'category',
+  ruleType: 'ruleType',
+  anchorType: 'anchorType',
+  offsetMonths: 'offsetMonths',
+  offsetDays: 'offsetDays',
+  offsetBusinessDays: 'offsetBusinessDays',
+  fixedMonth: 'fixedMonth',
+  fixedDay: 'fixedDay',
+  specificDate: 'specificDate',
+  isRecurring: 'isRecurring',
+  frequency: 'frequency',
+  generateUntilDate: 'generateUntilDate',
+  generateOccurrences: 'generateOccurrences',
+  isBillable: 'isBillable',
+  amount: 'amount',
+  currency: 'currency',
+  displayOrder: 'displayOrder',
+  sourceTemplateCode: 'sourceTemplateCode',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type DeadlineRuleScalarFieldEnum = (typeof DeadlineRuleScalarFieldEnum)[keyof typeof DeadlineRuleScalarFieldEnum]
 
 
 export const DeadlineScalarFieldEnum = {

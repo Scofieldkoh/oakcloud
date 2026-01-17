@@ -9,6 +9,11 @@ import type {
   PrismaClient,
 } from '@/generated/prisma';
 import { getServiceTypeLabel } from '@/lib/constants/contracts';
+import { generateDeadlinesFromRules } from '@/services/deadline-generation.service';
+import {
+  createDeadlineRules,
+} from '@/services/deadline-rule.service';
+import type { DeadlineRuleInput } from '@/lib/validations/service';
 
 /**
  * Type for Prisma transaction client (interactive transaction)
@@ -43,6 +48,12 @@ export interface CreateContractServiceInput {
   autoRenewal?: boolean;
   renewalPeriodMonths?: number | null;
   displayOrder?: number;
+  // Service template integration for deadline management (backward compatible)
+  serviceTemplateCode?: string | null;
+  deadlineTemplateCodes?: string[] | null;
+  generateDeadlines?: boolean;
+  // NEW: Custom deadline rules
+  deadlineRules?: DeadlineRuleInput[] | null;
 }
 
 export interface UpdateContractServiceInput {
@@ -102,7 +113,7 @@ export interface ContractServiceWithRelations extends ContractService {
 export async function createContractService(
   data: CreateContractServiceInput,
   params: TenantAwareParams
-): Promise<ContractService> {
+): Promise<ContractService & { deadlinesGenerated?: number }> {
   const { tenantId, userId, tx } = params;
   const db = tx || prisma;
 
@@ -133,6 +144,8 @@ export async function createContractService(
       autoRenewal: data.autoRenewal ?? false,
       renewalPeriodMonths: data.renewalPeriodMonths,
       displayOrder: data.displayOrder ?? 0,
+      // Store template code for reference
+      serviceTemplateCode: data.serviceTemplateCode,
     },
   });
 
@@ -152,10 +165,38 @@ export async function createContractService(
       status: service.status,
       contractId: contract.id,
       contractTitle: contract.title,
+      serviceTemplateCode: data.serviceTemplateCode,
     },
   });
 
-  return service;
+  // Generate deadlines from rules
+  let deadlinesGenerated = 0;
+
+  if (data.deadlineRules && data.deadlineRules.length > 0) {
+    try {
+      // Create deadline rules
+      await createDeadlineRules(service.id, data.deadlineRules, { tenantId, userId, tx: db });
+
+      // Mark service as having custom deadlines
+      await db.contractService.update({
+        where: { id: service.id },
+        data: { hasCustomDeadlines: true },
+      });
+
+      // Generate initial deadlines from rules
+      const result = await generateDeadlinesFromRules(
+        service.id,
+        contract.companyId,
+        { tenantId, userId, tx: db }
+      );
+      deadlinesGenerated = result.created;
+    } catch (error) {
+      // Log but don't fail the service creation
+      console.error('Error creating deadline rules for service:', error);
+    }
+  }
+
+  return { ...service, deadlinesGenerated };
 }
 
 /**

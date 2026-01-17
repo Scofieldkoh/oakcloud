@@ -28,6 +28,8 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useSession } from '@/hooks/use-auth';
 import type { DeadlineWithRelations } from '@/hooks/use-deadlines';
 import type { DeadlineStatus } from '@/generated/prisma';
 
@@ -206,6 +208,13 @@ function DeadlineDetailModal({
 export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
   const { can } = usePermissions(companyId);
   const canUpdate = can.updateCompany;
+  const { data: session } = useSession();
+
+  // Get the active tenant ID (from sidebar selector for Super Admin, or session for others)
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'completed'>('active');
   const [selectedDeadline, setSelectedDeadline] = useState<DeadlineWithRelations | null>(null);
@@ -221,10 +230,11 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
 
   const { data: deadlines, isLoading, error, refetch } = useCompanyDeadlines(companyId, {
     status: statusFilter,
+    tenantId: activeTenantId,
   });
 
   // Use separate stats query for accurate counts
-  const { data: stats } = useDeadlineStats(companyId);
+  const { data: stats } = useDeadlineStats(activeTenantId, companyId);
 
   // Mutations
   const generateDeadlines = useGenerateDeadlines();
@@ -274,7 +284,8 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
             variant="ghost"
             size="sm"
             onClick={() => refetch()}
-            title="Refresh"
+            aria-label="Refresh"
+            iconOnly
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
@@ -369,15 +380,16 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
                 : 'No deadlines found'}
           </p>
           {canUpdate && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setShowGenerateConfirm(true)}
-              className="mt-4"
-            >
-              <Wand2 className="w-4 h-4 mr-2" />
-              Generate Deadlines
-            </Button>
+            <div className="flex justify-center mt-4">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setShowGenerateConfirm(true)}
+              >
+                <Wand2 className="w-4 h-4 mr-2" />
+                Generate Deadlines
+              </Button>
+            </div>
           )}
         </div>
       )}
