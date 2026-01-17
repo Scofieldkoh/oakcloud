@@ -3,7 +3,7 @@
 import { use, useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Copy, Sparkles, FileText, DollarSign, CalendarDays, ListChecks, ChevronDown, ChevronUp, Info, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Copy, Sparkles, FileText, DollarSign, CalendarDays, ListChecks, ChevronDown, ChevronUp, Info, Loader2, WifiOff, RefreshCw } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -119,6 +119,7 @@ export default function NewServicePage({ params }: PageProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   const [deadlineRules, setDeadlineRules] = useState<DeadlineRuleInput[]>([]);
+  const [isOnline, setIsOnline] = useState(true);
   const templateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cleanup timeout on unmount
@@ -127,6 +128,25 @@ export default function NewServicePage({ params }: PageProps) {
       if (templateTimeoutRef.current) {
         clearTimeout(templateTimeoutRef.current);
       }
+    };
+  }, []);
+
+  // Network status awareness
+  useEffect(() => {
+    // Initialize with current status (only in browser)
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+    }
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -351,7 +371,7 @@ export default function NewServicePage({ params }: PageProps) {
 
   // Note: Zod transforms string rate/renewalPeriodMonths to numbers
   // so data here has the transformed (output) types
-  const onSubmit = async (data: unknown) => {
+  const onSubmit = useCallback(async (data: unknown) => {
     setSubmitError(null);
     const validatedData = data as CreateServiceInput;
 
@@ -382,7 +402,14 @@ export default function NewServicePage({ params }: PageProps) {
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create service');
     }
-  };
+  }, [createServiceMutation, deadlineRules, selectedTemplate, toastSuccess, router, companyId]);
+
+  // Retry handler for failed submissions
+  const handleRetry = useCallback(() => {
+    setSubmitError(null);
+    // Trigger form submission programmatically
+    handleSubmit(onSubmit)();
+  }, [handleSubmit, onSubmit]);
 
   return (
     <div className="h-full flex flex-col">
@@ -416,11 +443,38 @@ export default function NewServicePage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Error */}
+      {/* Offline Warning */}
+      {!isOnline && (
+        <div className="px-4 sm:px-6 pt-4">
+          <Alert variant="warning">
+            <div className="flex items-center gap-2">
+              <WifiOff className="w-4 h-4 flex-shrink-0" />
+              <span>You appear to be offline. Changes will be saved when connection is restored.</span>
+            </div>
+          </Alert>
+        </div>
+      )}
+
+      {/* Submit Error with Retry */}
       {submitError && (
         <div className="px-4 sm:px-6 pt-4">
           <Alert variant="error">
-            {submitError}
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-medium">Failed to create service</p>
+                <p className="text-sm mt-1 opacity-90">{submitError}</p>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleRetry}
+                leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+                disabled={isSubmitting}
+              >
+                Retry
+              </Button>
+            </div>
           </Alert>
         </div>
       )}
