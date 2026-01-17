@@ -3,7 +3,7 @@
 import { use, useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Copy, Sparkles, FileText, DollarSign, CalendarDays, ListChecks, ChevronDown, ChevronUp, Info, Loader2, WifiOff, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Save, Copy, Sparkles, FileText, DollarSign, CalendarDays, ListChecks, Info, Loader2, WifiOff, RefreshCw } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -13,6 +13,7 @@ import { Alert } from '@/components/ui/alert';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { Toggle } from '@/components/ui/toggle';
+import { CardSection } from '@/components/ui/card-section';
 import { CopyServiceModal } from '@/components/companies/contracts/copy-service-modal';
 import { useCompany } from '@/hooks/use-companies';
 import { useCompanyContracts } from '@/hooks/use-contracts';
@@ -33,62 +34,6 @@ import {
 import { DeadlineBuilderTable, type CompanyData } from '@/components/services/deadline-builder';
 import { convertTemplatesToRuleInputs } from '@/lib/utils/deadline-template-converter';
 import { cn } from '@/lib/utils';
-
-// Collapsible card section component
-interface CardSectionProps {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  badge?: string;
-  className?: string;
-  id?: string;
-}
-
-function CardSection({ title, icon, children, defaultOpen = true, badge, className, id }: CardSectionProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  const headingId = id ? `${id}-heading` : undefined;
-
-  return (
-    <section className={cn('card overflow-hidden', className)} aria-labelledby={headingId}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-4 flex items-center justify-between gap-3 bg-background-secondary/30 hover:bg-background-secondary/50 transition-colors border-b border-border-primary"
-        aria-expanded={isOpen}
-        aria-controls={id ? `${id}-content` : undefined}
-      >
-        <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-md bg-oak-primary/10 text-oak-primary">
-            {icon}
-          </div>
-          <h2 id={headingId} className="font-medium text-text-primary text-sm">{title}</h2>
-          {badge && (
-            <span className="px-2 py-0.5 text-xs rounded-full bg-oak-primary/10 text-oak-primary font-medium">
-              {badge}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-text-muted" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-text-muted" />
-          )}
-        </div>
-      </button>
-      <div
-        id={id ? `${id}-content` : undefined}
-        className={cn(
-          'transition-all duration-200 ease-in-out overflow-hidden',
-          isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
-        )}
-      >
-        <div className="p-4">{children}</div>
-      </div>
-    </section>
-  );
-}
 
 interface PageProps {
   params: Promise<{ id: string; contractId: string }>;
