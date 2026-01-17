@@ -18,6 +18,7 @@ import { useCompany } from '@/hooks/use-companies';
 import { useCompanyContracts } from '@/hooks/use-contracts';
 import { useCreateContractService } from '@/hooks/use-contract-services';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { createServiceSchema, type CreateServiceInput, type DeadlineRuleInput } from '@/lib/validations/service';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -287,6 +288,25 @@ export default function NewServicePage({ params }: PageProps) {
 
   // Warn about unsaved changes when leaving the page
   useUnsavedChangesWarning(isDirty, !isSubmitting);
+
+  // Keyboard shortcuts for common actions
+  useKeyboardShortcuts([
+    {
+      key: 's',
+      ctrl: true,
+      handler: () => {
+        handleSubmit(onSubmit)();
+      },
+      description: 'Save service',
+    },
+    {
+      key: 'Escape',
+      handler: () => {
+        router.push(`/companies/${companyId}?tab=contracts`);
+      },
+      description: 'Cancel and go back',
+    },
+  ], !isSubmitting);
 
   // Watch fields for conditional rendering and preview
   const serviceType = watch('serviceType');
@@ -645,8 +665,16 @@ export default function NewServicePage({ params }: PageProps) {
           {/* Actions - Sticky Footer */}
           <div className="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 bg-background-primary/95 backdrop-blur-sm border-t border-border-primary">
             <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
-              <div className="text-xs text-text-muted">
+              <div className="flex items-center gap-4 text-xs text-text-muted">
                 {isDirty && <span className="text-amber-600">• Unsaved changes</span>}
+                <span className="hidden sm:inline-flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-background-secondary rounded text-[10px] font-mono">Ctrl+S</kbd>
+                  <span>Save</span>
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-background-secondary rounded text-[10px] font-mono">Esc</kbd>
+                  <span>Cancel</span>
+                </span>
               </div>
               <div className="flex items-center gap-3">
                 <Link href={`/companies/${companyId}?tab=contracts`}>
