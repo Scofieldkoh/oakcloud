@@ -163,8 +163,8 @@ export function DeadlineBuilderTable({
           {/* Left: Rules Table */}
           <div className="flex-[3] min-w-0">
             <div className="border border-border-primary rounded-lg overflow-hidden">
-              {/* Table header */}
-              <div className="grid grid-cols-[1fr_2fr_100px_80px] gap-2 px-3 py-2 bg-background-secondary/50 border-b border-border-primary">
+              {/* Table header - hidden on mobile */}
+              <div className="hidden md:grid grid-cols-[1fr_2fr_100px_80px] gap-2 px-3 py-2 bg-background-secondary/50 border-b border-border-primary">
                 <div className="text-xs font-semibold text-text-secondary">Task Name</div>
                 <div className="text-xs font-semibold text-text-secondary">Due Date Rule</div>
                 <div className="text-xs font-semibold text-text-secondary">Frequency</div>
