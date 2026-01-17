@@ -194,14 +194,15 @@ export function DeadlineRuleRow({
     </select>
   );
 
-  // Render action buttons
+  // Render action buttons with descriptive aria-labels
+  const taskLabel = localRule.taskName?.trim() || 'this task';
   const renderActionButtons = () => (
     <>
       <Button
         variant="ghost"
         size="sm"
         iconOnly
-        aria-label="Move up"
+        aria-label={`Move ${taskLabel} up`}
         onClick={onMoveUp}
         disabled={isFirst}
         className="h-6 w-6 p-1 hover:bg-background-tertiary disabled:opacity-30"
@@ -212,7 +213,7 @@ export function DeadlineRuleRow({
         variant="ghost"
         size="sm"
         iconOnly
-        aria-label="Move down"
+        aria-label={`Move ${taskLabel} down`}
         onClick={onMoveDown}
         disabled={isLast}
         className="h-6 w-6 p-1 hover:bg-background-tertiary disabled:opacity-30"
@@ -223,7 +224,7 @@ export function DeadlineRuleRow({
         variant="ghost"
         size="sm"
         iconOnly
-        aria-label="Delete"
+        aria-label={`Delete ${taskLabel}`}
         onClick={onDelete}
         className="h-6 w-6 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600"
       >

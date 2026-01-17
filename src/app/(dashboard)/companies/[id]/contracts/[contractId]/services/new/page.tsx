@@ -42,23 +42,27 @@ interface CardSectionProps {
   defaultOpen?: boolean;
   badge?: string;
   className?: string;
+  id?: string;
 }
 
-function CardSection({ title, icon, children, defaultOpen = true, badge, className }: CardSectionProps) {
+function CardSection({ title, icon, children, defaultOpen = true, badge, className, id }: CardSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const headingId = id ? `${id}-heading` : undefined;
 
   return (
-    <div className={cn('card overflow-hidden', className)}>
+    <section className={cn('card overflow-hidden', className)} aria-labelledby={headingId}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full p-4 flex items-center justify-between gap-3 bg-background-secondary/30 hover:bg-background-secondary/50 transition-colors border-b border-border-primary"
+        aria-expanded={isOpen}
+        aria-controls={id ? `${id}-content` : undefined}
       >
         <div className="flex items-center gap-3">
           <div className="p-1.5 rounded-md bg-oak-primary/10 text-oak-primary">
             {icon}
           </div>
-          <h2 className="font-medium text-text-primary text-sm">{title}</h2>
+          <h2 id={headingId} className="font-medium text-text-primary text-sm">{title}</h2>
           {badge && (
             <span className="px-2 py-0.5 text-xs rounded-full bg-oak-primary/10 text-oak-primary font-medium">
               {badge}
@@ -74,6 +78,7 @@ function CardSection({ title, icon, children, defaultOpen = true, badge, classNa
         </div>
       </button>
       <div
+        id={id ? `${id}-content` : undefined}
         className={cn(
           'transition-all duration-200 ease-in-out overflow-hidden',
           isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
@@ -81,7 +86,7 @@ function CardSection({ title, icon, children, defaultOpen = true, badge, classNa
       >
         <div className="p-4">{children}</div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -420,8 +425,17 @@ export default function NewServicePage({ params }: PageProps) {
         </div>
       )}
 
+      {/* Screen reader announcement for form errors */}
+      <div role="alert" aria-live="polite" className="sr-only">
+        {Object.keys(errors).length > 0 && (
+          <span>
+            Form has {Object.keys(errors).length} error{Object.keys(errors).length !== 1 ? 's' : ''}. Please review and correct the highlighted fields.
+          </span>
+        )}
+      </div>
+
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col p-4 sm:p-6 pt-4 overflow-auto">
+      <form onSubmit={handleSubmit(onSubmit)} aria-label="Add new service form" className="flex-1 flex flex-col p-4 sm:p-6 pt-4 overflow-auto">
         <div className="max-w-5xl mx-auto w-full space-y-4">
           {/* Quick Start: Service Template */}
           <div className="card overflow-hidden">
@@ -483,6 +497,7 @@ export default function NewServicePage({ params }: PageProps) {
               <CardSection
                 title="Service Information"
                 icon={<FileText className="w-4 h-4" />}
+                id="service-info"
               >
                 <div className="space-y-4">
                   <FormInput
@@ -531,6 +546,7 @@ export default function NewServicePage({ params }: PageProps) {
               <CardSection
                 title="Billing Details"
                 icon={<DollarSign className="w-4 h-4" />}
+                id="billing-details"
               >
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -590,6 +606,7 @@ export default function NewServicePage({ params }: PageProps) {
               <CardSection
                 title="Schedule"
                 icon={<CalendarDays className="w-4 h-4" />}
+                id="schedule"
               >
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -698,6 +715,7 @@ export default function NewServicePage({ params }: PageProps) {
             icon={<ListChecks className="w-4 h-4" />}
             badge={deadlineRules.length > 0 ? `${deadlineRules.length} rule${deadlineRules.length !== 1 ? 's' : ''}` : undefined}
             defaultOpen={deadlineRules.length > 0}
+            id="deadline-config"
           >
             <DeadlineBuilderTable
               companyId={companyId}
