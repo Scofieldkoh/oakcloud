@@ -1,53 +1,68 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 
-interface ShortcutConfig {
+export interface ShortcutConfig {
   key: string;
   ctrl?: boolean;
   meta?: boolean;
   shift?: boolean;
+  alt?: boolean;
   handler: () => void;
   description: string;
 }
 
+/**
+ * Hook to register keyboard shortcuts for the current component.
+ * Automatically handles cleanup on unmount.
+ *
+ * @param shortcuts - Array of shortcut configurations
+ * @param enabled - Whether shortcuts are active (default: true)
+ */
 export function useKeyboardShortcuts(shortcuts: ShortcutConfig[], enabled = true) {
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!enabled) return;
+  // Use refs to avoid re-creating event listeners on every render
+  const shortcutsRef = useRef(shortcuts);
+  const enabledRef = useRef(enabled);
 
-    // Don't trigger shortcuts when typing in input fields
-    const target = event.target as HTMLElement;
-    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
-
-    // For Escape, allow it even in input fields
-    // For Ctrl+S, allow it even in input fields (common save pattern)
-
-    for (const shortcut of shortcuts) {
-      const ctrlOrMeta = shortcut.ctrl || shortcut.meta;
-      const matchesCtrlMeta = ctrlOrMeta
-        ? (event.ctrlKey || event.metaKey)
-        : (!event.ctrlKey && !event.metaKey);
-      const matchesShift = shortcut.shift ? event.shiftKey : !event.shiftKey;
-
-      if (
-        event.key.toLowerCase() === shortcut.key.toLowerCase() &&
-        matchesCtrlMeta &&
-        matchesShift
-      ) {
-        // Skip non-modifier shortcuts (like Escape) if in input field, unless it's Escape
-        if (isInputField && !ctrlOrMeta && shortcut.key.toLowerCase() !== 'escape') {
-          continue;
-        }
-
-        event.preventDefault();
-        shortcut.handler();
-        break;
-      }
-    }
-  }, [shortcuts, enabled]);
+  // Update refs when props change
+  shortcutsRef.current = shortcuts;
+  enabledRef.current = enabled;
 
   useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!enabledRef.current) return;
+
+      // Don't trigger shortcuts when typing in input fields
+      const target = event.target as HTMLElement;
+      const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+
+      for (const shortcut of shortcutsRef.current) {
+        const ctrlOrMeta = shortcut.ctrl || shortcut.meta;
+        const matchesCtrlMeta = ctrlOrMeta
+          ? (event.ctrlKey || event.metaKey)
+          : (!event.ctrlKey && !event.metaKey);
+        const matchesShift = shortcut.shift ? event.shiftKey : !event.shiftKey;
+        const matchesAlt = shortcut.alt ? event.altKey : !event.altKey;
+
+        if (
+          event.key.toLowerCase() === shortcut.key.toLowerCase() &&
+          matchesCtrlMeta &&
+          matchesShift &&
+          matchesAlt
+        ) {
+          // Skip non-modifier shortcuts if in input field, unless it's Escape
+          if (isInputField && !ctrlOrMeta && shortcut.key.toLowerCase() !== 'escape') {
+            continue;
+          }
+
+          event.preventDefault();
+          shortcut.handler();
+          break;
+        }
+      }
+    };
+
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+  }, []); // Empty deps - we use refs for everything
 }
