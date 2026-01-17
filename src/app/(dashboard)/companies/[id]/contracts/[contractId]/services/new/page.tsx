@@ -3,7 +3,7 @@
 import { use, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Copy, Sparkles, FileText, DollarSign, CalendarDays, ListChecks, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { ArrowLeft, Save, Copy, Sparkles, FileText, DollarSign, CalendarDays, ListChecks, ChevronDown, ChevronUp, Info, Loader2 } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -112,6 +112,7 @@ export default function NewServicePage({ params }: PageProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   const [deadlineRules, setDeadlineRules] = useState<DeadlineRuleInput[]>([]);
 
   // Fetch company and contract data for display
@@ -231,10 +232,9 @@ export default function NewServicePage({ params }: PageProps) {
 
   // Handle template selection
   const handleTemplateSelect = (templateCode: string | null) => {
-    setSelectedTemplate(templateCode);
-
     if (!templateCode) {
       // Clear template-related values but keep user-entered data
+      setSelectedTemplate(null);
       setDeadlineRules([]);
       return;
     }
@@ -242,22 +242,32 @@ export default function NewServicePage({ params }: PageProps) {
     const bundle = ALL_SERVICE_BUNDLES.find((b) => b.code === templateCode);
     if (!bundle) return;
 
-    // Pre-fill form with template data
-    setValue('name', bundle.name);
-    setValue('scope', bundle.description);
+    // Set loading state for visual feedback
+    setIsApplyingTemplate(true);
+    setSelectedTemplate(templateCode);
 
-    // Set service type and frequency based on bundle
-    const defaults = getBundleDefaults(bundle);
-    setValue('serviceType', defaults.serviceType);
-    setValue('frequency', defaults.frequency);
+    // Add slight delay for visual feedback before template applies
+    setTimeout(() => {
+      // Pre-fill form with template data
+      setValue('name', bundle.name);
+      setValue('scope', bundle.description);
 
-    // Default to auto-renewal for recurring services
-    setValue('autoRenewal', defaults.serviceType === 'RECURRING');
-    setValue('renewalPeriodMonths', '12');
+      // Set service type and frequency based on bundle
+      const defaults = getBundleDefaults(bundle);
+      setValue('serviceType', defaults.serviceType);
+      setValue('frequency', defaults.frequency);
 
-    // Convert template codes to deadline rules
-    const rules = convertTemplatesToRuleInputs(bundle.deadlineTemplateCodes);
-    setDeadlineRules(rules);
+      // Default to auto-renewal for recurring services
+      setValue('autoRenewal', defaults.serviceType === 'RECURRING');
+      setValue('renewalPeriodMonths', '12');
+
+      // Convert template codes to deadline rules
+      const rules = convertTemplatesToRuleInputs(bundle.deadlineTemplateCodes);
+      setDeadlineRules(rules);
+
+      // Clear loading state
+      setIsApplyingTemplate(false);
+    }, 150);
   };
 
   // Handle copying service data
@@ -418,10 +428,26 @@ export default function NewServicePage({ params }: PageProps) {
                 groupBy="group"
               />
               {selectedTemplate && (
-                <div className="mt-3 p-3 bg-oak-primary/5 rounded-lg border border-oak-primary/20">
+                <div
+                  className={cn(
+                    "mt-3 p-3 rounded-lg border transition-all duration-200",
+                    isApplyingTemplate
+                      ? "bg-oak-primary/10 border-oak-primary/30 animate-pulse"
+                      : "bg-oak-primary/5 border-oak-primary/20"
+                  )}
+                >
                   <div className="flex items-center gap-2 text-xs text-oak-primary">
-                    <Info className="w-3.5 h-3.5" />
-                    <span>Template selected: Fields have been pre-filled. You can customize them below.</span>
+                    {isApplyingTemplate ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Applying template...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Info className="w-3.5 h-3.5" />
+                        <span>Template selected: Fields have been pre-filled. You can customize them below.</span>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
