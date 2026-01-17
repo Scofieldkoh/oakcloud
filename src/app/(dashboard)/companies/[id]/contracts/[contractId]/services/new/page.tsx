@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useMemo, useCallback } from 'react';
+import { use, useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Copy, Sparkles, FileText, DollarSign, CalendarDays, ListChecks, ChevronDown, ChevronUp, Info, Loader2 } from 'lucide-react';
@@ -114,6 +114,16 @@ export default function NewServicePage({ params }: PageProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   const [deadlineRules, setDeadlineRules] = useState<DeadlineRuleInput[]>([]);
+  const templateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (templateTimeoutRef.current) {
+        clearTimeout(templateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Fetch company and contract data for display
   const { data: company } = useCompany(companyId);
@@ -230,12 +240,22 @@ export default function NewServicePage({ params }: PageProps) {
     },
   });
 
+  // Brief delay for visual feedback when applying template
+  const TEMPLATE_APPLY_DELAY_MS = 150;
+
   // Handle template selection
-  const handleTemplateSelect = (templateCode: string | null) => {
+  const handleTemplateSelect = useCallback((templateCode: string | null) => {
+    // Clear any pending template application
+    if (templateTimeoutRef.current) {
+      clearTimeout(templateTimeoutRef.current);
+      templateTimeoutRef.current = null;
+    }
+
     if (!templateCode) {
       // Clear template-related values but keep user-entered data
       setSelectedTemplate(null);
       setDeadlineRules([]);
+      setIsApplyingTemplate(false);
       return;
     }
 
@@ -247,7 +267,7 @@ export default function NewServicePage({ params }: PageProps) {
     setSelectedTemplate(templateCode);
 
     // Add slight delay for visual feedback before template applies
-    setTimeout(() => {
+    templateTimeoutRef.current = setTimeout(() => {
       // Pre-fill form with template data
       setValue('name', bundle.name);
       setValue('scope', bundle.description);
@@ -267,8 +287,9 @@ export default function NewServicePage({ params }: PageProps) {
 
       // Clear loading state
       setIsApplyingTemplate(false);
-    }, 150);
-  };
+      templateTimeoutRef.current = null;
+    }, TEMPLATE_APPLY_DELAY_MS);
+  }, [setValue]);
 
   // Handle copying service data
   const handleCopyService = (service: {
