@@ -24,16 +24,21 @@ interface CompanyTabsProps {
   activeTab: TabId;
   onTabChange: (tabId: TabId) => void;
   hasPoc?: boolean;
+  hasFye?: boolean;
 }
 
-export function CompanyTabs({ activeTab, onTabChange, hasPoc }: CompanyTabsProps) {
+export function CompanyTabs({ activeTab, onTabChange, hasPoc, hasFye }: CompanyTabsProps) {
   return (
     <div className="flex items-center border-b border-border-primary mb-6">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
         // Show warning for contacts tab when no POC
-        const showWarning = tab.id === 'contacts' && hasPoc === false;
+        const showContactsWarning = tab.id === 'contacts' && hasPoc === false;
+        // Show warning for profile tab when no FYE
+        const showProfileWarning = tab.id === 'profile' && hasFye === false;
+        const showWarning = showContactsWarning || showProfileWarning;
+        const warningTitle = showContactsWarning ? 'POC required' : showProfileWarning ? 'Financial year end required' : '';
         return (
           <button
             key={tab.id}
@@ -47,7 +52,7 @@ export function CompanyTabs({ activeTab, onTabChange, hasPoc }: CompanyTabsProps
             <Icon className="w-4 h-4" />
             {tab.label}
             {showWarning && (
-              <span className="text-amber-500" title="POC required">
+              <span className="text-amber-500" title={warningTitle}>
                 <AlertTriangle className="w-4 h-4" />
               </span>
             )}

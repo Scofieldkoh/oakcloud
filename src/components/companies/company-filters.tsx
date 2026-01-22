@@ -4,6 +4,7 @@ import { Search, Filter, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import type { CompanyStatus, EntityType } from '@/generated/prisma';
 import { ENTITY_TYPES } from '@/lib/constants';
+import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
 
 interface CompanyFiltersProps {
   onSearch: (query: string) => void;
@@ -17,6 +18,20 @@ export interface FilterValues {
   status?: CompanyStatus;
   hasCharges?: boolean;
   financialYearEndMonth?: number;
+  // Extended filters for mobile
+  address?: string;
+  homeCurrency?: string;
+  hasWarnings?: boolean;
+  incorporationDateFrom?: string;
+  incorporationDateTo?: string;
+  officersMin?: number;
+  officersMax?: number;
+  shareholdersMin?: number;
+  shareholdersMax?: number;
+  paidUpCapitalMin?: number;
+  paidUpCapitalMax?: number;
+  issuedCapitalMin?: number;
+  issuedCapitalMax?: number;
 }
 
 const statuses: { value: CompanyStatus; label: string }[] = [
@@ -81,12 +96,13 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
             aria-label="Search companies"
           />
         </form>
+        {/* Filter button - only show on mobile/tablet, hidden on desktop where inline filters are available */}
         <button
           onClick={() => setShowFilters(!showFilters)}
           aria-expanded={showFilters}
           aria-controls="company-filter-panel"
           aria-label={`${showFilters ? 'Hide' : 'Show'} filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
-          className={`btn-secondary btn-sm flex items-center gap-2 ${
+          className={`md:hidden btn-secondary btn-sm flex items-center gap-2 ${
             activeFilterCount > 0 ? 'border-oak-primary' : ''
           }`}
         >
@@ -104,9 +120,9 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
         </button>
       </div>
 
-      {/* Filter Panel */}
+      {/* Filter Panel - Mobile only */}
       {showFilters && (
-        <div id="company-filter-panel" className="card animate-fade-in">
+        <div id="company-filter-panel" className="card animate-fade-in md:hidden">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Filters</h3>
             {activeFilterCount > 0 && (
@@ -120,7 +136,19 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Address */}
+            <div>
+              <label className="label">Address</label>
+              <input
+                type="text"
+                value={filters.address || ''}
+                onChange={(e) => handleFilterChange('address', e.target.value || undefined)}
+                placeholder="Search address..."
+                className="input input-sm"
+              />
+            </div>
+
             {/* Entity Type */}
             <div>
               <label className="label">Entity Type</label>
@@ -159,6 +187,23 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
               </select>
             </div>
 
+            {/* Currency */}
+            <div>
+              <label className="label">Currency</label>
+              <select
+                value={filters.homeCurrency || ''}
+                onChange={(e) => handleFilterChange('homeCurrency', e.target.value || undefined)}
+                className="input input-sm"
+              >
+                <option value="">All currencies</option>
+                {SUPPORTED_CURRENCIES.map((currency) => (
+                  <option key={currency} value={currency}>
+                    {currency}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Financial Year End */}
             <div>
               <label className="label">FYE Month</label>
@@ -179,6 +224,143 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Has Warnings */}
+            <div>
+              <label className="label">Warnings</label>
+              <select
+                value={filters.hasWarnings === undefined ? '' : filters.hasWarnings.toString()}
+                onChange={(e) =>
+                  handleFilterChange(
+                    'hasWarnings',
+                    e.target.value === '' ? undefined : e.target.value === 'true'
+                  )
+                }
+                className="input input-sm"
+              >
+                <option value="">All companies</option>
+                <option value="true">With warnings</option>
+                <option value="false">Without warnings</option>
+              </select>
+            </div>
+
+            {/* Incorporation Date From */}
+            <div>
+              <label className="label">Incorporated From</label>
+              <input
+                type="date"
+                value={filters.incorporationDateFrom || ''}
+                onChange={(e) => handleFilterChange('incorporationDateFrom', e.target.value || undefined)}
+                className="input input-sm"
+              />
+            </div>
+
+            {/* Incorporation Date To */}
+            <div>
+              <label className="label">Incorporated To</label>
+              <input
+                type="date"
+                value={filters.incorporationDateTo || ''}
+                onChange={(e) => handleFilterChange('incorporationDateTo', e.target.value || undefined)}
+                className="input input-sm"
+              />
+            </div>
+
+            {/* Officers Range */}
+            <div>
+              <label className="label">Officers (Min)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.officersMin ?? ''}
+                onChange={(e) => handleFilterChange('officersMin', e.target.value ? parseInt(e.target.value) : undefined)}
+                placeholder="Min"
+                className="input input-sm"
+              />
+            </div>
+            <div>
+              <label className="label">Officers (Max)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.officersMax ?? ''}
+                onChange={(e) => handleFilterChange('officersMax', e.target.value ? parseInt(e.target.value) : undefined)}
+                placeholder="Max"
+                className="input input-sm"
+              />
+            </div>
+
+            {/* Shareholders Range */}
+            <div>
+              <label className="label">Shareholders (Min)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.shareholdersMin ?? ''}
+                onChange={(e) => handleFilterChange('shareholdersMin', e.target.value ? parseInt(e.target.value) : undefined)}
+                placeholder="Min"
+                className="input input-sm"
+              />
+            </div>
+            <div>
+              <label className="label">Shareholders (Max)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.shareholdersMax ?? ''}
+                onChange={(e) => handleFilterChange('shareholdersMax', e.target.value ? parseInt(e.target.value) : undefined)}
+                placeholder="Max"
+                className="input input-sm"
+              />
+            </div>
+
+            {/* Paid-up Capital Range */}
+            <div>
+              <label className="label">Paid-up Capital (Min)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.paidUpCapitalMin ?? ''}
+                onChange={(e) => handleFilterChange('paidUpCapitalMin', e.target.value ? parseFloat(e.target.value) : undefined)}
+                placeholder="Min amount"
+                className="input input-sm"
+              />
+            </div>
+            <div>
+              <label className="label">Paid-up Capital (Max)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.paidUpCapitalMax ?? ''}
+                onChange={(e) => handleFilterChange('paidUpCapitalMax', e.target.value ? parseFloat(e.target.value) : undefined)}
+                placeholder="Max amount"
+                className="input input-sm"
+              />
+            </div>
+
+            {/* Issued Capital Range */}
+            <div>
+              <label className="label">Issued Capital (Min)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.issuedCapitalMin ?? ''}
+                onChange={(e) => handleFilterChange('issuedCapitalMin', e.target.value ? parseFloat(e.target.value) : undefined)}
+                placeholder="Min amount"
+                className="input input-sm"
+              />
+            </div>
+            <div>
+              <label className="label">Issued Capital (Max)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.issuedCapitalMax ?? ''}
+                onChange={(e) => handleFilterChange('issuedCapitalMax', e.target.value ? parseFloat(e.target.value) : undefined)}
+                placeholder="Max amount"
+                className="input input-sm"
+              />
             </div>
 
             {/* Has Charges */}

@@ -210,7 +210,12 @@ function CompanyDetailContent({ id }: { id: string }) {
       </div>
 
       {/* Tabs */}
-      <CompanyTabs activeTab={activeTab} onTabChange={setActiveTab} hasPoc={contactDetailsData?.hasPoc} />
+      <CompanyTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        hasPoc={contactDetailsData?.hasPoc}
+        hasFye={company.financialYearEndMonth != null}
+      />
 
       {/* Tab Content */}
       {activeTab === 'profile' && (

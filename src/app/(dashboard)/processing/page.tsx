@@ -1821,7 +1821,7 @@ export default function ProcessingDocumentsPage() {
 
       {/* Document Table - Desktop View */}
       {!error && data && (
-        <div className={cn('hidden md:block card overflow-hidden relative', isFetching && 'opacity-60')}>
+        <div className={cn('hidden md:block table-container overflow-hidden relative', isFetching && 'opacity-60')}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-max">
               <colgroup>

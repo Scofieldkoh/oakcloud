@@ -797,6 +797,28 @@ export async function searchCompanies(
     ];
   }
 
+  // UEN filter (exact match with contains for partial search)
+  if (params.uen) {
+    where.uen = { contains: params.uen, mode: 'insensitive' };
+  }
+
+  // Address filter
+  if (params.address) {
+    where.addresses = {
+      some: {
+        fullAddress: { contains: params.address, mode: 'insensitive' },
+        isCurrent: true,
+      },
+    };
+  }
+
+  // Warnings filter (currently: warning = no FYE)
+  if (params.hasWarnings === true) {
+    where.financialYearEndMonth = null;
+  } else if (params.hasWarnings === false) {
+    where.financialYearEndMonth = { not: null };
+  }
+
   // Filters
   if (params.entityType) {
     where.entityType = params.entityType;
@@ -824,14 +846,83 @@ export async function searchCompanies(
     where.financialYearEndMonth = params.financialYearEndMonth;
   }
 
-  // Sorting
-  const orderBy: Prisma.CompanyOrderByWithRelationInput = {};
-  orderBy[params.sortBy] = params.sortOrder;
+  if (params.homeCurrency) {
+    where.homeCurrency = params.homeCurrency;
+  }
+
+  // Paid-up capital range filter
+  if (params.paidUpCapitalMin !== undefined || params.paidUpCapitalMax !== undefined) {
+    where.paidUpCapitalAmount = {};
+    if (params.paidUpCapitalMin !== undefined) {
+      where.paidUpCapitalAmount.gte = params.paidUpCapitalMin;
+    }
+    if (params.paidUpCapitalMax !== undefined) {
+      where.paidUpCapitalAmount.lte = params.paidUpCapitalMax;
+    }
+  }
+
+  // Issued capital range filter
+  if (params.issuedCapitalMin !== undefined || params.issuedCapitalMax !== undefined) {
+    where.issuedCapitalAmount = {};
+    if (params.issuedCapitalMin !== undefined) {
+      where.issuedCapitalAmount.gte = params.issuedCapitalMin;
+    }
+    if (params.issuedCapitalMax !== undefined) {
+      where.issuedCapitalAmount.lte = params.issuedCapitalMax;
+    }
+  }
+
+  // Officers and shareholders count filters using relation count
+  if (params.officersMin !== undefined || params.officersMax !== undefined) {
+    where.officers = {
+      ...((where.officers as object) || {}),
+    };
+    if (params.officersMin !== undefined) {
+      (where as Prisma.CompanyWhereInput).officers = {
+        some: { isCurrent: true },
+      };
+    }
+  }
+
+  if (params.shareholdersMin !== undefined || params.shareholdersMax !== undefined) {
+    where.shareholders = {
+      ...((where.shareholders as object) || {}),
+    };
+    if (params.shareholdersMin !== undefined) {
+      (where as Prisma.CompanyWhereInput).shareholders = {
+        some: { isCurrent: true },
+      };
+    }
+  }
+
+  // Sorting - handle _count fields and address specially
+  let orderBy: Prisma.CompanyOrderByWithRelationInput | Prisma.CompanyOrderByWithRelationInput[];
+  let sortByAddress = false;
+
+  if (params.sortBy === 'officersCount') {
+    orderBy = {
+      officers: {
+        _count: params.sortOrder,
+      },
+    };
+  } else if (params.sortBy === 'shareholdersCount') {
+    orderBy = {
+      shareholders: {
+        _count: params.sortOrder,
+      },
+    };
+  } else if (params.sortBy === 'address') {
+    // Address sorting will be done post-query since it's on a related table
+    orderBy = { name: params.sortOrder }; // Fallback sort
+    sortByAddress = true;
+  } else {
+    orderBy = { [params.sortBy]: params.sortOrder };
+  }
 
   // Pagination
   const skip = (params.page - 1) * params.limit;
 
-  const [companies, total] = await Promise.all([
+  let [companies, total] = await Promise.all([
     prisma.company.findMany({
       where,
       include: {
@@ -860,6 +951,34 @@ export async function searchCompanies(
     }),
     prisma.company.count({ where }),
   ]);
+
+  // Post-query filtering for count ranges (Prisma doesn't support this in WHERE)
+  if (params.officersMin !== undefined || params.officersMax !== undefined ||
+      params.shareholdersMin !== undefined || params.shareholdersMax !== undefined) {
+    companies = companies.filter((c) => {
+      const officerCount = c._count?.officers || 0;
+      const shareholderCount = c._count?.shareholders || 0;
+
+      if (params.officersMin !== undefined && officerCount < params.officersMin) return false;
+      if (params.officersMax !== undefined && officerCount > params.officersMax) return false;
+      if (params.shareholdersMin !== undefined && shareholderCount < params.shareholdersMin) return false;
+      if (params.shareholdersMax !== undefined && shareholderCount > params.shareholdersMax) return false;
+
+      return true;
+    });
+    // Adjust total for filtered results (approximate - could be improved with raw query)
+    total = companies.length < params.limit ? skip + companies.length : total;
+  }
+
+  // Post-query sorting by address (since it's on a related table)
+  if (sortByAddress) {
+    companies = companies.sort((a, b) => {
+      const addrA = a.addresses?.[0]?.fullAddress || '';
+      const addrB = b.addresses?.[0]?.fullAddress || '';
+      const cmp = addrA.localeCompare(addrB);
+      return params.sortOrder === 'asc' ? cmp : -cmp;
+    });
+  }
 
   return {
     companies,

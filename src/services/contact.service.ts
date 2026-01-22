@@ -949,8 +949,57 @@ export async function searchContactsWithCounts(
     });
   }
 
+  // Full name filter (separate from query for inline filter)
+  if (params.fullName) {
+    andConditions.push({ fullName: { contains: params.fullName, mode: 'insensitive' } });
+  }
+
   if (params.contactType) {
     andConditions.push({ contactType: params.contactType });
+  }
+
+  // Identification type filter
+  if (params.identificationType) {
+    andConditions.push({ identificationType: params.identificationType });
+  }
+
+  // Identification number filter
+  if (params.identificationNumber) {
+    andConditions.push({
+      OR: [
+        { identificationNumber: { contains: params.identificationNumber, mode: 'insensitive' } },
+        { corporateUen: { contains: params.identificationNumber, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  // Nationality filter
+  if (params.nationality) {
+    andConditions.push({ nationality: { contains: params.nationality, mode: 'insensitive' } });
+  }
+
+  // Email filter (search in contact details)
+  if (params.email) {
+    andConditions.push({
+      contactDetails: {
+        some: {
+          detailType: 'EMAIL',
+          value: { contains: params.email, mode: 'insensitive' },
+        },
+      },
+    });
+  }
+
+  // Phone filter (search in contact details)
+  if (params.phone) {
+    andConditions.push({
+      contactDetails: {
+        some: {
+          detailType: 'PHONE',
+          value: { contains: params.phone, mode: 'insensitive' },
+        },
+      },
+    });
   }
 
   // Filter by specific company IDs (for company-scoped users)
@@ -982,12 +1031,22 @@ export async function searchContactsWithCounts(
     AND: andConditions,
   };
 
-  const orderBy: Prisma.ContactOrderByWithRelationInput = {};
-  orderBy[params.sortBy] = params.sortOrder;
+  // Sorting - handle _count fields specially
+  let orderBy: Prisma.ContactOrderByWithRelationInput | Prisma.ContactOrderByWithRelationInput[];
+
+  if (params.sortBy === 'companyRelationsCount') {
+    orderBy = {
+      companyRelations: {
+        _count: params.sortOrder,
+      },
+    };
+  } else {
+    orderBy = { [params.sortBy]: params.sortOrder };
+  }
 
   const skip = (params.page - 1) * params.limit;
 
-  const [contacts, total] = await Promise.all([
+  let [contacts, total] = await Promise.all([
     prisma.contact.findMany({
       where,
       orderBy,
@@ -997,7 +1056,22 @@ export async function searchContactsWithCounts(
         _count: {
           select: {
             companyRelations: true,
+            officerPositions: true,
+            shareholdings: true,
           },
+        },
+        // Include company IDs from all relationship types to calculate unique companies
+        companyRelations: {
+          select: { companyId: true },
+          where: { company: { deletedAt: null } },
+        },
+        officerPositions: {
+          select: { companyId: true },
+          where: { company: { deletedAt: null } },
+        },
+        shareholdings: {
+          select: { companyId: true },
+          where: { company: { deletedAt: null } },
         },
         // Include default contact details (where companyId is null) for email/phone display
         contactDetails: {
@@ -1020,14 +1094,46 @@ export async function searchContactsWithCounts(
     prisma.contact.count({ where }),
   ]);
 
+  // Calculate unique companies count for each contact
+  // A contact can be linked to a company via companyRelations, officerPositions, or shareholdings
+  const contactsWithCompanyCount = contacts.map((contact) => {
+    const companyIds = new Set<string>();
+    contact.companyRelations.forEach((r) => companyIds.add(r.companyId));
+    contact.officerPositions.forEach((o) => companyIds.add(o.companyId));
+    contact.shareholdings.forEach((s) => companyIds.add(s.companyId));
+    return {
+      ...contact,
+      _count: {
+        ...contact._count,
+        // Override with unique company count across all relationship types
+        companyRelations: companyIds.size,
+      },
+    };
+  });
+
+  // Post-query filtering for companies count range (Prisma doesn't support direct _count filtering)
+  const needsCountFilter = params.companiesMin !== undefined || params.companiesMax !== undefined;
+  if (needsCountFilter) {
+    contacts = contactsWithCompanyCount.filter((contact) => {
+      const companyCount = contact._count?.companyRelations || 0;
+      if (params.companiesMin !== undefined && companyCount < params.companiesMin) return false;
+      if (params.companiesMax !== undefined && companyCount > params.companiesMax) return false;
+      return true;
+    });
+    // Adjust total for filtered results (approximate)
+    total = contacts.length < params.limit ? skip + contacts.length : total;
+  } else {
+    contacts = contactsWithCompanyCount;
+  }
+
   // Map contacts to include defaultEmail and defaultPhone
   const contactsWithDetails = contacts.map((contact) => {
     const emailDetail = contact.contactDetails.find((d) => d.detailType === 'EMAIL');
     const phoneDetail = contact.contactDetails.find((d) => d.detailType === 'PHONE');
 
-    // Remove contactDetails from the response and add defaultEmail/defaultPhone
+    // Remove relationship arrays and contactDetails from the response
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { contactDetails, ...contactWithoutDetails } = contact;
+    const { contactDetails, companyRelations, officerPositions, shareholdings, ...contactWithoutDetails } = contact;
 
     return {
       ...contactWithoutDetails,

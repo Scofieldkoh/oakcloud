@@ -317,17 +317,29 @@ export function DatePicker({
     }
   }, [isOpen, value, defaultTab]);
 
+  // Track if we should use single month for range (when space is limited)
+  const [useSingleMonthForRange, setUseSingleMonthForRange] = useState(false);
+
   // Calculate position with scroll and resize handling
   useEffect(() => {
     const updatePosition = () => {
       if (isOpen && triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-
-        // Dynamic width based on active tab
-        const popoverWidth = activeTab === 'presets' ? 400 : activeTab === 'single' ? 500 : 580;
-        const popoverHeight = 420; // Approximate height
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
+
+        // Check if we have enough space for two-month layout (580px)
+        const twoMonthWidth = 580;
+        const singleMonthWidth = 320;
+        const availableWidth = Math.max(viewportWidth - rect.left - 32, rect.right - 32);
+        const canFitTwoMonths = availableWidth >= twoMonthWidth;
+        setUseSingleMonthForRange(!canFitTwoMonths);
+
+        // Dynamic width based on active tab and available space
+        const popoverWidth = activeTab === 'presets' ? 400
+          : activeTab === 'single' ? singleMonthWidth
+          : canFitTwoMonths ? twoMonthWidth : singleMonthWidth;
+        const popoverHeight = 420; // Approximate height
         const spaceOnRight = viewportWidth - rect.left;
         const spaceOnLeft = rect.right;
 
@@ -598,12 +610,12 @@ export function DatePicker({
 
             {/* Date Range Tab */}
             {activeTab === 'range' && (
-              <div className="px-2">
+              <div className={cn('px-2', useSingleMonthForRange ? 'w-[320px]' : 'min-w-[540px]')}>
                 <DayPicker
                   mode="range"
                   selected={tempValue?.mode === 'range' ? tempValue.range : undefined}
                   onSelect={handleRangeSelect}
-                  numberOfMonths={2}
+                  numberOfMonths={useSingleMonthForRange ? 1 : 2}
                   month={month}
                   onMonthChange={setMonth}
                   showOutsideDays

@@ -16,10 +16,22 @@ import type { CompanyWithRelations, CompanyStats, CompanyLinkInfo } from '@/serv
 
 interface CompanySearchParams {
   query?: string;
+  uen?: string;
+  address?: string;
+  hasWarnings?: boolean;
   entityType?: EntityType;
   status?: CompanyStatus;
   hasCharges?: boolean;
   financialYearEndMonth?: number;
+  homeCurrency?: string;
+  paidUpCapitalMin?: number;
+  paidUpCapitalMax?: number;
+  issuedCapitalMin?: number;
+  issuedCapitalMax?: number;
+  officersMin?: number;
+  officersMax?: number;
+  shareholdersMin?: number;
+  shareholdersMax?: number;
   page?: number;
   limit?: number;
   sortBy?: string;
@@ -146,23 +158,12 @@ async function bulkDeleteCompanies(ids: string[], reason: string): Promise<{ del
  */
 export function useCompanies(params: CompanySearchParams = {}) {
   return useQuery({
-    queryKey: [
-      'companies',
-      params.query,
-      params.page,
-      params.limit,
-      params.sortBy,
-      params.sortOrder,
-      params.entityType,
-      params.status,
-      params.hasCharges,
-      params.financialYearEndMonth,
-      params.tenantId,
-    ],
+    queryKey: ['companies', params],
     queryFn: () => fetchCompanies(params),
     staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
     refetchOnMount: 'always', // Always refetch when component mounts
+    placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
   });
 }
 

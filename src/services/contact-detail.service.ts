@@ -656,11 +656,31 @@ export interface ExportContactDetail {
   companyUen: string;
   contactName: string | null;
   relationship: string | null;
+  isPoc: boolean;
   detailType: string;
   value: string;
   label: string | null;
   purposes: string[];
-  isPrimary: boolean;
+}
+
+/**
+ * Format relationship/role to proper case with special handling for acronyms
+ * E.g., "MANAGING_DIRECTOR" -> "Managing Director", "CEO" -> "CEO", "ORDINARY" -> "Ordinary"
+ */
+function formatRole(role: string): string {
+  // List of acronyms that should stay uppercase
+  const acronyms = ['CEO', 'CFO', 'COO', 'CTO', 'CIO'];
+
+  return role
+    .split('_')
+    .map(word => {
+      const upper = word.toUpperCase();
+      if (acronyms.includes(upper)) {
+        return upper;
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
 }
 
 /**
@@ -738,11 +758,11 @@ export async function getContactDetailsForExport(
         companyUen: company.uen,
         contactName: null,
         relationship: null,
+        isPoc: false,
         detailType: detail.detailType,
         value: detail.value,
         label: detail.label,
         purposes: detail.purposes,
-        isPrimary: detail.isPrimary,
       });
     }
 
@@ -750,9 +770,11 @@ export async function getContactDetailsForExport(
     const processedContactIds = new Set<string>();
 
     // Add contact details from CompanyContact relations
+    // Note: A contact can have multiple relationships to the same company
     for (const rel of company.contacts) {
-      if (!rel.contact || processedContactIds.has(rel.contact.id)) continue;
-      processedContactIds.add(rel.contact.id);
+      if (!rel.contact) continue;
+
+      const relationship = formatRole(rel.relationship);
 
       // Add all contact details from ContactDetail records
       for (const detail of rel.contact.contactDetails) {
@@ -760,22 +782,28 @@ export async function getContactDetailsForExport(
           companyName: company.name,
           companyUen: company.uen,
           contactName: rel.contact.fullName,
-          relationship: rel.relationship,
+          relationship,
+          isPoc: rel.isPoc,
           detailType: detail.detailType,
           value: detail.value,
           label: detail.label,
           purposes: detail.purposes,
-          isPrimary: detail.isPrimary,
         });
       }
+
+      // Track processed contact+relationship combinations
+      processedContactIds.add(`${rel.contact.id}-${rel.relationship}`);
     }
 
     // Add contact details from officers
     for (const officer of company.officers) {
-      if (!officer.contact || processedContactIds.has(officer.contact.id)) continue;
-      processedContactIds.add(officer.contact.id);
+      if (!officer.contact) continue;
+      // Skip if already processed with this role via CompanyContact
+      const roleKey = `${officer.contact.id}-${officer.role}`;
+      if (processedContactIds.has(roleKey)) continue;
+      processedContactIds.add(roleKey);
 
-      const relationship = officer.role.charAt(0).toUpperCase() + officer.role.slice(1).toLowerCase().replace(/_/g, ' ');
+      const relationship = formatRole(officer.role);
 
       for (const detail of officer.contact.contactDetails) {
         exportDetails.push({
@@ -783,21 +811,26 @@ export async function getContactDetailsForExport(
           companyUen: company.uen,
           contactName: officer.contact.fullName,
           relationship,
+          isPoc: false,
           detailType: detail.detailType,
           value: detail.value,
           label: detail.label,
           purposes: detail.purposes,
-          isPrimary: detail.isPrimary,
         });
       }
     }
 
     // Add contact details from shareholders
     for (const shareholder of company.shareholders) {
-      if (!shareholder.contact || processedContactIds.has(shareholder.contact.id)) continue;
-      processedContactIds.add(shareholder.contact.id);
+      if (!shareholder.contact) continue;
+      // Skip if already processed with this share class via CompanyContact
+      const shareKey = `${shareholder.contact.id}-${shareholder.shareClass || 'Ordinary'}_SHAREHOLDER`;
+      if (processedContactIds.has(shareKey)) continue;
+      processedContactIds.add(shareKey);
 
-      const relationship = `${shareholder.shareClass || 'Ordinary'} Shareholder`;
+      // Format share class properly (e.g., "ORDINARY" -> "Ordinary")
+      const shareClass = formatRole(shareholder.shareClass || 'Ordinary');
+      const relationship = `${shareClass} Shareholder`;
 
       for (const detail of shareholder.contact.contactDetails) {
         exportDetails.push({
@@ -805,11 +838,11 @@ export async function getContactDetailsForExport(
           companyUen: company.uen,
           contactName: shareholder.contact.fullName,
           relationship,
+          isPoc: false,
           detailType: detail.detailType,
           value: detail.value,
           label: detail.label,
           purposes: detail.purposes,
-          isPrimary: detail.isPrimary,
         });
       }
     }

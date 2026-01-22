@@ -15,8 +15,16 @@ export async function GET(request: NextRequest) {
 
     const params = contactSearchSchema.parse({
       query: searchParams.get('query') || undefined,
+      fullName: searchParams.get('fullName') || undefined,
       contactType: searchParams.get('contactType') || undefined,
+      identificationType: searchParams.get('identificationType') || undefined,
+      identificationNumber: searchParams.get('identificationNumber') || undefined,
+      nationality: searchParams.get('nationality') || undefined,
+      email: searchParams.get('email') || undefined,
+      phone: searchParams.get('phone') || undefined,
       companyId: searchParams.get('companyId') || undefined,
+      companiesMin: searchParams.get('companiesMin') ? Number(searchParams.get('companiesMin')) : undefined,
+      companiesMax: searchParams.get('companiesMax') ? Number(searchParams.get('companiesMax')) : undefined,
       page: searchParams.get('page') ? Number(searchParams.get('page')) : undefined,
       limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
       sortBy: searchParams.get('sortBy') || undefined,

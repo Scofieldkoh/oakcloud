@@ -308,57 +308,117 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
 
         {/* Content */}
         {data && (
-          <div className="divide-y divide-border-secondary">
-            {/* Default Details Section */}
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <User className="w-4 h-4 text-text-tertiary" />
-                <h3 className="text-sm font-medium text-text-primary">Default</h3>
-                <span className="text-xs text-text-muted">
-                  ({data.defaultDetails.length} {data.defaultDetails.length === 1 ? 'detail' : 'details'})
-                </span>
-              </div>
-              {data.defaultDetails.length > 0 ? (
-                <div className="space-y-1">
-                  {data.defaultDetails.map((detail) => renderDetailRow(detail, editingId === detail.id))}
+          <div className="p-4">
+            {/* Grid layout like Contact Information */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Default Details */}
+              {data.defaultDetails.length > 0 && (
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <p className="text-xs text-text-tertiary uppercase mb-2 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5" />
+                    Default
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {data.defaultDetails.map((detail) => {
+                      if (editingId === detail.id) {
+                        return <div key={detail.id} className="sm:col-span-2 lg:col-span-3">{renderDetailRow(detail, true)}</div>;
+                      }
+                      const config = DETAIL_TYPE_CONFIG[detail.detailType];
+                      const Icon = config.icon;
+                      return (
+                        <div key={detail.id} className="flex items-center gap-2 group">
+                          <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+                          <span className="text-sm text-text-primary truncate">{detail.value}</span>
+                          <CopyButton value={detail.value} />
+                          {detail.isPrimary && (
+                            <Star className="w-3 h-3 text-status-warning flex-shrink-0" fill="currentColor" />
+                          )}
+                          {canEdit && (
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                              <button
+                                onClick={() => startEdit(detail)}
+                                className="text-text-muted hover:text-oak-light p-1 rounded hover:bg-surface-tertiary"
+                                title="Edit"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
+                                className="text-text-muted hover:text-status-error p-1 rounded hover:bg-surface-tertiary"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ) : (
-                <p className="text-sm text-text-muted italic">No default contact details</p>
               )}
-            </div>
 
-            {/* Company-Specific Details Sections */}
-            {data.companyDetails.map((company) => (
-              <div key={company.companyId} className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-text-tertiary" />
+              {/* Company-Specific Details */}
+              {data.companyDetails.map((company) => (
+                <div key={company.companyId} className="sm:col-span-2 lg:col-span-3 pt-3 border-t border-border-secondary first:border-t-0 first:pt-0">
+                  <p className="text-xs text-text-tertiary uppercase mb-2 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5" />
                     <Link
                       href={`/companies/${company.companyId}`}
-                      className="text-sm font-medium text-oak-light hover:text-oak-dark"
+                      className="text-oak-light hover:text-oak-dark"
                     >
                       {company.companyName}
                     </Link>
-                    <span className="text-xs text-text-muted">({company.companyUen})</span>
-                  </div>
-                  <span className="text-xs text-text-muted">
-                    {company.details.length} {company.details.length === 1 ? 'detail' : 'details'}
-                  </span>
+                  </p>
+                  {company.details.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {company.details.map((detail) => {
+                        if (editingId === detail.id) {
+                          return <div key={detail.id} className="sm:col-span-2 lg:col-span-3">{renderDetailRow(detail, true)}</div>;
+                        }
+                        const config = DETAIL_TYPE_CONFIG[detail.detailType];
+                        const Icon = config.icon;
+                        return (
+                          <div key={detail.id} className="flex items-center gap-2 group">
+                            <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+                            <span className="text-sm text-text-primary truncate">{detail.value}</span>
+                            <CopyButton value={detail.value} />
+                            {detail.isPrimary && (
+                              <Star className="w-3 h-3 text-status-warning flex-shrink-0" fill="currentColor" />
+                            )}
+                            {canEdit && (
+                              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                <button
+                                  onClick={() => startEdit(detail)}
+                                  className="text-text-muted hover:text-oak-light p-1 rounded hover:bg-surface-tertiary"
+                                  title="Edit"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
+                                  className="text-text-muted hover:text-status-error p-1 rounded hover:bg-surface-tertiary"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-text-muted italic">No details</p>
+                  )}
                 </div>
-                {company.details.length > 0 ? (
-                  <div className="space-y-1">
-                    {company.details.map((detail) => renderDetailRow(detail, editingId === detail.id))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-text-muted italic">No company-specific details</p>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
 
             {/* Empty state when no details at all */}
             {data.defaultDetails.length === 0 && data.companyDetails.length === 0 && (
-              <div className="p-8 text-center">
-                <Mail className="w-8 h-8 text-text-muted mx-auto mb-2" />
+              <div className="py-4 text-center">
+                <Mail className="w-6 h-6 text-text-muted mx-auto mb-2" />
                 <p className="text-sm text-text-muted">No contact details</p>
                 {canEdit && (
                   <button

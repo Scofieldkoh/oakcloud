@@ -79,11 +79,19 @@ export const updateContactSchema = contactBaseSchema.partial().extend({
 
 export const contactSearchSchema = z.object({
   query: z.string().optional(),
+  fullName: z.string().optional(),
   contactType: contactTypeEnum.optional(),
+  identificationType: identificationTypeEnum.optional(),
+  identificationNumber: z.string().optional(),
+  nationality: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
   companyId: z.string().uuid().optional(),
+  companiesMin: z.number().optional(),
+  companiesMax: z.number().optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(200).default(20),
-  sortBy: z.enum(['fullName', 'createdAt', 'updatedAt']).default('fullName'),
+  sortBy: z.enum(['fullName', 'contactType', 'nationality', 'companyRelationsCount', 'createdAt', 'updatedAt']).default('fullName'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 

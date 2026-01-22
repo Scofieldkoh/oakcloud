@@ -2,7 +2,7 @@
 
 import { Search, Filter, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import type { ContactType } from '@/generated/prisma';
+import type { ContactType, IdentificationType } from '@/generated/prisma';
 
 interface ContactFiltersProps {
   onSearch: (query: string) => void;
@@ -13,11 +13,28 @@ interface ContactFiltersProps {
 
 export interface FilterValues {
   contactType?: ContactType;
+  // Extended filters for mobile
+  fullName?: string;
+  identificationType?: IdentificationType;
+  identificationNumber?: string;
+  nationality?: string;
+  email?: string;
+  phone?: string;
+  companiesMin?: number;
+  companiesMax?: number;
 }
 
 const contactTypes: { value: ContactType; label: string }[] = [
   { value: 'INDIVIDUAL', label: 'Individual' },
   { value: 'CORPORATE', label: 'Corporate' },
+];
+
+const idTypes: { value: IdentificationType; label: string }[] = [
+  { value: 'NRIC', label: 'NRIC' },
+  { value: 'FIN', label: 'FIN' },
+  { value: 'PASSPORT', label: 'Passport' },
+  { value: 'UEN', label: 'UEN' },
+  { value: 'OTHER', label: 'Other' },
 ];
 
 export function ContactFilters({
@@ -37,11 +54,8 @@ export function ContactFilters({
     onSearch(searchQuery);
   };
 
-  const handleFilterChange = (key: keyof FilterValues, value: string) => {
-    const newFilters: FilterValues = {
-      ...filters,
-      [key]: value ? (value as ContactType) : undefined,
-    };
+  const handleFilterChange = (key: keyof FilterValues, value: unknown) => {
+    const newFilters = { ...filters, [key]: value || undefined };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
@@ -66,12 +80,13 @@ export function ContactFilters({
             aria-label="Search contacts"
           />
         </form>
+        {/* Filter button - only show on mobile/tablet, hidden on desktop where inline filters are available */}
         <button
           onClick={() => setShowFilters(!showFilters)}
           aria-expanded={showFilters}
           aria-controls="contact-filter-panel"
           aria-label={`${showFilters ? 'Hide' : 'Show'} filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
-          className={`btn-secondary btn-sm flex items-center gap-2 ${
+          className={`md:hidden btn-secondary btn-sm flex items-center gap-2 ${
             activeFilterCount > 0 ? 'border-oak-primary' : ''
           }`}
         >
@@ -89,9 +104,9 @@ export function ContactFilters({
         </button>
       </div>
 
-      {/* Filter Panel */}
+      {/* Filter Panel - Mobile only */}
       {showFilters && (
-        <div id="contact-filter-panel" className="card animate-fade-in">
+        <div id="contact-filter-panel" className="card animate-fade-in md:hidden">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Filters</h3>
             {activeFilterCount > 0 && (
@@ -105,13 +120,25 @@ export function ContactFilters({
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Name */}
+            <div>
+              <label className="label">Name</label>
+              <input
+                type="text"
+                value={filters.fullName || ''}
+                onChange={(e) => handleFilterChange('fullName', e.target.value || undefined)}
+                placeholder="Search name..."
+                className="input input-sm"
+              />
+            </div>
+
             {/* Contact Type */}
             <div>
               <label className="label">Contact Type</label>
               <select
                 value={filters.contactType || ''}
-                onChange={(e) => handleFilterChange('contactType', e.target.value)}
+                onChange={(e) => handleFilterChange('contactType', e.target.value as ContactType)}
                 className="input input-sm"
               >
                 <option value="">All types</option>
@@ -121,6 +148,95 @@ export function ContactFilters({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* ID Type */}
+            <div>
+              <label className="label">ID Type</label>
+              <select
+                value={filters.identificationType || ''}
+                onChange={(e) => handleFilterChange('identificationType', e.target.value as IdentificationType)}
+                className="input input-sm"
+              >
+                <option value="">All types</option>
+                {idTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* ID Number */}
+            <div>
+              <label className="label">ID Number</label>
+              <input
+                type="text"
+                value={filters.identificationNumber || ''}
+                onChange={(e) => handleFilterChange('identificationNumber', e.target.value || undefined)}
+                placeholder="Search ID number..."
+                className="input input-sm"
+              />
+            </div>
+
+            {/* Nationality */}
+            <div>
+              <label className="label">Nationality</label>
+              <input
+                type="text"
+                value={filters.nationality || ''}
+                onChange={(e) => handleFilterChange('nationality', e.target.value || undefined)}
+                placeholder="Search nationality..."
+                className="input input-sm"
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="label">Email</label>
+              <input
+                type="text"
+                value={filters.email || ''}
+                onChange={(e) => handleFilterChange('email', e.target.value || undefined)}
+                placeholder="Search email..."
+                className="input input-sm"
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="label">Phone</label>
+              <input
+                type="text"
+                value={filters.phone || ''}
+                onChange={(e) => handleFilterChange('phone', e.target.value || undefined)}
+                placeholder="Search phone..."
+                className="input input-sm"
+              />
+            </div>
+
+            {/* Companies Range */}
+            <div>
+              <label className="label">Companies (Min)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.companiesMin ?? ''}
+                onChange={(e) => handleFilterChange('companiesMin', e.target.value ? parseInt(e.target.value) : undefined)}
+                placeholder="Min"
+                className="input input-sm"
+              />
+            </div>
+            <div>
+              <label className="label">Companies (Max)</label>
+              <input
+                type="number"
+                min="0"
+                value={filters.companiesMax ?? ''}
+                onChange={(e) => handleFilterChange('companiesMax', e.target.value ? parseInt(e.target.value) : undefined)}
+                placeholder="Max"
+                className="input input-sm"
+              />
             </div>
           </div>
         </div>

@@ -11,13 +11,18 @@ import { usePermissions, useCompanyPermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSelection } from '@/hooks/use-selection';
-import { CompanyTable } from '@/components/companies/company-table';
+import { CompanyTable, type CompanyInlineFilters, type CompanyFilterOption } from '@/components/companies/company-table';
 import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
 import { Pagination } from '@/components/companies/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { useToast } from '@/components/ui/toast';
+import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import { getEntityTypeLabel, getCompanyStatusLabel } from '@/lib/constants';
 import type { EntityType, CompanyStatus } from '@/generated/prisma';
+
+const COLUMN_PREF_KEY = 'companies:list:columns:v1';
 
 export default function CompaniesPage() {
   const router = useRouter();
@@ -36,10 +41,11 @@ export default function CompaniesPage() {
   const getParamsFromUrl = useCallback(() => {
     return {
       query: searchParams.get('q') || '',
+      uen: searchParams.get('uen') || undefined,
       page: parseInt(searchParams.get('page') || '1', 10),
       limit: parseInt(searchParams.get('limit') || '20', 10),
-      sortBy: searchParams.get('sortBy') || 'updatedAt',
-      sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc',
+      sortBy: searchParams.get('sortBy') || 'name',
+      sortOrder: (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc',
       entityType: (searchParams.get('entityType') || undefined) as EntityType | undefined,
       status: (searchParams.get('status') || undefined) as CompanyStatus | undefined,
       hasCharges: searchParams.get('hasCharges') === 'true' ? true :
@@ -55,7 +61,7 @@ export default function CompaniesPage() {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // Pass tenantId to filter companies by selected tenant (for SUPER_ADMIN)
-  const { data, isLoading, error } = useCompanies({
+  const { data, isLoading, isFetching, error } = useCompanies({
     ...params,
     tenantId: activeTenantId,
   });
@@ -82,15 +88,33 @@ export default function CompaniesPage() {
   );
   const { canEditCompany, canDeleteCompany } = useCompanyPermissions(companyIds);
 
+  // Column width persistence
+  const { data: columnPref } = useUserPreference<Record<string, number>>(COLUMN_PREF_KEY);
+  const saveColumnPref = useUpsertUserPreference<Record<string, number>>();
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const value = columnPref?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+    setColumnWidths(value as Record<string, number>);
+  }, [columnPref?.value]);
+
+  const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
+    const nextWidths = { ...columnWidths, [columnId]: width };
+    setColumnWidths(nextWidths);
+    saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: nextWidths });
+  }, [columnWidths, saveColumnPref]);
+
   // Memoize URL construction to avoid rebuilding on every render
   const targetUrl = useMemo(() => {
     const urlParams = new URLSearchParams();
 
     if (params.query) urlParams.set('q', params.query);
+    if (params.uen) urlParams.set('uen', params.uen);
     if (params.page > 1) urlParams.set('page', params.page.toString());
     if (params.limit !== 20) urlParams.set('limit', params.limit.toString());
-    if (params.sortBy !== 'updatedAt') urlParams.set('sortBy', params.sortBy);
-    if (params.sortOrder !== 'desc') urlParams.set('sortOrder', params.sortOrder);
+    if (params.sortBy !== 'name') urlParams.set('sortBy', params.sortBy);
+    if (params.sortOrder !== 'asc') urlParams.set('sortOrder', params.sortOrder);
     if (params.entityType) urlParams.set('entityType', params.entityType);
     if (params.status) urlParams.set('status', params.status);
     if (params.hasCharges !== undefined) urlParams.set('hasCharges', params.hasCharges.toString());
@@ -132,6 +156,330 @@ export default function CompaniesPage() {
   const handleLimitChange = (limit: number) => {
     setParams((prev) => ({ ...prev, limit, page: 1 }));
   };
+
+  // Inline filter handler - maps inline filter fields to API params
+  const handleInlineFilterChange = useCallback((filters: Partial<CompanyInlineFilters>) => {
+    setParams((prev) => {
+      const newParams: typeof prev & {
+        incorporationDateFrom?: string;
+        incorporationDateTo?: string;
+        officersMin?: number;
+        officersMax?: number;
+        shareholdersMin?: number;
+        shareholdersMax?: number;
+        homeCurrency?: string;
+        financialYearEndMonth?: number;
+        paidUpCapitalMin?: number;
+        paidUpCapitalMax?: number;
+        issuedCapitalMin?: number;
+        issuedCapitalMax?: number;
+        address?: string;
+        hasWarnings?: boolean;
+      } = { ...prev, page: 1 };
+
+      // companyName maps to query (the existing search field)
+      if ('companyName' in filters) {
+        newParams.query = filters.companyName || '';
+      }
+
+      // UEN filter - now properly supported by API
+      if ('uen' in filters) {
+        newParams.uen = filters.uen;
+      }
+
+      // Address filter
+      if ('address' in filters) {
+        newParams.address = filters.address;
+      }
+
+      // Warnings filter
+      if ('hasWarnings' in filters) {
+        newParams.hasWarnings = filters.hasWarnings;
+      }
+
+      // entityType and status map directly
+      if ('entityType' in filters) {
+        newParams.entityType = filters.entityType;
+      }
+      if ('status' in filters) {
+        newParams.status = filters.status;
+      }
+
+      // Incorporation date range
+      if ('incorporationDateFrom' in filters) {
+        newParams.incorporationDateFrom = filters.incorporationDateFrom;
+      }
+      if ('incorporationDateTo' in filters) {
+        newParams.incorporationDateTo = filters.incorporationDateTo;
+      }
+
+      // Officers count range
+      if ('officersMin' in filters) {
+        newParams.officersMin = filters.officersMin;
+      }
+      if ('officersMax' in filters) {
+        newParams.officersMax = filters.officersMax;
+      }
+
+      // Shareholders count range
+      if ('shareholdersMin' in filters) {
+        newParams.shareholdersMin = filters.shareholdersMin;
+      }
+      if ('shareholdersMax' in filters) {
+        newParams.shareholdersMax = filters.shareholdersMax;
+      }
+
+      // Home currency
+      if ('homeCurrency' in filters) {
+        newParams.homeCurrency = filters.homeCurrency;
+      }
+
+      // Financial year end month
+      if ('financialYearEndMonth' in filters) {
+        newParams.financialYearEndMonth = filters.financialYearEndMonth;
+      }
+
+      // Paid-up capital range
+      if ('paidUpCapitalMin' in filters) {
+        newParams.paidUpCapitalMin = filters.paidUpCapitalMin;
+      }
+      if ('paidUpCapitalMax' in filters) {
+        newParams.paidUpCapitalMax = filters.paidUpCapitalMax;
+      }
+
+      // Issued capital range
+      if ('issuedCapitalMin' in filters) {
+        newParams.issuedCapitalMin = filters.issuedCapitalMin;
+      }
+      if ('issuedCapitalMax' in filters) {
+        newParams.issuedCapitalMax = filters.issuedCapitalMax;
+      }
+
+      return newParams;
+    });
+  }, []);
+
+  // Derive inline filter values from params for the table
+  const inlineFilters: CompanyInlineFilters = useMemo(() => ({
+    companyName: params.query || undefined,
+    uen: params.uen,
+    address: (params as Record<string, unknown>).address as string | undefined,
+    entityType: params.entityType,
+    status: params.status,
+    incorporationDateFrom: (params as Record<string, unknown>).incorporationDateFrom as string | undefined,
+    incorporationDateTo: (params as Record<string, unknown>).incorporationDateTo as string | undefined,
+    officersMin: (params as Record<string, unknown>).officersMin as number | undefined,
+    officersMax: (params as Record<string, unknown>).officersMax as number | undefined,
+    shareholdersMin: (params as Record<string, unknown>).shareholdersMin as number | undefined,
+    shareholdersMax: (params as Record<string, unknown>).shareholdersMax as number | undefined,
+    homeCurrency: (params as Record<string, unknown>).homeCurrency as string | undefined,
+    financialYearEndMonth: (params as Record<string, unknown>).financialYearEndMonth as number | undefined,
+    paidUpCapitalMin: (params as Record<string, unknown>).paidUpCapitalMin as number | undefined,
+    paidUpCapitalMax: (params as Record<string, unknown>).paidUpCapitalMax as number | undefined,
+    issuedCapitalMin: (params as Record<string, unknown>).issuedCapitalMin as number | undefined,
+    issuedCapitalMax: (params as Record<string, unknown>).issuedCapitalMax as number | undefined,
+    hasWarnings: (params as Record<string, unknown>).hasWarnings as boolean | undefined,
+  }), [params]);
+
+  // Generate active filter chips
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{ key: string; label: string; value: string; onRemove: () => void }> = [];
+
+    if (inlineFilters.companyName) {
+      chips.push({
+        key: 'companyName',
+        label: 'Company',
+        value: inlineFilters.companyName,
+        onRemove: () => handleInlineFilterChange({ companyName: undefined }),
+      });
+    }
+
+    if (inlineFilters.uen) {
+      chips.push({
+        key: 'uen',
+        label: 'UEN',
+        value: inlineFilters.uen,
+        onRemove: () => handleInlineFilterChange({ uen: undefined }),
+      });
+    }
+
+    if (inlineFilters.address) {
+      chips.push({
+        key: 'address',
+        label: 'Address',
+        value: inlineFilters.address,
+        onRemove: () => handleInlineFilterChange({ address: undefined }),
+      });
+    }
+
+    if (inlineFilters.hasWarnings !== undefined) {
+      chips.push({
+        key: 'hasWarnings',
+        label: 'Warnings',
+        value: inlineFilters.hasWarnings ? 'Yes' : 'No',
+        onRemove: () => handleInlineFilterChange({ hasWarnings: undefined }),
+      });
+    }
+
+    if (inlineFilters.entityType) {
+      chips.push({
+        key: 'entityType',
+        label: 'Type',
+        value: getEntityTypeLabel(inlineFilters.entityType, true),
+        onRemove: () => handleInlineFilterChange({ entityType: undefined }),
+      });
+    }
+
+    if (inlineFilters.status) {
+      chips.push({
+        key: 'status',
+        label: 'Status',
+        value: getCompanyStatusLabel(inlineFilters.status),
+        onRemove: () => handleInlineFilterChange({ status: undefined }),
+      });
+    }
+
+    if (inlineFilters.incorporationDateFrom || inlineFilters.incorporationDateTo) {
+      const from = inlineFilters.incorporationDateFrom;
+      const to = inlineFilters.incorporationDateTo;
+      let value = '';
+      if (from && to) {
+        value = `${from} - ${to}`;
+      } else if (from) {
+        value = `From ${from}`;
+      } else if (to) {
+        value = `To ${to}`;
+      }
+      chips.push({
+        key: 'incorporationDate',
+        label: 'Incorporated',
+        value,
+        onRemove: () => handleInlineFilterChange({ incorporationDateFrom: undefined, incorporationDateTo: undefined }),
+      });
+    }
+
+    if (inlineFilters.officersMin !== undefined || inlineFilters.officersMax !== undefined) {
+      const min = inlineFilters.officersMin;
+      const max = inlineFilters.officersMax;
+      let value = '';
+      if (min !== undefined && max !== undefined && min === max) {
+        value = `${min}`;
+      } else if (min !== undefined && max !== undefined) {
+        value = `${min} - ${max}`;
+      } else if (min !== undefined) {
+        value = `≥ ${min}`;
+      } else if (max !== undefined) {
+        value = `≤ ${max}`;
+      }
+      chips.push({
+        key: 'officers',
+        label: 'Officers',
+        value,
+        onRemove: () => handleInlineFilterChange({ officersMin: undefined, officersMax: undefined }),
+      });
+    }
+
+    if (inlineFilters.shareholdersMin !== undefined || inlineFilters.shareholdersMax !== undefined) {
+      const min = inlineFilters.shareholdersMin;
+      const max = inlineFilters.shareholdersMax;
+      let value = '';
+      if (min !== undefined && max !== undefined && min === max) {
+        value = `${min}`;
+      } else if (min !== undefined && max !== undefined) {
+        value = `${min} - ${max}`;
+      } else if (min !== undefined) {
+        value = `≥ ${min}`;
+      } else if (max !== undefined) {
+        value = `≤ ${max}`;
+      }
+      chips.push({
+        key: 'shareholders',
+        label: 'Shareholders',
+        value,
+        onRemove: () => handleInlineFilterChange({ shareholdersMin: undefined, shareholdersMax: undefined }),
+      });
+    }
+
+    if (inlineFilters.homeCurrency) {
+      chips.push({
+        key: 'homeCurrency',
+        label: 'Currency',
+        value: inlineFilters.homeCurrency,
+        onRemove: () => handleInlineFilterChange({ homeCurrency: undefined }),
+      });
+    }
+
+    if (inlineFilters.financialYearEndMonth) {
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      chips.push({
+        key: 'fye',
+        label: 'FYE',
+        value: monthNames[inlineFilters.financialYearEndMonth - 1] || String(inlineFilters.financialYearEndMonth),
+        onRemove: () => handleInlineFilterChange({ financialYearEndMonth: undefined }),
+      });
+    }
+
+    if (inlineFilters.paidUpCapitalMin !== undefined || inlineFilters.paidUpCapitalMax !== undefined) {
+      const min = inlineFilters.paidUpCapitalMin;
+      const max = inlineFilters.paidUpCapitalMax;
+      let value = '';
+      if (min !== undefined && max !== undefined && min === max) {
+        value = `$${min.toLocaleString()}`;
+      } else if (min !== undefined && max !== undefined) {
+        value = `$${min.toLocaleString()} - $${max.toLocaleString()}`;
+      } else if (min !== undefined) {
+        value = `≥ $${min.toLocaleString()}`;
+      } else if (max !== undefined) {
+        value = `≤ $${max.toLocaleString()}`;
+      }
+      chips.push({
+        key: 'paidUpCapital',
+        label: 'Paid-up Capital',
+        value,
+        onRemove: () => handleInlineFilterChange({ paidUpCapitalMin: undefined, paidUpCapitalMax: undefined }),
+      });
+    }
+
+    if (inlineFilters.issuedCapitalMin !== undefined || inlineFilters.issuedCapitalMax !== undefined) {
+      const min = inlineFilters.issuedCapitalMin;
+      const max = inlineFilters.issuedCapitalMax;
+      let value = '';
+      if (min !== undefined && max !== undefined && min === max) {
+        value = `$${min.toLocaleString()}`;
+      } else if (min !== undefined && max !== undefined) {
+        value = `$${min.toLocaleString()} - $${max.toLocaleString()}`;
+      } else if (min !== undefined) {
+        value = `≥ $${min.toLocaleString()}`;
+      } else if (max !== undefined) {
+        value = `≤ $${max.toLocaleString()}`;
+      }
+      chips.push({
+        key: 'issuedCapital',
+        label: 'Issued Capital',
+        value,
+        onRemove: () => handleInlineFilterChange({ issuedCapitalMin: undefined, issuedCapitalMax: undefined }),
+      });
+    }
+
+    return chips;
+  }, [inlineFilters, handleInlineFilterChange]);
+
+  // Clear all filters
+  const clearAllFilters = useCallback(() => {
+    setParams((prev) => ({
+      ...prev,
+      query: '',
+      entityType: undefined,
+      status: undefined,
+      hasCharges: undefined,
+      page: 1,
+    }));
+  }, []);
+
+  // Derive company filter options from the loaded companies for the dropdown
+  const companyFilterOptions: CompanyFilterOption[] = useMemo(() => {
+    return data?.companies?.map(c => ({ id: c.id, name: c.name })) || [];
+  }, [data?.companies]);
 
   const handleSort = (field: string) => {
     setParams((prev) => {
@@ -302,6 +650,20 @@ export default function CompaniesPage() {
             entityType: params.entityType,
             status: params.status,
             hasCharges: params.hasCharges,
+            address: (params as Record<string, unknown>).address as string | undefined,
+            homeCurrency: (params as Record<string, unknown>).homeCurrency as string | undefined,
+            hasWarnings: (params as Record<string, unknown>).hasWarnings as boolean | undefined,
+            incorporationDateFrom: (params as Record<string, unknown>).incorporationDateFrom as string | undefined,
+            incorporationDateTo: (params as Record<string, unknown>).incorporationDateTo as string | undefined,
+            officersMin: (params as Record<string, unknown>).officersMin as number | undefined,
+            officersMax: (params as Record<string, unknown>).officersMax as number | undefined,
+            shareholdersMin: (params as Record<string, unknown>).shareholdersMin as number | undefined,
+            shareholdersMax: (params as Record<string, unknown>).shareholdersMax as number | undefined,
+            paidUpCapitalMin: (params as Record<string, unknown>).paidUpCapitalMin as number | undefined,
+            paidUpCapitalMax: (params as Record<string, unknown>).paidUpCapitalMax as number | undefined,
+            issuedCapitalMin: (params as Record<string, unknown>).issuedCapitalMin as number | undefined,
+            issuedCapitalMax: (params as Record<string, unknown>).issuedCapitalMax as number | undefined,
+            financialYearEndMonth: (params as Record<string, unknown>).financialYearEndMonth as number | undefined,
           }}
           initialQuery={params.query}
         />
@@ -317,13 +679,42 @@ export default function CompaniesPage() {
         </div>
       )}
 
+      {/* Active Filter Chips - Desktop Only */}
+      {activeFilterChips.length > 0 && (
+        <div className="hidden md:flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-sm text-text-secondary font-medium">Active filters:</span>
+          {activeFilterChips.map((chip) => (
+            <FilterChip
+              key={chip.key}
+              label={chip.label}
+              value={chip.value}
+              onRemove={chip.onRemove}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="text-sm text-text-muted hover:text-text-primary transition-colors ml-2"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
-      {/* Table */}
-      <div>
+      {/* Loading State - Only show on initial load when no data exists */}
+      {isLoading && !data && (
+        <div className="card p-8 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-oak-light border-t-transparent rounded-full animate-spin" />
+          <span className="ml-3 text-text-secondary">Loading companies...</span>
+        </div>
+      )}
+
+      {/* Table - Only render when data exists */}
+      {data && (
         <CompanyTable
-          companies={data?.companies || []}
+          companies={data.companies}
           onDelete={handleDeleteClick}
-          isLoading={isLoading}
+          isFetching={isFetching}
           canEdit={canEditCompany}
           canDelete={canDeleteCompany}
           canCreate={can.createCompany}
@@ -336,8 +727,13 @@ export default function CompaniesPage() {
           sortBy={params.sortBy}
           sortOrder={params.sortOrder}
           onSort={handleSort}
+          inlineFilters={inlineFilters}
+          onInlineFilterChange={handleInlineFilterChange}
+          companyFilterOptions={companyFilterOptions}
+          columnWidths={columnWidths}
+          onColumnWidthChange={handleColumnWidthChange}
         />
-      </div>
+      )}
 
       {/* Pagination */}
       {data && data.totalPages > 0 && (

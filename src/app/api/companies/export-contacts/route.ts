@@ -42,6 +42,108 @@ export async function POST(request: NextRequest) {
     // Get export data
     const exportData = await getContactDetailsForExport(companyIds, tenantId);
 
+    // Pivot data: group by company + contact (with relationships concatenated), types as columns
+    interface PivotedRow {
+      companyName: string;
+      companyUen: string;
+      contactName: string;
+      relationships: Set<string>;
+      isPoc: boolean;
+      email: string[];
+      phone: string[];
+      website: string[];
+      other: string[];
+    }
+
+    const pivotMap = new Map<string, PivotedRow>();
+    // Separate map for company-level details (keyed by company + label)
+    const companyLevelMap = new Map<string, PivotedRow>();
+
+    for (const detail of exportData) {
+      // Company-level details: use label as the "contact name", each label is a separate row
+      if (detail.contactName === null) {
+        const labelKey = `${detail.companyName}|${detail.label || '(Unlabeled)'}`;
+
+        if (!companyLevelMap.has(labelKey)) {
+          companyLevelMap.set(labelKey, {
+            companyName: detail.companyName,
+            companyUen: detail.companyUen,
+            contactName: detail.label || '(Company-level)',
+            relationships: new Set(),
+            isPoc: false,
+            email: [],
+            phone: [],
+            website: [],
+            other: [],
+          });
+        }
+
+        const row = companyLevelMap.get(labelKey)!;
+
+        // Add value (without label since label is used as contact name)
+        switch (detail.detailType) {
+          case 'EMAIL':
+            row.email.push(detail.value);
+            break;
+          case 'PHONE':
+            row.phone.push(detail.value);
+            break;
+          case 'WEBSITE':
+            row.website.push(detail.value);
+            break;
+          default:
+            row.other.push(detail.value);
+            break;
+        }
+      } else {
+        // Contact-level details: group by company + contact, concatenate relationships
+        const key = `${detail.companyName}|${detail.contactName}`;
+
+        if (!pivotMap.has(key)) {
+          pivotMap.set(key, {
+            companyName: detail.companyName,
+            companyUen: detail.companyUen,
+            contactName: detail.contactName,
+            relationships: new Set(),
+            isPoc: detail.isPoc,
+            email: [],
+            phone: [],
+            website: [],
+            other: [],
+          });
+        }
+
+        const row = pivotMap.get(key)!;
+
+        // Add relationship to set (will be concatenated later)
+        if (detail.relationship) {
+          row.relationships.add(detail.relationship);
+        }
+
+        // Update isPoc if any detail for this contact has isPoc true
+        if (detail.isPoc) row.isPoc = true;
+
+        // Format value with label if present
+        const formattedValue = detail.label ? `${detail.value} (${detail.label})` : detail.value;
+
+        // Add to appropriate type column (avoid duplicates)
+        switch (detail.detailType) {
+          case 'EMAIL':
+            if (!row.email.includes(formattedValue)) row.email.push(formattedValue);
+            break;
+          case 'PHONE':
+            if (!row.phone.includes(formattedValue)) row.phone.push(formattedValue);
+            break;
+          case 'WEBSITE':
+            if (!row.website.includes(formattedValue)) row.website.push(formattedValue);
+            break;
+          default:
+            if (!row.other.includes(formattedValue)) row.other.push(formattedValue);
+            break;
+        }
+      }
+    }
+
     // Create Excel workbook
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Oakcloud';
@@ -49,17 +151,17 @@ export async function POST(request: NextRequest) {
 
     const worksheet = workbook.addWorksheet('Contact Details');
 
-    // Define columns
+    // Define columns with types pivoted into separate columns
     worksheet.columns = [
       { header: 'Company Name', key: 'companyName', width: 30 },
       { header: 'UEN', key: 'companyUen', width: 15 },
       { header: 'Contact Name', key: 'contactName', width: 25 },
       { header: 'Relationship', key: 'relationship', width: 20 },
-      { header: 'Type', key: 'detailType', width: 12 },
-      { header: 'Value', key: 'value', width: 35 },
-      { header: 'Label', key: 'label', width: 20 },
-      { header: 'Purposes', key: 'purposes', width: 25 },
-      { header: 'Primary', key: 'isPrimary', width: 10 },
+      { header: 'Point of Contact', key: 'isPoc', width: 15 },
+      { header: 'Email', key: 'email', width: 35 },
+      { header: 'Phone', key: 'phone', width: 25 },
+      { header: 'Website', key: 'website', width: 35 },
+      { header: 'Other', key: 'other', width: 30 },
     ];
 
     // Style header row
@@ -71,18 +173,34 @@ export async function POST(request: NextRequest) {
     };
     worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
 
-    // Add data rows
-    for (const detail of exportData) {
+    // Add data rows - first company-level, then contact-level
+    // Company-level rows (labels as contact names)
+    for (const row of companyLevelMap.values()) {
       worksheet.addRow({
-        companyName: detail.companyName,
-        companyUen: detail.companyUen,
-        contactName: detail.contactName || '(Company-level)',
-        relationship: detail.relationship || '-',
-        detailType: formatDetailType(detail.detailType),
-        value: detail.value,
-        label: detail.label || '-',
-        purposes: detail.purposes.length > 0 ? detail.purposes.join(', ') : '-',
-        isPrimary: detail.isPrimary ? 'Yes' : 'No',
+        companyName: row.companyName,
+        companyUen: row.companyUen,
+        contactName: row.contactName,
+        relationship: '-',
+        isPoc: '-',
+        email: row.email.join(', ') || '-',
+        phone: row.phone.join(', ') || '-',
+        website: row.website.join(', ') || '-',
+        other: row.other.join(', ') || '-',
+      });
+    }
+
+    // Contact-level rows (with concatenated relationships)
+    for (const row of pivotMap.values()) {
+      worksheet.addRow({
+        companyName: row.companyName,
+        companyUen: row.companyUen,
+        contactName: row.contactName,
+        relationship: row.relationships.size > 0 ? Array.from(row.relationships).join(', ') : '-',
+        isPoc: row.isPoc ? 'Yes' : '-',
+        email: row.email.join(', ') || '-',
+        phone: row.phone.join(', ') || '-',
+        website: row.website.join(', ') || '-',
+        other: row.other.join(', ') || '-',
       });
     }
 
@@ -146,12 +264,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function formatDetailType(type: string): string {
-  const typeMap: Record<string, string> = {
-    EMAIL: 'Email',
-    PHONE: 'Phone',
-    WEBSITE: 'Website',
-    OTHER: 'Other',
-  };
-  return typeMap[type] || type;
-}

@@ -101,6 +101,9 @@ export const deleteCompanySchema = z.object({
 
 export const companySearchSchema = z.object({
   query: z.string().optional(),
+  uen: z.string().optional(),
+  address: z.string().optional(),
+  hasWarnings: z.boolean().optional(),
   entityType: entityTypeEnum.optional(),
   status: companyStatusEnum.optional(),
   incorporationDateFrom: z.string().optional().transform((val) => {
@@ -115,10 +118,21 @@ export const companySearchSchema = z.object({
   }),
   hasCharges: z.boolean().optional(),
   financialYearEndMonth: z.number().min(1).max(12).optional(),
+  homeCurrency: z.string().optional(),
+  // Capital amount filters
+  paidUpCapitalMin: z.number().optional(),
+  paidUpCapitalMax: z.number().optional(),
+  issuedCapitalMin: z.number().optional(),
+  issuedCapitalMax: z.number().optional(),
+  // Count filters
+  officersMin: z.number().optional(),
+  officersMax: z.number().optional(),
+  shareholdersMin: z.number().optional(),
+  shareholdersMax: z.number().optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(200).default(20),
   sortBy: z
-    .enum(['name', 'uen', 'incorporationDate', 'status', 'updatedAt', 'createdAt'])
+    .enum(['name', 'uen', 'incorporationDate', 'status', 'updatedAt', 'createdAt', 'homeCurrency', 'financialYearEndMonth', 'paidUpCapitalAmount', 'issuedCapitalAmount', 'officersCount', 'shareholdersCount', 'address'])
     .default('updatedAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });

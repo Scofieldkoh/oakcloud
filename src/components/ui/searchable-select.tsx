@@ -299,7 +299,7 @@ export function SearchableSelect({
   );
 
   const sizeClasses = {
-    sm: 'h-9 text-sm',
+    sm: 'h-9 text-xs',
     md: 'h-10 text-base',
   };
 
@@ -351,7 +351,9 @@ export function SearchableSelect({
           disabled={disabled}
           className={cn(
             'flex-1 bg-transparent outline-none px-3 min-w-0',
-            'text-text-primary placeholder:text-text-secondary',
+            'placeholder:text-text-secondary',
+            // Use secondary color when showing placeholder-like "All" state (empty value)
+            !value ? 'text-text-secondary' : 'text-text-primary',
             sizeClasses[size]
           )}
         />

@@ -20,6 +20,11 @@ export async function GET(request: NextRequest) {
     // Let Zod handle all parsing and validation - no manual parseInt or type casts
     const params = companySearchSchema.parse({
       query: searchParams.get('query') || undefined,
+      uen: searchParams.get('uen') || undefined,
+      address: searchParams.get('address') || undefined,
+      hasWarnings: searchParams.get('hasWarnings')
+        ? searchParams.get('hasWarnings') === 'true'
+        : undefined,
       entityType: searchParams.get('entityType') || undefined,
       status: searchParams.get('status') || undefined,
       incorporationDateFrom: searchParams.get('incorporationDateFrom') || undefined,
@@ -29,6 +34,31 @@ export async function GET(request: NextRequest) {
         : undefined,
       financialYearEndMonth: searchParams.get('financialYearEndMonth')
         ? Number(searchParams.get('financialYearEndMonth'))
+        : undefined,
+      homeCurrency: searchParams.get('homeCurrency') || undefined,
+      paidUpCapitalMin: searchParams.get('paidUpCapitalMin')
+        ? Number(searchParams.get('paidUpCapitalMin'))
+        : undefined,
+      paidUpCapitalMax: searchParams.get('paidUpCapitalMax')
+        ? Number(searchParams.get('paidUpCapitalMax'))
+        : undefined,
+      issuedCapitalMin: searchParams.get('issuedCapitalMin')
+        ? Number(searchParams.get('issuedCapitalMin'))
+        : undefined,
+      issuedCapitalMax: searchParams.get('issuedCapitalMax')
+        ? Number(searchParams.get('issuedCapitalMax'))
+        : undefined,
+      officersMin: searchParams.get('officersMin')
+        ? Number(searchParams.get('officersMin'))
+        : undefined,
+      officersMax: searchParams.get('officersMax')
+        ? Number(searchParams.get('officersMax'))
+        : undefined,
+      shareholdersMin: searchParams.get('shareholdersMin')
+        ? Number(searchParams.get('shareholdersMin'))
+        : undefined,
+      shareholdersMax: searchParams.get('shareholdersMax')
+        ? Number(searchParams.get('shareholdersMax'))
         : undefined,
       page: searchParams.get('page') ? Number(searchParams.get('page')) : undefined,
       limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,

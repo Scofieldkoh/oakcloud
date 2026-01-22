@@ -52,11 +52,19 @@ interface ContactWithRelationships extends Contact {
 
 interface ContactSearchParams {
   query?: string;
+  fullName?: string;
   contactType?: ContactType;
+  identificationType?: 'NRIC' | 'FIN' | 'PASSPORT' | 'UEN' | 'OTHER';
+  identificationNumber?: string;
+  nationality?: string;
+  email?: string;
+  phone?: string;
   companyId?: string;
+  companiesMin?: number;
+  companiesMax?: number;
   page?: number;
   limit?: number;
-  sortBy?: 'fullName' | 'createdAt' | 'updatedAt';
+  sortBy?: 'fullName' | 'contactType' | 'nationality' | 'companyRelationsCount' | 'createdAt' | 'updatedAt';
   sortOrder?: 'asc' | 'desc';
   tenantId?: string;
 }
@@ -193,21 +201,12 @@ async function unlinkContactFromCompany(
 
 export function useContacts(params: ContactSearchParams = {}) {
   return useQuery({
-    queryKey: [
-      'contacts',
-      params.query,
-      params.contactType,
-      params.companyId,
-      params.page,
-      params.limit,
-      params.sortBy,
-      params.sortOrder,
-      params.tenantId,
-    ],
+    queryKey: ['contacts', params],
     queryFn: () => fetchContacts(params),
     staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
     refetchOnMount: 'always', // Always refetch when component mounts
+    placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
   });
 }
 
