@@ -185,4 +185,7 @@ export interface StorageConfig {
   // S3 Encryption config
   s3Encryption?: S3EncryptionType;
   s3KmsKeyId?: string; // Required when s3Encryption is 'aws:kms'
+
+  // MinIO detection (auto-detected from endpoint, or set S3_IS_MINIO=true)
+  s3IsMinIO: boolean;
 }

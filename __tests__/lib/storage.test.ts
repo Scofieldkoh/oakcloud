@@ -184,6 +184,7 @@ describe('S3StorageAdapter', () => {
     s3SecretKey: 'test-secret-key',
     s3ForcePathStyle: true,
     s3UseSsl: false,
+    s3IsMinIO: true,
   };
 
   async function createS3Adapter() {
@@ -211,7 +212,7 @@ describe('S3StorageAdapter', () => {
     it('should throw error if config is incomplete', async () => {
       const { S3StorageAdapter } = await import('@/lib/storage/s3.adapter');
 
-      expect(() => new S3StorageAdapter({ provider: 's3' })).toThrow(
+      expect(() => new S3StorageAdapter({ provider: 's3', s3IsMinIO: false })).toThrow(
         'S3 configuration is incomplete'
       );
     });
@@ -568,6 +569,7 @@ describe('Storage Configuration', () => {
         s3SecretKey: 'secret',
         s3ForcePathStyle: true,
         s3UseSsl: false,
+        s3IsMinIO: true,
       };
 
       expect(() => validateStorageConfig(incompleteConfig)).toThrow('S3_BUCKET is required');
@@ -579,6 +581,7 @@ describe('Storage Configuration', () => {
 
       const invalidConfig = {
         provider: 'invalid' as 's3',
+        s3IsMinIO: false,
       };
 
       expect(() => validateStorageConfig(invalidConfig)).toThrow('Invalid STORAGE_PROVIDER');

@@ -38,6 +38,7 @@ export class S3StorageAdapter implements StorageAdapter {
   private bucketEnsured: boolean = false;
   private encryption: S3EncryptionType;
   private kmsKeyId?: string;
+  private isMinIO: boolean;
 
   constructor(config: StorageConfig) {
     if (!config.s3Endpoint || !config.s3Bucket || !config.s3AccessKey || !config.s3SecretKey) {
@@ -48,6 +49,7 @@ export class S3StorageAdapter implements StorageAdapter {
     this.endpoint = config.s3Endpoint;
     this.encryption = config.s3Encryption || 'AES256'; // Default to SSE-S3
     this.kmsKeyId = config.s3KmsKeyId;
+    this.isMinIO = config.s3IsMinIO;
 
     // Validate KMS configuration
     if (this.encryption === 'aws:kms' && !this.kmsKeyId) {
@@ -109,7 +111,7 @@ export class S3StorageAdapter implements StorageAdapter {
     // Note: MinIO may not support all encryption types. For local dev, consider S3_ENCRYPTION=none
     if (this.encryption !== 'none') {
       // Only add encryption header if not using MinIO (localhost)
-      const isMinIO = this.endpoint.includes('localhost') || this.endpoint.includes('127.0.0.1');
+      const isMinIO = this.isMinIO;
       if (!isMinIO) {
         commandInput.ServerSideEncryption = this.encryption;
         if (this.encryption === 'aws:kms' && this.kmsKeyId) {
@@ -313,7 +315,7 @@ export class S3StorageAdapter implements StorageAdapter {
     // Apply encryption to the copied object
     // Note: MinIO may not support all encryption types
     if (this.encryption !== 'none') {
-      const isMinIO = this.endpoint.includes('localhost') || this.endpoint.includes('127.0.0.1');
+      const isMinIO = this.isMinIO;
       if (!isMinIO) {
         commandInput.ServerSideEncryption = this.encryption;
         if (this.encryption === 'aws:kms' && this.kmsKeyId) {

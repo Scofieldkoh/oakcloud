@@ -1,4 +1,40 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oakcloud-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://oakcloud:oakcloud_password@postgres:5432/oakcloud
+      - REDIS_URL=redis://redis:6379
+      - S3_ENDPOINT=http://minio:9000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: oakcloud-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - app
+
   postgres:
     image: postgres:16-alpine
     container_name: oakcloud-postgres

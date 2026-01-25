@@ -5,64 +5,77 @@ import { getPrismaLogConfig, createLogger } from './logger';
 
 const prismaLogger = createLogger('prisma');
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-  pool: Pool | undefined;
-};
+declare global {
+  // eslint-disable-next-line no-var
+  var __prisma: PrismaClient | undefined;
+  // eslint-disable-next-line no-var
+  var __prismaPool: Pool | undefined;
+}
 
 /**
  * Create a PostgreSQL connection pool
- * Connection pool is reused across requests for efficiency
  */
 function createPool(): Pool {
-  const connectionString = process.env.DATABASE_URL;
+  if (global.__prismaPool) {
+    return global.__prismaPool;
+  }
 
+  const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error('DATABASE_URL environment variable is required');
   }
 
   const poolConfig: PoolConfig = {
     connectionString,
-    max: 10, // Maximum connections in pool
-    idleTimeoutMillis: 30000, // Close idle connections after 30s
-    connectionTimeoutMillis: 5000, // Timeout for new connections
+    max: 20, // Increased for better concurrency
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
   };
 
-  // Enable SSL for production environments (most cloud databases require it)
-  // Can be disabled by setting DATABASE_SSL=false
   if (process.env.NODE_ENV === 'production' && process.env.DATABASE_SSL !== 'false') {
-    poolConfig.ssl = {
-      rejectUnauthorized: false, // Allow self-signed certs (common in cloud DBs)
-    };
+    poolConfig.ssl = { rejectUnauthorized: false };
   }
 
-  return new Pool(poolConfig);
+  const pool = new Pool(poolConfig);
+  global.__prismaPool = pool;
+  return pool;
 }
 
 /**
- * Create Prisma Client with PostgreSQL driver adapter
- * Uses the new Prisma 7 architecture for better performance
+ * Initialize Prisma Client - called from instrumentation.ts or on first use
  */
-function createPrismaClient(): PrismaClient {
+export function initializePrisma(): PrismaClient {
+  if (global.__prisma) {
+    return global.__prisma;
+  }
+
   const logConfig = getPrismaLogConfig();
   prismaLogger.debug(`Initializing Prisma 7 with log levels: ${logConfig.join(', ') || 'none'}`);
 
-  // Create or reuse connection pool (reuse in both dev and production)
-  const pool = globalForPrisma.pool ?? createPool();
-  globalForPrisma.pool = pool;
-
-  // Create adapter with the pool
+  const pool = createPool();
   const adapter = new PrismaPg(pool);
+  const client = new PrismaClient({ adapter, log: logConfig });
 
-  return new PrismaClient({
-    adapter,
-    log: logConfig,
-  });
+  global.__prisma = client;
+  return client;
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+/**
+ * Get the Prisma client instance
+ */
+export function getPrisma(): PrismaClient {
+  if (!global.__prisma) {
+    return initializePrisma();
+  }
+  return global.__prisma;
+}
 
-// Store prisma instance globally to prevent multiple instances
-globalForPrisma.prisma = prisma;
+// CRITICAL FIX: Lazy proxy that defers initialization until first use
+// This prevents module-level execution timing issues with instrumentation.ts
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_, prop) {
+    return getPrisma()[prop as keyof PrismaClient];
+  },
+});
 
 export default prisma;

@@ -28,6 +28,15 @@ export function getStorageConfig(): StorageConfig {
     }
   }
 
+  const s3Endpoint = process.env.S3_ENDPOINT || 'http://localhost:9000';
+
+  // Auto-detect MinIO from endpoint or explicit S3_IS_MINIO env var
+  const s3IsMinIO =
+    process.env.S3_IS_MINIO === 'true' ||
+    s3Endpoint.includes('localhost') ||
+    s3Endpoint.includes('127.0.0.1') ||
+    s3Endpoint.includes('minio');
+
   return {
     provider,
 
@@ -35,7 +44,7 @@ export function getStorageConfig(): StorageConfig {
     localPath: process.env.STORAGE_LOCAL_PATH || './uploads',
 
     // S3/MinIO config
-    s3Endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
+    s3Endpoint,
     s3Region: process.env.S3_REGION || 'us-east-1',
     s3Bucket: process.env.S3_BUCKET || 'oakcloud',
     s3AccessKey: process.env.S3_ACCESS_KEY || 'oakcloud',
@@ -46,6 +55,9 @@ export function getStorageConfig(): StorageConfig {
     // S3 Encryption config
     s3Encryption,
     s3KmsKeyId: process.env.S3_KMS_KEY_ID,
+
+    // MinIO detection
+    s3IsMinIO,
   };
 }
 
