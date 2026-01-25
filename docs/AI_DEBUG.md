@@ -917,3 +917,129 @@ This file contains debug logs for AI extraction calls when `AI_DEBUG=true`.
 
 ---
 
+## AI Request - 2026-01-22T13:04:57.003Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 54343ms |
+| Input Tokens | 4309 |
+| Output Tokens | 992 |
+| Total Tokens | 7957 |
+| Estimated Cost | $0.0063 |
+
+<details>
+<summary>Response (2527 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202519163R",
+    "name": "AI 4 SOLUTIONS PTE. LTD.",
+    "incorporationDate": "2025-05-02",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-05-02"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "62011",
+      "description": "DEVELOPMENT OF SOFTWARE AND APPLICATIONS (EXCEPT GAMES AND CYBERSECURITY)"
+    },
+    "secondary": {
+      "code": "74909",
+      "description": "OTHER PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES N.E.C."
+    }
+  },
+  "registeredAddress": {
+    "block": "11",
+    "streetName": "COLLYER QUAY",
+    "level": "03",
+    "unit": "07",
+    "buildingName": "THE ARCADE",
+    "postalCode": "049317",
+    "effectiveFrom": "2025-05-02"
+  },
+  "paidUpCapital": {
+    "amount": 1,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 1,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 150000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "AI FOR SOLUTIONS PTY LTD",
+      "type": "CORPORATE",
+      "identificationType": "OTHER",
+      "identificationNumber": "AU-689580630",
+      "nationality": "AUSTRALIA",
+      "placeOfOrigin": "AUSTRALIA",
+      "address": "26 KUMBA STREET FLETCHER NSW 2287 AUSTRALIA",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 150000,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "MOHAMED SADAGATTOULLA SALIHA THASLIM",
+      "role": "CEO",
+      "identificationType": "FIN",
+      "identificationNumber": "S9682647H",
+      "nationality": "INDIAN",
+      "address": "520 BEDOK NORTH AVENUE 1, #05-342, SINGAPORE 460520",
+      "appointmentDate": "2025-05-02"
+    },
+    {
+      "name": "MOHAMED SADAGATTOULLA SALIHA THASLIM",
+      "role": "DIRECTOR",
+      "identificationType": "FIN",
+      "identificationNumber": "S9682647H",
+      "nationality": "INDIAN",
+      "address": "520 BEDOK NORTH AVENUE 1, #05-342, SINGAPORE 460520",
+      "appointmentDate": "2025-05-02"
+    },
+    {
+      "name": "MOHAMED SADAGATTOULLA SALIHA THASLIM",
+      "role": "MANAGING_DIRECTOR",
+      "identificationType": "FIN",
+      "identificationNumber": "S9682647H",
+      "nationality": "INDIAN",
+      "address": "520 BEDOK NORTH AVENUE 1, #05-342, SINGAPORE 460520",
+      "appointmentDate": "2025-05-02"
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "ACRA250807001467",
+    "receiptDate": "2025-08-07"
+  }
+}
+```
+</details>
+
+---
+

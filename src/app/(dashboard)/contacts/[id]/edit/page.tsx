@@ -317,11 +317,11 @@ export default function EditContactPage({
                   )}
                 </div>
                 <div>
-                  <label className="label">UEN</label>
+                  <label className="label">UEN / Registration No.</label>
                   <input
                     type="text"
                     {...register('corporateUen')}
-                    placeholder="202012345A"
+                    placeholder="202012345A or overseas reg. no."
                     className="input input-sm uppercase"
                   />
                 </div>

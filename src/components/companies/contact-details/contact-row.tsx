@@ -5,13 +5,30 @@ import { Mail, Phone, Pencil, Building2, User, Trash2, Star, Loader2 } from 'luc
 import { CopyButton } from './copy-button';
 import type { ContactWithDetails } from './types';
 
-// Helper to normalize and convert to Title Case
+// Common abbreviations that should remain uppercase
+const ABBREVIATIONS = new Set(['CEO', 'CFO', 'COO', 'CTO', 'CIO', 'CMO', 'HR', 'IT', 'VP', 'SVP', 'EVP']);
+
+// Helper to normalize and convert to Title Case while preserving abbreviations
 // Replaces underscores with spaces and converts to title case
 function normalizeRole(str: string): string {
+  // First check if the entire string (trimmed, uppercased) is an abbreviation
+  const upperStr = str.trim().toUpperCase();
+  if (ABBREVIATIONS.has(upperStr)) {
+    return upperStr;
+  }
+
   return str
     .replace(/_/g, ' ')  // Replace underscores with spaces
     .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .replace(/\b\w+/g, (word) => {
+      const upperWord = word.toUpperCase();
+      // Keep abbreviations uppercase
+      if (ABBREVIATIONS.has(upperWord)) {
+        return upperWord;
+      }
+      // Title case for other words
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    });
 }
 
 // Helper to deduplicate and clean up relationships

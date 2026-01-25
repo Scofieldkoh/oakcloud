@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { extractBizFileWithVision, generateBizFileDiff, normalizeExtractedData } from '@/services/bizfile';
+import { mapEntityType } from '@/services/bizfile/types';
 import { calculateCost, formatCost, getModelConfig } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
 import { storage } from '@/lib/storage';
+import { retrieveFYEFromACRA, isCompanyEntityType } from '@/lib/external/acra-fye';
+import logger from '@/lib/logger';
 
 // Supported MIME types for vision extraction
 const VISION_SUPPORTED_TYPES = [
@@ -119,6 +122,35 @@ export async function POST(
           tenantId: document.tenantId, // Use tenant's configured AI connector
         }
       );
+
+      // If FYE not extracted and entity type is a company, try to retrieve from ACRA
+      const extractedEntityType = mapEntityType(extractionResult.data.entityDetails?.entityType);
+      const hasFYE = extractionResult.data.financialYear?.endDay && extractionResult.data.financialYear?.endMonth;
+
+      if (!hasFYE && isCompanyEntityType(extractedEntityType)) {
+        const companyName = extractionResult.data.entityDetails?.name;
+        const uen = extractionResult.data.entityDetails?.uen;
+
+        if (companyName && uen) {
+          try {
+            logger.info('FYE not in BizFile, attempting ACRA retrieval', { companyName, uen, entityType: extractedEntityType });
+            const fyeResult = await retrieveFYEFromACRA(companyName, uen, extractedEntityType);
+
+            if (fyeResult) {
+              // Add FYE to extracted data
+              extractionResult.data.financialYear = {
+                ...extractionResult.data.financialYear,
+                endDay: fyeResult.day,
+                endMonth: fyeResult.month,
+              };
+              logger.info('FYE retrieved from ACRA and added to extraction', { fyeResult });
+            }
+          } catch (fyeError) {
+            // Log but don't fail the extraction if FYE retrieval fails
+            logger.warn('Failed to retrieve FYE from ACRA, continuing without it', { error: fyeError });
+          }
+        }
+      }
 
       // Normalize extracted data before comparing
       const normalizedData = normalizeExtractedData(extractionResult.data);

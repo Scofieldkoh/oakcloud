@@ -45,16 +45,16 @@ const contactBaseSchema = z.object({
   corporateName: z.string().max(200).optional().nullable(),
   corporateUen: z
     .string()
-    .max(10)
+    .max(50)
     .optional()
     .nullable()
     .refine(
       (val) => {
         if (!val) return true;
-        // Singapore UEN format: 9-10 alphanumeric characters
-        return /^[A-Za-z0-9]{9,10}$/.test(val);
+        // Allow alphanumeric characters, hyphens, and spaces for overseas registration numbers
+        return /^[A-Za-z0-9\-\s]+$/.test(val);
       },
-      { message: 'Corporate UEN must be 9-10 alphanumeric characters' }
+      { message: 'UEN / Registration No. must contain only alphanumeric characters, hyphens, or spaces' }
     ),
 
   // Address

@@ -86,6 +86,8 @@ export interface CompanyWithRelations extends Company {
     shareholders: number;
     charges: number;
   };
+  /** Whether any linked contact is marked as Point of Contact */
+  hasPoc?: boolean;
 }
 
 // Re-export shared type for backwards compatibility
@@ -922,7 +924,7 @@ export async function searchCompanies(
   // Pagination
   const skip = (params.page - 1) * params.limit;
 
-  let [companies, total] = await Promise.all([
+  let [companiesRaw, total] = await Promise.all([
     prisma.company.findMany({
       where,
       include: {
@@ -935,6 +937,11 @@ export async function searchCompanies(
             fullAddress: true,
             isCurrent: true,
           },
+        },
+        contacts: {
+          where: { isPoc: true, deletedAt: null },
+          take: 1,
+          select: { id: true },
         },
         _count: {
           select: {
@@ -951,6 +958,12 @@ export async function searchCompanies(
     }),
     prisma.company.count({ where }),
   ]);
+
+  // Map to add hasPoc field and remove contacts from response
+  let companies = companiesRaw.map(({ contacts, ...company }) => ({
+    ...company,
+    hasPoc: contacts && contacts.length > 0,
+  }));
 
   // Post-query filtering for count ranges (Prisma doesn't support this in WHERE)
   if (params.officersMin !== undefined || params.officersMax !== undefined ||

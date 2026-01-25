@@ -3,14 +3,16 @@
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert, Download } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateCompanySchema, type UpdateCompanyInput } from '@/lib/validations/company';
-import { useCompany, useUpdateCompany } from '@/hooks/use-companies';
+import { useCompany, useUpdateCompany, useRetrieveFYE } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { useToast } from '@/components/ui/toast';
 import { ENTITY_TYPES } from '@/lib/constants';
+import { isCompanyEntityType } from '@/lib/external/acra-fye';
 
 const statuses = [
   { value: 'LIVE', label: 'Live' },
@@ -48,14 +50,18 @@ export default function EditCompanyPage({
   const router = useRouter();
   const { data: company, isLoading, error } = useCompany(id);
   const updateCompany = useUpdateCompany();
+  const retrieveFYE = useRetrieveFYE(id);
   // Get permissions for this specific company
   const { can, isLoading: permissionsLoading } = usePermissions(id);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<UpdateCompanyInput>({
     resolver: zodResolver(updateCompanySchema),
@@ -63,6 +69,29 @@ export default function EditCompanyPage({
       id,
     },
   });
+
+  // Watch FYE fields and entity type to determine if Retrieve button should show
+  const watchedFYEDay = watch('financialYearEndDay');
+  const watchedFYEMonth = watch('financialYearEndMonth');
+  const watchedEntityType = watch('entityType');
+
+  // Show Retrieve button when FYE is empty and entity type is a company type
+  const showRetrieveFYEButton =
+    !watchedFYEDay &&
+    !watchedFYEMonth &&
+    watchedEntityType &&
+    isCompanyEntityType(watchedEntityType);
+
+  const handleRetrieveFYE = async () => {
+    try {
+      const result = await retrieveFYE.mutateAsync();
+      setValue('financialYearEndDay', result.financialYearEndDay, { shouldDirty: true });
+      setValue('financialYearEndMonth', result.financialYearEndMonth, { shouldDirty: true });
+      toastSuccess('Financial Year End retrieved successfully');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to retrieve FYE from ACRA');
+    }
+  };
 
   useEffect(() => {
     if (company) {
@@ -473,15 +502,33 @@ export default function EditCompanyPage({
                   ))}
                 </select>
               </div>
-              <div>
+              <div className="flex flex-col">
                 <label className="label">Home Currency</label>
-                <input
-                  type="text"
-                  maxLength={3}
-                  {...register('homeCurrency')}
-                  className="input input-sm uppercase"
-                  placeholder="SGD"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    maxLength={3}
+                    {...register('homeCurrency')}
+                    className="input input-sm uppercase flex-1"
+                    placeholder="SGD"
+                  />
+                  {showRetrieveFYEButton && (
+                    <button
+                      type="button"
+                      onClick={handleRetrieveFYE}
+                      disabled={retrieveFYE.isPending}
+                      className="btn-secondary btn-sm flex items-center gap-1.5 whitespace-nowrap"
+                      title="Retrieve Financial Year End from ACRA"
+                    >
+                      {retrieveFYE.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      <span className="hidden sm:inline">Retrieve FYE</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 

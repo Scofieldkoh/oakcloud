@@ -121,6 +121,10 @@ interface ExtractedData {
     postalCode: string;
     streetName: string;
   };
+  financialYear?: {
+    endDay: number;
+    endMonth: number;
+  };
 }
 
 // AI metadata from extraction
@@ -569,27 +573,27 @@ export default function UploadBizFilePage() {
             <div className="divide-y divide-border-primary">
               {/* Entity Details */}
               <div className="p-4">
-                <h3 className="text-sm font-medium text-text-tertiary uppercase mb-3">
+                <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
                   Entity Details
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-text-muted">UEN</p>
-                    <p className="text-text-primary">{extractedData.entityDetails.uen}</p>
+                    <p className="text-xs text-text-muted mb-0.5">UEN</p>
+                    <p className="text-sm text-text-primary">{extractedData.entityDetails.uen}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-muted">Name</p>
-                    <p className="text-text-primary">{extractedData.entityDetails.name}</p>
+                    <p className="text-xs text-text-muted mb-0.5">Name</p>
+                    <p className="text-sm text-text-primary">{extractedData.entityDetails.name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-muted">Entity Type</p>
-                    <p className="text-text-primary">
+                    <p className="text-xs text-text-muted mb-0.5">Entity Type</p>
+                    <p className="text-sm text-text-primary">
                       {extractedData.entityDetails.entityType?.replace(/_/g, ' ')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-muted">Status</p>
-                    <p className="text-text-primary">
+                    <p className="text-xs text-text-muted mb-0.5">Status</p>
+                    <p className="text-sm text-text-primary">
                       {extractedData.entityDetails.status?.replace(/_/g, ' ')}
                     </p>
                   </div>
@@ -599,13 +603,13 @@ export default function UploadBizFilePage() {
               {/* Business Activity */}
               {extractedData.ssicActivities?.primary && (
                 <div className="p-4">
-                  <h3 className="text-sm font-medium text-text-tertiary uppercase mb-3">
+                  <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
                     Business Activity
                   </h3>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div>
-                      <p className="text-xs text-text-muted">Primary</p>
-                      <p className="text-text-primary">
+                      <p className="text-xs text-text-muted mb-0.5">Primary</p>
+                      <p className="text-sm text-text-primary">
                         <code className="text-xs bg-background-elevated px-1.5 py-0.5 rounded mr-2">
                           {extractedData.ssicActivities.primary.code}
                         </code>
@@ -614,8 +618,8 @@ export default function UploadBizFilePage() {
                     </div>
                     {extractedData.ssicActivities.secondary && (
                       <div>
-                        <p className="text-xs text-text-muted">Secondary</p>
-                        <p className="text-text-primary">
+                        <p className="text-xs text-text-muted mb-0.5">Secondary</p>
+                        <p className="text-sm text-text-primary">
                           <code className="text-xs bg-background-elevated px-1.5 py-0.5 rounded mr-2">
                             {extractedData.ssicActivities.secondary.code}
                           </code>
@@ -627,17 +631,38 @@ export default function UploadBizFilePage() {
                 </div>
               )}
 
+              {/* Financial Year End */}
+              {extractedData.financialYear?.endDay && extractedData.financialYear?.endMonth && (
+                <div className="p-4">
+                  <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
+                    Financial Year End
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-text-muted mb-0.5">Day</p>
+                      <p className="text-sm text-text-primary">{extractedData.financialYear.endDay}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted mb-0.5">Month</p>
+                      <p className="text-sm text-text-primary">
+                        {new Date(2000, extractedData.financialYear.endMonth - 1).toLocaleString('default', { month: 'long' })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Officers */}
               {extractedData.officers && extractedData.officers.length > 0 && (
                 <div className="p-4">
-                  <h3 className="text-sm font-medium text-text-tertiary uppercase mb-3">
+                  <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
                     Officers ({extractedData.officers.length})
                   </h3>
                   <div className="space-y-2">
                     {extractedData.officers.slice(0, 5).map((officer, i) => (
                       <div key={i} className="flex items-center justify-between">
-                        <p className="text-text-primary">{officer.name}</p>
-                        <span className="text-sm text-text-tertiary">
+                        <p className="text-sm text-text-primary">{officer.name}</p>
+                        <span className="text-sm text-text-secondary">
                           {officer.role?.replace(/_/g, ' ')}
                         </span>
                       </div>
@@ -654,14 +679,14 @@ export default function UploadBizFilePage() {
               {/* Shareholders */}
               {extractedData.shareholders && extractedData.shareholders.length > 0 && (
                 <div className="p-4">
-                  <h3 className="text-sm font-medium text-text-tertiary uppercase mb-3">
+                  <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
                     Shareholders ({extractedData.shareholders.length})
                   </h3>
                   <div className="space-y-2">
                     {extractedData.shareholders.slice(0, 5).map((sh, i) => (
                       <div key={i} className="flex items-center justify-between">
-                        <p className="text-text-primary">{sh.name}</p>
-                        <span className="text-sm text-text-tertiary">
+                        <p className="text-sm text-text-primary">{sh.name}</p>
+                        <span className="text-sm text-text-secondary">
                           {sh.numberOfShares?.toLocaleString()} shares
                           {sh.percentageHeld && ` (${sh.percentageHeld}%)`}
                         </span>

@@ -27,6 +27,8 @@ interface CompanyWithRelations extends Company {
     shareholders: number;
     charges: number;
   };
+  /** Whether any linked contact is marked as Point of Contact */
+  hasPoc?: boolean;
 }
 
 /** Month names for FYE filter */
@@ -797,8 +799,14 @@ export function CompanyTable({
                     <span className={`badge ${statusConfig[company.status].color}`}>
                       {statusConfig[company.status].label}
                     </span>
-                    {company.financialYearEndMonth == null && (
-                      <span className="text-amber-500" title="Financial year end required">
+                    {(company.financialYearEndMonth == null || company.hasPoc === false) && (
+                      <span
+                        className="text-amber-500"
+                        title={[
+                          company.financialYearEndMonth == null && 'Financial year end required',
+                          company.hasPoc === false && 'Point of contact required',
+                        ].filter(Boolean).join(', ')}
+                      >
                         <AlertTriangle className="w-4 h-4" />
                       </span>
                     )}
@@ -965,10 +973,13 @@ export function CompanyTable({
                       </td>
                       {/* Warnings */}
                       <td className="px-1 py-3">
-                        {company.financialYearEndMonth == null && (
+                        {(company.financialYearEndMonth == null || company.hasPoc === false) && (
                           <span
                             className="inline-flex items-center justify-center text-amber-500"
-                            title="Financial year end required"
+                            title={[
+                              company.financialYearEndMonth == null && 'Financial year end required',
+                              company.hasPoc === false && 'Point of contact required',
+                            ].filter(Boolean).join(', ')}
                           >
                             <AlertTriangle className="w-4 h-4" />
                           </span>

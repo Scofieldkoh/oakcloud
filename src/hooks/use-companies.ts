@@ -649,3 +649,46 @@ export function useCompanyBizFile(companyId: string) {
     retry: false, // Don't retry on 404
   });
 }
+
+// ============================================================================
+// FYE Retrieval from ACRA
+// ============================================================================
+
+export interface FYERetrievalResult {
+  financialYearEndDay: number;
+  financialYearEndMonth: number;
+}
+
+async function retrieveFYE(companyId: string): Promise<FYERetrievalResult> {
+  const res = await fetch(`/api/companies/${companyId}/retrieve-fye`);
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to retrieve FYE from ACRA');
+  }
+  return res.json();
+}
+
+/**
+ * Hook to retrieve Financial Year End from ACRA data
+ *
+ * Fetches account_due_date from data.gov.sg and calculates FYE based on company type.
+ *
+ * @param companyId - Company ID to retrieve FYE for
+ * @returns Mutation object with mutate/mutateAsync functions
+ *
+ * @example
+ * ```tsx
+ * const retrieveFYE = useRetrieveFYE(companyId);
+ *
+ * const handleRetrieve = async () => {
+ *   const result = await retrieveFYE.mutateAsync();
+ *   setValue('financialYearEndDay', result.financialYearEndDay);
+ *   setValue('financialYearEndMonth', result.financialYearEndMonth);
+ * };
+ * ```
+ */
+export function useRetrieveFYE(companyId: string) {
+  return useMutation({
+    mutationFn: () => retrieveFYE(companyId),
+  });
+}
