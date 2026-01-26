@@ -203,9 +203,9 @@ export function useContacts(params: ContactSearchParams = {}) {
   return useQuery({
     queryKey: ['contacts', params],
     queryFn: () => fetchContacts(params),
-    staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
+    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
   });
 }
@@ -215,9 +215,9 @@ export function useContact(id: string, full = true) {
     queryKey: ['contact', id, full],
     queryFn: () => fetchContact(id, full),
     enabled: !!id,
-    staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
+    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
   });
 }
 

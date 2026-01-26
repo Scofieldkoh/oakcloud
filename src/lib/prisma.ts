@@ -1,9 +1,12 @@
 import { PrismaClient } from '@/generated/prisma';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool, PoolConfig } from 'pg';
-import { getPrismaLogConfig, createLogger } from './logger';
+import { getPrismaLogConfig, createLogger, isLogLevelEnabled } from './logger';
 
 const prismaLogger = createLogger('prisma');
+
+// Slow query threshold in milliseconds (configurable via env)
+const SLOW_QUERY_THRESHOLD = parseInt(process.env.SLOW_QUERY_THRESHOLD || '100', 10);
 
 declare global {
   // eslint-disable-next-line no-var
@@ -50,11 +53,42 @@ export function initializePrisma(): PrismaClient {
   }
 
   const logConfig = getPrismaLogConfig();
+  const enableSlowQueryLogging = isLogLevelEnabled('debug');
+
   prismaLogger.debug(`Initializing Prisma 7 with log levels: ${logConfig.join(', ') || 'none'}`);
+  if (enableSlowQueryLogging) {
+    prismaLogger.debug(`Slow query logging enabled (threshold: ${SLOW_QUERY_THRESHOLD}ms)`);
+  }
 
   const pool = createPool();
   const adapter = new PrismaPg(pool);
-  const client = new PrismaClient({ adapter, log: logConfig });
+
+  // Configure Prisma with event-based logging for slow queries
+  const client = new PrismaClient({
+    adapter,
+    log: enableSlowQueryLogging
+      ? [
+          { emit: 'event', level: 'query' },
+          ...logConfig.filter(l => l !== 'query').map(level => ({ emit: 'stdout' as const, level })),
+        ]
+      : logConfig,
+  });
+
+  // Log slow queries when debug level is enabled
+  if (enableSlowQueryLogging) {
+    client.$on('query', (e: { query: string; params: string; duration: number; target: string }) => {
+      if (e.duration >= SLOW_QUERY_THRESHOLD) {
+        const queryPreview = e.query.length > 200 ? e.query.substring(0, 200) + '...' : e.query;
+        prismaLogger.warn(`SLOW QUERY (${e.duration}ms): ${queryPreview}`);
+
+        // Log full query details at trace level
+        if (isLogLevelEnabled('trace')) {
+          prismaLogger.trace(`Full query: ${e.query}`);
+          prismaLogger.trace(`Params: ${e.params}`);
+        }
+      }
+    });
+  }
 
   global.__prisma = client;
   return client;

@@ -296,16 +296,26 @@ export async function searchTenants(params: TenantSearchInput) {
     [params.sortBy]: params.sortOrder,
   };
 
-  const [tenants, totalCount] = await Promise.all([
+  // Optimized: Fetch tenants without expensive _count with WHERE conditions
+  // The counts are fetched separately only for the paginated results
+  const [tenantsRaw, totalCount] = await Promise.all([
     prisma.tenant.findMany({
       where,
-      include: {
-        _count: {
-          select: {
-            users: { where: { deletedAt: null, isActive: true } },
-            companies: { where: { deletedAt: null } },
-          },
-        },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        status: true,
+        contactEmail: true,
+        contactPhone: true,
+        logoUrl: true,
+        primaryColor: true,
+        createdAt: true,
+        updatedAt: true,
+        settings: true,
+        maxUsers: true,
+        maxCompanies: true,
+        maxStorageMb: true,
       },
       orderBy,
       skip: (params.page - 1) * params.limit,
@@ -313,6 +323,42 @@ export async function searchTenants(params: TenantSearchInput) {
     }),
     prisma.tenant.count({ where }),
   ]);
+
+  // Batch fetch counts for the paginated tenants only (much faster than nested _count with WHERE)
+  const tenantIds = tenantsRaw.map(t => t.id);
+
+  const [userCounts, companyCounts] = await Promise.all([
+    prisma.user.groupBy({
+      by: ['tenantId'],
+      where: {
+        tenantId: { in: tenantIds },
+        deletedAt: null,
+        isActive: true,
+      },
+      _count: { id: true },
+    }),
+    prisma.company.groupBy({
+      by: ['tenantId'],
+      where: {
+        tenantId: { in: tenantIds },
+        deletedAt: null,
+      },
+      _count: { id: true },
+    }),
+  ]);
+
+  // Create lookup maps for O(1) access
+  const userCountMap = new Map(userCounts.map(u => [u.tenantId, u._count.id]));
+  const companyCountMap = new Map(companyCounts.map(c => [c.tenantId, c._count.id]));
+
+  // Merge counts into tenant objects
+  const tenants = tenantsRaw.map(tenant => ({
+    ...tenant,
+    _count: {
+      users: userCountMap.get(tenant.id) || 0,
+      companies: companyCountMap.get(tenant.id) || 0,
+    },
+  }));
 
   return {
     tenants,

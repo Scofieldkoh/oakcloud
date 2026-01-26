@@ -412,9 +412,9 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
       params.homeTotalTo,
     ],
     queryFn: () => fetchProcessingDocuments(params),
-    staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
+    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
   });
 }
@@ -424,9 +424,9 @@ export function useProcessingDocument(id: string) {
     queryKey: ['processing-document', id],
     queryFn: () => fetchProcessingDocument(id),
     enabled: !!id,
-    staleTime: 30_000, // 30 seconds - shorter to show fresher data
+    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnMount: 'always', // Always refetch when component mounts (page navigation)
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
   });
 }
 
@@ -478,9 +478,9 @@ export function useProcessingDocumentView(id: string) {
     queryKey: ['processing-document-view', id],
     queryFn: () => fetchProcessingDocumentView(id),
     enabled: !!id,
-    staleTime: 30_000, // 30 seconds
+    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnMount: 'always', // Always refetch when component mounts (page navigation)
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
   });
 }
 
@@ -508,8 +508,8 @@ export function useRevisionHistory(documentId: string, enabled: boolean = true) 
     queryKey: ['revision-history', documentId],
     queryFn: () => fetchRevisionHistory(documentId),
     enabled: !!documentId && enabled,
-    staleTime: 30_000,
-    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
   });
 }
 
@@ -640,8 +640,9 @@ export function useDocumentPages(documentId: string) {
     queryKey: ['document-pages', documentId],
     queryFn: () => fetchDocumentPages(documentId),
     enabled: !!documentId,
-    staleTime: 60_000, // 1 minute - pages don't change often
-    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 5 * 60 * 1000, // 5 minutes - pages rarely change
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
   });
 }
 
@@ -717,8 +718,9 @@ export function useRevisionWithLineItems(documentId: string, revisionId: string 
     queryKey: ['revision-line-items', documentId, revisionId, revalidate],
     queryFn: () => fetchRevisionWithLineItems(documentId, revisionId!, revalidate),
     enabled: !!documentId && !!revisionId,
-    staleTime: 30_000,
-    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
   });
 }
 
@@ -942,8 +944,9 @@ export function useDocumentNavigation(
     enabled: !!currentDocumentId && enabled,
     // For start=true (count queries on list page), use short staleTime for accurate counts
     // For navigation within detail page, use longer staleTime for performance
-    staleTime: options?.start ? 5_000 : 30_000,
-    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: options?.start ? 30_000 : 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
   });
 }
 

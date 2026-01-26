@@ -160,9 +160,9 @@ export function useCompanies(params: CompanySearchParams = {}) {
   return useQuery({
     queryKey: ['companies', params],
     queryFn: () => fetchCompanies(params),
-    staleTime: 30 * 1000, // 30 seconds - refetch on navigation after 30s
+    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
   });
 }

@@ -534,6 +534,9 @@ model User {
   @@index([email])
   @@index([tenantId])
   @@index([passwordResetToken])
+  // Performance indexes for tenant user counts and auth queries
+  @@index([tenantId, deletedAt, isActive])
+  @@index([deletedAt, isActive])
   @@map("users")
 }
 

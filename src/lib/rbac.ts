@@ -9,6 +9,47 @@ import { prisma } from './prisma';
 import type { SessionUser } from './auth';
 
 // ============================================================================
+// Permission Cache (in-memory, per-instance)
+// ============================================================================
+
+interface CachedPermissions {
+  permissions: Set<string>;
+  isSuperAdmin: boolean;
+  isTenantAdmin: boolean;
+  timestamp: number;
+}
+
+// Simple in-memory cache for permissions (5-minute TTL)
+const permissionCache = new Map<string, CachedPermissions>();
+const PERMISSION_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get cache key for permission lookup
+ */
+function getPermissionCacheKey(userId: string, companyId?: string): string {
+  return companyId ? `${userId}:${companyId}` : userId;
+}
+
+/**
+ * Clear permission cache for a user (call after role changes)
+ */
+export function clearPermissionCache(userId: string): void {
+  // Clear all cache entries for this user
+  for (const key of permissionCache.keys()) {
+    if (key.startsWith(userId)) {
+      permissionCache.delete(key);
+    }
+  }
+}
+
+/**
+ * Clear entire permission cache (call on server restart or major changes)
+ */
+export function clearAllPermissionCache(): void {
+  permissionCache.clear();
+}
+
+// ============================================================================
 // Permission Definitions
 // ============================================================================
 
@@ -253,7 +294,25 @@ export async function hasPermission(
   action: Action,
   companyId?: string
 ): Promise<boolean> {
-  // Get user with role assignments
+  const cacheKey = getPermissionCacheKey(userId, companyId);
+  const now = Date.now();
+
+  // Check cache first
+  const cached = permissionCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < PERMISSION_CACHE_TTL) {
+    // Fast path: use cached permissions
+    if (cached.isSuperAdmin) {
+      return true;
+    }
+    if (cached.isTenantAdmin) {
+      return true;
+    }
+    // Check if permission exists in cached set
+    const permKey = `${resource}:${action}`;
+    return cached.permissions.has(permKey) || cached.permissions.has(`${resource}:manage`);
+  }
+
+  // Get user with role assignments (cache miss)
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
@@ -285,6 +344,23 @@ export async function hasPermission(
     (a) => a.role.systemRoleType === 'TENANT_ADMIN'
   );
 
+  // Build permission set for caching
+  const permissionSet = new Set<string>();
+  const effectiveAssignments = getEffectiveRoleAssignments(user.roleAssignments, companyId);
+  for (const assignment of effectiveAssignments) {
+    for (const rp of assignment.role.permissions) {
+      permissionSet.add(`${rp.permission.resource}:${rp.permission.action}`);
+    }
+  }
+
+  // Cache the permissions
+  permissionCache.set(cacheKey, {
+    permissions: permissionSet,
+    isSuperAdmin: hasSuperAdminRole,
+    isTenantAdmin: hasTenantAdminRole,
+    timestamp: now,
+  });
+
   // SUPER_ADMIN has all permissions everywhere
   if (hasSuperAdminRole) {
     return true;
@@ -304,9 +380,6 @@ export async function hasPermission(
     }
     return true;
   }
-
-  // Get effective role assignments using specificity priority
-  const effectiveAssignments = getEffectiveRoleAssignments(user.roleAssignments, companyId);
 
   // Check if any effective role has the required permission
   for (const assignment of effectiveAssignments) {
@@ -393,21 +466,52 @@ export async function hasAllPermissions(
 /**
  * Get all permissions for a user
  * Uses the same specificity-based resolution as hasPermission
+ * Optimized: Uses select to minimize data transfer and leverages permission cache
  */
 export async function getUserPermissions(
   userId: string,
   companyId?: string
 ): Promise<PermissionString[]> {
+  const cacheKey = getPermissionCacheKey(userId, companyId);
+  const now = Date.now();
+
+  // Check cache first
+  const cached = permissionCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < PERMISSION_CACHE_TTL) {
+    // Fast path: return cached permissions
+    if (cached.isSuperAdmin || cached.isTenantAdmin) {
+      const allPermissions: PermissionString[] = [];
+      for (const resource of RESOURCES) {
+        for (const action of ACTIONS) {
+          allPermissions.push(`${resource}:${action}`);
+        }
+      }
+      return allPermissions;
+    }
+    return Array.from(cached.permissions) as PermissionString[];
+  }
+
+  // Optimized query using select instead of include
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
+    select: {
+      id: true,
+      deletedAt: true,
+      isActive: true,
       roleAssignments: {
-        include: {
+        select: {
+          companyId: true,
           role: {
-            include: {
+            select: {
+              systemRoleType: true,
               permissions: {
-                include: {
-                  permission: true,
+                select: {
+                  permission: {
+                    select: {
+                      resource: true,
+                      action: true,
+                    },
+                  },
                 },
               },
             },
@@ -429,6 +533,24 @@ export async function getUserPermissions(
     (a) => a.role.systemRoleType === 'TENANT_ADMIN'
   );
 
+  // Get effective role assignments using specificity priority
+  const effectiveAssignments = getEffectiveRoleAssignments(user.roleAssignments, companyId);
+
+  const permissionSet = new Set<string>();
+  for (const assignment of effectiveAssignments) {
+    for (const rp of assignment.role.permissions) {
+      permissionSet.add(`${rp.permission.resource}:${rp.permission.action}`);
+    }
+  }
+
+  // Cache the permissions for future calls
+  permissionCache.set(cacheKey, {
+    permissions: permissionSet,
+    isSuperAdmin: hasSuperAdminRole,
+    isTenantAdmin: hasTenantAdminRole,
+    timestamp: now,
+  });
+
   // SUPER_ADMIN and TENANT_ADMIN have all permissions
   if (hasSuperAdminRole || hasTenantAdminRole) {
     const allPermissions: PermissionString[] = [];
@@ -440,18 +562,7 @@ export async function getUserPermissions(
     return allPermissions;
   }
 
-  // Get effective role assignments using specificity priority
-  const effectiveAssignments = getEffectiveRoleAssignments(user.roleAssignments, companyId);
-
-  const permissions = new Set<PermissionString>();
-
-  for (const assignment of effectiveAssignments) {
-    for (const rp of assignment.role.permissions) {
-      permissions.add(`${rp.permission.resource}:${rp.permission.action}` as PermissionString);
-    }
-  }
-
-  return Array.from(permissions);
+  return Array.from(permissionSet) as PermissionString[];
 }
 
 // ============================================================================

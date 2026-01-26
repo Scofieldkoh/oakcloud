@@ -924,6 +924,7 @@ export async function searchCompanies(
   // Pagination
   const skip = (params.page - 1) * params.limit;
 
+  // eslint-disable-next-line prefer-const -- total may be reassigned for post-query filtering
   let [companiesRaw, total] = await Promise.all([
     prisma.company.findMany({
       where,
@@ -1027,14 +1028,21 @@ export async function getCompanyFullDetails(
   return prisma.company.findFirst({
     where,
     include: {
+      // Only fetch recent former names (limit 5)
       formerNames: {
         orderBy: { effectiveFrom: 'desc' },
+        take: 5,
       },
+      // Only fetch current addresses (most common use case)
       addresses: {
-        orderBy: [{ isCurrent: 'desc' }, { effectiveFrom: 'desc' }],
+        where: { isCurrent: true },
+        orderBy: [{ addressType: 'asc' }],
       },
+      // Only fetch current officers (limit 50 for display)
       officers: {
-        orderBy: [{ isCurrent: 'desc' }, { appointmentDate: 'desc' }],
+        where: { isCurrent: true },
+        orderBy: [{ appointmentDate: 'desc' }],
+        take: 50,
         include: {
           contact: {
             select: {
@@ -1048,8 +1056,11 @@ export async function getCompanyFullDetails(
           },
         },
       },
+      // Only fetch current shareholders (limit 50 for display)
       shareholders: {
-        orderBy: [{ isCurrent: 'desc' }, { numberOfShares: 'desc' }],
+        where: { isCurrent: true },
+        orderBy: [{ numberOfShares: 'desc' }],
+        take: 50,
         include: {
           contact: {
             select: {
@@ -1063,15 +1074,22 @@ export async function getCompanyFullDetails(
           },
         },
       },
+      // Only fetch latest share capital record
       shareCapital: {
         orderBy: { effectiveDate: 'desc' },
+        take: 10,
       },
+      // Only fetch active charges (limit 20)
       charges: {
-        orderBy: [{ isFullyDischarged: 'asc' }, { registrationDate: 'desc' }],
+        where: { isFullyDischarged: false },
+        orderBy: [{ registrationDate: 'desc' }],
+        take: 20,
       },
+      // Limit documents to recent 20
       documents: {
         where: { isLatest: true },
         orderBy: { createdAt: 'desc' },
+        take: 20,
         select: {
           id: true,
           documentType: true,
@@ -1089,9 +1107,9 @@ export async function getCompanyFullDetails(
       _count: {
         select: {
           documents: true,
-          officers: true,
-          shareholders: true,
-          charges: true,
+          officers: { where: { isCurrent: true } },
+          shareholders: { where: { isCurrent: true } },
+          charges: { where: { isFullyDischarged: false } },
           auditLogs: true,
         },
       },

@@ -1046,6 +1046,8 @@ export async function searchContactsWithCounts(
 
   const skip = (params.page - 1) * params.limit;
 
+  // Optimized query: Only fetch counts, not all related records
+  // This avoids N+1 pattern where we were fetching ALL company relations per contact
   let [contacts, total] = await Promise.all([
     prisma.contact.findMany({
       where,
@@ -1055,58 +1057,46 @@ export async function searchContactsWithCounts(
       include: {
         _count: {
           select: {
-            companyRelations: true,
-            officerPositions: true,
-            shareholdings: true,
+            companyRelations: { where: { company: { deletedAt: null } } },
+            officerPositions: { where: { company: { deletedAt: null } } },
+            shareholdings: { where: { company: { deletedAt: null } } },
           },
         },
-        // Include company IDs from all relationship types to calculate unique companies
-        companyRelations: {
-          select: { companyId: true },
-          where: { company: { deletedAt: null } },
-        },
-        officerPositions: {
-          select: { companyId: true },
-          where: { company: { deletedAt: null } },
-        },
-        shareholdings: {
-          select: { companyId: true },
-          where: { company: { deletedAt: null } },
-        },
-        // Include default contact details (where companyId is null) for email/phone display
+        // Only fetch primary contact details for display (limit to 2: one email, one phone)
         contactDetails: {
           where: {
             companyId: null, // Only default (non-company-specific) details
             detailType: { in: ['EMAIL', 'PHONE'] },
+            isPrimary: true,
           },
           select: {
             detailType: true,
             value: true,
             isPrimary: true,
           },
-          orderBy: [
-            { isPrimary: 'desc' },
-            { createdAt: 'asc' },
-          ],
+          take: 2, // At most one email and one phone
         },
       },
     }),
     prisma.contact.count({ where }),
   ]);
 
-  // Calculate unique companies count for each contact
-  // A contact can be linked to a company via companyRelations, officerPositions, or shareholdings
+  // Calculate approximate unique companies count from the separate counts
+  // This is faster than fetching all relations and counting unique IDs
   const contactsWithCompanyCount = contacts.map((contact) => {
-    const companyIds = new Set<string>();
-    contact.companyRelations.forEach((r) => companyIds.add(r.companyId));
-    contact.officerPositions.forEach((o) => companyIds.add(o.companyId));
-    contact.shareholdings.forEach((s) => companyIds.add(s.companyId));
+    // Use max of the three counts as approximation (contacts often have same company across relations)
+    // This is an approximation but avoids fetching thousands of records per contact
+    const approxCompanyCount = Math.max(
+      contact._count.companyRelations,
+      contact._count.officerPositions,
+      contact._count.shareholdings
+    );
     return {
       ...contact,
       _count: {
         ...contact._count,
-        // Override with unique company count across all relationship types
-        companyRelations: companyIds.size,
+        // Override with approximate unique company count
+        companyRelations: approxCompanyCount,
       },
     };
   });
@@ -1131,9 +1121,9 @@ export async function searchContactsWithCounts(
     const emailDetail = contact.contactDetails.find((d) => d.detailType === 'EMAIL');
     const phoneDetail = contact.contactDetails.find((d) => d.detailType === 'PHONE');
 
-    // Remove relationship arrays and contactDetails from the response
+    // Remove contactDetails from the response (counts are kept in _count)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { contactDetails, companyRelations, officerPositions, shareholdings, ...contactWithoutDetails } = contact;
+    const { contactDetails, ...contactWithoutDetails } = contact;
 
     return {
       ...contactWithoutDetails,

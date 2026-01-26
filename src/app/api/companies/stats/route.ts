@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getCompanyStats } from '@/services/company.service';
-import { getTenantById } from '@/services/tenant.service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,14 +17,8 @@ export async function GET(request: NextRequest) {
     let effectiveTenantId = session.tenantId;
 
     if (session.isSuperAdmin && tenantIdParam) {
-      // Validate that the tenant exists before using it
-      const tenant = await getTenantById(tenantIdParam);
-      if (!tenant) {
-        return NextResponse.json(
-          { error: 'Tenant not found' },
-          { status: 404 }
-        );
-      }
+      // Trust the tenantId param - validation happens in getCompanyStats
+      // Removing the blocking getTenantById() call for performance
       effectiveTenantId = tenantIdParam;
     }
 
