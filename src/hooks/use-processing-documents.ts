@@ -71,7 +71,7 @@ export interface ProcessingDocumentListItem {
     homeTaxAmount: string | null;
     homeEquivalent: string | null;
   };
-  tags: ProcessingDocumentTagItem[];
+  // Tags removed - fetched lazily
 }
 
 export interface ProcessingDocumentDetail {
@@ -436,7 +436,8 @@ export function useProcessingDocument(id: string) {
 
 /**
  * Consolidated document view data returned by the /view endpoint
- * Combines document, revision, pages, and tags in a single request
+ * Combines document, revision, and pages in a single request
+ * Tags are loaded separately for better performance
  */
 export interface ProcessingDocumentViewData {
   document: ProcessingDocumentDetail & {
@@ -444,7 +445,7 @@ export interface ProcessingDocumentViewData {
   };
   currentRevision: RevisionWithLineItems | null;
   pages: DocumentPagesResult;
-  tags: ProcessingDocumentTagItem[];
+  // Tags removed - loaded lazily via separate endpoint
 }
 
 /**
@@ -468,10 +469,11 @@ async function fetchProcessingDocumentView(id: string): Promise<ProcessingDocume
  * - useProcessingDocument (document + revision summary)
  * - useDocumentPages (page metadata)
  * - useRevisionWithLineItems (full revision)
- * - useDocumentTags (document tags)
+ *
+ * Tags are loaded separately via useDocumentTags for better performance
  *
  * @param id - Processing document ID
- * @returns Consolidated view data with document, revision, pages, and tags
+ * @returns Consolidated view data with document, revision, and pages
  */
 export function useProcessingDocumentView(id: string) {
   return useQuery({

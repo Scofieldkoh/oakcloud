@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
 import { createLogger } from './logger';
 
 const log = createLogger('api-error-handler');

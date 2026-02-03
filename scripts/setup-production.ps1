@@ -83,13 +83,17 @@ docker compose start minio
 Write-Host "      MinIO data restored" -ForegroundColor Green
 
 Write-Host "[4/5] Restoring Redis data..." -ForegroundColor Yellow
-docker compose stop redis
-docker run --rm `
-    -v oakcloud_redis_data:/data `
-    -v "${PWD}\migration-backup:/backup" `
-    alpine sh -c "rm -rf /data/* && tar xvf /backup/redis_data.tar -C /data" 2>$null
-docker compose start redis
-Write-Host "      Redis data restored" -ForegroundColor Green
+if (Test-Path ".\migration-backup\redis_data.tar") {
+    docker compose stop redis
+    docker run --rm `
+        -v oakcloud_redis_data:/data `
+        -v "${PWD}\migration-backup:/backup" `
+        alpine sh -c "rm -rf /data/* && tar xvf /backup/redis_data.tar -C /data" 2>$null
+    docker compose start redis
+    Write-Host "      Redis data restored" -ForegroundColor Green
+} else {
+    Write-Host "      Redis backup not found, skipping (Redis will start fresh)" -ForegroundColor Yellow
+}
 
 Write-Host "[5/5] Running database migrations..." -ForegroundColor Yellow
 docker compose exec app npx prisma migrate deploy

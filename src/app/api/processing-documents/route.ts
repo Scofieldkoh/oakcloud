@@ -327,32 +327,25 @@ export async function GET(request: NextRequest) {
       },
       currentRevision: doc.currentRevision
         ? {
-            id: doc.currentRevision.id,
-            revisionNumber: doc.currentRevision.revisionNumber,
-            status: doc.currentRevision.status,
-            documentCategory: doc.currentRevision.documentCategory,
-            documentSubCategory: doc.currentRevision.documentSubCategory,
-            vendorName: doc.currentRevision.vendorName,
-            documentNumber: doc.currentRevision.documentNumber,
-            documentDate: doc.currentRevision.documentDate?.toISOString() ?? null,
-            currency: doc.currentRevision.currency,
-            subtotal: doc.currentRevision.subtotal?.toString() ?? null,
-            taxAmount: doc.currentRevision.taxAmount?.toString() ?? null,
-            totalAmount: doc.currentRevision.totalAmount.toString(),
-            homeCurrency: doc.currentRevision.homeCurrency,
-            homeSubtotal: doc.currentRevision.homeSubtotal?.toString() ?? null,
-            homeTaxAmount: doc.currentRevision.homeTaxAmount?.toString() ?? null,
-            homeEquivalent: doc.currentRevision.homeEquivalent?.toString() ?? null,
-          }
+          id: doc.currentRevision.id,
+          revisionNumber: doc.currentRevision.revisionNumber,
+          status: doc.currentRevision.status,
+          documentCategory: doc.currentRevision.documentCategory,
+          documentSubCategory: doc.currentRevision.documentSubCategory,
+          vendorName: doc.currentRevision.vendorName,
+          documentNumber: doc.currentRevision.documentNumber,
+          documentDate: doc.currentRevision.documentDate?.toISOString() ?? null,
+          currency: doc.currentRevision.currency,
+          subtotal: doc.currentRevision.subtotal?.toString() ?? null,
+          taxAmount: doc.currentRevision.taxAmount?.toString() ?? null,
+          totalAmount: doc.currentRevision.totalAmount.toString(),
+          homeCurrency: doc.currentRevision.homeCurrency,
+          homeSubtotal: doc.currentRevision.homeSubtotal?.toString() ?? null,
+          homeTaxAmount: doc.currentRevision.homeTaxAmount?.toString() ?? null,
+          homeEquivalent: doc.currentRevision.homeEquivalent?.toString() ?? null,
+        }
         : undefined,
-      // Transform tags for display
-      tags: doc.documentTags?.map((t: { id: string; tagId: string; tag: { name: string; color: string; tenantId: string | null; companyId: string | null } }) => ({
-        id: t.id,
-        tagId: t.tagId,
-        name: t.tag.name,
-        color: t.tag.color,
-        scope: t.tag.tenantId && !t.tag.companyId ? 'tenant' : 'company',
-      })) ?? [],
+      // Tags removed - fetched lazily by DocumentTags component
     }));
 
     return NextResponse.json({
@@ -614,12 +607,12 @@ export async function POST(request: NextRequest) {
         jobId,
         duplicateWarning: duplicateCheckResult.hasPotentialDuplicate
           ? {
-              originalDocumentId: duplicateCheckResult.exactFileHashMatch?.documentId
-                || duplicateCheckResult.candidates[0]?.documentId,
-              message: duplicateCheckResult.exactFileHashMatch
-                ? 'An exact duplicate of this file already exists'
-                : `Potential duplicate detected (${(duplicateCheckResult.candidates[0]?.score.totalScore * 100).toFixed(0)}% match)`,
-            }
+            originalDocumentId: duplicateCheckResult.exactFileHashMatch?.documentId
+              || duplicateCheckResult.candidates[0]?.documentId,
+            message: duplicateCheckResult.exactFileHashMatch
+              ? 'An exact duplicate of this file already exists'
+              : `Potential duplicate detected (${(duplicateCheckResult.candidates[0]?.score.totalScore * 100).toFixed(0)}% match)`,
+          }
           : undefined,
       },
       meta: {

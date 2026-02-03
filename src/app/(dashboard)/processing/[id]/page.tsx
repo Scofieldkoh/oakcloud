@@ -280,13 +280,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
 
   // Data fetching - consolidated API for initial load
-  // This replaces multiple hooks: useProcessingDocument, useDocumentPages, useRevisionWithLineItems, useDocumentTags
+  // This replaces multiple hooks: useProcessingDocument, useDocumentPages, useRevisionWithLineItems
+  // Tags are loaded separately by DocumentTags component for better performance
   const { data: viewData, isLoading, error, refetch } = useProcessingDocumentView(id);
 
   // Extract data from consolidated response
   const currentRevisionFromView = viewData?.currentRevision;
   const pagesData = viewData?.pages;
-  const initialTags = viewData?.tags;
 
   // Compatibility layer for existing code that expects data.document and data.currentRevision
   const data = useMemo(() => viewData ? {
@@ -327,7 +327,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Auto-refresh every 10 seconds if document is being processed
   useEffect(() => {
     const isExtracting = data?.document?.pipelineStatus === 'QUEUED' ||
-                        data?.document?.pipelineStatus === 'PROCESSING';
+      data?.document?.pipelineStatus === 'PROCESSING';
 
     if (isExtracting) {
       const interval = setInterval(() => {
@@ -1340,11 +1340,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     setEditFormData((prev) => {
       // Only update if values have changed to prevent infinite loops
       if (newSubtotal !== prev.subtotal ||
-          newTaxAmount !== prev.taxAmount ||
-          newTotalAmount !== prev.totalAmount ||
-          newHomeSubtotal !== prev.homeSubtotal ||
-          newHomeTaxAmount !== prev.homeTaxAmount ||
-          newHomeTotal !== prev.homeTotal) {
+        newTaxAmount !== prev.taxAmount ||
+        newTotalAmount !== prev.totalAmount ||
+        newHomeSubtotal !== prev.homeSubtotal ||
+        newHomeTaxAmount !== prev.homeTaxAmount ||
+        newHomeTotal !== prev.homeTotal) {
         return {
           ...prev,
           subtotal: newSubtotal,
@@ -1364,8 +1364,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Skip hotkeys when typing in inputs (except for Escape and modal hotkeys)
       const isInInput = e.target instanceof HTMLInputElement ||
-                        e.target instanceof HTMLSelectElement ||
-                        e.target instanceof HTMLTextAreaElement;
+        e.target instanceof HTMLSelectElement ||
+        e.target instanceof HTMLTextAreaElement;
 
       // Handle approval modal hotkeys first (F1 to confirm, Escape to cancel)
       if (showApproveDialog) {
@@ -1784,60 +1784,59 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                           documentId={id}
                           companyId={doc.company?.id || null}
                           tenantId={activeTenantId}
-                          initialTags={initialTags}
                         />
                       </div>
 
                       {/* Header Fields */}
                       <div className="max-w-2xl space-y-4">
-                      <ExtractedHeaderFields
-                        revision={revisionWithLineItems || currentRevision}
-                        isEditing={isEditing}
-                        editFormData={editFormData}
-                        setEditFormData={setEditFormData}
-                        onResolveAlias={handleResolveCounterpartyAlias}
-                        isResolvingAlias={isResolvingAlias}
-                        disableResolveAlias={approveRevision.isPending}
-                        focusedField={focusedField}
-                        setFocusedField={setFocusedField}
-                        getFieldConfidence={getFieldConfidence}
-                        categoryLabels={categoryLabels}
-                      />
-
-                      {/* Amounts Section - Combined document and home currency */}
-                      <AmountsSection
-                        documentCurrency={revisionWithLineItems?.currency || currentRevision.currency}
-                        documentSubtotal={revisionWithLineItems?.subtotal || null}
-                        documentTaxAmount={revisionWithLineItems?.taxAmount || null}
-                        documentTotalAmount={revisionWithLineItems?.totalAmount || currentRevision.totalAmount}
-                        isEditing={isEditing}
-                        editFormData={editFormData}
-                        setEditFormData={setEditFormData}
-                        currencyOptions={currencyOptions}
-                        focusedField={focusedField}
-                        setFocusedField={setFocusedField}
-                        getFieldConfidence={getFieldConfidence}
-                        tenantId={data?.document?.tenantId}
-                        validationIssues={(revisionWithLineItems?.validationIssues as { issues?: ValidationIssue[] })?.issues}
-                      />
-
-                      {/* Validation Status */}
-                      {revisionWithLineItems?.validationStatus && revisionWithLineItems.validationStatus !== 'PENDING' && (
-                        <div className="pt-2">
-                          <ValidationStatusSection
-                            status={revisionWithLineItems.validationStatus}
-                            issues={(revisionWithLineItems.validationIssues as { issues?: ValidationIssue[] })?.issues}
-                          />
-                        </div>
-                      )}
-
-                      {/* Document Links - Only show when not viewing a snapshot */}
-                      {!isViewingSnapshot && (
-                        <DocumentLinks
-                          documentId={id}
-                          canUpdate={can.updateDocument}
+                        <ExtractedHeaderFields
+                          revision={revisionWithLineItems || currentRevision}
+                          isEditing={isEditing}
+                          editFormData={editFormData}
+                          setEditFormData={setEditFormData}
+                          onResolveAlias={handleResolveCounterpartyAlias}
+                          isResolvingAlias={isResolvingAlias}
+                          disableResolveAlias={approveRevision.isPending}
+                          focusedField={focusedField}
+                          setFocusedField={setFocusedField}
+                          getFieldConfidence={getFieldConfidence}
+                          categoryLabels={categoryLabels}
                         />
-                      )}
+
+                        {/* Amounts Section - Combined document and home currency */}
+                        <AmountsSection
+                          documentCurrency={revisionWithLineItems?.currency || currentRevision.currency}
+                          documentSubtotal={revisionWithLineItems?.subtotal || null}
+                          documentTaxAmount={revisionWithLineItems?.taxAmount || null}
+                          documentTotalAmount={revisionWithLineItems?.totalAmount || currentRevision.totalAmount}
+                          isEditing={isEditing}
+                          editFormData={editFormData}
+                          setEditFormData={setEditFormData}
+                          currencyOptions={currencyOptions}
+                          focusedField={focusedField}
+                          setFocusedField={setFocusedField}
+                          getFieldConfidence={getFieldConfidence}
+                          tenantId={data?.document?.tenantId}
+                          validationIssues={(revisionWithLineItems?.validationIssues as { issues?: ValidationIssue[] })?.issues}
+                        />
+
+                        {/* Validation Status */}
+                        {revisionWithLineItems?.validationStatus && revisionWithLineItems.validationStatus !== 'PENDING' && (
+                          <div className="pt-2">
+                            <ValidationStatusSection
+                              status={revisionWithLineItems.validationStatus}
+                              issues={(revisionWithLineItems.validationIssues as { issues?: ValidationIssue[] })?.issues}
+                            />
+                          </div>
+                        )}
+
+                        {/* Document Links - Only show when not viewing a snapshot */}
+                        {!isViewingSnapshot && (
+                          <DocumentLinks
+                            documentId={id}
+                            canUpdate={can.updateDocument}
+                          />
+                        )}
                       </div>
                     </div>
                   )}
@@ -2106,8 +2105,8 @@ function NoExtractionPlaceholder({
         {canTrigger
           ? 'This document has not been extracted yet. Click the button below to extract data from this document.'
           : pipelineStatus === 'PROCESSING'
-          ? 'Extraction is currently in progress...'
-          : 'Extraction is not available for this document status.'}
+            ? 'Extraction is currently in progress...'
+            : 'Extraction is not available for this document status.'}
       </p>
       {canTrigger && (
         <button onClick={() => onTrigger()} disabled={isPending} className="btn-primary btn-sm">
@@ -2235,9 +2234,9 @@ function ExtractedHeaderFields({
             <SearchableSelect
               options={editFormData.documentCategory
                 ? getSubCategoryOptions(editFormData.documentCategory as DocumentCategory).map(({ value, label }) => ({
-                    value,
-                    label,
-                  }))
+                  value,
+                  label,
+                }))
                 : []
               }
               value={editFormData.documentSubCategory}
@@ -3664,12 +3663,12 @@ function HistoryDropdown({
                     isViewingThis
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/30'
                       : isCurrentRevision
-                      ? 'border-oak-primary/50 bg-oak-primary/5'
-                      : rev.status === 'APPROVED'
-                      ? 'border-status-success/30 bg-status-success/5 hover:border-status-success/50'
-                      : rev.status === 'DRAFT'
-                      ? 'border-status-warning/30 bg-status-warning/5 hover:border-status-warning/50'
-                      : 'border-border-primary bg-background-tertiary hover:border-border-secondary'
+                        ? 'border-oak-primary/50 bg-oak-primary/5'
+                        : rev.status === 'APPROVED'
+                          ? 'border-status-success/30 bg-status-success/5 hover:border-status-success/50'
+                          : rev.status === 'DRAFT'
+                            ? 'border-status-warning/30 bg-status-warning/5 hover:border-status-warning/50'
+                            : 'border-border-primary bg-background-tertiary hover:border-border-secondary'
                   )}
                   onClick={() => {
                     if (isCurrentRevision) {

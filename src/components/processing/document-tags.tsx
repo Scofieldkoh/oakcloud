@@ -137,23 +137,14 @@ function ColorPicker({ selectedColor, onColorSelect }: ColorPickerProps) {
 // DocumentTags Component
 // ============================================================================
 
-// Type for initial tags from consolidated API
-interface InitialTag {
-  id: string;
-  tagId: string;
-  name: string;
-  color: string;
-  scope: 'tenant' | 'company';
-}
-
 interface DocumentTagsProps {
   documentId: string;
   companyId: string | null;
   tenantId?: string | null;
   readOnly?: boolean;
   className?: string;
-  /** Initial tags from consolidated API - skips initial fetch if provided */
-  initialTags?: InitialTag[];
+  /** Limit the number of tags shown (for table view) */
+  limit?: number;
 }
 
 export function DocumentTags({
@@ -162,7 +153,7 @@ export function DocumentTags({
   tenantId,
   readOnly = false,
   className,
-  initialTags,
+  limit,
 }: DocumentTagsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
@@ -185,12 +176,8 @@ export function DocumentTags({
   const isAdmin = session?.isSuperAdmin || session?.isTenantAdmin;
 
   // Queries
-  // Skip fetching document tags if initialTags are provided (from consolidated API)
-  const { data: fetchedDocTags = [], isLoading: isLoadingDocTags } = useDocumentTags(
-    initialTags ? null : documentId // Skip fetch if initial tags provided
-  );
-  // Use initial tags if provided, otherwise use fetched tags
-  const documentTags = initialTags || fetchedDocTags;
+  // Fetch document tags lazily after component mount
+  const { data: documentTags = [], isLoading: isLoadingDocTags } = useDocumentTags(documentId);
 
   // Lazy load tag selector data - only fetch when dropdown is open
   const { data: recentTags = [] } = useAvailableRecentTags(
@@ -455,12 +442,12 @@ export function DocumentTags({
     <div ref={containerRef} className={cn('relative', className)}>
       {/* Current Tags Display */}
       <div className="flex flex-wrap items-center gap-1.5">
-        {!initialTags && isLoadingDocTags ? (
+        {isLoadingDocTags ? (
           <span className="text-xs text-text-muted">Loading...</span>
         ) : documentTags.length === 0 && readOnly ? (
           <span className="text-xs text-text-muted">No tags</span>
         ) : (
-          documentTags.map((tag) => (
+          (limit ? documentTags.slice(0, limit) : documentTags).map((tag) => (
             <TagChip
               key={tag.id}
               name={tag.name}
@@ -471,6 +458,9 @@ export function DocumentTags({
               isLoading={removingTagId === tag.tagId}
             />
           ))
+        )}
+        {limit && documentTags.length > limit && (
+          <span className="text-xs text-text-muted">+{documentTags.length - limit}</span>
         )}
 
         {!readOnly && (

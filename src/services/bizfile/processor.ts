@@ -1004,6 +1004,36 @@ export async function processBizFileExtraction(
     return { company, processingDocId: processingDoc.id };
   });
 
+  // Move file from pending/ to companies/{companyId}/documents/ if it's in pending
+  if (storageKey && storageKey.includes('/pending/')) {
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+      select: { fileName: true },
+    });
+
+    if (document) {
+      const extension = document.fileName.match(/\.[^.]+$/)?.[0] || '';
+      const newStorageKey = `${tenantId}/companies/${result.company.id}/documents/${documentId}/original${extension}`;
+
+      try {
+        await storage.move(storageKey, newStorageKey);
+        log.info(`Moved BizFile from ${storageKey} to ${newStorageKey}`);
+
+        // Update document with new storage key
+        await prisma.document.update({
+          where: { id: documentId },
+          data: { storageKey: newStorageKey },
+        });
+
+        // Use new storage key for page preparation
+        storageKey = newStorageKey;
+      } catch (error) {
+        log.error(`Failed to move BizFile from ${storageKey} to ${newStorageKey}:`, error);
+        // Continue with old storage key if move fails
+      }
+    }
+  }
+
   // Prepare document pages for the page sidebar (outside transaction)
   if (storageKey && mimeType) {
     await prepareDocumentPages(result.processingDocId, storageKey, mimeType);

@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 

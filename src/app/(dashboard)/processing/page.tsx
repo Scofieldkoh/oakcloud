@@ -54,8 +54,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '@/lib/document-categories';
 import { cn } from '@/lib/utils';
+import { TAG_COLORS, type TagColor } from '@/lib/validations/document-tag';
+import { DocumentTags } from '@/components/processing/document-tags';
 import { TagChip } from '@/components/processing/document-tags';
-import type { TagColor } from '@/lib/validations/document-tag';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
 
 /**
@@ -349,7 +350,7 @@ export default function ProcessingDocumentsPage() {
       revisionStatus: (searchParams.get('revisionStatus') || undefined) as RevisionStatus | undefined,
       needsReview: searchParams.get('needsReview') === 'true' ? true : undefined,
       isContainer: searchParams.get('isContainer') === 'true' ? true :
-                   searchParams.get('isContainer') === 'false' ? false : undefined,
+        searchParams.get('isContainer') === 'false' ? false : undefined,
       // New filter parameters
       companyId: searchParams.get('companyId') || undefined,
       uploadDatePreset: (searchParams.get('uploadDatePreset') || undefined) as 'TODAY' | undefined,
@@ -555,26 +556,14 @@ export default function ProcessingDocumentsPage() {
       case 'tags':
         return (
           <td key={columnId} className="px-4 py-3 max-w-0">
-            <div className="flex flex-wrap items-center gap-1 min-w-0">
-              {doc.tags.length === 0 ? (
-                <span className="text-sm text-text-muted">-</span>
-              ) : (
-                <>
-                  {doc.tags.slice(0, 3).map((tag) => (
-                    <TagChip
-                      key={tag.id}
-                      name={tag.name}
-                      color={tag.color as TagColor}
-                      size="xs"
-                      scope={tag.scope}
-                    />
-                  ))}
-                  {doc.tags.length > 3 && (
-                    <span className="text-xs text-text-muted">+{doc.tags.length - 3}</span>
-                  )}
-                </>
-              )}
-            </div>
+            <DocumentTags
+              documentId={doc.id}
+              companyId={effectiveCompanyId || doc.document.companyId}
+              tenantId={activeTenantId}
+              readOnly={true}
+              limit={3}
+              className="flex-nowrap"
+            />
           </td>
         );
       case 'category':
@@ -745,8 +734,8 @@ export default function ProcessingDocumentsPage() {
       } catch {
         // ignore
       }
-        document.body.style.userSelect = '';
-        document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
       isResizingRef.current = false;
 
       const nextWidths = { ...columnWidths, [columnId]: latestWidth };
@@ -884,8 +873,8 @@ export default function ProcessingDocumentsPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Skip hotkeys when typing in inputs
       const isInInput = e.target instanceof HTMLInputElement ||
-                        e.target instanceof HTMLSelectElement ||
-                        e.target instanceof HTMLTextAreaElement;
+        e.target instanceof HTMLSelectElement ||
+        e.target instanceof HTMLTextAreaElement;
       if (isInInput) return;
 
       // R - Refresh
@@ -1625,126 +1614,126 @@ export default function ProcessingDocumentsPage() {
                   }
                   subtitle={
                     <span className="text-text-muted">
-                    {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
-                    {doc.document.company && ` • ${doc.document.company.name}`}
-                  </span>
-                }
-                badge={
-                  <StatusBadge
-                    status={doc.pipelineStatus}
-                    config={pipelineStatusConfig[doc.pipelineStatus]}
-                  />
-                }
-                details={
-                  <div className="space-y-3">
-                    {/* Status Badges Row */}
-                    <div className="flex flex-wrap gap-2">
-                      {doc.currentRevision && (
-                        <span className={cn(
-                          'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
-                          revisionStatusConfig[doc.currentRevision.status].color
-                        )}>
-                          {revisionStatusConfig[doc.currentRevision.status].label}
-                        </span>
-                      )}
-                      {doc.duplicateStatus !== 'NONE' && (
-                        <StatusBadge
-                          status={doc.duplicateStatus}
-                          config={duplicateStatusConfig[doc.duplicateStatus]}
-                        />
-                      )}
-                    </div>
+                      {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
+                      {doc.document.company && ` • ${doc.document.company.name}`}
+                    </span>
+                  }
+                  badge={
+                    <StatusBadge
+                      status={doc.pipelineStatus}
+                      config={pipelineStatusConfig[doc.pipelineStatus]}
+                    />
+                  }
+                  details={
+                    <div className="space-y-3">
+                      {/* Status Badges Row */}
+                      <div className="flex flex-wrap gap-2">
+                        {doc.currentRevision && (
+                          <span className={cn(
+                            'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
+                            revisionStatusConfig[doc.currentRevision.status].color
+                          )}>
+                            {revisionStatusConfig[doc.currentRevision.status].label}
+                          </span>
+                        )}
+                        {doc.duplicateStatus !== 'NONE' && (
+                          <StatusBadge
+                            status={doc.duplicateStatus}
+                            config={duplicateStatusConfig[doc.duplicateStatus]}
+                          />
+                        )}
+                      </div>
 
-                    <CardDetailsGrid>
-                      <CardDetailItem
-                        label="Company"
-                        value={doc.document.company?.name || '-'}
-                      />
-                      <CardDetailItem
-                        label="Category"
-                        value={formatCategory(doc.currentRevision?.documentCategory)}
-                      />
-                      <CardDetailItem
-                        label="Sub-Category"
-                        value={formatCategory(doc.currentRevision?.documentSubCategory)}
-                      />
-                      <CardDetailItem
-                        label="Vendor"
-                        value={doc.currentRevision?.vendorName || '-'}
-                      />
-                      <CardDetailItem
-                        label="Doc #"
-                        value={doc.currentRevision?.documentNumber || '-'}
-                      />
-                      <CardDetailItem
-                        label="Doc Date"
-                        value={doc.currentRevision?.documentDate
-                          ? formatDate(doc.currentRevision.documentDate)
-                          : '-'}
-                      />
-                      <CardDetailItem
-                        label="Subtotal"
-                        value={doc.currentRevision
-                          ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency)
-                          : '-'}
-                      />
-                      <CardDetailItem
-                        label="Tax"
-                        value={doc.currentRevision
-                          ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency)
-                          : '-'}
-                      />
-                      <CardDetailItem
-                        label="Total"
-                        value={doc.currentRevision
-                          ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
-                          : '-'}
-                      />
-                      {doc.currentRevision?.homeCurrency && (
-                        <>
-                          <CardDetailItem
-                            label="Home Subtotal"
-                            value={formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency)}
-                          />
-                          <CardDetailItem
-                            label="Home Tax"
-                            value={formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency)}
-                          />
-                          <CardDetailItem
-                            label="Home Total"
-                            value={formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency)}
-                          />
-                        </>
+                      <CardDetailsGrid>
+                        <CardDetailItem
+                          label="Company"
+                          value={doc.document.company?.name || '-'}
+                        />
+                        <CardDetailItem
+                          label="Category"
+                          value={formatCategory(doc.currentRevision?.documentCategory)}
+                        />
+                        <CardDetailItem
+                          label="Sub-Category"
+                          value={formatCategory(doc.currentRevision?.documentSubCategory)}
+                        />
+                        <CardDetailItem
+                          label="Vendor"
+                          value={doc.currentRevision?.vendorName || '-'}
+                        />
+                        <CardDetailItem
+                          label="Doc #"
+                          value={doc.currentRevision?.documentNumber || '-'}
+                        />
+                        <CardDetailItem
+                          label="Doc Date"
+                          value={doc.currentRevision?.documentDate
+                            ? formatDate(doc.currentRevision.documentDate)
+                            : '-'}
+                        />
+                        <CardDetailItem
+                          label="Subtotal"
+                          value={doc.currentRevision
+                            ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency)
+                            : '-'}
+                        />
+                        <CardDetailItem
+                          label="Tax"
+                          value={doc.currentRevision
+                            ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency)
+                            : '-'}
+                        />
+                        <CardDetailItem
+                          label="Total"
+                          value={doc.currentRevision
+                            ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
+                            : '-'}
+                        />
+                        {doc.currentRevision?.homeCurrency && (
+                          <>
+                            <CardDetailItem
+                              label="Home Subtotal"
+                              value={formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency)}
+                            />
+                            <CardDetailItem
+                              label="Home Tax"
+                              value={formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency)}
+                            />
+                            <CardDetailItem
+                              label="Home Total"
+                              value={formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency)}
+                            />
+                          </>
+                        )}
+                        <CardDetailItem
+                          label="Uploaded"
+                          value={formatDate(doc.createdAt)}
+                        />
+                      </CardDetailsGrid>
+                    </div>
+                  }
+                  actions={
+                    <div className="flex items-center gap-2">
+                      {doc.duplicateStatus === 'SUSPECTED' && (
+                        <Link
+                          href={`/processing/${doc.id}?compare=true`}
+                          className="btn-ghost btn-xs inline-flex items-center gap-1 text-status-warning min-h-[44px]"
+                          title="Compare with suspected duplicate"
+                        >
+                          <Copy className="w-4 h-4" />
+                          Compare
+                        </Link>
                       )}
-                      <CardDetailItem
-                        label="Uploaded"
-                        value={formatDate(doc.createdAt)}
-                      />
-                    </CardDetailsGrid>
-                  </div>
-                }
-                actions={
-                  <div className="flex items-center gap-2">
-                    {doc.duplicateStatus === 'SUSPECTED' && (
                       <Link
-                        href={`/processing/${doc.id}?compare=true`}
-                        className="btn-ghost btn-xs inline-flex items-center gap-1 text-status-warning min-h-[44px]"
-                        title="Compare with suspected duplicate"
+                        href={`/processing/${doc.id}`}
+                        className="btn-secondary btn-xs inline-flex items-center gap-1 min-h-[44px]"
                       >
-                        <Copy className="w-4 h-4" />
-                        Compare
+                        <Eye className="w-4 h-4" />
+                        View
                       </Link>
-                    )}
-                    <Link
-                      href={`/processing/${doc.id}`}
-                      className="btn-secondary btn-xs inline-flex items-center gap-1 min-h-[44px]"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View
-                    </Link>
-                  </div>
-                }
-              />
+                    </div>
+                  }
+                />
               );
             })
           )}
@@ -1984,12 +1973,12 @@ export default function ProcessingDocumentsPage() {
                           value={
                             params.documentDateFrom || params.documentDateTo
                               ? {
-                                  mode: 'range' as const,
-                                  range: {
-                                    from: params.documentDateFrom ? new Date(params.documentDateFrom) : undefined,
-                                    to: params.documentDateTo ? new Date(params.documentDateTo) : undefined,
-                                  }
+                                mode: 'range' as const,
+                                range: {
+                                  from: params.documentDateFrom ? new Date(params.documentDateFrom) : undefined,
+                                  to: params.documentDateTo ? new Date(params.documentDateTo) : undefined,
                                 }
+                              }
                               : undefined
                           }
                           onChange={(value) => {
@@ -2012,21 +2001,21 @@ export default function ProcessingDocumentsPage() {
                           value={
                             params.uploadDatePreset === 'TODAY'
                               ? {
-                                  mode: 'range' as const,
-                                  range: {
-                                    from: new Date(new Date().setHours(0, 0, 0, 0)),
-                                    to: new Date(new Date().setHours(23, 59, 59, 999)),
-                                  }
+                                mode: 'range' as const,
+                                range: {
+                                  from: new Date(new Date().setHours(0, 0, 0, 0)),
+                                  to: new Date(new Date().setHours(23, 59, 59, 999)),
                                 }
+                              }
                               : params.uploadDateFrom || params.uploadDateTo
-                              ? {
+                                ? {
                                   mode: 'range' as const,
                                   range: {
                                     from: params.uploadDateFrom ? new Date(params.uploadDateFrom) : undefined,
                                     to: params.uploadDateTo ? new Date(params.uploadDateTo) : undefined,
                                   }
                                 }
-                              : undefined
+                                : undefined
                           }
                           onChange={(value) => {
                             if (!value || value.mode !== 'range') {
@@ -2122,8 +2111,8 @@ export default function ProcessingDocumentsPage() {
                       ) : columnId === 'subtotal' ? (
                         <AmountFilter
                           value={params.subtotal !== undefined ? { mode: 'single', single: params.subtotal } :
-                                params.subtotalFrom !== undefined || params.subtotalTo !== undefined ?
-                                { mode: 'range', range: { from: params.subtotalFrom, to: params.subtotalTo } } : undefined}
+                            params.subtotalFrom !== undefined || params.subtotalTo !== undefined ?
+                              { mode: 'range', range: { from: params.subtotalFrom, to: params.subtotalTo } } : undefined}
                           onChange={(value) => handleFiltersChange({ subtotalFilter: value })}
                           placeholder="All amounts"
                           size="sm"
@@ -2133,8 +2122,8 @@ export default function ProcessingDocumentsPage() {
                       ) : columnId === 'tax' ? (
                         <AmountFilter
                           value={params.tax !== undefined ? { mode: 'single', single: params.tax } :
-                                params.taxFrom !== undefined || params.taxTo !== undefined ?
-                                { mode: 'range', range: { from: params.taxFrom, to: params.taxTo } } : undefined}
+                            params.taxFrom !== undefined || params.taxTo !== undefined ?
+                              { mode: 'range', range: { from: params.taxFrom, to: params.taxTo } } : undefined}
                           onChange={(value) => handleFiltersChange({ taxFilter: value })}
                           placeholder="All amounts"
                           size="sm"
@@ -2144,8 +2133,8 @@ export default function ProcessingDocumentsPage() {
                       ) : columnId === 'total' ? (
                         <AmountFilter
                           value={params.total !== undefined ? { mode: 'single', single: params.total } :
-                                params.totalFrom !== undefined || params.totalTo !== undefined ?
-                                { mode: 'range', range: { from: params.totalFrom, to: params.totalTo } } : undefined}
+                            params.totalFrom !== undefined || params.totalTo !== undefined ?
+                              { mode: 'range', range: { from: params.totalFrom, to: params.totalTo } } : undefined}
                           onChange={(value) => handleFiltersChange({ totalFilter: value })}
                           placeholder="All amounts"
                           size="sm"
@@ -2155,8 +2144,8 @@ export default function ProcessingDocumentsPage() {
                       ) : columnId === 'homeSubtotal' ? (
                         <AmountFilter
                           value={params.homeSubtotal !== undefined ? { mode: 'single', single: params.homeSubtotal } :
-                                params.homeSubtotalFrom !== undefined || params.homeSubtotalTo !== undefined ?
-                                { mode: 'range', range: { from: params.homeSubtotalFrom, to: params.homeSubtotalTo } } : undefined}
+                            params.homeSubtotalFrom !== undefined || params.homeSubtotalTo !== undefined ?
+                              { mode: 'range', range: { from: params.homeSubtotalFrom, to: params.homeSubtotalTo } } : undefined}
                           onChange={(value) => handleFiltersChange({ homeSubtotalFilter: value })}
                           placeholder="All amounts"
                           size="sm"
@@ -2166,8 +2155,8 @@ export default function ProcessingDocumentsPage() {
                       ) : columnId === 'homeTax' ? (
                         <AmountFilter
                           value={params.homeTax !== undefined ? { mode: 'single', single: params.homeTax } :
-                                params.homeTaxFrom !== undefined || params.homeTaxTo !== undefined ?
-                                { mode: 'range', range: { from: params.homeTaxFrom, to: params.homeTaxTo } } : undefined}
+                            params.homeTaxFrom !== undefined || params.homeTaxTo !== undefined ?
+                              { mode: 'range', range: { from: params.homeTaxFrom, to: params.homeTaxTo } } : undefined}
                           onChange={(value) => handleFiltersChange({ homeTaxFilter: value })}
                           placeholder="All amounts"
                           size="sm"
@@ -2177,8 +2166,8 @@ export default function ProcessingDocumentsPage() {
                       ) : columnId === 'homeTotal' ? (
                         <AmountFilter
                           value={params.homeTotal !== undefined ? { mode: 'single', single: params.homeTotal } :
-                                params.homeTotalFrom !== undefined || params.homeTotalTo !== undefined ?
-                                { mode: 'range', range: { from: params.homeTotalFrom, to: params.homeTotalTo } } : undefined}
+                            params.homeTotalFrom !== undefined || params.homeTotalTo !== undefined ?
+                              { mode: 'range', range: { from: params.homeTotalFrom, to: params.homeTotalTo } } : undefined}
                           onChange={(value) => handleFiltersChange({ homeTotalFilter: value })}
                           placeholder="All amounts"
                           size="sm"

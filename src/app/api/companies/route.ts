@@ -4,6 +4,7 @@ import { requirePermission } from '@/lib/rbac';
 import { createCompanySchema, companySearchSchema } from '@/lib/validations/company';
 import { createCompany, searchCompanies, getCompanyByUen } from '@/services/company.service';
 import { getTenantById } from '@/services/tenant.service';
+import { migrateBizFileToProcessing } from '@/services/document-processing.service';
 import { createLogger, sanitizeError } from '@/lib/logger';
 
 const log = createLogger('api:companies');
@@ -170,6 +171,21 @@ export async function POST(request: NextRequest) {
     }
 
     const company = await createCompany(data, { tenantId, userId: session.id });
+
+    // If a bizfileDocumentId is provided, migrate it to the processing pipeline
+    const bizfileDocumentId = body.bizfileDocumentId as string | undefined;
+    if (bizfileDocumentId) {
+      try {
+        log.info(`Migrating BizFile document ${bizfileDocumentId} for company ${company.id}`);
+        await migrateBizFileToProcessing(bizfileDocumentId, company.id, tenantId);
+        log.info(`Successfully migrated BizFile document ${bizfileDocumentId}`);
+      } catch (error) {
+        // Log error but don't fail company creation
+        log.error(`Failed to migrate BizFile document ${bizfileDocumentId}:`, sanitizeError(error));
+        // Company is still created, but BizFile migration failed
+        // User can manually retry or upload the document again
+      }
+    }
 
     return NextResponse.json(company, { status: 201 });
   } catch (error) {

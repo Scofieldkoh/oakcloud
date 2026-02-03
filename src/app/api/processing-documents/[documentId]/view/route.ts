@@ -63,18 +63,7 @@ export async function GET(
             renderDpi: true,
           },
         },
-        documentTags: {
-          include: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-                color: true,
-                companyId: true,
-              },
-            },
-          },
-        },
+        // Tags removed - will be loaded lazily via separate endpoint
       },
     });
 
@@ -159,14 +148,7 @@ export async function GET(
       imageUrl: `/api/processing-documents/${documentId}/pages/${page.pageNumber}/image`,
     }));
 
-    // Transform tags
-    const tags = processingDoc.documentTags.map((docTag) => ({
-      id: docTag.id,
-      tagId: docTag.tag.id,
-      name: docTag.tag.name,
-      color: docTag.tag.color,
-      scope: docTag.tag.companyId ? 'company' : 'tenant' as const,
-    }));
+
 
     return NextResponse.json({
       success: true,
@@ -199,51 +181,51 @@ export async function GET(
         },
         currentRevision: currentRevision
           ? {
-              id: currentRevision.id,
-              revisionNumber: currentRevision.revisionNumber,
-              status: currentRevision.status,
-              documentCategory: currentRevision.documentCategory,
-              documentSubCategory: currentRevision.documentSubCategory,
-              vendorName: currentRevision.vendorName,
-              documentNumber: currentRevision.documentNumber,
-              documentDate: currentRevision.documentDate?.toISOString().split('T')[0] || null,
-              dueDate: currentRevision.dueDate?.toISOString().split('T')[0] || null,
-              currency: currentRevision.currency,
-              subtotal: currentRevision.subtotal?.toString() || null,
-              taxAmount: currentRevision.taxAmount?.toString() || null,
-              totalAmount: currentRevision.totalAmount.toString(),
-              gstTreatment: currentRevision.gstTreatment,
-              supplierGstNo: currentRevision.supplierGstNo,
-              validationStatus: currentRevision.validationStatus,
-              validationIssues: currentRevision.validationIssues,
-              headerEvidenceJson: currentRevision.headerEvidenceJson,
-              // Home currency fields
-              homeCurrency: currentRevision.homeCurrency,
-              homeExchangeRate: currentRevision.homeExchangeRate?.toString() || null,
-              homeExchangeRateSource: currentRevision.homeExchangeRateSource,
-              exchangeRateDate: currentRevision.exchangeRateDate?.toISOString().split('T')[0] || null,
-              homeSubtotal: currentRevision.homeSubtotal?.toString() || null,
-              homeTaxAmount: currentRevision.homeTaxAmount?.toString() || null,
-              homeEquivalent: currentRevision.homeEquivalent?.toString() || null,
-              isHomeExchangeRateOverride: currentRevision.isHomeExchangeRateOverride ?? false,
-              lineItems: currentRevision.items.map((item) => ({
-                id: item.id,
-                lineNo: item.lineNo,
-                description: item.description,
-                quantity: item.quantity?.toString() || null,
-                unitPrice: item.unitPrice?.toString() || null,
-                amount: item.amount.toString(),
-                gstAmount: item.gstAmount?.toString() || null,
-                taxCode: item.taxCode,
-                accountCode: item.accountCode,
-                evidenceJson: item.evidenceJson,
-                // Home currency line item fields
-                homeAmount: item.homeAmount?.toString() || null,
-                homeGstAmount: item.homeGstAmount?.toString() || null,
-                isHomeAmountOverride: item.isHomeAmountOverride ?? false,
-                isHomeGstOverride: item.isHomeGstOverride ?? false,
-              })),
-            }
+            id: currentRevision.id,
+            revisionNumber: currentRevision.revisionNumber,
+            status: currentRevision.status,
+            documentCategory: currentRevision.documentCategory,
+            documentSubCategory: currentRevision.documentSubCategory,
+            vendorName: currentRevision.vendorName,
+            documentNumber: currentRevision.documentNumber,
+            documentDate: currentRevision.documentDate?.toISOString().split('T')[0] || null,
+            dueDate: currentRevision.dueDate?.toISOString().split('T')[0] || null,
+            currency: currentRevision.currency,
+            subtotal: currentRevision.subtotal?.toString() || null,
+            taxAmount: currentRevision.taxAmount?.toString() || null,
+            totalAmount: currentRevision.totalAmount.toString(),
+            gstTreatment: currentRevision.gstTreatment,
+            supplierGstNo: currentRevision.supplierGstNo,
+            validationStatus: currentRevision.validationStatus,
+            validationIssues: currentRevision.validationIssues,
+            headerEvidenceJson: currentRevision.headerEvidenceJson,
+            // Home currency fields
+            homeCurrency: currentRevision.homeCurrency,
+            homeExchangeRate: currentRevision.homeExchangeRate?.toString() || null,
+            homeExchangeRateSource: currentRevision.homeExchangeRateSource,
+            exchangeRateDate: currentRevision.exchangeRateDate?.toISOString().split('T')[0] || null,
+            homeSubtotal: currentRevision.homeSubtotal?.toString() || null,
+            homeTaxAmount: currentRevision.homeTaxAmount?.toString() || null,
+            homeEquivalent: currentRevision.homeEquivalent?.toString() || null,
+            isHomeExchangeRateOverride: currentRevision.isHomeExchangeRateOverride ?? false,
+            lineItems: currentRevision.items.map((item) => ({
+              id: item.id,
+              lineNo: item.lineNo,
+              description: item.description,
+              quantity: item.quantity?.toString() || null,
+              unitPrice: item.unitPrice?.toString() || null,
+              amount: item.amount.toString(),
+              gstAmount: item.gstAmount?.toString() || null,
+              taxCode: item.taxCode,
+              accountCode: item.accountCode,
+              evidenceJson: item.evidenceJson,
+              // Home currency line item fields
+              homeAmount: item.homeAmount?.toString() || null,
+              homeGstAmount: item.homeGstAmount?.toString() || null,
+              isHomeAmountOverride: item.isHomeAmountOverride ?? false,
+              isHomeGstOverride: item.isHomeGstOverride ?? false,
+            })),
+          }
           : null,
         pages: {
           documentId,
@@ -253,7 +235,7 @@ export async function GET(
           // Include lockVersion in URL for cache busting after page modifications
           pdfUrl: isPdf ? `/api/processing-documents/${documentId}/pdf?v=${processingDoc.lockVersion}` : null,
         },
-        tags,
+        // Tags removed - will be loaded lazily via separate endpoint
       },
       meta: {
         requestId: uuidv4(),

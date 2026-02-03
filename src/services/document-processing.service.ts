@@ -1441,23 +1441,6 @@ export async function listProcessingDocumentsPaged(options: {
             homeEquivalent: true,
           },
         },
-        // Include document tags for list display
-        documentTags: {
-          select: {
-            id: true,
-            tagId: true,
-            tag: {
-              select: {
-                id: true,
-                name: true,
-                color: true,
-                companyId: true,
-                tenantId: true,
-              },
-            },
-          },
-          orderBy: { addedAt: 'asc' },
-        },
       },
       orderBy,
       skip,
@@ -1531,17 +1514,6 @@ export interface ProcessingDocumentWithDocument {
     homeTaxAmount: Decimal | null;
     homeEquivalent: Decimal | null;
   } | null;
-  documentTags: Array<{
-    id: string;
-    tagId: string;
-    tag: {
-      id: string;
-      name: string;
-      color: string;
-      companyId: string | null;
-      tenantId: string | null;
-    };
-  }>;
 }
 
 /**
@@ -1760,6 +1732,113 @@ async function calculateFileHash(storageKey: string): Promise<string> {
     // Fallback: use key-based hash if file read fails
     return hashBlake3(storageKey);
   }
+}
+
+/**
+ * Migrate BizFile Document to Processing Pipeline
+ * 
+ * Called when a company is created from a BizFile upload.
+ * Moves the document from pending/ to companies/{companyId}/documents/
+ * and creates ProcessingDocument + DocumentPage records.
+ */
+export async function migrateBizFileToProcessing(
+  documentId: string,
+  companyId: string,
+  tenantId: string
+): Promise<{ processingDocumentId: string; pageCount: number }> {
+  log.info(`Migrating BizFile document ${documentId} to processing pipeline for company ${companyId}`);
+
+  // Get the document
+  const document = await prisma.document.findUnique({
+    where: { id: documentId },
+    select: {
+      id: true,
+      tenantId: true,
+      storageKey: true,
+      fileName: true,
+      mimeType: true,
+      fileSize: true,
+      originalFileName: true,
+    },
+  });
+
+  if (!document) {
+    throw new Error(`Document ${documentId} not found`);
+  }
+
+  if (document.tenantId !== tenantId) {
+    throw new Error(`Document ${documentId} does not belong to tenant ${tenantId}`);
+  }
+
+  // Check if already migrated (has ProcessingDocument)
+  const existing = await prisma.processingDocument.findUnique({
+    where: { documentId },
+  });
+
+  if (existing) {
+    log.info(`Document ${documentId} already has ProcessingDocument ${existing.id}`);
+    return {
+      processingDocumentId: existing.id,
+      pageCount: existing.pageCount || 0,
+    };
+  }
+
+  // Generate new storage key for company documents folder
+  const extension = document.fileName.match(/\.[^.]+$/)?.[0] || '';
+  const newStorageKey = `${tenantId}/companies/${companyId}/documents/${documentId}/original${extension}`;
+
+  // Move file in MinIO
+  try {
+    await storage.move(document.storageKey, newStorageKey);
+    log.info(`Moved file from ${document.storageKey} to ${newStorageKey}`);
+  } catch (error) {
+    log.error(`Failed to move file from ${document.storageKey} to ${newStorageKey}:`, error);
+    throw new Error(`Failed to move document file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
+  // Update document record in a transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // Update Document with new storage key and company association
+    await tx.document.update({
+      where: { id: documentId },
+      data: {
+        companyId,
+        storageKey: newStorageKey,
+      },
+    });
+
+    // Calculate file hash for duplicate detection
+    const fileHash = await calculateFileHash(newStorageKey);
+
+    // Create ProcessingDocument
+    const processingDoc = await tx.processingDocument.create({
+      data: {
+        documentId,
+        isContainer: true,
+        pipelineStatus: 'UPLOADED',
+        processingPriority: 'NORMAL',
+        uploadSource: 'WEB',
+        fileHash,
+        contentTypeDetected: document.mimeType,
+      },
+    });
+
+    // Create DocumentPage records
+    const { pageCount } = await prepareDocumentPages(
+      processingDoc.id,
+      newStorageKey,
+      document.mimeType || 'application/pdf'
+    );
+
+    log.info(`Created ProcessingDocument ${processingDoc.id} with ${pageCount} pages`);
+
+    return {
+      processingDocumentId: processingDoc.id,
+      pageCount,
+    };
+  });
+
+  return result;
 }
 
 // Export constants for use in other modules

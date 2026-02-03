@@ -1043,3 +1043,352 @@ This file contains debug logs for AI extraction calls when `AI_DEBUG=true`.
 
 ---
 
+## AI Request - 2026-02-03T04:15:12.210Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 25953ms |
+| Input Tokens | 4309 |
+| Output Tokens | 838 |
+| Total Tokens | 6967 |
+| Estimated Cost | $0.0060 |
+
+<details>
+<summary>Response (2071 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202510716E",
+    "name": "GD CARWASH PTE. LTD.",
+    "entityType": "PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-03-11",
+    "incorporationDate": "2025-03-11"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "95302",
+      "description": "CAR WASHING AND RELATED SERVICES"
+    }
+  },
+  "registeredAddress": {
+    "block": "8",
+    "streetName": "MAKEWAY AVENUE",
+    "unit": "#15-15",
+    "buildingName": "KOPAR AT NEWTON",
+    "postalCode": "228607",
+    "effectiveFrom": "2025-03-11"
+  },
+  "paidUpCapital": {
+    "amount": 10000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 10000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SINGAPORE DOLLAR",
+      "numberOfShares": 100000,
+      "totalValue": 10000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "CHIANG HAN CHIANG @ DENNIS KONG",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8772352F",
+      "nationality": "TAIWANESE",
+      "address": "8 MAKEWAY AVENUE, #15-15, KOPAR AT NEWTON, SINGAPORE 228607",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 100000,
+      "currency": "SINGAPORE DOLLAR"
+    }
+  ],
+  "officers": [
+    {
+      "name": "CHIANG HAN CHIANG @ DENNIS KONG",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8772352F",
+      "nationality": "TAIWANESE",
+      "address": "8 MAKEWAY AVENUE, #15-15, KOPAR AT NEWTON, SINGAPORE 228607",
+      "appointmentDate": "2025-03-11"
+    },
+    {
+      "name": "TAY LAY KHENG",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S6910806G",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "644 YISHUN STREET 61, #05-314, SINGAPORE 760644",
+      "appointmentDate": "2025-03-11"
+    }
+  ],
+  "compliance": {},
+  "documentMetadata": {
+    "receiptNo": "ACRA250902004254",
+    "receiptDate": "2025-09-02"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-03T05:04:31.251Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 23940ms |
+| Input Tokens | 4309 |
+| Output Tokens | 810 |
+| Total Tokens | 6846 |
+| Estimated Cost | $0.0059 |
+
+<details>
+<summary>Response (1996 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202510716E",
+    "name": "GD CARWASH PTE. LTD.",
+    "incorporationDate": "2025-03-11",
+    "entityType": "PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-03-11"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "95302",
+      "description": "CAR WASHING AND RELATED SERVICES"
+    }
+  },
+  "registeredAddress": {
+    "block": "8",
+    "streetName": "MAKEWAY AVENUE",
+    "unit": "#15-15",
+    "buildingName": "KOPAR AT NEWTON",
+    "postalCode": "228607",
+    "effectiveFrom": "2025-03-11"
+  },
+  "paidUpCapital": {
+    "amount": 10000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 10000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SINGAPORE DOLLAR",
+      "numberOfShares": 100000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "CHIANG HAN CHIANG @ DENNIS KONG",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8772352F",
+      "nationality": "TAIWANESE",
+      "address": "8 MAKEWAY AVENUE, #15-15, KOPAR AT NEWTON, SINGAPORE 228607",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 100000,
+      "currency": "SINGAPORE DOLLAR"
+    }
+  ],
+  "officers": [
+    {
+      "name": "CHIANG HAN CHIANG @ DENNIS KONG",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8772352F",
+      "nationality": "TAIWANESE",
+      "address": "8 MAKEWAY AVENUE, #15-15, KOPAR AT NEWTON, SINGAPORE 228607",
+      "appointmentDate": "2025-03-11"
+    },
+    {
+      "name": "TAY LAY KHENG",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S6910806G",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "644 YISHUN STREET 61, #05-314, SINGAPORE 760644",
+      "appointmentDate": "2025-03-11"
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "ACRA250902004254",
+    "receiptDate": "2025-09-02"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-03T05:34:16.052Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 44320ms |
+| Input Tokens | 4309 |
+| Output Tokens | 995 |
+| Total Tokens | 9031 |
+| Estimated Cost | $0.0063 |
+
+<details>
+<summary>Response (2530 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202519163R",
+    "name": "AI 4 SOLUTIONS PTE. LTD.",
+    "incorporationDate": "2025-05-02",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-05-02"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "62011",
+      "description": "DEVELOPMENT OF SOFTWARE AND APPLICATIONS (EXCEPT GAMES AND CYBERSECURITY)"
+    },
+    "secondary": {
+      "code": "74909",
+      "description": "OTHER PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES N.E.C."
+    }
+  },
+  "registeredAddress": {
+    "block": "11",
+    "streetName": "COLLYER QUAY",
+    "level": "03",
+    "unit": "07",
+    "buildingName": "THE ARCADE",
+    "postalCode": "049317",
+    "effectiveFrom": "2025-05-02"
+  },
+  "paidUpCapital": {
+    "amount": 1,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 1,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 150000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "AI FOR SOLUTIONS PTY LTD",
+      "type": "CORPORATE",
+      "identificationType": "OTHER",
+      "identificationNumber": "AU-689580630",
+      "nationality": "AUSTRALIA",
+      "placeOfOrigin": "AUSTRALIA",
+      "address": "26 KUMBA STREET FLETCHER NSW 2287 AUSTRALIA",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 150000,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "MOHAMED SADAGATTOULLA SALIHA THASLIM",
+      "role": "CEO",
+      "identificationType": "NRIC",
+      "identificationNumber": "S9682647H",
+      "nationality": "INDIAN",
+      "address": "520 BEDOK NORTH AVENUE 1, #05-342, SINGAPORE 460520",
+      "appointmentDate": "2025-05-02"
+    },
+    {
+      "name": "MOHAMED SADAGATTOULLA SALIHA THASLIM",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S9682647H",
+      "nationality": "INDIAN",
+      "address": "520 BEDOK NORTH AVENUE 1, #05-342, SINGAPORE 460520",
+      "appointmentDate": "2025-05-02"
+    },
+    {
+      "name": "MOHAMED SADAGATTOULLA SALIHA THASLIM",
+      "role": "MANAGING_DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S9682647H",
+      "nationality": "INDIAN",
+      "address": "520 BEDOK NORTH AVENUE 1, #05-342, SINGAPORE 460520",
+      "appointmentDate": "2025-05-02"
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "ACRA250807001467",
+    "receiptDate": "2025-08-07"
+  }
+}
+```
+</details>
+
+---
+
