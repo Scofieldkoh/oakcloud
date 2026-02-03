@@ -65,7 +65,13 @@ export default function CompaniesPage() {
     ...params,
     tenantId: activeTenantId,
   });
-  const { data: stats, error: statsError } = useCompanyStats(activeTenantId);
+
+  // OPTIMIZED: Defer stats loading until after main list has loaded
+  // This prevents stats query from competing with the primary companies query
+  const shouldLoadStats = !isLoading && !!data;
+  const { data: stats, error: statsError } = useCompanyStats(activeTenantId, {
+    enabled: shouldLoadStats,
+  });
   const deleteCompany = useDeleteCompany();
   const bulkDeleteCompanies = useBulkDeleteCompanies();
   const exportContactDetails = useExportContactDetails();

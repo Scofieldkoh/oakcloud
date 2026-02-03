@@ -3,67 +3,48 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, type ComponentProps, type ReactNode } from 'react';
-import { usePrefetchCompany } from '@/hooks/use-companies';
-import { usePrefetchContact } from '@/hooks/use-contacts';
 
 type LinkProps = ComponentProps<typeof Link>;
 
 interface PrefetchLinkProps extends LinkProps {
   children: ReactNode;
-  /** Type of entity to prefetch */
+  /** Type of entity to prefetch (currently unused - only route prefetch is active) */
   prefetchType?: 'company' | 'contact';
-  /** Entity ID to prefetch (extracted from href if not provided) */
+  /** Entity ID to prefetch (currently unused - only route prefetch is active) */
   prefetchId?: string;
 }
 
 /**
- * A Link component that prefetches data on hover for faster navigation.
- * Automatically detects company/contact URLs and prefetches the appropriate data.
+ * A Link component that prefetches routes on hover for faster navigation.
+ *
+ * NOTE: Data prefetch (company/contact details) was disabled because fetching
+ * full company details (~8 parallel queries) on hover caused performance issues
+ * when users quickly moved over multiple rows. The route prefetch alone provides
+ * sufficient performance benefit.
  */
 export function PrefetchLink({
   children,
-  prefetchType,
-  prefetchId,
+  // These props are kept for API compatibility but currently unused
+  prefetchType: _prefetchType,
+  prefetchId: _prefetchId,
   onMouseEnter,
   href,
   ...props
 }: PrefetchLinkProps) {
   const router = useRouter();
-  const prefetchCompany = usePrefetchCompany();
-  const prefetchContact = usePrefetchContact();
 
-  // Extract entity type and ID from href if not provided
+  // Extract href string for route prefetching
   const hrefString = typeof href === 'string' ? href : href.pathname || '';
-
-  const detectedType = prefetchType || (() => {
-    if (hrefString.includes('/companies/')) return 'company';
-    if (hrefString.includes('/contacts/')) return 'contact';
-    return undefined;
-  })();
-
-  const detectedId = prefetchId || (() => {
-    const match = hrefString.match(/\/(companies|contacts)\/([a-zA-Z0-9-]+)/);
-    return match ? match[2] : undefined;
-  })();
 
   const handleMouseEnter = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
-      // Prefetch the route
+      // Prefetch the route only - Next.js handles this efficiently
       router.prefetch(hrefString);
-
-      // Prefetch the data
-      if (detectedId) {
-        if (detectedType === 'company') {
-          prefetchCompany(detectedId);
-        } else if (detectedType === 'contact') {
-          prefetchContact(detectedId);
-        }
-      }
 
       // Call original onMouseEnter if provided
       onMouseEnter?.(e);
     },
-    [router, hrefString, detectedType, detectedId, prefetchCompany, prefetchContact, onMouseEnter]
+    [router, hrefString, onMouseEnter]
   );
 
   return (

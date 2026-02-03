@@ -209,12 +209,16 @@ export function useCompany(id: string) {
  * );
  * ```
  */
-export function useCompanyStats(tenantId?: string) {
+export function useCompanyStats(tenantId?: string, options?: { enabled?: boolean }) {
+  // Default enabled to true, but allow explicit disabling for deferred loading
+  const enabled = options?.enabled ?? true;
+
   return useQuery({
     queryKey: ['company-stats', tenantId],
     queryFn: () => fetchCompanyStats(tenantId),
     staleTime: 30 * 60 * 1000, // 30 minutes - stats change infrequently
     gcTime: 60 * 60 * 1000, // 1 hour
+    enabled,
   });
 }
 

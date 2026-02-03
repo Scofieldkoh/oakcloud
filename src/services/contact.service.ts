@@ -230,8 +230,12 @@ export async function searchContacts(
     };
   }
 
-  const orderBy: Prisma.ContactOrderByWithRelationInput = {};
-  orderBy[params.sortBy] = params.sortOrder;
+  // Handle special sort fields that don't map directly to Prisma fields
+  // companyRelationsCount is a computed field - sort by fullName instead as fallback
+  const sortField = params.sortBy === 'companyRelationsCount' ? 'fullName' : params.sortBy;
+  const orderBy: Prisma.ContactOrderByWithRelationInput = {
+    [sortField]: params.sortOrder,
+  };
 
   const skip = (params.page - 1) * params.limit;
 

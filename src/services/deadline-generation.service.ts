@@ -1237,6 +1237,7 @@ function generateDeadlinesFromRule(
           statutoryDueDate: occurrence.date,
           isBillable: rule.isBillable,
           amount: rule.amount ? Number(rule.amount) : null,
+          currency: rule.currency || 'SGD',
           templateCode: rule.sourceTemplateCode || 'CUSTOM',
         });
       }
@@ -1254,6 +1255,7 @@ function generateDeadlinesFromRule(
           statutoryDueDate: baseDate,
           isBillable: rule.isBillable,
           amount: rule.amount ? Number(rule.amount) : null,
+          currency: rule.currency || 'SGD',
           templateCode: rule.sourceTemplateCode || 'CUSTOM',
         });
       }

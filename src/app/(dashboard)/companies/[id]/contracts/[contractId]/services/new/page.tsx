@@ -154,14 +154,21 @@ export default function NewServicePage({ params }: PageProps) {
         entityType: 'PRIVATE_LIMITED' as const,
       };
     }
+    // Handle incorporationDate which can be Date, string (from JSON), or null
+    // Cast to unknown first since API returns Date but JSON serialization makes it string
+    const incDate = company.incorporationDate as unknown as Date | string | null;
+    let incorporationDateStr: string | null = null;
+    if (incDate) {
+      if (typeof incDate === 'string') {
+        incorporationDateStr = incDate.split('T')[0];
+      } else if (incDate instanceof Date) {
+        incorporationDateStr = incDate.toISOString().split('T')[0];
+      }
+    }
     return {
       fyeMonth: company.financialYearEndMonth,
       fyeDay: company.financialYearEndDay,
-      incorporationDate: company.incorporationDate
-        ? (typeof company.incorporationDate === 'string'
-          ? company.incorporationDate.split('T')[0]
-          : company.incorporationDate.toISOString().split('T')[0])
-        : null,
+      incorporationDate: incorporationDateStr,
       isGstRegistered: company.isGstRegistered,
       gstFilingFrequency: company.gstFilingFrequency,
       entityType: company.entityType,

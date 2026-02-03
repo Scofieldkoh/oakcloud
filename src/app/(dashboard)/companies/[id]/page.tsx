@@ -16,9 +16,8 @@ import {
 import {
   useCompany,
   useDeleteCompany,
-  useCompanyLinkInfo,
 } from '@/hooks/use-companies';
-import { useCompanyContactDetails, usePrefetchCompanyContactDetails } from '@/hooks/use-contact-details';
+import { useCompanyContactDetails } from '@/hooks/use-contact-details';
 import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate } from '@/lib/utils';
 import { getEntityTypeLabel } from '@/lib/constants';
@@ -33,7 +32,6 @@ import {
   useTabState,
 } from '@/components/companies/company-detail';
 import { ContractsTab } from '@/components/companies/contracts';
-import { usePrefetchCompanyContracts } from '@/hooks/use-contracts';
 
 // Inner component that uses useSearchParams (needs Suspense boundary)
 function CompanyDetailContent({ id }: { id: string }) {
@@ -49,28 +47,30 @@ function CompanyDetailContent({ id }: { id: string }) {
   // URL-persisted tab state
   const [activeTab, setActiveTab] = useTabState();
 
-  // Prefetch contact details and contracts in background after profile loads
-  // This runs the query but with lower priority, so it doesn't block the main content
-  usePrefetchCompanyContactDetails(id, !isLoading && !!company);
-  usePrefetchCompanyContracts(id, !isLoading && !!company);
+  // OPTIMIZED: Removed prefetch hooks - let tabs fetch their own data lazily
+  // This prevents sequential loading where prefetch waits for company to load first
 
   // Get contact details to check hasPoc for the warning icon
   const { data: contactDetailsData } = useCompanyContactDetails(id);
 
-  // Fetch link info when delete dialog opens
-  const { data: linkInfo } = useCompanyLinkInfo(deleteDialogOpen ? id : null);
-
-  // Build warning message based on links
+  // OPTIMIZED: Use counts from already-fetched company data instead of separate useCompanyLinkInfo hook
+  // Build warning message based on company._count (already fetched with company data)
   const getDeleteWarning = () => {
-    if (!linkInfo?.hasLinks) {
+    const counts = company?._count;
+    if (!counts) {
+      return 'This action cannot be undone. The company will be soft-deleted and can be restored later.';
+    }
+
+    const hasLinks = counts.officers > 0 || counts.shareholders > 0 || counts.charges > 0 || counts.documents > 0;
+    if (!hasLinks) {
       return 'This action cannot be undone. The company will be soft-deleted and can be restored later.';
     }
 
     const parts: string[] = [];
-    if (linkInfo.officerCount > 0) parts.push(`${linkInfo.officerCount} officer(s)`);
-    if (linkInfo.shareholderCount > 0) parts.push(`${linkInfo.shareholderCount} shareholder(s)`);
-    if (linkInfo.chargeCount > 0) parts.push(`${linkInfo.chargeCount} charge(s)`);
-    if (linkInfo.documentCount > 0) parts.push(`${linkInfo.documentCount} document(s)`);
+    if (counts.officers > 0) parts.push(`${counts.officers} officer(s)`);
+    if (counts.shareholders > 0) parts.push(`${counts.shareholders} shareholder(s)`);
+    if (counts.charges > 0) parts.push(`${counts.charges} charge(s)`);
+    if (counts.documents > 0) parts.push(`${counts.documents} document(s)`);
 
     return `Warning: This company has ${parts.join(', ')} linked. Deleting will remove these links, but the underlying data (contacts, documents) will remain. This action cannot be undone.`;
   };

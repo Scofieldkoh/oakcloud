@@ -41,7 +41,6 @@ import { cn } from '@/lib/utils';
 import { getSidebarWidth as getSidebarWidthFn } from '@/lib/constants/layout';
 import { SidebarTenantButton } from '@/components/ui/tenant-selector';
 import { SidebarCompanyButton } from '@/components/ui/company-selector';
-import { PetToggleButton } from '@/components/ui/pet-toggle-button';
 
 interface NavItem {
   name: string;
@@ -523,10 +522,7 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
 
         {/* Theme toggle - hidden on mobile since it's in the header */}
         {!isMobile && (
-          <>
-            <ThemeToggleButton collapsed={collapsed} />
-            <PetToggleButton collapsed={collapsed} />
-          </>
+          <ThemeToggleButton collapsed={collapsed} />
         )}
 
         {/* User info */}

@@ -532,24 +532,3 @@
   }
 }
 
-/* ===== PET MASCOT (PHASER CANVAS) ===== */
-.phaser-canvas-container {
-  /* Respect sidebar width */
-  left: 14rem; /* 56px (collapsed) converted to rem */
-}
-
-.phaser-canvas-container[data-sidebar-collapsed='false'] {
-  left: 14rem; /* 224px / 16 = 14rem (expanded) */
-}
-
-.phaser-canvas-container[data-sidebar-collapsed='true'] {
-  left: 3.5rem; /* 56px / 16 = 3.5rem (collapsed) */
-}
-
-/* Mobile: full width, account for header */
-@media (max-width: 1023px) {
-  .phaser-canvas-container {
-    left: 0 !important;
-    top: 3rem; /* 48px mobile header */
-  }
-}

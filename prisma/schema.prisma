@@ -918,6 +918,7 @@ model CompanyOfficer {
   @@index([companyId, isCurrent]) // For search queries
   @@index([contactId, companyId]) // For contact lookup
   @@index([name, isCurrent]) // For name search
+  @@index([companyId, isCurrent, appointmentDate]) // For detail page queries with sorting
   @@map("company_officers")
 }
 
@@ -987,6 +988,7 @@ model CompanyShareholder {
   @@index([companyId, isCurrent]) // For search queries
   @@index([contactId, companyId]) // For contact lookup
   @@index([name, isCurrent]) // For name search
+  @@index([companyId, isCurrent, numberOfShares]) // For detail page queries with sorting
   @@map("company_shareholders")
 }
 
@@ -1021,6 +1023,7 @@ model CompanyCharge {
   @@index([companyId])
   @@index([chargeHolderId])
   @@index([isFullyDischarged])
+  @@index([companyId, isFullyDischarged, registrationDate]) // For detail page queries
   @@map("company_charges")
 }
 
@@ -1085,6 +1088,7 @@ model Document {
   @@index([uploadedById])
   @@index([tenantId, companyId])
   @@index([tenantId, deletedAt])
+  @@index([companyId, isLatest, createdAt]) // For company document list with sorting
   @@map("documents")
 }
 

@@ -222,7 +222,7 @@ export async function createDeadlineRules(
     entityType: 'DeadlineRule',
     entityId: contractServiceId,
     changeSource: 'MANUAL',
-    details: {
+    metadata: {
       contractServiceId,
       rulesCreated: createdRules.length,
     },
@@ -287,7 +287,7 @@ export async function updateDeadlineRules(
     entityType: 'DeadlineRule',
     entityId: contractServiceId,
     changeSource: 'MANUAL',
-    details: {
+    metadata: {
       contractServiceId,
       rulesUpdated: newRules.length,
     },
@@ -326,7 +326,7 @@ export async function deleteDeadlineRules(
     entityType: 'DeadlineRule',
     entityId: contractServiceId,
     changeSource: 'MANUAL',
-    details: {
+    metadata: {
       contractServiceId,
     },
   });
@@ -439,10 +439,10 @@ export function validateDeadlineRuleInput(rule: DeadlineRuleInput): { valid: boo
     if (!rule.anchorType) {
       errors.push('Anchor type is required for rule-based deadlines');
     }
-    if (rule.offsetMonths !== undefined && (rule.offsetMonths < -120 || rule.offsetMonths > 120)) {
+    if (rule.offsetMonths != null && (rule.offsetMonths < -120 || rule.offsetMonths > 120)) {
       errors.push('Offset months must be between -120 and 120');
     }
-    if (rule.offsetDays !== undefined && (rule.offsetDays < -365 || rule.offsetDays > 365)) {
+    if (rule.offsetDays != null && (rule.offsetDays < -365 || rule.offsetDays > 365)) {
       errors.push('Offset days must be between -365 and 365');
     }
     if (rule.anchorType === 'FIXED_CALENDAR') {
@@ -470,7 +470,7 @@ export function validateDeadlineRuleInput(rule: DeadlineRuleInput): { valid: boo
   }
 
   // Billing validation
-  if (rule.isBillable && rule.amount !== undefined && rule.amount < 0) {
+  if (rule.isBillable && rule.amount != null && rule.amount < 0) {
     errors.push('Amount cannot be negative');
   }
 

@@ -65,7 +65,6 @@
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^5.4.449",
     "pg": "^8.16.3",
-    "phaser": "^3.90.0",
     "puppeteer-core": "^24.32.0",
     "react": "^19.0.0",
     "react-day-picker": "^9.13.0",
