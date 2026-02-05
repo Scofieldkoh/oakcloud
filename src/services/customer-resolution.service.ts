@@ -126,17 +126,37 @@ export async function resolveCustomer(input: ResolveCustomerInput): Promise<Cust
   const rawDisplay = normalizeForDisplay(raw);
 
   const aliases = await prisma.customerAlias.findMany({
-    where: { tenantId: input.tenantId, companyId: input.companyId, deletedAt: null },
-    select: { rawName: true, normalizedContactId: true, confidence: true },
+    where: {
+      tenantId: input.tenantId,
+      deletedAt: null,
+      OR: [{ companyId: input.companyId }, { companyId: null }],
+    },
+    select: { rawName: true, normalizedContactId: true, confidence: true, companyId: true },
     orderBy: { createdAt: 'desc' },
     take: DEFAULTS.aliasScanLimit,
   });
 
-  let bestAlias: { normalizedContactId: string; rawName: string; score: number } | null = null;
+  let bestAlias: {
+    normalizedContactId: string;
+    rawName: string;
+    score: number;
+    companyId: string | null;
+  } | null = null;
   for (const a of aliases) {
     const score = scoreNameSimilarity(rawDisplay, a.rawName);
-    if (!bestAlias || score > bestAlias.score) {
-      bestAlias = { normalizedContactId: a.normalizedContactId, rawName: a.rawName, score };
+    const isCompanyScoped = a.companyId === input.companyId;
+    const bestIsCompanyScoped = bestAlias?.companyId === input.companyId;
+    if (
+      !bestAlias ||
+      score > bestAlias.score ||
+      (score === bestAlias.score && isCompanyScoped && !bestIsCompanyScoped)
+    ) {
+      bestAlias = {
+        normalizedContactId: a.normalizedContactId,
+        rawName: a.rawName,
+        score,
+        companyId: a.companyId,
+      };
     }
   }
 

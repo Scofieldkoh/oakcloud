@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Building2, AlertCircle, FileUp, Trash2, Download } from 'lucide-react';
+import { Plus, Building2, AlertCircle, FileUp, Trash2, Download, RefreshCw } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { useCompanies, useCompanyStats, useDeleteCompany, useBulkDeleteCompanies } from '@/hooks/use-companies';
 import { useExportContactDetails } from '@/hooks/use-contact-details';
@@ -19,10 +19,12 @@ import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { useToast } from '@/components/ui/toast';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { getEntityTypeLabel, getCompanyStatusLabel } from '@/lib/constants';
 import type { EntityType, CompanyStatus } from '@/generated/prisma';
 
 const COLUMN_PREF_KEY = 'companies:list:columns:v1';
+const COMPANY_SEARCH_INPUT_ID = 'companies-search-input';
 
 export default function CompaniesPage() {
   const router = useRouter();
@@ -61,7 +63,7 @@ export default function CompaniesPage() {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // Pass tenantId to filter companies by selected tenant (for SUPER_ADMIN)
-  const { data, isLoading, isFetching, error } = useCompanies({
+  const { data, isLoading, isFetching, error, refetch } = useCompanies({
     ...params,
     tenantId: activeTenantId,
   });
@@ -69,7 +71,7 @@ export default function CompaniesPage() {
   // OPTIMIZED: Defer stats loading until after main list has loaded
   // This prevents stats query from competing with the primary companies query
   const shouldLoadStats = !isLoading && !!data;
-  const { data: stats, error: statsError } = useCompanyStats(activeTenantId, {
+  const { data: stats, error: statsError, isFetching: isStatsFetching, refetch: refetchStats } = useCompanyStats(activeTenantId, {
     enabled: shouldLoadStats,
   });
   const deleteCompany = useDeleteCompany();
@@ -110,6 +112,22 @@ export default function CompaniesPage() {
     setColumnWidths(nextWidths);
     saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: nextWidths });
   }, [columnWidths, saveColumnPref]);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+    if (shouldLoadStats) {
+      refetchStats();
+    }
+  }, [refetch, refetchStats, shouldLoadStats]);
+
+  const focusSearchInput = useCallback(() => {
+    if (typeof document === 'undefined') return;
+    const input = document.getElementById(COMPANY_SEARCH_INPUT_ID) as HTMLInputElement | null;
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, []);
 
   // Memoize URL construction to avoid rebuilding on every render
   const targetUrl = useMemo(() => {
@@ -558,6 +576,32 @@ export default function CompaniesPage() {
     }
   };
 
+  const isRefreshing = isFetching || isStatsFetching;
+
+  useKeyboardShortcuts([
+    {
+      key: 'r',
+      handler: handleRefresh,
+      description: 'Refresh companies',
+    },
+    ...(can.createCompany ? [{
+      key: 'F1',
+      handler: () => router.push('/companies/new'),
+      description: 'Add company',
+    }] : []),
+    ...(can.createDocument ? [{
+      key: 'F2',
+      handler: () => router.push('/companies/upload'),
+      description: 'Upload BizFile',
+    }] : []),
+    {
+      key: 'k',
+      ctrl: true,
+      handler: focusSearchInput,
+      description: 'Focus search',
+    },
+  ]);
+
   return (
     <div className="p-4 sm:p-6">
       {/* Header */}
@@ -569,17 +613,29 @@ export default function CompaniesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="btn-secondary btn-sm flex items-center gap-2"
+            aria-label="Refresh companies"
+            title="Refresh list (R)"
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="sm:hidden">Refresh</span>
+          </button>
           {can.createDocument && (
-            <Link href="/companies/upload" className="btn-secondary btn-sm flex items-center gap-2">
+            <Link href="/companies/upload" className="btn-secondary btn-sm flex items-center gap-2" title="Upload BizFile (F2)">
               <FileUp className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload BizFile</span>
+              <span className="hidden sm:inline">Upload BizFile (F2)</span>
               <span className="sm:hidden">Upload</span>
             </Link>
           )}
           {can.createCompany && (
-            <Link href="/companies/new" className="btn-primary btn-sm flex items-center gap-2">
+            <Link href="/companies/new" className="btn-primary btn-sm flex items-center gap-2" title="Add company (F1)">
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Company</span>
+              <span className="hidden sm:inline">Add Company (F1)</span>
               <span className="sm:hidden">Add</span>
             </Link>
           )}
@@ -672,6 +728,7 @@ export default function CompaniesPage() {
             financialYearEndMonth: (params as Record<string, unknown>).financialYearEndMonth as number | undefined,
           }}
           initialQuery={params.query}
+          searchInputId={COMPANY_SEARCH_INPUT_ID}
         />
       </div>
 

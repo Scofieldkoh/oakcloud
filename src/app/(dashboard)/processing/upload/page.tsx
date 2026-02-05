@@ -26,6 +26,7 @@ import { useCompanies } from '@/hooks/use-companies';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { useToast } from '@/components/ui/toast';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { FileMergeModal } from '@/components/processing/file-merge-modal';
 import { processFileForUpload, isSupportedFileType } from '@/lib/pdf-utils';
@@ -475,43 +476,46 @@ export default function ProcessingUploadPage() {
   const errorCount = queuedFiles.filter((f) => f.status === 'error').length;
   const allComplete = queuedFiles.length > 0 && completedCount === queuedFiles.length;
 
-  // Keyboard hotkeys
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip hotkeys when typing in inputs or when modal is open
-      const isInInput = e.target instanceof HTMLInputElement ||
-                        e.target instanceof HTMLSelectElement ||
-                        e.target instanceof HTMLTextAreaElement;
-
-      // Escape - Back to processing page (works unless modal is open or uploading)
-      if (e.key === 'Escape' && !isMergeModalOpen && !isUploading) {
-        e.preventDefault();
-        router.push('/processing');
-        return;
-      }
-
-      if (isInInput || isMergeModalOpen) return;
-
-      // F1 - Upload files
-      if (e.key === 'F1') {
-        e.preventDefault();
-        if (!isUploading && queuedFiles.length > 0 && selectedCompanyId && !allComplete) {
+  // Keyboard shortcuts (standardized): F1 primary action, F2 secondary action
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: () => {
+        if (!isMergeModalOpen && !isUploading) {
+          router.push('/processing');
+        }
+      },
+      description: 'Back to processing',
+    },
+    {
+      key: 'F1',
+      handler: () => {
+        if (!isMergeModalOpen && !isUploading && queuedFiles.length > 0 && selectedCompanyId && !allComplete) {
           uploadFiles();
         }
-      }
-
-      // M - Open merge modal
-      if (e.key === 'm' || e.key === 'M') {
-        e.preventDefault();
-        if (!isUploading) {
+      },
+      description: 'Upload files',
+    },
+    {
+      key: 'F2',
+      handler: () => {
+        if (!isMergeModalOpen && !isUploading) {
           openMergeModal();
         }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isUploading, queuedFiles.length, selectedCompanyId, allComplete, isMergeModalOpen, uploadFiles, openMergeModal, router]);
+      },
+      description: 'Merge files',
+    },
+    // Keep M as an alias for existing users
+    {
+      key: 'm',
+      handler: () => {
+        if (!isMergeModalOpen && !isUploading) {
+          openMergeModal();
+        }
+      },
+      description: 'Merge files',
+    },
+  ]);
 
   // Get file icon based on type
   const getFileIcon = (file: File) => {
@@ -668,10 +672,10 @@ export default function ProcessingUploadPage() {
           onClick={openMergeModal}
           disabled={isUploading}
           className="btn-secondary btn-sm flex items-center gap-2"
-          title="Merge multiple files into one PDF (M)"
+          title="Merge multiple files into one PDF (F2)"
         >
           <Merge className="w-4 h-4" />
-          Merge Multiple Files (M)
+          Merge Multiple Files (F2)
         </button>
         <p className="text-xs text-text-muted mt-1.5">
           Combine multiple files/images into a single PDF document

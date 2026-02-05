@@ -12,6 +12,7 @@ import { useCompany } from '@/hooks/use-companies';
 import { useCompanyContracts } from '@/hooks/use-contracts';
 import { useUpdateContractService } from '@/hooks/use-contract-services';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { createServiceSchema, type CreateServiceInput } from '@/lib/validations/service';
 import {
   SERVICE_TYPES,
@@ -132,6 +133,34 @@ export default function EditServicePage({ params }: PageProps) {
     }
   };
 
+  const handleCancel = () => {
+    router.push(`/companies/${companyId}?tab=contracts`);
+  };
+
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: handleCancel,
+      description: 'Cancel and go back',
+    },
+    {
+      key: 's',
+      ctrl: true,
+      handler: () => handleSubmit(onSubmit)(),
+      description: 'Save service',
+    },
+    {
+      key: 'F1',
+      handler: () => router.push('/companies/new'),
+      description: 'Create company',
+    },
+    {
+      key: 'F2',
+      handler: () => router.push(`/companies/upload?companyId=${companyId}`),
+      description: 'Update via BizFile',
+    },
+  ], !isSubmitting);
+
   if (isLoadingContract) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
@@ -162,6 +191,7 @@ export default function EditServicePage({ params }: PageProps) {
       <div className="mb-6">
         <Link
           href={`/companies/${companyId}?tab=contracts`}
+          title="Back to Contracts (Esc)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -393,16 +423,24 @@ export default function EditServicePage({ params }: PageProps) {
           <Link
             href={`/companies/${companyId}?tab=contracts`}
             className="btn-secondary btn-sm"
+            title="Cancel (Esc)"
           >
-            Cancel
+            <span className="hidden sm:inline">Cancel (Esc)</span>
+            <span className="sm:hidden">Cancel</span>
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
             className="btn-primary btn-sm flex items-center gap-2"
+            title="Update Service (Ctrl+S)"
           >
             <Save className="w-4 h-4" />
-            {isSubmitting ? 'Updating...' : 'Update Service'}
+            {isSubmitting ? 'Updating...' : (
+              <>
+                <span className="hidden sm:inline">Update Service (Ctrl+S)</span>
+                <span className="sm:hidden">Update Service</span>
+              </>
+            )}
           </button>
         </div>
       </form>

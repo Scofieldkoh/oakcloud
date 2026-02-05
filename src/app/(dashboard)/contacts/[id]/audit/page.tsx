@@ -2,9 +2,11 @@
 
 import { use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, History, User, Pencil, Trash2, Plus, RotateCcw, Link2 } from 'lucide-react';
+import { ArrowLeft, History, User, Pencil, Trash2, Plus, RotateCcw, Link2, RefreshCw } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 interface AuditLog {
   id: string;
@@ -64,18 +66,39 @@ export default function ContactAuditPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
 
-  const { data: auditLogs, isLoading, error } = useQuery({
+  const { data: auditLogs, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['contact-audit', id],
     queryFn: () => fetchContactAuditLogs(id),
   });
 
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: () => router.push(`/contacts/${id}`),
+      description: 'Back to contact',
+    },
+    {
+      key: 'r',
+      handler: () => refetch(),
+      description: 'Refresh audit logs',
+    },
+    {
+      key: 'F1',
+      handler: () => router.push('/contacts/new'),
+      description: 'Create contact',
+    },
+  ]);
+
   return (
     <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div>
         <Link
           href={`/contacts/${id}`}
+          title="Back to Contact (Esc)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -87,6 +110,24 @@ export default function ContactAuditPage({
         <p className="text-sm text-text-secondary mt-1">
           Complete history of changes made to this contact record
         </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => refetch()}
+            className="btn-secondary btn-sm flex items-center gap-2"
+            title="Refresh (R)"
+            disabled={isFetching}
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="sm:hidden">Refresh</span>
+          </button>
+          <Link href="/contacts/new" className="btn-primary btn-sm flex items-center gap-2" title="Add Contact (F1)">
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Contact (F1)</span>
+            <span className="sm:hidden">Add</span>
+          </Link>
+        </div>
       </div>
 
       {/* Loading */}

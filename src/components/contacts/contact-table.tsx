@@ -15,9 +15,9 @@ interface ContactWithCount extends Contact {
   _count?: {
     companyRelations: number;
   };
-  /** Default email from ContactDetail (where companyId is null) */
+  /** Display email (default first, then company-specific fallback) */
   defaultEmail?: string | null;
-  /** Default phone from ContactDetail (where companyId is null) */
+  /** Display phone (default first, then company-specific fallback) */
   defaultPhone?: string | null;
 }
 

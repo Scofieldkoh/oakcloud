@@ -11,6 +11,7 @@ interface CompanyFiltersProps {
   onFilterChange: (filters: FilterValues) => void;
   initialFilters?: FilterValues;
   initialQuery?: string;
+  searchInputId?: string;
 }
 
 export interface FilterValues {
@@ -58,7 +59,13 @@ const months = [
   { value: 12, label: 'December' },
 ];
 
-export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initialQuery = '' }: CompanyFiltersProps) {
+export function CompanyFilters({
+  onSearch,
+  onFilterChange,
+  initialFilters,
+  initialQuery = '',
+  searchInputId,
+}: CompanyFiltersProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterValues>(initialFilters || {});
@@ -89,11 +96,13 @@ export function CompanyFilters({ onSearch, onFilterChange, initialFilters, initi
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" aria-hidden="true" />
           <input
             type="text"
+            id={searchInputId}
             placeholder="Search by name, UEN, SSIC, officer, shareholder, address..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input input-sm pl-10"
             aria-label="Search companies"
+            title="Focus search (Ctrl/Cmd+K)"
           />
         </form>
         {/* Filter button - only show on mobile/tablet, hidden on desktop where inline filters are available */}

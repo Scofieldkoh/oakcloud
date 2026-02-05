@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
@@ -26,7 +26,9 @@ import {
 import { useSession } from '@/hooks/use-auth';
 import { useCompany } from '@/hooks/use-companies';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
+import { DocumentPageViewer, ResizableSplitView } from '@/components/processing';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
 
@@ -142,10 +144,11 @@ interface AIMetadata {
 }
 
 export default function UploadBizFilePage() {
-  const _router = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [step, setStep] = useState<UploadStep>('upload');
   const [error, setError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
@@ -180,6 +183,20 @@ export default function UploadBizFilePage() {
       setError(null);
     }
   }, []);
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -368,6 +385,47 @@ export default function UploadBizFilePage() {
     setConcurrentUpdateWarning(null);
   };
 
+  const handleCancel = () => {
+    if (step === 'upload') {
+      router.push(isUpdateMode ? `/companies/${existingCompanyId}` : '/companies');
+      return;
+    }
+
+    if (step === 'preview' || step === 'diff-preview') {
+      handleReset();
+      return;
+    }
+
+    if (step === 'complete' && companyId) {
+      router.push(`/companies/${companyId}`);
+    }
+  };
+
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: handleCancel,
+      description: 'Cancel and go back',
+    },
+    ...(step === 'preview' ? [{
+      key: 's',
+      ctrl: true,
+      handler: handleConfirm,
+      description: 'Confirm and save',
+    }] : []),
+    ...(step === 'diff-preview' ? [{
+      key: 's',
+      ctrl: true,
+      handler: handleApplyUpdate,
+      description: 'Apply changes',
+    }] : []),
+    {
+      key: 'F1',
+      handler: () => router.push('/companies/new'),
+      description: 'Create company',
+    },
+  ], step !== 'extracting' && step !== 'saving');
+
   // Handle officer action change (for potentially ceased officers)
   const handleOfficerActionChange = (officerId: string, action: 'cease' | 'follow_up', cessationDate?: string) => {
     setOfficerActions((prev) => {
@@ -381,12 +439,46 @@ export default function UploadBizFilePage() {
     });
   };
 
+  const isPdfFile = !!file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
+  const isImageFile = !!file && (file.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(file.name));
+  const previewPanel = (
+    <div className="h-full bg-background-secondary border border-border-primary rounded-lg overflow-hidden">
+      <div className="px-4 py-3 border-b border-border-primary bg-background-tertiary">
+        <p className="text-sm font-medium text-text-primary">BizFile Preview</p>
+        <p className="text-xs text-text-tertiary truncate">{file?.name || 'No file selected'}</p>
+      </div>
+      <div className="h-[calc(100%-52px)] bg-background-primary">
+        {!file || !previewUrl ? (
+          <div className="h-full flex items-center justify-center text-sm text-text-tertiary">
+            Upload a file to preview the BizFile pages.
+          </div>
+        ) : isPdfFile ? (
+          <DocumentPageViewer pdfUrl={previewUrl} className="h-full" />
+        ) : isImageFile ? (
+          <div className="h-full flex items-center justify-center p-4">
+            {/* eslint-disable-next-line @next/next/no-img-element -- Local object URL preview */}
+            <img
+              src={previewUrl}
+              alt="BizFile preview"
+              className="max-h-full max-w-full object-contain rounded"
+            />
+          </div>
+        ) : (
+          <div className="h-full flex items-center justify-center text-sm text-text-tertiary">
+            Preview available for PDF or image files.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="p-4 sm:p-6 max-w-4xl">
+    <div className="p-4 sm:p-6 max-w-7xl w-full">
       {/* Header */}
       <div className="mb-6">
         <Link
           href={isUpdateMode ? `/companies/${existingCompanyId}` : '/companies'}
+          title={isUpdateMode ? 'Back to Company (Esc)' : 'Back to Companies (Esc)'}
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -504,8 +596,9 @@ export default function UploadBizFilePage() {
           />
 
           <div className="flex items-center justify-end gap-3">
-            <Link href="/companies" className="btn-secondary btn-sm">
-              Cancel
+            <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Esc)">
+              <span className="hidden sm:inline">Cancel (Esc)</span>
+              <span className="sm:hidden">Cancel</span>
             </Link>
             <button
               onClick={handleUploadAndExtract}
@@ -534,11 +627,16 @@ export default function UploadBizFilePage() {
 
       {/* Step: Preview */}
       {step === 'preview' && extractedData && (
-        <div className="space-y-6">
-          <div className="card bg-status-success/5 border-status-success">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 text-status-success">
-                <CheckCircle className="w-5 h-5" />
+        <ResizableSplitView
+          className="h-[70vh] min-h-[520px]"
+          leftPanel={previewPanel}
+          rightPanel={
+            <div className="h-full overflow-y-auto bg-background-primary p-4">
+              <div className="space-y-6">
+            <div className="card bg-status-success/5 border-status-success">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-status-success">
+                  <CheckCircle className="w-5 h-5" />
                 <p className="font-medium">Successfully extracted data from BizFile</p>
               </div>
               {aiMetadata && (
@@ -708,21 +806,31 @@ export default function UploadBizFilePage() {
               Upload Different File
             </button>
             <div className="flex items-center gap-3">
-              <Link href="/companies" className="btn-secondary btn-sm">
-                Cancel
+              <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Esc)">
+                <span className="hidden sm:inline">Cancel (Esc)</span>
+                <span className="sm:hidden">Cancel</span>
               </Link>
-              <button onClick={handleConfirm} className="btn-primary btn-sm flex items-center gap-2">
+              <button onClick={handleConfirm} className="btn-primary btn-sm flex items-center gap-2" title="Confirm & Save (Ctrl+S)">
                 <CheckCircle className="w-4 h-4" />
-                Confirm & Save
-              </button>
+                <span className="hidden sm:inline">Confirm & Save (Ctrl+S)</span>
+                <span className="sm:hidden">Confirm & Save</span>
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
+              </div>
+            </div>
+          }
+        />
       )}
 
       {/* Step: Diff Preview (Update Mode) */}
       {step === 'diff-preview' && extractedData && diffResult && (
-        <div className="space-y-6">
+        <ResizableSplitView
+          className="h-[70vh] min-h-[520px]"
+          leftPanel={previewPanel}
+          rightPanel={
+            <div className="h-full overflow-y-auto bg-background-primary p-4">
+              <div className="space-y-6">
           <div className="card bg-status-success/5 border-status-success">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 text-status-success">
@@ -1067,8 +1175,9 @@ export default function UploadBizFilePage() {
               Upload Different File
             </button>
             <div className="flex items-center gap-3">
-              <Link href={`/companies/${companyId}`} className="btn-secondary btn-sm">
-                Cancel
+              <Link href={`/companies/${companyId}`} className="btn-secondary btn-sm" title="Cancel (Esc)">
+                <span className="hidden sm:inline">Cancel (Esc)</span>
+                <span className="sm:hidden">Cancel</span>
               </Link>
               {(() => {
                 const companyChanges = diffResult.differences.length;
@@ -1081,17 +1190,29 @@ export default function UploadBizFilePage() {
                   <button
                     onClick={handleApplyUpdate}
                     className="btn-primary btn-sm flex items-center gap-2"
+                    title="Apply Changes (Ctrl+S)"
                   >
                     <CheckCircle className="w-4 h-4" />
-                    {hasAnyChanges
-                      ? `Apply ${totalChanges} Change${totalChanges > 1 ? 's' : ''}`
-                      : 'Confirm & Save Document'}
+                    {hasAnyChanges ? (
+                      <>
+                        <span className="hidden sm:inline">{`Apply ${totalChanges} Change${totalChanges > 1 ? 's' : ''} (Ctrl+S)`}</span>
+                        <span className="sm:hidden">{`Apply ${totalChanges} Change${totalChanges > 1 ? 's' : ''}`}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="hidden sm:inline">Confirm & Save Document (Ctrl+S)</span>
+                        <span className="sm:hidden">Confirm & Save Document</span>
+                      </>
+                    )}
                   </button>
-                );
-              })()}
+                  );
+                })()}
+              </div>
             </div>
-          </div>
-        </div>
+              </div>
+            </div>
+          }
+        />
       )}
 
       {/* Step: Saving */}

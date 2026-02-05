@@ -1,6 +1,6 @@
 # Document Processing - UI Components
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2026-02-05
 > **Audience**: Developers
 
 UI components and patterns for the Document Processing module.
@@ -251,16 +251,35 @@ Issue types:
 
 ## Keyboard Shortcuts
 
+### Processing List (`/processing`)
+
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+S` | Save changes |
-| `Ctrl+Enter` | Approve document |
-| `Tab` | Next field |
-| `Shift+Tab` | Previous field |
-| `Ctrl+N` | Add line item |
-| `Ctrl+D` | Delete line item |
-| `Page Up/Down` | Navigate pages |
-| `+/-` | Zoom in/out |
+| `R` | Refresh list |
+| `F1` | Upload documents |
+| `F2` | Approve next pending document |
+
+### Upload Page (`/processing/upload`)
+
+| Shortcut | Action |
+|----------|--------|
+| `Esc` | Back to processing list |
+| `F1` | Upload queued files |
+| `F2` | Merge multiple files |
+| `M` | Merge multiple files (legacy alias) |
+
+### Document Detail (`/processing/[id]`)
+
+| Shortcut | Action |
+|----------|--------|
+| `Esc` | Cancel editing or back to list |
+| `R` | Refresh document |
+| `F1` | Approve (and confirm approval dialog) |
+| `F2` | Edit document |
+| `F3` | Save edits |
+| `F4` | Re-extract while editing |
+
+For cross-module standards (Companies, Contacts, Processing), see `docs/guides/KEYBOARD_SHORTCUTS.md`.
 
 ---
 

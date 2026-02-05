@@ -1066,19 +1066,26 @@ export async function searchContactsWithCounts(
             shareholdings: { where: { company: { deletedAt: null } } },
           },
         },
-        // Only fetch primary contact details for display (limit to 2: one email, one phone)
+        // Fetch email/phone details to display (prefer default, then company-specific)
         contactDetails: {
           where: {
-            companyId: null, // Only default (non-company-specific) details
             detailType: { in: ['EMAIL', 'PHONE'] },
-            isPrimary: true,
+            deletedAt: null,
           },
           select: {
             detailType: true,
             value: true,
             isPrimary: true,
+            companyId: true,
+            displayOrder: true,
+            createdAt: true,
           },
-          take: 2, // At most one email and one phone
+          orderBy: [
+            { companyId: 'asc' }, // Default (null) first, then company-specific
+            { isPrimary: 'desc' },
+            { displayOrder: 'asc' },
+            { createdAt: 'asc' },
+          ],
         },
       },
     }),
@@ -1122,8 +1129,13 @@ export async function searchContactsWithCounts(
 
   // Map contacts to include defaultEmail and defaultPhone
   const contactsWithDetails = contacts.map((contact) => {
-    const emailDetail = contact.contactDetails.find((d) => d.detailType === 'EMAIL');
-    const phoneDetail = contact.contactDetails.find((d) => d.detailType === 'PHONE');
+    const details = contact.contactDetails;
+    const getDetailValue = (type: 'EMAIL' | 'PHONE') => {
+      const defaultDetail = details.find((d) => !d.companyId && d.detailType === type);
+      if (defaultDetail?.value) return defaultDetail.value;
+      const companyDetail = details.find((d) => d.companyId && d.detailType === type);
+      return companyDetail?.value || null;
+    };
 
     // Remove contactDetails from the response (counts are kept in _count)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1131,8 +1143,8 @@ export async function searchContactsWithCounts(
 
     return {
       ...contactWithoutDetails,
-      defaultEmail: emailDetail?.value || null,
-      defaultPhone: phoneDetail?.value || null,
+      defaultEmail: getDetailValue('EMAIL'),
+      defaultPhone: getDetailValue('PHONE'),
     };
   });
 

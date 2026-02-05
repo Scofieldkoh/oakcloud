@@ -13,6 +13,7 @@ import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { ENTITY_TYPES } from '@/lib/constants';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 const statuses = [
   { value: 'LIVE', label: 'Live' },
@@ -70,6 +71,50 @@ export default function NewCompanyPage() {
   // Warn about unsaved changes when leaving the page
   useUnsavedChangesWarning(isDirty, !isSubmitting);
 
+  const handleCancel = () => {
+    router.push('/companies');
+  };
+
+  const onSubmit = async (data: CreateCompanyInput) => {
+    setSubmitError(null);
+
+    // SUPER_ADMIN must select a tenant
+    if (isSuperAdmin && !activeTenantId) {
+      setSubmitError('Please select a tenant before creating a company');
+      return;
+    }
+
+    try {
+      const company = await createCompany.mutateAsync({
+        ...data,
+        // Include tenantId for SUPER_ADMIN
+        ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
+      });
+      router.push(`/companies/${company.id}`);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to create company');
+    }
+  };
+
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: handleCancel,
+      description: 'Cancel and go back',
+    },
+    {
+      key: 's',
+      ctrl: true,
+      handler: () => handleSubmit(onSubmit)(),
+      description: 'Create company',
+    },
+    {
+      key: 'F2',
+      handler: () => router.push('/companies/upload'),
+      description: 'Upload BizFile',
+    },
+  ], !isSubmitting);
+
   // Check permission to create
   if (permissionsLoading) {
     return (
@@ -97,33 +142,13 @@ export default function NewCompanyPage() {
     );
   }
 
-  const onSubmit = async (data: CreateCompanyInput) => {
-    setSubmitError(null);
-
-    // SUPER_ADMIN must select a tenant
-    if (isSuperAdmin && !activeTenantId) {
-      setSubmitError('Please select a tenant before creating a company');
-      return;
-    }
-
-    try {
-      const company = await createCompany.mutateAsync({
-        ...data,
-        // Include tenantId for SUPER_ADMIN
-        ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
-      });
-      router.push(`/companies/${company.id}`);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to create company');
-    }
-  };
-
   return (
     <div className="p-4 sm:p-6 max-w-4xl">
       {/* Header */}
       <div className="mb-6">
         <Link
           href="/companies"
+          title="Back to Companies (Esc)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -347,16 +372,23 @@ export default function NewCompanyPage() {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Link href="/companies" className="btn-secondary btn-sm">
-            Cancel
+          <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Esc)">
+            <span className="hidden sm:inline">Cancel (Esc)</span>
+            <span className="sm:hidden">Cancel</span>
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
             className="btn-primary btn-sm flex items-center gap-2"
+            title="Create Company (Ctrl+S)"
           >
             <Save className="w-4 h-4" />
-            {isSubmitting ? 'Creating...' : 'Create Company'}
+            {isSubmitting ? 'Creating...' : (
+              <>
+                <span className="hidden sm:inline">Create Company (Ctrl+S)</span>
+                <span className="sm:hidden">Create Company</span>
+              </>
+            )}
           </button>
         </div>
       </form>

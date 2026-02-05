@@ -71,9 +71,9 @@ export interface ContactWithCount extends Contact {
  * Contact with count and default contact details for table display.
  */
 export interface ContactWithCountAndDetails extends ContactWithCount {
-  /** Default email (from ContactDetail where companyId is null) */
+  /** Display email (default first, then company-specific fallback) */
   defaultEmail?: string | null;
-  /** Default phone (from ContactDetail where companyId is null) */
+  /** Display phone (default first, then company-specific fallback) */
   defaultPhone?: string | null;
 }
 

@@ -8,6 +8,8 @@ interface ContactWithCount extends Contact {
   _count?: {
     companyRelations: number;
   };
+  defaultEmail?: string | null;
+  defaultPhone?: string | null;
 }
 
 interface ContactWithRelationships extends Contact {

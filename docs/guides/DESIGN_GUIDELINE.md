@@ -1,6 +1,6 @@
 # Oakcloud Design Guidelines
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2026-02-05
 > **Audience**: Developers, Designers
 
 This document outlines the design system, UI components, and styling standards for the Oakcloud application.
@@ -818,7 +818,7 @@ When buttons have keyboard shortcuts, display them consistently:
 
 // ❌ Bad: Inconsistent formatting
 <Button variant="ghost">Refresh - R</Button>
-<Button variant="ghost">Upload [F2]</Button>
+<Button variant="ghost">Upload [F1]</Button>
 ```
 
 **Recommendation**: Use parentheses format for simplicity: `Action (Key)`. Reserve badge format for complex shortcuts.
@@ -2419,7 +2419,7 @@ Display keyboard shortcuts for frequently used actions:
     onClick={handleUpload}
   >
     <Icon name="upload" className="w-4 h-4 mr-2" />
-    Upload (F2)
+    Upload (F1)
   </Button>
 
   <Button
@@ -2428,7 +2428,7 @@ Display keyboard shortcuts for frequently used actions:
     onClick={handleAdd}
   >
     <Icon name="plus" className="w-4 h-4 mr-2" />
-    Add New (A)
+    Add New (F2)
   </Button>
 </div>
 
@@ -2439,8 +2439,8 @@ useEffect(() => {
     if (document.activeElement?.tagName === 'INPUT') return;
 
     if (e.key === 'r') handleRefresh();
-    if (e.key === 'F2') handleUpload();
-    if (e.key === 'a') handleAdd();
+    if (e.key === 'F1') handleUpload();
+    if (e.key === 'F2') handleAdd();
   };
 
   window.addEventListener('keydown', handleKeyDown);
@@ -2450,10 +2450,11 @@ useEffect(() => {
 
 **Keyboard Shortcut Guidelines:**
 - Show shortcuts in button text: `Action (Key)`
-- Use single letters for common actions (R, A, E)
-- Use function keys for less common actions (F2, F3)
+- Use single letters for non-destructive global actions (R, E)
+- Use function keys for primary/secondary actions (F1, F2, F3)
 - Don't trigger when input fields are focused
 - Use uppercase in display, lowercase in listener
+- Keep mappings aligned with [Keyboard Shortcuts](./KEYBOARD_SHORTCUTS.md)
 
 ### Filter Pill Groups (see Reusable Components)
 
@@ -3338,7 +3339,7 @@ Display keyboard shortcuts in table action buttons:
   </Button>
   <Button size="sm" variant="ghost" onClick={handleUpload}>
     <Icon name="upload" className="w-4 h-4 mr-2" />
-    Upload (F2)
+    Upload (F1)
   </Button>
 </div>
 
@@ -3349,7 +3350,7 @@ useEffect(() => {
       e.preventDefault();
       handleRefresh();
     }
-    if (e.key === 'F2') {
+    if (e.key === 'F1') {
       e.preventDefault();
       handleUpload();
     }
@@ -3363,7 +3364,7 @@ useEffect(() => {
 **Best Practices:**
 - Show shortcuts in button text: `Action (Key)`
 - Use single letters for common actions (R = Refresh, A = Add)
-- Use function keys (F2, F3) for less common actions
+- Use function keys (F1, F2, F3) for primary/secondary actions
 - Don't trigger when input fields are focused
 - Document shortcuts in tooltip or help text
 
@@ -3437,7 +3438,7 @@ This is the **production reference implementation** showcasing all advanced tabl
 - ✅ Click-to-navigate rows with modifier key support
 - ✅ Column visibility toggle
 - ✅ User preference persistence (widths, visibility)
-- ✅ Keyboard shortcuts (Refresh: R, Upload: F2)
+- ✅ Keyboard shortcuts (Refresh: R, Upload: F1, Approve Next: F2)
 - ✅ Pagination with page info
 
 **1. Multi-Row Header Structure** (Lines 1842-2263)

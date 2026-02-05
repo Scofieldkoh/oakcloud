@@ -49,6 +49,7 @@ import { useCompanies } from '@/hooks/use-companies';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
@@ -868,42 +869,27 @@ export default function ProcessingDocumentsPage() {
     }
   }, [activeTenantId, effectiveCompanyId, router]);
 
-  // Keyboard hotkeys
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip hotkeys when typing in inputs
-      const isInInput = e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLSelectElement ||
-        e.target instanceof HTMLTextAreaElement;
-      if (isInInput) return;
-
-      // R - Refresh
-      if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault();
+  // Keyboard shortcuts (standardized): R refresh, F1 primary create, F2 secondary action
+  useKeyboardShortcuts([
+    {
+      key: 'r',
+      handler: () => {
         refetch();
         refetchPendingCount();
-      }
-
-      // F1 - Approve (navigate to next pending document)
-      if (e.key === 'F1') {
-        e.preventDefault();
-        if (pendingApprovalCount > 0) {
-          handleReviewNext();
-        }
-      }
-
-      // F2 - Upload (navigate to upload page)
-      if (e.key === 'F2') {
-        e.preventDefault();
-        if (can.createDocument) {
-          router.push('/processing/upload');
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [refetch, refetchPendingCount, handleReviewNext, pendingApprovalCount, can.createDocument, router]);
+      },
+      description: 'Refresh list',
+    },
+    ...(can.createDocument ? [{
+      key: 'F1',
+      handler: () => router.push('/processing/upload'),
+      description: 'Upload documents',
+    }] : []),
+    ...(pendingApprovalCount > 0 ? [{
+      key: 'F2',
+      handler: handleReviewNext,
+      description: 'Approve next document',
+    }] : []),
+  ]);
 
   // Selection state
   const selectionState = useMemo(() => {
@@ -1443,17 +1429,17 @@ export default function ProcessingDocumentsPage() {
             <button
               onClick={handleReviewNext}
               className="btn-secondary btn-sm flex items-center gap-2"
-              title="Approve next document pending approval (F1)"
+              title="Approve next document pending approval (F2)"
             >
               <Play className="w-4 h-4" />
-              <span className="hidden sm:inline">Approve ({pendingApprovalCount}) (F1)</span>
+              <span className="hidden sm:inline">Approve ({pendingApprovalCount}) (F2)</span>
               <span className="sm:hidden">Approve ({pendingApprovalCount})</span>
             </button>
           )}
           {can.createDocument && (
-            <Link href="/processing/upload" className="btn-primary btn-sm flex items-center gap-2" title="Upload documents (F2)">
+            <Link href="/processing/upload" className="btn-primary btn-sm flex items-center gap-2" title="Upload documents (F1)">
               <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload (F2)</span>
+              <span className="hidden sm:inline">Upload (F1)</span>
               <span className="sm:hidden">Upload</span>
             </Link>
           )}

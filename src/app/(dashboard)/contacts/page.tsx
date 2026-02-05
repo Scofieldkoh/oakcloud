@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Users, AlertCircle, Building2, User, Trash2, X } from 'lucide-react';
+import { Plus, Users, AlertCircle, Building2, User, Trash2, X, RefreshCw } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { useContacts, useDeleteContact, useBulkDeleteContacts } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -11,6 +11,7 @@ import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSelection } from '@/hooks/use-selection';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ContactTable, type ContactInlineFilters, type ContactFilterOption } from '@/components/contacts/contact-table';
 import { ContactFilters, type FilterValues } from '@/components/contacts/contact-filters';
 import { Pagination } from '@/components/companies/pagination';
@@ -46,6 +47,8 @@ interface ActiveFilterChip {
   label: string;
   onClear: () => void;
 }
+
+const CONTACT_SEARCH_INPUT_ID = 'contacts-search-input';
 
 export default function ContactsPage() {
   const router = useRouter();
@@ -101,7 +104,7 @@ export default function ContactsPage() {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // Pass tenantId to filter contacts by selected tenant (for SUPER_ADMIN)
-  const { data, isLoading, isFetching, error } = useContacts({
+  const { data, isLoading, isFetching, error, refetch } = useContacts({
     ...params,
     tenantId: activeTenantId,
   });
@@ -221,6 +224,19 @@ export default function ContactsPage() {
     saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: nextWidths });
   }, [columnWidths, saveColumnPref]);
 
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const focusSearchInput = useCallback(() => {
+    if (typeof document === 'undefined') return;
+    const input = document.getElementById(CONTACT_SEARCH_INPUT_ID) as HTMLInputElement | null;
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, []);
+
   const handleDeleteClick = (id: string) => {
     setContactToDelete(id);
     setDeleteDialogOpen(true);
@@ -269,6 +285,25 @@ export default function ContactsPage() {
   const handleBulkDeleteCancel = () => {
     setBulkDeleteDialogOpen(false);
   };
+
+  useKeyboardShortcuts([
+    {
+      key: 'r',
+      handler: handleRefresh,
+      description: 'Refresh contacts',
+    },
+    ...(can.createContact ? [{
+      key: 'F1',
+      handler: () => router.push('/contacts/new'),
+      description: 'Add contact',
+    }] : []),
+    {
+      key: 'k',
+      ctrl: true,
+      handler: focusSearchInput,
+      description: 'Focus search',
+    },
+  ]);
 
   // Build active filter chips
   const activeFilterChips: ActiveFilterChip[] = useMemo(() => {
@@ -387,10 +422,22 @@ export default function ContactsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="btn-secondary btn-sm flex items-center gap-2"
+            aria-label="Refresh contacts"
+            title="Refresh list (R)"
+            disabled={isFetching}
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="sm:hidden">Refresh</span>
+          </button>
           {can.createContact && (
-            <Link href="/contacts/new" className="btn-primary btn-sm flex items-center gap-2">
+            <Link href="/contacts/new" className="btn-primary btn-sm flex items-center gap-2" title="Add contact (F1)">
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Contact</span>
+              <span className="hidden sm:inline">Add Contact (F1)</span>
               <span className="sm:hidden">Add</span>
             </Link>
           )}
@@ -475,6 +522,7 @@ export default function ContactsPage() {
             companiesMax: params.companiesMax,
           }}
           initialQuery={params.query}
+          searchInputId={CONTACT_SEARCH_INPUT_ID}
         />
       </div>
 

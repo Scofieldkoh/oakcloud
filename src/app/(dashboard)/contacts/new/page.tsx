@@ -13,6 +13,7 @@ import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 const contactTypes = [
   { value: 'INDIVIDUAL', label: 'Individual' },
@@ -78,6 +79,44 @@ export default function NewContactPage() {
     }
   };
 
+  const handleCancel = () => {
+    router.push('/contacts');
+  };
+
+  const onSubmit = async (data: CreateContactInput) => {
+    setSubmitError(null);
+
+    // SUPER_ADMIN must select a tenant
+    if (isSuperAdmin && !activeTenantId) {
+      setSubmitError('Please select a tenant before creating a contact');
+      return;
+    }
+
+    try {
+      const contact = await createContact.mutateAsync({
+        ...data,
+        ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
+      });
+      router.push(`/contacts/${contact.id}`);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to create contact');
+    }
+  };
+
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: handleCancel,
+      description: 'Cancel and go back',
+    },
+    {
+      key: 's',
+      ctrl: true,
+      handler: () => handleSubmit(onSubmit, onInvalid)(),
+      description: 'Create contact',
+    },
+  ], !isSubmitting);
+
   // Check permission to create
   if (permissionsLoading) {
     return (
@@ -105,32 +144,13 @@ export default function NewContactPage() {
     );
   }
 
-  const onSubmit = async (data: CreateContactInput) => {
-    setSubmitError(null);
-
-    // SUPER_ADMIN must select a tenant
-    if (isSuperAdmin && !activeTenantId) {
-      setSubmitError('Please select a tenant before creating a contact');
-      return;
-    }
-
-    try {
-      const contact = await createContact.mutateAsync({
-        ...data,
-        ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
-      });
-      router.push(`/contacts/${contact.id}`);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to create contact');
-    }
-  };
-
   return (
     <div className="p-4 sm:p-6 max-w-4xl">
       {/* Header */}
       <div className="mb-6">
         <Link
           href="/contacts"
+          title="Back to Contacts (Esc)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -326,16 +346,23 @@ export default function NewContactPage() {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Link href="/contacts" className="btn-secondary btn-sm">
-            Cancel
+          <Link href="/contacts" className="btn-secondary btn-sm" title="Cancel (Esc)">
+            <span className="hidden sm:inline">Cancel (Esc)</span>
+            <span className="sm:hidden">Cancel</span>
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
             className="btn-primary btn-sm flex items-center gap-2"
+            title="Create Contact (Ctrl+S)"
           >
             <Save className="w-4 h-4" />
-            {isSubmitting ? 'Creating...' : 'Create Contact'}
+            {isSubmitting ? 'Creating...' : (
+              <>
+                <span className="hidden sm:inline">Create Contact (Ctrl+S)</span>
+                <span className="sm:hidden">Create Contact</span>
+              </>
+            )}
           </button>
         </div>
       </form>

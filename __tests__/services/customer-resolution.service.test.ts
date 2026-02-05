@@ -35,7 +35,12 @@ describe('Customer Resolution Service', () => {
 
   it('resolves via alias match (normalized)', async () => {
     vi.mocked(prisma.customerAlias.findMany).mockResolvedValue([
-      { rawName: 'Accounting and Corporate Authority (ACCA)', normalizedContactId: 'c1', confidence: 1.0 },
+      {
+        rawName: 'Accounting and Corporate Authority (ACCA)',
+        normalizedContactId: 'c1',
+        confidence: 1.0,
+        companyId: 'co1',
+      },
     ] as never);
     vi.mocked(prisma.contact.findUnique).mockResolvedValue({
       id: 'c1',
@@ -58,7 +63,7 @@ describe('Customer Resolution Service', () => {
 
   it('does not merge distinct entities with extra tokens', async () => {
     vi.mocked(prisma.customerAlias.findMany).mockResolvedValue([
-      { rawName: 'Nobody Business Pte Ltd', normalizedContactId: 'c1', confidence: 1.0 },
+      { rawName: 'Nobody Business Pte Ltd', normalizedContactId: 'c1', confidence: 1.0, companyId: 'co1' },
     ] as never);
     vi.mocked(prisma.contact.findMany).mockResolvedValue([] as never);
 
@@ -112,5 +117,26 @@ describe('Customer Resolution Service', () => {
     expect(prisma.customerAlias.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'ca1' } })
     );
+  });
+
+  it('resolves tenant-wide alias when company-specific alias is not present', async () => {
+    vi.mocked(prisma.customerAlias.findMany).mockResolvedValue([
+      { rawName: 'ACCA', normalizedContactId: 'c1', confidence: 1.0, companyId: null },
+    ] as never);
+    vi.mocked(prisma.contact.findUnique).mockResolvedValue({
+      id: 'c1',
+      corporateName: 'Accounting and Corporate Regulatory Authority',
+      fullName: 'Accounting and Corporate Regulatory Authority',
+    } as never);
+
+    const result = await resolveCustomer({
+      tenantId: 't1',
+      companyId: 'co1',
+      rawCustomerName: 'ACCA',
+    });
+
+    expect(result.strategy).toBe('ALIAS');
+    expect(result.customerId).toBe('c1');
+    expect(result.customerName).toBe('Accounting and Corporate Regulatory Authority');
   });
 });

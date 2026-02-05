@@ -1409,7 +1409,14 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       const canApproveNow = currentRev?.status === 'DRAFT' &&
         (doc.duplicateStatus === 'NONE' || doc.duplicateStatus === 'REJECTED');
 
-      // F1 - Approve (when viewing, not editing)
+      // R - Refresh document view
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        refetch();
+        return;
+      }
+
+      // F1 - Primary action: Approve (when viewing, not editing)
       if (e.key === 'F1') {
         e.preventDefault();
         if (!isEditing && !isViewingSnapshot && canApproveNow && can.updateDocument) {
@@ -1418,7 +1425,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         }
       }
 
-      // F2 - Edit
+      // F2 - Secondary action: Edit
       if (e.key === 'F2') {
         e.preventDefault();
         if (!isViewingSnapshot && !isEditing && can.updateDocument) {
@@ -1463,6 +1470,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     showApproveDialog,
     approveRevision.isPending,
     handleApproveRevision,
+    refetch,
     router,
   ]);
 
@@ -1692,7 +1700,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               <Trash2 className="w-4 h-4" />
             </button>
           )}
-          <button onClick={() => refetch()} className="btn-ghost btn-sm p-2" title="Refresh">
+          <button onClick={() => refetch()} className="btn-ghost btn-sm p-2" title="Refresh (R)">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>

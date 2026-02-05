@@ -1,6 +1,6 @@
 # Oakcloud Documentation
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2026-02-05
 > Central navigation for all Oakcloud documentation.
 
 ---
@@ -23,6 +23,7 @@ Development guidelines and best practices.
 |-------|-------------|
 | [RBAC Guideline](./guides/RBAC_GUIDELINE.md) | Authentication, roles, permissions, multi-tenancy |
 | [Design Guideline](./guides/DESIGN_GUIDELINE.md) | UI components, styling, responsive patterns |
+| [Keyboard Shortcuts](./guides/KEYBOARD_SHORTCUTS.md) | Standard shortcut mappings across modules |
 | [Service Patterns](./guides/SERVICE_PATTERNS.md) | Service layer architecture and conventions |
 | [Audit Logging](./guides/AUDIT_LOGGING.md) | Activity tracking and change logging |
 

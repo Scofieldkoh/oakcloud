@@ -9,6 +9,7 @@ interface ContactFiltersProps {
   onFilterChange: (filters: FilterValues) => void;
   initialFilters?: FilterValues;
   initialQuery?: string;
+  searchInputId?: string;
 }
 
 export interface FilterValues {
@@ -42,6 +43,7 @@ export function ContactFilters({
   onFilterChange,
   initialFilters,
   initialQuery = '',
+  searchInputId,
 }: ContactFiltersProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [showFilters, setShowFilters] = useState(false);
@@ -73,11 +75,13 @@ export function ContactFilters({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" aria-hidden="true" />
           <input
             type="text"
+            id={searchInputId}
             placeholder="Search by name, email, ID number, UEN, phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input input-sm pl-10"
             aria-label="Search contacts"
+            title="Focus search (Ctrl/Cmd+K)"
           />
         </form>
         {/* Filter button - only show on mobile/tablet, hidden on desktop where inline filters are available */}

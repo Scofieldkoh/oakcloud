@@ -1,6 +1,6 @@
 # Oakcloud - Practice Management System
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2026-02-05
 
 A modular internal management system designed for accounting practices. Clean, efficient, and runs completely locally.
 
@@ -16,6 +16,7 @@ A modular internal management system designed for accounting practices. Clean, e
 ### Guides
 - [RBAC Guideline](./guides/RBAC_GUIDELINE.md) - Authentication and permissions
 - [Design Guideline](./guides/DESIGN_GUIDELINE.md) - UI components and styling
+- [Keyboard Shortcuts](./guides/KEYBOARD_SHORTCUTS.md) - Standard shortcut mappings across modules
 - [Service Patterns](./guides/SERVICE_PATTERNS.md) - Service layer conventions
 - [Audit Logging](./guides/AUDIT_LOGGING.md) - Activity tracking
 

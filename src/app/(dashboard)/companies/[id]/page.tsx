@@ -12,6 +12,7 @@ import {
   Upload,
   Hash,
   Building2,
+  RefreshCw,
 } from 'lucide-react';
 import {
   useCompany,
@@ -32,11 +33,12 @@ import {
   useTabState,
 } from '@/components/companies/company-detail';
 import { ContractsTab } from '@/components/companies/contracts';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 // Inner component that uses useSearchParams (needs Suspense boundary)
 function CompanyDetailContent({ id }: { id: string }) {
   const router = useRouter();
-  const { data: company, isLoading, error } = useCompany(id);
+  const { data: company, isLoading, error, refetch, isFetching } = useCompany(id);
   const deleteCompany = useDeleteCompany();
   const { success, error: toastError } = useToast();
   // Get permissions for this specific company
@@ -51,7 +53,7 @@ function CompanyDetailContent({ id }: { id: string }) {
   // This prevents sequential loading where prefetch waits for company to load first
 
   // Get contact details to check hasPoc for the warning icon
-  const { data: contactDetailsData } = useCompanyContactDetails(id);
+  const { data: contactDetailsData, refetch: refetchContactDetails, isFetching: isContactDetailsFetching } = useCompanyContactDetails(id);
 
   // OPTIMIZED: Use counts from already-fetched company data instead of separate useCompanyLinkInfo hook
   // Build warning message based on company._count (already fetched with company data)
@@ -86,6 +88,41 @@ function CompanyDetailContent({ id }: { id: string }) {
       toastError(err instanceof Error ? err.message : 'Failed to delete company');
     }
   };
+
+  const handleRefresh = () => {
+    refetch();
+    refetchContactDetails();
+  };
+
+  const isRefreshing = isFetching || isContactDetailsFetching;
+
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: () => router.push('/companies'),
+      description: 'Back to companies',
+    },
+    {
+      key: 'r',
+      handler: handleRefresh,
+      description: 'Refresh company',
+    },
+    ...(can.createCompany ? [{
+      key: 'F1',
+      handler: () => router.push('/companies/new'),
+      description: 'Create company',
+    }] : []),
+    ...(can.updateDocument ? [{
+      key: 'F2',
+      handler: () => router.push(`/companies/upload?companyId=${id}`),
+      description: 'Update via BizFile',
+    }] : []),
+    ...(can.updateCompany ? [{
+      key: 'e',
+      handler: () => router.push(`/companies/${id}/edit`),
+      description: 'Edit company',
+    }] : []),
+  ], !deleteDialogOpen);
 
   if (isLoading) {
     return (
@@ -175,38 +212,60 @@ function CompanyDetailContent({ id }: { id: string }) {
             )}
           </div>
         </div>
-        {(can.updateCompany || can.deleteCompany) && (
-          <div className="flex items-center gap-2 sm:gap-3">
-            {can.updateCompany && (
-              <Link
-                href={`/companies/${id}/edit`}
-                className="btn-primary btn-sm flex items-center gap-2"
-              >
-                <Pencil className="w-4 h-4" />
-                Edit
-              </Link>
-            )}
-            {can.updateDocument && (
-              <Link
-                href={`/companies/upload?companyId=${id}`}
-                className="btn-secondary btn-sm flex items-center gap-2"
-              >
-                <Upload className="w-4 h-4" />
-                <span className="hidden sm:inline">Update via BizFile</span>
-                <span className="sm:hidden">BizFile</span>
-              </Link>
-            )}
-            {can.deleteCompany && (
-              <button
-                onClick={() => setDeleteDialogOpen(true)}
-                className="btn-danger btn-sm flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {can.createCompany && (
+            <Link
+              href="/companies/new"
+              className="btn-primary btn-sm flex items-center gap-2"
+              title="Add Company (F1)"
+            >
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Company (F1)</span>
+              <span className="sm:hidden">Add</span>
+            </Link>
+          )}
+          <button
+            onClick={handleRefresh}
+            className="btn-secondary btn-sm flex items-center gap-2"
+            title="Refresh (R)"
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="sm:hidden">Refresh</span>
+          </button>
+          {can.updateCompany && (
+            <Link
+              href={`/companies/${id}/edit`}
+              className="btn-primary btn-sm flex items-center gap-2"
+              title="Edit (E)"
+            >
+              <Pencil className="w-4 h-4" />
+              <span className="hidden sm:inline">Edit (E)</span>
+              <span className="sm:hidden">Edit</span>
+            </Link>
+          )}
+          {can.updateDocument && (
+            <Link
+              href={`/companies/upload?companyId=${id}`}
+              className="btn-secondary btn-sm flex items-center gap-2"
+              title="Update via BizFile (F2)"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">Update via BizFile (F2)</span>
+              <span className="sm:hidden">BizFile</span>
+            </Link>
+          )}
+          {can.deleteCompany && (
+            <button
+              onClick={() => setDeleteDialogOpen(true)}
+              className="btn-danger btn-sm flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}

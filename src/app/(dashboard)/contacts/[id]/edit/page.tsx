@@ -11,6 +11,7 @@ import { useContact, useUpdateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useToast } from '@/components/ui/toast';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 const contactTypes = [
   { value: 'INDIVIDUAL', label: 'Individual' },
@@ -100,6 +101,40 @@ export default function EditContactPage({
     }
   };
 
+  const handleCancel = () => {
+    router.push(`/contacts/${id}`);
+  };
+
+  const onSubmit = async (data: UpdateContactInput) => {
+    setSubmitError(null);
+
+    try {
+      await updateContact.mutateAsync({ id, data });
+      router.push(`/contacts/${id}`);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to update contact');
+    }
+  };
+
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: handleCancel,
+      description: 'Cancel and go back',
+    },
+    {
+      key: 's',
+      ctrl: true,
+      handler: () => handleSubmit(onSubmit, onInvalid)(),
+      description: 'Save contact',
+    },
+    ...(can.createContact ? [{
+      key: 'F1',
+      handler: () => router.push('/contacts/new'),
+      description: 'Create contact',
+    }] : []),
+  ], !isSubmitting);
+
   // Loading state
   if (contactLoading || permissionsLoading) {
     return (
@@ -147,23 +182,13 @@ export default function EditContactPage({
     );
   }
 
-  const onSubmit = async (data: UpdateContactInput) => {
-    setSubmitError(null);
-
-    try {
-      await updateContact.mutateAsync({ id, data });
-      router.push(`/contacts/${id}`);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to update contact');
-    }
-  };
-
   return (
     <div className="p-4 sm:p-6 max-w-4xl">
       {/* Header */}
       <div className="mb-6">
         <Link
           href={`/contacts/${id}`}
+          title="Back to Contact (Esc)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -350,16 +375,23 @@ export default function EditContactPage({
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Link href={`/contacts/${id}`} className="btn-secondary btn-sm">
-            Cancel
+          <Link href={`/contacts/${id}`} className="btn-secondary btn-sm" title="Cancel (Esc)">
+            <span className="hidden sm:inline">Cancel (Esc)</span>
+            <span className="sm:hidden">Cancel</span>
           </Link>
           <button
             type="submit"
             disabled={isSubmitting || !isDirty}
             className="btn-primary btn-sm flex items-center gap-2"
+            title="Save Changes (Ctrl+S)"
           >
             <Save className="w-4 h-4" />
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? 'Saving...' : (
+              <>
+                <span className="hidden sm:inline">Save Changes (Ctrl+S)</span>
+                <span className="sm:hidden">Save Changes</span>
+              </>
+            )}
           </button>
         </div>
       </form>

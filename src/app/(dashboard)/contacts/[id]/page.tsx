@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Building2,
   Tags,
+  RefreshCw,
 } from 'lucide-react';
 import { useContact, useDeleteContact, useLinkContactToCompany, useUnlinkContactFromCompany, useRemoveOfficerPosition, useRemoveShareholding, useUpdateOfficerPosition, useUpdateShareholding, useContactLinkInfo } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
@@ -28,6 +29,7 @@ import { CompanyRelationships } from '@/components/contacts/company-relationship
 import { ContactDetailsSection } from '@/components/contacts/contact-details-section';
 import { ContactAliasesModal } from '@/components/contacts/contact-aliases-modal';
 import { InternalNotes } from '@/components/notes/internal-notes';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import type { ContactType, IdentificationType } from '@/generated/prisma';
 
 // Company option type for AsyncSearchSelect
@@ -70,7 +72,7 @@ export default function ContactDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { data: contact, isLoading, error } = useContact(id);
+  const { data: contact, isLoading, error, refetch, isFetching } = useContact(id);
   const deleteContact = useDeleteContact();
   const linkContact = useLinkContactToCompany();
   const unlinkContact = useUnlinkContactFromCompany();
@@ -292,6 +294,33 @@ export default function ContactDetailPage({
     }
   };
 
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: () => router.push('/contacts'),
+      description: 'Back to contacts',
+    },
+    {
+      key: 'r',
+      handler: handleRefresh,
+      description: 'Refresh contact',
+    },
+    ...(can.createContact ? [{
+      key: 'F1',
+      handler: () => router.push('/contacts/new'),
+      description: 'Create contact',
+    }] : []),
+    ...(can.updateContact ? [{
+      key: 'e',
+      handler: () => router.push(`/contacts/${id}/edit`),
+      description: 'Edit contact',
+    }] : []),
+  ], !deleteDialogOpen && !unlinkDialogOpen && !linkModalOpen && !editOfficerModalOpen && !editShareholderModalOpen && !aliasesModalOpen);
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -361,28 +390,49 @@ export default function ContactDetailPage({
             {contact.nationality && <span>{contact.nationality}</span>}
           </div>
         </div>
-        {(can.updateContact || can.deleteContact) && (
-          <div className="flex items-center gap-2 sm:gap-3">
-            {can.updateContact && (
-              <Link
-                href={`/contacts/${id}/edit`}
-                className="btn-secondary btn-sm flex items-center gap-2"
-              >
-                <Pencil className="w-4 h-4" />
-                Edit
-              </Link>
-            )}
-            {can.deleteContact && (
-              <button
-                onClick={() => setDeleteDialogOpen(true)}
-                className="btn-danger btn-sm flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {can.createContact && (
+            <Link
+              href="/contacts/new"
+              className="btn-primary btn-sm flex items-center gap-2"
+              title="Add Contact (F1)"
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Contact (F1)</span>
+              <span className="sm:hidden">Add</span>
+            </Link>
+          )}
+          <button
+            onClick={handleRefresh}
+            className="btn-secondary btn-sm flex items-center gap-2"
+            title="Refresh (R)"
+            disabled={isFetching}
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="sm:hidden">Refresh</span>
+          </button>
+          {can.updateContact && (
+            <Link
+              href={`/contacts/${id}/edit`}
+              className="btn-secondary btn-sm flex items-center gap-2"
+              title="Edit (E)"
+            >
+              <Pencil className="w-4 h-4" />
+              <span className="hidden sm:inline">Edit (E)</span>
+              <span className="sm:hidden">Edit</span>
+            </Link>
+          )}
+          {can.deleteContact && (
+            <button
+              onClick={() => setDeleteDialogOpen(true)}
+              className="btn-danger btn-sm flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

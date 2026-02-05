@@ -13,6 +13,7 @@ import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useToast } from '@/components/ui/toast';
 import { ENTITY_TYPES } from '@/lib/constants';
 import { isCompanyEntityType } from '@/lib/external/acra-fye';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 const statuses = [
   { value: 'LIVE', label: 'Live' },
@@ -156,6 +157,10 @@ export default function EditCompanyPage({
   // Warn about unsaved changes when leaving the page
   useUnsavedChangesWarning(isDirty, !isSubmitting);
 
+  const handleCancel = () => {
+    router.push(`/companies/${id}`);
+  };
+
   const onSubmit = async (data: UpdateCompanyInput) => {
     setSubmitError(null);
     try {
@@ -165,6 +170,35 @@ export default function EditCompanyPage({
       setSubmitError(err instanceof Error ? err.message : 'Failed to update company');
     }
   };
+
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      handler: handleCancel,
+      description: 'Cancel and go back',
+    },
+    {
+      key: 's',
+      ctrl: true,
+      handler: () => handleSubmit(onSubmit)(),
+      description: 'Save changes',
+    },
+    ...(showRetrieveFYEButton ? [{
+      key: 'F3',
+      handler: handleRetrieveFYE,
+      description: 'Retrieve FYE',
+    }] : []),
+    ...(can.updateDocument ? [{
+      key: 'F2',
+      handler: () => router.push(`/companies/upload?companyId=${id}`),
+      description: 'Update via BizFile',
+    }] : []),
+    ...(can.createCompany ? [{
+      key: 'F1',
+      handler: () => router.push('/companies/new'),
+      description: 'Create company',
+    }] : []),
+  ], !isSubmitting && !retrieveFYE.isPending);
 
   if (isLoading || permissionsLoading) {
     return (
@@ -217,6 +251,7 @@ export default function EditCompanyPage({
       <div className="mb-6">
         <Link
           href={`/companies/${id}`}
+          title="Back to Company (Esc)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -518,14 +553,15 @@ export default function EditCompanyPage({
                       onClick={handleRetrieveFYE}
                       disabled={retrieveFYE.isPending}
                       className="btn-secondary btn-sm flex items-center gap-1.5 whitespace-nowrap"
-                      title="Retrieve Financial Year End from ACRA"
+                      title="Retrieve Financial Year End from ACRA (F3)"
                     >
                       {retrieveFYE.isPending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Download className="w-4 h-4" />
                       )}
-                      <span className="hidden sm:inline">Retrieve FYE</span>
+                      <span className="hidden sm:inline">Retrieve FYE (F3)</span>
+                      <span className="sm:hidden">Retrieve</span>
                     </button>
                   )}
                 </div>
@@ -594,15 +630,22 @@ export default function EditCompanyPage({
           </p>
           <div className="flex items-center gap-3 order-1 sm:order-2 w-full sm:w-auto">
             <Link href={`/companies/${id}`} className="btn-secondary btn-sm flex-1 sm:flex-none justify-center">
-              Cancel
+              <span className="hidden sm:inline">Cancel (Esc)</span>
+              <span className="sm:hidden">Cancel</span>
             </Link>
             <button
               type="submit"
               disabled={isSubmitting || !isDirty}
               className="btn-primary btn-sm flex items-center gap-2 flex-1 sm:flex-none justify-center"
+              title="Save Changes (Ctrl+S)"
             >
               <Save className="w-4 h-4" />
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? 'Saving...' : (
+                <>
+                  <span className="hidden sm:inline">Save Changes (Ctrl+S)</span>
+                  <span className="sm:hidden">Save Changes</span>
+                </>
+              )}
             </button>
           </div>
         </div>
