@@ -8,6 +8,7 @@ export interface RecurrenceConfigProps {
   frequency: DeadlineFrequency | null;
   generateOccurrences: number | null;
   generateUntilDate: string | null;
+  size?: 'sm' | 'md';
   onUpdate: (updates: {
     isRecurring?: boolean;
     frequency?: DeadlineFrequency | null;
@@ -18,8 +19,11 @@ export interface RecurrenceConfigProps {
 
 export function RecurrenceConfig({
   frequency,
+  size = 'sm',
   onUpdate,
 }: RecurrenceConfigProps) {
+  const sizeClass = size === 'md' ? 'h-9 text-sm' : 'h-8 text-sm';
+
   return (
     <select
       value={frequency || 'ONE_TIME'}
@@ -36,9 +40,10 @@ export function RecurrenceConfig({
         });
       }}
       className={cn(
-        'w-full h-6 px-1 text-xs rounded appearance-none cursor-pointer',
+        'w-full px-2.5 rounded-lg appearance-none cursor-pointer',
+        sizeClass,
         'bg-background-primary border border-border-primary',
-        'hover:border-border-secondary focus:border-oak-primary focus:ring-1 focus:ring-oak-primary/30',
+        'hover:border-border-secondary focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30',
         'outline-none transition-colors text-text-primary'
       )}
     >

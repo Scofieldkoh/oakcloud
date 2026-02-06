@@ -376,7 +376,7 @@ async function removeOfficerPosition(
   companyId: string,
   officerId: string
 ): Promise<{ success: boolean }> {
-  const response = await fetch(`/api/companies/${companyId}/officers/${officerId}`, {
+  const response = await fetch(`/api/companies/${companyId}/officers/${officerId}?action=cease`, {
     method: 'DELETE',
   });
   if (!response.ok) {
@@ -405,7 +405,7 @@ async function removeShareholding(
   companyId: string,
   shareholderId: string
 ): Promise<{ success: boolean }> {
-  const response = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}`, {
+  const response = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}?action=cease`, {
     method: 'DELETE',
   });
   if (!response.ok) {

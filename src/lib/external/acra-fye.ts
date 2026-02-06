@@ -43,6 +43,9 @@ const ACRA_DATASETS: Record<string, string> = {
 };
 
 const DATA_GOV_BASE_URL = 'https://data.gov.sg/api/action/datastore_search';
+const MAX_RETRY_ATTEMPTS = 2; // Total attempts = 1 initial + 2 retries
+const BASE_RETRY_DELAY_MS = 1000;
+const MAX_RETRY_DELAY_MS = 10000;
 
 // Entity types that are considered "company" structures
 export const COMPANY_ENTITY_TYPES = [
@@ -73,6 +76,35 @@ interface DataGovResponse {
     records: ACRARecord[];
     total: number;
   };
+}
+
+export class ACRARateLimitError extends Error {
+  retryAfterSeconds?: number;
+
+  constructor(message: string, retryAfterSeconds?: number) {
+    super(message);
+    this.name = 'ACRARateLimitError';
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseRetryAfterSeconds(retryAfterHeader: string | null): number | undefined {
+  if (!retryAfterHeader) return undefined;
+
+  const asNumber = Number(retryAfterHeader);
+  if (!Number.isNaN(asNumber) && asNumber >= 0) {
+    return asNumber;
+  }
+
+  const retryDateMs = Date.parse(retryAfterHeader);
+  if (Number.isNaN(retryDateMs)) return undefined;
+
+  const secondsUntilRetry = Math.ceil((retryDateMs - Date.now()) / 1000);
+  return secondsUntilRetry > 0 ? secondsUntilRetry : undefined;
 }
 
 /**
@@ -122,45 +154,86 @@ export async function fetchAccountDueDate(
   logger.info('Fetching ACRA data', { companyName, uen, datasetId });
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    });
+    for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
 
-    if (!response.ok) {
-      logger.error('ACRA API request failed', { status: response.status, url });
-      throw new Error(`ACRA API returned ${response.status}`);
+      if (response.status === 429) {
+        const retryAfterSeconds = parseRetryAfterSeconds(response.headers.get('retry-after'));
+        const isLastAttempt = attempt >= MAX_RETRY_ATTEMPTS;
+
+        if (isLastAttempt) {
+          logger.error('ACRA API rate limit exceeded', {
+            status: response.status,
+            url,
+            retryAfterSeconds,
+            attempts: attempt + 1,
+          });
+          throw new ACRARateLimitError(
+            'ACRA API rate limit exceeded. Please try again shortly.',
+            retryAfterSeconds
+          );
+        }
+
+        const backoffDelayMs = Math.min(
+          BASE_RETRY_DELAY_MS * Math.pow(2, attempt),
+          MAX_RETRY_DELAY_MS
+        );
+        const delayMs = retryAfterSeconds
+          ? Math.min(retryAfterSeconds * 1000, MAX_RETRY_DELAY_MS)
+          : backoffDelayMs;
+
+        logger.warn('ACRA API rate limited, retrying', {
+          attempt: attempt + 1,
+          nextAttempt: attempt + 2,
+          delayMs,
+          retryAfterSeconds,
+          url,
+        });
+
+        await sleep(delayMs);
+        continue;
+      }
+
+      if (!response.ok) {
+        logger.error('ACRA API request failed', { status: response.status, url });
+        throw new Error(`ACRA API returned ${response.status}`);
+      }
+
+      const data: DataGovResponse = await response.json();
+
+      if (!data.success || !data.result?.records?.length) {
+        logger.info('No ACRA records found', { uen });
+        return null;
+      }
+
+      // Find exact UEN match (search may return partial matches)
+      const record = data.result.records.find(
+        (r) => r.uen?.toUpperCase() === uen.toUpperCase()
+      );
+
+      if (!record) {
+        logger.info('No exact UEN match in ACRA response', { uen });
+        return null;
+      }
+
+      if (!record.account_due_date) {
+        logger.info('ACRA record has no account_due_date', { uen });
+        return null;
+      }
+
+      logger.info('Found ACRA account_due_date', {
+        uen,
+        account_due_date: record.account_due_date,
+      });
+
+      return record.account_due_date;
     }
 
-    const data: DataGovResponse = await response.json();
-
-    if (!data.success || !data.result?.records?.length) {
-      logger.info('No ACRA records found', { uen });
-      return null;
-    }
-
-    // Find exact UEN match (search may return partial matches)
-    const record = data.result.records.find(
-      (r) => r.uen?.toUpperCase() === uen.toUpperCase()
-    );
-
-    if (!record) {
-      logger.info('No exact UEN match in ACRA response', { uen });
-      return null;
-    }
-
-    if (!record.account_due_date) {
-      logger.info('ACRA record has no account_due_date', { uen });
-      return null;
-    }
-
-    logger.info('Found ACRA account_due_date', {
-      uen,
-      account_due_date: record.account_due_date,
-    });
-
-    return record.account_due_date;
+    return null;
   } catch (error) {
     logger.error('Failed to fetch ACRA data', { error, uen });
     throw error;

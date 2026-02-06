@@ -6,6 +6,7 @@ import {
   unlinkShareholderFromContact,
   updateShareholder,
   removeShareholder,
+  deleteShareholder,
   getCompanyById,
 } from '@/services/company.service';
 import { z } from 'zod';
@@ -96,7 +97,7 @@ export async function PATCH(
   }
 }
 
-// DELETE - Remove shareholder (mark as former)
+// DELETE - Remove shareholder (mark as former) or delete record (action=delete)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; shareholderId: string }> }
@@ -104,9 +105,15 @@ export async function DELETE(
   try {
     const session = await requireAuth();
     const { id: companyId, shareholderId } = await params;
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
 
-    // Check permission
-    await requirePermission(session, 'company', 'update', companyId);
+    // Check permission (delete vs mark former)
+    if (action === 'delete') {
+      await requirePermission(session, 'shareholder', 'delete', companyId);
+    } else {
+      await requirePermission(session, 'company', 'update', companyId);
+    }
 
     // Additional check for company-scoped users
     if (!(await canAccessCompany(session, companyId))) {
@@ -127,7 +134,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tenant context required' }, { status: 403 });
     }
 
-    await removeShareholder(shareholderId, companyId, tenantId, session.id);
+    if (action === 'delete') {
+      await deleteShareholder(shareholderId, companyId, tenantId, session.id);
+    } else {
+      await removeShareholder(shareholderId, companyId, tenantId, session.id);
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof Error) {

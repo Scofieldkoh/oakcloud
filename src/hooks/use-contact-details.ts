@@ -44,6 +44,7 @@ export interface ContactWithDetails {
   };
   details: ContactDetail[];
   isPoc: boolean; // Company-specific POC status
+  isCurrent: boolean; // Whether contact has an active relationship to the company
 }
 
 export interface CompanyContactDetailsResponse {

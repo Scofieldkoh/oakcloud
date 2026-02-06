@@ -118,7 +118,8 @@ export default function EditContactPage({
 
   useKeyboardShortcuts([
     {
-      key: 'Escape',
+      key: 'Backspace',
+      ctrl: true,
       handler: handleCancel,
       description: 'Cancel and go back',
     },
@@ -188,7 +189,7 @@ export default function EditContactPage({
       <div className="mb-6">
         <Link
           href={`/contacts/${id}`}
-          title="Back to Contact (Esc)"
+          title="Back to Contact (Ctrl+Backspace)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -375,8 +376,8 @@ export default function EditContactPage({
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Link href={`/contacts/${id}`} className="btn-secondary btn-sm" title="Cancel (Esc)">
-            <span className="hidden sm:inline">Cancel (Esc)</span>
+          <Link href={`/contacts/${id}`} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
+            <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
             <span className="sm:hidden">Cancel</span>
           </Link>
           <button

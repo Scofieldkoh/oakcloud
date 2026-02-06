@@ -47,6 +47,8 @@ interface RichTextEditorProps {
   placeholder?: string;
   minHeight?: number;
   className?: string;
+  /** Expand editor height to fit content (no internal scroll) */
+  autoGrow?: boolean;
   /** Hide the built-in toolbar (for external toolbar usage) */
   hideToolbar?: boolean;
   /** Render prop for external toolbar */
@@ -620,6 +622,7 @@ export function RichTextEditor({
   readOnly = false,
   minHeight = 100,
   className = '',
+  autoGrow = false,
   hideToolbar = false,
   renderToolbar,
 }: RichTextEditorProps) {
@@ -715,7 +718,7 @@ export function RichTextEditor({
       style={className?.includes('h-full') ? { height: '100%' } : undefined}
     >
       <EditorToolbar editor={editor} />
-      <div className="flex-1 overflow-auto">
+      <div className={autoGrow ? 'overflow-visible' : 'flex-1 overflow-auto'}>
         <EditorContent editor={editor} />
       </div>
     </div>

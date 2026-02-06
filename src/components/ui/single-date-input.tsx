@@ -411,7 +411,7 @@ export function SingleDateInput({
   const inputId = label?.toLowerCase().replace(/\s+/g, '-');
 
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    <div className={cn('flex flex-col gap-2', className)}>
       {/* Inject custom styles */}
       <style dangerouslySetInnerHTML={{ __html: calendarStyles }} />
 

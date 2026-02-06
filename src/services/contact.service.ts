@@ -33,6 +33,12 @@ function buildFullName(data: {
   return parts.length > 0 ? parts.join(' ') : 'Unknown';
 }
 
+function normalizeOptionalString(value?: string | null): string | null {
+  if (value === undefined || value === null) return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export async function createContact(
   data: CreateContactInput,
   params: TenantAwareParams
@@ -40,6 +46,8 @@ export async function createContact(
   const { tenantId, userId, tx } = params;
   const db = tx || prisma;
   const fullName = buildFullName(data);
+  const identificationNumber = normalizeOptionalString(data.identificationNumber);
+  const corporateUen = normalizeOptionalString(data.corporateUen);
 
   const contact = await db.contact.create({
     data: {
@@ -50,11 +58,11 @@ export async function createContact(
       fullName,
       alias: data.alias,
       identificationType: data.identificationType,
-      identificationNumber: data.identificationNumber,
+      identificationNumber,
       nationality: data.nationality,
       dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       corporateName: data.corporateName,
-      corporateUen: data.corporateUen,
+      corporateUen,
       fullAddress: data.fullAddress,
     },
   });
@@ -96,12 +104,13 @@ export async function updateContact(
   if (data.alias !== undefined) updateData.alias = data.alias;
   if (data.identificationType !== undefined) updateData.identificationType = data.identificationType;
   if (data.identificationNumber !== undefined)
-    updateData.identificationNumber = data.identificationNumber;
+    updateData.identificationNumber = normalizeOptionalString(data.identificationNumber);
   if (data.nationality !== undefined) updateData.nationality = data.nationality;
   if (data.dateOfBirth !== undefined)
     updateData.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null;
   if (data.corporateName !== undefined) updateData.corporateName = data.corporateName;
-  if (data.corporateUen !== undefined) updateData.corporateUen = data.corporateUen;
+  if (data.corporateUen !== undefined)
+    updateData.corporateUen = normalizeOptionalString(data.corporateUen);
   if (data.fullAddress !== undefined) updateData.fullAddress = data.fullAddress;
 
   // Rebuild full name if relevant fields changed
@@ -139,6 +148,8 @@ export async function findOrCreateContact(
 ): Promise<{ contact: Contact; isNew: boolean }> {
   const { tenantId, tx } = params;
   const db = tx || prisma;
+  const identificationNumber = normalizeOptionalString(data.identificationNumber);
+  const corporateUen = normalizeOptionalString(data.corporateUen);
 
   // Enforce tenant context - this function must always be called with a valid tenantId
   if (!tenantId) {
@@ -146,12 +157,12 @@ export async function findOrCreateContact(
   }
 
   // Try to find existing contact by identification number within tenant
-  if (data.identificationNumber && data.identificationType) {
+  if (identificationNumber && data.identificationType) {
     const existing = await db.contact.findFirst({
       where: {
         tenantId,
         identificationType: data.identificationType,
-        identificationNumber: data.identificationNumber,
+        identificationNumber,
         deletedAt: null,
       },
     });
@@ -162,11 +173,11 @@ export async function findOrCreateContact(
   }
 
   // Try to find by corporate UEN within tenant
-  if (data.corporateUen) {
+  if (corporateUen) {
     const existing = await db.contact.findFirst({
       where: {
         tenantId,
-        corporateUen: data.corporateUen,
+        corporateUen,
         deletedAt: null,
       },
     });
@@ -892,6 +903,112 @@ export interface SearchContactsOptions {
 }
 
 /**
+ * Calculate exact unique company counts for a list of contacts across:
+ * - company_contacts
+ * - company_officers
+ * - company_shareholders
+ */
+async function getUniqueCompanyCountsForContacts(
+  contactIds: string[],
+  companyIds?: string[]
+): Promise<Map<string, number>> {
+  const normalizeRelationship = (value: string) =>
+    value.toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  const OFFICER_ROLE_VALUES = new Set([
+    'director',
+    'managing director',
+    'alternate director',
+    'secretary',
+    'ceo',
+    'cfo',
+    'auditor',
+    'liquidator',
+    'receiver',
+    'judicial manager',
+  ]);
+  const isPositionRelationship = (relationship: string) => {
+    const normalized = normalizeRelationship(relationship);
+    if (OFFICER_ROLE_VALUES.has(normalized)) return true;
+    if (normalized === 'shareholder') return true;
+    return normalized.endsWith('shareholder');
+  };
+
+  const counts = new Map<string, number>();
+
+  if (contactIds.length === 0) {
+    return counts;
+  }
+
+  const companyIdFilter =
+    companyIds && companyIds.length > 0 ? { companyId: { in: companyIds } } : {};
+
+  const [companyRelations, officerPositions, shareholdings] = await Promise.all([
+    prisma.companyContact.findMany({
+      where: {
+        deletedAt: null,
+        contactId: { in: contactIds },
+        company: { deletedAt: null },
+        ...companyIdFilter,
+      },
+      select: {
+        contactId: true,
+        companyId: true,
+        relationship: true,
+      },
+    }),
+    prisma.companyOfficer.findMany({
+      where: {
+        contactId: { in: contactIds },
+        isCurrent: true,
+        cessationDate: null,
+        company: { deletedAt: null },
+        ...companyIdFilter,
+      },
+      select: {
+        contactId: true,
+        companyId: true,
+      },
+    }),
+    prisma.companyShareholder.findMany({
+      where: {
+        contactId: { in: contactIds },
+        isCurrent: true,
+        company: { deletedAt: null },
+        ...companyIdFilter,
+      },
+      select: {
+        contactId: true,
+        companyId: true,
+      },
+    }),
+  ]);
+
+  const uniqueCompanyIdsByContact = new Map<string, Set<string>>();
+  const addCompanyForContact = (contactId: string | null, companyId: string) => {
+    if (!contactId) return;
+
+    let uniqueCompanyIds = uniqueCompanyIdsByContact.get(contactId);
+    if (!uniqueCompanyIds) {
+      uniqueCompanyIds = new Set<string>();
+      uniqueCompanyIdsByContact.set(contactId, uniqueCompanyIds);
+    }
+    uniqueCompanyIds.add(companyId);
+  };
+
+  companyRelations
+    .filter((rel) => !isPositionRelationship(rel.relationship))
+    .forEach(({ contactId, companyId }) => addCompanyForContact(contactId, companyId));
+  officerPositions.forEach(({ contactId, companyId }) => addCompanyForContact(contactId, companyId));
+  shareholdings.forEach(({ contactId, companyId }) => addCompanyForContact(contactId, companyId));
+
+  uniqueCompanyIdsByContact.forEach((companyIdsSet, contactId) => {
+    counts.set(contactId, companyIdsSet.size);
+  });
+
+  return counts;
+}
+
+/**
  * Search contacts with company relation counts
  * @param params - Search parameters
  * @param tenantId - Tenant ID for security (required unless skipTenantFilter is true)
@@ -1050,8 +1167,7 @@ export async function searchContactsWithCounts(
 
   const skip = (params.page - 1) * params.limit;
 
-  // Optimized query: Only fetch counts, not all related records
-  // This avoids N+1 pattern where we were fetching ALL company relations per contact
+  // Fetch current page of contacts plus display details.
   let [contacts, total] = await Promise.all([
     prisma.contact.findMany({
       where,
@@ -1062,8 +1178,6 @@ export async function searchContactsWithCounts(
         _count: {
           select: {
             companyRelations: { where: { company: { deletedAt: null } } },
-            officerPositions: { where: { company: { deletedAt: null } } },
-            shareholdings: { where: { company: { deletedAt: null } } },
           },
         },
         // Fetch email/phone details to display (prefer default, then company-specific)
@@ -1092,22 +1206,17 @@ export async function searchContactsWithCounts(
     prisma.contact.count({ where }),
   ]);
 
-  // Calculate approximate unique companies count from the separate counts
-  // This is faster than fetching all relations and counting unique IDs
+  // Calculate exact unique company count across relations per contact.
+  const uniqueCompanyCounts = await getUniqueCompanyCountsForContacts(
+    contacts.map((contact) => contact.id),
+    companyIds
+  );
+
   const contactsWithCompanyCount = contacts.map((contact) => {
-    // Use max of the three counts as approximation (contacts often have same company across relations)
-    // This is an approximation but avoids fetching thousands of records per contact
-    const approxCompanyCount = Math.max(
-      contact._count.companyRelations,
-      contact._count.officerPositions,
-      contact._count.shareholdings
-    );
     return {
       ...contact,
       _count: {
-        ...contact._count,
-        // Override with approximate unique company count
-        companyRelations: approxCompanyCount,
+        companyRelations: uniqueCompanyCounts.get(contact.id) || 0,
       },
     };
   });

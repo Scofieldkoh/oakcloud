@@ -30,6 +30,8 @@ export interface ContractService {
   scope: string | null;
   autoRenewal: boolean;
   renewalPeriodMonths: number | null;
+  serviceTemplateCode?: string | null;
+  hasCustomDeadlines?: boolean;
   displayOrder: number;
   createdAt: string;
   updatedAt: string;

@@ -428,6 +428,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // UI State (showHistoryDropdown already declared above for data fetching optimization)
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showForceReExtractDialog, setShowForceReExtractDialog] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showModelSelector, setShowModelSelector] = useState(false);
@@ -1362,7 +1363,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Hotkeys effect (after all handler definitions)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip hotkeys when typing in inputs (except for Escape and modal hotkeys)
+      // Skip hotkeys when typing in inputs (except for modal hotkeys)
       const isInInput = e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLSelectElement ||
         e.target instanceof HTMLTextAreaElement;
@@ -1382,8 +1383,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         return; // Block other hotkeys when modal is open
       }
 
-      // Escape - Cancel editing (works even in input fields)
-      if (e.key === 'Escape' && isEditing) {
+      // Ctrl+Backspace - Cancel editing
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Backspace' && isEditing && !isInInput) {
         e.preventDefault();
         setIsEditing(false);
         setIsEditingApproved(false);
@@ -1391,8 +1392,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         return;
       }
 
-      // Escape - Go back to processing page (when not editing, not in modal, not in input)
-      if (e.key === 'Escape' && !isEditing && !isInInput) {
+      // Ctrl+Backspace - Go back to processing page (when not editing, not in modal, not in input)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Backspace' && !isEditing && !isInInput) {
         e.preventDefault();
         router.push('/processing');
         return;
@@ -1409,8 +1410,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       const canApproveNow = currentRev?.status === 'DRAFT' &&
         (doc.duplicateStatus === 'NONE' || doc.duplicateStatus === 'REJECTED');
 
-      // R - Refresh document view
-      if (e.key === 'r' || e.key === 'R') {
+      // Ctrl+R - Refresh document view
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R')) {
         e.preventDefault();
         refetch();
         return;
@@ -1510,6 +1511,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     doc.pipelineStatus === 'UPLOADED' ||
     doc.pipelineStatus === 'QUEUED' ||
     doc.pipelineStatus === 'FAILED_RETRYABLE';
+  const canForceReExtract = doc.pipelineStatus === 'PROCESSING';
 
   const canApprove =
     currentRevision?.status === 'DRAFT' &&
@@ -1522,7 +1524,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-background-primary flex-shrink-0">
         <div className="flex items-center gap-3">
-          <Link href="/processing" className="btn-ghost btn-sm p-2" title="Back to list (Esc)">
+          <Link href="/processing" className="btn-ghost btn-sm p-2" title="Back to list (Ctrl+Backspace)">
             <ArrowLeft className="w-4 h-4" />
           </Link>
 
@@ -1583,6 +1585,21 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               Extract
             </button>
           )}
+          {!isViewingSnapshot && canForceReExtract && can.updateDocument && (
+            <button
+              onClick={() => setShowForceReExtractDialog(true)}
+              disabled={triggerExtraction.isPending}
+              className="btn-secondary btn-sm text-status-warning hover:bg-status-warning/10"
+              title="Force re-run extraction if this document appears stuck in processing"
+            >
+              {triggerExtraction.isPending ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+              ) : (
+                <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              Force Re-extract
+            </button>
+          )}
           {/* Split button - only show for multi-page documents */}
           {!isViewingSnapshot && (data?.document?.pageCount || 0) > 1 && can.updateDocument && (
             <button
@@ -1596,8 +1613,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           )}
           {!isViewingSnapshot && isEditing ? (
             <>
-              <button onClick={() => { setIsEditing(false); setIsEditingApproved(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm" title="Cancel editing (Esc)">
-                Cancel (Esc)
+              <button onClick={() => { setIsEditing(false); setIsEditingApproved(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm" title="Cancel editing (Ctrl+Backspace)">
+                Cancel (Ctrl+Backspace)
               </button>
               <button
                 onClick={() => handleShowModelSelector(true)}
@@ -1700,7 +1717,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               <Trash2 className="w-4 h-4" />
             </button>
           )}
-          <button onClick={() => refetch()} className="btn-ghost btn-sm p-2" title="Refresh (R)">
+          <button onClick={() => refetch()} className="btn-ghost btn-sm p-2" title="Refresh (Ctrl+R)">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
@@ -1963,6 +1980,21 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         confirmLabel="Delete"
         variant="danger"
         isLoading={bulkOperation.isPending}
+      />
+
+      {/* Force Re-extract Dialog */}
+      <ConfirmDialog
+        isOpen={showForceReExtractDialog}
+        onClose={() => setShowForceReExtractDialog(false)}
+        onConfirm={() => {
+          setShowForceReExtractDialog(false);
+          handleShowModelSelector(true);
+        }}
+        title="Force Re-extract Document"
+        description="This document is still marked as Processing. Force re-extract will start a new extraction attempt and may replace extracted results."
+        confirmLabel="Continue"
+        cancelLabel="Cancel"
+        variant="warning"
       />
 
       {/* AI Model Selector Modal - Matching Upload Page */}

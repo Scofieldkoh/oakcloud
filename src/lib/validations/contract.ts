@@ -115,6 +115,8 @@ export const createContractServiceSchema = z.object({
   serviceTemplateCode: z.string().optional().nullable(),
   // NEW: Custom deadline rules (replaces old template-based system)
   deadlineRules: z.array(deadlineRuleInputSchema).optional().nullable(),
+  // Optional: override FYE year for deadline generation
+  fyeYearOverride: z.number().int().min(1900).max(2100).optional().nullable(),
 });
 
 export const updateContractServiceSchema = createContractServiceSchema.partial().extend({

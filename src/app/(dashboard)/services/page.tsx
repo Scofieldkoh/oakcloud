@@ -196,7 +196,7 @@ function ServiceActionsDropdown({
           </DropdownItem>
         )}
         {service.contract?.company && (
-          <Link href={`/companies/${service.contract.company.id}?tab=contracts`}>
+          <Link href={`/companies/${service.contract.company.id}?tab=services`}>
             <DropdownItem icon={<ExternalLink className="w-4 h-4" />}>
               View Company
             </DropdownItem>
@@ -264,7 +264,7 @@ function ServiceTable({
         <Briefcase className="w-12 h-12 text-text-muted mx-auto mb-4" />
         <h3 className="text-lg font-medium text-text-primary mb-2">No services found</h3>
         <p className="text-text-secondary mb-4">
-          Services are managed under contracts. Create a contract first to add services.
+          No services match your current filters. Add services from each company page.
         </p>
       </div>
     );
@@ -384,7 +384,7 @@ function ServiceTable({
                 <td>
                   {service.contract ? (
                     <Link
-                      href={`/companies/${service.contract.companyId}?tab=contracts`}
+                      href={`/companies/${service.contract.companyId}?tab=services`}
                       className="text-text-secondary hover:text-oak-light transition-colors"
                     >
                       {service.contract.title}

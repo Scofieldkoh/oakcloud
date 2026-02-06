@@ -25,6 +25,7 @@ import { useSession } from '@/hooks/use-auth';
 import { useCompanies } from '@/hooks/use-companies';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
+import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
@@ -479,7 +480,8 @@ export default function ProcessingUploadPage() {
   // Keyboard shortcuts (standardized): F1 primary action, F2 secondary action
   useKeyboardShortcuts([
     {
-      key: 'Escape',
+      key: 'Backspace',
+      ctrl: true,
       handler: () => {
         if (!isMergeModalOpen && !isUploading) {
           router.push('/processing');
@@ -505,13 +507,14 @@ export default function ProcessingUploadPage() {
       },
       description: 'Merge files',
     },
-    // Keep M as an alias for existing users
-    {
-      key: 'm',
-      handler: () => {
-        if (!isMergeModalOpen && !isUploading) {
-          openMergeModal();
-        }
+      // Keep Ctrl+M as an alias for existing users
+      {
+        key: 'm',
+        ctrl: true,
+        handler: () => {
+          if (!isMergeModalOpen && !isUploading) {
+            openMergeModal();
+          }
       },
       description: 'Merge files',
     },
@@ -565,10 +568,10 @@ export default function ProcessingUploadPage() {
         <Link
           href="/processing"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
-          title="Back to Processing (Esc)"
+          title="Back to Processing (Ctrl+Backspace)"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Processing (Esc)
+          Back to Processing (Ctrl+Backspace)
         </Link>
         <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
           Upload Documents for Processing
@@ -600,19 +603,15 @@ export default function ProcessingUploadPage() {
           </div>
         ) : (
           <>
-            <select
+            <CompanySearchableSelect
+              companies={companies}
               value={selectedCompanyId}
-              onChange={(e) => setSelectedCompanyId(e.target.value)}
+              onChange={setSelectedCompanyId}
+              placeholder="Select a company..."
               disabled={isUploading || companies.length === 0}
-              className={`input input-sm w-full max-w-md ${!selectedCompanyId && 'border-status-warning'}`}
-            >
-              <option value="">Select a company...</option>
-              {companies.map((company) => (
-                <option key={company.id} value={company.id}>
-                  {company.name} {company.uen ? `(${company.uen})` : ''}
-                </option>
-              ))}
-            </select>
+              loading={isLoadingCompanies}
+              className="w-full max-w-md"
+            />
             {!selectedCompanyId && companies.length > 0 && (
               <p className="text-xs text-status-warning mt-1.5">
                 Please select a company to upload documents

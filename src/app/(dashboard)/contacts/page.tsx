@@ -289,6 +289,7 @@ export default function ContactsPage() {
   useKeyboardShortcuts([
     {
       key: 'r',
+      ctrl: true,
       handler: handleRefresh,
       description: 'Refresh contacts',
     },
@@ -427,11 +428,11 @@ export default function ContactsPage() {
             onClick={handleRefresh}
             className="btn-secondary btn-sm flex items-center gap-2"
             aria-label="Refresh contacts"
-            title="Refresh list (R)"
+            title="Refresh list (Ctrl+R)"
             disabled={isFetching}
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
             <span className="sm:hidden">Refresh</span>
           </button>
           {can.createContact && (

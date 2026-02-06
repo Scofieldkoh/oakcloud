@@ -485,7 +485,7 @@ export function useUpdateOfficer(companyId: string) {
 }
 
 async function removeOfficerFn(companyId: string, officerId: string): Promise<void> {
-  const res = await fetch(`/api/companies/${companyId}/officers/${officerId}`, {
+  const res = await fetch(`/api/companies/${companyId}/officers/${officerId}?action=cease`, {
     method: 'DELETE',
   });
   if (!res.ok) {
@@ -499,6 +499,28 @@ export function useRemoveOfficer(companyId: string) {
 
   return useMutation({
     mutationFn: (officerId: string) => removeOfficerFn(companyId, officerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+  });
+}
+
+async function deleteOfficerFn(companyId: string, officerId: string): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/officers/${officerId}?action=delete`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to delete officer');
+  }
+}
+
+export function useDeleteOfficer(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (officerId: string) => deleteOfficerFn(companyId, officerId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
@@ -591,7 +613,7 @@ export function useUpdateShareholder(companyId: string) {
 }
 
 async function removeShareholderFn(companyId: string, shareholderId: string): Promise<void> {
-  const res = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}`, {
+  const res = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}?action=cease`, {
     method: 'DELETE',
   });
   if (!res.ok) {
@@ -605,6 +627,28 @@ export function useRemoveShareholder(companyId: string) {
 
   return useMutation({
     mutationFn: (shareholderId: string) => removeShareholderFn(companyId, shareholderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+  });
+}
+
+async function deleteShareholderFn(companyId: string, shareholderId: string): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}?action=delete`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to delete shareholder');
+  }
+}
+
+export function useDeleteShareholder(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (shareholderId: string) => deleteShareholderFn(companyId, shareholderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
       queryClient.invalidateQueries({ queryKey: ['contacts'] });

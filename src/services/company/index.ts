@@ -43,12 +43,14 @@ export {
   linkOfficerToContact,
   unlinkOfficerFromContact,
   removeOfficer,
+  deleteOfficer,
 
   // Shareholder Management
   updateShareholder,
   linkShareholderToContact,
   unlinkShareholderFromContact,
   removeShareholder,
+  deleteShareholder,
 } from '../company.service';
 
 // Re-export legacy types for backward compatibility

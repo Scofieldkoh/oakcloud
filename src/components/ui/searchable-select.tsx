@@ -299,8 +299,8 @@ export function SearchableSelect({
   );
 
   const sizeClasses = {
-    sm: 'h-9 text-xs',
-    md: 'h-10 text-base',
+    sm: 'h-8 text-sm',
+    md: 'h-9 text-sm',
   };
 
   // Display value in input: show search when typing, otherwise show selected label
@@ -314,7 +314,7 @@ export function SearchableSelect({
   return (
     <div className={cn('relative', className)}>
       {label && (
-        <label id={labelId} className="block text-sm font-medium text-text-primary mb-1.5">
+        <label id={labelId} className="block text-xs font-medium text-text-secondary mb-2">
           {label}
         </label>
       )}
@@ -324,8 +324,8 @@ export function SearchableSelect({
         ref={containerRef}
         className={cn(
           'w-full flex items-center gap-2 rounded-lg border',
-          'bg-background-secondary/30 border-border-primary',
-          'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
+          'bg-background-primary border-border-primary',
+          'hover:border-border-secondary focus-within:ring-2 focus-within:ring-oak-primary/30 focus-within:border-oak-primary',
           'transition-colors',
           sizeClasses[size],
           disabled && 'opacity-50 cursor-not-allowed',
@@ -351,7 +351,7 @@ export function SearchableSelect({
           disabled={disabled}
           className={cn(
             'flex-1 bg-transparent outline-none px-3 min-w-0',
-            'placeholder:text-text-secondary',
+            'placeholder:text-text-muted',
             // Use secondary color when showing placeholder-like "All" state (empty value)
             !value ? 'text-text-secondary' : 'text-text-primary',
             sizeClasses[size]
@@ -455,6 +455,7 @@ export function SearchableSelect({
                               id={`${baseId}-option-${option.value}`}
                               role="option"
                               aria-selected={option.value === value}
+                              title={option.description || undefined}
                               data-index={currentIndex}
                               onClick={() => handleSelect(option.value)}
                               className={cn(
@@ -491,6 +492,7 @@ export function SearchableSelect({
                       id={`${baseId}-option-${option.value}`}
                       role="option"
                       aria-selected={option.value === value}
+                      title={option.description || undefined}
                       data-index={index}
                       onClick={() => handleSelect(option.value)}
                       className={cn(
@@ -532,7 +534,7 @@ export function SearchableSelect({
                 <div className="flex items-center gap-3 text-xs text-text-muted">
                   <span>
                     <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                      ↑↓
+                      Up/Down
                     </kbd>{' '}
                     Navigate
                   </span>

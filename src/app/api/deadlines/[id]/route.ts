@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
+import { requireTenantContext } from '@/lib/api-helpers';
 import {
   getDeadlineById,
   updateDeadline,
@@ -35,11 +36,11 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
 
-    const tenantId = session.tenantId;
+    const tenantIdParam = req.nextUrl.searchParams.get('tenantId');
+    const tenantResult = await requireTenantContext(session, tenantIdParam);
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
     const { id } = await params;
 
     const deadline = await getDeadlineById(id, tenantId);
@@ -69,14 +70,17 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
 
-    const tenantId = session.tenantId;
+    const body = await req.json();
+    const tenantIdParam = (body && typeof body === 'object' && 'tenantId' in body)
+      ? (body.tenantId as string | null | undefined)
+      : undefined;
+    const tenantResult = await requireTenantContext(session, tenantIdParam);
+    if (tenantResult.error) return tenantResult.error;
+
+    const tenantId = tenantResult.tenantId;
     const userId = session.id;
     const { id } = await params;
-    const body = await req.json();
 
     // Get existing deadline to check permissions
     const existing = await getDeadlineById(id, tenantId);
@@ -163,11 +167,12 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
 
-    const tenantId = session.tenantId;
+    const tenantIdParam = req.nextUrl.searchParams.get('tenantId');
+    const tenantResult = await requireTenantContext(session, tenantIdParam);
+    if (tenantResult.error) return tenantResult.error;
+
+    const tenantId = tenantResult.tenantId;
     const userId = session.id;
     const { id } = await params;
 

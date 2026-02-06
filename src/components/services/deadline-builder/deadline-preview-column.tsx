@@ -1,10 +1,37 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Box, Flex, Text, Spinner } from '@chakra-ui/react';
+import { useMemo } from 'react';
+import { Box, Flex, Text } from '@chakra-ui/react';
 import { AlertCircle, Calendar, ExternalLink } from 'lucide-react';
 import type { DeadlineRuleInput } from '@/lib/validations/service';
 import type { CompanyData } from './deadline-builder-table';
+
+function addMonthsClamped(date: Date, months: number): Date {
+  const year = date.getFullYear();
+  const monthIndex = date.getMonth();
+  const day = date.getDate();
+  const targetIndex = monthIndex + months;
+  const targetYear = year + Math.floor(targetIndex / 12);
+  const targetMonth = ((targetIndex % 12) + 12) % 12;
+  const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const safeDay = Math.min(day, lastDay);
+  return new Date(targetYear, targetMonth, safeDay);
+}
+
+function applyOffset(baseDate: Date, rule: DeadlineRuleInput): Date {
+  let shifted = addMonthsClamped(baseDate, rule.offsetMonths || 0);
+  if (rule.offsetDays) {
+    shifted = new Date(shifted.getFullYear(), shifted.getMonth(), shifted.getDate() + rule.offsetDays);
+  }
+  return shifted;
+}
+
+function advanceByFrequency(baseDate: Date, frequency: DeadlineRuleInput['frequency'], step: number): Date {
+  if (frequency === 'MONTHLY') return addMonthsClamped(baseDate, step);
+  if (frequency === 'QUARTERLY') return addMonthsClamped(baseDate, step * 3);
+  if (frequency === 'ANNUALLY') return addMonthsClamped(baseDate, step * 12);
+  return new Date(baseDate);
+}
 
 export interface DeadlinePreviewColumnProps {
   rule: DeadlineRuleInput;
@@ -52,14 +79,7 @@ export function DeadlinePreviewColumn({
         if (rule.isRecurring && rule.frequency && rule.frequency !== 'ONE_TIME') {
           const occurrenceCount = rule.generateOccurrences || 3;
           for (let i = 0; i < Math.min(occurrenceCount, 3); i++) {
-            const occurrence = new Date(baseDate);
-            if (rule.frequency === 'MONTHLY') {
-              occurrence.setMonth(occurrence.getMonth() + i);
-            } else if (rule.frequency === 'QUARTERLY') {
-              occurrence.setMonth(occurrence.getMonth() + (i * 3));
-            } else if (rule.frequency === 'ANNUALLY') {
-              occurrence.setFullYear(occurrence.getFullYear() + i);
-            }
+            const occurrence = advanceByFrequency(baseDate, rule.frequency, i);
             dates.push(occurrence.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
           }
           if (occurrenceCount > 3) {
@@ -84,11 +104,10 @@ export function DeadlinePreviewColumn({
 
           // Calculate FYE-based date
           const currentYear = new Date().getFullYear();
+          const baseYear = companyData.fyeYear ?? currentYear;
           for (let i = 0; i < 3; i++) {
-            const fye = new Date(currentYear + i, companyData.fyeMonth - 1, companyData.fyeDay);
-            const dueDate = new Date(fye);
-            dueDate.setMonth(dueDate.getMonth() + (rule.offsetMonths || 0));
-            dueDate.setDate(dueDate.getDate() + (rule.offsetDays || 0));
+            const fye = new Date(baseYear + i, companyData.fyeMonth - 1, companyData.fyeDay);
+            const dueDate = applyOffset(fye, rule);
             dates.push(dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
           }
         } else if (rule.anchorType === 'INCORPORATION') {
@@ -100,19 +119,15 @@ export function DeadlinePreviewColumn({
           if (rule.isRecurring && rule.frequency && rule.frequency !== 'ONE_TIME') {
             const occurrenceCount = rule.generateOccurrences || 3;
             for (let i = 0; i < Math.min(occurrenceCount, 3); i++) {
-              const occurrence = new Date(incDate);
-              occurrence.setFullYear(occurrence.getFullYear() + i);
-              occurrence.setMonth(occurrence.getMonth() + (rule.offsetMonths || 0));
-              occurrence.setDate(occurrence.getDate() + (rule.offsetDays || 0));
-              dates.push(occurrence.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+              const occurrence = advanceByFrequency(incDate, rule.frequency, i);
+              const dueDate = applyOffset(occurrence, rule);
+              dates.push(dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
             }
             if (occurrenceCount > 3) {
               dates.push(`+${occurrenceCount - 3} more`);
             }
           } else {
-            const dueDate = new Date(incDate);
-            dueDate.setMonth(dueDate.getMonth() + (rule.offsetMonths || 0));
-            dueDate.setDate(dueDate.getDate() + (rule.offsetDays || 0));
+            const dueDate = applyOffset(incDate, rule);
             dates.push(dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
           }
         } else if (rule.anchorType === 'SERVICE_START') {
@@ -126,23 +141,13 @@ export function DeadlinePreviewColumn({
           if (rule.isRecurring && rule.frequency && rule.frequency !== 'ONE_TIME') {
             // Generate recurring dates from service start
             for (let i = 0; i < 3; i++) {
-              const occurrence = new Date(startDate);
-              if (rule.frequency === 'MONTHLY') {
-                occurrence.setMonth(occurrence.getMonth() + i);
-              } else if (rule.frequency === 'QUARTERLY') {
-                occurrence.setMonth(occurrence.getMonth() + (i * 3));
-              } else if (rule.frequency === 'ANNUALLY') {
-                occurrence.setFullYear(occurrence.getFullYear() + i);
-              }
-              occurrence.setMonth(occurrence.getMonth() + (rule.offsetMonths || 0));
-              occurrence.setDate(occurrence.getDate() + (rule.offsetDays || 0));
-              dates.push(occurrence.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+              const occurrence = advanceByFrequency(startDate, rule.frequency, i);
+              const dueDate = applyOffset(occurrence, rule);
+              dates.push(dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
             }
           } else {
             // One-time calculation from service start
-            const dueDate = new Date(startDate);
-            dueDate.setMonth(dueDate.getMonth() + (rule.offsetMonths || 0));
-            dueDate.setDate(dueDate.getDate() + (rule.offsetDays || 0));
+            const dueDate = applyOffset(startDate, rule);
             dates.push(dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
           }
         } else if (rule.anchorType === 'QUARTER_END' || rule.anchorType === 'MONTH_END') {
@@ -159,9 +164,7 @@ export function DeadlinePreviewColumn({
               // Next month end
               anchorDate.setMonth(anchorDate.getMonth() + 1 + i, 0);
             }
-            const dueDate = new Date(anchorDate);
-            dueDate.setMonth(dueDate.getMonth() + (rule.offsetMonths || 0));
-            dueDate.setDate(dueDate.getDate() + (rule.offsetDays || 0));
+            const dueDate = applyOffset(anchorDate, rule);
             dates.push(dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
           }
         } else {

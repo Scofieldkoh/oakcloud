@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/toast';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import type {
   DeadlineCategory,
   DeadlineStatus,
@@ -281,10 +283,19 @@ export function useCompanyDeadlines(companyId: string | null, options?: {
  * Get a single deadline by ID
  */
 export function useDeadline(id: string | null) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
   return useQuery({
     queryKey: deadlineKeys.detail(id ?? ''),
     queryFn: async () => {
-      const response = await fetch(`/api/deadlines/${id}`);
+      const url = activeTenantId
+        ? `/api/deadlines/${id}?tenantId=${activeTenantId}`
+        : `/api/deadlines/${id}`;
+      const response = await fetch(url);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to fetch deadline');
@@ -383,13 +394,18 @@ export function useOverdueDeadlines(options?: {
 export function useCreateDeadline() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (data: CreateDeadlineInput) => {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -413,13 +429,21 @@ export function useCreateDeadline() {
 export function useUpdateDeadline(id: string) {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (data: UpdateDeadlineInput) => {
-      const response = await fetch(`/api/deadlines/${id}`, {
+      const url = activeTenantId
+        ? `/api/deadlines/${id}?tenantId=${activeTenantId}`
+        : `/api/deadlines/${id}`;
+      const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -443,6 +467,11 @@ export function useUpdateDeadline(id: string) {
 export function useCompleteDeadline(id: string) {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (data: {
@@ -450,10 +479,13 @@ export function useCompleteDeadline(id: string) {
       filingDate?: string | null;
       filingReference?: string | null;
     }) => {
-      const response = await fetch(`/api/deadlines/${id}`, {
+      const url = activeTenantId
+        ? `/api/deadlines/${id}?tenantId=${activeTenantId}`
+        : `/api/deadlines/${id}`;
+      const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'complete', ...data }),
+        body: JSON.stringify({ action: 'complete', tenantId: activeTenantId, ...data }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -477,13 +509,21 @@ export function useCompleteDeadline(id: string) {
 export function useReopenDeadline(id: string) {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/deadlines/${id}`, {
+      const url = activeTenantId
+        ? `/api/deadlines/${id}?tenantId=${activeTenantId}`
+        : `/api/deadlines/${id}`;
+      const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reopen' }),
+        body: JSON.stringify({ action: 'reopen', tenantId: activeTenantId }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -507,10 +547,18 @@ export function useReopenDeadline(id: string) {
 export function useDeleteDeadline() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/deadlines/${id}`, { method: 'DELETE' });
+      const url = activeTenantId
+        ? `/api/deadlines/${id}?tenantId=${activeTenantId}`
+        : `/api/deadlines/${id}`;
+      const response = await fetch(url, { method: 'DELETE' });
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Failed to delete deadline');
@@ -533,6 +581,11 @@ export function useDeleteDeadline() {
 export function useGenerateDeadlines() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (data: {
@@ -544,7 +597,7 @@ export function useGenerateDeadlines() {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', ...data }),
+        body: JSON.stringify({ action: 'generate', tenantId: activeTenantId, ...data }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -568,13 +621,18 @@ export function useGenerateDeadlines() {
 export function useBulkAssignDeadlines() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (data: { deadlineIds: string[]; assigneeId: string | null }) => {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'bulk-assign', ...data }),
+        body: JSON.stringify({ action: 'bulk-assign', tenantId: activeTenantId, ...data }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -598,13 +656,18 @@ export function useBulkAssignDeadlines() {
 export function useBulkUpdateStatus() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (data: { deadlineIds: string[]; status: DeadlineStatus }) => {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'bulk-status', ...data }),
+        body: JSON.stringify({ action: 'bulk-status', tenantId: activeTenantId, ...data }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -628,13 +691,18 @@ export function useBulkUpdateStatus() {
 export function useBulkDeleteDeadlines() {
   const queryClient = useQueryClient();
   const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: async (deadlineIds: string[]) => {
       const response = await fetch('/api/deadlines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'bulk-delete', deadlineIds }),
+        body: JSON.stringify({ action: 'bulk-delete', tenantId: activeTenantId, deadlineIds }),
       });
       if (!response.ok) {
         const err = await response.json();

@@ -15,7 +15,6 @@ import {
   CreditCard,
   User,
   Filter,
-  Trash2,
   Pencil as PencilIcon,
   X,
   Plus,
@@ -25,12 +24,14 @@ import {
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import {
   useUpdateOfficer,
   useUpdateShareholder,
-  useRemoveOfficer,
+  useDeleteOfficer,
   useRemoveShareholder,
+  useDeleteShareholder,
   useCompanyBizFile,
 } from '@/hooks/use-companies';
 import { formatDate, formatCurrency, formatPercentage } from '@/lib/utils';
@@ -88,11 +89,17 @@ function getContactAddress(contact: {
   return formatAddress(contact.fullAddress);
 }
 
+function isOfficerActive(officer: Officer): boolean {
+  return officer.isCurrent && !officer.cessationDate;
+}
+
 interface CompanyProfileTabProps {
   company: CompanyWithRelations;
   companyId: string;
   can: {
     updateCompany: boolean;
+    deleteOfficer?: boolean;
+    deleteShareholder?: boolean;
   };
 }
 
@@ -120,8 +127,9 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
   // Update and remove hooks
   const updateOfficerMutation = useUpdateOfficer(companyId);
   const updateShareholderMutation = useUpdateShareholder(companyId);
-  const removeOfficerMutation = useRemoveOfficer(companyId);
+  const deleteOfficerMutation = useDeleteOfficer(companyId);
   const removeShareholderMutation = useRemoveShareholder(companyId);
+  const deleteShareholderMutation = useDeleteShareholder(companyId);
 
   // Edit modals state
   const [editOfficerModalOpen, setEditOfficerModalOpen] = useState(false);
@@ -138,6 +146,7 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
     name: string;
     numberOfShares: number;
     shareClass: string | null;
+    isCurrent: boolean;
   } | null>(null);
   const [editOfficerForm, setEditOfficerForm] = useState({
     appointmentDate: '',
@@ -147,18 +156,34 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
     numberOfShares: '',
     shareClass: '',
   });
+  const [deleteOfficerConfirm, setDeleteOfficerConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [deleteShareholderConfirm, setDeleteShareholderConfirm] = useState<{ id: string; name: string } | null>(null);
 
-  // Handle remove action (mark as ceased/former)
-  const handleRemove = async (type: 'officer' | 'shareholder', targetId: string) => {
+  const handleDeleteOfficer = async () => {
+    if (!deleteOfficerConfirm) return;
+
     try {
-      if (type === 'officer') {
-        await removeOfficerMutation.mutateAsync(targetId);
-      } else {
-        await removeShareholderMutation.mutateAsync(targetId);
-      }
-      success(`${type === 'officer' ? 'Officer' : 'Shareholder'} removed successfully`);
+      await deleteOfficerMutation.mutateAsync(deleteOfficerConfirm.id);
+      success('Officer deleted successfully');
+      setDeleteOfficerConfirm(null);
+      setEditOfficerModalOpen(false);
+      setSelectedOfficer(null);
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to remove');
+      toastError(err instanceof Error ? err.message : 'Failed to delete officer');
+    }
+  };
+
+  const handleDeleteShareholder = async () => {
+    if (!deleteShareholderConfirm) return;
+
+    try {
+      await deleteShareholderMutation.mutateAsync(deleteShareholderConfirm.id);
+      success('Shareholder deleted successfully');
+      setDeleteShareholderConfirm(null);
+      setEditShareholderModalOpen(false);
+      setSelectedShareholder(null);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to delete shareholder');
     }
   };
 
@@ -221,6 +246,7 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
       name: shareholder.name,
       numberOfShares: shareholder.numberOfShares,
       shareClass: shareholder.shareClass || null,
+      isCurrent: shareholder.isCurrent,
     });
     setEditShareholderForm({
       numberOfShares: shareholder.numberOfShares.toString(),
@@ -252,6 +278,19 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
       setSelectedShareholder(null);
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to update shareholder');
+    }
+  };
+
+  const handleMarkShareholderFormer = async () => {
+    if (!selectedShareholder) return;
+
+    try {
+      await removeShareholderMutation.mutateAsync(selectedShareholder.id);
+      success('Shareholder marked as former');
+      setEditShareholderModalOpen(false);
+      setSelectedShareholder(null);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to mark shareholder as former');
     }
   };
 
@@ -341,8 +380,8 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
                   <span className="text-sm text-text-tertiary">
                     {(() => {
                       const officers = company.officers || [];
-                      const activeCount = officers.filter(o => o.isCurrent).length;
-                      const pastCount = officers.filter(o => !o.isCurrent).length;
+                      const activeCount = officers.filter(isOfficerActive).length;
+                      const pastCount = officers.length - activeCount;
                       return `${activeCount} active; ${pastCount} past`;
                     })()}
                   </span>
@@ -436,7 +475,7 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
                       if (officer.role !== officerRoleFilter) return false;
                     }
                     // Show ceased filter
-                    if (!showCeasedOfficers && !officer.isCurrent) return false;
+                    if (!showCeasedOfficers && !isOfficerActive(officer)) return false;
                     return true;
                   })
                   .map((officer) => (
@@ -469,17 +508,7 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
                             <PencilIcon className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        {can.updateCompany && officer.isCurrent && (
-                          <button
-                            onClick={() => handleRemove('officer', officer.id)}
-                            className="text-text-muted hover:text-status-error transition-colors"
-                            title="Remove officer"
-                            disabled={removeOfficerMutation.isPending}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {officer.isCurrent ? (
+                        {isOfficerActive(officer) ? (
                           <span className="badge badge-success">Active</span>
                         ) : (
                           <span className="badge badge-neutral">Ceased</span>
@@ -530,7 +559,7 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
                 company.officers.filter((officer) => {
                   if (officerNameFilter && !officer.name.toLowerCase().includes(officerNameFilter.toLowerCase())) return false;
                   if (officerRoleFilter && officer.role !== officerRoleFilter) return false;
-                  if (!showCeasedOfficers && !officer.isCurrent) return false;
+                  if (!showCeasedOfficers && !isOfficerActive(officer)) return false;
                   return true;
                 }).length === 0 && (
                 <div className="p-4 text-center">
@@ -660,16 +689,6 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
                             title="Edit shareholder"
                           >
                             <PencilIcon className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {can.updateCompany && shareholder.isCurrent && (
-                          <button
-                            onClick={() => handleRemove('shareholder', shareholder.id)}
-                            className="text-text-muted hover:text-status-error transition-colors"
-                            title="Remove shareholder"
-                            disabled={removeShareholderMutation.isPending}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
                         {shareholder.isCurrent && (
@@ -994,25 +1013,46 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
             </div>
           )}
         </ModalBody>
-        <ModalFooter>
+      <ModalFooter>
+        {can.deleteOfficer && selectedOfficer && (
           <Button
-            variant="secondary"
-            onClick={() => {
-              setEditOfficerModalOpen(false);
-              setSelectedOfficer(null);
-            }}
+            variant="danger"
+            onClick={() => setDeleteOfficerConfirm({ id: selectedOfficer.id, name: selectedOfficer.name })}
+            disabled={deleteOfficerMutation.isPending}
           >
-            Cancel
+            Delete
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleEditOfficer}
-            disabled={updateOfficerMutation.isPending}
-          >
-            {updateOfficerMutation.isPending ? 'Saving...' : 'Save'}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        )}
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setEditOfficerModalOpen(false);
+            setSelectedOfficer(null);
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          onClick={handleEditOfficer}
+          disabled={updateOfficerMutation.isPending}
+        >
+          {updateOfficerMutation.isPending ? 'Saving...' : 'Save'}
+        </Button>
+      </ModalFooter>
+    </Modal>
+
+    {/* Delete Officer Confirmation */}
+    <ConfirmDialog
+      isOpen={!!deleteOfficerConfirm}
+      onClose={() => setDeleteOfficerConfirm(null)}
+      onConfirm={handleDeleteOfficer}
+      title="Delete Officer"
+      description={`Are you sure you want to delete "${deleteOfficerConfirm?.name}"? This action cannot be undone.`}
+      variant="danger"
+      confirmLabel="Delete"
+      isLoading={deleteOfficerMutation.isPending}
+    />
 
       {/* Edit Shareholder Modal */}
       <Modal
@@ -1056,6 +1096,24 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
           )}
         </ModalBody>
         <ModalFooter>
+          {selectedShareholder?.isCurrent && (
+            <Button
+              variant="secondary"
+              onClick={handleMarkShareholderFormer}
+              disabled={removeShareholderMutation.isPending}
+            >
+              Mark as Former
+            </Button>
+          )}
+          {can.deleteShareholder && selectedShareholder && (
+            <Button
+              variant="danger"
+              onClick={() => setDeleteShareholderConfirm({ id: selectedShareholder.id, name: selectedShareholder.name })}
+              disabled={deleteShareholderMutation.isPending}
+            >
+              Delete
+            </Button>
+          )}
           <Button
             variant="secondary"
             onClick={() => {
@@ -1074,6 +1132,18 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
           </Button>
         </ModalFooter>
       </Modal>
+
+      {/* Delete Shareholder Confirmation */}
+      <ConfirmDialog
+        isOpen={!!deleteShareholderConfirm}
+        onClose={() => setDeleteShareholderConfirm(null)}
+        onConfirm={handleDeleteShareholder}
+        title="Delete Shareholder"
+        description={`Are you sure you want to delete "${deleteShareholderConfirm?.name}"? This action cannot be undone.`}
+        variant="danger"
+        confirmLabel="Delete"
+        isLoading={deleteShareholderMutation.isPending}
+      />
 
       {/* Add Officer Modal */}
       <AddOfficerModal

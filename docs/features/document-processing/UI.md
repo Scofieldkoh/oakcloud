@@ -255,7 +255,7 @@ Issue types:
 
 | Shortcut | Action |
 |----------|--------|
-| `R` | Refresh list |
+| `Ctrl+R` | Refresh list |
 | `F1` | Upload documents |
 | `F2` | Approve next pending document |
 
@@ -263,17 +263,17 @@ Issue types:
 
 | Shortcut | Action |
 |----------|--------|
-| `Esc` | Back to processing list |
+| `Ctrl+Backspace` | Back to processing list |
 | `F1` | Upload queued files |
 | `F2` | Merge multiple files |
-| `M` | Merge multiple files (legacy alias) |
+| `Ctrl+M` | Merge multiple files (legacy alias) |
 
 ### Document Detail (`/processing/[id]`)
 
 | Shortcut | Action |
 |----------|--------|
-| `Esc` | Cancel editing or back to list |
-| `R` | Refresh document |
+| `Ctrl+Backspace` | Cancel editing or back to list |
+| `Ctrl+R` | Refresh document |
 | `F1` | Approve (and confirm approval dialog) |
 | `F2` | Edit document |
 | `F3` | Save edits |

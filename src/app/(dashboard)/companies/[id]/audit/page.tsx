@@ -74,12 +74,14 @@ export default function CompanyAuditPage({
 
   useKeyboardShortcuts([
     {
-      key: 'Escape',
+      key: 'Backspace',
+      ctrl: true,
       handler: () => router.push(`/companies/${id}`),
       description: 'Back to company',
     },
     {
       key: 'r',
+      ctrl: true,
       handler: () => refetch(),
       description: 'Refresh audit logs',
     },
@@ -102,7 +104,7 @@ export default function CompanyAuditPage({
         <div>
         <Link
           href={`/companies/${id}`}
-          title="Back to Company (Esc)"
+          title="Back to Company (Ctrl+Backspace)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -119,11 +121,11 @@ export default function CompanyAuditPage({
           <button
             onClick={() => refetch()}
             className="btn-secondary btn-sm flex items-center gap-2"
-            title="Refresh (R)"
+            title="Refresh (Ctrl+R)"
             disabled={isFetching}
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
             <span className="sm:hidden">Refresh</span>
           </button>
           <Link href="/companies/upload" className="btn-secondary btn-sm flex items-center gap-2" title="Upload BizFile (F2)">

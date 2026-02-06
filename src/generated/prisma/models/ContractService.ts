@@ -31,6 +31,7 @@ export type ContractServiceAvgAggregateOutputType = {
   renewalPeriodMonths: number | null
   displayOrder: number | null
   customRate: runtime.Decimal | null
+  fyeYearOverride: number | null
 }
 
 export type ContractServiceSumAggregateOutputType = {
@@ -38,6 +39,7 @@ export type ContractServiceSumAggregateOutputType = {
   renewalPeriodMonths: number | null
   displayOrder: number | null
   customRate: runtime.Decimal | null
+  fyeYearOverride: number | null
 }
 
 export type ContractServiceMinAggregateOutputType = {
@@ -62,6 +64,7 @@ export type ContractServiceMinAggregateOutputType = {
   overrideBillable: boolean | null
   customRate: runtime.Decimal | null
   hasCustomDeadlines: boolean | null
+  fyeYearOverride: number | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -89,6 +92,7 @@ export type ContractServiceMaxAggregateOutputType = {
   overrideBillable: boolean | null
   customRate: runtime.Decimal | null
   hasCustomDeadlines: boolean | null
+  fyeYearOverride: number | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -116,6 +120,7 @@ export type ContractServiceCountAggregateOutputType = {
   overrideBillable: number
   customRate: number
   hasCustomDeadlines: number
+  fyeYearOverride: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -128,6 +133,7 @@ export type ContractServiceAvgAggregateInputType = {
   renewalPeriodMonths?: true
   displayOrder?: true
   customRate?: true
+  fyeYearOverride?: true
 }
 
 export type ContractServiceSumAggregateInputType = {
@@ -135,6 +141,7 @@ export type ContractServiceSumAggregateInputType = {
   renewalPeriodMonths?: true
   displayOrder?: true
   customRate?: true
+  fyeYearOverride?: true
 }
 
 export type ContractServiceMinAggregateInputType = {
@@ -159,6 +166,7 @@ export type ContractServiceMinAggregateInputType = {
   overrideBillable?: true
   customRate?: true
   hasCustomDeadlines?: true
+  fyeYearOverride?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -186,6 +194,7 @@ export type ContractServiceMaxAggregateInputType = {
   overrideBillable?: true
   customRate?: true
   hasCustomDeadlines?: true
+  fyeYearOverride?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -213,6 +222,7 @@ export type ContractServiceCountAggregateInputType = {
   overrideBillable?: true
   customRate?: true
   hasCustomDeadlines?: true
+  fyeYearOverride?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -327,6 +337,7 @@ export type ContractServiceGroupByOutputType = {
   overrideBillable: boolean | null
   customRate: runtime.Decimal | null
   hasCustomDeadlines: boolean
+  fyeYearOverride: number | null
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -377,6 +388,7 @@ export type ContractServiceWhereInput = {
   overrideBillable?: Prisma.BoolNullableFilter<"ContractService"> | boolean | null
   customRate?: Prisma.DecimalNullableFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFilter<"ContractService"> | boolean
+  fyeYearOverride?: Prisma.IntNullableFilter<"ContractService"> | number | null
   createdAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContractService"> | Date | string | null
@@ -408,6 +420,7 @@ export type ContractServiceOrderByWithRelationInput = {
   overrideBillable?: Prisma.SortOrderInput | Prisma.SortOrder
   customRate?: Prisma.SortOrderInput | Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
+  fyeYearOverride?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -442,6 +455,7 @@ export type ContractServiceWhereUniqueInput = Prisma.AtLeast<{
   overrideBillable?: Prisma.BoolNullableFilter<"ContractService"> | boolean | null
   customRate?: Prisma.DecimalNullableFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFilter<"ContractService"> | boolean
+  fyeYearOverride?: Prisma.IntNullableFilter<"ContractService"> | number | null
   createdAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContractService"> | Date | string | null
@@ -473,6 +487,7 @@ export type ContractServiceOrderByWithAggregationInput = {
   overrideBillable?: Prisma.SortOrderInput | Prisma.SortOrder
   customRate?: Prisma.SortOrderInput | Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
+  fyeYearOverride?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -508,6 +523,7 @@ export type ContractServiceScalarWhereWithAggregatesInput = {
   overrideBillable?: Prisma.BoolNullableWithAggregatesFilter<"ContractService"> | boolean | null
   customRate?: Prisma.DecimalNullableWithAggregatesFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolWithAggregatesFilter<"ContractService"> | boolean
+  fyeYearOverride?: Prisma.IntNullableWithAggregatesFilter<"ContractService"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ContractService"> | Date | string | null
@@ -533,6 +549,7 @@ export type ContractServiceCreateInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -564,6 +581,7 @@ export type ContractServiceUncheckedCreateInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -591,6 +609,7 @@ export type ContractServiceUpdateInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -622,6 +641,7 @@ export type ContractServiceUncheckedUpdateInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -651,6 +671,7 @@ export type ContractServiceCreateManyInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -676,6 +697,7 @@ export type ContractServiceUpdateManyMutationInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -703,6 +725,7 @@ export type ContractServiceUncheckedUpdateManyInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -740,6 +763,7 @@ export type ContractServiceCountOrderByAggregateInput = {
   overrideBillable?: Prisma.SortOrder
   customRate?: Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
+  fyeYearOverride?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -750,6 +774,7 @@ export type ContractServiceAvgOrderByAggregateInput = {
   renewalPeriodMonths?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   customRate?: Prisma.SortOrder
+  fyeYearOverride?: Prisma.SortOrder
 }
 
 export type ContractServiceMaxOrderByAggregateInput = {
@@ -774,6 +799,7 @@ export type ContractServiceMaxOrderByAggregateInput = {
   overrideBillable?: Prisma.SortOrder
   customRate?: Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
+  fyeYearOverride?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -801,6 +827,7 @@ export type ContractServiceMinOrderByAggregateInput = {
   overrideBillable?: Prisma.SortOrder
   customRate?: Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
+  fyeYearOverride?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -811,6 +838,7 @@ export type ContractServiceSumOrderByAggregateInput = {
   renewalPeriodMonths?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   customRate?: Prisma.SortOrder
+  fyeYearOverride?: Prisma.SortOrder
 }
 
 export type ContractServiceScalarRelationFilter = {
@@ -973,6 +1001,7 @@ export type ContractServiceCreateWithoutTenantInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1002,6 +1031,7 @@ export type ContractServiceUncheckedCreateWithoutTenantInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1060,6 +1090,7 @@ export type ContractServiceScalarWhereInput = {
   overrideBillable?: Prisma.BoolNullableFilter<"ContractService"> | boolean | null
   customRate?: Prisma.DecimalNullableFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFilter<"ContractService"> | boolean
+  fyeYearOverride?: Prisma.IntNullableFilter<"ContractService"> | number | null
   createdAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContractService"> | Date | string | null
@@ -1085,6 +1116,7 @@ export type ContractServiceCreateWithoutContractInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1114,6 +1146,7 @@ export type ContractServiceUncheckedCreateWithoutContractInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1167,6 +1200,7 @@ export type ContractServiceCreateWithoutDeadlineRulesInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1197,6 +1231,7 @@ export type ContractServiceUncheckedCreateWithoutDeadlineRulesInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1239,6 +1274,7 @@ export type ContractServiceUpdateWithoutDeadlineRulesInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1269,6 +1305,7 @@ export type ContractServiceUncheckedUpdateWithoutDeadlineRulesInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1295,6 +1332,7 @@ export type ContractServiceCreateWithoutDeadlinesInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1325,6 +1363,7 @@ export type ContractServiceUncheckedCreateWithoutDeadlinesInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1367,6 +1406,7 @@ export type ContractServiceUpdateWithoutDeadlinesInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1397,6 +1437,7 @@ export type ContractServiceUncheckedUpdateWithoutDeadlinesInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1424,6 +1465,7 @@ export type ContractServiceCreateManyTenantInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1449,6 +1491,7 @@ export type ContractServiceUpdateWithoutTenantInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1478,6 +1521,7 @@ export type ContractServiceUncheckedUpdateWithoutTenantInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1506,6 +1550,7 @@ export type ContractServiceUncheckedUpdateManyWithoutTenantInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1532,6 +1577,7 @@ export type ContractServiceCreateManyContractInput = {
   overrideBillable?: boolean | null
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1557,6 +1603,7 @@ export type ContractServiceUpdateWithoutContractInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1586,6 +1633,7 @@ export type ContractServiceUncheckedUpdateWithoutContractInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1614,6 +1662,7 @@ export type ContractServiceUncheckedUpdateManyWithoutContractInput = {
   overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1681,6 +1730,7 @@ export type ContractServiceSelect<ExtArgs extends runtime.Types.Extensions.Inter
   overrideBillable?: boolean
   customRate?: boolean
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1713,6 +1763,7 @@ export type ContractServiceSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   overrideBillable?: boolean
   customRate?: boolean
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1742,6 +1793,7 @@ export type ContractServiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   overrideBillable?: boolean
   customRate?: boolean
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1771,12 +1823,13 @@ export type ContractServiceSelectScalar = {
   overrideBillable?: boolean
   customRate?: boolean
   hasCustomDeadlines?: boolean
+  fyeYearOverride?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type ContractServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contractId" | "name" | "serviceType" | "status" | "rate" | "currency" | "frequency" | "startDate" | "endDate" | "nextBillingDate" | "scope" | "autoRenewal" | "renewalPeriodMonths" | "displayOrder" | "serviceTemplateCode" | "gstFilingFrequency" | "overrideBillable" | "customRate" | "hasCustomDeadlines" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contractService"]>
+export type ContractServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contractId" | "name" | "serviceType" | "status" | "rate" | "currency" | "frequency" | "startDate" | "endDate" | "nextBillingDate" | "scope" | "autoRenewal" | "renewalPeriodMonths" | "displayOrder" | "serviceTemplateCode" | "gstFilingFrequency" | "overrideBillable" | "customRate" | "hasCustomDeadlines" | "fyeYearOverride" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contractService"]>
 export type ContractServiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contract?: boolean | Prisma.ContractDefaultArgs<ExtArgs>
@@ -1823,6 +1876,7 @@ export type $ContractServicePayload<ExtArgs extends runtime.Types.Extensions.Int
     overrideBillable: boolean | null
     customRate: runtime.Decimal | null
     hasCustomDeadlines: boolean
+    fyeYearOverride: number | null
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -2274,6 +2328,7 @@ export interface ContractServiceFieldRefs {
   readonly overrideBillable: Prisma.FieldRef<"ContractService", 'Boolean'>
   readonly customRate: Prisma.FieldRef<"ContractService", 'Decimal'>
   readonly hasCustomDeadlines: Prisma.FieldRef<"ContractService", 'Boolean'>
+  readonly fyeYearOverride: Prisma.FieldRef<"ContractService", 'Int'>
   readonly createdAt: Prisma.FieldRef<"ContractService", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ContractService", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"ContractService", 'DateTime'>

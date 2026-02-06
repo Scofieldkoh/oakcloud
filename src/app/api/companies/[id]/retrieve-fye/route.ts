@@ -6,6 +6,7 @@ import { parseIdParams } from '@/lib/validations/params';
 import {
   retrieveFYEFromACRA,
   isCompanyEntityType,
+  ACRARateLimitError,
 } from '@/lib/external/acra-fye';
 
 export async function GET(
@@ -73,6 +74,20 @@ export async function GET(
       financialYearEndMonth: fye.month,
     });
   } catch (error) {
+    if (error instanceof ACRARateLimitError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+        },
+        {
+          status: 429,
+          headers: error.retryAfterSeconds
+            ? { 'Retry-After': String(error.retryAfterSeconds) }
+            : undefined,
+        }
+      );
+    }
+
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

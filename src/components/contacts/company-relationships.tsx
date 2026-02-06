@@ -72,6 +72,28 @@ interface CompanyRelationshipsProps {
   onEditShareholder?: (shareholder: Shareholding, companyId: string) => void;
 }
 
+const isOfficerActive = (pos: OfficerPosition) => pos.isCurrent && !pos.cessationDate;
+const normalizeRelationship = (value: string) =>
+  value.toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+const OFFICER_ROLE_VALUES = new Set([
+  'director',
+  'managing director',
+  'alternate director',
+  'secretary',
+  'ceo',
+  'cfo',
+  'auditor',
+  'liquidator',
+  'receiver',
+  'judicial manager',
+]);
+const isPositionRelationship = (relationship: string) => {
+  const normalized = normalizeRelationship(relationship);
+  if (OFFICER_ROLE_VALUES.has(normalized)) return true;
+  if (normalized === 'shareholder') return true;
+  return normalized.endsWith('shareholder');
+};
+
 export function CompanyRelationships({
   companyRelations,
   officerPositions,
@@ -103,14 +125,16 @@ export function CompanyRelationships({
           companyName: rel.company.name,
           companyUen: rel.company.uen,
           isPrimary: rel.isPrimary,
-          generalRelationship: rel.relationship,
+          generalRelationship: isPositionRelationship(rel.relationship) ? null : rel.relationship,
           officerPositions: [],
           shareholdings: [],
         });
       } else {
         const existing = map.get(rel.company.id)!;
         if (rel.isPrimary) existing.isPrimary = true;
-        if (!existing.generalRelationship) existing.generalRelationship = rel.relationship;
+        if (!existing.generalRelationship && !isPositionRelationship(rel.relationship)) {
+          existing.generalRelationship = rel.relationship;
+        }
       }
     });
 
@@ -171,7 +195,7 @@ export function CompanyRelationships({
 
     // Add general relationships
     companyRelations?.forEach((rel) => {
-      if (rel.relationship) {
+      if (rel.relationship && !isPositionRelationship(rel.relationship)) {
         positions.add(rel.relationship);
       }
     });
@@ -195,7 +219,7 @@ export function CompanyRelationships({
         const normalizedFilter = positionFilter.toLowerCase();
 
         // Check officer positions (filter by current if showCeased is false)
-        const matchingOfficers = rel.officerPositions.filter(pos => showCeased || pos.isCurrent);
+        const matchingOfficers = rel.officerPositions.filter(pos => showCeased || isOfficerActive(pos));
         const hasOfficerMatch = matchingOfficers.some((pos) =>
           pos.role.replace(/_/g, ' ').toLowerCase() === normalizedFilter
         );
@@ -212,7 +236,7 @@ export function CompanyRelationships({
 
       // If showCeased is false, filter out companies with only ceased positions
       if (!showCeased) {
-        const hasCurrentOfficer = rel.officerPositions.some(pos => pos.isCurrent);
+        const hasCurrentOfficer = rel.officerPositions.some((pos) => isOfficerActive(pos));
         const hasCurrentShareholder = rel.shareholdings.some(sh => sh.isCurrent);
         const hasGeneralRel = rel.generalRelationship;
 
@@ -223,6 +247,14 @@ export function CompanyRelationships({
       return true;
     });
   }, [consolidatedRelationships, companyNameFilter, positionFilter, showCeased]);
+
+  const isActiveRelationship = (rel: ConsolidatedRelationship) =>
+    rel.officerPositions.some((pos) => isOfficerActive(pos)) ||
+    rel.shareholdings.some((sh) => sh.isCurrent) ||
+    !!rel.generalRelationship;
+
+  const activeRelationshipCount = consolidatedRelationships.filter(isActiveRelationship).length;
+  const pastRelationshipCount = consolidatedRelationships.length - activeRelationshipCount;
 
   const hasActiveFilters = companyNameFilter || positionFilter || showCeased;
 
@@ -291,6 +323,9 @@ export function CompanyRelationships({
             <span className="text-xs text-text-muted">
               ({filteredRelationships.length}
               {hasActiveFilters && ` of ${consolidatedRelationships.length}`})
+            </span>
+            <span className="text-xs text-text-tertiary">
+              {activeRelationshipCount} active; {pastRelationshipCount} past
             </span>
             {hiddenCompanyCount !== undefined && hiddenCompanyCount > 0 && (
               <span className="text-xs text-status-warning" title="Some company relationships are hidden due to your access permissions">
@@ -392,7 +427,7 @@ export function CompanyRelationships({
         {filteredRelationships.map((rel) => {
           const isExpanded = expandedCompanies.has(rel.companyId);
           const hasDetailInfo = hasDetails(rel);
-          const currentOfficerPositions = rel.officerPositions.filter((p) => p.isCurrent);
+          const currentOfficerPositions = rel.officerPositions.filter((p) => isOfficerActive(p));
           const currentShareholdings = rel.shareholdings.filter((s) => s.isCurrent);
 
           return (
@@ -515,7 +550,7 @@ export function CompanyRelationships({
                               )}
                             </div>
                             <div className="flex items-center gap-2">
-                              {pos.isCurrent ? (
+                              {isOfficerActive(pos) ? (
                                 <span className="badge badge-success text-2xs">Active</span>
                               ) : (
                                 <span className="badge badge-neutral text-2xs">Ceased</span>

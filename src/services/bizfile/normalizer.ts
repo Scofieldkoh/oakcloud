@@ -7,6 +7,43 @@
 import { normalizeName, normalizeCompanyName, normalizeAddress } from '@/lib/utils';
 import type { ExtractedBizFileData } from './types';
 
+const CURRENCY_NAME_MAP: Record<string, string> = {
+  'SINGAPORE DOLLAR': 'SGD',
+  'SINGAPORE DOLLARS': 'SGD',
+  S: 'SGD',
+};
+
+/**
+ * Normalize currency values to ISO 4217 3-letter codes when possible.
+ * Example: "SINGAPORE DOLLAR" -> "SGD"
+ */
+function normalizeCurrency(value?: string): string | undefined {
+  if (!value) return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  // Handle clean 3-letter ISO codes (case-insensitive)
+  const compact = trimmed.toUpperCase().replace(/[^A-Z]/g, '');
+  if (compact.length === 3) {
+    return compact;
+  }
+
+  // Handle currency names / aliases
+  const normalizedName = trimmed.toUpperCase().replace(/[^A-Z]+/g, ' ').trim();
+  const codeToken = normalizedName.match(/\b[A-Z]{3}\b/)?.[0];
+  if (codeToken) {
+    return codeToken;
+  }
+
+  if (CURRENCY_NAME_MAP[normalizedName]) {
+    return CURRENCY_NAME_MAP[normalizedName];
+  }
+
+  // Preserve unknown values (uppercase) to avoid silent data loss
+  return trimmed.toUpperCase();
+}
+
 /**
  * Build full address string from address components
  */
@@ -43,6 +80,37 @@ export function buildFullAddress(addr: {
  */
 export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBizFileData {
   const normalized = { ...data };
+
+  // Normalize currency values
+  normalized.homeCurrency = normalizeCurrency(normalized.homeCurrency);
+
+  if (normalized.paidUpCapital) {
+    normalized.paidUpCapital = {
+      ...normalized.paidUpCapital,
+      currency: normalizeCurrency(normalized.paidUpCapital.currency) || 'SGD',
+    };
+  }
+
+  if (normalized.issuedCapital) {
+    normalized.issuedCapital = {
+      ...normalized.issuedCapital,
+      currency: normalizeCurrency(normalized.issuedCapital.currency) || 'SGD',
+    };
+  }
+
+  if (normalized.shareCapital) {
+    normalized.shareCapital = normalized.shareCapital.map((capital) => ({
+      ...capital,
+      currency: normalizeCurrency(capital.currency) || 'SGD',
+    }));
+  }
+
+  if (normalized.treasuryShares) {
+    normalized.treasuryShares = {
+      ...normalized.treasuryShares,
+      currency: normalizeCurrency(normalized.treasuryShares.currency),
+    };
+  }
 
   // Normalize entity details
   if (normalized.entityDetails) {
@@ -118,6 +186,7 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
       nationality: shareholder.nationality ? normalizeCompanyName(shareholder.nationality) : undefined,
       placeOfOrigin: shareholder.placeOfOrigin ? normalizeCompanyName(shareholder.placeOfOrigin) : undefined,
       address: shareholder.address ? normalizeAddress(shareholder.address) : undefined,
+      currency: normalizeCurrency(shareholder.currency),
     }));
   }
 
@@ -136,6 +205,7 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
       ...charge,
       chargeHolderName: normalizeCompanyName(charge.chargeHolderName) || charge.chargeHolderName,
       description: charge.description ? normalizeCompanyName(charge.description) : undefined,
+      currency: normalizeCurrency(charge.currency),
     }));
   }
 

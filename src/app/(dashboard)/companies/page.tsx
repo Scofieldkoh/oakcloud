@@ -581,6 +581,7 @@ export default function CompaniesPage() {
   useKeyboardShortcuts([
     {
       key: 'r',
+      ctrl: true,
       handler: handleRefresh,
       description: 'Refresh companies',
     },
@@ -618,11 +619,11 @@ export default function CompaniesPage() {
             onClick={handleRefresh}
             className="btn-secondary btn-sm flex items-center gap-2"
             aria-label="Refresh companies"
-            title="Refresh list (R)"
+            title="Refresh list (Ctrl+R)"
             disabled={isRefreshing}
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
             <span className="sm:hidden">Refresh</span>
           </button>
           {can.createDocument && (

@@ -3197,3 +3197,2235 @@ This file contains debug logs for AI extraction calls when `AI_DEBUG=true`.
 
 ---
 
+## AI Request - 2026-02-05T07:52:36.487Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 35308ms |
+| Input Tokens | 4249 |
+| Output Tokens | 1157 |
+| Total Tokens | 7543 |
+| Estimated Cost | $0.0066 |
+
+<details>
+<summary>Response (2959 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202527032W",
+    "name": "MYLIFESTYLE SANITARY PTE. LTD.",
+    "incorporationDate": "2025-06-23",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-06-23"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "47529",
+      "description": "RETAIL SALE OF HARDWARE, PAINT AND GLASS N.E.C. (E.G. WOOD, GLASS, SANITARY WARE, DO-IT-YOURSELF MATERIALS)"
+    }
+  },
+  "registeredAddress": {
+    "block": "1",
+    "streetName": "THOMSON ROAD",
+    "level": "04",
+    "unit": "348G",
+    "buildingName": "BALESTIER HILL SHOPPING CENTRE",
+    "postalCode": "300001",
+    "effectiveFrom": "2025-06-23"
+  },
+  "paidUpCapital": {
+    "amount": 100000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 100000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SINGAPORE DOLLAR",
+      "numberOfShares": 100000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "TAN MEI JUN, DAPHNE (CHEN MEIJUN, DAPHNE)",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8413024I",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "1 THOMSON ROAD, #04-348G, BALESTIER HILL SHOPPING CENTRE, SINGAPORE 300001",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 51000,
+      "currency": "SINGAPORE DOLLAR"
+    },
+    {
+      "name": "TAN TIAN HOCK (CHEN TIANFU)",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7416573G",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "965 UPPER CHANGI ROAD NORTH, #01-33, SINGAPORE 507665",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 49000,
+      "currency": "SINGAPORE DOLLAR"
+    }
+  ],
+  "officers": [
+    {
+      "name": "TAN MEI JUN, DAPHNE (CHEN MEIJUN, DAPHNE)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8413024I",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "1 THOMSON ROAD, #04-348G, BALESTIER HILL SHOPPING CENTRE, SINGAPORE 300001",
+      "appointmentDate": "2025-06-23"
+    },
+    {
+      "name": "TAN TIAN HOCK (CHEN TIANFU)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7416573G",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "965 UPPER CHANGI ROAD NORTH, #01-33, SINGAPORE 507665",
+      "appointmentDate": "2025-06-23"
+    },
+    {
+      "name": "TAN TIAN HOCK (CHEN TIANFU)",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7416573G",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "965 UPPER CHANGI ROAD NORTH, #01-33, SINGAPORE 507665",
+      "appointmentDate": "2025-06-23"
+    }
+  ],
+  "homeCurrency": "SINGAPORE DOLLAR",
+  "documentMetadata": {
+    "receiptNo": "FREE",
+    "receiptDate": "2025-06-23"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-05T08:12:15.309Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 77034ms |
+| Input Tokens | 8603 |
+| Output Tokens | 2438 |
+| Total Tokens | 15889 |
+| Estimated Cost | $0.0135 |
+
+<details>
+<summary>Response (6400 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "TREASURY",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "BANK_STATEMENT",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "OCBC Bank",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "MYLIFESTYLE SANITARY PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "604719641001",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2026-01-31",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": null,
+  "taxAmount": null,
+  "totalAmount": {
+    "value": "47702.14",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": "CHARGES 0000001053118117 Txn Charges Billing Billing Statement",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-10.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "6200"
+    },
+    {
+      "lineNo": 2,
+      "description": "FAST TRANSFER RENT MYLIFESTYLE SA RENT NOV DEC 25",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-8353.76",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "6700"
+    },
+    {
+      "lineNo": 3,
+      "description": "PAYMENT/TRANSFER OTHR S$ LIM KHEN YANG ERBER PayNow: QSMYLIFESTYLE SANITA",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "3968.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4100"
+    },
+    {
+      "lineNo": 4,
+      "description": "FAST PAYMENT COMM S$ LOK FOONG K ID FEE SA 129060",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-100.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "7250"
+    },
+    {
+      "lineNo": 5,
+      "description": "BILL PAYMENT CMS SGBP260112737951 SINGTEL",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-61.82",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "6900"
+    },
+    {
+      "lineNo": 6,
+      "description": "BILL PAYMENT CMS SGBP260112737952 SINGTEL",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-37.06",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "6900"
+    },
+    {
+      "lineNo": 7,
+      "description": "BILL PAYMENT CMS SGBP260112737953 SINGTEL",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-37.06",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "6900"
+    },
+    {
+      "lineNo": 8,
+      "description": "FAST PAYMENT OTHR S$ YOU TECHNOL TT YOUTRIP BUSIN",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-14500.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "5210"
+    },
+    {
+      "lineNo": 9,
+      "description": "FAST PAYMENT IVPT S$ CHAN SA 5167 PayNow: window works 3978",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-150.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "6800"
+    },
+    {
+      "lineNo": 10,
+      "description": "PAYMENT/TRANSFER OTHR S$ ZHANG YUXUAN PayNow: QSMYLIFESTYLE SANITA",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "900.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4100"
+    },
+    {
+      "lineNo": 11,
+      "description": "PAYMENT/TRANSFER IVPT 20TWENTYFIVE PTE. MLS-S-2602",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "534.10",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4100"
+    },
+    {
+      "lineNo": 12,
+      "description": "PAYMENT/TRANSFER OTHR S$ LAI SHIH KAE PayNow: QSMYLIFESTYLE SANITA",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "1013.70",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4100"
+    },
+    {
+      "lineNo": 13,
+      "description": "FAST TRANSFER REFU S$ MYLIFESTYLE REFUND PayNow: refund mls-s-r260 and com",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-104.50",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4130"
+    },
+    {
+      "lineNo": 14,
+      "description": "FAST PAYMENT IVPT TAN MEI JUN DA CLAIMS META ADS claims dec2025",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-2194.49",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "6100"
+    },
+    {
+      "lineNo": 15,
+      "description": "FAST PAYMENT BEXP TAN MEI JUN DA CLAIMS MATERIAL claims for material",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "-119.46",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "5200"
+    },
+    {
+      "lineNo": 16,
+      "description": "PAYMENT/TRANSFER OTHR S$ ZHANG YUXUAN PayNow: QSMYLIFESTYLE SANITA",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "909.40",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4100"
+    },
+    {
+      "lineNo": 17,
+      "description": "PAYMENT/TRANSFER OTHR S$ TAN MEI JUN DAPHNE PayNow: QSMYLIFESTYLE SANITA",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "700.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4100"
+    },
+    {
+      "lineNo": 18,
+      "description": "PAYMENT/TRANSFER OTHR S$ TAN MEI JUN DAPHNE PayNow: QSMYLIFESTYLE SANITA",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "600.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4100"
+    },
+    {
+      "lineNo": 19,
+      "description": "PAYMENT/TRANSFER OTHR S$ ANG CHWEE LI JASMIN PayNow: QSMYLIFESTYLE SANITA",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "2800.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4100"
+    },
+    {
+      "lineNo": 20,
+      "description": "PAYMENT/TRANSFER OTHR S$ LEE TUCK KEONG PayNow: QSMYLIFESTYLE SANITA",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "500.00",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4100"
+    },
+    {
+      "lineNo": 21,
+      "description": "INTEREST CREDIT",
+      "quantity": null,
+      "unitPrice": null,
+      "amount": "0.09",
+      "gstAmount": null,
+      "taxCode": "NA",
+      "accountCode": "4300"
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-05T08:13:32.358Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | TREASURY | 0.99 |
+| Vendor | OCBC Bank | 0.99 |
+| Total Amount | 47702.14 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6200 | 0.80 | CHARGES 0000001053118117 Txn Charges Billing Bi... |
+| 2 | 6700 | 0.80 | FAST TRANSFER RENT MYLIFESTYLE SA RENT NOV DEC 25 |
+| 3 | 4100 | 0.80 | PAYMENT/TRANSFER OTHR S$ LIM KHEN YANG ERBER Pa... |
+| 4 | 7250 | 0.80 | FAST PAYMENT COMM S$ LOK FOONG K ID FEE SA 129060 |
+| 5 | 6900 | 0.80 | BILL PAYMENT CMS SGBP260112737951 SINGTEL |
+| 6 | 6900 | 0.80 | BILL PAYMENT CMS SGBP260112737952 SINGTEL |
+| 7 | 6900 | 0.80 | BILL PAYMENT CMS SGBP260112737953 SINGTEL |
+| 8 | 5210 | 0.80 | FAST PAYMENT OTHR S$ YOU TECHNOL TT YOUTRIP BUSIN |
+| 9 | 6800 | 0.80 | FAST PAYMENT IVPT S$ CHAN SA 5167 PayNow: windo... |
+| 10 | 4100 | 0.80 | PAYMENT/TRANSFER OTHR S$ ZHANG YUXUAN PayNow: Q... |
+| 11 | 4100 | 0.80 | PAYMENT/TRANSFER IVPT 20TWENTYFIVE PTE. MLS-S-2602 |
+| 12 | 4100 | 0.80 | PAYMENT/TRANSFER OTHR S$ LAI SHIH KAE PayNow: Q... |
+| 13 | 4130 | 0.80 | FAST TRANSFER REFU S$ MYLIFESTYLE REFUND PayNow... |
+| 14 | 6100 | 0.80 | FAST PAYMENT IVPT TAN MEI JUN DA CLAIMS META AD... |
+| 15 | 5200 | 0.80 | FAST PAYMENT BEXP TAN MEI JUN DA CLAIMS MATERIA... |
+| 16 | 4100 | 0.80 | PAYMENT/TRANSFER OTHR S$ ZHANG YUXUAN PayNow: Q... |
+| 17 | 4100 | 0.80 | PAYMENT/TRANSFER OTHR S$ TAN MEI JUN DAPHNE Pay... |
+| 18 | 4100 | 0.80 | PAYMENT/TRANSFER OTHR S$ TAN MEI JUN DAPHNE Pay... |
+| 19 | 4100 | 0.80 | PAYMENT/TRANSFER OTHR S$ ANG CHWEE LI JASMIN Pa... |
+| 20 | 4100 | 0.80 | PAYMENT/TRANSFER OTHR S$ LEE TUCK KEONG PayNow:... |
+| 21 | 4300 | 0.80 | INTEREST CREDIT |
+
+---
+
+## AI Request - 2026-02-05T08:14:34.176Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 46089ms |
+| Input Tokens | 7013 |
+| Output Tokens | 632 |
+| Total Tokens | 11026 |
+| Estimated Cost | $0.0083 |
+
+<details>
+<summary>Response (1547 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "SALES_ORDER",
+    "confidence": 0.9
+  },
+  "vendorName": {
+    "value": "Mylifestyle Sanitary Pte Ltd",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "Mr lee",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "MLS-S-2606",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2026-01-30",
+    "confidence": 0.95
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "880.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "79.20",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "959.20",
+    "confidence": 0.95
+  },
+  "supplierGstNo": {
+    "value": "202527032W",
+    "confidence": 0.85
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Zerco 81JG White",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "880.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "880.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "79.20",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4110",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-05T08:15:20.275Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.95 |
+| Vendor | Mylifestyle Sanitary Pte Ltd | 0.95 |
+| Total Amount | 959.20 SGD | 0.95 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4110 | 0.80 | Zerco 81JG White |
+
+---
+
+## AI Request - 2026-02-05T08:14:34.936Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 60306ms |
+| Input Tokens | 6989 |
+| Output Tokens | 1127 |
+| Total Tokens | 12622 |
+| Estimated Cost | $0.0092 |
+
+<details>
+<summary>Response (2870 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "SALES_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "Mylifestyle Sanitary Pte Ltd",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "20Twentyfive Pte Ltd",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "MLS-S-2602",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2026-01-16",
+    "confidence": 0.95
+  },
+  "dueDate": {
+    "value": "2026-02-04",
+    "confidence": 0.85
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "1130.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "101.70",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "1231.70",
+    "confidence": 0.95
+  },
+  "supplierGstNo": {
+    "value": "202527032W",
+    "confidence": 0.9
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "HV3-81JG White",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "880.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "880.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "79.20",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4110",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Hacking of ventaltion hole",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "100.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "100.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "9.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Install electrical switch and wire",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "150.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "150.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "13.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-05T08:15:35.252Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.95 |
+| Vendor | Mylifestyle Sanitary Pte Ltd | 0.95 |
+| Total Amount | 1231.70 SGD | 0.95 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4110 | 0.80 | HV3-81JG White |
+| 2 | 4200 | 0.80 | Hacking of ventaltion hole |
+| 3 | 4200 | 0.80 | Install electrical switch and wire |
+
+---
+
+## AI Request - 2026-02-05T08:14:33.459Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 69463ms |
+| Input Tokens | 7013 |
+| Output Tokens | 1582 |
+| Total Tokens | 13634 |
+| Estimated Cost | $0.0102 |
+
+<details>
+<summary>Response (4131 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "SALES_ORDER",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "Mylifestyle Sanitary Pte Ltd",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "Jasmine Ang",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "MLS-S-2605",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-01-29",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "5040.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "453.60",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "5493.60",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202527032W",
+    "confidence": 0.9
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Huezentte 3 - Model: FHD3-C150P_MT - Colour: White",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "2580.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "2580.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "232.20",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4110",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Huezentte Palette - Model: FHD2-C150P_Palette - Colour: White",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "2380.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "2380.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "214.20",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4110",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Discount for 2 set and above",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "-200.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "-200.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "-18.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4120",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "Discount for Wells customer",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "-100.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "-100.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "-9.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4120",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 5,
+      "description": {
+        "value": "Additional 2 Year Warranty",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "2",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "190.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "380.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "34.20",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-05T08:15:42.932Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.99 |
+| Vendor | Mylifestyle Sanitary Pte Ltd | 0.99 |
+| Total Amount | 5493.60 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4110 | 0.90 | Huezentte 3 - Model: FHD3-C150P_MT - Colour: White |
+| 2 | 4110 | 0.90 | Huezentte Palette - Model: FHD2-C150P_Palette -... |
+| 3 | 4120 | 0.90 | Discount for 2 set and above |
+| 4 | 4120 | 0.90 | Discount for Wells customer |
+| 5 | 4200 | 0.80 | Additional 2 Year Warranty |
+
+---
+
+## AI Request - 2026-02-05T08:24:00.898Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 64637ms |
+| Input Tokens | 7009 |
+| Output Tokens | 650 |
+| Total Tokens | 12623 |
+| Estimated Cost | $0.0083 |
+
+<details>
+<summary>Response (1563 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "SALES_ORDER",
+    "confidence": 0.9
+  },
+  "vendorName": {
+    "value": "Mylifestyle Sanitary Pte Ltd",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "Mr lee",
+    "confidence": 0.9
+  },
+  "documentNumber": {
+    "value": "MLS-S-2606",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2026-01-30",
+    "confidence": 0.95
+  },
+  "dueDate": {
+    "value": "2026-02-05",
+    "confidence": 0.8
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "880.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "79.20",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "959.20",
+    "confidence": 0.95
+  },
+  "supplierGstNo": {
+    "value": "202527032W",
+    "confidence": 0.7
+  },
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Zerco 81JG - White",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "880.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "880.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "79.20",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4110",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-05T08:25:05.550Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.95 |
+| Vendor | Mylifestyle Sanitary Pte Ltd | 0.95 |
+| Total Amount | 959.20 SGD | 0.95 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4110 | 0.80 | Zerco 81JG - White |
+
+---
+
+## AI Request - 2026-02-05T08:24:11.262Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 56440ms |
+| Input Tokens | 7009 |
+| Output Tokens | 1577 |
+| Total Tokens | 12410 |
+| Estimated Cost | $0.0102 |
+
+<details>
+<summary>Response (4104 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "SALES_ORDER",
+    "confidence": 0.9
+  },
+  "vendorName": {
+    "value": "Mylifestyle Sanitary Pte Ltd",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "Jasmine Ang",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "MLS-S-2605",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2026-01-29",
+    "confidence": 0.95
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "5040.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "453.60",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "5493.60",
+    "confidence": 0.95
+  },
+  "supplierGstNo": {
+    "value": "202527032W",
+    "confidence": 0.95
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Huezentte 3 - FHD3-C150P_MT (White)",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "2580.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "2580.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "232.20",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4110",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Huezentte Palette - FHD2-C150P_Palette (White)",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "2380.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "2380.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "214.20",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4110",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Discount for 2 set and above",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "2",
+        "confidence": 0.85
+      },
+      "unitPrice": {
+        "value": "-100.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "-200.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "-18.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4120",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "Discount for Wells customer",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.85
+      },
+      "unitPrice": {
+        "value": "-100.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "-100.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "-9.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4120",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 5,
+      "description": {
+        "value": "Additional 2 Year Warranty",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "2",
+        "confidence": 0.85
+      },
+      "unitPrice": {
+        "value": "190.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "380.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "34.20",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-05T08:25:07.712Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.95 |
+| Vendor | Mylifestyle Sanitary Pte Ltd | 0.95 |
+| Total Amount | 5493.60 SGD | 0.95 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4110 | 0.90 | Huezentte 3 - FHD3-C150P_MT (White) |
+| 2 | 4110 | 0.90 | Huezentte Palette - FHD2-C150P_Palette (White) |
+| 3 | 4120 | 0.90 | Discount for 2 set and above |
+| 4 | 4120 | 0.90 | Discount for Wells customer |
+| 5 | 4200 | 0.80 | Additional 2 Year Warranty |
+
+---
+
+## AI Request - 2026-02-05T08:24:10.537Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 68039ms |
+| Input Tokens | 6985 |
+| Output Tokens | 1127 |
+| Total Tokens | 13406 |
+| Estimated Cost | $0.0092 |
+
+<details>
+<summary>Response (2870 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "SALES_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "Mylifestyle Sanitary Pte Ltd",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "20Twentyfive Pte Ltd",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "MLS-S-2602",
+    "confidence": 0.9
+  },
+  "documentDate": {
+    "value": "2026-01-16",
+    "confidence": 0.95
+  },
+  "dueDate": {
+    "value": "2026-02-04",
+    "confidence": 0.85
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "1130.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "101.70",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "1231.70",
+    "confidence": 0.95
+  },
+  "supplierGstNo": {
+    "value": "202527032W",
+    "confidence": 0.85
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "HV3-81JG White",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "880.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "880.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "79.20",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4110",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Hacking of ventaltion hole",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "100.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "100.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "9.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Install electrical switch and wire",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "150.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "150.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "13.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-05T08:25:18.589Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.95 |
+| Vendor | Mylifestyle Sanitary Pte Ltd | 0.95 |
+| Total Amount | 1231.70 SGD | 0.95 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4110 | 0.80 | HV3-81JG White |
+| 2 | 4200 | 0.80 | Hacking of ventaltion hole |
+| 3 | 4200 | 0.80 | Install electrical switch and wire |
+
+---
+
+## AI Request - 2026-02-05T08:35:33.815Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 81354ms |
+| Input Tokens | 8609 |
+| Output Tokens | 754 |
+| Total Tokens | 15932 |
+| Estimated Cost | $0.0101 |
+
+<details>
+<summary>Response (1922 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "TREASURY",
+    "confidence": 1
+  },
+  "documentSubCategory": {
+    "value": "BANK_STATEMENT",
+    "confidence": 1
+  },
+  "vendorName": {
+    "value": "OCBC Bank",
+    "confidence": 1
+  },
+  "customerName": {
+    "value": "MYLIFESTYLE SANITARY PTE. LTD.",
+    "confidence": 1
+  },
+  "documentNumber": {
+    "value": "604719641001",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2026-01-31",
+    "confidence": 1
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 1
+  },
+  "subtotal": {
+    "value": "37593.44",
+    "confidence": 0.6
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 1
+  },
+  "totalAmount": {
+    "value": "47702.14",
+    "confidence": 0.9
+  },
+  "supplierGstNo": {
+    "value": "193200032W",
+    "confidence": 0.9
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Total Withdrawals",
+        "confidence": 1
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 1
+      },
+      "unitPrice": {
+        "value": "25668.15",
+        "confidence": 1
+      },
+      "amount": {
+        "value": "25668.15",
+        "confidence": 1
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 1
+      },
+      "accountCode": null
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Total Deposits",
+        "confidence": 1
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 1
+      },
+      "unitPrice": {
+        "value": "11925.29",
+        "confidence": 1
+      },
+      "amount": {
+        "value": "11925.29",
+        "confidence": 1
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 1
+      },
+      "accountCode": null
+    }
+  ],
+  "overallConfidence": 0.9
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-05T08:36:55.186Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | TREASURY | 1.00 |
+| Vendor | OCBC Bank | 1.00 |
+| Total Amount | 47702.14 SGD | 0.90 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | ❌ NOT ASSIGNED | - | Total Withdrawals |
+| 2 | ❌ NOT ASSIGNED | - | Total Deposits |
+
+---
+
+## AI Request - 2026-02-05T08:40:16.908Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 44775ms |
+| Input Tokens | 12325 |
+| Output Tokens | 880 |
+| Total Tokens | 16426 |
+| Estimated Cost | $0.0141 |
+
+<details>
+<summary>Response (2363 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "TREASURY",
+    "confidence": 1
+  },
+  "documentSubCategory": {
+    "value": "BANK_STATEMENT",
+    "confidence": 1
+  },
+  "vendorName": {
+    "value": "OCBC Bank",
+    "confidence": 1
+  },
+  "customerName": {
+    "value": "GD CARWASH PTE. LTD.",
+    "confidence": 1
+  },
+  "documentNumber": {
+    "value": "604716910001",
+    "confidence": 1
+  },
+  "documentDate": {
+    "value": "2026-01-31",
+    "confidence": 1
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 1
+  },
+  "subtotal": {
+    "value": "93023.41",
+    "confidence": 0.9
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.9
+  },
+  "totalAmount": {
+    "value": "93023.41",
+    "confidence": 1
+  },
+  "supplierGstNo": {
+    "value": "193200032W",
+    "confidence": 0.9
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Opening Balance",
+        "confidence": 1
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 1
+      },
+      "unitPrice": {
+        "value": "86670.55",
+        "confidence": 1
+      },
+      "amount": {
+        "value": "86670.55",
+        "confidence": 1
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 1
+      },
+      "accountCode": null
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Total Deposits",
+        "confidence": 1
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 1
+      },
+      "unitPrice": {
+        "value": "34691.93",
+        "confidence": 1
+      },
+      "amount": {
+        "value": "34691.93",
+        "confidence": 1
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 1
+      },
+      "accountCode": null
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Total Withdrawals",
+        "confidence": 1
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 1
+      },
+      "unitPrice": {
+        "value": "-28339.07",
+        "confidence": 1
+      },
+      "amount": {
+        "value": "-28339.07",
+        "confidence": 1
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 1
+      },
+      "accountCode": null
+    }
+  ],
+  "overallConfidence": 1
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-05T08:41:01.699Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | TREASURY | 1.00 |
+| Vendor | OCBC Bank | 1.00 |
+| Total Amount | 93023.41 SGD | 1.00 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | ❌ NOT ASSIGNED | - | Opening Balance |
+| 2 | ❌ NOT ASSIGNED | - | Total Deposits |
+| 3 | ❌ NOT ASSIGNED | - | Total Withdrawals |
+
+---
+
+## AI Request - 2026-02-05T10:07:29.768Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 33881ms |
+| Input Tokens | 4309 |
+| Output Tokens | 833 |
+| Total Tokens | 7665 |
+| Estimated Cost | $0.0060 |
+
+<details>
+<summary>Response (2093 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202449207H",
+    "name": "AFFINITYWORKS PTE. LTD.",
+    "incorporationDate": "2024-12-01",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2024-12-01"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "78300",
+      "description": "MANAGEMENT OF HUMAN RESOURCE FUNCTIONS"
+    }
+  },
+  "registeredAddress": {
+    "block": "135",
+    "streetName": "MIDDLE ROAD",
+    "level": "02",
+    "unit": "27",
+    "buildingName": "BYLANDS BUILDING",
+    "postalCode": "188975",
+    "effectiveFrom": "2024-12-01"
+  },
+  "paidUpCapital": {
+    "amount": 5000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 5000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 5000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "TEO HWI WOON",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8426458Z",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "25C SURIN AVENUE CHARLTON 27 SINGAPORE (533968)",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 5000,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "TEO HWI WOON",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8426458Z",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "25C SURIN AVENUE CHARLTON 27 SINGAPORE (533968)",
+      "appointmentDate": "2024-12-01"
+    },
+    {
+      "name": "LOH ZHI XIANG",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8848369C",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "135 MIDDLE ROAD #02-27 BYLANDS BUILDING SINGAPORE (188975)",
+      "appointmentDate": "2024-12-01"
+    }
+  ],
+  "compliance": {
+    "lastAgmDate": null,
+    "lastArFiledDate": null,
+    "fyeAsAtLastAr": null
+  },
+  "documentMetadata": {
+    "receiptNo": "ACRA241201007117",
+    "receiptDate": "2024-12-01"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-05T10:07:36.974Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 54101ms |
+| Input Tokens | 4309 |
+| Output Tokens | 1237 |
+| Total Tokens | 9620 |
+| Estimated Cost | $0.0068 |
+
+<details>
+<summary>Response (3088 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "201927349Z",
+    "name": "CLICKSHARE MEDIA VENTURES PTE. LTD.",
+    "dateOfNameChange": null,
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2019-08-21",
+    "incorporationDate": "2019-08-21"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "47711",
+      "description": "RETAIL SALE OF CLOTHING FOR ADULTS"
+    },
+    "secondary": {
+      "code": "70201",
+      "description": "MANAGEMENT CONSULTANCY SERVICES"
+    }
+  },
+  "registeredAddress": {
+    "block": "8",
+    "streetName": "ALEXANDRA VIEW",
+    "level": "22",
+    "unit": "07",
+    "buildingName": "THE METROPOLITAN CONDOMINIUM",
+    "postalCode": "158747",
+    "effectiveFrom": "2024-11-01"
+  },
+  "paidUpCapital": {
+    "amount": 100,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 100,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 100,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "KIM DO WAN",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S9287158D",
+      "nationality": "AMERICAN",
+      "address": "8 ALEXANDRA VIEW, #22-07, THE METROPOLITAN CONDOMINIUM, SINGAPORE 158747",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 50,
+      "currency": "SGD"
+    },
+    {
+      "name": "TAN SU-YU, MICHELLE (CHEN SUYU)",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8623295B",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "8 ALEXANDRA VIEW, #22-07, THE METROPOLITAN CONDOMINIUM, SINGAPORE 158747",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 50,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "ISHWINDER SINGH",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7655906F",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "121 TANJONG RHU ROAD, #18-35, TANJONG RIA CONDOMINIUM, SINGAPORE 436914",
+      "appointmentDate": "2022-11-15"
+    },
+    {
+      "name": "SABA KHAN",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7686336I",
+      "nationality": "INDIAN",
+      "address": "8 MARINA VIEW, #43-068, ASIA SQUARE TOWER 1, SINGAPORE 018960",
+      "appointmentDate": "2022-11-15"
+    },
+    {
+      "name": "TAN SU-YU, MICHELLE (CHEN SUYU)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8623295B",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "8 ALEXANDRA VIEW, #22-07, THE METROPOLITAN CONDOMINIUM, SINGAPORE 158747",
+      "appointmentDate": "2019-08-21"
+    }
+  ],
+  "financialYear": {
+    "endDay": 31,
+    "endMonth": 12
+  },
+  "compliance": {
+    "lastAgmDate": "2025-05-30",
+    "lastArFiledDate": "2025-05-30",
+    "fyeAsAtLastAr": "2024-12-31"
+  },
+  "documentMetadata": {
+    "receiptNo": "ACRA251017002587",
+    "receiptDate": "2025-10-17"
+  }
+}
+```
+</details>
+
+---
+

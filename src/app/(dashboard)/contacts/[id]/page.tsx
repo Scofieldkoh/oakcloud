@@ -300,12 +300,14 @@ export default function ContactDetailPage({
 
   useKeyboardShortcuts([
     {
-      key: 'Escape',
+      key: 'Backspace',
+      ctrl: true,
       handler: () => router.push('/contacts'),
       description: 'Back to contacts',
     },
     {
       key: 'r',
+      ctrl: true,
       handler: handleRefresh,
       description: 'Refresh contact',
     },
@@ -316,6 +318,7 @@ export default function ContactDetailPage({
     }] : []),
     ...(can.updateContact ? [{
       key: 'e',
+      ctrl: true,
       handler: () => router.push(`/contacts/${id}/edit`),
       description: 'Edit contact',
     }] : []),
@@ -405,23 +408,23 @@ export default function ContactDetailPage({
           <button
             onClick={handleRefresh}
             className="btn-secondary btn-sm flex items-center gap-2"
-            title="Refresh (R)"
+            title="Refresh (Ctrl+R)"
             disabled={isFetching}
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
             <span className="sm:hidden">Refresh</span>
           </button>
           {can.updateContact && (
             <Link
               href={`/contacts/${id}/edit`}
               className="btn-secondary btn-sm flex items-center gap-2"
-              title="Edit (E)"
+              title="Edit (Ctrl+E)"
             >
-              <Pencil className="w-4 h-4" />
-              <span className="hidden sm:inline">Edit (E)</span>
-              <span className="sm:hidden">Edit</span>
-            </Link>
+                <Pencil className="w-4 h-4" />
+                <span className="hidden sm:inline">Edit (Ctrl+E)</span>
+                <span className="sm:hidden">Edit</span>
+              </Link>
           )}
           {can.deleteContact && (
             <button

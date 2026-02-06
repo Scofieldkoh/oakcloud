@@ -809,15 +809,15 @@ When buttons have keyboard shortcuts, display them consistently:
 
 ```tsx
 // ✅ Good: Keyboard shortcut in subtle badge
-<Button variant="ghost" rightIcon={<Badge variant="subtle">R</Badge>}>
+<Button variant="ghost" rightIcon={<Badge variant="subtle">Ctrl+R</Badge>}>
   Refresh
 </Button>
 
 // ✅ Good: Keyboard shortcut in parentheses (simpler approach)
-<Button variant="ghost">Refresh (R)</Button>
+<Button variant="ghost">Refresh (Ctrl+R)</Button>
 
 // ❌ Bad: Inconsistent formatting
-<Button variant="ghost">Refresh - R</Button>
+<Button variant="ghost">Refresh - Ctrl+R</Button>
 <Button variant="ghost">Upload [F1]</Button>
 ```
 
@@ -2410,7 +2410,7 @@ Display keyboard shortcuts for frequently used actions:
     onClick={handleRefresh}
   >
     <Icon name="refresh" className="w-4 h-4 mr-2" />
-    Refresh (R)
+    Refresh (Ctrl+R)
   </Button>
 
   <Button
@@ -2488,7 +2488,7 @@ Complete example of a filter bar with multiple controls:
 
     <Button size="sm" variant="ghost" onClick={handleRefresh}>
       <Icon name="refresh" className="w-4 h-4 mr-2" />
-      Refresh (R)
+      Refresh (Ctrl+R)
     </Button>
 
     <Button size="sm" variant="primary" onClick={handleAdd}>
@@ -3335,7 +3335,7 @@ Display keyboard shortcuts in table action buttons:
 <div className="flex items-center gap-2 mb-4">
   <Button size="sm" variant="ghost" onClick={handleRefresh}>
     <Icon name="refresh" className="w-4 h-4 mr-2" />
-    Refresh (R)
+    Refresh (Ctrl+R)
   </Button>
   <Button size="sm" variant="ghost" onClick={handleUpload}>
     <Icon name="upload" className="w-4 h-4 mr-2" />
@@ -3346,7 +3346,7 @@ Display keyboard shortcuts in table action buttons:
 // Implement keyboard listener
 useEffect(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r') {
       e.preventDefault();
       handleRefresh();
     }
@@ -3363,7 +3363,7 @@ useEffect(() => {
 
 **Best Practices:**
 - Show shortcuts in button text: `Action (Key)`
-- Use single letters for common actions (R = Refresh, A = Add)
+- Use Ctrl+letters for common actions (Ctrl+R = Refresh, Ctrl+A = Add)
 - Use function keys (F1, F2, F3) for primary/secondary actions
 - Don't trigger when input fields are focused
 - Document shortcuts in tooltip or help text
@@ -3438,7 +3438,7 @@ This is the **production reference implementation** showcasing all advanced tabl
 - ✅ Click-to-navigate rows with modifier key support
 - ✅ Column visibility toggle
 - ✅ User preference persistence (widths, visibility)
-- ✅ Keyboard shortcuts (Refresh: R, Upload: F1, Approve Next: F2)
+- ✅ Keyboard shortcuts (Refresh: Ctrl+R, Upload: F1, Approve Next: F2)
 - ✅ Pagination with page info
 
 **1. Multi-Row Header Structure** (Lines 1842-2263)

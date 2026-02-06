@@ -25,6 +25,7 @@ interface AddContactDetailModalProps {
   }) => Promise<void>;
   onUpdate?: (detailId: string, data: { value: string; label?: string | null; purposes?: string[]; isPoc?: boolean }) => Promise<void>;
   onDelete?: (detailId: string) => Promise<void>;
+  onUnlinkContact?: () => Promise<void>;
   /** Called after successful submission to reopen the modal for another entry */
   onReopen?: () => void;
   isLoading: boolean;
@@ -59,6 +60,7 @@ export function AddContactDetailModal({
   onSubmit,
   onUpdate,
   onDelete,
+  onUnlinkContact,
   onReopen,
   isLoading,
   targetName,
@@ -101,6 +103,7 @@ export function AddContactDetailModal({
   // Form state for company-level details (for company targetType)
   const [singleForm, setSingleForm] = useState({
     detailType: 'EMAIL' as ContactDetailType,
+    label: '',
     value: '',
     purposes: [] as string[],
   });
@@ -108,6 +111,8 @@ export function AddContactDetailModal({
   // Delete confirmation state
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; type: 'PHONE' | 'EMAIL'; value: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [unlinkConfirmOpen, setUnlinkConfirmOpen] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
 
   // Get existing details for the current scope
   const getExistingForScope = (type: ContactDetailType) => {
@@ -308,6 +313,7 @@ export function AddContactDetailModal({
     setScope('default');
     clearCompanySelection();
     setDeleteConfirm(null);
+    setUnlinkConfirmOpen(false);
     onClose();
   };
 
@@ -336,6 +342,21 @@ export function AddContactDetailModal({
       // Error handled by the mutation hook
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleUnlinkContact = async () => {
+    if (!onUnlinkContact) return;
+
+    try {
+      setIsUnlinking(true);
+      await onUnlinkContact();
+      setUnlinkConfirmOpen(false);
+      handleClose();
+    } catch {
+      // Error handled by mutation hook
+    } finally {
+      setIsUnlinking(false);
     }
   };
 
@@ -537,6 +558,16 @@ export function AddContactDetailModal({
         </ModalBody>
 
         <ModalFooter>
+          {onUnlinkContact && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setUnlinkConfirmOpen(true)}
+              disabled={isLoading || isDeleting || isUnlinking}
+            >
+              Delete Contact
+            </Button>
+          )}
           <Button variant="secondary" size="sm" onClick={handleClose} disabled={isLoading || isDeleting}>
             Cancel
           </Button>
@@ -544,7 +575,7 @@ export function AddContactDetailModal({
             variant="primary"
             size="sm"
             onClick={handleSubmit}
-            disabled={isLoading || isDeleting || !hasChanges || !hasValidCompanySelection}
+            disabled={isLoading || isDeleting || isUnlinking || !hasChanges || !hasValidCompanySelection}
           >
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Save
@@ -563,6 +594,18 @@ export function AddContactDetailModal({
         confirmLabel="Delete"
         isLoading={isDeleting}
       />
+
+      {/* Delete Contact Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={unlinkConfirmOpen}
+        onClose={() => setUnlinkConfirmOpen(false)}
+        onConfirm={handleUnlinkContact}
+        title="Delete Contact"
+        description={`Are you sure you want to delete "${targetName}" from this company? This will remove the link but keep the contact record.`}
+        variant="danger"
+        confirmLabel="Delete"
+        isLoading={isUnlinking}
+      />
     </>
     );
   }
@@ -572,6 +615,7 @@ export function AddContactDetailModal({
   const handleSingleSubmit = async (reopenAfter: boolean = false) => {
     const input: CreateContactDetailInput = {
       detailType: singleForm.detailType,
+      label: singleForm.label.trim() || undefined,
       value: singleForm.value.trim(),
       purposes: singleForm.purposes,
       isPrimary: false,
@@ -579,7 +623,7 @@ export function AddContactDetailModal({
 
     await onSubmit(input);
     // Clear form after submission (parent handles success/error and closes modal)
-    setSingleForm({ detailType: 'EMAIL', value: '', purposes: [] });
+    setSingleForm({ detailType: 'EMAIL', label: '', value: '', purposes: [] });
 
     // For "Add Another", reopen the modal after a brief delay
     if (reopenAfter && onReopen) {
@@ -590,7 +634,7 @@ export function AddContactDetailModal({
   };
 
   const handleSingleClose = () => {
-    setSingleForm({ detailType: 'EMAIL', value: '', purposes: [] });
+    setSingleForm({ detailType: 'EMAIL', label: '', value: '', purposes: [] });
     onClose();
   };
 
@@ -623,6 +667,18 @@ export function AddContactDetailModal({
               <option key={type} value={type}>{cfg.label}</option>
             ))}
           </select>
+        </div>
+
+        {/* Value input */}
+        <div>
+          <label className="label">Label (Optional)</label>
+          <input
+            type="text"
+            value={singleForm.label}
+            onChange={(e) => setSingleForm(prev => ({ ...prev, label: e.target.value }))}
+            className="input input-sm w-full"
+            placeholder="e.g. Main line, Accounts, Billing"
+          />
         </div>
 
         {/* Value input */}

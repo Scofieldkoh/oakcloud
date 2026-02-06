@@ -1053,11 +1053,14 @@ export async function getCompanyFullDetails(
       where: { companyId: id, isCurrent: true },
       orderBy: { addressType: 'asc' },
     }),
-    // Current officers with contact info
+    // Officers with contact info (include ceased for detail page filters)
     prisma.companyOfficer.findMany({
-      where: { companyId: id, isCurrent: true },
-      orderBy: { appointmentDate: 'desc' },
-      take: 50,
+      where: { companyId: id },
+      orderBy: [
+        { isCurrent: 'desc' },
+        { appointmentDate: 'desc' },
+      ],
+      take: 100,
       include: {
         contact: {
           select: {
@@ -1071,11 +1074,14 @@ export async function getCompanyFullDetails(
         },
       },
     }),
-    // Current shareholders with contact info
+    // Shareholders with contact info (include former for detail page filters)
     prisma.companyShareholder.findMany({
-      where: { companyId: id, isCurrent: true },
-      orderBy: { numberOfShares: 'desc' },
-      take: 50,
+      where: { companyId: id },
+      orderBy: [
+        { isCurrent: 'desc' },
+        { numberOfShares: 'desc' },
+      ],
+      take: 100,
       include: {
         contact: {
           select: {
@@ -1517,6 +1523,46 @@ export async function removeOfficer(
   });
 }
 
+/**
+ * Delete an officer record (hard delete)
+ */
+export async function deleteOfficer(
+  officerId: string,
+  companyId: string,
+  tenantId: string,
+  userId: string
+): Promise<void> {
+  // Verify officer exists and belongs to this company in this tenant
+  const officer = await prisma.companyOfficer.findFirst({
+    where: { id: officerId, companyId },
+    include: { company: { select: { id: true, tenantId: true, name: true } } },
+  });
+
+  if (!officer || officer.company.tenantId !== tenantId) {
+    throw new Error('Officer not found');
+  }
+
+  await prisma.companyOfficer.delete({
+    where: { id: officerId },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'DELETE',
+    entityType: 'CompanyOfficer',
+    entityId: officerId,
+    summary: `Deleted officer "${officer.name}" from company "${officer.company.name}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      companyId: officer.company.id,
+      companyName: officer.company.name,
+      officerName: officer.name,
+      role: officer.role,
+    },
+  });
+}
+
 // ============================================================================
 // Shareholder Management
 // ============================================================================
@@ -1800,6 +1846,46 @@ export async function removeShareholder(
     changes: {
       isCurrent: { old: true, new: false },
     },
+    metadata: {
+      companyId: shareholder.company.id,
+      companyName: shareholder.company.name,
+      shareholderName: shareholder.name,
+      numberOfShares: shareholder.numberOfShares,
+    },
+  });
+}
+
+/**
+ * Delete a shareholder record (hard delete)
+ */
+export async function deleteShareholder(
+  shareholderId: string,
+  companyId: string,
+  tenantId: string,
+  userId: string
+): Promise<void> {
+  // Verify shareholder exists and belongs to this company in this tenant
+  const shareholder = await prisma.companyShareholder.findFirst({
+    where: { id: shareholderId, companyId },
+    include: { company: { select: { id: true, tenantId: true, name: true } } },
+  });
+
+  if (!shareholder || shareholder.company.tenantId !== tenantId) {
+    throw new Error('Shareholder not found');
+  }
+
+  await prisma.companyShareholder.delete({
+    where: { id: shareholderId },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'DELETE',
+    entityType: 'CompanyShareholder',
+    entityId: shareholderId,
+    summary: `Deleted shareholder "${shareholder.name}" from company "${shareholder.company.name}"`,
+    changeSource: 'MANUAL',
     metadata: {
       companyId: shareholder.company.id,
       companyName: shareholder.company.name,

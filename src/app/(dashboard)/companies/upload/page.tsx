@@ -403,7 +403,8 @@ export default function UploadBizFilePage() {
 
   useKeyboardShortcuts([
     {
-      key: 'Escape',
+      key: 'Backspace',
+      ctrl: true,
       handler: handleCancel,
       description: 'Cancel and go back',
     },
@@ -473,12 +474,12 @@ export default function UploadBizFilePage() {
   );
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl w-full">
+    <div className={`p-4 sm:p-6 w-full ${(step === 'preview' || step === 'diff-preview') ? 'max-w-none' : 'max-w-7xl'}`}>
       {/* Header */}
       <div className="mb-6">
         <Link
           href={isUpdateMode ? `/companies/${existingCompanyId}` : '/companies'}
-          title={isUpdateMode ? 'Back to Company (Esc)' : 'Back to Companies (Esc)'}
+          title={isUpdateMode ? 'Back to Company (Ctrl+Backspace)' : 'Back to Companies (Ctrl+Backspace)'}
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -596,8 +597,8 @@ export default function UploadBizFilePage() {
           />
 
           <div className="flex items-center justify-end gap-3">
-            <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Esc)">
-              <span className="hidden sm:inline">Cancel (Esc)</span>
+            <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
+              <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
               <span className="sm:hidden">Cancel</span>
             </Link>
             <button
@@ -806,8 +807,8 @@ export default function UploadBizFilePage() {
               Upload Different File
             </button>
             <div className="flex items-center gap-3">
-              <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Esc)">
-                <span className="hidden sm:inline">Cancel (Esc)</span>
+              <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
+                <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
                 <span className="sm:hidden">Cancel</span>
               </Link>
               <button onClick={handleConfirm} className="btn-primary btn-sm flex items-center gap-2" title="Confirm & Save (Ctrl+S)">
@@ -1175,8 +1176,8 @@ export default function UploadBizFilePage() {
               Upload Different File
             </button>
             <div className="flex items-center gap-3">
-              <Link href={`/companies/${companyId}`} className="btn-secondary btn-sm" title="Cancel (Esc)">
-                <span className="hidden sm:inline">Cancel (Esc)</span>
+              <Link href={`/companies/${companyId}`} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
+                <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
                 <span className="sm:hidden">Cancel</span>
               </Link>
               {(() => {

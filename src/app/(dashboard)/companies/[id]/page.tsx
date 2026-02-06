@@ -1,8 +1,9 @@
 'use client';
 
-import { use, useState, Suspense } from 'react';
+import { use, useCallback, useEffect, useState, Suspense } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   AlertCircle,
@@ -17,11 +18,14 @@ import {
 import {
   useCompany,
   useDeleteCompany,
+  useRetrieveFYE,
+  useUpdateCompany,
 } from '@/hooks/use-companies';
 import { useCompanyContactDetails } from '@/hooks/use-contact-details';
 import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate } from '@/lib/utils';
 import { getEntityTypeLabel } from '@/lib/constants';
+import { isCompanyEntityType } from '@/lib/external/acra-fye';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { InternalNotes } from '@/components/notes/internal-notes';
@@ -34,12 +38,17 @@ import {
 } from '@/components/companies/company-detail';
 import { ContractsTab } from '@/components/companies/contracts';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { serviceKeys } from '@/hooks/use-contract-services';
+import { deadlineKeys } from '@/hooks/use-deadlines';
 
 // Inner component that uses useSearchParams (needs Suspense boundary)
 function CompanyDetailContent({ id }: { id: string }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: company, isLoading, error, refetch, isFetching } = useCompany(id);
   const deleteCompany = useDeleteCompany();
+  const retrieveFYEMutation = useRetrieveFYE(id);
+  const updateCompanyMutation = useUpdateCompany();
   const { success, error: toastError } = useToast();
   // Get permissions for this specific company
   const { can } = usePermissions(id);
@@ -89,40 +98,99 @@ function CompanyDetailContent({ id }: { id: string }) {
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback((refreshAllTabs = false) => {
     refetch();
     refetchContactDetails();
+    if (refreshAllTabs || activeTab === 'services') {
+      queryClient.invalidateQueries({ queryKey: serviceKeys.company(id), refetchType: 'all' });
+    }
+    if (refreshAllTabs || activeTab === 'deadlines') {
+      queryClient.invalidateQueries({ queryKey: deadlineKeys.all, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: deadlineKeys.stats(id), refetchType: 'all' });
+    }
+  }, [
+    activeTab,
+    id,
+    queryClient,
+    refetch,
+    refetchContactDetails,
+  ]);
+
+  const searchParams = useSearchParams();
+  const refreshToken = searchParams.get('refresh');
+  const searchParamsString = searchParams.toString();
+
+  useEffect(() => {
+    if (!refreshToken) return;
+
+    handleRefresh(true);
+
+    const params = new URLSearchParams(searchParamsString);
+    params.delete('refresh');
+    const next = params.toString();
+    router.replace(next ? `/companies/${id}?${next}` : `/companies/${id}`);
+  }, [handleRefresh, id, refreshToken, router, searchParamsString]);
+
+  const handleRetrieveFYE = async () => {
+    if (!company || isRetrievingFYE) return;
+
+    try {
+      const result = await retrieveFYEMutation.mutateAsync();
+
+      await updateCompanyMutation.mutateAsync({
+        id,
+        data: {
+          id,
+          financialYearEndDay: result.financialYearEndDay,
+          financialYearEndMonth: result.financialYearEndMonth,
+        },
+      });
+
+      success('Financial Year End retrieved successfully');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to retrieve FYE from ACRA');
+    }
   };
 
   const isRefreshing = isFetching || isContactDetailsFetching;
+  const isRetrievingFYE = retrieveFYEMutation.isPending || updateCompanyMutation.isPending;
+  const hasFinancialYearEnd = !!(company?.financialYearEndMonth && company?.financialYearEndDay);
+  const showRetrieveFYEButton =
+    !!company &&
+    !hasFinancialYearEnd &&
+    can.updateCompany &&
+    isCompanyEntityType(company.entityType);
 
   useKeyboardShortcuts([
     {
-      key: 'Escape',
+      key: 'Backspace',
+      ctrl: true,
       handler: () => router.push('/companies'),
       description: 'Back to companies',
     },
     {
       key: 'r',
+      ctrl: true,
       handler: handleRefresh,
       description: 'Refresh company',
     },
-    ...(can.createCompany ? [{
-      key: 'F1',
-      handler: () => router.push('/companies/new'),
-      description: 'Create company',
-    }] : []),
     ...(can.updateDocument ? [{
       key: 'F2',
       handler: () => router.push(`/companies/upload?companyId=${id}`),
       description: 'Update via BizFile',
     }] : []),
+    ...(showRetrieveFYEButton ? [{
+      key: 'F3',
+      handler: handleRetrieveFYE,
+      description: 'Retrieve FYE',
+    }] : []),
     ...(can.updateCompany ? [{
       key: 'e',
+      ctrl: true,
       handler: () => router.push(`/companies/${id}/edit`),
       description: 'Edit company',
     }] : []),
-  ], !deleteDialogOpen);
+  ], !deleteDialogOpen && !isRetrievingFYE);
 
   if (isLoading) {
     return (
@@ -171,7 +239,6 @@ function CompanyDetailContent({ id }: { id: string }) {
   };
 
   const currentStatus = statusConfig[company.status] || { color: 'badge-neutral', label: company.status };
-
   return (
     <div className="p-4 sm:p-6">
       {/* Header */}
@@ -213,35 +280,35 @@ function CompanyDetailContent({ id }: { id: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          {can.createCompany && (
-            <Link
-              href="/companies/new"
-              className="btn-primary btn-sm flex items-center gap-2"
-              title="Add Company (F1)"
-            >
-              <Building2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Company (F1)</span>
-              <span className="sm:hidden">Add</span>
-            </Link>
-          )}
           <button
             onClick={handleRefresh}
             className="btn-secondary btn-sm flex items-center gap-2"
-            title="Refresh (R)"
+            title="Refresh (Ctrl+R)"
             disabled={isRefreshing}
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
             <span className="sm:hidden">Refresh</span>
           </button>
+          {showRetrieveFYEButton && (
+            <button
+              onClick={handleRetrieveFYE}
+              className="btn-secondary btn-sm flex items-center gap-2"
+              title="Retrieve FYE (F3)"
+              disabled={isRetrievingFYE}
+            >
+              <RefreshCw className={`w-4 h-4 ${isRetrievingFYE ? 'animate-spin' : ''}`} />
+              <span>Retrieve FYE (F3)</span>
+            </button>
+          )}
           {can.updateCompany && (
             <Link
               href={`/companies/${id}/edit`}
               className="btn-primary btn-sm flex items-center gap-2"
-              title="Edit (E)"
+              title="Edit (Ctrl+E)"
             >
               <Pencil className="w-4 h-4" />
-              <span className="hidden sm:inline">Edit (E)</span>
+              <span className="hidden sm:inline">Edit (Ctrl+E)</span>
               <span className="sm:hidden">Edit</span>
             </Link>
           )}
@@ -291,7 +358,7 @@ function CompanyDetailContent({ id }: { id: string }) {
           canEdit={can.updateCompany}
         />
       )}
-      {activeTab === 'contracts' && (
+      {activeTab === 'services' && (
         <ContractsTab
           companyId={id}
           canEdit={can.updateCompany}

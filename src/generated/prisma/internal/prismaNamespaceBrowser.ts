@@ -1510,6 +1510,7 @@ export const ContractServiceScalarFieldEnum = {
   overrideBillable: 'overrideBillable',
   customRate: 'customRate',
   hasCustomDeadlines: 'hasCustomDeadlines',
+  fyeYearOverride: 'fyeYearOverride',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'

@@ -54,6 +54,7 @@ export interface CreateContractServiceInput {
   generateDeadlines?: boolean;
   // NEW: Custom deadline rules
   deadlineRules?: DeadlineRuleInput[] | null;
+  fyeYearOverride?: number | null;
 }
 
 export interface UpdateContractServiceInput {
@@ -71,6 +72,8 @@ export interface UpdateContractServiceInput {
   autoRenewal?: boolean;
   renewalPeriodMonths?: number | null;
   displayOrder?: number;
+  serviceTemplateCode?: string | null;
+  fyeYearOverride?: number | null;
 }
 
 export interface ServiceSearchParams {
@@ -103,6 +106,42 @@ export interface ContractServiceWithRelations extends ContractService {
   };
 }
 
+/**
+ * Build the exclusive threshold for "after cutoff date" comparisons.
+ * Example: cutoff=2026-02-05 -> delete deadlines with due date >= 2026-02-06 00:00.
+ */
+function getAfterDateThreshold(cutoffDate: Date): Date {
+  const threshold = new Date(cutoffDate);
+  threshold.setHours(0, 0, 0, 0);
+  threshold.setDate(threshold.getDate() + 1);
+  return threshold;
+}
+
+async function pruneServiceDeadlinesAfterDate(
+  serviceId: string,
+  companyId: string,
+  cutoffDate: Date,
+  params: Pick<TenantAwareParams, 'tenantId' | 'tx'>
+): Promise<number> {
+  const { tenantId, tx } = params;
+  const db = tx || prisma;
+  const threshold = getAfterDateThreshold(cutoffDate);
+
+  const result = await db.deadline.deleteMany({
+    where: {
+      tenantId,
+      companyId,
+      contractServiceId: serviceId,
+      deletedAt: null,
+      statutoryDueDate: {
+        gte: threshold,
+      },
+    },
+  });
+
+  return result.count;
+}
+
 // ============================================================================
 // CRUD OPERATIONS
 // ============================================================================
@@ -116,6 +155,7 @@ export async function createContractService(
 ): Promise<ContractService & { deadlinesGenerated?: number }> {
   const { tenantId, userId, tx } = params;
   const db = tx || prisma;
+  const fyeYearOverride = data.fyeYearOverride ?? null;
 
   // Validate contract belongs to tenant
   const contract = await db.contract.findFirst({
@@ -146,6 +186,7 @@ export async function createContractService(
       displayOrder: data.displayOrder ?? 0,
       // Store template code for reference
       serviceTemplateCode: data.serviceTemplateCode,
+      fyeYearOverride: data.fyeYearOverride ?? null,
     },
   });
 
@@ -187,7 +228,8 @@ export async function createContractService(
       const result = await generateDeadlinesFromRules(
         service.id,
         contract.companyId,
-        { tenantId, userId, tx: db }
+        { tenantId, userId, tx: db },
+        fyeYearOverride ? { fyeYearOverride } : undefined
       );
       deadlinesGenerated = result.created;
     } catch (error) {
@@ -222,6 +264,15 @@ export async function updateContractService(
     throw new Error('Service not found');
   }
 
+  const nextStatus = data.status ?? existing.status;
+  const nextEndDate = data.endDate !== undefined
+    ? (data.endDate ? new Date(data.endDate) : null)
+    : existing.endDate;
+
+  const wasAlreadyStopped = existing.status === 'CANCELLED' || existing.status === 'COMPLETED';
+  const isNowStopped = nextStatus === 'CANCELLED' || nextStatus === 'COMPLETED';
+  const stoppedNow = !wasAlreadyStopped && isNowStopped;
+
   const service = await db.contractService.update({
     where: { id: data.id },
     data: {
@@ -242,8 +293,18 @@ export async function updateContractService(
       autoRenewal: data.autoRenewal,
       renewalPeriodMonths: data.renewalPeriodMonths !== undefined ? data.renewalPeriodMonths : undefined,
       displayOrder: data.displayOrder,
+      serviceTemplateCode: data.serviceTemplateCode !== undefined ? data.serviceTemplateCode : undefined,
+      fyeYearOverride: data.fyeYearOverride !== undefined ? data.fyeYearOverride : undefined,
     },
   });
+
+  const cutoffDate = nextEndDate ?? (stoppedNow ? new Date() : null);
+  if (cutoffDate) {
+    await pruneServiceDeadlinesAfterDate(service.id, existing.contract.companyId, cutoffDate, {
+      tenantId,
+      tx,
+    });
+  }
 
   // Create audit log
   await createAuditLog({
@@ -284,9 +345,16 @@ export async function deleteContractService(
     throw new Error('Service not found');
   }
 
+  const deletionDate = new Date();
+
   const service = await db.contractService.update({
     where: { id },
-    data: { deletedAt: new Date() },
+    data: { deletedAt: deletionDate },
+  });
+
+  await pruneServiceDeadlinesAfterDate(id, existing.contract.companyId, deletionDate, {
+    tenantId,
+    tx,
   });
 
   // Create audit log

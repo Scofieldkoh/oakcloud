@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Building2, User, Loader2, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus, Building2, User, Loader2, X, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -30,6 +31,57 @@ interface ContactDetailsTabProps {
   canEdit: boolean;
 }
 
+// Common abbreviations that should remain uppercase
+const ABBREVIATIONS = new Set(['CEO', 'CFO', 'COO', 'CTO', 'CIO', 'CMO', 'HR', 'IT', 'VP', 'SVP', 'EVP']);
+
+// Helper to normalize and convert to Title Case while preserving abbreviations
+// Replaces underscores with spaces and converts to title case
+function normalizeRole(str: string): string {
+  // First check if the entire string (trimmed, uppercased) is an abbreviation
+  const upperStr = str.trim().toUpperCase();
+  if (ABBREVIATIONS.has(upperStr)) {
+    return upperStr;
+  }
+
+  return str
+    .replace(/_/g, ' ')  // Replace underscores with spaces
+    .toLowerCase()
+    .replace(/\b\w+/g, (word) => {
+      const upperWord = word.toUpperCase();
+      // Keep abbreviations uppercase
+      if (ABBREVIATIONS.has(upperWord)) {
+        return upperWord;
+      }
+      // Title case for other words
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    });
+}
+
+// Helper to deduplicate and clean up relationships
+// - Normalizes underscores and casing for proper deduplication
+// - Removes generic "Shareholder" if there's a more specific one like "Ordinary Shareholder"
+function cleanRelationships(relationshipStr: string | undefined): string[] {
+  if (!relationshipStr) return [];
+
+  // Split, normalize, and deduplicate
+  const normalizedRoles = relationshipStr
+    .split(', ')
+    .filter(Boolean)
+    .map(normalizeRole);
+
+  // Deduplicate after normalization
+  const uniqueRoles = [...new Set(normalizedRoles)];
+
+  // Check if there's a specific shareholder type (e.g., "Ordinary Shareholder", "Preference Shareholder")
+  const hasSpecificShareholder = uniqueRoles.some(r => r.includes('Shareholder') && r !== 'Shareholder');
+
+  // Filter out generic "Shareholder" if there's a more specific one
+  return uniqueRoles.filter(r => {
+    if (r === 'Shareholder' && hasSpecificShareholder) return false;
+    return true;
+  });
+}
+
 export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDetailsTabProps) {
   const { success } = useToast();
   // Data is prefetched in background by usePrefetchCompanyContactDetails in parent
@@ -49,6 +101,7 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
     id?: string;
     name: string;
     existingDetails?: ContactDetail[];
+    relationship?: string;
   }>({
     type: 'company',
     name: companyName,
@@ -56,6 +109,15 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
 
   // State for add contact modal
   const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const handleCreateNewContact = () => {
+    window.open('/contacts/new', '_blank', 'noopener,noreferrer');
+  };
+
+  // Filter state for linked contacts
+  const [contactNameFilter, setContactNameFilter] = useState('');
+  const [contactRoleFilter, setContactRoleFilter] = useState('');
+  const [showCeasedContacts, setShowCeasedContacts] = useState(false);
+  const [showContactFilters, setShowContactFilters] = useState(false);
 
   // State for editing
   const [editingDetailId, setEditingDetailId] = useState<string | null>(null);
@@ -78,13 +140,6 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
   // State for delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; value: string } | null>(null);
   const [deletingDetailId, setDeletingDetailId] = useState<string | null>(null);
-
-  // State for unlink confirmation
-  const [unlinkConfirm, setUnlinkConfirm] = useState<{
-    contactId: string;
-    contactName: string;
-    relationship: string;
-  } | null>(null);
 
   // State for POC toggle loading
   const [togglingPocContactId, setTogglingPocContactId] = useState<string | null>(null);
@@ -184,17 +239,17 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
     }
   };
 
-  const handleUnlinkContact = async () => {
-    if (!unlinkConfirm) return;
+  const handleUnlinkContactFromModal = async () => {
+    if (!addDetailTarget.id || !addDetailTarget.relationship) return;
 
     try {
       await unlinkContactMutation.mutateAsync({
-        contactId: unlinkConfirm.contactId,
+        contactId: addDetailTarget.id,
         companyId,
-        relationship: unlinkConfirm.relationship,
+        relationship: addDetailTarget.relationship,
       });
       success('Contact unlinked successfully');
-      setUnlinkConfirm(null);
+      setShowAddDetailModal(false);
     } catch {
       // Error handled by mutation
     }
@@ -244,9 +299,53 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
       id: item.contact.id,
       name: item.contact.fullName,
       existingDetails: item.details,
+      relationship: item.contact.relationship || '',
     });
     setShowAddDetailModal(true);
   };
+
+  const contactDetails = data?.contactDetails ?? [];
+  const activeContactCount = contactDetails.filter((contact) => contact.isCurrent).length;
+  const pastContactCount = contactDetails.length - activeContactCount;
+
+  const availableContactRoles = useMemo(() => {
+    const roles = new Set<string>();
+    contactDetails.forEach((item) => {
+      cleanRelationships(item.contact.relationship).forEach((role) => roles.add(role));
+    });
+    return Array.from(roles).sort();
+  }, [contactDetails]);
+
+  const filteredContactDetails = useMemo(() => {
+    return contactDetails.filter((item) => {
+      // Name filter
+      if (contactNameFilter) {
+        const searchTerm = contactNameFilter.toLowerCase();
+        if (!item.contact.fullName.toLowerCase().includes(searchTerm)) return false;
+      }
+
+      // Role filter
+      if (contactRoleFilter) {
+        const roles = cleanRelationships(item.contact.relationship);
+        if (!roles.some((role) => role.toLowerCase() === contactRoleFilter.toLowerCase())) return false;
+      }
+
+      // Show ceased filter
+      if (!showCeasedContacts && !item.isCurrent) return false;
+
+      return true;
+    });
+  }, [contactDetails, contactNameFilter, contactRoleFilter, showCeasedContacts]);
+
+  const hasActiveContactFilters = contactNameFilter || contactRoleFilter || showCeasedContacts;
+  const hasProtectedContactRole = (relationship?: string) =>
+    cleanRelationships(relationship).some(
+      (rel) => rel.toLowerCase().includes('director') || rel.toLowerCase().includes('shareholder')
+    );
+  const canUnlinkContactFromModal = canEdit &&
+    addDetailTarget.type === 'contact' &&
+    !!addDetailTarget.relationship &&
+    !hasProtectedContactRole(addDetailTarget.relationship);
 
   return (
     <>
@@ -357,25 +456,104 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                       <User className="w-4 h-4 text-text-tertiary" />
                       Linked Contacts
                     </h4>
-                    <p className="text-xs text-text-secondary mt-1">
-                      Directors, officers, shareholders, and other contacts linked to this company
-                    </p>
-                  </div>
+                      <p className="text-xs text-text-secondary mt-1">
+                        Directors, officers, shareholders, and other contacts linked to this company
+                      </p>
+                    </div>
                   <div className="flex items-center gap-3">
+                    <span className="text-sm text-text-tertiary">
+                      {activeContactCount} active; {pastContactCount} past
+                    </span>
+                    {contactDetails.length > 0 && (
+                      <button
+                        onClick={() => setShowContactFilters(!showContactFilters)}
+                        className={`btn-ghost btn-xs flex items-center gap-1 ${
+                          hasActiveContactFilters ? 'text-oak-light' : ''
+                        }`}
+                        title="Filter contacts"
+                      >
+                        <Filter className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     {canEdit && (
-                      <Button variant="secondary" size="xs" onClick={() => setShowAddContactModal(true)}>
-                        <Plus className="w-3.5 h-3.5 mr-1" />
-                        Add Contact
-                      </Button>
+                      <>
+                        <Button variant="secondary" size="xs" onClick={() => setShowAddContactModal(true)}>
+                          <Plus className="w-3.5 h-3.5 mr-1" />
+                          Add Contact
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="xs"
+                          onClick={handleCreateNewContact}
+                          title="Create New Contact (opens in new tab)"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" />
+                          Create New Contact
+                        </Button>
+                      </>
                     )}
                     <span className="text-xs text-text-muted bg-surface-tertiary px-2.5 py-1 rounded-full">
-                      {data.contactDetails.length} {data.contactDetails.length === 1 ? 'contact' : 'contacts'}
+                      {contactDetails.length} {contactDetails.length === 1 ? 'contact' : 'contacts'}
                     </span>
                   </div>
                 </div>
+
+                {/* Filter Panel */}
+                {showContactFilters && (
+                  <div className="mt-3 pt-3 border-t border-border-secondary animate-fade-in">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="flex-1 min-w-[120px] max-w-[180px]">
+                        <label className="text-xs text-text-tertiary mb-1 block">Name</label>
+                        <input
+                          type="text"
+                          value={contactNameFilter}
+                          onChange={(e) => setContactNameFilter(e.target.value)}
+                          placeholder="Search..."
+                          className="input input-xs w-full"
+                        />
+                      </div>
+                      <div className="min-w-[120px]">
+                        <label className="text-xs text-text-tertiary mb-1 block">Role</label>
+                        <select
+                          value={contactRoleFilter}
+                          onChange={(e) => setContactRoleFilter(e.target.value)}
+                          className="input input-xs w-full"
+                        >
+                          <option value="">All Roles</option>
+                          {availableContactRoles.map((role) => (
+                            <option key={role} value={role}>{role}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2 h-[26px]">
+                        <Checkbox
+                          id="show-ceased-contacts"
+                          checked={showCeasedContacts}
+                          onChange={(e) => setShowCeasedContacts(e.target.checked)}
+                          size="sm"
+                        />
+                        <label htmlFor="show-ceased-contacts" className="text-xs text-text-secondary cursor-pointer">
+                          Show ceased
+                        </label>
+                      </div>
+                      {hasActiveContactFilters && (
+                        <button
+                          onClick={() => {
+                            setContactNameFilter('');
+                            setContactRoleFilter('');
+                            setShowCeasedContacts(false);
+                          }}
+                          className="btn-ghost btn-xs text-text-muted hover:text-text-primary"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="py-2">
-                {data.contactDetails.length > 0 ? (
+                {contactDetails.length > 0 ? (
                   <>
                     {/* Header row */}
                     <div className="flex items-center gap-4 py-2 px-4 text-xs font-medium text-text-muted border-b border-border-secondary">
@@ -388,18 +566,13 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                     </div>
                     {/* Contact rows */}
                     <div className="divide-y divide-border-secondary">
-                      {data.contactDetails.map((item) => (
+                      {filteredContactDetails.map((item) => (
                         <ContactRow
                           key={item.contact.id}
                           item={item}
                           companyId={companyId}
                           canEdit={canEdit}
                           onAddDetail={() => openAddDetailForContact(item)}
-                          onUnlink={() => setUnlinkConfirm({
-                            contactId: item.contact.id,
-                            contactName: item.contact.fullName,
-                            relationship: item.contact.relationship || '',
-                          })}
                           onTogglePoc={(isPoc) => handleTogglePoc(item.contact.id, isPoc)}
                           isTogglingPoc={togglingPocContactId === item.contact.id}
                         />
@@ -421,6 +594,11 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                     )}
                   </div>
                 )}
+                {contactDetails.length > 0 && filteredContactDetails.length === 0 && (
+                  <div className="p-4 text-center">
+                    <p className="text-text-muted text-sm">No contacts match your filters</p>
+                  </div>
+                )}
               </div>
             </div>
           </>
@@ -434,6 +612,7 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
         onSubmit={handleAddDetail}
         onUpdate={handleUpdateDetailFromModal}
         onDelete={handleDeleteDetailFromModal}
+        onUnlinkContact={canUnlinkContactFromModal ? handleUnlinkContactFromModal : undefined}
         onReopen={openAddDetailForCompany}
         isLoading={createDetailMutation.isPending || updateDetailMutation.isPending}
         targetName={addDetailTarget.name}
@@ -464,17 +643,6 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
         isLoading={deleteDetailMutation.isPending}
       />
 
-      {/* Unlink Contact Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={!!unlinkConfirm}
-        onClose={() => setUnlinkConfirm(null)}
-        onConfirm={handleUnlinkContact}
-        title="Unlink Contact"
-        description={`Are you sure you want to unlink "${unlinkConfirm?.contactName}" from this company? This will remove their relationship as "${unlinkConfirm?.relationship}".`}
-        variant="danger"
-        confirmLabel="Unlink"
-        isLoading={unlinkContactMutation.isPending}
-      />
     </>
   );
 }

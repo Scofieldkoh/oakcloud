@@ -2,27 +2,24 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { Plus, Loader2, FileText, ScrollText, Filter, X } from 'lucide-react';
+import { Loader2, Plus, Filter, X, Pencil, Trash2, Ban, Calendar, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
-import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import {
-  useCompanyContracts,
-  useCreateContract,
-  useUpdateContract,
-  useDeleteContract,
-  contractKeys,
-  type Contract,
-  type CreateContractInput,
-  type UpdateContractInput,
-} from '@/hooks/use-contracts';
-import { serviceKeys } from '@/hooks/use-contract-services';
-import { ContractCard } from './contract-card';
-import { ContractModal } from './contract-modal';
+  useCompanyServices,
+  useDeleteCompanyService,
+  useUpdateCompanyService,
+  type ContractServiceWithRelations,
+} from '@/hooks/use-contract-services';
+import {
+  getServiceStatusColor,
+  getServiceStatusLabel,
+  getServiceTypeLabel,
+  getBillingFrequencyLabel,
+} from '@/lib/constants/contracts';
+import { formatDateShort, formatCurrency } from '@/lib/utils';
 import { ScopeModal } from './scope-modal';
 
 interface ContractsTabProps {
@@ -30,149 +27,82 @@ interface ContractsTabProps {
   canEdit: boolean;
 }
 
+interface ServiceActionTarget {
+  id: string;
+  name: string;
+  endDate: string | null;
+}
+
+function canStopService(service: ContractServiceWithRelations): boolean {
+  return service.status === 'ACTIVE' || service.status === 'PENDING';
+}
+
+function isStoppedService(service: ContractServiceWithRelations): boolean {
+  return service.status === 'CANCELLED' || service.status === 'COMPLETED';
+}
+
 export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { success, error: toastError } = useToast();
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
+  const { error: toastError } = useToast();
 
-  const { data, isLoading, error } = useCompanyContracts(companyId);
+  const { data, isLoading, error } = useCompanyServices(companyId, {
+    limit: 200,
+    sortBy: 'updatedAt',
+    sortOrder: 'desc',
+  });
 
-  // Contract mutations
-  const createContractMutation = useCreateContract(companyId);
-  const deleteContractMutation = useDeleteContract(companyId);
+  const deleteServiceMutation = useDeleteCompanyService(companyId);
+  const [stoppingService, setStoppingService] = useState<ServiceActionTarget | null>(null);
+  const stopServiceMutation = useUpdateCompanyService(companyId, stoppingService?.id ?? '');
 
-  // Track which contract is being edited for the update mutation
-  const [editingContract, setEditingContract] = useState<Contract | null>(null);
-  const updateContractMutation = useUpdateContract(companyId, editingContract?.id ?? '');
-
-  // Track service deletion state
-  const [isDeletingService, setIsDeletingService] = useState(false);
-
-  // Modal states
-  const [showContractModal, setShowContractModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showStopped, setShowStopped] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<ServiceActionTarget | null>(null);
   const [showScopeModal, setShowScopeModal] = useState<{
     serviceName: string;
     scope: string;
   } | null>(null);
 
-  // Delete confirmation
-  const [deleteConfirm, setDeleteConfirm] = useState<{
-    type: 'contract' | 'service';
-    id: string;
-    name: string;
-    contractId?: string;
-  } | null>(null);
+  const allServices = data?.services || [];
+  const services = allServices.filter((service) => (showStopped ? true : !isStoppedService(service)));
+  const stoppedCount = allServices.filter((service) => isStoppedService(service)).length;
+  const activeCount = allServices.filter((service) => !isStoppedService(service)).length;
 
-  // Expanded contracts for accordion
-  const [expandedContracts, setExpandedContracts] = useState<Set<string>>(new Set());
-
-  // Filter state
-  const [showFilters, setShowFilters] = useState(false);
-  const [showTerminated, setShowTerminated] = useState(false);
-
-  const toggleContract = (contractId: string) => {
-    setExpandedContracts((prev) => {
-      const next = new Set(prev);
-      if (next.has(contractId)) {
-        next.delete(contractId);
-      } else {
-        next.add(contractId);
-      }
-      return next;
-    });
+  const handleAddService = () => {
+    router.push(`/companies/${companyId}/services/new`);
   };
 
-  // Contract handlers
-  const handleCreateContract = async (input: CreateContractInput) => {
-    try {
-      const contract = await createContractMutation.mutateAsync(input);
-      setShowContractModal(false);
-      // Auto-expand the newly created contract
-      setExpandedContracts((prev) => new Set([...prev, contract.id]));
-    } catch {
-      // Error handled by mutation
-    }
-  };
-
-  const handleUpdateContract = async (input: UpdateContractInput) => {
-    if (!editingContract) return;
-    try {
-      await updateContractMutation.mutateAsync(input);
-      setEditingContract(null);
-    } catch {
-      // Error handled by mutation
-    }
-  };
-
-  const handleDeleteContract = async (reason?: string) => {
-    if (!deleteConfirm || deleteConfirm.type !== 'contract' || !reason?.trim()) return;
-    try {
-      await deleteContractMutation.mutateAsync({
-        contractId: deleteConfirm.id,
-        reason: reason.trim(),
-      });
-      setDeleteConfirm(null);
-    } catch {
-      // Error handled by mutation
-    }
-  };
-
-  // Service navigation
-  const handleAddService = (contractId: string) => {
-    router.push(`/companies/${companyId}/contracts/${contractId}/services/new`);
-  };
-
-  const handleEditService = (contractId: string, serviceId: string) => {
-    router.push(`/companies/${companyId}/contracts/${contractId}/services/${serviceId}`);
+  const handleEditService = (serviceId: string) => {
+    router.push(`/companies/${companyId}/services/${serviceId}`);
   };
 
   const handleDeleteService = async () => {
-    if (!deleteConfirm || deleteConfirm.type !== 'service' || !deleteConfirm.contractId) return;
-
-    const { id: serviceId, contractId } = deleteConfirm;
-    setIsDeletingService(true);
+    if (!deleteConfirm) return;
 
     try {
-      const url = activeTenantId
-        ? `/api/companies/${companyId}/contracts/${contractId}/services/${serviceId}?tenantId=${activeTenantId}`
-        : `/api/companies/${companyId}/contracts/${contractId}/services/${serviceId}`;
-
-      const response = await fetch(url, { method: 'DELETE' });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to delete service');
-      }
-
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: contractKeys.company(companyId) });
-      queryClient.invalidateQueries({ queryKey: contractKeys.detail(companyId, contractId) });
-      queryClient.invalidateQueries({ queryKey: serviceKeys.contract(contractId) });
-      queryClient.invalidateQueries({ queryKey: serviceKeys.all });
-
-      success('Service deleted successfully');
+      await deleteServiceMutation.mutateAsync(deleteConfirm.id);
       setDeleteConfirm(null);
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to delete service');
-    } finally {
-      setIsDeletingService(false);
     }
   };
 
-  const allContracts = data?.contracts ?? [];
+  const handleStopService = async () => {
+    if (!stoppingService) return;
 
-  // Filter contracts based on status
-  const contracts = allContracts.filter((contract) => {
-    if (!showTerminated && contract.status === 'TERMINATED') return false;
-    return true;
-  });
+    const stopDate = new Date().toISOString().split('T')[0];
 
-  const terminatedCount = allContracts.filter((c) => c.status === 'TERMINATED').length;
+    try {
+      await stopServiceMutation.mutateAsync({
+        status: 'CANCELLED',
+        endDate: stoppingService.endDate || stopDate,
+        autoRenewal: false,
+      });
+      setStoppingService(null);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to stop service');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -185,73 +115,73 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
   if (error) {
     return (
       <div className="text-center py-12 text-text-muted">
-        {error instanceof Error ? error.message : 'Failed to load contracts'}
+        {error instanceof Error ? error.message : 'Failed to load services'}
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Contracts Card */}
       <div className="card overflow-hidden">
-        {/* Card Header */}
         <div className="px-4 py-3 border-b border-border-primary">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <h4 className="font-medium text-text-primary flex items-center gap-2">
-                <ScrollText className="w-4 h-4 text-text-tertiary" />
-                Contracts & Services
-              </h4>
+              <h4 className="font-medium text-text-primary">Services</h4>
               <p className="text-xs text-text-secondary mt-1">
-                Manage contracts and billable services for this company
+                Add, stop, and remove services. Deadlines are generated from service rules/templates.
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              {terminatedCount > 0 && (
+            <div className="flex items-center gap-2">
+              {stoppedCount > 0 && (
                 <button
-                  onClick={() => setShowFilters(!showFilters)}
+                  onClick={() => setShowFilters((prev) => !prev)}
                   className={`p-1.5 rounded transition-colors ${
-                    showFilters || showTerminated
+                    showFilters || showStopped
                       ? 'bg-oak-light/10 text-oak-light'
                       : 'text-text-muted hover:text-text-primary hover:bg-background-secondary'
                   }`}
-                  title="Filter contracts"
+                  title="Filter services"
                 >
                   <Filter className="w-3.5 h-3.5" />
                 </button>
               )}
+              <Button
+                variant="secondary"
+                size="xs"
+                onClick={() => router.push(`/companies/${companyId}?tab=deadlines`)}
+              >
+                Deadlines
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </Button>
               {canEdit && (
-                <Button variant="secondary" size="xs" onClick={() => setShowContractModal(true)}>
+                <Button variant="primary" size="xs" onClick={handleAddService}>
                   <Plus className="w-3.5 h-3.5 mr-1" />
-                  Add Contract
+                  Add Service
                 </Button>
               )}
-              <span className="text-xs text-text-muted">
-                {contracts.length} contract{contracts.length !== 1 ? 's' : ''}
-                {!showTerminated && terminatedCount > 0 && (
-                  <span className="ml-1">({terminatedCount} hidden)</span>
-                )}
-              </span>
             </div>
           </div>
-          {/* Filter Panel */}
+          <div className="mt-2 text-xs text-text-muted">
+            {activeCount} active
+            {stoppedCount > 0 && <span className="ml-2">{stoppedCount} stopped</span>}
+          </div>
           {showFilters && (
             <div className="mt-3 pt-3 border-t border-border-secondary animate-fade-in">
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Checkbox
-                    id="show-terminated-contracts"
-                    checked={showTerminated}
-                    onChange={(e) => setShowTerminated(e.target.checked)}
+                    id="show-stopped-services"
+                    checked={showStopped}
+                    onChange={(e) => setShowStopped(e.target.checked)}
                     size="sm"
                   />
-                  <label htmlFor="show-terminated-contracts" className="text-xs text-text-secondary cursor-pointer">
-                    Show terminated
+                  <label htmlFor="show-stopped-services" className="text-xs text-text-secondary cursor-pointer">
+                    Show stopped/completed services
                   </label>
                 </div>
-                {showTerminated && (
+                {showStopped && (
                   <button
-                    onClick={() => setShowTerminated(false)}
+                    onClick={() => setShowStopped(false)}
                     className="btn-ghost btn-xs text-text-muted hover:text-text-primary"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -262,82 +192,124 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
           )}
         </div>
 
-        {/* Card Body */}
-        {contracts.length === 0 ? (
-          <div className="text-center py-6">
-            <FileText className="w-8 h-8 text-text-muted mx-auto mb-2" />
-            <p className="text-sm text-text-muted">No contracts yet</p>
+        {services.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-sm text-text-muted">No services yet</p>
             {canEdit && (
               <button
-                onClick={() => setShowContractModal(true)}
+                onClick={handleAddService}
                 className="text-sm text-oak-light hover:text-oak-dark mt-2 inline-flex items-center gap-1"
               >
                 <Plus className="w-4 h-4" />
-                Add first contract
+                Add first service
               </button>
             )}
           </div>
         ) : (
           <div className="divide-y divide-border-primary">
-            {contracts.map((contract) => (
-              <ContractCard
-                key={contract.id}
-                contract={contract}
-                isExpanded={expandedContracts.has(contract.id)}
-                onToggle={() => toggleContract(contract.id)}
-                canEdit={canEdit}
-                onEditContract={() => setEditingContract(contract)}
-                onDeleteContract={() =>
-                  setDeleteConfirm({
-                    type: 'contract',
-                    id: contract.id,
-                    name: contract.title,
-                  })
-                }
-                onAddService={() => handleAddService(contract.id)}
-                onEditService={(service) => handleEditService(contract.id, service.id)}
-                onDeleteService={(service) =>
-                  setDeleteConfirm({
-                    type: 'service',
-                    id: service.id,
-                    name: service.name,
-                    contractId: contract.id,
-                  })
-                }
-                onViewScope={(service) =>
-                  setShowScopeModal({
-                    serviceName: service.name,
-                    scope: service.scope || '',
-                  })
-                }
-              />
+            {services.map((service) => (
+              <div key={service.id} className="px-4 py-3 hover:bg-background-secondary/40 transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h5 className="font-medium text-text-primary truncate">{service.name}</h5>
+                      <span className={`badge ${getServiceStatusColor(service.status)}`}>
+                        {getServiceStatusLabel(service.status)}
+                      </span>
+                      <span className="badge badge-info">
+                        {getServiceTypeLabel(service.serviceType)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-text-muted mt-1">
+                      {service.contract?.title || 'Services'}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-text-muted">
+                      {service.rate != null && (
+                        <span className="text-text-primary font-medium">
+                          {formatCurrency(Number(service.rate), service.currency)}
+                          {service.frequency !== 'ONE_TIME' && (
+                            <span className="text-text-muted ml-1">
+                              / {getBillingFrequencyLabel(service.frequency).toLowerCase()}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {formatDateShort(service.startDate)}
+                        {service.endDate ? ` - ${formatDateShort(service.endDate)}` : ' - ongoing'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {service.scope && (
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={() =>
+                          setShowScopeModal({
+                            serviceName: service.name,
+                            scope: service.scope || '',
+                          })
+                        }
+                      >
+                        Scope
+                      </Button>
+                    )}
+                    {canEdit && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleEditService(service.id)}
+                          className="p-1.5 rounded text-text-muted hover:text-oak-light hover:bg-background-elevated transition-colors"
+                          title="Edit service"
+                          aria-label="Edit service"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        {canStopService(service) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setStoppingService({
+                                id: service.id,
+                                name: service.name,
+                                endDate: service.endDate,
+                              })
+                            }
+                            className="p-1.5 rounded text-text-muted hover:text-status-warning hover:bg-background-elevated transition-colors"
+                            title="Stop service"
+                            aria-label="Stop service"
+                          >
+                            <Ban className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDeleteConfirm({
+                              id: service.id,
+                              name: service.name,
+                              endDate: service.endDate,
+                            })
+                          }
+                          className="p-1.5 rounded text-text-muted hover:text-status-error hover:bg-background-elevated transition-colors"
+                          title="Delete service"
+                          aria-label="Delete service"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Contract Modal */}
-      {(showContractModal || editingContract) && (
-        <ContractModal
-          isOpen={true}
-          onClose={() => {
-            setShowContractModal(false);
-            setEditingContract(null);
-          }}
-          contract={editingContract}
-          companyId={companyId}
-          onSubmit={async (data) => {
-            if (editingContract) {
-              await handleUpdateContract(data as UpdateContractInput);
-            } else {
-              await handleCreateContract(data as CreateContractInput);
-            }
-          }}
-          isLoading={createContractMutation.isPending || updateContractMutation.isPending}
-        />
-      )}
-
-      {/* Scope Modal */}
       {showScopeModal && (
         <ScopeModal
           isOpen={true}
@@ -347,26 +319,7 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
         />
       )}
 
-      {/* Delete Contract Confirmation */}
-      {deleteConfirm?.type === 'contract' && (
-        <ConfirmDialog
-          isOpen={true}
-          onClose={() => setDeleteConfirm(null)}
-          title="Delete Contract"
-          description={`Are you sure you want to delete the contract "${deleteConfirm.name}"? This will also delete all services under this contract.`}
-          confirmLabel="Delete Contract"
-          variant="danger"
-          isLoading={deleteContractMutation.isPending}
-          onConfirm={handleDeleteContract}
-          requireReason
-          reasonLabel="Reason for deletion"
-          reasonPlaceholder="Enter reason (min 10 characters)"
-          reasonMinLength={10}
-        />
-      )}
-
-      {/* Delete Service Confirmation */}
-      {deleteConfirm?.type === 'service' && (
+      {deleteConfirm && (
         <ConfirmDialog
           isOpen={true}
           onClose={() => setDeleteConfirm(null)}
@@ -374,8 +327,21 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
           description={`Are you sure you want to delete the service "${deleteConfirm.name}"?`}
           confirmLabel="Delete Service"
           variant="danger"
-          isLoading={isDeletingService}
+          isLoading={deleteServiceMutation.isPending}
           onConfirm={handleDeleteService}
+        />
+      )}
+
+      {stoppingService && (
+        <ConfirmDialog
+          isOpen={true}
+          onClose={() => setStoppingService(null)}
+          title="Stop Service"
+          description={`Stop "${stoppingService.name}"? This will mark it as cancelled and stop ongoing work tracking.`}
+          confirmLabel="Stop Service"
+          variant="warning"
+          isLoading={stopServiceMutation.isPending}
+          onConfirm={handleStopService}
         />
       )}
     </div>

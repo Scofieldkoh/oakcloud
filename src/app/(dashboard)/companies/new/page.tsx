@@ -98,7 +98,8 @@ export default function NewCompanyPage() {
 
   useKeyboardShortcuts([
     {
-      key: 'Escape',
+      key: 'Backspace',
+      ctrl: true,
       handler: handleCancel,
       description: 'Cancel and go back',
     },
@@ -148,7 +149,7 @@ export default function NewCompanyPage() {
       <div className="mb-6">
         <Link
           href="/companies"
-          title="Back to Companies (Esc)"
+          title="Back to Companies (Ctrl+Backspace)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -372,8 +373,8 @@ export default function NewCompanyPage() {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Esc)">
-            <span className="hidden sm:inline">Cancel (Esc)</span>
+          <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
+            <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
             <span className="sm:hidden">Cancel</span>
           </Link>
           <button

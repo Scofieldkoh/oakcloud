@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { ChevronUp, ChevronDown, Trash2, Copy, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { DeadlineRuleInput } from '@/lib/validations/service';
 import type { CompanyData } from './deadline-builder-table';
 import { RecurrenceConfig } from './recurrence-config';
@@ -20,19 +21,12 @@ export interface DeadlineRuleRowProps {
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onDuplicate?: () => void;
   isFirst: boolean;
   isLast: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
 }
-
-const anchorTypeLabels: Record<string, string> = {
-  FYE: 'Financial Year End',
-  SERVICE_START: 'Service Start Date',
-  FIXED_CALENDAR: 'Fixed Calendar Date',
-  QUARTER_END: 'Quarter End',
-  MONTH_END: 'Month End',
-  INCORPORATION: 'Incorporation Date',
-  IPC_EXPIRY: 'IPC Expiry Date',
-};
 
 const anchorTypeShort: Record<string, string> = {
   FYE: 'FYE',
@@ -44,6 +38,31 @@ const anchorTypeShort: Record<string, string> = {
   IPC_EXPIRY: 'IPC Expiry',
 };
 
+const monthLabels = [
+  { value: 1, label: 'Jan' },
+  { value: 2, label: 'Feb' },
+  { value: 3, label: 'Mar' },
+  { value: 4, label: 'Apr' },
+  { value: 5, label: 'May' },
+  { value: 6, label: 'Jun' },
+  { value: 7, label: 'Jul' },
+  { value: 8, label: 'Aug' },
+  { value: 9, label: 'Sep' },
+  { value: 10, label: 'Oct' },
+  { value: 11, label: 'Nov' },
+  { value: 12, label: 'Dec' },
+];
+
+type OffsetUnit = 'month' | 'days';
+
+function deriveOffsetUnit(rule: DeadlineRuleInput): OffsetUnit {
+  if (rule.offsetMonths !== null && rule.offsetMonths !== undefined) {
+    if (rule.offsetMonths !== 0) return 'month';
+    if (rule.offsetDays === null || rule.offsetDays === undefined) return 'month';
+  }
+  return 'days';
+}
+
 export function DeadlineRuleRow({
   rule,
   companyId,
@@ -54,134 +73,225 @@ export function DeadlineRuleRow({
   onDelete,
   onMoveUp,
   onMoveDown,
+  onDuplicate,
   isFirst,
   isLast,
+  isSelected = false,
+  onSelect,
 }: DeadlineRuleRowProps) {
   const [localRule, setLocalRule] = useState(rule);
+  const [offsetUnit, setOffsetUnit] = useState<OffsetUnit>(() => deriveOffsetUnit(rule));
+  const desktopDescriptionRef = useRef<HTMLTextAreaElement | null>(null);
+  const mobileDescriptionRef = useRef<HTMLTextAreaElement | null>(null);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
-  // Update local state when prop changes
   useEffect(() => {
     setLocalRule(rule);
+    setOffsetUnit(deriveOffsetUnit(rule));
   }, [rule]);
 
-  // Handle field updates
-  const handleFieldChange = useCallback((field: keyof DeadlineRuleInput, value: unknown) => {
-    const updatedRule = { ...localRule, [field]: value };
+  const autoResizeTextarea = useCallback((textarea: HTMLTextAreaElement | null) => {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, []);
 
-    // Auto-adjust based on rule type changes
-    if (field === 'ruleType') {
-      if (value === 'FIXED_DATE') {
-        // Switch to fixed date mode
-        updatedRule.anchorType = null;
-        updatedRule.offsetMonths = null;
-        updatedRule.offsetDays = null;
-        if (!updatedRule.specificDate) {
-          updatedRule.specificDate = new Date().toISOString().split('T')[0];
-        }
-      } else if (value === 'RULE_BASED') {
-        // Switch to rule-based mode
-        updatedRule.specificDate = null;
-        if (!updatedRule.anchorType) {
-          updatedRule.anchorType = 'FYE';
-        }
-        if (updatedRule.offsetMonths === null) {
-          updatedRule.offsetMonths = 0;
-        }
-        if (updatedRule.offsetDays === null) {
-          updatedRule.offsetDays = 0;
+  useEffect(() => {
+    if (!isDescriptionExpanded) return;
+    autoResizeTextarea(desktopDescriptionRef.current);
+    autoResizeTextarea(mobileDescriptionRef.current);
+  }, [autoResizeTextarea, isDescriptionExpanded, localRule.description]);
+
+  const commitRule = useCallback(
+    (updatedRule: DeadlineRuleInput) => {
+      setLocalRule(updatedRule);
+      onUpdate(updatedRule);
+    },
+    [onUpdate]
+  );
+
+  const handleFieldChange = useCallback(
+    (field: keyof DeadlineRuleInput, value: unknown) => {
+      const updatedRule: DeadlineRuleInput = { ...localRule, [field]: value };
+
+      if (field === 'ruleType') {
+        if (value === 'FIXED_DATE') {
+          updatedRule.anchorType = null;
+          updatedRule.offsetMonths = null;
+          updatedRule.offsetDays = null;
+          updatedRule.fixedMonth = null;
+          updatedRule.fixedDay = null;
+          if (!updatedRule.specificDate) {
+            updatedRule.specificDate = new Date().toISOString().split('T')[0];
+          }
+        } else if (value === 'RULE_BASED') {
+          updatedRule.specificDate = null;
+          if (!updatedRule.anchorType) {
+            updatedRule.anchorType = 'FYE';
+          }
+          if (updatedRule.offsetMonths === null || updatedRule.offsetMonths === undefined) {
+            updatedRule.offsetMonths = 0;
+          }
+          if (updatedRule.offsetDays === null || updatedRule.offsetDays === undefined) {
+            updatedRule.offsetDays = 0;
+          }
+          setOffsetUnit(deriveOffsetUnit(updatedRule));
         }
       }
-    }
 
-    setLocalRule(updatedRule);
-    onUpdate(updatedRule);
-  }, [localRule, onUpdate]);
+      if (field === 'anchorType') {
+        if (value === 'FIXED_CALENDAR') {
+          updatedRule.fixedMonth = updatedRule.fixedMonth ?? 12;
+          updatedRule.fixedDay = updatedRule.fixedDay ?? 31;
+          updatedRule.offsetMonths = 0;
+          updatedRule.offsetDays = 0;
+        } else {
+          updatedRule.fixedMonth = null;
+          updatedRule.fixedDay = null;
+          if (updatedRule.offsetMonths === null && updatedRule.offsetDays === null) {
+            updatedRule.offsetDays = 0;
+          }
+        }
+      }
+
+      commitRule(updatedRule);
+    },
+    [commitRule, localRule]
+  );
 
   const isRuleBased = localRule.ruleType === 'RULE_BASED';
+  const isFixedCalendar = isRuleBased && localRule.anchorType === 'FIXED_CALENDAR';
+  const offsetSign = useMemo(() => {
+    const monthSign = localRule.offsetMonths ?? 0;
+    const daySign = localRule.offsetDays ?? 0;
+    return monthSign < 0 || daySign < 0 ? -1 : 1;
+  }, [localRule.offsetDays, localRule.offsetMonths]);
+  const offsetMagnitude = useMemo(() => {
+    const sourceValue = offsetUnit === 'month' ? localRule.offsetMonths : localRule.offsetDays;
+    return Math.abs(sourceValue ?? 0);
+  }, [localRule.offsetDays, localRule.offsetMonths, offsetUnit]);
 
-  // Common input styles
   const inputBaseClasses = cn(
     'bg-background-primary border border-border-primary',
-    'hover:border-border-secondary focus:border-oak-primary focus:ring-1 focus:ring-oak-primary/30',
+    'hover:border-border-secondary focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30',
     'outline-none transition-colors text-text-primary'
   );
 
-  // Render the offset number input
-  const renderOffsetInput = (height: string = 'h-6') => (
+  const handleOffsetValueChange = useCallback(
+    (rawValue: string) => {
+      const parsed = Number.parseInt(rawValue, 10);
+      const nextMagnitude = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+      const signedValue = nextMagnitude * offsetSign;
+      const updatedRule: DeadlineRuleInput =
+        offsetUnit === 'month'
+          ? {
+              ...localRule,
+              offsetMonths: signedValue,
+              offsetDays: 0,
+            }
+          : {
+              ...localRule,
+              offsetMonths: 0,
+              offsetDays: signedValue,
+            };
+
+      commitRule(updatedRule);
+    },
+    [commitRule, localRule, offsetSign, offsetUnit]
+  );
+
+  const handleOffsetUnitChange = useCallback(
+    (nextUnit: OffsetUnit) => {
+      setOffsetUnit(nextUnit);
+      const signedValue = offsetMagnitude * offsetSign;
+      const updatedRule: DeadlineRuleInput =
+        nextUnit === 'month'
+          ? {
+              ...localRule,
+              offsetMonths: signedValue,
+              offsetDays: 0,
+            }
+          : {
+              ...localRule,
+              offsetMonths: 0,
+              offsetDays: signedValue,
+            };
+      commitRule(updatedRule);
+    },
+    [commitRule, localRule, offsetMagnitude, offsetSign]
+  );
+
+  const handleOffsetDirectionChange = useCallback(
+    (direction: 'before' | 'after') => {
+      const sign = direction === 'before' ? -1 : 1;
+      const signedValue = offsetMagnitude * sign;
+      const updatedRule: DeadlineRuleInput =
+        offsetUnit === 'month'
+          ? {
+              ...localRule,
+              offsetMonths: signedValue,
+              offsetDays: 0,
+            }
+          : {
+              ...localRule,
+              offsetMonths: 0,
+              offsetDays: signedValue,
+            };
+      commitRule(updatedRule);
+    },
+    [commitRule, localRule, offsetMagnitude, offsetUnit]
+  );
+
+  const renderOffsetInput = (height: string = 'h-8') => (
     <input
       type="number"
-      value={Math.abs(localRule.offsetMonths !== 0 ? localRule.offsetMonths ?? 0 : localRule.offsetDays ?? 0)}
-      onChange={(e) => {
-        const val = parseInt(e.target.value) || 0;
-        const sign = (localRule.offsetMonths ?? 0) < 0 || (localRule.offsetDays ?? 0) < 0 ? -1 : 1;
-        if (localRule.offsetMonths !== 0) {
-          handleFieldChange('offsetMonths', val * sign);
-        } else {
-          handleFieldChange('offsetDays', val * sign);
-        }
-      }}
+      min={0}
+      value={offsetMagnitude}
+      onChange={(e) => handleOffsetValueChange(e.target.value)}
       className={cn(
-        `w-12 ${height} px-1.5 text-xs text-center rounded`,
+        `w-16 ${height} px-2 text-sm text-center rounded-lg`,
         inputBaseClasses
       )}
     />
   );
 
-  // Render the unit select (month/days)
-  const renderUnitSelect = (height: string = 'h-6') => (
+  const renderUnitSelect = (height: string = 'h-8') => (
     <select
       className={cn(
-        `${height} px-1 text-xs rounded appearance-none cursor-pointer`,
+        `${height} px-2 text-sm rounded-lg appearance-none cursor-pointer`,
         inputBaseClasses
       )}
-      value={localRule.offsetMonths !== 0 ? 'month' : 'days'}
-      onChange={(e) => {
-        const currentValue = Math.abs(localRule.offsetMonths !== 0 ? localRule.offsetMonths ?? 0 : localRule.offsetDays ?? 0);
-        const sign = (localRule.offsetMonths ?? 0) < 0 || (localRule.offsetDays ?? 0) < 0 ? -1 : 1;
-        if (e.target.value === 'month') {
-          handleFieldChange('offsetMonths', currentValue * sign);
-          handleFieldChange('offsetDays', 0);
-        } else {
-          handleFieldChange('offsetDays', currentValue * sign);
-          handleFieldChange('offsetMonths', 0);
-        }
-      }}
+      value={offsetUnit}
+      onChange={(e) => handleOffsetUnitChange(e.target.value as OffsetUnit)}
     >
-      <option value="month">mo</option>
+      <option value="month">months</option>
       <option value="days">days</option>
     </select>
   );
 
-  // Render the direction select (before/after)
-  const renderDirectionSelect = (height: string = 'h-6') => (
+  const renderDirectionSelect = (height: string = 'h-8') => (
     <select
       className={cn(
-        `${height} px-1 text-xs rounded appearance-none cursor-pointer`,
+        `${height} px-2 text-sm rounded-lg appearance-none cursor-pointer`,
         inputBaseClasses
       )}
-      value={(localRule.offsetMonths ?? 0) < 0 || (localRule.offsetDays ?? 0) < 0 ? 'before' : 'after'}
-      onChange={(e) => {
-        const sign = e.target.value === 'before' ? -1 : 1;
-        if (localRule.offsetMonths !== 0) {
-          handleFieldChange('offsetMonths', Math.abs(localRule.offsetMonths ?? 0) * sign);
-        }
-        if (localRule.offsetDays !== 0) {
-          handleFieldChange('offsetDays', Math.abs(localRule.offsetDays ?? 0) * sign);
-        }
-      }}
+      value={offsetSign < 0 ? 'before' : 'after'}
+      onChange={(e) => handleOffsetDirectionChange(e.target.value as 'before' | 'after')}
     >
       <option value="after">after</option>
       <option value="before">before</option>
     </select>
   );
 
-  // Render the anchor type select
-  const renderAnchorSelect = (height: string = 'h-6', additionalClasses: string = '') => (
+  const renderAnchorSelect = (
+    height: string = 'h-8',
+    additionalClasses: string = ''
+  ) => (
     <select
       value={localRule.anchorType || 'FYE'}
       onChange={(e) => handleFieldChange('anchorType', e.target.value)}
       className={cn(
-        `${height} px-1 text-xs rounded appearance-none cursor-pointer`,
+        `${height} px-2 text-sm rounded-lg appearance-none cursor-pointer`,
         inputBaseClasses,
         additionalClasses
       )}
@@ -194,130 +304,265 @@ export function DeadlineRuleRow({
     </select>
   );
 
-  // Render action buttons with descriptive aria-labels
+  const renderRuleTypeSelect = (height: string = 'h-8') => (
+    <select
+      value={localRule.ruleType}
+      onChange={(e) => handleFieldChange('ruleType', e.target.value)}
+      className={cn(
+        `${height} px-2 text-sm rounded-lg appearance-none cursor-pointer min-w-[128px]`,
+        inputBaseClasses
+      )}
+    >
+      <option value="RULE_BASED">Relative rule</option>
+      <option value="FIXED_DATE">Specific date</option>
+    </select>
+  );
+
+  const renderFixedCalendarMonthSelect = (height: string = 'h-8') => (
+    <select
+      value={localRule.fixedMonth ?? 1}
+      onChange={(e) => {
+        const monthValue = Number.parseInt(e.target.value, 10);
+        handleFieldChange('fixedMonth', Number.isNaN(monthValue) ? 1 : monthValue);
+      }}
+      className={cn(
+        `${height} px-2 text-sm rounded-lg appearance-none cursor-pointer`,
+        inputBaseClasses
+      )}
+    >
+      {monthLabels.map((month) => (
+        <option key={month.value} value={month.value}>
+          {month.label}
+        </option>
+      ))}
+    </select>
+  );
+
+  const renderFixedCalendarDayInput = (height: string = 'h-8') => (
+    <input
+      type="number"
+      min={1}
+      max={31}
+      value={localRule.fixedDay ?? 1}
+      onChange={(e) => {
+        const dayValue = Number.parseInt(e.target.value, 10);
+        const bounded = Number.isNaN(dayValue) ? 1 : Math.min(31, Math.max(1, dayValue));
+        handleFieldChange('fixedDay', bounded);
+      }}
+      className={cn(
+        `w-16 ${height} px-2 text-sm text-center rounded-lg`,
+        inputBaseClasses
+      )}
+    />
+  );
+
   const taskLabel = localRule.taskName?.trim() || 'this task';
   const renderActionButtons = () => (
     <>
       <Button
         variant="ghost"
         size="sm"
-        iconOnly
+        aria-label={`${isDescriptionExpanded ? 'Collapse' : 'Expand'} ${taskLabel} description`}
+        onClick={() => setIsDescriptionExpanded((prev) => !prev)}
+        className={cn(
+          'h-10 w-10 md:h-8 md:w-8 p-1.5 hover:bg-background-tertiary',
+          isDescriptionExpanded && 'bg-oak-primary/10 text-oak-primary'
+        )}
+      >
+        <FileText className="w-3.5 h-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
         aria-label={`Move ${taskLabel} up`}
         onClick={onMoveUp}
         disabled={isFirst}
-        className="h-6 w-6 p-1 hover:bg-background-tertiary disabled:opacity-30"
+        className="h-10 w-10 md:h-8 md:w-8 p-1.5 hover:bg-background-tertiary disabled:opacity-30"
       >
-        <ChevronUp className="w-3 h-3" />
+        <ChevronUp className="w-3.5 h-3.5" />
       </Button>
       <Button
         variant="ghost"
         size="sm"
-        iconOnly
         aria-label={`Move ${taskLabel} down`}
         onClick={onMoveDown}
         disabled={isLast}
-        className="h-6 w-6 p-1 hover:bg-background-tertiary disabled:opacity-30"
+        className="h-10 w-10 md:h-8 md:w-8 p-1.5 hover:bg-background-tertiary disabled:opacity-30"
       >
-        <ChevronDown className="w-3 h-3" />
+        <ChevronDown className="w-3.5 h-3.5" />
       </Button>
+      {onDuplicate && (
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={`Duplicate ${taskLabel}`}
+          onClick={onDuplicate}
+          className="h-10 w-10 md:h-8 md:w-8 p-1.5 hover:bg-background-tertiary"
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="sm"
-        iconOnly
         aria-label={`Delete ${taskLabel}`}
         onClick={onDelete}
-        className="h-6 w-6 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600"
+        className="h-10 w-10 md:h-8 md:w-8 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600"
       >
-        <Trash2 className="w-3 h-3" />
+        <Trash2 className="w-3.5 h-3.5" />
       </Button>
     </>
   );
 
+  const handleDescriptionChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      handleFieldChange('description', e.target.value);
+      autoResizeTextarea(e.currentTarget);
+    },
+    [autoResizeTextarea, handleFieldChange]
+  );
+
   return (
     <>
-      {/* Desktop: Table row */}
-      <div className="hidden md:grid grid-cols-[1fr_2fr_100px_80px] gap-2 px-3 py-2 bg-background-primary hover:bg-background-secondary/30 transition-colors items-center">
-        {/* Task Name */}
-        <div className="min-w-0">
-          <input
-            type="text"
-            value={localRule.taskName}
-            onChange={(e) => handleFieldChange('taskName', e.target.value)}
-            placeholder="Task name"
-            className={cn(
-              'w-full h-7 px-2 text-xs font-medium rounded-md',
-              inputBaseClasses,
-              'placeholder:text-text-muted'
-            )}
-          />
-        </div>
+      <div
+        className={cn(
+          'hidden md:block px-3 py-3 bg-background-primary hover:bg-background-secondary/30 transition-colors',
+          isSelected && 'ring-1 ring-oak-primary/30 bg-oak-light/10'
+        )}
+        onClick={onSelect}
+      >
+        <div
+          className={cn(
+            'grid gap-2 items-center',
+            previewEnabled
+              ? 'grid-cols-[1.75fr_2fr_170px_120px_1fr_240px]'
+              : 'grid-cols-[1.75fr_2fr_170px_120px_240px]'
+          )}
+        >
+          <div className="min-w-0">
+            <input
+              type="text"
+              value={localRule.taskName}
+              onChange={(e) => handleFieldChange('taskName', e.target.value)}
+              onFocus={onSelect}
+              placeholder="Task name"
+              className={cn(
+                'w-full h-8 px-3 text-sm font-medium rounded-lg',
+                inputBaseClasses,
+                'placeholder:text-text-muted'
+              )}
+            />
+          </div>
 
-        {/* Due Date Rule */}
-        <div className="min-w-0">
+          <div className="min-w-0">
           {isRuleBased ? (
-            <div className="flex items-center gap-1 flex-wrap text-xs">
-              {renderOffsetInput()}
-              {renderUnitSelect()}
-              {renderDirectionSelect()}
-              {renderAnchorSelect('h-6', 'flex-1 min-w-[100px]')}
+            <div className="flex items-center gap-1.5 flex-nowrap text-sm">
+              {renderRuleTypeSelect()}
+              {isFixedCalendar ? (
+                <>
+                  {renderAnchorSelect('h-8', 'w-28 shrink-0')}
+                  <span className="text-text-muted whitespace-nowrap">on</span>
+                  {renderFixedCalendarMonthSelect()}
+                  {renderFixedCalendarDayInput()}
+                </>
+              ) : (
+                <>
+                  {renderOffsetInput()}
+                  {renderUnitSelect()}
+                  {renderDirectionSelect()}
+                  {renderAnchorSelect('h-8', 'w-28 shrink-0')}
+                </>
+              )}
             </div>
           ) : (
-            <div className="flex items-center gap-1 text-xs">
-              <span className="text-text-muted whitespace-nowrap">On</span>
+            <div className="flex items-center gap-1.5 text-sm">
+              {renderRuleTypeSelect()}
               <input
                 type="date"
                 value={localRule.specificDate || ''}
                 onChange={(e) => handleFieldChange('specificDate', e.target.value)}
                 className={cn(
-                  'h-6 px-1.5 text-xs rounded',
+                  'h-8 px-2.5 text-sm rounded-lg',
                   inputBaseClasses
                 )}
               />
             </div>
           )}
-        </div>
+          </div>
 
-        {/* Recurring Configuration */}
-        <div className="min-w-0">
+          <div className="min-w-0">
           <RecurrenceConfig
             isRecurring={localRule.isRecurring}
             frequency={localRule.frequency ?? null}
             generateOccurrences={localRule.generateOccurrences ?? null}
             generateUntilDate={localRule.generateUntilDate ?? null}
+            size="sm"
             onUpdate={(updates) => {
               Object.entries(updates).forEach(([field, value]) => {
                 handleFieldChange(field as keyof DeadlineRuleInput, value);
               });
             }}
           />
+          </div>
+
+          <div className="min-w-0">
+            <Checkbox
+              size="sm"
+              checked={Boolean(localRule.isBillable)}
+              onChange={(event) => handleFieldChange('isBillable', event.target.checked)}
+              aria-label={`Mark ${taskLabel} as billable`}
+              className="justify-start"
+            />
+          </div>
+
+          {previewEnabled && (
+            <div className="min-w-[150px]">
+              <DeadlinePreviewColumn
+                rule={localRule}
+                companyId={companyId}
+                companyData={companyData}
+                serviceStartDate={serviceStartDate}
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-0.5 flex-nowrap min-w-[200px]">
+            {renderActionButtons()}
+          </div>
         </div>
 
-        {/* Preview - Only show if enabled */}
-        {previewEnabled && (
-          <div className="min-w-[150px]">
-            <DeadlinePreviewColumn
-              rule={localRule}
-              companyId={companyId}
-              companyData={companyData}
-              serviceStartDate={serviceStartDate}
+        {isDescriptionExpanded && (
+          <div className="mt-2">
+            <textarea
+              value={localRule.description || ''}
+              onChange={handleDescriptionChange}
+              onFocus={onSelect}
+              placeholder="Description (e.g., steps, requirements, references)"
+              rows={3}
+              ref={desktopDescriptionRef}
+              className={cn(
+                'w-full px-3 py-2 text-xs rounded-lg resize-none overflow-hidden',
+                inputBaseClasses,
+                'placeholder:text-text-muted'
+              )}
             />
           </div>
         )}
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-0.5">
-          {renderActionButtons()}
-        </div>
       </div>
 
-      {/* Mobile: Card layout */}
-      <div className="md:hidden p-3 border-b border-border-primary space-y-2 bg-background-primary">
-        {/* Row 1: Task name + actions */}
+      <div
+        className={cn(
+          'md:hidden p-4 border-b border-border-primary space-y-3 bg-background-primary',
+          isSelected && 'ring-1 ring-oak-primary/30 bg-oak-light/10'
+        )}
+        onClick={onSelect}
+      >
         <div className="flex items-center justify-between gap-2">
           <input
             type="text"
             value={localRule.taskName}
             onChange={(e) => handleFieldChange('taskName', e.target.value)}
+            onFocus={onSelect}
             placeholder="Task name"
             className={cn(
               'flex-1 h-8 px-2 text-sm font-medium rounded-md',
@@ -330,25 +575,52 @@ export function DeadlineRuleRow({
           </div>
         </div>
 
-        {/* Row 2: Due date rule */}
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-text-muted">Due</span>
+        {isDescriptionExpanded && (
+          <textarea
+            value={localRule.description || ''}
+            onChange={handleDescriptionChange}
+            onFocus={onSelect}
+            placeholder="Description (e.g., steps, requirements, references)"
+            rows={3}
+            ref={mobileDescriptionRef}
+            className={cn(
+              'w-full px-2 py-2 text-xs rounded-md resize-none overflow-hidden',
+              inputBaseClasses,
+              'placeholder:text-text-muted'
+            )}
+          />
+        )}
+
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-text-muted">Due rule</span>
           {isRuleBased ? (
             <>
-              {renderOffsetInput('h-7')}
-              {renderUnitSelect('h-7')}
-              {renderDirectionSelect('h-7')}
-              {renderAnchorSelect('h-7', 'flex-1 min-w-[90px]')}
+              {renderRuleTypeSelect('h-8')}
+              {isFixedCalendar ? (
+                <>
+                  {renderAnchorSelect('h-8', 'w-28 shrink-0')}
+                  <span className="text-text-muted">on</span>
+                  {renderFixedCalendarMonthSelect('h-8')}
+                  {renderFixedCalendarDayInput('h-8')}
+                </>
+              ) : (
+                <>
+                  {renderOffsetInput('h-8')}
+                  {renderUnitSelect('h-8')}
+                  {renderDirectionSelect('h-8')}
+                  {renderAnchorSelect('h-8', 'w-28 shrink-0')}
+                </>
+              )}
             </>
           ) : (
             <>
-              <span className="text-text-muted">on</span>
+              {renderRuleTypeSelect('h-8')}
               <input
                 type="date"
                 value={localRule.specificDate || ''}
                 onChange={(e) => handleFieldChange('specificDate', e.target.value)}
                 className={cn(
-                  'h-7 px-2 text-xs rounded flex-1',
+                  'h-8 px-2.5 text-sm rounded-lg flex-1',
                   inputBaseClasses
                 )}
               />
@@ -356,7 +628,6 @@ export function DeadlineRuleRow({
           )}
         </div>
 
-        {/* Row 3: Frequency */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-text-muted">Repeats:</span>
           <RecurrenceConfig
@@ -364,6 +635,7 @@ export function DeadlineRuleRow({
             frequency={localRule.frequency ?? null}
             generateOccurrences={localRule.generateOccurrences ?? null}
             generateUntilDate={localRule.generateUntilDate ?? null}
+            size="sm"
             onUpdate={(updates) => {
               Object.entries(updates).forEach(([field, value]) => {
                 handleFieldChange(field as keyof DeadlineRuleInput, value);
@@ -372,7 +644,15 @@ export function DeadlineRuleRow({
           />
         </div>
 
-        {/* Preview - Only show if enabled on mobile */}
+        <div className="flex items-center">
+          <Checkbox
+            size="sm"
+            checked={Boolean(localRule.isBillable)}
+            onChange={(event) => handleFieldChange('isBillable', event.target.checked)}
+            label="Billable"
+          />
+        </div>
+
         {previewEnabled && (
           <div className="pt-1">
             <DeadlinePreviewColumn

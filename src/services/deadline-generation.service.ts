@@ -21,6 +21,7 @@ import type {
 } from '@/generated/prisma';
 import { ALL_DEADLINE_TEMPLATES, type DeadlineTemplateData } from '@/lib/constants/deadline-templates';
 import type { DeadlineRule, DeadlineRuleType } from '@/generated/prisma';
+import type { DeadlineRuleInput } from '@/lib/validations/service';
 
 /**
  * Type for Prisma transaction client
@@ -76,6 +77,11 @@ interface GeneratedDeadline {
   amount: number | null;
   currency: string;
   templateCode: string;
+}
+
+export interface PreviewDeadlinesResult {
+  deadlines: GeneratedDeadline[];
+  warnings: string[];
 }
 
 // ============================================================================
@@ -238,9 +244,8 @@ function calculateDueDate(
     throw new Error(`Cannot calculate due date: no anchor date for ${template.code}`);
   }
 
-  // Apply month offset
-  let dueDate = new Date(anchorDate);
-  dueDate.setMonth(dueDate.getMonth() + template.offsetMonths);
+  // Apply month offset (clamp to end-of-month if needed)
+  let dueDate = addMonthsClamped(anchorDate, template.offsetMonths);
 
   // Apply day offset
   if (template.offsetBusinessDays) {
@@ -278,6 +283,21 @@ function addBusinessDays(date: Date, days: number): Date {
 function getLastDayOfMonth(year: number, month: number): number {
   // Month is 0-indexed, so month + 1 is next month, day 0 is last day of current month
   return new Date(year, month + 1, 0).getDate();
+}
+
+/**
+ * Add months to a date while clamping to the last day of target month if needed.
+ */
+function addMonthsClamped(date: Date, months: number): Date {
+  const year = date.getFullYear();
+  const monthIndex = date.getMonth();
+  const day = date.getDate();
+  const targetIndex = monthIndex + months;
+  const targetYear = year + Math.floor(targetIndex / 12);
+  const targetMonth = ((targetIndex % 12) + 12) % 12;
+  const lastDay = getLastDayOfMonth(targetYear, targetMonth);
+  const safeDay = Math.min(day, lastDay);
+  return new Date(targetYear, targetMonth, safeDay);
 }
 
 // ============================================================================
@@ -1000,6 +1020,7 @@ export async function generateDeadlinesFromRules(
   options?: {
     monthsAhead?: number;
     regenerate?: boolean; // Delete existing and recreate
+    fyeYearOverride?: number;
   }
 ): Promise<{ created: number; skipped: number }> {
   const { tenantId, userId, tx } = params;
@@ -1077,8 +1098,23 @@ export async function generateDeadlinesFromRules(
 
   // Generate deadlines
   const now = new Date();
-  const endDate = new Date();
+  const lookbackStart = new Date(now);
+  lookbackStart.setMonth(lookbackStart.getMonth() - monthsAhead);
+
+  let generationStart = lookbackStart;
+  if (service.startDate && service.startDate > generationStart) {
+    generationStart = new Date(service.startDate);
+  }
+
+  const endDate = new Date(now);
   endDate.setMonth(endDate.getMonth() + monthsAhead);
+  if (service.startDate && service.startDate > endDate) {
+    const extendedEnd = new Date(service.startDate);
+    extendedEnd.setMonth(extendedEnd.getMonth() + monthsAhead);
+    if (extendedEnd > endDate) {
+      endDate.setTime(extendedEnd.getTime());
+    }
+  }
 
   let created = 0;
   let skipped = 0;
@@ -1123,12 +1159,16 @@ export async function generateDeadlinesFromRules(
   }> = [];
 
   for (const rule of rules) {
+    const ruleStartDate =
+      options?.fyeYearOverride && rule.anchorType === 'FYE'
+        ? new Date(options.fyeYearOverride, 0, 1)
+        : generationStart;
     // Generate deadlines from this rule
     const deadlines = generateDeadlinesFromRule(
       rule,
       context,
       serviceContext,
-      now,
+      ruleStartDate,
       endDate
     );
 
@@ -1193,6 +1233,172 @@ export async function generateDeadlinesFromRules(
   }
 
   return { created, skipped };
+}
+
+/**
+ * Preview deadlines from rule inputs without persisting anything.
+ * Uses the same generation logic as actual creation.
+ */
+export async function previewDeadlinesFromRuleInputs(
+  companyId: string,
+  rules: DeadlineRuleInput[],
+  params: TenantAwareParams,
+  options?: {
+    monthsAhead?: number;
+    serviceStartDate?: string | Date | null;
+    fyeYearOverride?: number | null;
+  }
+): Promise<PreviewDeadlinesResult> {
+  const { tenantId, tx } = params;
+  const db = tx || prisma;
+  const monthsAhead = options?.monthsAhead ?? 18;
+
+  const company = await db.company.findFirst({
+    where: { id: companyId, tenantId, deletedAt: null },
+  });
+
+  if (!company) {
+    throw new Error('Company not found');
+  }
+
+  const warnings: string[] = [];
+
+  // Build company context
+  const context: CompanyDeadlineContext = {
+    company,
+    fyeMonth: company.financialYearEndMonth,
+    fyeDay: company.financialYearEndDay,
+    incorporationDate: company.incorporationDate,
+    isGstRegistered: company.isGstRegistered,
+    gstFilingFrequency: company.gstFilingFrequency as GstFilingFrequency | null,
+    isRegisteredCharity: company.isRegisteredCharity,
+    isIPC: company.isIPC,
+    ipcExpiryDate: company.ipcExpiryDate,
+    agmDispensed: company.agmDispensed,
+    isDormant: company.isDormant,
+    dormantTaxExemptionApproved: company.dormantTaxExemptionApproved,
+    requiresAudit: determineAuditRequirement(company),
+    entityType: company.entityType,
+  };
+
+  const resolvedServiceStartDate = options?.serviceStartDate
+    ? new Date(options.serviceStartDate)
+    : new Date();
+  if (Number.isNaN(resolvedServiceStartDate.getTime())) {
+    resolvedServiceStartDate.setTime(Date.now());
+  }
+
+  const serviceContext: ServiceContext = {
+    service: {} as ContractService,
+    serviceStartDate: resolvedServiceStartDate,
+    gstFilingFrequency: null,
+  };
+
+  const now = new Date();
+  const lookbackStart = new Date(now);
+  lookbackStart.setMonth(lookbackStart.getMonth() - monthsAhead);
+
+  let startDate = lookbackStart;
+  if (resolvedServiceStartDate && resolvedServiceStartDate > startDate) {
+    startDate = new Date(resolvedServiceStartDate);
+  }
+
+  const endDate = new Date(now);
+  endDate.setMonth(endDate.getMonth() + monthsAhead);
+  if (resolvedServiceStartDate > endDate) {
+    const extendedEnd = new Date(resolvedServiceStartDate);
+    extendedEnd.setMonth(extendedEnd.getMonth() + monthsAhead);
+    if (extendedEnd > endDate) {
+      endDate.setTime(extendedEnd.getTime());
+    }
+  }
+
+  const generated: GeneratedDeadline[] = [];
+
+  rules.forEach((rule, index) => {
+    const taskName = rule.taskName?.trim() || 'Untitled task';
+
+    if (rule.ruleType === 'FIXED_DATE') {
+      if (!rule.specificDate) {
+        warnings.push(`${taskName}: specific date not set`);
+        return;
+      }
+    }
+
+    if (rule.ruleType === 'RULE_BASED') {
+      if (!rule.anchorType) {
+        warnings.push(`${taskName}: anchor type not set`);
+        return;
+      }
+      if (rule.anchorType === 'FYE' && (!context.fyeMonth || !context.fyeDay)) {
+        warnings.push(`${taskName}: company FYE is not configured`);
+        return;
+      }
+      if (rule.anchorType === 'INCORPORATION' && !context.incorporationDate) {
+        warnings.push(`${taskName}: incorporation date not set`);
+        return;
+      }
+      if (rule.anchorType === 'IPC_EXPIRY' && !context.ipcExpiryDate) {
+        warnings.push(`${taskName}: IPC expiry date not set`);
+        return;
+      }
+      if (rule.anchorType === 'SERVICE_START' && !resolvedServiceStartDate) {
+        warnings.push(`${taskName}: service start date not set`);
+        return;
+      }
+      if (rule.anchorType === 'FIXED_CALENDAR' && (!rule.fixedMonth || !rule.fixedDay)) {
+        warnings.push(`${taskName}: fixed calendar date not set`);
+        return;
+      }
+    }
+
+    const pseudoRule: DeadlineRule = {
+      id: `preview-${index}`,
+      tenantId,
+      contractServiceId: 'preview',
+      taskName: rule.taskName,
+      description: rule.description ?? null,
+      category: rule.category,
+      ruleType: rule.ruleType,
+      anchorType: rule.anchorType ?? null,
+      offsetMonths: rule.offsetMonths ?? 0,
+      offsetDays: rule.offsetDays ?? 0,
+      offsetBusinessDays: rule.offsetBusinessDays ?? false,
+      fixedMonth: rule.fixedMonth ?? null,
+      fixedDay: rule.fixedDay ?? null,
+      specificDate: rule.specificDate ? new Date(rule.specificDate) : null,
+      isRecurring: rule.isRecurring,
+      frequency: rule.frequency ?? null,
+      generateUntilDate: rule.generateUntilDate ? new Date(rule.generateUntilDate) : null,
+      generateOccurrences: rule.generateOccurrences ?? null,
+      isBillable: rule.isBillable,
+      amount: rule.amount ?? null,
+      currency: rule.currency ?? 'SGD',
+      displayOrder: rule.displayOrder ?? index,
+      sourceTemplateCode: rule.sourceTemplateCode ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    } as DeadlineRule;
+
+    const ruleStartDate =
+      options?.fyeYearOverride && rule.anchorType === 'FYE'
+        ? new Date(options.fyeYearOverride, 0, 1)
+        : startDate;
+
+    const deadlines = generateDeadlinesFromRule(
+      pseudoRule,
+      context,
+      serviceContext,
+      ruleStartDate,
+      endDate
+    );
+    generated.push(...deadlines);
+  });
+
+  generated.sort((a, b) => a.statutoryDueDate.getTime() - b.statutoryDueDate.getTime());
+
+  return { deadlines: generated, warnings };
 }
 
 /**
@@ -1267,6 +1473,10 @@ function generateDeadlinesFromRule(
       return [];
     }
 
+    if (rule.anchorType === 'SERVICE_START') {
+      return generateServiceStartDeadlines(rule, serviceContext, startDate, endDate);
+    }
+
     // Convert DeadlineRule to DeadlineTemplateData format
     const pseudoTemplate: DeadlineTemplateData = {
       code: rule.sourceTemplateCode || 'CUSTOM',
@@ -1307,6 +1517,130 @@ function generateDeadlinesFromRule(
   }
 
   return deadlines;
+}
+
+function generateServiceStartDeadlines(
+  rule: DeadlineRule,
+  serviceContext: ServiceContext,
+  startDate: Date,
+  endDate: Date
+): GeneratedDeadline[] {
+  if (!serviceContext.serviceStartDate) {
+    return [];
+  }
+
+  const baseDate = new Date(serviceContext.serviceStartDate);
+  if (Number.isNaN(baseDate.getTime())) {
+    return [];
+  }
+
+  const effectiveFrequency = rule.isRecurring
+    ? (rule.frequency || 'ONE_TIME')
+    : 'ONE_TIME';
+
+  const recurrenceRule: DeadlineRule = {
+    ...rule,
+    frequency: effectiveFrequency,
+  };
+
+  const template: DeadlineTemplateData = {
+    code: rule.sourceTemplateCode || 'CUSTOM',
+    name: rule.taskName,
+    category: rule.category,
+    jurisdiction: 'SG',
+    description: rule.description || '',
+    entityTypes: null,
+    excludeEntityTypes: null,
+    requiresGstRegistered: null,
+    requiresAudit: null,
+    isTaxFiling: false,
+    requiresCharityStatus: null,
+    requiresIPCStatus: null,
+    anchorType: 'SERVICE_START',
+    offsetMonths: rule.offsetMonths ?? 0,
+    offsetDays: rule.offsetDays ?? 0,
+    offsetBusinessDays: rule.offsetBusinessDays ?? false,
+    fixedMonth: rule.fixedMonth,
+    fixedDay: rule.fixedDay,
+    frequency: effectiveFrequency,
+    generateMonthsAhead: 18,
+    isOptional: false,
+    optionalNote: null,
+    isBillable: rule.isBillable,
+    defaultAmount: rule.amount ? Number(rule.amount) : null,
+    reminderDaysBefore: [60, 30, 14, 7],
+  };
+
+  const occurrences = generateRecurringFromFixedDate(
+    recurrenceRule,
+    baseDate,
+    baseDate,
+    endDate
+  );
+
+  const generated: GeneratedDeadline[] = [];
+
+  for (const occurrence of occurrences) {
+    const anchorDate = occurrence.date;
+    const anchorYear = anchorDate.getFullYear();
+    const anchorMonth = anchorDate.getMonth() + 1;
+    const anchorQuarter = Math.floor(anchorDate.getMonth() / 3) + 1;
+
+    let dueDate: Date;
+    try {
+      dueDate = calculateDueDate(template, anchorDate, anchorYear);
+    } catch {
+      continue;
+    }
+
+    if (dueDate < startDate || dueDate > endDate) {
+      continue;
+    }
+
+    const labelYear = dueDate.getFullYear();
+    const labelMonth = dueDate.getMonth() + 1;
+    const labelQuarter = Math.floor(dueDate.getMonth() / 3) + 1;
+
+    const periodLabel = generatePeriodLabel(
+      template,
+      labelYear,
+      template.frequency === 'QUARTERLY' ? labelQuarter : undefined,
+      template.frequency === 'MONTHLY' ? labelMonth : undefined
+    );
+
+    const referenceCode = generateReferenceCode(
+      template,
+      labelYear,
+      template.frequency === 'QUARTERLY' ? labelQuarter : undefined,
+      template.frequency === 'MONTHLY' ? labelMonth : undefined
+    );
+
+    const periodStart =
+      template.frequency === 'ANNUALLY'
+        ? getPeriodStart(anchorDate, 'ANNUALLY')
+        : template.frequency === 'QUARTERLY'
+          ? getQuarterStart(anchorYear, anchorQuarter)
+          : template.frequency === 'MONTHLY'
+            ? new Date(anchorYear, anchorMonth - 1, 1)
+            : null;
+
+    generated.push({
+      title: `${rule.taskName} - ${periodLabel}`,
+      description: rule.description,
+      category: rule.category,
+      referenceCode,
+      periodLabel,
+      periodStart,
+      periodEnd: anchorDate,
+      statutoryDueDate: dueDate,
+      isBillable: rule.isBillable,
+      amount: rule.amount ? Number(rule.amount) : null,
+      currency: rule.currency || 'SGD',
+      templateCode: rule.sourceTemplateCode || 'CUSTOM',
+    });
+  }
+
+  return generated;
 }
 
 /**

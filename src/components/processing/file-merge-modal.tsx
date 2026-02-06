@@ -232,7 +232,7 @@ export function FileMergeModal({
     }
   }, [files, onMergeComplete, onClose]);
 
-  // Keyboard hotkeys (Escape to cancel, M to merge)
+    // Keyboard hotkeys (Escape to cancel, Ctrl+M to merge)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
@@ -251,8 +251,8 @@ export function FileMergeModal({
 
       if (isInInput) return;
 
-      // M - Merge files
-      if ((e.key === 'm' || e.key === 'M') && !isMerging && files.length >= 2) {
+      // Ctrl+M - Merge files
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'm' || e.key === 'M') && !isMerging && files.length >= 2) {
         e.preventDefault();
         handleMerge();
       }
@@ -422,7 +422,7 @@ export function FileMergeModal({
               onClick={handleMerge}
               disabled={isMerging || files.length < 2}
               className="btn-primary btn-sm flex items-center justify-center gap-2"
-              title="Merge files (M)"
+              title="Merge files (Ctrl+M)"
             >
               {isMerging ? (
                 <>
@@ -432,7 +432,7 @@ export function FileMergeModal({
               ) : (
                 <>
                   <Merge className="w-4 h-4" />
-                  Merge {files.length} Files (M)
+                  Merge {files.length} Files (Ctrl+M)
                 </>
               )}
             </button>

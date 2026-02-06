@@ -304,6 +304,42 @@ describe('BizFile Service', () => {
       expect(result.shareCapital).toHaveLength(1);
       expect(result.shareCapital![0].numberOfShares).toBe(100000);
     });
+
+    it('should normalize currency names to ISO codes', () => {
+      const data: ExtractedBizFileData = {
+        entityDetails: {
+          uen: '202312345A',
+          name: 'Test Company',
+          entityType: 'PRIVATE_LIMITED',
+          status: 'LIVE',
+        },
+        homeCurrency: 'SINGAPORE DOLLAR',
+        paidUpCapital: {
+          amount: 1000,
+          currency: 'Singapore Dollar',
+        },
+        issuedCapital: {
+          amount: 1000,
+          currency: 'sgd',
+        },
+        shareCapital: [
+          {
+            shareClass: 'ORDINARY',
+            currency: 'SINGAPORE DOLLAR',
+            numberOfShares: 1000,
+            totalValue: 1000,
+            isPaidUp: true,
+          },
+        ],
+      };
+
+      const result = normalizeExtractedData(data);
+
+      expect(result.homeCurrency).toBe('SGD');
+      expect(result.paidUpCapital?.currency).toBe('SGD');
+      expect(result.issuedCapital?.currency).toBe('SGD');
+      expect(result.shareCapital?.[0]?.currency).toBe('SGD');
+    });
   });
 
   describe('Extraction Data Validation', () => {

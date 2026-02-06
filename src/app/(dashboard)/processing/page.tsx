@@ -869,10 +869,11 @@ export default function ProcessingDocumentsPage() {
     }
   }, [activeTenantId, effectiveCompanyId, router]);
 
-  // Keyboard shortcuts (standardized): R refresh, F1 primary create, F2 secondary action
+  // Keyboard shortcuts (standardized): Ctrl+R refresh, F1 primary create, F2 secondary action
   useKeyboardShortcuts([
     {
       key: 'r',
+      ctrl: true,
       handler: () => {
         refetch();
         refetchPendingCount();
@@ -1419,10 +1420,10 @@ export default function ProcessingDocumentsPage() {
           <button
             onClick={() => { refetch(); refetchPendingCount(); }}
             className="btn-secondary btn-sm flex items-center gap-2"
-            title="Refresh list (R)"
+            title="Refresh list (Ctrl+R)"
           >
             <RefreshCw className="w-4 h-4" />
-            <span className="hidden sm:inline">Refresh (R)</span>
+            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
             <span className="sm:hidden">Refresh</span>
           </button>
           {pendingApprovalCount > 0 && (

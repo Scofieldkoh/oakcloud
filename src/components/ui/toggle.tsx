@@ -34,12 +34,16 @@ export function Toggle({
   size = 'md',
   className,
 }: ToggleProps) {
+  const labelClassName = size === 'sm'
+    ? 'text-xs font-medium text-text-secondary'
+    : 'text-sm font-medium text-text-primary';
+
   return (
     <div className={cn('flex items-center justify-between gap-4', className)}>
       {(label || description) && (
         <div className="flex flex-col min-w-0">
           {label && (
-            <span className="text-sm font-medium text-text-primary">{label}</span>
+            <span className={labelClassName}>{label}</span>
           )}
           {description && (
             <span className="text-xs text-text-secondary">{description}</span>

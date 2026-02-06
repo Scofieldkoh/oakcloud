@@ -3312,6 +3312,7 @@ model ContractService {
   overrideBillable       Boolean?               // Override template billable setting
   customRate             Decimal?  @db.Decimal(18, 2)  // Custom rate for this client
   hasCustomDeadlines     Boolean             @default(false)  // Has custom deadline rules
+  fyeYearOverride        Int?                  // Override FYE year used for deadline generation
 
   // Generated deadlines
   deadlines              Deadline[]

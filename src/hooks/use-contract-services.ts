@@ -12,6 +12,7 @@ import type { DeadlineRuleInput } from '@/lib/validations/service';
 // ============================================================================
 
 export interface ContractServiceWithRelations extends ContractService {
+  deadlineRules?: DeadlineRuleInput[];
   contract?: {
     id: string;
     title: string;
@@ -27,6 +28,11 @@ export interface ContractServiceWithRelations extends ContractService {
 }
 
 export interface AllServicesResponse {
+  services: ContractServiceWithRelations[];
+  total: number;
+}
+
+export interface CompanyServicesResponse {
   services: ContractServiceWithRelations[];
   total: number;
 }
@@ -50,6 +56,7 @@ export interface CreateContractServiceInput {
   deadlineTemplateCodes?: string[] | null;
   deadlineRules?: DeadlineRuleInput[] | null;
   generateDeadlines?: boolean;
+  fyeYearOverride?: number | null;
 }
 
 export interface UpdateContractServiceInput {
@@ -66,6 +73,9 @@ export interface UpdateContractServiceInput {
   autoRenewal?: boolean;
   renewalPeriodMonths?: number | null;
   displayOrder?: number;
+  serviceTemplateCode?: string | null;
+  deadlineRules?: DeadlineRuleInput[] | null;
+  regenerateDeadlines?: boolean;
 }
 
 export interface ServiceSearchParams {
@@ -89,6 +99,7 @@ export interface ServiceSearchParams {
 export const serviceKeys = {
   all: ['services'] as const,
   list: (params?: ServiceSearchParams) => [...serviceKeys.all, 'list', params] as const,
+  company: (companyId: string) => [...serviceKeys.all, 'company', companyId] as const,
   contract: (contractId: string) => [...serviceKeys.all, 'contract', contractId] as const,
   detail: (serviceId: string) => [...serviceKeys.all, 'detail', serviceId] as const,
 };
@@ -132,6 +143,74 @@ export function useAllServices(params?: ServiceSearchParams) {
       }
       return response.json();
     },
+  });
+}
+
+/**
+ * Get services for a specific company (services-first company management).
+ */
+export function useCompanyServices(
+  companyId: string | null,
+  params?: Omit<ServiceSearchParams, 'companyId'>
+) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useQuery({
+    queryKey: [...serviceKeys.company(companyId ?? ''), activeTenantId ?? '', params],
+    queryFn: async (): Promise<CompanyServicesResponse> => {
+      const searchParams = new URLSearchParams();
+      if (activeTenantId) searchParams.set('tenantId', activeTenantId);
+      if (params?.query) searchParams.set('query', params.query);
+      if (params?.status) searchParams.set('status', params.status);
+      if (params?.serviceType) searchParams.set('serviceType', params.serviceType);
+      if (params?.contractId) searchParams.set('contractId', params.contractId);
+      if (params?.endDateFrom) searchParams.set('endDateFrom', params.endDateFrom);
+      if (params?.endDateTo) searchParams.set('endDateTo', params.endDateTo);
+      if (params?.page) searchParams.set('page', params.page.toString());
+      if (params?.limit) searchParams.set('limit', params.limit.toString());
+      if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
+      if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder);
+
+      const url = `/api/companies/${companyId}/services?${searchParams.toString()}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch company services');
+      }
+      return response.json();
+    },
+    enabled: !!companyId,
+  });
+}
+
+/**
+ * Get one service for a company by service ID.
+ */
+export function useCompanyService(companyId: string | null, serviceId: string | null) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useQuery({
+    queryKey: [...serviceKeys.company(companyId ?? ''), 'detail', serviceId ?? '', activeTenantId ?? ''],
+    queryFn: async (): Promise<ContractServiceWithRelations> => {
+      const url = activeTenantId
+        ? `/api/companies/${companyId}/services/${serviceId}?tenantId=${activeTenantId}`
+        : `/api/companies/${companyId}/services/${serviceId}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch service');
+      }
+      return response.json();
+    },
+    enabled: !!companyId && !!serviceId,
   });
 }
 
@@ -293,6 +372,129 @@ export function useDeleteContractService(companyId: string, contractId: string) 
       });
       queryClient.invalidateQueries({ queryKey: serviceKeys.contract(contractId) });
       queryClient.invalidateQueries({ queryKey: serviceKeys.all });
+      queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
+      success('Service deleted successfully');
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+/**
+ * Create a service directly under a company (contract handled by API).
+ */
+export function useCreateCompanyService(companyId: string) {
+  const queryClient = useQueryClient();
+  const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async (
+      data: CreateContractServiceInput & { contractId?: string | null }
+    ): Promise<ContractService & { deadlinesGenerated?: number }> => {
+      const response = await fetch(`/api/companies/${companyId}/services`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to create service');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.list() });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.all });
+      if (data.deadlinesGenerated && data.deadlinesGenerated > 0) {
+        queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
+      }
+      if (!data.deadlinesGenerated) {
+        success(`Service "${data.name}" created successfully`);
+      }
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+/**
+ * Update a service directly under a company.
+ */
+export function useUpdateCompanyService(companyId: string, serviceId: string) {
+  const queryClient = useQueryClient();
+  const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async (data: UpdateContractServiceInput) => {
+      const response = await fetch(`/api/companies/${companyId}/services/${serviceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, tenantId: activeTenantId }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update service');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.list() });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.all });
+      queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
+      success(`Service "${data.name}" updated successfully`);
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+/**
+ * Delete a service directly under a company.
+ */
+export function useDeleteCompanyService(companyId: string) {
+  const queryClient = useQueryClient();
+  const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async (serviceId: string) => {
+      const url = activeTenantId
+        ? `/api/companies/${companyId}/services/${serviceId}?tenantId=${activeTenantId}`
+        : `/api/companies/${companyId}/services/${serviceId}`;
+      const response = await fetch(url, { method: 'DELETE' });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete service');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.list() });
+      queryClient.invalidateQueries({ queryKey: serviceKeys.all });
+      queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
       success('Service deleted successfully');
     },
     onError: (err: Error) => {

@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Clock,
   Calendar,
+  Trash2,
 } from 'lucide-react';
 import { cn, formatDateShort } from '@/lib/utils';
 import {
@@ -15,6 +16,7 @@ import {
   useDeadlineStats,
   useGenerateDeadlines,
   useCompleteDeadline,
+  useDeleteDeadline,
 } from '@/hooks/use-deadlines';
 import { usePermissions } from '@/hooks/use-permissions';
 import { DeadlineCompactList } from '@/components/deadlines/deadline-list';
@@ -50,6 +52,7 @@ interface DeadlineDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete?: () => void;
+  onDelete?: () => void;
   canEdit?: boolean;
 }
 
@@ -58,6 +61,7 @@ function DeadlineDetailModal({
   isOpen,
   onClose,
   onComplete,
+  onDelete,
   canEdit,
 }: DeadlineDetailModalProps) {
   if (!deadline) return null;
@@ -187,6 +191,12 @@ function DeadlineDetailModal({
       </ModalBody>
 
       <ModalFooter>
+        {canEdit && onDelete && (
+          <Button variant="danger" onClick={onDelete}>
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete Deadline
+          </Button>
+        )}
         <Button variant="secondary" onClick={onClose}>
           Close
         </Button>
@@ -219,6 +229,7 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'completed'>('active');
   const [selectedDeadline, setSelectedDeadline] = useState<DeadlineWithRelations | null>(null);
   const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Queries
   const statusFilter: DeadlineStatus[] | undefined =
@@ -239,6 +250,7 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
   // Mutations
   const generateDeadlines = useGenerateDeadlines();
   const completeDeadline = useCompleteDeadline(selectedDeadline?.id || '');
+  const deleteDeadline = useDeleteDeadline();
 
   const handleGenerateDeadlines = async () => {
     try {
@@ -254,6 +266,18 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
     if (!selectedDeadline) return;
     try {
       await completeDeadline.mutateAsync({});
+      setSelectedDeadline(null);
+      refetch();
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleDeleteDeadline = async () => {
+    if (!selectedDeadline) return;
+    try {
+      await deleteDeadline.mutateAsync(selectedDeadline.id);
+      setShowDeleteConfirm(false);
       setSelectedDeadline(null);
       refetch();
     } catch {
@@ -400,6 +424,7 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
         isOpen={!!selectedDeadline}
         onClose={() => setSelectedDeadline(null)}
         onComplete={handleCompleteDeadline}
+        onDelete={() => setShowDeleteConfirm(true)}
         canEdit={canUpdate}
       />
 
@@ -412,6 +437,17 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
         description="This will automatically generate deadlines based on the company's profile (entity type, financial year end, GST registration, etc.) and applicable compliance templates. Existing deadlines will not be duplicated."
         confirmLabel="Generate"
         isLoading={generateDeadlines.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteDeadline}
+        title="Delete Deadline"
+        description="Are you sure you want to delete this deadline? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteDeadline.isPending}
       />
     </div>
   );

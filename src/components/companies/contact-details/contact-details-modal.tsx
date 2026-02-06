@@ -14,7 +14,6 @@ import {
   Check,
   Star,
   Loader2,
-  Unlink,
 } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -318,13 +317,11 @@ function ContactRow({
   companyId,
   canEdit,
   onAddDetail,
-  onUnlink,
 }: {
   item: ContactWithDetails;
   companyId: string;
   canEdit: boolean;
   onAddDetail: () => void;
-  onUnlink?: () => void;
 }) {
   // Parse relationship to show badges (deduplicated, cleaned, and in title case)
   const relationships = cleanRelationships(item.contact.relationship);
@@ -434,15 +431,6 @@ function ContactRow({
           >
             <Plus className="w-4 h-4" aria-hidden="true" />
           </button>
-          {onUnlink && (
-            <button
-              onClick={onUnlink}
-              className="text-text-muted hover:text-status-error p-1.5 rounded hover:bg-status-error/10"
-              aria-label={`Unlink ${item.contact.fullName} from company`}
-            >
-              <Unlink className="w-4 h-4" aria-hidden="true" />
-            </button>
-          )}
         </div>
       )}
     </div>
@@ -476,6 +464,7 @@ export function ContactDetailsModal({
     id?: string;
     name: string;
     existingDetails?: ContactDetail[];
+    relationship?: string;
   }>({
     type: 'company',
     name: companyName,
@@ -504,12 +493,6 @@ export function ContactDetailsModal({
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; value: string } | null>(null);
   const [deletingDetailId, setDeletingDetailId] = useState<string | null>(null);
 
-  // State for unlink confirmation
-  const [unlinkConfirm, setUnlinkConfirm] = useState<{
-    contactId: string;
-    contactName: string;
-    relationship: string;
-  } | null>(null);
 
   const handleAddDetail = async (input: CreateContactDetailInput) => {
     try {
@@ -598,17 +581,17 @@ export function ContactDetailsModal({
     }
   };
 
-  const handleUnlinkContact = async () => {
-    if (!unlinkConfirm) return;
+  const handleUnlinkContactFromModal = async () => {
+    if (!addDetailTarget.id || !addDetailTarget.relationship) return;
 
     try {
       await unlinkContactMutation.mutateAsync({
-        contactId: unlinkConfirm.contactId,
+        contactId: addDetailTarget.id,
         companyId,
-        relationship: unlinkConfirm.relationship,
+        relationship: addDetailTarget.relationship,
       });
       success('Contact unlinked successfully');
-      setUnlinkConfirm(null);
+      setShowAddDetailModal(false);
     } catch {
       // Error handled by mutation
     }
@@ -645,9 +628,19 @@ export function ContactDetailsModal({
       id: item.contact.id,
       name: item.contact.fullName,
       existingDetails: item.details,
+      relationship: item.contact.relationship || '',
     });
     setShowAddDetailModal(true);
   };
+
+  const hasProtectedContactRole = (relationship?: string) =>
+    cleanRelationships(relationship).some(
+      (rel) => rel.toLowerCase().includes('director') || rel.toLowerCase().includes('shareholder')
+    );
+  const canUnlinkContactFromModal = canEdit &&
+    addDetailTarget.type === 'contact' &&
+    !!addDetailTarget.relationship &&
+    !hasProtectedContactRole(addDetailTarget.relationship);
 
   return (
     <>
@@ -782,11 +775,6 @@ export function ContactDetailsModal({
                               companyId={companyId}
                               canEdit={canEdit}
                               onAddDetail={() => openAddDetailForContact(item)}
-                              onUnlink={() => setUnlinkConfirm({
-                                contactId: item.contact.id,
-                                contactName: item.contact.fullName,
-                                relationship: item.contact.relationship || '',
-                              })}
                             />
                           ))}
                         </div>
@@ -821,6 +809,7 @@ export function ContactDetailsModal({
         onSubmit={handleAddDetail}
         onUpdate={handleUpdateDetailFromModal}
         onDelete={handleDeleteDetailFromModal}
+        onUnlinkContact={canUnlinkContactFromModal ? handleUnlinkContactFromModal : undefined}
         isLoading={createDetailMutation.isPending || updateDetailMutation.isPending}
         targetName={addDetailTarget.name}
         targetType={addDetailTarget.type}
@@ -851,17 +840,6 @@ export function ContactDetailsModal({
         isLoading={deleteDetailMutation.isPending}
       />
 
-      {/* Unlink Contact Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={!!unlinkConfirm}
-        onClose={() => setUnlinkConfirm(null)}
-        onConfirm={handleUnlinkContact}
-        title="Unlink Contact"
-        description={`Are you sure you want to unlink "${unlinkConfirm?.contactName}" from this company? This will remove their relationship as "${unlinkConfirm?.relationship}".`}
-        variant="danger"
-        confirmLabel="Unlink"
-        isLoading={unlinkContactMutation.isPending}
-      />
     </>
   );
 }

@@ -10,13 +10,115 @@ export interface ChronologicalDeadlinePreviewProps {
   rules: DeadlineRuleInput[];
   companyData: CompanyData;
   serviceStartDate?: string;
+  highlightTaskName?: string | null;
+  serverDeadlines?: Array<{ taskName: string; statutoryDueDate: string }>;
+  serverWarnings?: string[];
+  loading?: boolean;
+  error?: string | null;
 }
 
 interface PreviewDeadline {
   taskName: string;
   date: Date;
   dateString: string;
-  warning?: string;
+  relativeLabel: string;
+  isPast: boolean;
+  isToday: boolean;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_PREVIEW_PER_RULE = 12;
+const MAX_RENDER_ITEMS = 24;
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function formatDate(date: Date): string {
+  const datePart = date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+  return `${datePart}, ${weekday}`;
+}
+
+function formatRelativeLabel(dayDelta: number): string {
+  if (dayDelta === 0) return 'today';
+  if (dayDelta > 0) return `in ${dayDelta} day${dayDelta === 1 ? '' : 's'}`;
+  const overdue = Math.abs(dayDelta);
+  return `${overdue} day${overdue === 1 ? '' : 's'} overdue`;
+}
+
+function addMonthsClamped(date: Date, months: number): Date {
+  const year = date.getFullYear();
+  const monthIndex = date.getMonth();
+  const day = date.getDate();
+  const targetIndex = monthIndex + months;
+  const targetYear = year + Math.floor(targetIndex / 12);
+  const targetMonth = ((targetIndex % 12) + 12) % 12;
+  const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const safeDay = Math.min(day, lastDay);
+  return new Date(targetYear, targetMonth, safeDay);
+}
+
+function applyOffset(baseDate: Date, rule: DeadlineRuleInput): Date {
+  let shifted = addMonthsClamped(baseDate, rule.offsetMonths ?? 0);
+  if (rule.offsetDays) {
+    shifted = new Date(shifted.getFullYear(), shifted.getMonth(), shifted.getDate() + rule.offsetDays);
+  }
+  return shifted;
+}
+
+function frequencyStepMonths(rule: DeadlineRuleInput): number {
+  if (!rule.isRecurring) return 0;
+  if (!rule.frequency || rule.frequency === 'ONE_TIME') return 0;
+  if (rule.frequency === 'MONTHLY') return 1;
+  if (rule.frequency === 'QUARTERLY') return 3;
+  return 12;
+}
+
+function previewOccurrenceCount(rule: DeadlineRuleInput): number {
+  if (!rule.isRecurring || !rule.frequency || rule.frequency === 'ONE_TIME') {
+    return 1;
+  }
+
+  const fallback = rule.frequency === 'MONTHLY' ? 6 : rule.frequency === 'QUARTERLY' ? 6 : 4;
+  const configured = rule.generateOccurrences ?? fallback;
+  return Math.max(1, Math.min(configured, MAX_PREVIEW_PER_RULE));
+}
+
+function recurringDatesFromBase(baseDate: Date, rule: DeadlineRuleInput): Date[] {
+  const count = previewOccurrenceCount(rule);
+  const stepMonths = frequencyStepMonths(rule);
+
+  if (count <= 1 || stepMonths === 0) {
+    return [applyOffset(baseDate, rule)];
+  }
+
+  const dates: Date[] = [];
+  for (let i = 0; i < count; i++) {
+    const occurrence = addMonthsClamped(baseDate, i * stepMonths);
+    dates.push(applyOffset(occurrence, rule));
+  }
+
+  return dates;
+}
+
+function safeDate(dateInput: string | Date): Date | null {
+  const candidate = new Date(dateInput);
+  if (Number.isNaN(candidate.getTime())) return null;
+  return candidate;
+}
+
+function quarterEndForOffset(baseDate: Date, offset: number): Date {
+  const currentQuarter = Math.floor(baseDate.getMonth() / 3);
+  const targetQuarter = currentQuarter + offset;
+  const year = baseDate.getFullYear() + Math.floor(targetQuarter / 4);
+  const quarterInYear = ((targetQuarter % 4) + 4) % 4;
+  const quarterEndMonth = quarterInYear * 3 + 2;
+  return new Date(year, quarterEndMonth + 1, 0);
 }
 
 /**
@@ -26,188 +128,225 @@ export function ChronologicalDeadlinePreview({
   rules,
   companyData,
   serviceStartDate,
+  highlightTaskName,
+  serverDeadlines,
+  serverWarnings,
+  loading = false,
+  error = null,
 }: ChronologicalDeadlinePreviewProps) {
-  // Calculate all deadlines and sort chronologically
-  const sortedDeadlines = useMemo(() => {
-    const allDeadlines: PreviewDeadline[] = [];
-    const warnings: string[] = [];
+  const previewData = useMemo(() => {
+    if (serverDeadlines) {
+      const rawDeadlines: Array<{ taskName: string; date: Date }> = [];
+      serverDeadlines.forEach((deadline) => {
+        const date = safeDate(deadline.statutoryDueDate);
+        if (!date) return;
+        rawDeadlines.push({ taskName: deadline.taskName, date });
+      });
+
+      rawDeadlines.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+      const today = startOfDay(new Date());
+      const mappedDeadlines: PreviewDeadline[] = rawDeadlines.map((deadline) => {
+        const dayDelta = Math.round((startOfDay(deadline.date).getTime() - today.getTime()) / DAY_MS);
+        return {
+          taskName: deadline.taskName,
+          date: deadline.date,
+          dateString: formatDate(deadline.date),
+          relativeLabel: formatRelativeLabel(dayDelta),
+          isPast: dayDelta < 0,
+          isToday: dayDelta === 0,
+        };
+      });
+
+      const visibleDeadlines = mappedDeadlines.slice(0, MAX_RENDER_ITEMS);
+      const overdueCount = mappedDeadlines.filter((deadline) => deadline.isPast).length;
+
+      return {
+        deadlines: visibleDeadlines,
+        warnings: serverWarnings ?? [],
+        totalCount: mappedDeadlines.length,
+        hiddenCount: Math.max(0, mappedDeadlines.length - visibleDeadlines.length),
+        overdueCount,
+      };
+    }
+
+    const rawDeadlines: Array<{ taskName: string; date: Date }> = [];
+    const warningSet = new Set<string>();
+    const now = new Date();
 
     rules.forEach((rule) => {
-      if (!rule.taskName) return;
+      const taskName = rule.taskName?.trim();
+      if (!taskName) return;
 
       try {
         if (rule.ruleType === 'FIXED_DATE') {
-          if (!rule.specificDate) return;
-
-          const baseDate = new Date(rule.specificDate);
-          if (isNaN(baseDate.getTime())) return;
-
-          // For recurring, show multiple occurrences
-          if (rule.isRecurring && rule.frequency && rule.frequency !== 'ONE_TIME') {
-            const occurrenceCount = Math.min(rule.generateOccurrences || 3, 5);
-            for (let i = 0; i < occurrenceCount; i++) {
-              const occurrence = new Date(baseDate);
-              if (rule.frequency === 'MONTHLY') {
-                occurrence.setMonth(occurrence.getMonth() + i);
-              } else if (rule.frequency === 'QUARTERLY') {
-                occurrence.setMonth(occurrence.getMonth() + (i * 3));
-              } else if (rule.frequency === 'ANNUALLY') {
-                occurrence.setFullYear(occurrence.getFullYear() + i);
-              }
-              allDeadlines.push({
-                taskName: rule.taskName,
-                date: occurrence,
-                dateString: occurrence.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  weekday: 'short'
-                }),
-              });
-            }
-          } else {
-            allDeadlines.push({
-              taskName: rule.taskName,
-              date: baseDate,
-              dateString: baseDate.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                weekday: 'short'
-              }),
-            });
+          if (!rule.specificDate) {
+            warningSet.add(`${taskName}: specific date not set`);
+            return;
           }
-        } else if (rule.ruleType === 'RULE_BASED') {
-          if (!rule.anchorType) return;
 
-          // Check for missing company data
-          if (rule.anchorType === 'FYE') {
-            if (companyData.fyeMonth === null || companyData.fyeMonth === undefined ||
-                companyData.fyeDay === null || companyData.fyeDay === undefined) {
-              warnings.push(`${rule.taskName}: Company FYE not set`);
-              return;
-            }
-
-            // Calculate FYE-based dates (show next 3 years)
-            const currentYear = new Date().getFullYear();
-            for (let i = 0; i < 3; i++) {
-              const fye = new Date(currentYear + i, companyData.fyeMonth - 1, companyData.fyeDay);
-              const dueDate = new Date(fye);
-              dueDate.setMonth(dueDate.getMonth() + (rule.offsetMonths || 0));
-              dueDate.setDate(dueDate.getDate() + (rule.offsetDays || 0));
-
-              allDeadlines.push({
-                taskName: rule.taskName,
-                date: dueDate,
-                dateString: dueDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  weekday: 'short'
-                }),
-              });
-            }
-          } else if (rule.anchorType === 'INCORPORATION') {
-            if (!companyData.incorporationDate) {
-              warnings.push(`${rule.taskName}: Incorporation date not set`);
-              return;
-            }
-            const incDate = new Date(companyData.incorporationDate);
-            if (rule.isRecurring && rule.frequency && rule.frequency !== 'ONE_TIME') {
-              const occurrenceCount = Math.min(rule.generateOccurrences || 3, 5);
-              for (let i = 0; i < occurrenceCount; i++) {
-                const occurrence = new Date(incDate);
-                occurrence.setFullYear(occurrence.getFullYear() + i);
-                occurrence.setMonth(occurrence.getMonth() + (rule.offsetMonths || 0));
-                occurrence.setDate(occurrence.getDate() + (rule.offsetDays || 0));
-
-                allDeadlines.push({
-                  taskName: rule.taskName,
-                  date: occurrence,
-                  dateString: occurrence.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    weekday: 'short'
-                  }),
-                });
-              }
-            } else {
-              const dueDate = new Date(incDate);
-              dueDate.setMonth(dueDate.getMonth() + (rule.offsetMonths || 0));
-              dueDate.setDate(dueDate.getDate() + (rule.offsetDays || 0));
-
-              allDeadlines.push({
-                taskName: rule.taskName,
-                date: dueDate,
-                dateString: dueDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  weekday: 'short'
-                }),
-              });
-            }
-          } else if (rule.anchorType === 'SERVICE_START') {
-            if (!serviceStartDate) {
-              warnings.push(`${rule.taskName}: Service start date not set`);
-              return;
-            }
-
-            const startDate = new Date(serviceStartDate);
-            if (rule.isRecurring && rule.frequency && rule.frequency !== 'ONE_TIME') {
-              const occurrenceCount = Math.min(rule.generateOccurrences || 3, 5);
-              for (let i = 0; i < occurrenceCount; i++) {
-                const occurrence = new Date(startDate);
-                if (rule.frequency === 'MONTHLY') {
-                  occurrence.setMonth(occurrence.getMonth() + i);
-                } else if (rule.frequency === 'QUARTERLY') {
-                  occurrence.setMonth(occurrence.getMonth() + (i * 3));
-                } else if (rule.frequency === 'ANNUALLY') {
-                  occurrence.setFullYear(occurrence.getFullYear() + i);
-                }
-                occurrence.setMonth(occurrence.getMonth() + (rule.offsetMonths || 0));
-                occurrence.setDate(occurrence.getDate() + (rule.offsetDays || 0));
-
-                allDeadlines.push({
-                  taskName: rule.taskName,
-                  date: occurrence,
-                  dateString: occurrence.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    weekday: 'short'
-                  }),
-                });
-              }
-            } else {
-              const dueDate = new Date(startDate);
-              dueDate.setMonth(dueDate.getMonth() + (rule.offsetMonths || 0));
-              dueDate.setDate(dueDate.getDate() + (rule.offsetDays || 0));
-
-              allDeadlines.push({
-                taskName: rule.taskName,
-                date: dueDate,
-                dateString: dueDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  weekday: 'short'
-                }),
-              });
-            }
+          const fixedDate = safeDate(rule.specificDate);
+          if (!fixedDate) {
+            warningSet.add(`${taskName}: invalid specific date`);
+            return;
           }
+
+          recurringDatesFromBase(fixedDate, rule).forEach((date) => {
+            rawDeadlines.push({ taskName, date });
+          });
+          return;
+        }
+
+        if (!rule.anchorType) {
+          warningSet.add(`${taskName}: anchor type not set`);
+          return;
+        }
+
+        if (rule.anchorType === 'FYE') {
+          if (!companyData.fyeMonth || !companyData.fyeDay) {
+            warningSet.add(`${taskName}: company FYE is not configured`);
+            return;
+          }
+
+          const count = previewOccurrenceCount(rule);
+          const baseYear = companyData.fyeYear ?? now.getFullYear();
+          for (let i = 0; i < count; i++) {
+            const anchor = new Date(
+              baseYear + i,
+              companyData.fyeMonth - 1,
+              companyData.fyeDay
+            );
+            rawDeadlines.push({ taskName, date: applyOffset(anchor, rule) });
+          }
+          return;
+        }
+
+        if (rule.anchorType === 'INCORPORATION') {
+          if (!companyData.incorporationDate) {
+            warningSet.add(`${taskName}: incorporation date not set`);
+            return;
+          }
+
+          const incorporationDate = safeDate(companyData.incorporationDate);
+          if (!incorporationDate) {
+            warningSet.add(`${taskName}: incorporation date is invalid`);
+            return;
+          }
+
+          recurringDatesFromBase(incorporationDate, rule).forEach((date) => {
+            rawDeadlines.push({ taskName, date });
+          });
+          return;
+        }
+
+        if (rule.anchorType === 'SERVICE_START') {
+          if (!serviceStartDate) {
+            warningSet.add(`${taskName}: service start date not set`);
+            return;
+          }
+
+          const startDate = safeDate(serviceStartDate);
+          if (!startDate) {
+            warningSet.add(`${taskName}: service start date is invalid`);
+            return;
+          }
+
+          recurringDatesFromBase(startDate, rule).forEach((date) => {
+            rawDeadlines.push({ taskName, date });
+          });
+          return;
+        }
+
+        if (rule.anchorType === 'MONTH_END') {
+          const count = previewOccurrenceCount(rule);
+          for (let i = 0; i < count; i++) {
+            const anchor = new Date(now.getFullYear(), now.getMonth() + i + 1, 0);
+            rawDeadlines.push({ taskName, date: applyOffset(anchor, rule) });
+          }
+          return;
+        }
+
+        if (rule.anchorType === 'QUARTER_END') {
+          const count = previewOccurrenceCount(rule);
+          for (let i = 0; i < count; i++) {
+            const anchor = quarterEndForOffset(now, i);
+            rawDeadlines.push({ taskName, date: applyOffset(anchor, rule) });
+          }
+          return;
+        }
+
+        if (rule.anchorType === 'FIXED_CALENDAR') {
+          const fixedMonth = rule.fixedMonth;
+          const fixedDay = rule.fixedDay;
+
+          if (!fixedMonth || !fixedDay) {
+            warningSet.add(`${taskName}: fixed month/day not set`);
+            return;
+          }
+
+          const count = previewOccurrenceCount(rule);
+          for (let i = 0; i < count; i++) {
+            const year = now.getFullYear() + i;
+            const lastDayOfMonth = new Date(year, fixedMonth, 0).getDate();
+            const safeDay = Math.min(fixedDay, lastDayOfMonth);
+            const anchor = new Date(year, fixedMonth - 1, safeDay);
+            rawDeadlines.push({ taskName, date: applyOffset(anchor, rule) });
+          }
+          return;
+        }
+
+        if (rule.anchorType === 'IPC_EXPIRY') {
+          warningSet.add(`${taskName}: IPC expiry preview is shown after save`);
+          return;
         }
       } catch {
-        // Skip invalid rules silently
+        warningSet.add(`${taskName}: preview unavailable`);
       }
     });
 
-    // Sort by date
-    allDeadlines.sort((a, b) => a.date.getTime() - b.date.getTime());
+    rawDeadlines.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    return { deadlines: allDeadlines, warnings };
-  }, [rules, companyData, serviceStartDate]);
+    const today = startOfDay(now);
+    const mappedDeadlines: PreviewDeadline[] = rawDeadlines.map((deadline) => {
+      const dayDelta = Math.round((startOfDay(deadline.date).getTime() - today.getTime()) / DAY_MS);
+      return {
+        taskName: deadline.taskName,
+        date: deadline.date,
+        dateString: formatDate(deadline.date),
+        relativeLabel: formatRelativeLabel(dayDelta),
+        isPast: dayDelta < 0,
+        isToday: dayDelta === 0,
+      };
+    });
+
+    const visibleDeadlines = mappedDeadlines.slice(0, MAX_RENDER_ITEMS);
+    const overdueCount = mappedDeadlines.filter((deadline) => deadline.isPast).length;
+
+    return {
+      deadlines: visibleDeadlines,
+      warnings: Array.from(warningSet),
+      totalCount: mappedDeadlines.length,
+      hiddenCount: Math.max(0, mappedDeadlines.length - visibleDeadlines.length),
+      overdueCount,
+    };
+  }, [rules, companyData, serviceStartDate, serverDeadlines, serverWarnings]);
+
+  if (loading && !serverDeadlines) {
+    return (
+      <div className="p-6 text-center border border-border-primary rounded-lg">
+        <p className="text-sm text-text-muted">Loading preview...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center border border-border-primary rounded-lg">
+        <p className="text-sm text-text-muted">Preview unavailable</p>
+        <p className="text-xs text-text-muted mt-1">{error}</p>
+      </div>
+    );
+  }
 
   if (rules.length === 0) {
     return (
@@ -219,10 +358,9 @@ export function ChronologicalDeadlinePreview({
 
   return (
     <div>
-      {/* Warnings */}
-      {sortedDeadlines.warnings.length > 0 && (
+      {previewData.warnings.length > 0 && (
         <div className="mb-4 space-y-2">
-          {sortedDeadlines.warnings.map((warning, index) => (
+          {previewData.warnings.map((warning, index) => (
             <div
               key={index}
               className="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-md border border-amber-200 dark:border-amber-800"
@@ -234,55 +372,77 @@ export function ChronologicalDeadlinePreview({
         </div>
       )}
 
-      {/* Chronological list */}
-      {sortedDeadlines.deadlines.length > 0 ? (
-        <div className="space-y-1">
-          {sortedDeadlines.deadlines.map((deadline, index) => {
-            const isPast = deadline.date < new Date();
-            return (
+      {previewData.deadlines.length > 0 ? (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] text-text-muted">
+              Showing {previewData.deadlines.length} of {previewData.totalCount} generated deadline{previewData.totalCount !== 1 ? 's' : ''}
+            </span>
+            {previewData.overdueCount > 0 && (
+              <span className="text-[11px] text-red-600 dark:text-red-400">
+                {previewData.overdueCount} overdue
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {previewData.deadlines.map((deadline, index) => {
+              const isHighlighted = Boolean(highlightTaskName) && (
+                deadline.taskName === highlightTaskName ||
+                deadline.taskName.startsWith(`${highlightTaskName} -`)
+              );
+              const isDimmed = Boolean(highlightTaskName) && !isHighlighted;
+              return (
               <div
                 key={index}
                 className={cn(
-                  'flex items-start gap-2 p-2 rounded-md transition-colors',
-                  isPast
-                    ? 'bg-red-50 dark:bg-red-900/20'
-                    : 'hover:bg-background-secondary'
+                  'flex items-start gap-2 p-3 rounded-md border transition-colors',
+                  deadline.isPast
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/50'
+                    : deadline.isToday
+                      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/50'
+                      : 'bg-background-primary border-border-primary/60 hover:bg-background-secondary/60',
+                  isHighlighted && 'ring-1 ring-oak-primary/30 bg-oak-light/10 border-border-primary',
+                  isDimmed && 'opacity-70'
                 )}
               >
                 <Calendar
                   className={cn(
-                    'w-3.5 h-3.5 flex-shrink-0 mt-0.5',
-                    isPast ? 'text-red-500' : 'text-oak-primary'
+                    'w-4 h-4 flex-shrink-0 mt-0.5',
+                    deadline.isPast
+                      ? 'text-red-500'
+                      : deadline.isToday
+                        ? 'text-amber-500'
+                        : 'text-oak-primary'
                   )}
                 />
                 <div className="flex-1 min-w-0">
                   <p
                     className={cn(
-                      'text-xs font-medium truncate',
-                      isPast ? 'text-red-700 dark:text-red-400' : 'text-text-primary'
+                      'text-sm font-medium whitespace-normal break-words',
+                      deadline.isPast ? 'text-red-700 dark:text-red-400' : 'text-text-primary'
                     )}
                   >
-                    {deadline.taskName}
-                  </p>
-                  <p
-                    className={cn(
-                      'text-[10px]',
-                      isPast ? 'text-red-600 dark:text-red-400' : 'text-text-muted'
-                    )}
-                  >
-                    {deadline.dateString}
-                    {isPast && ' (Past)'}
+                    <span>{deadline.taskName}</span>
+                    <span className="text-text-muted"> - {deadline.dateString} ({deadline.relativeLabel})</span>
                   </p>
                 </div>
               </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {previewData.hiddenCount > 0 && (
+            <div className="mt-2 text-center text-[10px] text-text-muted">
+              +{previewData.hiddenCount} more dates not shown
+            </div>
+          )}
         </div>
       ) : (
         <div className="p-4 text-center border border-border-primary rounded-lg">
-          <p className="text-xs text-text-muted">No preview dates available</p>
+          <p className="text-xs text-text-muted">No deadlines available yet</p>
           <p className="text-[10px] text-text-muted mt-1">
-            Check company FYE and service start date
+            Check company FYE, service start, and anchor settings
           </p>
         </div>
       )}

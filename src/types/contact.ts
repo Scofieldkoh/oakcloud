@@ -122,6 +122,7 @@ export interface ContactWithDetails {
     relationship?: string;
   };
   details: ContactDetailRecord[];
+  isCurrent: boolean;
 }
 
 // ============================================================================

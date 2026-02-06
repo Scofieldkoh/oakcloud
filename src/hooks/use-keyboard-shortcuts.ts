@@ -34,7 +34,7 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[], enabled = true
 
       // Don't trigger shortcuts when typing in input fields
       const target = event.target as HTMLElement;
-      const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+      const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
 
       for (const shortcut of shortcutsRef.current) {
         const ctrlOrMeta = shortcut.ctrl || shortcut.meta;
@@ -50,6 +50,13 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[], enabled = true
           matchesShift &&
           matchesAlt
         ) {
+          const isBackspace = shortcut.key.toLowerCase() === 'backspace';
+
+          // Avoid hijacking Ctrl+Backspace while typing
+          if (isInputField && isBackspace) {
+            continue;
+          }
+
           // Skip non-modifier shortcuts if in input field, unless it's Escape
           if (isInputField && !ctrlOrMeta && shortcut.key.toLowerCase() !== 'escape') {
             continue;
