@@ -96,7 +96,6 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
       await stopServiceMutation.mutateAsync({
         status: 'CANCELLED',
         endDate: stoppingService.endDate || stopDate,
-        autoRenewal: false,
       });
       setStoppingService(null);
     } catch (err) {

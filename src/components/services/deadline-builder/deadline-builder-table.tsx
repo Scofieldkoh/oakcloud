@@ -23,6 +23,8 @@ export interface DeadlineBuilderTableProps {
   initialRules: DeadlineRuleInput[];
   onChange: (rules: DeadlineRuleInput[]) => void;
   serviceStartDate?: string;
+  defaultBillingAmount?: number | null;
+  defaultBillingCurrency?: string | null;
   error?: string;
   selectedRuleIndex?: number | null;
   onSelectRule?: (index: number | null) => void;
@@ -137,6 +139,8 @@ export function DeadlineBuilderTable({
   initialRules,
   onChange,
   serviceStartDate,
+  defaultBillingAmount,
+  defaultBillingCurrency,
   error,
   selectedRuleIndex,
   onSelectRule,
@@ -172,6 +176,38 @@ export function DeadlineBuilderTable({
     },
     [onChange]
   );
+
+  useEffect(() => {
+    if (defaultBillingAmount === null || defaultBillingAmount === undefined) return;
+
+    let updated = false;
+    const nextRules = rules.map((rule) => {
+      if (!rule.isBillable) return rule;
+
+      let nextRule = rule;
+
+      if (rule.amount === null || rule.amount === undefined) {
+        updated = true;
+        nextRule = { ...nextRule, amount: defaultBillingAmount };
+      }
+
+      if (defaultBillingCurrency) {
+        const shouldUpdateCurrency =
+          rule.currency == null ||
+          (rule.currency === 'SGD' && defaultBillingCurrency !== 'SGD');
+        if (shouldUpdateCurrency) {
+          updated = true;
+          nextRule = { ...nextRule, currency: defaultBillingCurrency };
+        }
+      }
+
+      return nextRule;
+    });
+
+    if (updated) {
+      handleRulesChange(nextRules);
+    }
+  }, [defaultBillingAmount, defaultBillingCurrency, handleRulesChange, rules]);
 
   const handleAddRule = useCallback(() => {
     const newRule = createBlankRule(rules.length);
@@ -298,11 +334,11 @@ export function DeadlineBuilderTable({
         <div className="space-y-4">
           <div className="min-w-0">
             <div className="border border-border-primary rounded-lg overflow-hidden">
-              <div className="hidden md:grid grid-cols-[1.75fr_2fr_170px_120px_240px] gap-2 px-3 py-2 bg-background-secondary/50 border-b border-border-primary">
+              <div className="hidden md:grid grid-cols-[1.75fr_2fr_170px_240px_240px] gap-2 px-3 py-2 bg-background-secondary/50 border-b border-border-primary">
                 <div className="text-xs font-semibold text-text-secondary">Task Name</div>
                 <div className="text-xs font-semibold text-text-secondary">Due Date Rule</div>
                 <div className="text-xs font-semibold text-text-secondary">Frequency</div>
-                <div className="text-xs font-semibold text-text-secondary">Billable</div>
+                <div className="text-xs font-semibold text-text-secondary">Billing</div>
                 <div className="text-xs font-semibold text-text-secondary text-right">Actions</div>
               </div>
 
@@ -316,6 +352,8 @@ export function DeadlineBuilderTable({
                     companyData={companyData}
                     previewEnabled={false}
                     serviceStartDate={serviceStartDate}
+                    defaultBillingAmount={defaultBillingAmount}
+                    defaultBillingCurrency={defaultBillingCurrency}
                     onUpdate={(updatedRule) => handleUpdateRule(index, updatedRule)}
                     onDelete={() => handleDeleteRule(index)}
                     onMoveUp={() => handleMoveUp(index)}

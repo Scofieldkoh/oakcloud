@@ -278,9 +278,10 @@ enum DeadlineCategory {
 }
 
 enum DeadlineStatus {
-  UPCOMING
-  DUE_SOON
+  PENDING
+  PENDING_CLIENT
   IN_PROGRESS
+  PENDING_REVIEW
   COMPLETED
   CANCELLED
   WAIVED
@@ -289,6 +290,7 @@ enum DeadlineStatus {
 enum DeadlineBillingStatus {
   NOT_APPLICABLE
   PENDING
+  TO_BE_BILLED
   INVOICED
   PAID
 }
@@ -3295,14 +3297,9 @@ model ContractService {
   // Service-level dates
   startDate           DateTime
   endDate             DateTime?
-  nextBillingDate     DateTime?
 
   // Scope / Statement of Work (rich text)
   scope               String?          @db.Text
-
-  // Renewal tracking
-  autoRenewal         Boolean          @default(false)
-  renewalPeriodMonths Int?
 
   displayOrder        Int              @default(0)
 
@@ -3470,6 +3467,7 @@ model Deadline {
   // Core fields
   title                 String              // Display title (max 200 chars)
   description           String?             @db.Text
+  internalNotes         String?             @db.Text
   category              DeadlineCategory
   referenceCode         String?             // For grouping (e.g., "AGM-2024")
   periodLabel           String              // Human-readable period (e.g., "FY2024", "YA2025")
@@ -3491,7 +3489,7 @@ model Deadline {
   scopeNote             String?
   isBacklog             Boolean             @default(false) // Inherited overdue?
   backlogNote           String?
-  status                DeadlineStatus      @default(UPCOMING)
+  status                DeadlineStatus      @default(PENDING)
 
   // Completion
   completedAt           DateTime?

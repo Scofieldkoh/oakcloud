@@ -49,6 +49,8 @@ export interface SearchableSelectProps {
   loading?: boolean;
   /** Group options by this field (must match option.group) */
   groupBy?: string;
+  /** Additional class name for the input container */
+  containerClassName?: string;
 }
 
 export function SearchableSelect({
@@ -65,6 +67,7 @@ export function SearchableSelect({
   showChevron = true,
   loading = false,
   groupBy,
+  containerClassName,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -329,7 +332,8 @@ export function SearchableSelect({
           'transition-colors',
           sizeClasses[size],
           disabled && 'opacity-50 cursor-not-allowed',
-          isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary'
+          isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary',
+          containerClassName
         )}
       >
         <input

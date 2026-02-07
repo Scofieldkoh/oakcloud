@@ -44,6 +44,7 @@ export type DeadlineMinAggregateOutputType = {
   deadlineTemplateId: string | null
   title: string | null
   description: string | null
+  internalNotes: string | null
   category: $Enums.DeadlineCategory | null
   referenceCode: string | null
   periodLabel: string | null
@@ -89,6 +90,7 @@ export type DeadlineMaxAggregateOutputType = {
   deadlineTemplateId: string | null
   title: string | null
   description: string | null
+  internalNotes: string | null
   category: $Enums.DeadlineCategory | null
   referenceCode: string | null
   periodLabel: string | null
@@ -134,6 +136,7 @@ export type DeadlineCountAggregateOutputType = {
   deadlineTemplateId: number
   title: number
   description: number
+  internalNotes: number
   category: number
   referenceCode: number
   periodLabel: number
@@ -192,6 +195,7 @@ export type DeadlineMinAggregateInputType = {
   deadlineTemplateId?: true
   title?: true
   description?: true
+  internalNotes?: true
   category?: true
   referenceCode?: true
   periodLabel?: true
@@ -237,6 +241,7 @@ export type DeadlineMaxAggregateInputType = {
   deadlineTemplateId?: true
   title?: true
   description?: true
+  internalNotes?: true
   category?: true
   referenceCode?: true
   periodLabel?: true
@@ -282,6 +287,7 @@ export type DeadlineCountAggregateInputType = {
   deadlineTemplateId?: true
   title?: true
   description?: true
+  internalNotes?: true
   category?: true
   referenceCode?: true
   periodLabel?: true
@@ -415,6 +421,7 @@ export type DeadlineGroupByOutputType = {
   deadlineTemplateId: string | null
   title: string
   description: string | null
+  internalNotes: string | null
   category: $Enums.DeadlineCategory
   referenceCode: string | null
   periodLabel: string
@@ -484,6 +491,7 @@ export type DeadlineWhereInput = {
   deadlineTemplateId?: Prisma.StringNullableFilter<"Deadline"> | string | null
   title?: Prisma.StringFilter<"Deadline"> | string
   description?: Prisma.StringNullableFilter<"Deadline"> | string | null
+  internalNotes?: Prisma.StringNullableFilter<"Deadline"> | string | null
   category?: Prisma.EnumDeadlineCategoryFilter<"Deadline"> | $Enums.DeadlineCategory
   referenceCode?: Prisma.StringNullableFilter<"Deadline"> | string | null
   periodLabel?: Prisma.StringFilter<"Deadline"> | string
@@ -536,6 +544,7 @@ export type DeadlineOrderByWithRelationInput = {
   deadlineTemplateId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  internalNotes?: Prisma.SortOrderInput | Prisma.SortOrder
   category?: Prisma.SortOrder
   referenceCode?: Prisma.SortOrderInput | Prisma.SortOrder
   periodLabel?: Prisma.SortOrder
@@ -592,6 +601,7 @@ export type DeadlineWhereUniqueInput = Prisma.AtLeast<{
   deadlineTemplateId?: Prisma.StringNullableFilter<"Deadline"> | string | null
   title?: Prisma.StringFilter<"Deadline"> | string
   description?: Prisma.StringNullableFilter<"Deadline"> | string | null
+  internalNotes?: Prisma.StringNullableFilter<"Deadline"> | string | null
   category?: Prisma.EnumDeadlineCategoryFilter<"Deadline"> | $Enums.DeadlineCategory
   referenceCode?: Prisma.StringNullableFilter<"Deadline"> | string | null
   periodLabel?: Prisma.StringFilter<"Deadline"> | string
@@ -644,6 +654,7 @@ export type DeadlineOrderByWithAggregationInput = {
   deadlineTemplateId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  internalNotes?: Prisma.SortOrderInput | Prisma.SortOrder
   category?: Prisma.SortOrder
   referenceCode?: Prisma.SortOrderInput | Prisma.SortOrder
   periodLabel?: Prisma.SortOrder
@@ -698,6 +709,7 @@ export type DeadlineScalarWhereWithAggregatesInput = {
   deadlineTemplateId?: Prisma.StringNullableWithAggregatesFilter<"Deadline"> | string | null
   title?: Prisma.StringWithAggregatesFilter<"Deadline"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Deadline"> | string | null
+  internalNotes?: Prisma.StringNullableWithAggregatesFilter<"Deadline"> | string | null
   category?: Prisma.EnumDeadlineCategoryWithAggregatesFilter<"Deadline"> | $Enums.DeadlineCategory
   referenceCode?: Prisma.StringNullableWithAggregatesFilter<"Deadline"> | string | null
   periodLabel?: Prisma.StringWithAggregatesFilter<"Deadline"> | string
@@ -740,6 +752,7 @@ export type DeadlineCreateInput = {
   id?: string
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -790,6 +803,7 @@ export type DeadlineUncheckedCreateInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -832,6 +846,7 @@ export type DeadlineUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -882,6 +897,7 @@ export type DeadlineUncheckedUpdateInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -928,6 +944,7 @@ export type DeadlineCreateManyInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -970,6 +987,7 @@ export type DeadlineUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1014,6 +1032,7 @@ export type DeadlineUncheckedUpdateManyInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1077,6 +1096,7 @@ export type DeadlineCountOrderByAggregateInput = {
   deadlineTemplateId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  internalNotes?: Prisma.SortOrder
   category?: Prisma.SortOrder
   referenceCode?: Prisma.SortOrder
   periodLabel?: Prisma.SortOrder
@@ -1128,6 +1148,7 @@ export type DeadlineMaxOrderByAggregateInput = {
   deadlineTemplateId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  internalNotes?: Prisma.SortOrder
   category?: Prisma.SortOrder
   referenceCode?: Prisma.SortOrder
   periodLabel?: Prisma.SortOrder
@@ -1173,6 +1194,7 @@ export type DeadlineMinOrderByAggregateInput = {
   deadlineTemplateId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  internalNotes?: Prisma.SortOrder
   category?: Prisma.SortOrder
   referenceCode?: Prisma.SortOrder
   periodLabel?: Prisma.SortOrder
@@ -1483,6 +1505,7 @@ export type DeadlineCreateWithoutTenantInput = {
   id?: string
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -1531,6 +1554,7 @@ export type DeadlineUncheckedCreateWithoutTenantInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -1606,6 +1630,7 @@ export type DeadlineScalarWhereInput = {
   deadlineTemplateId?: Prisma.StringNullableFilter<"Deadline"> | string | null
   title?: Prisma.StringFilter<"Deadline"> | string
   description?: Prisma.StringNullableFilter<"Deadline"> | string | null
+  internalNotes?: Prisma.StringNullableFilter<"Deadline"> | string | null
   category?: Prisma.EnumDeadlineCategoryFilter<"Deadline"> | $Enums.DeadlineCategory
   referenceCode?: Prisma.StringNullableFilter<"Deadline"> | string | null
   periodLabel?: Prisma.StringFilter<"Deadline"> | string
@@ -1648,6 +1673,7 @@ export type DeadlineCreateWithoutAssigneeInput = {
   id?: string
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -1697,6 +1723,7 @@ export type DeadlineUncheckedCreateWithoutAssigneeInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -1748,6 +1775,7 @@ export type DeadlineCreateWithoutCompletedByInput = {
   id?: string
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -1797,6 +1825,7 @@ export type DeadlineUncheckedCreateWithoutCompletedByInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -1880,6 +1909,7 @@ export type DeadlineCreateWithoutCompanyInput = {
   id?: string
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -1928,6 +1958,7 @@ export type DeadlineUncheckedCreateWithoutCompanyInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -1996,6 +2027,7 @@ export type DeadlineCreateWithoutContractServiceInput = {
   id?: string
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -2044,6 +2076,7 @@ export type DeadlineUncheckedCreateWithoutContractServiceInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -2112,6 +2145,7 @@ export type DeadlineCreateWithoutDeadlineTemplateInput = {
   id?: string
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -2160,6 +2194,7 @@ export type DeadlineUncheckedCreateWithoutDeadlineTemplateInput = {
   contractServiceId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -2231,6 +2266,7 @@ export type DeadlineCreateManyTenantInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -2273,6 +2309,7 @@ export type DeadlineUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2321,6 +2358,7 @@ export type DeadlineUncheckedUpdateWithoutTenantInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2366,6 +2404,7 @@ export type DeadlineUncheckedUpdateManyWithoutTenantInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2412,6 +2451,7 @@ export type DeadlineCreateManyAssigneeInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -2457,6 +2497,7 @@ export type DeadlineCreateManyCompletedByInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -2498,6 +2539,7 @@ export type DeadlineUpdateWithoutAssigneeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2547,6 +2589,7 @@ export type DeadlineUncheckedUpdateWithoutAssigneeInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2592,6 +2635,7 @@ export type DeadlineUncheckedUpdateManyWithoutAssigneeInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2633,6 +2677,7 @@ export type DeadlineUpdateWithoutCompletedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2682,6 +2727,7 @@ export type DeadlineUncheckedUpdateWithoutCompletedByInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2727,6 +2773,7 @@ export type DeadlineUncheckedUpdateManyWithoutCompletedByInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2771,6 +2818,7 @@ export type DeadlineCreateManyCompanyInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -2813,6 +2861,7 @@ export type DeadlineUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2861,6 +2910,7 @@ export type DeadlineUncheckedUpdateWithoutCompanyInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2906,6 +2956,7 @@ export type DeadlineUncheckedUpdateManyWithoutCompanyInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2951,6 +3002,7 @@ export type DeadlineCreateManyContractServiceInput = {
   deadlineTemplateId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -2993,6 +3045,7 @@ export type DeadlineUpdateWithoutContractServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3041,6 +3094,7 @@ export type DeadlineUncheckedUpdateWithoutContractServiceInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3086,6 +3140,7 @@ export type DeadlineUncheckedUpdateManyWithoutContractServiceInput = {
   deadlineTemplateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3131,6 +3186,7 @@ export type DeadlineCreateManyDeadlineTemplateInput = {
   contractServiceId?: string | null
   title: string
   description?: string | null
+  internalNotes?: string | null
   category: $Enums.DeadlineCategory
   referenceCode?: string | null
   periodLabel: string
@@ -3173,6 +3229,7 @@ export type DeadlineUpdateWithoutDeadlineTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3221,6 +3278,7 @@ export type DeadlineUncheckedUpdateWithoutDeadlineTemplateInput = {
   contractServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3266,6 +3324,7 @@ export type DeadlineUncheckedUpdateManyWithoutDeadlineTemplateInput = {
   contractServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.EnumDeadlineCategoryFieldUpdateOperationsInput | $Enums.DeadlineCategory
   referenceCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   periodLabel?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3314,6 +3373,7 @@ export type DeadlineSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   deadlineTemplateId?: boolean
   title?: boolean
   description?: boolean
+  internalNotes?: boolean
   category?: boolean
   referenceCode?: boolean
   periodLabel?: boolean
@@ -3366,6 +3426,7 @@ export type DeadlineSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   deadlineTemplateId?: boolean
   title?: boolean
   description?: boolean
+  internalNotes?: boolean
   category?: boolean
   referenceCode?: boolean
   periodLabel?: boolean
@@ -3418,6 +3479,7 @@ export type DeadlineSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   deadlineTemplateId?: boolean
   title?: boolean
   description?: boolean
+  internalNotes?: boolean
   category?: boolean
   referenceCode?: boolean
   periodLabel?: boolean
@@ -3470,6 +3532,7 @@ export type DeadlineSelectScalar = {
   deadlineTemplateId?: boolean
   title?: boolean
   description?: boolean
+  internalNotes?: boolean
   category?: boolean
   referenceCode?: boolean
   periodLabel?: boolean
@@ -3508,7 +3571,7 @@ export type DeadlineSelectScalar = {
   deletedAt?: boolean
 }
 
-export type DeadlineOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "contractServiceId" | "deadlineTemplateId" | "title" | "description" | "category" | "referenceCode" | "periodLabel" | "periodStart" | "periodEnd" | "statutoryDueDate" | "extendedDueDate" | "internalDueDate" | "eotReference" | "eotNote" | "eotGrantedAt" | "isInScope" | "scopeNote" | "isBacklog" | "backlogNote" | "status" | "completedAt" | "completedById" | "completionNote" | "filingDate" | "filingReference" | "isBillable" | "overrideBillable" | "billingStatus" | "amount" | "overrideAmount" | "currency" | "invoiceReference" | "invoicedAt" | "assigneeId" | "assignedAt" | "generationType" | "remindersSent" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["deadline"]>
+export type DeadlineOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "contractServiceId" | "deadlineTemplateId" | "title" | "description" | "internalNotes" | "category" | "referenceCode" | "periodLabel" | "periodStart" | "periodEnd" | "statutoryDueDate" | "extendedDueDate" | "internalDueDate" | "eotReference" | "eotNote" | "eotGrantedAt" | "isInScope" | "scopeNote" | "isBacklog" | "backlogNote" | "status" | "completedAt" | "completedById" | "completionNote" | "filingDate" | "filingReference" | "isBillable" | "overrideBillable" | "billingStatus" | "amount" | "overrideAmount" | "currency" | "invoiceReference" | "invoicedAt" | "assigneeId" | "assignedAt" | "generationType" | "remindersSent" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["deadline"]>
 export type DeadlineInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -3552,6 +3615,7 @@ export type $DeadlinePayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     deadlineTemplateId: string | null
     title: string
     description: string | null
+    internalNotes: string | null
     category: $Enums.DeadlineCategory
     referenceCode: string | null
     periodLabel: string
@@ -4024,6 +4088,7 @@ export interface DeadlineFieldRefs {
   readonly deadlineTemplateId: Prisma.FieldRef<"Deadline", 'String'>
   readonly title: Prisma.FieldRef<"Deadline", 'String'>
   readonly description: Prisma.FieldRef<"Deadline", 'String'>
+  readonly internalNotes: Prisma.FieldRef<"Deadline", 'String'>
   readonly category: Prisma.FieldRef<"Deadline", 'DeadlineCategory'>
   readonly referenceCode: Prisma.FieldRef<"Deadline", 'String'>
   readonly periodLabel: Prisma.FieldRef<"Deadline", 'String'>

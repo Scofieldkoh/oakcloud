@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Trash2, Eye, RotateCcw, Calendar } from 'lucide-react';
+import { Pencil, Trash2, Eye, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Contract } from '@/hooks/use-contracts';
 import {
@@ -89,16 +89,6 @@ export function ServiceRow({
             )}
           </span>
 
-          {/* Auto renewal indicator */}
-          {service.autoRenewal && (
-            <span className="flex items-center gap-1 text-oak-light">
-              <RotateCcw className="w-3.5 h-3.5" />
-              Auto-renews
-              {service.renewalPeriodMonths && (
-                <span>({service.renewalPeriodMonths} months)</span>
-              )}
-            </span>
-          )}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal } from '@/components/ui/modal';
+import { Modal, ModalBody } from '@/components/ui/modal';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 
 interface ScopeModalProps {
@@ -21,17 +21,22 @@ export function ScopeModal({
       isOpen={isOpen}
       onClose={onClose}
       title={`Scope of Work: ${serviceName}`}
-      size="lg"
+      size="4xl"
+      className="overflow-hidden"
     >
-      <div className="py-2">
-        {scope ? (
-          <RichTextDisplay content={scope} />
-        ) : (
-          <p className="text-text-muted text-center py-8">
-            No scope of work defined for this service.
-          </p>
-        )}
-      </div>
+      <ModalBody className="p-6 sm:p-8">
+        <div className="max-h-[65vh] overflow-y-auto pr-1">
+          {scope ? (
+            <RichTextDisplay content={scope} />
+          ) : (
+            <div className="py-12 text-center">
+              <p className="text-text-muted">
+                No scope of work defined for this service.
+              </p>
+            </div>
+          )}
+        </div>
+      </ModalBody>
     </Modal>
   );
 }

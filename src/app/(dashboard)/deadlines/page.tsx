@@ -9,7 +9,6 @@ import {
   Calendar,
   ListFilter,
   RefreshCw,
-  Trash2,
   AlertCircle,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
@@ -17,21 +16,64 @@ import { Button } from '@/components/ui/button';
 import {
   useDeadlines,
   useDeadlineStats,
-  useDeleteDeadline,
   useBulkUpdateStatus,
+  useBulkUpdateBillingStatus,
+  useBulkAssignDeadlines,
   useBulkDeleteDeadlines,
 } from '@/hooks/use-deadlines';
+import { useTenantUsers } from '@/hooks/use-admin';
+import { useCompanies } from '@/hooks/use-companies';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSelection } from '@/hooks/use-selection';
-import { DeadlineList } from '@/components/deadlines/deadline-list';
+import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import DeadlineTable, { type DeadlineInlineFilters } from '@/components/deadlines/deadline-table';
 import { DeadlineFilters, type FilterValues } from '@/components/deadlines/deadline-filters';
+import DeadlinesBulkActionsToolbar from '@/components/deadlines/deadlines-bulk-actions-toolbar';
+import { Pagination } from '@/components/companies/pagination';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
-import { useToast } from '@/components/ui/toast';
-import { cn } from '@/lib/utils';
-import type { DeadlineCategory, DeadlineStatus } from '@/generated/prisma';
-import type { DeadlineWithRelations } from '@/hooks/use-deadlines';
+import { cn, formatDateShort } from '@/lib/utils';
+import type { DeadlineBillingStatus, DeadlineCategory, DeadlineStatus } from '@/generated/prisma';
+import type { DeadlineTimingStatus } from '@/components/deadlines/deadline-status-badge';
+
+const COLUMN_PREF_KEY = 'deadlines:overview:columns:v1';
+
+const STATUS_LABELS: Record<DeadlineStatus, string> = {
+  PENDING: 'Pending',
+  PENDING_CLIENT: 'Pending Client',
+  IN_PROGRESS: 'In Progress',
+  PENDING_REVIEW: 'Pending Review',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+  WAIVED: 'Waived',
+};
+
+const TIMING_LABELS: Record<DeadlineTimingStatus, string> = {
+  OVERDUE: 'Overdue',
+  DUE_SOON: 'Due Soon',
+  UPCOMING: 'Upcoming',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+  WAIVED: 'Waived',
+};
+
+const CATEGORY_LABELS: Record<DeadlineCategory, string> = {
+  CORPORATE_SECRETARY: 'Corporate Secretary',
+  TAX: 'Tax',
+  ACCOUNTING: 'Accounting',
+  AUDIT: 'Audit',
+  COMPLIANCE: 'Compliance',
+  OTHER: 'Other',
+};
+
+const BILLING_STATUS_LABELS: Record<DeadlineBillingStatus, string> = {
+  NOT_APPLICABLE: 'Not Applicable',
+  PENDING: 'Pending',
+  TO_BE_BILLED: 'To be billed',
+  INVOICED: 'Invoiced',
+  PAID: 'Paid',
+};
 
 // ============================================================================
 // COMPONENT
@@ -40,8 +82,10 @@ import type { DeadlineWithRelations } from '@/hooks/use-deadlines';
 export default function DeadlinesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { success: toastSuccess } = useToast();
   const { data: session } = useSession();
+  const { data: columnPref } = useUserPreference<Record<string, number>>(COLUMN_PREF_KEY);
+  const saveColumnPref = useUpsertUserPreference<Record<string, number>>();
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 
   // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
   const activeTenantId = useActiveTenantId(
@@ -56,12 +100,24 @@ export default function DeadlinesPage() {
       ? statusParam.split(',') as DeadlineStatus[]
       : undefined;
 
+    const parseNumber = (value: string | null) => {
+      if (!value) return undefined;
+      const num = parseFloat(value);
+      return Number.isNaN(num) ? undefined : num;
+    };
+
     return {
       query: searchParams.get('q') || '',
+      period: searchParams.get('period') || '',
       page: parseInt(searchParams.get('page') || '1', 10),
       limit: parseInt(searchParams.get('limit') || '20', 10),
       sortBy: (searchParams.get('sortBy') || 'statutoryDueDate') as
         | 'title'
+        | 'periodLabel'
+        | 'service'
+        | 'billingStatus'
+        | 'amount'
+        | 'assignee'
         | 'statutoryDueDate'
         | 'status'
         | 'category'
@@ -71,51 +127,298 @@ export default function DeadlinesPage() {
       sortOrder: (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc',
       category: (searchParams.get('category') || undefined) as DeadlineCategory | undefined,
       status: statusValues,
+      timing: (searchParams.get('timing') || undefined) as DeadlineTimingStatus | undefined,
       assigneeId: searchParams.get('assigneeId') || undefined,
+      companyId: searchParams.get('companyId') || undefined,
+      contractServiceId: searchParams.get('contractServiceId') || undefined,
+      billingStatus: (searchParams.get('billingStatus') || undefined) as DeadlineBillingStatus | undefined,
+      dueDateFrom: searchParams.get('dueDateFrom') || undefined,
+      dueDateTo: searchParams.get('dueDateTo') || undefined,
+      amountFrom: parseNumber(searchParams.get('amountFrom')),
+      amountTo: parseNumber(searchParams.get('amountTo')),
       isInScope: searchParams.get('isInScope') === 'true' ? true :
                  searchParams.get('isInScope') === 'false' ? false : undefined,
     };
   }, [searchParams]);
 
   const [params, setParams] = useState(getParamsFromUrl);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deadlineToDelete, setDeadlineToDelete] = useState<string | null>(null);
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
+  const { data: companiesData } = useCompanies({
+    tenantId: activeTenantId || undefined,
+    limit: 200,
+  });
+  const { data: tenantUsers } = useTenantUsers(activeTenantId || undefined, { limit: 200 });
+
   // Queries - pass tenantId for SUPER_ADMIN support
-  const { data, isLoading, error, refetch } = useDeadlines({
+  const { data, isLoading, isFetching, error, refetch } = useDeadlines({
     ...params,
     tenantId: activeTenantId,
   });
   const { data: stats, error: statsError } = useDeadlineStats(activeTenantId);
 
   // Mutations
-  const deleteDeadline = useDeleteDeadline();
   const bulkUpdateStatus = useBulkUpdateStatus();
+  const bulkUpdateBillingStatus = useBulkUpdateBillingStatus();
+  const bulkAssignDeadlines = useBulkAssignDeadlines();
   const bulkDeleteDeadlines = useBulkDeleteDeadlines();
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // Selection
   const {
     selectedIds,
-    selectedCount,
     toggleOne,
+    toggleAll,
+    isAllSelected,
+    isIndeterminate,
     clear: clearSelection,
   } = useSelection(data?.deadlines || []);
+
+  const companyFilterOptions = useMemo(() => {
+    if (!companiesData?.companies) return [];
+    return companiesData.companies.map((company) => ({ id: company.id, name: company.name }));
+  }, [companiesData?.companies]);
+
+  const serviceFilterOptions = useMemo(() => {
+    if (!data?.deadlines) return [];
+    const map = new Map<string, string>();
+    data.deadlines.forEach((deadline) => {
+      if (deadline.contractService) {
+        const contractTitle = deadline.contractService.contract?.title;
+        const label = contractTitle
+          ? `${deadline.contractService.name} - ${contractTitle}`
+          : deadline.contractService.name;
+        map.set(deadline.contractService.id, label);
+      }
+    });
+    return Array.from(map).map(([id, label]) => ({ id, label }));
+  }, [data?.deadlines]);
+
+  const assigneeFilterOptions = useMemo(() => {
+    if (!data?.deadlines) return [];
+    const map = new Map<string, string>();
+    data.deadlines.forEach((deadline) => {
+      if (deadline.assignee) {
+        map.set(deadline.assignee.id, `${deadline.assignee.firstName} ${deadline.assignee.lastName}`);
+      }
+    });
+    return Array.from(map).map(([id, label]) => ({ id, label }));
+  }, [data?.deadlines]);
+
+  const assigneeOptions = useMemo(() => {
+    if (!tenantUsers?.users) return [];
+    return tenantUsers.users
+      .filter((user) => user.isActive)
+      .map((user) => ({ id: user.id, label: `${user.firstName} ${user.lastName}` }));
+  }, [tenantUsers?.users]);
+
+  const selectedDeadlines = useMemo(
+    () => (data?.deadlines || []).filter((deadline) => selectedIds.has(deadline.id)),
+    [data?.deadlines, selectedIds]
+  );
+
+  useEffect(() => {
+    const value = columnPref?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+    setColumnWidths(value as Record<string, number>);
+  }, [columnPref?.value]);
+
+  const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
+    setColumnWidths((prev) => {
+      const next = { ...prev, [columnId]: width };
+      saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: next });
+      return next;
+    });
+  }, [saveColumnPref]);
+
+  const inlineFilters = useMemo<DeadlineInlineFilters>(() => ({
+    query: params.query,
+    period: params.period,
+    companyId: params.companyId,
+    contractServiceId: params.contractServiceId,
+    category: params.category,
+    status: params.status,
+    timing: params.timing,
+    assigneeId: params.assigneeId,
+    isInScope: params.isInScope,
+    billingStatus: params.billingStatus,
+    dueDateFrom: params.dueDateFrom,
+    dueDateTo: params.dueDateTo,
+    amountFrom: params.amountFrom,
+    amountTo: params.amountTo,
+  }), [params]);
+
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{ key: string; label: string; value: string; onRemove: () => void }> = [];
+    const numberFormatter = new Intl.NumberFormat('en-SG', { maximumFractionDigits: 2 });
+
+    if (params.query) {
+      chips.push({
+        key: 'query',
+        label: 'Search',
+        value: params.query,
+        onRemove: () => setParams((p) => ({ ...p, query: '', page: 1 })),
+      });
+    }
+    if (params.period) {
+      chips.push({
+        key: 'period',
+        label: 'Period',
+        value: params.period,
+        onRemove: () => setParams((p) => ({ ...p, period: '', page: 1 })),
+      });
+    }
+    if (params.companyId) {
+      const name = companiesData?.companies?.find((c) => c.id === params.companyId)?.name || 'Selected';
+      chips.push({
+        key: 'company',
+        label: 'Company',
+        value: name,
+        onRemove: () => setParams((p) => ({ ...p, companyId: undefined, page: 1 })),
+      });
+    }
+    if (params.contractServiceId) {
+      const serviceLabel = serviceFilterOptions.find((s) => s.id === params.contractServiceId)?.label || 'Selected';
+      chips.push({
+        key: 'service',
+        label: 'Service',
+        value: serviceLabel,
+        onRemove: () => setParams((p) => ({ ...p, contractServiceId: undefined, page: 1 })),
+      });
+    }
+    if (params.category) {
+      chips.push({
+        key: 'category',
+        label: 'Category',
+        value: CATEGORY_LABELS[params.category],
+        onRemove: () => setParams((p) => ({ ...p, category: undefined, page: 1 })),
+      });
+    }
+    if (params.timing) {
+      chips.push({
+        key: 'timing',
+        label: 'Status',
+        value: TIMING_LABELS[params.timing],
+        onRemove: () => setParams((p) => ({ ...p, timing: undefined, page: 1 })),
+      });
+    }
+    if (params.status && params.status.length > 0) {
+      const activeStatuses = ['PENDING', 'PENDING_CLIENT', 'IN_PROGRESS', 'PENDING_REVIEW'];
+      const isActive =
+        params.status.length === activeStatuses.length &&
+        params.status.every((s) => activeStatuses.includes(s));
+      const value = isActive
+        ? 'Active'
+        : params.status.map((s) => STATUS_LABELS[s]).join(', ');
+      chips.push({
+        key: 'status',
+        label: 'Internal Status',
+        value,
+        onRemove: () => setParams((p) => ({ ...p, status: undefined, page: 1 })),
+      });
+    }
+    if (params.assigneeId) {
+      const assigneeLabel = assigneeFilterOptions.find((a) => a.id === params.assigneeId)?.label || 'Selected';
+      chips.push({
+        key: 'assignee',
+        label: 'Assignee',
+        value: assigneeLabel,
+        onRemove: () => setParams((p) => ({ ...p, assigneeId: undefined, page: 1 })),
+      });
+    }
+    if (params.isInScope !== undefined) {
+      chips.push({
+        key: 'scope',
+        label: 'Scope',
+        value: params.isInScope ? 'In scope' : 'Out of scope',
+        onRemove: () => setParams((p) => ({ ...p, isInScope: undefined, page: 1 })),
+      });
+    }
+    if (params.billingStatus) {
+      chips.push({
+        key: 'billing',
+        label: 'Billing',
+        value: BILLING_STATUS_LABELS[params.billingStatus],
+        onRemove: () => setParams((p) => ({ ...p, billingStatus: undefined, page: 1 })),
+      });
+    }
+    if (params.dueDateFrom || params.dueDateTo) {
+      const fromLabel = params.dueDateFrom ? formatDateShort(params.dueDateFrom) : '';
+      const toLabel = params.dueDateTo ? formatDateShort(params.dueDateTo) : '';
+      const value = params.dueDateFrom && params.dueDateTo
+        ? `${fromLabel} - ${toLabel}`
+        : params.dueDateFrom
+          ? `>= ${fromLabel}`
+          : `<= ${toLabel}`;
+      chips.push({
+        key: 'dueDate',
+        label: 'Due Date',
+        value,
+        onRemove: () => setParams((p) => ({ ...p, dueDateFrom: undefined, dueDateTo: undefined, page: 1 })),
+      });
+    }
+    if (params.amountFrom !== undefined || params.amountTo !== undefined) {
+      const fromLabel = params.amountFrom !== undefined ? numberFormatter.format(params.amountFrom) : '';
+      const toLabel = params.amountTo !== undefined ? numberFormatter.format(params.amountTo) : '';
+      const value = params.amountFrom !== undefined && params.amountTo !== undefined
+        ? `${fromLabel} - ${toLabel}`
+        : params.amountFrom !== undefined
+          ? `>= ${fromLabel}`
+          : `<= ${toLabel}`;
+      chips.push({
+        key: 'amount',
+        label: 'Amount',
+        value,
+        onRemove: () => setParams((p) => ({ ...p, amountFrom: undefined, amountTo: undefined, page: 1 })),
+      });
+    }
+
+    return chips;
+  }, [params, companiesData?.companies, serviceFilterOptions, assigneeFilterOptions]);
+
+  const clearAllFilters = () => {
+    setParams((p) => ({
+      ...p,
+      query: '',
+      period: '',
+      category: undefined,
+      timing: undefined,
+      status: undefined,
+      assigneeId: undefined,
+      companyId: undefined,
+      contractServiceId: undefined,
+      billingStatus: undefined,
+      dueDateFrom: undefined,
+      dueDateTo: undefined,
+      amountFrom: undefined,
+      amountTo: undefined,
+      isInScope: undefined,
+      page: 1,
+    }));
+  };
 
   // URL sync
   const targetUrl = useMemo(() => {
     const urlParams = new URLSearchParams();
 
     if (params.query) urlParams.set('q', params.query);
+    if (params.period) urlParams.set('period', params.period);
     if (params.page > 1) urlParams.set('page', params.page.toString());
     if (params.limit !== 20) urlParams.set('limit', params.limit.toString());
     if (params.sortBy !== 'statutoryDueDate') urlParams.set('sortBy', params.sortBy);
     if (params.sortOrder !== 'asc') urlParams.set('sortOrder', params.sortOrder);
     if (params.category) urlParams.set('category', params.category);
     if (params.status && params.status.length > 0) urlParams.set('status', params.status.join(','));
+    if (params.timing) urlParams.set('timing', params.timing);
     if (params.assigneeId) urlParams.set('assigneeId', params.assigneeId);
     if (params.isInScope !== undefined) urlParams.set('isInScope', params.isInScope.toString());
+    if (params.companyId) urlParams.set('companyId', params.companyId);
+    if (params.contractServiceId) urlParams.set('contractServiceId', params.contractServiceId);
+    if (params.billingStatus) urlParams.set('billingStatus', params.billingStatus);
+    if (params.dueDateFrom) urlParams.set('dueDateFrom', params.dueDateFrom);
+    if (params.dueDateTo) urlParams.set('dueDateTo', params.dueDateTo);
+    if (params.amountFrom !== undefined) urlParams.set('amountFrom', params.amountFrom.toString());
+    if (params.amountTo !== undefined) urlParams.set('amountTo', params.amountTo.toString());
 
     const queryString = urlParams.toString();
     return queryString ? `/deadlines?${queryString}` : '/deadlines';
@@ -147,13 +450,23 @@ export default function DeadlinesPage() {
       setParams((prev) => ({
         ...prev,
         category: filters.category,
+        timing: filters.timing,
         status: filters.status,
+        assigneeId: filters.assigneeId,
         isInScope: filters.isInScope,
         page: 1,
       }));
     },
     []
   );
+
+  const handleInlineFilterChange = useCallback((filters: Partial<DeadlineInlineFilters>) => {
+    setParams((prev) => ({
+      ...prev,
+      ...filters,
+      page: 1,
+    }));
+  }, []);
 
   const handlePageChange = useCallback(
     (page: number) => {
@@ -183,23 +496,53 @@ export default function DeadlinesPage() {
     []
   );
 
-  const handleViewDeadline = useCallback(
-    (deadline: DeadlineWithRelations) => {
-      router.push(`/companies/${deadline.companyId}?tab=deadlines&deadline=${deadline.id}`);
+  const handleBulkStatusUpdate = useCallback(
+    async (status: DeadlineStatus) => {
+      if (selectedIds.size === 0) return;
+      try {
+        await bulkUpdateStatus.mutateAsync({
+          deadlineIds: Array.from(selectedIds),
+          status,
+        });
+        clearSelection();
+      } catch {
+        // Error handled by mutation
+      }
     },
-    [router]
+    [selectedIds, bulkUpdateStatus, clearSelection]
   );
 
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!deadlineToDelete) return;
-    try {
-      await deleteDeadline.mutateAsync(deadlineToDelete);
-      setDeleteDialogOpen(false);
-      setDeadlineToDelete(null);
-    } catch {
-      // Error handled by mutation
-    }
-  }, [deadlineToDelete, deleteDeadline]);
+  const handleBulkBillingUpdate = useCallback(
+    async (billingStatus: DeadlineBillingStatus) => {
+      if (selectedIds.size === 0) return;
+      try {
+        await bulkUpdateBillingStatus.mutateAsync({
+          deadlineIds: Array.from(selectedIds),
+          billingStatus,
+        });
+        clearSelection();
+      } catch {
+        // Error handled by mutation
+      }
+    },
+    [selectedIds, bulkUpdateBillingStatus, clearSelection]
+  );
+
+  const handleBulkAssign = useCallback(
+    async (assigneeId: string | null) => {
+      if (selectedIds.size === 0) return;
+      try {
+        await bulkAssignDeadlines.mutateAsync({
+          deadlineIds: Array.from(selectedIds),
+          assigneeId,
+        });
+        clearSelection();
+      } catch {
+        // Error handled by mutation
+      }
+    },
+    [selectedIds, bulkAssignDeadlines, clearSelection]
+  );
 
   const handleBulkDeleteConfirm = useCallback(async () => {
     if (selectedIds.size === 0) return;
@@ -212,30 +555,15 @@ export default function DeadlinesPage() {
     }
   }, [selectedIds, bulkDeleteDeadlines, clearSelection]);
 
-  const handleBulkAction = useCallback(
-    async (actionId: string) => {
-      if (selectedIds.size === 0) return;
-      const ids = Array.from(selectedIds);
-
-      switch (actionId) {
-        case 'complete':
-          try {
-            await bulkUpdateStatus.mutateAsync({
-              deadlineIds: ids,
-              status: 'COMPLETED',
-            });
-            clearSelection();
-            toastSuccess('Deadlines marked as complete');
-          } catch {
-            // Error handled by mutation
-          }
-          break;
-        case 'delete':
-          setBulkDeleteDialogOpen(true);
-          break;
-      }
-    },
-    [selectedIds, bulkUpdateStatus, clearSelection, toastSuccess]
+  const activeWorkflowCount = stats
+    ? (stats.byStatus.PENDING || 0)
+      + (stats.byStatus.PENDING_CLIENT || 0)
+      + (stats.byStatus.IN_PROGRESS || 0)
+      + (stats.byStatus.PENDING_REVIEW || 0)
+    : 0;
+  const upcomingCount = Math.max(
+    0,
+    activeWorkflowCount - (stats?.overdue || 0) - (stats?.dueSoon || 0)
   );
 
   return (
@@ -243,7 +571,7 @@ export default function DeadlinesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">Deadlines</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">Deadline/ Billing Overview</h1>
           <p className="text-text-secondary text-sm mt-1">
             Manage compliance deadlines across all companies
           </p>
@@ -298,7 +626,7 @@ export default function DeadlinesPage() {
                 </div>
                 <div>
                   <p className="text-xl sm:text-2xl font-semibold text-text-primary">
-                    {(stats.byStatus.UPCOMING || 0) + (stats.byStatus.DUE_SOON || 0) + (stats.byStatus.IN_PROGRESS || 0)}
+                    {upcomingCount}
                   </p>
                   <p className="text-xs sm:text-sm text-text-tertiary">Upcoming</p>
                 </div>
@@ -351,18 +679,42 @@ export default function DeadlinesPage() {
       )}
 
       {/* Filters */}
-      <div className="mb-6">
+      <div className="mb-6 md:hidden">
         <DeadlineFilters
           onSearch={handleSearch}
           onFilterChange={handleFilterChange}
           initialQuery={params.query}
           initialFilters={{
             category: params.category,
+            timing: params.timing,
             status: params.status,
             isInScope: params.isInScope,
+            assigneeId: params.assigneeId,
           }}
         />
       </div>
+
+      {/* Active Filter Chips - Desktop Only */}
+      {activeFilterChips.length > 0 && (
+        <div className="hidden md:flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-sm text-text-secondary font-medium">Active filters:</span>
+          {activeFilterChips.map((chip) => (
+            <FilterChip
+              key={chip.key}
+              label={chip.label}
+              value={chip.value}
+              onRemove={chip.onRemove}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="text-sm text-oak-primary hover:text-oak-primary/80 font-medium transition-colors ml-2"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Error State */}
       {error && (
@@ -377,40 +729,39 @@ export default function DeadlinesPage() {
       {/* Content */}
       {viewMode === 'list' ? (
         <div>
-          <DeadlineList
+          <DeadlineTable
             deadlines={data?.deadlines || []}
             isLoading={isLoading}
-            onView={handleViewDeadline}
-            onDelete={(deadline) => {
-              setDeadlineToDelete(deadline.id);
-              setDeleteDialogOpen(true);
-            }}
-            showCompany={true}
+            isFetching={isFetching}
             selectable={true}
             selectedIds={selectedIds}
-            onSelectionChange={(ids) => {
-              // Sync with selection hook
-              const currentIds = Array.from(selectedIds);
-              const newIds = Array.from(ids);
-
-              // Find added/removed
-              const added = newIds.filter((id) => !currentIds.includes(id));
-              const removed = currentIds.filter((id) => !newIds.includes(id));
-
-              added.forEach((id) => toggleOne(id));
-              removed.forEach((id) => toggleOne(id));
-            }}
+            onToggleOne={toggleOne}
+            onToggleAll={toggleAll}
+            isAllSelected={isAllSelected}
+            isIndeterminate={isIndeterminate}
             sortBy={params.sortBy}
             sortOrder={params.sortOrder}
             onSort={handleSort}
-            page={params.page}
-            totalPages={data?.totalPages || 1}
-            total={data?.total || 0}
-            limit={params.limit}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-            emptyMessage="No deadlines found. Try adjusting your filters."
+            inlineFilters={inlineFilters}
+            onInlineFilterChange={handleInlineFilterChange}
+            companyFilterOptions={companyFilterOptions}
+            serviceFilterOptions={serviceFilterOptions}
+            assigneeFilterOptions={assigneeFilterOptions}
+            columnWidths={columnWidths}
+            onColumnWidthChange={handleColumnWidthChange}
           />
+          {data && data.totalPages > 0 && (
+            <div className="mt-4">
+              <Pagination
+                page={params.page}
+                totalPages={data.totalPages}
+                total={data.total}
+                limit={params.limit}
+                onPageChange={handlePageChange}
+                onLimitChange={handleLimitChange}
+              />
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-background-secondary rounded-lg p-8 text-center">
@@ -423,53 +774,28 @@ export default function DeadlinesPage() {
       )}
 
       {/* Floating Bulk Actions Toolbar */}
-      <BulkActionsToolbar
-        selectedCount={selectedCount}
+      <DeadlinesBulkActionsToolbar
+        selectedIds={Array.from(selectedIds)}
+        selectedDeadlines={selectedDeadlines}
         onClearSelection={clearSelection}
-        itemLabel="deadline"
-        actions={[
-          {
-            id: 'complete',
-            label: 'Mark Complete',
-            icon: CheckCircle,
-            description: 'Mark selected deadlines as completed',
-            isLoading: bulkUpdateStatus.isPending,
-          },
-          {
-            id: 'delete',
-            label: 'Delete',
-            icon: Trash2,
-            description: 'Delete selected deadlines',
-            variant: 'danger',
-            isLoading: bulkDeleteDeadlines.isPending,
-          },
-        ]}
-        onAction={handleBulkAction}
+        onUpdateStatus={handleBulkStatusUpdate}
+        onUpdateBillingStatus={handleBulkBillingUpdate}
+        onAssign={handleBulkAssign}
+        onDelete={() => setBulkDeleteDialogOpen(true)}
+        assigneeOptions={assigneeOptions}
+        isUpdatingStatus={bulkUpdateStatus.isPending}
+        isUpdatingBilling={bulkUpdateBillingStatus.isPending}
+        isAssigning={bulkAssignDeadlines.isPending}
+        isDeleting={bulkDeleteDeadlines.isPending}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setDeadlineToDelete(null);
-        }}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Deadline"
-        description="Are you sure you want to delete this deadline? This action cannot be undone."
-        confirmLabel="Delete"
-        variant="danger"
-        isLoading={deleteDeadline.isPending}
-      />
-
-      {/* Bulk Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={bulkDeleteDialogOpen}
         onClose={() => setBulkDeleteDialogOpen(false)}
         onConfirm={handleBulkDeleteConfirm}
         title="Delete Selected Deadlines"
-        description={`Are you sure you want to delete ${selectedCount} selected deadlines? This action cannot be undone.`}
-        confirmLabel="Delete All"
+        description={`This will delete ${selectedIds.size} selected deadline${selectedIds.size !== 1 ? 's' : ''}. This action cannot be undone.`}
+        confirmLabel="Delete"
         variant="danger"
         isLoading={bulkDeleteDeadlines.isPending}
       />

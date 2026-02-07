@@ -17,6 +17,7 @@ import {
   getOverdueDeadlines,
   bulkAssignDeadlines,
   bulkUpdateStatus,
+  bulkUpdateBillingStatus,
   bulkDeleteDeadlines,
 } from '@/services/deadline.service';
 import {
@@ -27,11 +28,13 @@ import {
   createDeadlineSchema,
   bulkAssignSchema,
   bulkStatusSchema,
+  bulkBillingSchema,
   bulkDeleteSchema,
   generateDeadlinesSchema,
 } from '@/lib/validations/deadline';
 import { getTenantById } from '@/services/tenant.service';
 import type { DeadlineCategory, DeadlineStatus, DeadlineBillingStatus } from '@/generated/prisma';
+import type { DeadlineTimingStatus } from '@/services/deadline.service';
 
 export async function GET(req: NextRequest) {
   try {
@@ -111,6 +114,7 @@ export async function GET(req: NextRequest) {
       status: searchParams.has('status')
         ? searchParams.getAll('status') as DeadlineStatus[]
         : undefined,
+      timing: (searchParams.get('timing') || undefined) as DeadlineTimingStatus | undefined,
       assigneeId: searchParams.has('assigneeId')
         ? searchParams.get('assigneeId') || undefined
         : undefined,
@@ -121,12 +125,28 @@ export async function GET(req: NextRequest) {
         ? searchParams.get('isBacklog') === 'true'
         : undefined,
       billingStatus: searchParams.get('billingStatus') as DeadlineBillingStatus | undefined,
+      amountFrom: searchParams.get('amountFrom') ? parseFloat(searchParams.get('amountFrom')!) : undefined,
+      amountTo: searchParams.get('amountTo') ? parseFloat(searchParams.get('amountTo')!) : undefined,
       dueDateFrom: searchParams.get('dueDateFrom') || undefined,
       dueDateTo: searchParams.get('dueDateTo') || undefined,
       query: searchParams.get('query') || undefined,
+      period: searchParams.get('period') || undefined,
       page: parseInt(searchParams.get('page') || '1', 10),
       limit: Math.min(parseInt(searchParams.get('limit') || '20', 10), 100),
-      sortBy: searchParams.get('sortBy') as 'title' | 'statutoryDueDate' | 'status' | 'category' | 'company' | 'createdAt' | 'updatedAt' | undefined,
+      sortBy: searchParams.get('sortBy') as
+        | 'title'
+        | 'periodLabel'
+        | 'service'
+        | 'billingStatus'
+        | 'amount'
+        | 'assignee'
+        | 'statutoryDueDate'
+        | 'status'
+        | 'category'
+        | 'company'
+        | 'createdAt'
+        | 'updatedAt'
+        | undefined,
       sortOrder: searchParams.get('sortOrder') as 'asc' | 'desc' | undefined,
     };
 
@@ -241,6 +261,38 @@ export async function POST(req: NextRequest) {
             status,
             { tenantId: tenantId, userId: session.id }
           );
+          return NextResponse.json({ success: true, count });
+        }
+
+        case 'bulk-billing': {
+          const parseResult = bulkBillingSchema.safeParse(body);
+          if (!parseResult.success) {
+            return NextResponse.json(
+              { error: parseResult.error.errors[0]?.message || 'Invalid input' },
+              { status: 400 }
+            );
+          }
+          const { deadlineIds, billingStatus } = parseResult.data;
+
+          const deadlines = await prisma.deadline.findMany({
+            where: { id: { in: deadlineIds }, tenantId, deletedAt: null },
+            select: { id: true, companyId: true },
+          });
+
+          const uniqueCompanyIds = [...new Set(deadlines.map((d) => d.companyId))];
+          for (const companyId of uniqueCompanyIds) {
+            const canUpdate = await hasPermission(session.id, 'company', 'update', companyId);
+            if (!canUpdate) {
+              return NextResponse.json({ error: 'Permission denied for one or more deadlines' }, { status: 403 });
+            }
+          }
+
+          const count = await bulkUpdateBillingStatus(
+            deadlineIds,
+            billingStatus,
+            { tenantId: tenantId, userId: session.id }
+          );
+
           return NextResponse.json({ success: true, count });
         }
 

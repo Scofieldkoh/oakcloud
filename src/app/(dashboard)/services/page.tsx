@@ -2,36 +2,42 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import {
   Briefcase,
   AlertCircle,
   Building2,
   FileText,
   RefreshCw,
-  Calendar,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
-  ExternalLink,
-  MoreHorizontal,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
-import { useAllServices, type ContractServiceWithRelations } from '@/hooks/use-contract-services';
+import {
+  useAllServices,
+  useBulkUpdateServiceEndDate,
+  useBulkHardDeleteServices,
+  type ContractServiceWithRelations,
+} from '@/hooks/use-contract-services';
+import { useCompanies } from '@/hooks/use-companies';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useSelection } from '@/hooks/use-selection';
+import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { Pagination } from '@/components/companies/pagination';
-import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
+import ServiceTable, { type ServiceInlineFilters } from '@/components/services/service-table';
+import ServicesBulkActionsToolbar from '@/components/services/services-bulk-actions-toolbar';
 import { ScopeModal } from '@/components/companies/contracts';
-import { formatDate, cn, formatCurrency } from '@/lib/utils';
+import { FilterChip } from '@/components/ui/filter-chip';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
+import { formatDateShort } from '@/lib/utils';
 import {
   getServiceTypeLabel,
-  getServiceStatusColor,
   getServiceStatusLabel,
-  getBillingFrequencyLabel,
 } from '@/lib/constants/contracts';
 import type { ServiceStatus, ServiceType } from '@/generated/prisma';
+
+const COLUMN_PREF_KEY = 'services:overview:columns:v1';
 
 // Filter component for Services
 interface FilterValues {
@@ -127,327 +133,20 @@ function ServiceFilters({
   );
 }
 
-// Sortable column header
-function SortableHeader({
-  label,
-  field,
-  sortBy,
-  sortOrder,
-  onSort,
-}: {
-  label: string;
-  field: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  onSort?: (field: string) => void;
-}) {
-  const isActive = sortBy === field;
-
-  if (!onSort) {
-    return <th>{label}</th>;
-  }
-
-  return (
-    <th className="cursor-pointer select-none">
-      <button
-        type="button"
-        onClick={() => onSort(field)}
-        className={cn(
-          'inline-flex items-center gap-1 hover:text-text-primary transition-colors',
-          isActive ? 'text-text-primary' : ''
-        )}
-      >
-        <span>{label}</span>
-        <span className="flex-shrink-0">
-          {isActive ? (
-            sortOrder === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5" />
-            ) : (
-              <ArrowDown className="w-3.5 h-3.5" />
-            )
-          ) : (
-            <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
-          )}
-        </span>
-      </button>
-    </th>
-  );
-}
-
-// Service actions dropdown
-function ServiceActionsDropdown({
-  service,
-  onViewScope,
-}: {
-  service: ContractServiceWithRelations;
-  onViewScope: () => void;
-}) {
-  return (
-    <Dropdown>
-      <DropdownTrigger asChild>
-        <button className="p-1 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors">
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
-      </DropdownTrigger>
-      <DropdownMenu>
-        {service.scope && (
-          <DropdownItem icon={<FileText className="w-4 h-4" />} onClick={onViewScope}>
-            View Scope
-          </DropdownItem>
-        )}
-        {service.contract?.company && (
-          <Link href={`/companies/${service.contract.company.id}?tab=services`}>
-            <DropdownItem icon={<ExternalLink className="w-4 h-4" />}>
-              View Company
-            </DropdownItem>
-          </Link>
-        )}
-      </DropdownMenu>
-    </Dropdown>
-  );
-}
-
-// Service table component
-function ServiceTable({
-  services,
-  isLoading,
-  sortBy,
-  sortOrder,
-  onSort,
-  onViewScope,
-}: {
-  services: ContractServiceWithRelations[];
-  isLoading?: boolean;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  onSort?: (field: string) => void;
-  onViewScope: (service: ContractServiceWithRelations) => void;
-}) {
-  if (isLoading) {
-    return (
-      <div className="table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Service Name</th>
-              <th>Company</th>
-              <th>Contract</th>
-              <th>Type</th>
-              <th>Rate</th>
-              <th>Status</th>
-              <th>End Date</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...Array(5)].map((_, i) => (
-              <tr key={i}>
-                <td><div className="skeleton h-4 w-40" /></td>
-                <td><div className="skeleton h-4 w-32" /></td>
-                <td><div className="skeleton h-4 w-28" /></td>
-                <td><div className="skeleton h-4 w-20" /></td>
-                <td><div className="skeleton h-4 w-24" /></td>
-                <td><div className="skeleton h-4 w-16" /></td>
-                <td><div className="skeleton h-4 w-24" /></td>
-                <td><div className="skeleton h-4 w-8" /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  if (services.length === 0) {
-    return (
-      <div className="card p-6 sm:p-12 text-center">
-        <Briefcase className="w-12 h-12 text-text-muted mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-text-primary mb-2">No services found</h3>
-        <p className="text-text-secondary mb-4">
-          No services match your current filters. Add services from each company page.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {/* Mobile Card View */}
-      <div className="md:hidden space-y-3">
-        {services.map((service) => (
-          <MobileCard
-            key={service.id}
-            title={
-              <span className="font-medium text-text-primary">{service.name}</span>
-            }
-            subtitle={service.contract?.company?.name || 'Unknown Company'}
-            badge={
-              <span className={`badge ${getServiceStatusColor(service.status)}`}>
-                {getServiceStatusLabel(service.status)}
-              </span>
-            }
-            actions={
-              <ServiceActionsDropdown
-                service={service}
-                onViewScope={() => onViewScope(service)}
-              />
-            }
-            details={
-              <CardDetailsGrid>
-                <CardDetailItem
-                  label="Contract"
-                  value={service.contract?.title || '-'}
-                />
-                <CardDetailItem
-                  label="Type"
-                  value={getServiceTypeLabel(service.serviceType)}
-                />
-                <CardDetailItem
-                  label="Rate"
-                  value={
-                    service.rate
-                      ? `${formatCurrency(Number(service.rate), service.currency)} ${service.frequency !== 'ONE_TIME' ? `/ ${getBillingFrequencyLabel(service.frequency).toLowerCase()}` : ''}`
-                      : '-'
-                  }
-                />
-                {service.endDate && (
-                  <CardDetailItem
-                    label="End Date"
-                    value={formatDate(service.endDate)}
-                  />
-                )}
-                {service.autoRenewal && (
-                  <CardDetailItem
-                    label="Auto Renewal"
-                    value={
-                      <div className="flex items-center gap-1 text-status-success">
-                        <RefreshCw className="w-3 h-3" />
-                        Yes
-                      </div>
-                    }
-                  />
-                )}
-              </CardDetailsGrid>
-            }
-          />
-        ))}
-      </div>
-
-      {/* Desktop Table View */}
-      <div className="hidden md:block table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              <SortableHeader label="Service Name" field="name" sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
-              <th>Company</th>
-              <th>Contract</th>
-              <th>Type</th>
-              <SortableHeader label="Rate" field="rate" sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
-              <SortableHeader label="Status" field="status" sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
-              <SortableHeader label="End Date" field="endDate" sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {services.map((service) => (
-              <tr key={service.id} className="hover:bg-background-tertiary/50 transition-colors">
-                <td>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-text-primary">{service.name}</span>
-                    {service.autoRenewal && (
-                      <span title="Auto-renewal enabled">
-                        <RefreshCw className="w-3.5 h-3.5 text-status-success" />
-                      </span>
-                    )}
-                  </div>
-                  {service.scope && (
-                    <button
-                      onClick={() => onViewScope(service)}
-                      className="text-xs text-oak-light hover:underline mt-0.5"
-                    >
-                      View scope
-                    </button>
-                  )}
-                </td>
-                <td>
-                  {service.contract?.company ? (
-                    <Link
-                      href={`/companies/${service.contract.company.id}`}
-                      className="text-text-primary hover:text-oak-light transition-colors"
-                    >
-                      {service.contract.company.name}
-                    </Link>
-                  ) : (
-                    <span className="text-text-muted">-</span>
-                  )}
-                </td>
-                <td>
-                  {service.contract ? (
-                    <Link
-                      href={`/companies/${service.contract.companyId}?tab=services`}
-                      className="text-text-secondary hover:text-oak-light transition-colors"
-                    >
-                      {service.contract.title}
-                    </Link>
-                  ) : (
-                    <span className="text-text-muted">-</span>
-                  )}
-                </td>
-                <td>
-                  <span className="text-text-secondary">
-                    {getServiceTypeLabel(service.serviceType)}
-                  </span>
-                </td>
-                <td>
-                  {service.rate ? (
-                    <div className="text-text-primary">
-                      <span className="font-medium">
-                        {formatCurrency(Number(service.rate), service.currency)}
-                      </span>
-                      {service.frequency !== 'ONE_TIME' && (
-                        <span className="text-xs text-text-muted ml-1">
-                          / {getBillingFrequencyLabel(service.frequency).toLowerCase()}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-text-muted">-</span>
-                  )}
-                </td>
-                <td>
-                  <span className={`badge ${getServiceStatusColor(service.status)}`}>
-                    {getServiceStatusLabel(service.status)}
-                  </span>
-                </td>
-                <td>
-                  {service.endDate ? (
-                    <div className="flex items-center gap-1.5 text-text-secondary">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {formatDate(service.endDate)}
-                    </div>
-                  ) : (
-                    <span className="text-text-muted">-</span>
-                  )}
-                </td>
-                <td>
-                  <ServiceActionsDropdown
-                    service={service}
-                    onViewScope={() => onViewScope(service)}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
+function toLocalDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 export default function ServicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { data: columnPref } = useUserPreference<Record<string, number>>(COLUMN_PREF_KEY);
+  const saveColumnPref = useUpsertUserPreference<Record<string, number>>();
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 
   // Get active tenant ID
   const activeTenantId = useActiveTenantId(
@@ -457,14 +156,27 @@ export default function ServicesPage() {
 
   // Parse URL params
   const getParamsFromUrl = useCallback(() => {
+    const parseNumber = (value: string | null) => {
+      if (!value) return undefined;
+      const num = parseFloat(value);
+      return Number.isNaN(num) ? undefined : num;
+    };
+
     return {
       query: searchParams.get('q') || '',
       page: parseInt(searchParams.get('page') || '1', 10),
       limit: parseInt(searchParams.get('limit') || '20', 10),
-      sortBy: (searchParams.get('sortBy') || 'updatedAt') as 'name' | 'startDate' | 'endDate' | 'status' | 'rate' | 'updatedAt' | 'createdAt',
+      sortBy: (searchParams.get('sortBy') || 'updatedAt') as 'name' | 'startDate' | 'endDate' | 'status' | 'rate' | 'serviceType' | 'company' | 'updatedAt' | 'createdAt',
       sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc',
       status: (searchParams.get('status') || undefined) as ServiceStatus | undefined,
       serviceType: (searchParams.get('serviceType') || undefined) as ServiceType | undefined,
+      companyId: searchParams.get('companyId') || undefined,
+      startDateFrom: searchParams.get('startDateFrom') || undefined,
+      startDateTo: searchParams.get('startDateTo') || undefined,
+      endDateFrom: searchParams.get('endDateFrom') || undefined,
+      endDateTo: searchParams.get('endDateTo') || undefined,
+      rateFrom: parseNumber(searchParams.get('rateFrom')),
+      rateTo: parseNumber(searchParams.get('rateTo')),
     };
   }, [searchParams]);
 
@@ -475,11 +187,52 @@ export default function ServicesPage() {
     serviceName: string;
     scope: string;
   } | null>(null);
+  const [bulkEndDateOpen, setBulkEndDateOpen] = useState(false);
+  const [bulkEndDate, setBulkEndDate] = useState<Date | undefined>(undefined);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+
+  const { data: companiesData } = useCompanies({
+    tenantId: activeTenantId || undefined,
+    limit: 200,
+  });
 
   // Fetch services
-  const { data, isLoading, error } = useAllServices({
+  const { data, isLoading, isFetching, error } = useAllServices({
     ...params,
   });
+
+  const bulkUpdateEndDate = useBulkUpdateServiceEndDate();
+  const bulkHardDelete = useBulkHardDeleteServices();
+
+  // Selection state for bulk operations
+  const {
+    selectedIds,
+    selectedCount,
+    toggleOne,
+    toggleAll,
+    isAllSelected,
+    isIndeterminate,
+    clear: clearSelection,
+  } = useSelection(data?.services || []);
+
+  const selectedServices = useMemo(
+    () => (data?.services || []).filter((service) => selectedIds.has(service.id)),
+    [data?.services, selectedIds]
+  );
+
+  useEffect(() => {
+    const value = columnPref?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+    setColumnWidths(value as Record<string, number>);
+  }, [columnPref?.value]);
+
+  const handleColumnWidthChange = useCallback((columnId: string, width: number) => {
+    setColumnWidths((prev) => {
+      const next = { ...prev, [columnId]: width };
+      saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: next });
+      return next;
+    });
+  }, [saveColumnPref]);
 
   // Calculate stats from current data
   const stats = useMemo(() => {
@@ -496,6 +249,127 @@ export default function ServicesPage() {
     };
   }, [data]);
 
+  const companyFilterOptions = useMemo(() => {
+    if (!companiesData?.companies) return [];
+    return companiesData.companies.map((company) => ({ id: company.id, name: company.name }));
+  }, [companiesData?.companies]);
+
+  const inlineFilters = useMemo(() => ({
+    query: params.query,
+    companyId: params.companyId,
+    status: params.status,
+    serviceType: params.serviceType,
+    startDateFrom: params.startDateFrom,
+    startDateTo: params.startDateTo,
+    endDateFrom: params.endDateFrom,
+    endDateTo: params.endDateTo,
+    rateFrom: params.rateFrom,
+    rateTo: params.rateTo,
+  }), [params]);
+
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{ key: string; label: string; value: string; onRemove: () => void }> = [];
+    const numberFormatter = new Intl.NumberFormat('en-SG', { maximumFractionDigits: 2 });
+
+    if (params.query) {
+      chips.push({
+        key: 'query',
+        label: 'Search',
+        value: params.query,
+        onRemove: () => setParams((p) => ({ ...p, query: '', page: 1 })),
+      });
+    }
+    if (params.status) {
+      chips.push({
+        key: 'status',
+        label: 'Status',
+        value: getServiceStatusLabel(params.status),
+        onRemove: () => setParams((p) => ({ ...p, status: undefined, page: 1 })),
+      });
+    }
+    if (params.serviceType) {
+      chips.push({
+        key: 'serviceType',
+        label: 'Type',
+        value: getServiceTypeLabel(params.serviceType),
+        onRemove: () => setParams((p) => ({ ...p, serviceType: undefined, page: 1 })),
+      });
+    }
+    if (params.companyId) {
+      const name = companiesData?.companies?.find((c) => c.id === params.companyId)?.name || 'Selected';
+      chips.push({
+        key: 'company',
+        label: 'Company',
+        value: name,
+        onRemove: () => setParams((p) => ({ ...p, companyId: undefined, page: 1 })),
+      });
+    }
+    if (params.startDateFrom || params.startDateTo) {
+      const fromLabel = params.startDateFrom ? formatDateShort(params.startDateFrom) : '';
+      const toLabel = params.startDateTo ? formatDateShort(params.startDateTo) : '';
+      const value = params.startDateFrom && params.startDateTo
+        ? `${fromLabel} - ${toLabel}`
+        : params.startDateFrom
+          ? `>= ${fromLabel}`
+          : `<= ${toLabel}`;
+      chips.push({
+        key: 'startDate',
+        label: 'Start Date',
+        value,
+        onRemove: () => setParams((p) => ({ ...p, startDateFrom: undefined, startDateTo: undefined, page: 1 })),
+      });
+    }
+    if (params.endDateFrom || params.endDateTo) {
+      const fromLabel = params.endDateFrom ? formatDateShort(params.endDateFrom) : '';
+      const toLabel = params.endDateTo ? formatDateShort(params.endDateTo) : '';
+      const value = params.endDateFrom && params.endDateTo
+        ? `${fromLabel} - ${toLabel}`
+        : params.endDateFrom
+          ? `>= ${fromLabel}`
+          : `<= ${toLabel}`;
+      chips.push({
+        key: 'endDate',
+        label: 'End Date',
+        value,
+        onRemove: () => setParams((p) => ({ ...p, endDateFrom: undefined, endDateTo: undefined, page: 1 })),
+      });
+    }
+    if (params.rateFrom !== undefined || params.rateTo !== undefined) {
+      const fromLabel = params.rateFrom !== undefined ? numberFormatter.format(params.rateFrom) : '';
+      const toLabel = params.rateTo !== undefined ? numberFormatter.format(params.rateTo) : '';
+      const value = params.rateFrom !== undefined && params.rateTo !== undefined
+        ? `${fromLabel} - ${toLabel}`
+        : params.rateFrom !== undefined
+          ? `>= ${fromLabel}`
+          : `<= ${toLabel}`;
+      chips.push({
+        key: 'rate',
+        label: 'Rate',
+        value,
+        onRemove: () => setParams((p) => ({ ...p, rateFrom: undefined, rateTo: undefined, page: 1 })),
+      });
+    }
+
+    return chips;
+  }, [params, companiesData?.companies]);
+
+  const clearAllFilters = () => {
+    setParams((p) => ({
+      ...p,
+      query: '',
+      status: undefined,
+      serviceType: undefined,
+      companyId: undefined,
+      startDateFrom: undefined,
+      startDateTo: undefined,
+      endDateFrom: undefined,
+      endDateTo: undefined,
+      rateFrom: undefined,
+      rateTo: undefined,
+      page: 1,
+    }));
+  };
+
   // Memoize URL construction
   const targetUrl = useMemo(() => {
     const urlParams = new URLSearchParams();
@@ -507,6 +381,13 @@ export default function ServicesPage() {
     if (params.sortOrder !== 'desc') urlParams.set('sortOrder', params.sortOrder);
     if (params.status) urlParams.set('status', params.status);
     if (params.serviceType) urlParams.set('serviceType', params.serviceType);
+    if (params.companyId) urlParams.set('companyId', params.companyId);
+    if (params.startDateFrom) urlParams.set('startDateFrom', params.startDateFrom);
+    if (params.startDateTo) urlParams.set('startDateTo', params.startDateTo);
+    if (params.endDateFrom) urlParams.set('endDateFrom', params.endDateFrom);
+    if (params.endDateTo) urlParams.set('endDateTo', params.endDateTo);
+    if (params.rateFrom !== undefined) urlParams.set('rateFrom', params.rateFrom.toString());
+    if (params.rateTo !== undefined) urlParams.set('rateTo', params.rateTo.toString());
 
     const queryString = urlParams.toString();
     return queryString ? `/services?${queryString}` : '/services';
@@ -515,7 +396,8 @@ export default function ServicesPage() {
   // Reset page when tenant changes
   useEffect(() => {
     setParams((prev) => ({ ...prev, page: 1 }));
-  }, [activeTenantId]);
+    clearSelection();
+  }, [activeTenantId, clearSelection]);
 
   // Sync URL when params change
   useEffect(() => {
@@ -535,6 +417,14 @@ export default function ServicesPage() {
       page: 1,
     }));
   };
+
+  const handleInlineFilterChange = useCallback((filters: Partial<ServiceInlineFilters>) => {
+    setParams((prev) => ({
+      ...prev,
+      ...filters,
+      page: 1,
+    }));
+  }, []);
 
   const handlePageChange = (page: number) => {
     setParams((prev) => ({ ...prev, page }));
@@ -561,6 +451,32 @@ export default function ServicesPage() {
       });
     }
   };
+
+  const handleBulkEndDateConfirm = useCallback(async () => {
+    if (!bulkEndDate || selectedIds.size === 0) return;
+    try {
+      await bulkUpdateEndDate.mutateAsync({
+        serviceIds: Array.from(selectedIds),
+        endDate: toLocalDateString(bulkEndDate),
+      });
+      setBulkEndDateOpen(false);
+      setBulkEndDate(undefined);
+      clearSelection();
+    } catch {
+      // Error handled by mutation
+    }
+  }, [bulkEndDate, selectedIds, bulkUpdateEndDate, clearSelection]);
+
+  const handleBulkDeleteConfirm = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await bulkHardDelete.mutateAsync(Array.from(selectedIds));
+      setBulkDeleteDialogOpen(false);
+      clearSelection();
+    } catch {
+      // Error handled by mutation
+    }
+  }, [selectedIds, bulkHardDelete, clearSelection]);
 
   // Calculate pagination
   const totalPages = data ? Math.ceil(data.total / params.limit) : 0;
@@ -639,7 +555,7 @@ export default function ServicesPage() {
       )}
 
       {/* Filters */}
-      <div className="mb-6">
+      <div className="mb-6 md:hidden">
         <ServiceFilters
           onSearch={handleSearch}
           onFilterChange={handleFilterChange}
@@ -650,6 +566,28 @@ export default function ServicesPage() {
           initialQuery={params.query}
         />
       </div>
+
+      {/* Active Filter Chips - Desktop Only */}
+      {activeFilterChips.length > 0 && (
+        <div className="hidden md:flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-sm text-text-secondary font-medium">Active filters:</span>
+          {activeFilterChips.map((chip) => (
+            <FilterChip
+              key={chip.key}
+              label={chip.label}
+              value={chip.value}
+              onRemove={chip.onRemove}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="text-sm text-oak-primary hover:text-oak-primary/80 font-medium transition-colors ml-2"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Error State */}
       {error && (
@@ -666,10 +604,22 @@ export default function ServicesPage() {
         <ServiceTable
           services={data?.services || []}
           isLoading={isLoading}
+          isFetching={isFetching}
           sortBy={params.sortBy}
           sortOrder={params.sortOrder}
           onSort={handleSort}
           onViewScope={handleViewScope}
+          selectable
+          selectedIds={selectedIds}
+          onToggleOne={toggleOne}
+          onToggleAll={toggleAll}
+          isAllSelected={isAllSelected}
+          isIndeterminate={isIndeterminate}
+          inlineFilters={inlineFilters}
+          onInlineFilterChange={handleInlineFilterChange}
+          companyFilterOptions={companyFilterOptions}
+          columnWidths={columnWidths}
+          onColumnWidthChange={handleColumnWidthChange}
         />
       </div>
 
@@ -686,6 +636,78 @@ export default function ServicesPage() {
           />
         </div>
       )}
+
+      {/* Floating Bulk Actions Toolbar */}
+      <ServicesBulkActionsToolbar
+        selectedIds={Array.from(selectedIds)}
+        selectedServices={selectedServices}
+        onClearSelection={clearSelection}
+        onAddEndDate={() => setBulkEndDateOpen(true)}
+        onHardDelete={() => setBulkDeleteDialogOpen(true)}
+        isUpdating={bulkUpdateEndDate.isPending}
+        isDeleting={bulkHardDelete.isPending}
+      />
+
+      {/* Bulk End Date Modal */}
+      <Modal
+        isOpen={bulkEndDateOpen}
+        onClose={() => {
+          setBulkEndDateOpen(false);
+          setBulkEndDate(undefined);
+        }}
+        title="Add End Date"
+        size="md"
+      >
+        <ModalBody className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            Apply an end date to {selectedCount} selected service{selectedCount !== 1 ? 's' : ''}.
+          </p>
+          <DatePicker
+            value={bulkEndDate ? { mode: 'single', date: bulkEndDate } : undefined}
+            onChange={(value: DatePickerValue | undefined) => {
+              if (!value || value.mode !== 'single') {
+                setBulkEndDate(undefined);
+              } else {
+                setBulkEndDate(value.date);
+              }
+            }}
+            placeholder="Select end date"
+            defaultTab="single"
+            className="text-sm"
+          />
+        </ModalBody>
+        <ModalFooter className="justify-end">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setBulkEndDateOpen(false);
+              setBulkEndDate(undefined);
+            }}
+            disabled={bulkUpdateEndDate.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleBulkEndDateConfirm}
+            disabled={!bulkEndDate || bulkUpdateEndDate.isPending}
+          >
+            Apply End Date
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Bulk Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={bulkDeleteDialogOpen}
+        onClose={() => setBulkDeleteDialogOpen(false)}
+        onConfirm={handleBulkDeleteConfirm}
+        title="Delete Selected Services"
+        description={`This will permanently delete ${selectedCount} selected service${selectedCount !== 1 ? 's' : ''}. This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={bulkHardDelete.isPending}
+      />
 
       {/* Scope Modal */}
       {scopeModal && (

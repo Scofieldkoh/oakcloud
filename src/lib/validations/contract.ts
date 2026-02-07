@@ -61,6 +61,12 @@ const requiredDateStringTransform = z.string().transform((val) => {
   return new Date(val).toISOString();
 });
 
+const numberTransform = z.preprocess((val) => {
+  if (val === '' || val === undefined || val === null) return undefined;
+  const num = typeof val === 'string' ? parseFloat(val) : Number(val);
+  return Number.isNaN(num) ? undefined : num;
+}, z.number().min(0).optional());
+
 // ============================================================================
 // Contract Schemas
 // ============================================================================
@@ -100,13 +106,7 @@ export const createContractServiceSchema = z.object({
   frequency: billingFrequencyEnum.default('MONTHLY'),
   startDate: requiredDateStringTransform,
   endDate: dateStringTransform,
-  nextBillingDate: dateStringTransform,
   scope: z.string().optional().nullable(),
-  autoRenewal: z.boolean().default(false),
-  renewalPeriodMonths: z.preprocess(
-    (val) => (val === '' || val === null || val === undefined || Number.isNaN(val) ? null : val),
-    z.number().min(1).max(120).optional().nullable()
-  ),
   displayOrder: z.preprocess(
     (val) => (val === '' || val === null || val === undefined || Number.isNaN(val) ? 0 : val),
     z.number().min(0).default(0)
@@ -147,15 +147,34 @@ export const serviceSearchSchema = z.object({
   serviceType: serviceTypeEnum.optional(),
   companyId: z.string().uuid().optional(),
   contractId: z.string().uuid().optional(),
-  // Date range filters for service end dates
+  // Date range filters for service start/end dates
+  startDateFrom: dateStringTransform,
+  startDateTo: dateStringTransform,
   endDateFrom: dateStringTransform,
   endDateTo: dateStringTransform,
+  rateFrom: numberTransform,
+  rateTo: numberTransform,
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(200).default(20),
   sortBy: z
     .enum(['name', 'startDate', 'endDate', 'status', 'rate', 'updatedAt', 'createdAt'])
     .default('updatedAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
+});
+
+// ============================================================================
+// Bulk Operations
+// ============================================================================
+
+export const bulkServiceEndDateSchema = z.object({
+  action: z.literal('bulk-end-date'),
+  serviceIds: z.array(z.string().uuid()).min(1, 'At least one service ID is required'),
+  endDate: requiredDateStringTransform,
+});
+
+export const bulkServiceHardDeleteSchema = z.object({
+  action: z.literal('bulk-hard-delete'),
+  serviceIds: z.array(z.string().uuid()).min(1, 'At least one service ID is required'),
 });
 
 // ============================================================================
@@ -170,3 +189,5 @@ export type UpdateContractServiceInput = z.infer<typeof updateContractServiceSch
 export type DeleteContractServiceInput = z.infer<typeof deleteContractServiceSchema>;
 export type ContractSearchInput = z.infer<typeof contractSearchSchema>;
 export type ServiceSearchInput = z.infer<typeof serviceSearchSchema>;
+export type BulkServiceEndDateInput = z.infer<typeof bulkServiceEndDateSchema>;
+export type BulkServiceHardDeleteInput = z.infer<typeof bulkServiceHardDeleteSchema>;

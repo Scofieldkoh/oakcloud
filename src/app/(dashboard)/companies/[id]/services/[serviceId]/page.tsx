@@ -65,8 +65,6 @@ type ServiceFormValues = {
   startDate: string;
   endDate: string;
   scope: string;
-  autoRenewal: boolean;
-  renewalPeriodMonths: string;
 };
 
 type TemplateSource = 'BUILT_IN' | 'CUSTOM';
@@ -81,8 +79,6 @@ interface TemplateCatalogItem {
   rate?: number | null;
   currency?: string | null;
   frequency: ServiceFormValues['frequency'];
-  autoRenewal: boolean;
-  renewalPeriodMonths: number | null;
   startDate?: string | null;
   endDate?: string | null;
   scope?: string | null;
@@ -134,8 +130,6 @@ function buildBlankServiceFormValues(): ServiceFormValues {
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     scope: '',
-    autoRenewal: true,
-    renewalPeriodMonths: '12',
   };
 }
 
@@ -227,8 +221,6 @@ export default function EditServicePage({ params }: PageProps) {
         rate: override?.rate,
         currency: override?.currency,
         frequency: override?.frequency ?? defaults.frequency,
-        autoRenewal: override?.autoRenewal ?? (defaults.serviceType === 'RECURRING'),
-        renewalPeriodMonths: override?.renewalPeriodMonths ?? (defaults.serviceType === 'RECURRING' ? 12 : null),
         startDate: override?.startDate,
         endDate: override?.endDate,
         scope: override?.scope,
@@ -252,8 +244,6 @@ export default function EditServicePage({ params }: PageProps) {
         rate: template.rate,
         currency: template.currency,
         frequency: template.frequency,
-        autoRenewal: template.autoRenewal,
-        renewalPeriodMonths: template.renewalPeriodMonths,
         startDate: template.startDate,
         endDate: template.endDate,
         scope: template.scope,
@@ -392,10 +382,6 @@ export default function EditServicePage({ params }: PageProps) {
       startDate: service.startDate.split('T')[0],
       endDate: service.endDate?.split('T')[0] || '',
       scope: service.scope || '',
-      autoRenewal: service.autoRenewal,
-      renewalPeriodMonths: service.renewalPeriodMonths
-        ? String(service.renewalPeriodMonths)
-        : '',
     });
 
     setDeadlineRules(service.deadlineRules || []);
@@ -411,11 +397,6 @@ export default function EditServicePage({ params }: PageProps) {
     setValue('name', template.name);
     setValue('serviceType', template.serviceType);
     setValue('frequency', template.frequency);
-    setValue('autoRenewal', template.autoRenewal);
-    setValue(
-      'renewalPeriodMonths',
-      template.renewalPeriodMonths != null ? String(template.renewalPeriodMonths) : ''
-    );
 
     const shouldApplyFullTemplate = template.source === 'CUSTOM' || template.isSystemOverridden;
     if (shouldApplyFullTemplate) {
@@ -479,12 +460,6 @@ export default function EditServicePage({ params }: PageProps) {
     const frequency = serviceType === 'ONE_TIME'
       ? 'ONE_TIME'
       : values.frequency;
-    const autoRenewal = serviceType === 'ONE_TIME'
-      ? false
-      : values.autoRenewal;
-    const renewalPeriodMonths = serviceType === 'ONE_TIME' || !autoRenewal
-      ? null
-      : Number.parseInt(values.renewalPeriodMonths || '12', 10) || 12;
     const rateValue = values.rate?.trim();
     const parsedRate = rateValue ? Number.parseFloat(rateValue) : null;
     const rate = parsedRate !== null && Number.isNaN(parsedRate) ? null : parsedRate;
@@ -498,8 +473,6 @@ export default function EditServicePage({ params }: PageProps) {
       rate,
       currency: values.currency,
       frequency,
-      autoRenewal,
-      renewalPeriodMonths,
       startDate: values.startDate || null,
       endDate: values.endDate || null,
       scope: values.scope || null,
@@ -600,8 +573,6 @@ export default function EditServicePage({ params }: PageProps) {
     currency: string;
     frequency: string;
     scope: string | null;
-    autoRenewal: boolean;
-    renewalPeriodMonths: number | null;
   }) => {
     setSelectedTemplate(null);
     setPendingTemplateCode(null);
@@ -614,14 +585,19 @@ export default function EditServicePage({ params }: PageProps) {
     setValue('currency', copiedService.currency);
     setValue('frequency', copiedService.frequency as ServiceFormValues['frequency']);
     setValue('scope', copiedService.scope || '');
-    setValue('autoRenewal', copiedService.autoRenewal);
-    setValue('renewalPeriodMonths', copiedService.renewalPeriodMonths?.toString() || '');
   };
 
   useUnsavedChangesWarning(isDirty, !isSubmitting);
 
   const serviceType = watch('serviceType');
   const startDate = watch('startDate');
+  const rateInput = watch('rate');
+  const billingCurrency = watch('currency');
+  const defaultBillingAmount = useMemo(() => {
+    if (!rateInput) return null;
+    const parsed = Number.parseFloat(rateInput);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [rateInput]);
   const frequencyOptions = useMemo(
     () => (serviceType === 'ONE_TIME'
       ? BILLING_FREQUENCIES.filter((f) => f.value === 'ONE_TIME')
@@ -655,8 +631,6 @@ export default function EditServicePage({ params }: PageProps) {
         startDate: validatedData.startDate,
         endDate: validatedData.endDate,
         scope: validatedData.scope?.trim() || null,
-        autoRenewal: validatedData.autoRenewal,
-        renewalPeriodMonths: validatedData.renewalPeriodMonths,
         serviceTemplateCode: selectedTemplate,
         deadlineRules,
         regenerateDeadlines: true,
@@ -1029,6 +1003,8 @@ export default function EditServicePage({ params }: PageProps) {
               initialRules={deadlineRules}
               onChange={setDeadlineRules}
               serviceStartDate={startDate}
+              defaultBillingAmount={defaultBillingAmount}
+              defaultBillingCurrency={billingCurrency}
               selectedRuleIndex={selectedRuleIndex}
               onSelectRule={setSelectedRuleIndex}
             />

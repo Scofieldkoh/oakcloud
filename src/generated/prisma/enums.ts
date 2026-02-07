@@ -295,9 +295,10 @@ export type DeadlineCategory = (typeof DeadlineCategory)[keyof typeof DeadlineCa
 
 
 export const DeadlineStatus = {
-  UPCOMING: 'UPCOMING',
-  DUE_SOON: 'DUE_SOON',
+  PENDING: 'PENDING',
+  PENDING_CLIENT: 'PENDING_CLIENT',
   IN_PROGRESS: 'IN_PROGRESS',
+  PENDING_REVIEW: 'PENDING_REVIEW',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
   WAIVED: 'WAIVED'
@@ -309,6 +310,7 @@ export type DeadlineStatus = (typeof DeadlineStatus)[keyof typeof DeadlineStatus
 export const DeadlineBillingStatus = {
   NOT_APPLICABLE: 'NOT_APPLICABLE',
   PENDING: 'PENDING',
+  TO_BE_BILLED: 'TO_BE_BILLED',
   INVOICED: 'INVOICED',
   PAID: 'PAID'
 } as const

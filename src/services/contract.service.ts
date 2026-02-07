@@ -73,8 +73,6 @@ export interface ContractWithServices extends Contract {
     startDate: Date;
     endDate: Date | null;
     scope: string | null;
-    autoRenewal: boolean;
-    renewalPeriodMonths: number | null;
     displayOrder: number;
     createdAt: Date;
     updatedAt: Date;

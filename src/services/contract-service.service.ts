@@ -43,10 +43,7 @@ export interface CreateContractServiceInput {
   frequency?: BillingFrequency;
   startDate: string | Date;
   endDate?: string | Date | null;
-  nextBillingDate?: string | Date | null;
   scope?: string | null;
-  autoRenewal?: boolean;
-  renewalPeriodMonths?: number | null;
   displayOrder?: number;
   // Service template integration for deadline management (backward compatible)
   serviceTemplateCode?: string | null;
@@ -67,10 +64,7 @@ export interface UpdateContractServiceInput {
   frequency?: BillingFrequency;
   startDate?: string | Date;
   endDate?: string | Date | null;
-  nextBillingDate?: string | Date | null;
   scope?: string | null;
-  autoRenewal?: boolean;
-  renewalPeriodMonths?: number | null;
   displayOrder?: number;
   serviceTemplateCode?: string | null;
   fyeYearOverride?: number | null;
@@ -82,12 +76,16 @@ export interface ServiceSearchParams {
   status?: ServiceStatus;
   serviceType?: ServiceType;
   query?: string;
+  startDateFrom?: string | Date | null;
+  startDateTo?: string | Date | null;
   endDateFrom?: string | Date | null;
   endDateTo?: string | Date | null;
+  rateFrom?: number;
+  rateTo?: number;
   includeDeleted?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'startDate' | 'endDate' | 'status' | 'rate' | 'updatedAt' | 'createdAt';
+  sortBy?: 'name' | 'startDate' | 'endDate' | 'status' | 'rate' | 'serviceType' | 'company' | 'updatedAt' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -179,10 +177,7 @@ export async function createContractService(
       frequency: data.frequency ?? 'MONTHLY',
       startDate: new Date(data.startDate),
       endDate: data.endDate ? new Date(data.endDate) : null,
-      nextBillingDate: data.nextBillingDate ? new Date(data.nextBillingDate) : null,
       scope: data.scope,
-      autoRenewal: data.autoRenewal ?? false,
-      renewalPeriodMonths: data.renewalPeriodMonths,
       displayOrder: data.displayOrder ?? 0,
       // Store template code for reference
       serviceTemplateCode: data.serviceTemplateCode,
@@ -286,12 +281,7 @@ export async function updateContractService(
       endDate: data.endDate !== undefined
         ? (data.endDate ? new Date(data.endDate) : null)
         : undefined,
-      nextBillingDate: data.nextBillingDate !== undefined
-        ? (data.nextBillingDate ? new Date(data.nextBillingDate) : null)
-        : undefined,
       scope: data.scope !== undefined ? data.scope : undefined,
-      autoRenewal: data.autoRenewal,
-      renewalPeriodMonths: data.renewalPeriodMonths !== undefined ? data.renewalPeriodMonths : undefined,
       displayOrder: data.displayOrder,
       serviceTemplateCode: data.serviceTemplateCode !== undefined ? data.serviceTemplateCode : undefined,
       fyeYearOverride: data.fyeYearOverride !== undefined ? data.fyeYearOverride : undefined,
@@ -374,6 +364,138 @@ export async function deleteContractService(
 }
 
 // ============================================================================
+// BULK OPERATIONS
+// ============================================================================
+
+/**
+ * Bulk update end date for services
+ */
+export async function bulkUpdateServiceEndDate(
+  serviceIds: string[],
+  endDate: string | Date | null,
+  params: TenantAwareParams
+): Promise<number> {
+  const { tenantId, userId, tx } = params;
+  const db = tx || prisma;
+  const normalizedEndDate = endDate ? new Date(endDate) : null;
+
+  const services = await db.contractService.findMany({
+    where: {
+      id: { in: serviceIds },
+      tenantId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      contract: {
+        select: {
+          id: true,
+          title: true,
+          companyId: true,
+        },
+      },
+    },
+  });
+
+  if (services.length === 0) {
+    return 0;
+  }
+
+  const result = await db.contractService.updateMany({
+    where: {
+      id: { in: services.map((service) => service.id) },
+      tenantId,
+      deletedAt: null,
+    },
+    data: {
+      endDate: normalizedEndDate,
+    },
+  });
+
+  if (normalizedEndDate) {
+    for (const service of services) {
+      await pruneServiceDeadlinesAfterDate(service.id, service.contract.companyId, normalizedEndDate, {
+        tenantId,
+        tx: db,
+      });
+    }
+  }
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'BULK_UPDATE',
+    entityType: 'ContractService',
+    entityId: services.map((service) => service.id).join(','),
+    summary: `Bulk updated end date for ${result.count} services`,
+    changeSource: 'MANUAL',
+    metadata: {
+      serviceIds: services.map((service) => service.id),
+      endDate: normalizedEndDate ? normalizedEndDate.toISOString() : null,
+    },
+  });
+
+  return result.count;
+}
+
+/**
+ * Bulk hard delete services (permanent)
+ */
+export async function bulkHardDeleteServices(
+  serviceIds: string[],
+  params: TenantAwareParams
+): Promise<number> {
+  const { tenantId, userId, tx } = params;
+  const db = tx || prisma;
+
+  const services = await db.contractService.findMany({
+    where: {
+      id: { in: serviceIds },
+      tenantId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      contract: {
+        select: {
+          id: true,
+          title: true,
+          companyId: true,
+        },
+      },
+    },
+  });
+
+  if (services.length === 0) {
+    return 0;
+  }
+
+  const result = await db.contractService.deleteMany({
+    where: {
+      id: { in: services.map((service) => service.id) },
+      tenantId,
+    },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'BULK_UPDATE',
+    entityType: 'ContractService',
+    entityId: services.map((service) => service.id).join(','),
+    summary: `Bulk hard deleted ${result.count} services`,
+    changeSource: 'MANUAL',
+    metadata: {
+      serviceIds: services.map((service) => service.id),
+    },
+  });
+
+  return result.count;
+}
+
+// ============================================================================
 // QUERY OPERATIONS
 // ============================================================================
 
@@ -446,14 +568,38 @@ export async function getAllServices(
     status,
     serviceType,
     query,
+    startDateFrom,
+    startDateTo,
     endDateFrom,
     endDateTo,
+    rateFrom,
+    rateTo,
     includeDeleted = false,
     page = 1,
     limit = 20,
     sortBy = 'updatedAt',
     sortOrder = 'desc',
   } = params || {};
+
+  const andFilters: Prisma.ContractServiceWhereInput[] = [];
+
+  if (startDateFrom || startDateTo) {
+    andFilters.push({
+      startDate: {
+        ...(startDateFrom ? { gte: new Date(startDateFrom) } : {}),
+        ...(startDateTo ? { lte: new Date(startDateTo) } : {}),
+      },
+    });
+  }
+
+  if (endDateFrom || endDateTo) {
+    andFilters.push({
+      endDate: {
+        ...(endDateFrom ? { gte: new Date(endDateFrom) } : {}),
+        ...(endDateTo ? { lte: new Date(endDateTo) } : {}),
+      },
+    });
+  }
 
   const where: Prisma.ContractServiceWhereInput = {
     tenantId,
@@ -470,25 +616,24 @@ export async function getAllServices(
         { contract: { company: { name: { contains: query, mode: 'insensitive' } } } },
       ],
     }),
-    // Date range filters for end date
-    ...(endDateFrom || endDateTo
+    ...(andFilters.length > 0 ? { AND: andFilters } : {}),
+    ...(rateFrom !== undefined || rateTo !== undefined
       ? {
-          AND: [
-            ...(endDateFrom
-              ? [{ endDate: { gte: new Date(endDateFrom) } }]
-              : []),
-            ...(endDateTo
-              ? [{ endDate: { lte: new Date(endDateTo) } }]
-              : []),
-          ],
+          rate: {
+            ...(rateFrom !== undefined ? { gte: rateFrom } : {}),
+            ...(rateTo !== undefined ? { lte: rateTo } : {}),
+          },
         }
       : {}),
   };
 
   // Handle sortBy for nested fields
   let orderBy: Prisma.ContractServiceOrderByWithRelationInput = {};
-  if (sortBy === 'name' || sortBy === 'startDate' || sortBy === 'endDate' ||
-      sortBy === 'status' || sortBy === 'rate' || sortBy === 'updatedAt' || sortBy === 'createdAt') {
+  if (sortBy === 'company') {
+    orderBy = { contract: { company: { name: sortOrder } } };
+  } else if (sortBy === 'name' || sortBy === 'startDate' || sortBy === 'endDate' ||
+      sortBy === 'status' || sortBy === 'rate' || sortBy === 'serviceType' ||
+      sortBy === 'updatedAt' || sortBy === 'createdAt') {
     orderBy = { [sortBy]: sortOrder };
   }
 

@@ -16,8 +16,6 @@ const serviceTemplateBaseSchema = z.object({
   rate: z.number().min(0, 'Rate cannot be negative').optional().nullable(),
   currency: z.string().max(3).default('SGD'),
   frequency: billingFrequencyEnum.default('ANNUALLY'),
-  autoRenewal: z.boolean().default(true),
-  renewalPeriodMonths: z.number().int().min(1).max(120).optional().nullable(),
   startDate: z.string().optional().nullable(),
   endDate: z.string().optional().nullable(),
   scope: z.string().optional().nullable(),

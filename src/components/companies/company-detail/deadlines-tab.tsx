@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   RefreshCw,
   Wand2,
@@ -9,13 +9,15 @@ import {
   Clock,
   Calendar,
   Trash2,
+  Save,
 } from 'lucide-react';
-import { cn, formatDateShort } from '@/lib/utils';
+import { cn, formatDateShort, formatCurrency } from '@/lib/utils';
 import {
   useCompanyDeadlines,
   useDeadlineStats,
   useGenerateDeadlines,
   useCompleteDeadline,
+  useUpdateDeadline,
   useDeleteDeadline,
 } from '@/hooks/use-deadlines';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -25,6 +27,7 @@ import {
   DeadlineCategoryBadge,
   UrgencyIndicator,
 } from '@/components/deadlines/deadline-status-badge';
+import { RichTextEditor, RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -33,7 +36,33 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSession } from '@/hooks/use-auth';
 import type { DeadlineWithRelations } from '@/hooks/use-deadlines';
-import type { DeadlineStatus } from '@/generated/prisma';
+import type { DeadlineStatus, DeadlineBillingStatus } from '@/generated/prisma';
+
+const BILLING_STATUS_OPTIONS: Array<{ value: DeadlineBillingStatus; label: string }> = [
+  { value: 'NOT_APPLICABLE', label: 'Not Applicable' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'TO_BE_BILLED', label: 'To be billed' },
+  { value: 'INVOICED', label: 'Invoiced' },
+  { value: 'PAID', label: 'Paid' },
+];
+
+const EDITABLE_BILLING_STATUS_OPTIONS = BILLING_STATUS_OPTIONS.filter(
+  (option) => option.value !== 'TO_BE_BILLED'
+);
+
+const getBillingStatusLabel = (
+  status: DeadlineBillingStatus | null,
+  deadlineStatus: DeadlineStatus
+) => {
+  if (!status) return '-';
+  if (
+    deadlineStatus === 'COMPLETED' &&
+    (status === 'TO_BE_BILLED' || status === 'PENDING')
+  ) {
+    return 'To be billed';
+  }
+  return BILLING_STATUS_OPTIONS.find((option) => option.value === status)?.label || '-';
+};
 
 // ============================================================================
 // TYPES
@@ -51,7 +80,9 @@ interface DeadlineDetailModalProps {
   deadline: DeadlineWithRelations | null;
   isOpen: boolean;
   onClose: () => void;
-  onComplete?: () => void;
+  onComplete?: (payload: { billingStatus?: DeadlineBillingStatus; invoiceReference?: string | null }) => void;
+  onSaveNotes?: (notes: string) => Promise<void> | void;
+  isSavingNotes?: boolean;
   onDelete?: () => void;
   canEdit?: boolean;
 }
@@ -61,12 +92,46 @@ function DeadlineDetailModal({
   isOpen,
   onClose,
   onComplete,
+  onSaveNotes,
+  isSavingNotes,
   onDelete,
   canEdit,
 }: DeadlineDetailModalProps) {
   if (!deadline) return null;
 
   const isCompleted = deadline.status === 'COMPLETED';
+  const effectiveBillable = deadline.overrideBillable ?? deadline.isBillable;
+  const amountToDisplay = deadline.overrideAmount ?? deadline.amount;
+  const [billingStatus, setBillingStatus] = useState<DeadlineBillingStatus>('PENDING');
+  const [invoiceReference, setInvoiceReference] = useState('');
+  const [notesValue, setNotesValue] = useState('');
+  const [notesDirty, setNotesDirty] = useState(false);
+
+  useEffect(() => {
+    const rawStatus = deadline.billingStatus ?? 'PENDING';
+    const normalizedStatus =
+      !isCompleted && rawStatus === 'TO_BE_BILLED' ? 'PENDING' : rawStatus;
+    const nextStatus = effectiveBillable
+      ? normalizedStatus
+      : 'NOT_APPLICABLE';
+    setBillingStatus(nextStatus);
+    setInvoiceReference(deadline.invoiceReference ?? '');
+    setNotesValue(deadline.internalNotes ?? '');
+    setNotesDirty(false);
+  }, [
+    deadline.billingStatus,
+    deadline.invoiceReference,
+    deadline.internalNotes,
+    deadline.status,
+    effectiveBillable,
+    isOpen,
+  ]);
+
+  const handleSaveNotes = async () => {
+    if (!onSaveNotes) return;
+    await onSaveNotes(notesValue);
+    setNotesDirty(false);
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={deadline.title} size="lg">
@@ -145,6 +210,63 @@ function DeadlineDetailModal({
           </div>
         )}
 
+        {/* Billing */}
+        <div>
+          <label className="label">Billing</label>
+          {effectiveBillable ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Amount</label>
+                  <p className="text-sm font-medium text-text-primary">
+                    {formatCurrency(amountToDisplay, deadline.currency)}
+                  </p>
+                </div>
+                <div>
+                  <label className="label">Status</label>
+                  {canEdit && !isCompleted ? (
+                    <select
+                      value={billingStatus}
+                      onChange={(event) =>
+                        setBillingStatus(event.target.value as DeadlineBillingStatus)
+                      }
+                      className="input input-sm"
+                    >
+                      {EDITABLE_BILLING_STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-sm text-text-primary">
+                      {getBillingStatusLabel(billingStatus, deadline.status)}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="label">Invoice Reference</label>
+                {canEdit && !isCompleted ? (
+                  <input
+                    type="text"
+                    value={invoiceReference}
+                    onChange={(event) => setInvoiceReference(event.target.value)}
+                    placeholder="Optional invoice reference"
+                    className="input input-sm"
+                  />
+                ) : (
+                  <p className="text-sm text-text-primary">
+                    {invoiceReference || '-'}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted">Not billable</p>
+          )}
+        </div>
+
         {/* Completion Details */}
         {isCompleted && (
           <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 space-y-2">
@@ -161,17 +283,48 @@ function DeadlineDetailModal({
                   ` by ${deadline.completedBy.firstName} ${deadline.completedBy.lastName}`}
               </p>
             )}
-            {deadline.filingDate && (
-              <p className="text-sm text-text-muted">
-                Filed on {formatDateShort(deadline.filingDate)}
-                {deadline.filingReference && ` (Ref: ${deadline.filingReference})`}
-              </p>
-            )}
             {deadline.completionNote && (
               <p className="text-sm text-text-primary mt-2">{deadline.completionNote}</p>
             )}
           </div>
         )}
+
+        {/* Notes */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="label">Notes</label>
+            {canEdit && onSaveNotes && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSaveNotes}
+                disabled={!notesDirty || isSavingNotes}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Notes
+              </Button>
+            )}
+          </div>
+          {canEdit ? (
+            <RichTextEditor
+              value={notesValue}
+              onChange={(value) => {
+                setNotesValue(value);
+                setNotesDirty(true);
+              }}
+              minHeight={140}
+              className="bg-background-secondary"
+            />
+          ) : (
+            <div className="rounded-lg border border-border-primary bg-background-secondary/40 p-3">
+              {notesValue ? (
+                <RichTextDisplay content={notesValue} />
+              ) : (
+                <p className="text-sm text-text-muted">No notes yet.</p>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Assignee */}
         {deadline.assignee && (
@@ -201,7 +354,17 @@ function DeadlineDetailModal({
           Close
         </Button>
         {canEdit && !isCompleted && (
-          <Button variant="primary" onClick={onComplete}>
+          <Button
+            variant="primary"
+            onClick={() =>
+              onComplete?.({
+                billingStatus: effectiveBillable ? billingStatus : undefined,
+                invoiceReference: effectiveBillable
+                  ? (invoiceReference.trim() ? invoiceReference.trim() : null)
+                  : undefined,
+              })
+            }
+          >
             <CheckCircle className="w-4 h-4 mr-2" />
             Mark Complete
           </Button>
@@ -234,7 +397,7 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
   // Queries
   const statusFilter: DeadlineStatus[] | undefined =
     activeFilter === 'active'
-      ? ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS']
+      ? ['PENDING', 'PENDING_CLIENT', 'IN_PROGRESS', 'PENDING_REVIEW']
       : activeFilter === 'completed'
         ? ['COMPLETED']
         : undefined;
@@ -250,6 +413,7 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
   // Mutations
   const generateDeadlines = useGenerateDeadlines();
   const completeDeadline = useCompleteDeadline(selectedDeadline?.id || '');
+  const updateDeadline = useUpdateDeadline(selectedDeadline?.id || '');
   const deleteDeadline = useDeleteDeadline();
 
   const handleGenerateDeadlines = async () => {
@@ -262,10 +426,13 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
     }
   };
 
-  const handleCompleteDeadline = async () => {
+  const handleCompleteDeadline = async (payload?: {
+    billingStatus?: DeadlineBillingStatus;
+    invoiceReference?: string | null;
+  }) => {
     if (!selectedDeadline) return;
     try {
-      await completeDeadline.mutateAsync({});
+      await completeDeadline.mutateAsync(payload ?? {});
       setSelectedDeadline(null);
       refetch();
     } catch {
@@ -285,9 +452,23 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
     }
   };
 
+  const handleSaveNotes = async (notes: string) => {
+    if (!selectedDeadline) return;
+    try {
+      const updated = await updateDeadline.mutateAsync({ internalNotes: notes });
+      setSelectedDeadline(updated);
+      refetch();
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
   // Statistics from dedicated stats query (more accurate)
   const activeCount = stats
-    ? (stats.byStatus.UPCOMING || 0) + (stats.byStatus.DUE_SOON || 0) + (stats.byStatus.IN_PROGRESS || 0)
+    ? (stats.byStatus.PENDING || 0)
+      + (stats.byStatus.PENDING_CLIENT || 0)
+      + (stats.byStatus.IN_PROGRESS || 0)
+      + (stats.byStatus.PENDING_REVIEW || 0)
     : 0;
   const completedCount = stats?.byStatus.COMPLETED || 0;
   const overdueCount = stats?.overdue || 0;
@@ -424,6 +605,8 @@ export function DeadlinesTab({ companyId }: DeadlinesTabProps) {
         isOpen={!!selectedDeadline}
         onClose={() => setSelectedDeadline(null)}
         onComplete={handleCompleteDeadline}
+        onSaveNotes={handleSaveNotes}
+        isSavingNotes={updateDeadline.isPending}
         onDelete={() => setShowDeleteConfirm(true)}
         canEdit={canUpdate}
       />

@@ -3,6 +3,7 @@
 import { Search, Filter, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import type { DeadlineCategory, DeadlineStatus } from '@/generated/prisma';
+import type { DeadlineTimingStatus } from '@/components/deadlines/deadline-status-badge';
 
 interface DeadlineFiltersProps {
   onSearch: (query: string) => void;
@@ -13,15 +14,26 @@ interface DeadlineFiltersProps {
 
 export interface FilterValues {
   category?: DeadlineCategory;
+  timing?: DeadlineTimingStatus;
   status?: DeadlineStatus[];
   assigneeId?: string;
   isInScope?: boolean;
 }
 
-const STATUS_OPTIONS: { value: DeadlineStatus; label: string }[] = [
-  { value: 'UPCOMING', label: 'Upcoming' },
+const TIMING_OPTIONS: { value: DeadlineTimingStatus; label: string }[] = [
+  { value: 'OVERDUE', label: 'Overdue' },
   { value: 'DUE_SOON', label: 'Due Soon' },
+  { value: 'UPCOMING', label: 'Upcoming' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+  { value: 'WAIVED', label: 'Waived' },
+];
+
+const STATUS_OPTIONS: { value: DeadlineStatus; label: string }[] = [
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'PENDING_CLIENT', label: 'Pending Client' },
   { value: 'IN_PROGRESS', label: 'In Progress' },
+  { value: 'PENDING_REVIEW', label: 'Pending Review' },
   { value: 'COMPLETED', label: 'Completed' },
   { value: 'CANCELLED', label: 'Cancelled' },
   { value: 'WAIVED', label: 'Waived' },
@@ -48,6 +60,7 @@ export function DeadlineFilters({
 
   const activeFilterCount =
     (filters.category ? 1 : 0) +
+    (filters.timing ? 1 : 0) +
     (filters.status && filters.status.length > 0 ? 1 : 0) +
     (filters.isInScope !== undefined ? 1 : 0);
 
@@ -151,17 +164,36 @@ export function DeadlineFilters({
             <div>
               <label className="label">Status</label>
               <select
+                value={filters.timing || ''}
+                onChange={(e) =>
+                  handleFilterChange('timing', e.target.value as DeadlineTimingStatus)
+                }
+                className="input input-sm"
+              >
+                <option value="">All statuses</option>
+                {TIMING_OPTIONS.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Internal Status */}
+            <div>
+              <label className="label">Internal Status</label>
+              <select
                 value={
                   filters.status && filters.status.length === 1
                     ? filters.status[0]
-                    : filters.status && filters.status.length === 3
+                    : filters.status && filters.status.length === 4
                       ? 'ACTIVE'
                       : ''
                 }
                 onChange={(e) => {
                   const value = e.target.value;
                   if (value === 'ACTIVE') {
-                    handleFilterChange('status', ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS']);
+                    handleFilterChange('status', ['PENDING', 'PENDING_CLIENT', 'IN_PROGRESS', 'PENDING_REVIEW']);
                   } else if (value) {
                     handleFilterChange('status', [value as DeadlineStatus]);
                   } else {
@@ -170,7 +202,7 @@ export function DeadlineFilters({
                 }}
                 className="input input-sm"
               >
-                <option value="">All statuses</option>
+                <option value="">All internal statuses</option>
                 <option value="ACTIVE">Active (Not Completed)</option>
                 {STATUS_OPTIONS.map((status) => (
                   <option key={status.value} value={status.value}>

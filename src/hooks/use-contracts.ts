@@ -26,10 +26,7 @@ export interface ContractService {
   frequency: BillingFrequency;
   startDate: string;
   endDate: string | null;
-  nextBillingDate: string | null;
   scope: string | null;
-  autoRenewal: boolean;
-  renewalPeriodMonths: number | null;
   serviceTemplateCode?: string | null;
   hasCustomDeadlines?: boolean;
   displayOrder: number;

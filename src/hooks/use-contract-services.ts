@@ -46,10 +46,7 @@ export interface CreateContractServiceInput {
   frequency?: BillingFrequency;
   startDate: string;
   endDate?: string | null;
-  nextBillingDate?: string | null;
   scope?: string | null;
-  autoRenewal?: boolean;
-  renewalPeriodMonths?: number | null;
   displayOrder?: number;
   // Service template integration for deadline management
   serviceTemplateCode?: string | null;
@@ -68,10 +65,7 @@ export interface UpdateContractServiceInput {
   frequency?: BillingFrequency;
   startDate?: string;
   endDate?: string | null;
-  nextBillingDate?: string | null;
   scope?: string | null;
-  autoRenewal?: boolean;
-  renewalPeriodMonths?: number | null;
   displayOrder?: number;
   serviceTemplateCode?: string | null;
   deadlineRules?: DeadlineRuleInput[] | null;
@@ -84,11 +78,15 @@ export interface ServiceSearchParams {
   serviceType?: ServiceType;
   companyId?: string;
   contractId?: string;
+  startDateFrom?: string;
+  startDateTo?: string;
   endDateFrom?: string;
   endDateTo?: string;
+  rateFrom?: number;
+  rateTo?: number;
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'startDate' | 'endDate' | 'status' | 'rate' | 'updatedAt' | 'createdAt';
+  sortBy?: 'name' | 'startDate' | 'endDate' | 'status' | 'rate' | 'serviceType' | 'company' | 'updatedAt' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -128,8 +126,12 @@ export function useAllServices(params?: ServiceSearchParams) {
       if (params?.serviceType) searchParams.set('serviceType', params.serviceType);
       if (params?.companyId) searchParams.set('companyId', params.companyId);
       if (params?.contractId) searchParams.set('contractId', params.contractId);
+      if (params?.startDateFrom) searchParams.set('startDateFrom', params.startDateFrom);
+      if (params?.startDateTo) searchParams.set('startDateTo', params.startDateTo);
       if (params?.endDateFrom) searchParams.set('endDateFrom', params.endDateFrom);
       if (params?.endDateTo) searchParams.set('endDateTo', params.endDateTo);
+      if (params?.rateFrom !== undefined) searchParams.set('rateFrom', params.rateFrom.toString());
+      if (params?.rateTo !== undefined) searchParams.set('rateTo', params.rateTo.toString());
       if (params?.page) searchParams.set('page', params.page.toString());
       if (params?.limit) searchParams.set('limit', params.limit.toString());
       if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
@@ -168,8 +170,12 @@ export function useCompanyServices(
       if (params?.status) searchParams.set('status', params.status);
       if (params?.serviceType) searchParams.set('serviceType', params.serviceType);
       if (params?.contractId) searchParams.set('contractId', params.contractId);
+      if (params?.startDateFrom) searchParams.set('startDateFrom', params.startDateFrom);
+      if (params?.startDateTo) searchParams.set('startDateTo', params.startDateTo);
       if (params?.endDateFrom) searchParams.set('endDateFrom', params.endDateFrom);
       if (params?.endDateTo) searchParams.set('endDateTo', params.endDateTo);
+      if (params?.rateFrom !== undefined) searchParams.set('rateFrom', params.rateFrom.toString());
+      if (params?.rateTo !== undefined) searchParams.set('rateTo', params.rateTo.toString());
       if (params?.page) searchParams.set('page', params.page.toString());
       if (params?.limit) searchParams.set('limit', params.limit.toString());
       if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
@@ -496,6 +502,78 @@ export function useDeleteCompanyService(companyId: string) {
       queryClient.invalidateQueries({ queryKey: serviceKeys.all });
       queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
       success('Service deleted successfully');
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+/**
+ * Bulk update end date for services (Services Overview)
+ */
+export function useBulkUpdateServiceEndDate() {
+  const queryClient = useQueryClient();
+  const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async (data: { serviceIds: string[]; endDate: string }) => {
+      const response = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'bulk-end-date', tenantId: activeTenantId, ...data }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update service end dates');
+      }
+      return response.json() as Promise<{ success: boolean; count: number }>;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: serviceKeys.all });
+      queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
+      success(`Updated end date for ${data.count} services`);
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+/**
+ * Bulk hard delete services (permanent)
+ */
+export function useBulkHardDeleteServices() {
+  const queryClient = useQueryClient();
+  const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async (serviceIds: string[]) => {
+      const response = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'bulk-hard-delete', tenantId: activeTenantId, serviceIds }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete services');
+      }
+      return response.json() as Promise<{ success: boolean; count: number }>;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: serviceKeys.all });
+      queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
+      success(`Deleted ${data.count} services`);
     },
     onError: (err: Error) => {
       error(err.message);

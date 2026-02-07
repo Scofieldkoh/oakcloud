@@ -52,8 +52,6 @@ type ServiceFormValues = {
   startDate: string;
   endDate: string;
   scope: string;
-  autoRenewal: boolean;
-  renewalPeriodMonths: string;
 };
 
 type TemplateSource = 'BUILT_IN' | 'CUSTOM';
@@ -68,8 +66,6 @@ interface TemplateCatalogItem {
   rate?: number | null;
   currency?: string | null;
   frequency: ServiceFormValues['frequency'];
-  autoRenewal: boolean;
-  renewalPeriodMonths: number | null;
   startDate?: string | null;
   endDate?: string | null;
   scope?: string | null;
@@ -121,8 +117,6 @@ function buildBlankServiceFormValues(): ServiceFormValues {
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     scope: '',
-    autoRenewal: true,
-    renewalPeriodMonths: '12',
   };
 }
 
@@ -229,8 +223,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
         rate: override?.rate,
         currency: override?.currency,
         frequency: override?.frequency ?? defaults.frequency,
-        autoRenewal: override?.autoRenewal ?? (defaults.serviceType === 'RECURRING'),
-        renewalPeriodMonths: override?.renewalPeriodMonths ?? (defaults.serviceType === 'RECURRING' ? 12 : null),
         startDate: override?.startDate,
         endDate: override?.endDate,
         scope: override?.scope,
@@ -254,8 +246,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
         rate: template.rate,
         currency: template.currency,
         frequency: template.frequency,
-        autoRenewal: template.autoRenewal,
-        renewalPeriodMonths: template.renewalPeriodMonths,
         startDate: template.startDate,
         endDate: template.endDate,
         scope: template.scope,
@@ -382,11 +372,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
     setValue('name', template.name);
     setValue('serviceType', template.serviceType);
     setValue('frequency', template.frequency);
-    setValue('autoRenewal', template.autoRenewal);
-    setValue(
-      'renewalPeriodMonths',
-      template.renewalPeriodMonths != null ? String(template.renewalPeriodMonths) : ''
-    );
 
     const shouldApplyFullTemplate = template.source === 'CUSTOM' || template.isSystemOverridden;
     if (shouldApplyFullTemplate) {
@@ -451,12 +436,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
     const frequency = serviceType === 'ONE_TIME'
       ? 'ONE_TIME'
       : values.frequency;
-    const autoRenewal = serviceType === 'ONE_TIME'
-      ? false
-      : values.autoRenewal;
-    const renewalPeriodMonths = serviceType === 'ONE_TIME' || !autoRenewal
-      ? null
-      : Number.parseInt(values.renewalPeriodMonths || '12', 10) || 12;
     const rateValue = values.rate?.trim();
     const parsedRate = rateValue ? Number.parseFloat(rateValue) : null;
     const rate = parsedRate !== null && Number.isNaN(parsedRate) ? null : parsedRate;
@@ -470,8 +449,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
       rate,
       currency: values.currency,
       frequency,
-      autoRenewal,
-      renewalPeriodMonths,
       startDate: values.startDate || null,
       endDate: values.endDate || null,
       scope: values.scope || null,
@@ -491,11 +468,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
     setValue('name', payload.name);
     setValue('serviceType', payload.serviceType);
     setValue('frequency', payload.frequency);
-    setValue('autoRenewal', payload.autoRenewal);
-    setValue(
-      'renewalPeriodMonths',
-      payload.renewalPeriodMonths != null ? String(payload.renewalPeriodMonths) : ''
-    );
     setValue('status', payload.status ?? 'ACTIVE');
     setValue('rate', payload.rate != null ? String(payload.rate) : '');
     setValue('currency', payload.currency ?? 'SGD');
@@ -606,8 +578,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
     currency: string;
     frequency: string;
     scope: string | null;
-    autoRenewal: boolean;
-    renewalPeriodMonths: number | null;
   }) => {
     // Clear template selection when copying from existing
     setSelectedTemplate(null);
@@ -621,8 +591,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
     setValue('currency', service.currency);
     setValue('frequency', service.frequency as ServiceFormValues['frequency']);
     setValue('scope', service.scope || '');
-    setValue('autoRenewal', service.autoRenewal);
-    setValue('renewalPeriodMonths', service.renewalPeriodMonths?.toString() || '');
   };
 
   // Warn about unsaved changes when leaving the page
@@ -651,6 +619,13 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
   // Watch fields for conditional rendering and preview
   const serviceType = watch('serviceType');
   const startDate = watch('startDate');
+  const rateInput = watch('rate');
+  const billingCurrency = watch('currency');
+  const defaultBillingAmount = useMemo(() => {
+    if (!rateInput) return null;
+    const parsed = Number.parseFloat(rateInput);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [rateInput]);
   const frequencyOptions = useMemo(
     () => (serviceType === 'ONE_TIME'
       ? BILLING_FREQUENCIES.filter((f) => f.value === 'ONE_TIME')
@@ -669,7 +644,7 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
     }
   }, [getValues, serviceType, setValue]);
 
-  // Note: Zod transforms string rate/renewalPeriodMonths to numbers
+  // Note: Zod transforms string rate to numbers
   // so data here has the transformed (output) types
   const onSubmit = useCallback(async (data: unknown) => {
     setSubmitError(null);
@@ -686,8 +661,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
         startDate: validatedData.startDate,
         endDate: validatedData.endDate,
         scope: validatedData.scope?.trim() || null,
-        autoRenewal: validatedData.autoRenewal,
-        renewalPeriodMonths: validatedData.renewalPeriodMonths,
         // Always use deadline rules (converted from template or custom)
         deadlineRules: deadlineRules.length > 0 ? deadlineRules : null,
         serviceTemplateCode: selectedTemplate,
@@ -1032,6 +1005,8 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
               initialRules={deadlineRules}
               onChange={setDeadlineRules}
               serviceStartDate={startDate}
+              defaultBillingAmount={defaultBillingAmount}
+              defaultBillingCurrency={billingCurrency}
               selectedRuleIndex={selectedRuleIndex}
               onSelectRule={setSelectedRuleIndex}
             />

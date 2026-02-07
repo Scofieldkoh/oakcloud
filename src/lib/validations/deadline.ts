@@ -18,9 +18,19 @@ export const DeadlineCategoryEnum = z.enum([
 ]);
 
 export const DeadlineStatusEnum = z.enum([
-  'UPCOMING',
-  'DUE_SOON',
+  'PENDING',
+  'PENDING_CLIENT',
   'IN_PROGRESS',
+  'PENDING_REVIEW',
+  'COMPLETED',
+  'CANCELLED',
+  'WAIVED',
+]);
+
+export const DeadlineTimingStatusEnum = z.enum([
+  'OVERDUE',
+  'DUE_SOON',
+  'UPCOMING',
   'COMPLETED',
   'CANCELLED',
   'WAIVED',
@@ -29,6 +39,7 @@ export const DeadlineStatusEnum = z.enum([
 export const DeadlineBillingStatusEnum = z.enum([
   'NOT_APPLICABLE',
   'PENDING',
+  'TO_BE_BILLED',
   'INVOICED',
   'PAID',
 ]);
@@ -48,6 +59,7 @@ export const createDeadlineSchema = z.object({
     .min(1, 'Title is required')
     .max(200, 'Title must be 200 characters or less'),
   description: z.string().nullish(),
+  internalNotes: z.string().nullish(),
   category: DeadlineCategoryEnum,
   referenceCode: z.string().max(50, 'Reference code must be 50 characters or less').nullish(),
   periodLabel: z
@@ -63,7 +75,7 @@ export const createDeadlineSchema = z.object({
   scopeNote: z.string().nullish(),
   isBacklog: z.boolean().default(false),
   backlogNote: z.string().nullish(),
-  status: DeadlineStatusEnum.default('UPCOMING'),
+  status: DeadlineStatusEnum.default('PENDING'),
   isBillable: z.boolean().default(false),
   amount: z.number().positive('Amount must be positive').nullish(),
   currency: z.string().length(3, 'Currency must be 3 characters').default('SGD'),
@@ -85,6 +97,7 @@ export const updateDeadlineSchema = z.object({
     .max(200, 'Title must be 200 characters or less')
     .optional(),
   description: z.string().nullish(),
+  internalNotes: z.string().nullish(),
   category: DeadlineCategoryEnum.optional(),
   referenceCode: z.string().max(50).nullish(),
   periodLabel: z.string().min(1).max(50).optional(),
@@ -118,6 +131,8 @@ export const completeDeadlineSchema = z.object({
   completionNote: z.string().nullish(),
   filingDate: z.string().datetime().or(z.date()).nullish(),
   filingReference: z.string().max(100, 'Filing reference must be 100 characters or less').nullish(),
+  billingStatus: DeadlineBillingStatusEnum.optional(),
+  invoiceReference: z.string().max(100, 'Invoice reference must be 100 characters or less').nullish(),
 });
 
 export type CompleteDeadlineInput = z.infer<typeof completeDeadlineSchema>;
@@ -143,6 +158,7 @@ export const deadlineSearchSchema = z.object({
   contractServiceId: z.string().uuid().optional(),
   category: DeadlineCategoryEnum.optional(),
   status: z.union([DeadlineStatusEnum, z.array(DeadlineStatusEnum)]).optional(),
+  timing: DeadlineTimingStatusEnum.optional(),
   assigneeId: z.string().uuid().nullish(),
   isInScope: z.boolean().optional(),
   isBacklog: z.boolean().optional(),
@@ -154,7 +170,20 @@ export const deadlineSearchSchema = z.object({
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(20),
   sortBy: z
-    .enum(['title', 'statutoryDueDate', 'status', 'category', 'company', 'createdAt', 'updatedAt'])
+    .enum([
+      'title',
+      'periodLabel',
+      'service',
+      'billingStatus',
+      'amount',
+      'assignee',
+      'statutoryDueDate',
+      'status',
+      'category',
+      'company',
+      'createdAt',
+      'updatedAt',
+    ])
     .default('statutoryDueDate'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
@@ -177,6 +206,12 @@ export const bulkStatusSchema = z.object({
   status: DeadlineStatusEnum,
 });
 
+export const bulkBillingSchema = z.object({
+  action: z.literal('bulk-billing'),
+  deadlineIds: z.array(z.string().uuid()).min(1, 'At least one deadline ID is required'),
+  billingStatus: DeadlineBillingStatusEnum,
+});
+
 export const bulkDeleteSchema = z.object({
   action: z.literal('bulk-delete'),
   deadlineIds: z.array(z.string().uuid()).min(1, 'At least one deadline ID is required'),
@@ -192,5 +227,6 @@ export const generateDeadlinesSchema = z.object({
 
 export type BulkAssignInput = z.infer<typeof bulkAssignSchema>;
 export type BulkStatusInput = z.infer<typeof bulkStatusSchema>;
+export type BulkBillingInput = z.infer<typeof bulkBillingSchema>;
 export type BulkDeleteInput = z.infer<typeof bulkDeleteSchema>;
 export type GenerateDeadlinesInput = z.infer<typeof generateDeadlinesSchema>;

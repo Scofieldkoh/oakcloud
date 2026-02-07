@@ -35,12 +35,34 @@ export interface TenantAwareParams {
 // TYPES
 // ============================================================================
 
+export type DeadlineTimingStatus =
+  | 'OVERDUE'
+  | 'DUE_SOON'
+  | 'UPCOMING'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'WAIVED';
+
+const ACTIVE_WORKFLOW_STATUSES: DeadlineStatus[] = [
+  'PENDING',
+  'PENDING_CLIENT',
+  'IN_PROGRESS',
+  'PENDING_REVIEW',
+];
+const TERMINAL_WORKFLOW_STATUSES: DeadlineStatus[] = [
+  'COMPLETED',
+  'CANCELLED',
+  'WAIVED',
+];
+const DUE_SOON_DAYS = 14;
+
 export interface CreateDeadlineInput {
   companyId: string;
   contractServiceId?: string | null;
   deadlineTemplateId?: string | null;
   title: string;
   description?: string | null;
+  internalNotes?: string | null;
   category: DeadlineCategory;
   referenceCode?: string | null;
   periodLabel: string;
@@ -65,6 +87,7 @@ export interface UpdateDeadlineInput {
   id: string;
   title?: string;
   description?: string | null;
+  internalNotes?: string | null;
   category?: DeadlineCategory;
   referenceCode?: string | null;
   periodLabel?: string;
@@ -92,6 +115,8 @@ export interface CompleteDeadlineInput {
   completionNote?: string | null;
   filingDate?: string | Date | null;
   filingReference?: string | null;
+  billingStatus?: DeadlineBillingStatus;
+  invoiceReference?: string | null;
 }
 
 export interface UpdateBillingInput {
@@ -105,17 +130,21 @@ export interface DeadlineSearchParams {
   contractServiceId?: string;
   category?: DeadlineCategory;
   status?: DeadlineStatus | DeadlineStatus[];
+  timing?: DeadlineTimingStatus;
   assigneeId?: string;
   isInScope?: boolean;
   isBacklog?: boolean;
   billingStatus?: DeadlineBillingStatus;
+  amountFrom?: number;
+  amountTo?: number;
   dueDateFrom?: string | Date | null;
   dueDateTo?: string | Date | null;
   query?: string;
+  period?: string;
   includeDeleted?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: 'title' | 'statutoryDueDate' | 'status' | 'category' | 'company' | 'createdAt' | 'updatedAt';
+  sortBy?: 'title' | 'periodLabel' | 'service' | 'billingStatus' | 'amount' | 'assignee' | 'statutoryDueDate' | 'status' | 'category' | 'company' | 'createdAt' | 'updatedAt';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -148,6 +177,17 @@ export interface DeadlineWithRelations extends Deadline {
     id: string;
     firstName: string;
     lastName: string;
+  };
+}
+
+function buildEffectiveDueDateWhere(
+  range: Prisma.DateTimeFilter
+): Prisma.DeadlineWhereInput {
+  return {
+    OR: [
+      { extendedDueDate: null, statutoryDueDate: range },
+      { extendedDueDate: range },
+    ],
   };
 }
 
@@ -195,6 +235,8 @@ export async function createDeadline(
     }
   }
 
+  const isBillable = data.isBillable ?? false;
+
   const deadline = await db.deadline.create({
     data: {
       tenantId,
@@ -203,6 +245,7 @@ export async function createDeadline(
       deadlineTemplateId: data.deadlineTemplateId,
       title: data.title.slice(0, 200),
       description: data.description,
+      internalNotes: data.internalNotes,
       category: data.category,
       referenceCode: data.referenceCode,
       periodLabel: data.periodLabel,
@@ -215,8 +258,9 @@ export async function createDeadline(
       scopeNote: data.scopeNote,
       isBacklog: data.isBacklog ?? false,
       backlogNote: data.backlogNote,
-      status: data.status ?? 'UPCOMING',
-      isBillable: data.isBillable ?? false,
+      status: data.status ?? 'PENDING',
+      isBillable,
+      billingStatus: isBillable ? 'PENDING' : 'NOT_APPLICABLE',
       amount: data.amount,
       currency: data.currency ?? 'SGD',
       assigneeId: data.assigneeId,
@@ -265,6 +309,32 @@ export async function updateDeadline(
     throw new Error('Deadline not found');
   }
 
+  const nextIsBillable = data.isBillable ?? existing.isBillable;
+  const nextOverrideBillable =
+    data.overrideBillable !== undefined ? data.overrideBillable : existing.overrideBillable;
+  const effectiveBillable = nextOverrideBillable ?? nextIsBillable;
+
+  const completionUpdate: Prisma.DeadlineUpdateInput = {};
+  if (data.status) {
+    if (data.status === 'COMPLETED') {
+      completionUpdate.completedAt = new Date();
+      completionUpdate.completedById = userId;
+    } else {
+      completionUpdate.completedAt = null;
+      completionUpdate.completedById = null;
+      completionUpdate.completionNote = null;
+      completionUpdate.filingDate = null;
+      completionUpdate.filingReference = null;
+    }
+  }
+
+  const billingStatusUpdate: Prisma.DeadlineUpdateInput = {};
+  if (data.status === 'COMPLETED' && effectiveBillable) {
+    if (existing.billingStatus !== 'INVOICED' && existing.billingStatus !== 'PAID') {
+      billingStatusUpdate.billingStatus = 'TO_BE_BILLED';
+    }
+  }
+
   // Validate assignee if provided
   if (data.assigneeId !== undefined && data.assigneeId !== null) {
     const assignee = await db.user.findFirst({
@@ -280,6 +350,7 @@ export async function updateDeadline(
     data: {
       title: data.title !== undefined ? data.title.slice(0, 200) : undefined,
       description: data.description !== undefined ? data.description : undefined,
+      internalNotes: data.internalNotes !== undefined ? data.internalNotes : undefined,
       category: data.category,
       referenceCode: data.referenceCode !== undefined ? data.referenceCode : undefined,
       periodLabel: data.periodLabel,
@@ -312,6 +383,8 @@ export async function updateDeadline(
       assignedAt: data.assigneeId !== undefined && data.assigneeId !== existing.assigneeId
         ? (data.assigneeId ? new Date() : null)
         : undefined,
+      ...billingStatusUpdate,
+      ...completionUpdate,
     },
   });
 
@@ -354,16 +427,45 @@ export async function completeDeadline(
     throw new Error('Deadline is already completed');
   }
 
+  const effectiveBillable = existing.overrideBillable ?? existing.isBillable;
+
+  const updateData: Prisma.DeadlineUpdateInput = {
+    status: 'COMPLETED',
+    completedAt: new Date(),
+    completedById: userId,
+    completionNote: data.completionNote,
+    filingDate: data.filingDate ? new Date(data.filingDate) : null,
+    filingReference: data.filingReference,
+  };
+
+  let resolvedBillingStatus = data.billingStatus;
+  if (effectiveBillable) {
+    if (
+      resolvedBillingStatus === undefined ||
+      resolvedBillingStatus === 'PENDING' ||
+      resolvedBillingStatus === 'NOT_APPLICABLE'
+    ) {
+      if (existing.billingStatus !== 'INVOICED' && existing.billingStatus !== 'PAID') {
+        resolvedBillingStatus = 'TO_BE_BILLED';
+      }
+    }
+  }
+
+  if (resolvedBillingStatus !== undefined) {
+    updateData.billingStatus = resolvedBillingStatus;
+    if (data.invoiceReference !== undefined) {
+      updateData.invoiceReference = data.invoiceReference;
+    }
+    if (resolvedBillingStatus === 'INVOICED' && !existing.invoicedAt) {
+      updateData.invoicedAt = new Date();
+    }
+  } else if (data.invoiceReference !== undefined) {
+    updateData.invoiceReference = data.invoiceReference;
+  }
+
   const deadline = await db.deadline.update({
     where: { id: data.id },
-    data: {
-      status: 'COMPLETED',
-      completedAt: new Date(),
-      completedById: userId,
-      completionNote: data.completionNote,
-      filingDate: data.filingDate ? new Date(data.filingDate) : null,
-      filingReference: data.filingReference,
-    },
+    data: updateData,
   });
 
   // Create audit log
@@ -380,33 +482,12 @@ export async function completeDeadline(
     metadata: {
       filingDate: deadline.filingDate?.toISOString(),
       filingReference: deadline.filingReference,
+      billingStatus: deadline.billingStatus,
+      invoiceReference: deadline.invoiceReference,
     },
   });
 
   return deadline;
-}
-
-/**
- * Calculate the appropriate status for a deadline based on its due date
- */
-function calculateDeadlineStatus(
-  statutoryDueDate: Date,
-  extendedDueDate: Date | null
-): DeadlineStatus {
-  const now = new Date();
-  const effectiveDueDate = extendedDueDate || statutoryDueDate;
-  const daysUntilDue = Math.ceil(
-    (effectiveDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (daysUntilDue < 0) {
-    // Overdue - keep as DUE_SOON to indicate urgency
-    return 'DUE_SOON';
-  } else if (daysUntilDue <= 14) {
-    return 'DUE_SOON';
-  } else {
-    return 'UPCOMING';
-  }
 }
 
 /**
@@ -432,21 +513,21 @@ export async function reopenDeadline(
     throw new Error('Deadline is not completed');
   }
 
-  // Calculate the appropriate status based on due date
-  const newStatus = calculateDeadlineStatus(
-    existing.statutoryDueDate,
-    existing.extendedDueDate
-  );
+  const billingStatusUpdate: Prisma.DeadlineUpdateInput =
+    existing.billingStatus === 'TO_BE_BILLED'
+      ? { billingStatus: 'PENDING' }
+      : {};
 
   const deadline = await db.deadline.update({
     where: { id },
     data: {
-      status: newStatus,
+      status: 'PENDING',
       completedAt: null,
       completedById: null,
       completionNote: null,
       filingDate: null,
       filingReference: null,
+      ...billingStatusUpdate,
     },
   });
 
@@ -678,23 +759,27 @@ export async function searchDeadlines(
   tenantId: string,
   params?: DeadlineSearchParams
 ): Promise<{ deadlines: DeadlineWithRelations[]; total: number }> {
-  const {
-    companyId,
-    contractServiceId,
-    category,
-    status,
-    assigneeId,
-    isInScope,
-    isBacklog,
-    billingStatus,
-    dueDateFrom,
-    dueDateTo,
-    query,
-    includeDeleted = false,
-    page = 1,
-    limit = 20,
-    sortBy = 'statutoryDueDate',
-    sortOrder = 'asc',
+    const {
+      companyId,
+      contractServiceId,
+      category,
+      status,
+      timing,
+      assigneeId,
+      isInScope,
+      isBacklog,
+      billingStatus,
+      amountFrom,
+      amountTo,
+      dueDateFrom,
+      dueDateTo,
+      query,
+      period,
+      includeDeleted = false,
+      page = 1,
+      limit = 20,
+      sortBy = 'statutoryDueDate',
+      sortOrder = 'asc',
   } = params || {};
 
   const where: Prisma.DeadlineWhereInput = {
@@ -705,10 +790,11 @@ export async function searchDeadlines(
     ...(category && { category }),
     ...(status && { status: Array.isArray(status) ? { in: status } : status }),
     ...(assigneeId !== undefined && { assigneeId: assigneeId || null }),
-    ...(isInScope !== undefined && { isInScope }),
-    ...(isBacklog !== undefined && { isBacklog }),
-    ...(billingStatus && { billingStatus }),
-    ...(query && {
+      ...(isInScope !== undefined && { isInScope }),
+      ...(isBacklog !== undefined && { isBacklog }),
+      ...(billingStatus && { billingStatus }),
+      ...(period && { periodLabel: { contains: period, mode: 'insensitive' } }),
+      ...(query && {
       OR: [
         { title: { contains: query, mode: 'insensitive' } },
         { referenceCode: { contains: query, mode: 'insensitive' } },
@@ -728,11 +814,61 @@ export async function searchDeadlines(
       : {}),
   };
 
+  if (timing) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueSoonDate = new Date(today);
+    dueSoonDate.setDate(dueSoonDate.getDate() + DUE_SOON_DAYS);
+
+    const timingFilters: Prisma.DeadlineWhereInput[] = [];
+
+    if (timing === 'OVERDUE') {
+      timingFilters.push({ status: { in: ACTIVE_WORKFLOW_STATUSES } });
+      timingFilters.push(buildEffectiveDueDateWhere({ lt: today }));
+    } else if (timing === 'DUE_SOON') {
+      timingFilters.push({ status: { in: ACTIVE_WORKFLOW_STATUSES } });
+      timingFilters.push(buildEffectiveDueDateWhere({ gte: today, lte: dueSoonDate }));
+    } else if (timing === 'UPCOMING') {
+      timingFilters.push({ status: { in: ACTIVE_WORKFLOW_STATUSES } });
+      timingFilters.push(buildEffectiveDueDateWhere({ gt: dueSoonDate }));
+    } else if (TERMINAL_WORKFLOW_STATUSES.includes(timing as DeadlineStatus)) {
+      timingFilters.push({ status: timing as DeadlineStatus });
+    }
+
+    if (timingFilters.length > 0) {
+      where.AND = [...(where.AND || []), ...timingFilters];
+    }
+  }
+
+  if (amountFrom !== undefined || amountTo !== undefined) {
+    const range = {
+      ...(amountFrom !== undefined ? { gte: amountFrom } : {}),
+      ...(amountTo !== undefined ? { lte: amountTo } : {}),
+    };
+    where.AND = [
+      ...(where.AND || []),
+      {
+        OR: [
+          { overrideAmount: range },
+          { overrideAmount: null, amount: range },
+        ],
+      },
+    ];
+  }
+
   // Build orderBy
   const orderBy: Prisma.DeadlineOrderByWithRelationInput[] = [];
   if (sortBy === 'company') {
     orderBy.push({ company: { name: sortOrder } });
-  } else if (sortBy === 'title' || sortBy === 'statutoryDueDate' || sortBy === 'status' ||
+  } else if (sortBy === 'service') {
+    orderBy.push({ contractService: { name: sortOrder } });
+  } else if (sortBy === 'assignee') {
+    orderBy.push(
+      { assignee: { lastName: sortOrder } },
+      { assignee: { firstName: sortOrder } }
+    );
+  } else if (sortBy === 'title' || sortBy === 'periodLabel' || sortBy === 'billingStatus' ||
+             sortBy === 'amount' || sortBy === 'statutoryDueDate' || sortBy === 'status' ||
              sortBy === 'category' || sortBy === 'createdAt' || sortBy === 'updatedAt') {
     orderBy.push({ [sortBy]: sortOrder });
   }
@@ -784,18 +920,17 @@ export async function getUpcomingDeadlines(
     limit?: number;
   }
 ): Promise<DeadlineWithRelations[]> {
-  const futureDate = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const futureDate = new Date(today);
   futureDate.setDate(futureDate.getDate() + daysAhead);
 
   const where: Prisma.DeadlineWhereInput = {
     tenantId,
     deletedAt: null,
-    status: { in: ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'] },
+    status: { in: ACTIVE_WORKFLOW_STATUSES },
     isInScope: true,
-    statutoryDueDate: {
-      lte: futureDate,
-      gte: new Date(),
-    },
+    ...buildEffectiveDueDateWhere({ gte: today, lte: futureDate }),
     ...(options?.companyId && { companyId: options.companyId }),
     ...(options?.assigneeId && { assigneeId: options.assigneeId }),
     ...(options?.category && { category: options.category }),
@@ -845,19 +980,9 @@ export async function getOverdueDeadlines(
   const where: Prisma.DeadlineWhereInput = {
     tenantId,
     deletedAt: null,
-    status: { in: ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'] },
+    status: { in: ACTIVE_WORKFLOW_STATUSES },
     isInScope: true,
-    OR: [
-      // Overdue based on statutory due date (no extension)
-      {
-        extendedDueDate: null,
-        statutoryDueDate: { lt: today },
-      },
-      // Overdue based on extended due date
-      {
-        extendedDueDate: { lt: today },
-      },
-    ],
+    ...buildEffectiveDueDateWhere({ lt: today }),
     ...(options?.companyId && { companyId: options.companyId }),
     ...(options?.assigneeId && { assigneeId: options.assigneeId }),
   };
@@ -929,7 +1054,7 @@ export async function getDeadlineStats(
   today.setHours(0, 0, 0, 0);
 
   const dueSoonDate = new Date();
-  dueSoonDate.setDate(dueSoonDate.getDate() + 14);
+  dueSoonDate.setDate(dueSoonDate.getDate() + DUE_SOON_DAYS);
 
   const [
     total,
@@ -964,11 +1089,8 @@ export async function getDeadlineStats(
     prisma.deadline.count({
       where: {
         ...baseWhere,
-        status: { in: ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'] },
-        OR: [
-          { extendedDueDate: null, statutoryDueDate: { lt: today } },
-          { extendedDueDate: { lt: today } },
-        ],
+        status: { in: ACTIVE_WORKFLOW_STATUSES },
+        ...buildEffectiveDueDateWhere({ lt: today }),
       },
     }),
 
@@ -976,8 +1098,8 @@ export async function getDeadlineStats(
     prisma.deadline.count({
       where: {
         ...baseWhere,
-        status: { in: ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'] },
-        statutoryDueDate: { gte: today, lte: dueSoonDate },
+        status: { in: ACTIVE_WORKFLOW_STATUSES },
+        ...buildEffectiveDueDateWhere({ gte: today, lte: dueSoonDate }),
       },
     }),
 
@@ -985,7 +1107,7 @@ export async function getDeadlineStats(
     prisma.deadline.count({
       where: {
         ...baseWhere,
-        status: { in: ['UPCOMING', 'DUE_SOON', 'IN_PROGRESS'] },
+        status: { in: ACTIVE_WORKFLOW_STATUSES },
         assigneeId: null,
       },
     }),
@@ -995,7 +1117,7 @@ export async function getDeadlineStats(
       where: {
         ...baseWhere,
         isBillable: true,
-        billingStatus: 'PENDING',
+        billingStatus: { in: ['PENDING', 'TO_BE_BILLED'] },
       },
     }),
 
@@ -1022,7 +1144,7 @@ export async function getDeadlineStats(
       where: {
         ...baseWhere,
         isBillable: true,
-        billingStatus: 'PENDING',
+        billingStatus: { in: ['PENDING', 'TO_BE_BILLED'] },
       },
       _sum: { amount: true },
     }),
@@ -1030,9 +1152,10 @@ export async function getDeadlineStats(
 
   // Convert grouped results to records
   const statusRecord: Record<DeadlineStatus, number> = {
-    UPCOMING: 0,
-    DUE_SOON: 0,
+    PENDING: 0,
+    PENDING_CLIENT: 0,
     IN_PROGRESS: 0,
+    PENDING_REVIEW: 0,
     COMPLETED: 0,
     CANCELLED: 0,
     WAIVED: 0,
@@ -1145,9 +1268,35 @@ export async function bulkUpdateStatus(
     },
     data: {
       status,
-      ...(status === 'COMPLETED' ? { completedAt: new Date(), completedById: userId } : {}),
+      ...(status === 'COMPLETED'
+        ? { completedAt: new Date(), completedById: userId }
+        : {
+            completedAt: null,
+            completedById: null,
+            completionNote: null,
+            filingDate: null,
+            filingReference: null,
+          }),
     },
   });
+
+  if (status === 'COMPLETED') {
+    await db.deadline.updateMany({
+      where: {
+        id: { in: deadlineIds },
+        tenantId,
+        deletedAt: null,
+        billingStatus: { notIn: ['INVOICED', 'PAID'] },
+        OR: [
+          { overrideBillable: true },
+          { overrideBillable: null, isBillable: true },
+        ],
+      },
+      data: {
+        billingStatus: 'TO_BE_BILLED',
+      },
+    });
+  }
 
   // Create audit log
   await createAuditLog({
@@ -1161,6 +1310,46 @@ export async function bulkUpdateStatus(
     metadata: {
       deadlineIds,
       status,
+    },
+  });
+
+  return result.count;
+}
+
+/**
+ * Bulk update billing status
+ */
+export async function bulkUpdateBillingStatus(
+  deadlineIds: string[],
+  billingStatus: DeadlineBillingStatus,
+  params: TenantAwareParams
+): Promise<number> {
+  const { tenantId, userId, tx } = params;
+  const db = tx || prisma;
+
+  const result = await db.deadline.updateMany({
+    where: {
+      id: { in: deadlineIds },
+      tenantId,
+      deletedAt: null,
+    },
+    data: {
+      billingStatus,
+      ...(billingStatus === 'INVOICED' ? { invoicedAt: new Date() } : {}),
+    },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'BULK_UPDATE',
+    entityType: 'Deadline',
+    entityId: deadlineIds.join(','),
+    summary: `Bulk updated billing status to "${billingStatus}" for ${result.count} deadlines`,
+    changeSource: 'MANUAL',
+    metadata: {
+      deadlineIds,
+      billingStatus,
     },
   });
 

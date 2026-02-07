@@ -15,8 +15,6 @@ export interface ServiceTemplateRecord {
   rate?: number | null;
   currency?: string | null;
   frequency: BillingFrequency;
-  autoRenewal: boolean;
-  renewalPeriodMonths: number | null;
   startDate?: string | null;
   endDate?: string | null;
   scope?: string | null;
@@ -36,8 +34,6 @@ export interface CreateServiceTemplatePayload {
   rate?: number | null;
   currency?: string | null;
   frequency: BillingFrequency;
-  autoRenewal: boolean;
-  renewalPeriodMonths?: number | null;
   startDate?: string | null;
   endDate?: string | null;
   scope?: string | null;
@@ -53,8 +49,6 @@ export interface UpdateServiceTemplatePayload {
   rate?: number | null;
   currency?: string | null;
   frequency?: BillingFrequency;
-  autoRenewal?: boolean;
-  renewalPeriodMonths?: number | null;
   startDate?: string | null;
   endDate?: string | null;
   scope?: string | null;

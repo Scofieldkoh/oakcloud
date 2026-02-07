@@ -51,14 +51,6 @@ function normalizeTemplateFields(
       ? 'ANNUALLY'
       : requestedFrequency;
 
-  const requestedAutoRenewal = input.autoRenewal ?? fallback?.autoRenewal ?? true;
-  const autoRenewal = serviceType === 'ONE_TIME' ? false : requestedAutoRenewal;
-
-  const requestedRenewalPeriod = input.renewalPeriodMonths ?? fallback?.renewalPeriodMonths ?? 12;
-  const renewalPeriodMonths = serviceType === 'ONE_TIME' || !autoRenewal
-    ? null
-    : requestedRenewalPeriod;
-
   const rate = input.rate ?? fallback?.rate ?? null;
   const currency = input.currency ?? fallback?.currency ?? 'SGD';
   const startDate = input.startDate ?? fallback?.startDate ?? null;
@@ -85,8 +77,6 @@ function normalizeTemplateFields(
     rate,
     currency,
     frequency,
-    autoRenewal,
-    renewalPeriodMonths,
     startDate,
     endDate,
     scope,

@@ -62,8 +62,6 @@ export async function GET(req: NextRequest) {
       startDate: service.startDate,
       endDate: service.endDate,
       scope: service.scope,
-      autoRenewal: service.autoRenewal,
-      renewalPeriodMonths: service.renewalPeriodMonths,
       companyName: service.contract.company.name,
       companyId: service.contract.company.id,
       contractTitle: service.contract.title,

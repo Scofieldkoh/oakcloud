@@ -5,7 +5,7 @@ import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { FormInput } from '@/components/ui/form-input';
-import { Copy, Search, Building2, FileText, CheckCircle2, DollarSign, Calendar, RotateCw } from 'lucide-react';
+import { Copy, Search, Building2, FileText, CheckCircle2, DollarSign, Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 interface Service {
@@ -19,8 +19,6 @@ interface Service {
   startDate: string;
   endDate: string | null;
   scope: string | null;
-  autoRenewal: boolean;
-  renewalPeriodMonths: number | null;
   companyName: string;
   companyId: string;
   contractTitle: string;
@@ -289,19 +287,6 @@ export function CopyServiceModal({
                   </div>
                 </div>
 
-                {selectedService.autoRenewal && (
-                  <div className="flex items-start gap-2">
-                    <div className="p-1.5 bg-oak-primary/10 rounded">
-                      <RotateCw className="w-3.5 h-3.5 text-oak-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <dt className="text-xs text-text-muted mb-0.5">Auto-renewal</dt>
-                      <dd className="text-sm font-medium text-text-primary">
-                        {selectedService.renewalPeriodMonths} months
-                      </dd>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Scope Preview */}

@@ -471,8 +471,9 @@ export async function generateDeadlinesForCompany(
     periodStart: Date | null;
     periodEnd: Date | null;
     statutoryDueDate: Date;
-    status: 'UPCOMING';
+    status: 'PENDING';
     isBillable: boolean;
+    billingStatus: 'NOT_APPLICABLE' | 'PENDING';
     amount: number | null;
     currency: string;
     generationType: 'AUTO';
@@ -515,8 +516,9 @@ export async function generateDeadlinesForCompany(
         periodStart: deadlineData.periodStart,
         periodEnd: deadlineData.periodEnd,
         statutoryDueDate: deadlineData.statutoryDueDate,
-        status: 'UPCOMING',
+        status: 'PENDING',
         isBillable: deadlineData.isBillable,
+        billingStatus: deadlineData.isBillable ? 'PENDING' : 'NOT_APPLICABLE',
         amount: deadlineData.amount,
         currency: 'SGD',
         generationType: 'AUTO',
@@ -859,7 +861,7 @@ export async function regenerateDeadlinesForCompany(
       tenantId,
       companyId,
       generationType: 'AUTO',
-      status: { in: ['UPCOMING', 'DUE_SOON'] },
+      status: { in: ['PENDING', 'PENDING_CLIENT', 'IN_PROGRESS', 'PENDING_REVIEW'] },
       deletedAt: null,
     };
 
@@ -1151,8 +1153,9 @@ export async function generateDeadlinesFromRules(
     periodStart: Date | null;
     periodEnd: Date | null;
     statutoryDueDate: Date;
-    status: 'UPCOMING';
+    status: 'PENDING';
     isBillable: boolean;
+    billingStatus: 'NOT_APPLICABLE' | 'PENDING';
     amount: number | null;
     currency: string;
     generationType: 'AUTO';
@@ -1193,8 +1196,9 @@ export async function generateDeadlinesFromRules(
         periodStart: deadlineData.periodStart,
         periodEnd: deadlineData.periodEnd,
         statutoryDueDate: deadlineData.statutoryDueDate,
-        status: 'UPCOMING',
+        status: 'PENDING',
         isBillable: deadlineData.isBillable,
+        billingStatus: deadlineData.isBillable ? 'PENDING' : 'NOT_APPLICABLE',
         amount: deadlineData.amount,
         currency: deadlineData.currency || 'SGD',
         generationType: 'AUTO',

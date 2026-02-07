@@ -17,6 +17,8 @@ export interface DeadlineRuleRowProps {
   companyData: CompanyData;
   previewEnabled?: boolean;
   serviceStartDate?: string;
+  defaultBillingAmount?: number | null;
+  defaultBillingCurrency?: string | null;
   onUpdate: (rule: DeadlineRuleInput) => void;
   onDelete: () => void;
   onMoveUp: () => void;
@@ -53,6 +55,14 @@ const monthLabels = [
   { value: 12, label: 'Dec' },
 ];
 
+const currencyOptions = [
+  { value: 'SGD', label: 'SGD' },
+  { value: 'USD', label: 'USD' },
+  { value: 'EUR', label: 'EUR' },
+  { value: 'GBP', label: 'GBP' },
+  { value: 'MYR', label: 'MYR' },
+];
+
 type OffsetUnit = 'month' | 'days';
 
 function deriveOffsetUnit(rule: DeadlineRuleInput): OffsetUnit {
@@ -69,6 +79,8 @@ export function DeadlineRuleRow({
   companyData,
   previewEnabled = true,
   serviceStartDate,
+  defaultBillingAmount,
+  defaultBillingCurrency,
   onUpdate,
   onDelete,
   onMoveUp,
@@ -139,6 +151,15 @@ export function DeadlineRuleRow({
         }
       }
 
+      if (field === 'isBillable' && value === true) {
+        if ((updatedRule.amount === null || updatedRule.amount === undefined) && defaultBillingAmount != null) {
+          updatedRule.amount = defaultBillingAmount;
+        }
+        if (defaultBillingCurrency && (updatedRule.currency == null || updatedRule.currency === 'SGD')) {
+          updatedRule.currency = defaultBillingCurrency;
+        }
+      }
+
       if (field === 'anchorType') {
         if (value === 'FIXED_CALENDAR') {
           updatedRule.fixedMonth = updatedRule.fixedMonth ?? 12;
@@ -161,6 +182,7 @@ export function DeadlineRuleRow({
 
   const isRuleBased = localRule.ruleType === 'RULE_BASED';
   const isFixedCalendar = isRuleBased && localRule.anchorType === 'FIXED_CALENDAR';
+  const isBillable = Boolean(localRule.isBillable);
   const offsetSign = useMemo(() => {
     const monthSign = localRule.offsetMonths ?? 0;
     const daySign = localRule.offsetDays ?? 0;
@@ -356,6 +378,52 @@ export function DeadlineRuleRow({
     />
   );
 
+  const renderAmountInput = (height: string = 'h-8', widthClass = 'w-24') => (
+    <input
+      type="number"
+      min={0}
+      step="0.01"
+      value={localRule.amount ?? ''}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw.trim() === '') {
+          handleFieldChange('amount', null);
+          return;
+        }
+        const parsed = Number.parseFloat(raw);
+        if (!Number.isNaN(parsed)) {
+          handleFieldChange('amount', parsed);
+        }
+      }}
+      disabled={!isBillable}
+      placeholder="Amount"
+      className={cn(
+        `${widthClass} ${height} px-2 text-sm text-right rounded-lg`,
+        inputBaseClasses,
+        !isBillable && 'opacity-50 cursor-not-allowed'
+      )}
+    />
+  );
+
+  const renderCurrencySelect = (height: string = 'h-8', widthClass = 'w-20') => (
+    <select
+      value={localRule.currency || 'SGD'}
+      onChange={(e) => handleFieldChange('currency', e.target.value)}
+      disabled={!isBillable}
+      className={cn(
+        `${widthClass} ${height} px-2 text-sm rounded-lg appearance-none cursor-pointer`,
+        inputBaseClasses,
+        !isBillable && 'opacity-50 cursor-not-allowed'
+      )}
+    >
+      {currencyOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+
   const taskLabel = localRule.taskName?.trim() || 'this task';
   const renderActionButtons = () => (
     <>
@@ -435,8 +503,8 @@ export function DeadlineRuleRow({
           className={cn(
             'grid gap-2 items-center',
             previewEnabled
-              ? 'grid-cols-[1.75fr_2fr_170px_120px_1fr_240px]'
-              : 'grid-cols-[1.75fr_2fr_170px_120px_240px]'
+              ? 'grid-cols-[1.75fr_2fr_170px_240px_1fr_240px]'
+              : 'grid-cols-[1.75fr_2fr_170px_240px_240px]'
           )}
         >
           <div className="min-w-0">
@@ -506,13 +574,17 @@ export function DeadlineRuleRow({
           </div>
 
           <div className="min-w-0">
-            <Checkbox
-              size="sm"
-              checked={Boolean(localRule.isBillable)}
-              onChange={(event) => handleFieldChange('isBillable', event.target.checked)}
-              aria-label={`Mark ${taskLabel} as billable`}
-              className="justify-start"
-            />
+            <div className="flex items-center gap-2">
+              <Checkbox
+                size="sm"
+                checked={Boolean(localRule.isBillable)}
+                onChange={(event) => handleFieldChange('isBillable', event.target.checked)}
+                aria-label={`Mark ${taskLabel} as billable`}
+                className="justify-start"
+              />
+              {renderAmountInput()}
+              {renderCurrencySelect()}
+            </div>
           </div>
 
           {previewEnabled && (
@@ -533,12 +605,15 @@ export function DeadlineRuleRow({
 
         {isDescriptionExpanded && (
           <div className="mt-2">
+            <label className="text-[11px] font-medium text-text-muted block mb-1">
+              Description
+            </label>
             <textarea
               value={localRule.description || ''}
               onChange={handleDescriptionChange}
               onFocus={onSelect}
               placeholder="Description (e.g., steps, requirements, references)"
-              rows={3}
+              rows={2}
               ref={desktopDescriptionRef}
               className={cn(
                 'w-full px-3 py-2 text-xs rounded-lg resize-none overflow-hidden',
@@ -576,19 +651,24 @@ export function DeadlineRuleRow({
         </div>
 
         {isDescriptionExpanded && (
-          <textarea
-            value={localRule.description || ''}
-            onChange={handleDescriptionChange}
-            onFocus={onSelect}
-            placeholder="Description (e.g., steps, requirements, references)"
-            rows={3}
-            ref={mobileDescriptionRef}
-            className={cn(
-              'w-full px-2 py-2 text-xs rounded-md resize-none overflow-hidden',
-              inputBaseClasses,
-              'placeholder:text-text-muted'
-            )}
-          />
+          <div>
+            <label className="text-[11px] font-medium text-text-muted block mb-1">
+              Description
+            </label>
+            <textarea
+              value={localRule.description || ''}
+              onChange={handleDescriptionChange}
+              onFocus={onSelect}
+              placeholder="Description (e.g., steps, requirements, references)"
+              rows={2}
+              ref={mobileDescriptionRef}
+              className={cn(
+                'w-full px-2 py-2 text-xs rounded-md resize-none overflow-hidden',
+                inputBaseClasses,
+                'placeholder:text-text-muted'
+              )}
+            />
+          </div>
         )}
 
         <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -644,13 +724,17 @@ export function DeadlineRuleRow({
           />
         </div>
 
-        <div className="flex items-center">
+        <div className="space-y-2">
           <Checkbox
             size="sm"
             checked={Boolean(localRule.isBillable)}
             onChange={(event) => handleFieldChange('isBillable', event.target.checked)}
             label="Billable"
           />
+          <div className="flex items-center gap-2">
+            {renderAmountInput('h-8', 'flex-1')}
+            {renderCurrencySelect('h-8', 'w-24')}
+          </div>
         </div>
 
         {previewEnabled && (

@@ -42,8 +42,6 @@ export function ServiceModal({
     startDate: string;
     endDate: string;
     scope: string;
-    autoRenewal: boolean;
-    renewalPeriodMonths: string;
   }>({
     name: '',
     serviceType: 'RECURRING',
@@ -54,8 +52,6 @@ export function ServiceModal({
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     scope: '',
-    autoRenewal: true,
-    renewalPeriodMonths: '12',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -73,10 +69,6 @@ export function ServiceModal({
         startDate: service.startDate.split('T')[0],
         endDate: service.endDate?.split('T')[0] || '',
         scope: service.scope || '',
-        autoRenewal: service.autoRenewal,
-        renewalPeriodMonths: service.renewalPeriodMonths
-          ? String(service.renewalPeriodMonths)
-          : '',
       });
     } else {
       setFormData({
@@ -89,8 +81,6 @@ export function ServiceModal({
         startDate: new Date().toISOString().split('T')[0],
         endDate: '',
         scope: '',
-        autoRenewal: true,
-        renewalPeriodMonths: '12',
       });
     }
     setErrors({});
@@ -109,13 +99,6 @@ export function ServiceModal({
 
     if (formData.rate && isNaN(parseFloat(formData.rate))) {
       newErrors.rate = 'Rate must be a valid number';
-    }
-
-    if (
-      formData.renewalPeriodMonths &&
-      isNaN(parseInt(formData.renewalPeriodMonths))
-    ) {
-      newErrors.renewalPeriodMonths = 'Must be a valid number';
     }
 
     setErrors(newErrors);
@@ -139,10 +122,6 @@ export function ServiceModal({
         startDate: formData.startDate,
         endDate: formData.endDate || null,
         scope: formData.scope.trim() || null,
-        autoRenewal: formData.autoRenewal,
-        renewalPeriodMonths: formData.renewalPeriodMonths
-          ? parseInt(formData.renewalPeriodMonths)
-          : null,
       });
     } finally {
       setIsSubmitting(false);
@@ -296,48 +275,6 @@ export function ServiceModal({
             }
           />
         </div>
-
-        {/* Auto Renewal (for recurring services) */}
-        {formData.serviceType === 'RECURRING' && (
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.autoRenewal}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    autoRenewal: e.target.checked,
-                  }))
-                }
-                className="w-4 h-4 rounded border-border-primary text-oak-light focus:ring-oak-light"
-              />
-              <span className="text-sm text-text-primary">Auto-renews</span>
-            </label>
-
-            {formData.autoRenewal && (
-              <FormInput
-                label=""
-                type="number"
-                min="1"
-                max="120"
-                value={formData.renewalPeriodMonths}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    renewalPeriodMonths: e.target.value,
-                  }))
-                }
-                placeholder="12"
-                error={errors.renewalPeriodMonths}
-                className="w-24"
-              />
-            )}
-            {formData.autoRenewal && (
-              <span className="text-sm text-text-muted">months</span>
-            )}
-          </div>
-        )}
 
         {/* Scope / Statement of Work */}
         <div>

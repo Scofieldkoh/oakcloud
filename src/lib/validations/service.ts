@@ -184,19 +184,6 @@ export const createServiceSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => (val === '' ? null : val)),
-  autoRenewal: z.boolean().default(false),
-  renewalPeriodMonths: z
-    .string()
-    .optional()
-    .nullable()
-    .transform((val) => {
-      if (!val || val === '') return null;
-      const parsed = parseInt(val, 10);
-      return isNaN(parsed) ? null : parsed;
-    })
-    .refine((val) => val === null || (val >= 1 && val <= 120), {
-      message: 'Renewal period must be between 1 and 120 months',
-    }),
 
   // Deadline Management
   serviceTemplateCode: z.string().optional().nullable(),
@@ -214,10 +201,10 @@ export const updateServiceSchema = createServiceSchema.extend({
 /** Deadline rule input type */
 export type DeadlineRuleInput = z.infer<typeof deadlineRuleInputSchema>;
 
-/** Output type after Zod transforms (rate and renewalPeriodMonths are numbers) */
+/** Output type after Zod transforms (rate is a number) */
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;
 export type UpdateServiceInput = z.infer<typeof updateServiceSchema>;
 
-/** Input type for forms before Zod transforms (rate and renewalPeriodMonths are strings) */
+/** Input type for forms before Zod transforms (rate is a string) */
 export type CreateServiceFormInput = z.input<typeof createServiceSchema>;
 export type UpdateServiceFormInput = z.input<typeof updateServiceSchema>;

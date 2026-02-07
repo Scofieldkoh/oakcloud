@@ -8,6 +8,7 @@ import type {
   DeadlineBillingStatus,
   DeadlineGenerationType,
 } from '@/generated/prisma';
+import type { DeadlineTimingStatus } from '@/components/deadlines/deadline-status-badge';
 
 // ============================================================================
 // TYPES
@@ -21,6 +22,7 @@ export interface DeadlineWithRelations {
   deadlineTemplateId: string | null;
   title: string;
   description: string | null;
+  internalNotes: string | null;
   category: DeadlineCategory;
   referenceCode: string | null;
   periodLabel: string;
@@ -108,16 +110,20 @@ export interface DeadlineSearchParams {
   contractServiceId?: string;
   category?: DeadlineCategory;
   status?: DeadlineStatus | DeadlineStatus[];
+  timing?: DeadlineTimingStatus;
   assigneeId?: string | null;
   isInScope?: boolean;
   isBacklog?: boolean;
   billingStatus?: DeadlineBillingStatus;
+  amountFrom?: number;
+  amountTo?: number;
   dueDateFrom?: string;
   dueDateTo?: string;
   query?: string;
+  period?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'title' | 'statutoryDueDate' | 'status' | 'category' | 'company' | 'createdAt' | 'updatedAt';
+  sortBy?: 'title' | 'periodLabel' | 'service' | 'billingStatus' | 'amount' | 'assignee' | 'statutoryDueDate' | 'status' | 'category' | 'company' | 'createdAt' | 'updatedAt';
   sortOrder?: 'asc' | 'desc';
   tenantId?: string; // For SUPER_ADMIN to filter by tenant
 }
@@ -128,6 +134,7 @@ export interface CreateDeadlineInput {
   deadlineTemplateId?: string | null;
   title: string;
   description?: string | null;
+  internalNotes?: string | null;
   category: DeadlineCategory;
   referenceCode?: string | null;
   periodLabel: string;
@@ -150,6 +157,7 @@ export interface CreateDeadlineInput {
 export interface UpdateDeadlineInput {
   title?: string;
   description?: string | null;
+  internalNotes?: string | null;
   category?: DeadlineCategory;
   referenceCode?: string | null;
   periodLabel?: string;
@@ -210,15 +218,19 @@ export function useDeadlines(params?: DeadlineSearchParams) {
         const statuses = Array.isArray(params.status) ? params.status : [params.status];
         statuses.forEach(s => searchParams.append('status', s));
       }
+      if (params?.timing) searchParams.set('timing', params.timing);
       if (params?.assigneeId !== undefined) {
         searchParams.set('assigneeId', params.assigneeId || '');
       }
       if (params?.isInScope !== undefined) searchParams.set('isInScope', String(params.isInScope));
       if (params?.isBacklog !== undefined) searchParams.set('isBacklog', String(params.isBacklog));
       if (params?.billingStatus) searchParams.set('billingStatus', params.billingStatus);
+      if (params?.amountFrom !== undefined) searchParams.set('amountFrom', params.amountFrom.toString());
+      if (params?.amountTo !== undefined) searchParams.set('amountTo', params.amountTo.toString());
       if (params?.dueDateFrom) searchParams.set('dueDateFrom', params.dueDateFrom);
       if (params?.dueDateTo) searchParams.set('dueDateTo', params.dueDateTo);
       if (params?.query) searchParams.set('query', params.query);
+      if (params?.period) searchParams.set('period', params.period);
       if (params?.page) searchParams.set('page', params.page.toString());
       if (params?.limit) searchParams.set('limit', params.limit.toString());
       if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
@@ -478,6 +490,8 @@ export function useCompleteDeadline(id: string) {
       completionNote?: string | null;
       filingDate?: string | null;
       filingReference?: string | null;
+      billingStatus?: DeadlineBillingStatus;
+      invoiceReference?: string | null;
     }) => {
       const url = activeTenantId
         ? `/api/deadlines/${id}?tenantId=${activeTenantId}`
@@ -672,6 +686,41 @@ export function useBulkUpdateStatus() {
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Failed to update deadlines');
+      }
+      return response.json() as Promise<{ success: boolean; count: number }>;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
+      success(`${data.count} deadlines updated`);
+    },
+    onError: (err: Error) => {
+      error(err.message);
+    },
+  });
+}
+
+/**
+ * Bulk update billing status
+ */
+export function useBulkUpdateBillingStatus() {
+  const queryClient = useQueryClient();
+  const { error, success } = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  return useMutation({
+    mutationFn: async (data: { deadlineIds: string[]; billingStatus: DeadlineBillingStatus }) => {
+      const response = await fetch('/api/deadlines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'bulk-billing', tenantId: activeTenantId, ...data }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update billing status');
       }
       return response.json() as Promise<{ success: boolean; count: number }>;
     },
