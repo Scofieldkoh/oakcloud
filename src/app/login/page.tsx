@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { LogIn, Mail, Lock, ArrowRight } from 'lucide-react';
+import { LogIn, Mail, Lock } from 'lucide-react';
 import { useLogin, useSession } from '@/hooks/use-auth';
 import { FormInput } from '@/components/ui/form-input';
 import { Button } from '@/components/ui/button';
@@ -164,37 +164,6 @@ export default function LoginPage() {
               {login.isPending ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border-primary" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-2 bg-background-primary text-xs text-text-muted">
-                Demo Credentials
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setEmail('admin@oakcloud.local');
-              setPassword('admin123');
-            }}
-            className="w-full group"
-          >
-            <div className="card p-3 hover:border-oak-primary/30 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="text-left">
-                  <p className="text-sm font-medium text-text-primary">Super Admin</p>
-                  <p className="text-xs text-text-tertiary mt-0.5">admin@oakcloud.local</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-text-muted group-hover:text-oak-light group-hover:translate-x-0.5 transition-all" />
-              </div>
-            </div>
-          </button>
 
           {/* Back to Home */}
           <p className="text-center text-xs text-text-tertiary">

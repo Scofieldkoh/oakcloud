@@ -3,8 +3,15 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { requireTenantContext } from '@/lib/api-helpers';
 import { getContractById } from '@/services/contract.service';
-import { getContractServices, createContractService } from '@/services/contract-service.service';
-import { createContractServiceSchema } from '@/lib/validations/contract';
+import {
+  getContractServices,
+  createContractService,
+  createBothServices,
+} from '@/services/contract-service.service';
+import {
+  createContractServiceSchema,
+  getCreateServiceBillingAlignmentError,
+} from '@/lib/validations/contract';
 import { ZodError } from 'zod';
 
 type RouteParams = {
@@ -94,6 +101,26 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Parse and validate input
     const data = createContractServiceSchema.parse(serviceData);
+    const billingAlignmentError = getCreateServiceBillingAlignmentError(data);
+    if (billingAlignmentError) {
+      return NextResponse.json({ error: billingAlignmentError }, { status: 400 });
+    }
+
+    // Handle "BOTH" service type - creates two linked services in this contract
+    if (data.serviceType === 'BOTH') {
+      const result = await createBothServices(
+        { ...data, contractId },
+        { tenantId, userId: session.id }
+      );
+
+      return NextResponse.json({
+        services: [result.oneTimeService, result.recurringService],
+        linkedServiceIds: [result.oneTimeService.id, result.recurringService.id],
+        deadlinesGenerated:
+          (result.oneTimeService.deadlinesGenerated ?? 0) +
+          (result.recurringService.deadlinesGenerated ?? 0),
+      }, { status: 201 });
+    }
 
     const service = await createContractService(
       { ...data, contractId },

@@ -413,18 +413,18 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                     <div className="divide-y divide-border-secondary">
                       {data.companyDetails.map((detail) => (
                         <ContactDetailRow
-                        key={detail.id}
-                        detail={detail}
-                        canEdit={canEdit}
-                        isEditing={editingDetailId === detail.id}
-                        editForm={editForm}
-                        onStartEdit={() => startEdit(detail)}
-                        onCancelEdit={cancelEdit}
-                        onSaveEdit={handleUpdateDetail}
-                        onDelete={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
-                        onUpdateForm={updateEditForm}
-                        isSaving={updateDetailMutation.isPending}
-                        isDeleting={deletingDetailId === detail.id}
+                          key={detail.id}
+                          detail={detail}
+                          canEdit={canEdit}
+                          isEditing={editingDetailId === detail.id}
+                          editForm={editForm}
+                          onStartEdit={() => startEdit(detail)}
+                          onCancelEdit={cancelEdit}
+                          onSaveEdit={handleUpdateDetail}
+                          onDelete={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
+                          onUpdateForm={updateEditForm}
+                          isSaving={updateDetailMutation.isPending}
+                          isDeleting={deletingDetailId === detail.id}
                         />
                       ))}
                     </div>
@@ -456,10 +456,10 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                       <User className="w-4 h-4 text-text-tertiary" />
                       Linked Contacts
                     </h4>
-                      <p className="text-xs text-text-secondary mt-1">
-                        Directors, officers, shareholders, and other contacts linked to this company
-                      </p>
-                    </div>
+                    <p className="text-xs text-text-secondary mt-1">
+                      Directors, officers, shareholders, and other contacts linked to this company
+                    </p>
+                  </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-text-tertiary">
                       {activeContactCount} active; {pastContactCount} past
@@ -467,9 +467,8 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                     {contactDetails.length > 0 && (
                       <button
                         onClick={() => setShowContactFilters(!showContactFilters)}
-                        className={`btn-ghost btn-xs flex items-center gap-1 ${
-                          hasActiveContactFilters ? 'text-oak-light' : ''
-                        }`}
+                        className={`btn-ghost btn-xs flex items-center gap-1 ${hasActiveContactFilters ? 'text-oak-light' : ''
+                          }`}
                         title="Filter contacts"
                       >
                         <Filter className="w-3.5 h-3.5" />
@@ -485,7 +484,6 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
                           variant="secondary"
                           size="xs"
                           onClick={handleCreateNewContact}
-                          title="Create New Contact (opens in new tab)"
                         >
                           <Plus className="w-3.5 h-3.5 mr-1" />
                           Create New Contact

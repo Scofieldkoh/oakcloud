@@ -12,6 +12,7 @@
 import { callAIWithConnector, getBestAvailableModelForTenant } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma';
 import { createLogger } from '@/lib/logger';
 
 // Document category type (string union instead of Prisma enum for flexibility)
@@ -267,9 +268,9 @@ export async function sendAIChatMessage(params: AIChatParams): Promise<AIChatRes
       conversationId: convId,
       usage: response.usage
         ? {
-            inputTokens: response.usage.inputTokens,
-            outputTokens: response.usage.outputTokens,
-          }
+          inputTokens: response.usage.inputTokens,
+          outputTokens: response.usage.outputTokens,
+        }
         : undefined,
     };
   } catch (error) {
@@ -483,7 +484,7 @@ export async function saveConversation(
     await prisma.aiConversation.upsert({
       where: { id: conversationId },
       update: {
-        messages: messages as unknown as import('@prisma/client').Prisma.InputJsonValue,
+        messages: messages as unknown as Prisma.InputJsonValue,
         updatedAt: new Date(),
       },
       create: {
@@ -492,7 +493,7 @@ export async function saveConversation(
         userId,
         contextType,
         contextId,
-        messages: messages as unknown as import('@prisma/client').Prisma.InputJsonValue,
+        messages: messages as unknown as Prisma.InputJsonValue,
       },
     });
   } catch (error) {

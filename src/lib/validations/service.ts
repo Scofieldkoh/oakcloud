@@ -4,7 +4,7 @@ import { z } from 'zod';
 // Enums
 // ============================================================================
 
-export const serviceTypeEnum = z.enum(['RECURRING', 'ONE_TIME']);
+export const serviceTypeEnum = z.enum(['RECURRING', 'ONE_TIME', 'BOTH']);
 
 export const serviceStatusEnum = z.enum(['ACTIVE', 'COMPLETED', 'CANCELLED', 'PENDING']);
 
@@ -38,6 +38,15 @@ export const deadlineAnchorTypeEnum = z.enum([
 ]);
 
 export const deadlineFrequencyEnum = z.enum(['ANNUALLY', 'QUARTERLY', 'MONTHLY', 'ONE_TIME']);
+
+export const deadlineExclusionInputSchema = z.object({
+  taskName: z.string().trim().min(1, 'Task name is required').max(200, 'Task name is too long'),
+  statutoryDueDate: z
+    .string()
+    .trim()
+    .min(1, 'Due date is required')
+    .refine((value) => !Number.isNaN(new Date(value).getTime()), 'Due date must be a valid date'),
+});
 
 // ============================================================================
 // Deadline Rule Schema
@@ -138,19 +147,6 @@ export const deadlineRuleInputSchema = z
       message: 'Frequency is required for recurring deadlines',
       path: ['frequency'],
     }
-  )
-  .refine(
-    (data) => {
-      // Recurring must have either generateUntilDate or generateOccurrences
-      if (data.isRecurring && !data.generateUntilDate && !data.generateOccurrences) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'Either generate until date or occurrences count is required for recurring deadlines',
-      path: ['generateUntilDate'],
-    }
   );
 
 // ============================================================================
@@ -200,6 +196,7 @@ export const updateServiceSchema = createServiceSchema.extend({
 
 /** Deadline rule input type */
 export type DeadlineRuleInput = z.infer<typeof deadlineRuleInputSchema>;
+export type DeadlineExclusionInput = z.infer<typeof deadlineExclusionInputSchema>;
 
 /** Output type after Zod transforms (rate is a number) */
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;

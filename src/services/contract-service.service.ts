@@ -13,7 +13,7 @@ import { generateDeadlinesFromRules } from '@/services/deadline-generation.servi
 import {
   createDeadlineRules,
 } from '@/services/deadline-rule.service';
-import type { DeadlineRuleInput } from '@/lib/validations/service';
+import type { DeadlineExclusionInput, DeadlineRuleInput } from '@/lib/validations/service';
 
 /**
  * Type for Prisma transaction client (interactive transaction)
@@ -33,10 +33,13 @@ export interface TenantAwareParams {
 // TYPES
 // ============================================================================
 
+// Input type that includes 'BOTH' for API layer (splits into two services)
+export type InputServiceType = ServiceType | 'BOTH';
+
 export interface CreateContractServiceInput {
   contractId: string;
   name: string;
-  serviceType?: ServiceType;
+  serviceType?: InputServiceType;
   status?: ServiceStatus;
   rate?: number | null;
   currency?: string;
@@ -51,7 +54,12 @@ export interface CreateContractServiceInput {
   generateDeadlines?: boolean;
   // NEW: Custom deadline rules
   deadlineRules?: DeadlineRuleInput[] | null;
+  excludedDeadlines?: DeadlineExclusionInput[] | null;
   fyeYearOverride?: number | null;
+  // For "BOTH" service type - creates linked one-time and recurring services
+  oneTimeSuffix?: string | null;
+  recurringSuffix?: string | null;
+  oneTimeRate?: number | null;
 }
 
 export interface UpdateContractServiceInput {
@@ -67,14 +75,16 @@ export interface UpdateContractServiceInput {
   scope?: string | null;
   displayOrder?: number;
   serviceTemplateCode?: string | null;
+  deadlineRules?: DeadlineRuleInput[] | null;
   fyeYearOverride?: number | null;
+  excludedDeadlines?: DeadlineExclusionInput[] | null;
 }
 
 export interface ServiceSearchParams {
   contractId?: string;
   companyId?: string;
   status?: ServiceStatus;
-  serviceType?: ServiceType;
+  serviceType?: InputServiceType;
   query?: string;
   startDateFrom?: string | Date | null;
   startDateTo?: string | Date | null;
@@ -140,6 +150,26 @@ async function pruneServiceDeadlinesAfterDate(
   return result.count;
 }
 
+async function deleteAllServiceDeadlines(
+  serviceId: string,
+  companyId: string,
+  params: Pick<TenantAwareParams, 'tenantId' | 'tx'>
+): Promise<number> {
+  const { tenantId, tx } = params;
+  const db = tx || prisma;
+
+  const result = await db.deadline.deleteMany({
+    where: {
+      tenantId,
+      companyId,
+      contractServiceId: serviceId,
+      deletedAt: null,
+    },
+  });
+
+  return result.count;
+}
+
 // ============================================================================
 // CRUD OPERATIONS
 // ============================================================================
@@ -170,7 +200,8 @@ export async function createContractService(
       tenantId,
       contractId: data.contractId,
       name: data.name,
-      serviceType: data.serviceType ?? 'RECURRING',
+      // BOTH is handled by createBothServices, so this should always be RECURRING or ONE_TIME
+      serviceType: (data.serviceType === 'BOTH' ? 'RECURRING' : data.serviceType) ?? 'RECURRING',
       status: data.status ?? 'ACTIVE',
       rate: data.rate != null ? data.rate : null,
       currency: data.currency ?? 'SGD',
@@ -203,7 +234,7 @@ export async function createContractService(
       contractTitle: contract.title,
       serviceTemplateCode: data.serviceTemplateCode,
     },
-  });
+  }, tx as unknown as Prisma.TransactionClient | undefined);
 
   // Generate deadlines from rules
   let deadlinesGenerated = 0;
@@ -224,7 +255,12 @@ export async function createContractService(
         service.id,
         contract.companyId,
         { tenantId, userId, tx: db },
-        fyeYearOverride ? { fyeYearOverride } : undefined
+        {
+          ...(fyeYearOverride ? { fyeYearOverride } : {}),
+          ...(data.excludedDeadlines && data.excludedDeadlines.length > 0
+            ? { excludedDeadlines: data.excludedDeadlines }
+            : {}),
+        }
       );
       deadlinesGenerated = result.created;
     } catch (error) {
@@ -234,6 +270,125 @@ export async function createContractService(
   }
 
   return { ...service, deadlinesGenerated };
+}
+
+/**
+ * Result type for creating both services
+ */
+export interface CreateBothServicesResult {
+  oneTimeService: ContractService & { deadlinesGenerated?: number };
+  recurringService: ContractService & { deadlinesGenerated?: number };
+}
+
+function reorderDeadlineRules(rules: DeadlineRuleInput[]): DeadlineRuleInput[] {
+  return rules.map((rule, index) => ({
+    ...rule,
+    displayOrder: index,
+  }));
+}
+
+function splitDeadlineRulesForBothServices(
+  rules: DeadlineRuleInput[] | null | undefined
+): {
+  oneTimeRules: DeadlineRuleInput[] | null;
+  recurringRules: DeadlineRuleInput[] | null;
+} {
+  if (!rules || rules.length === 0) {
+    return {
+      oneTimeRules: null,
+      recurringRules: null,
+    };
+  }
+
+  const oneTimeRules = rules.filter(
+    (rule) => !rule.isRecurring || rule.frequency === 'ONE_TIME'
+  );
+  const recurringRules = rules.filter(
+    (rule) => rule.isRecurring && rule.frequency !== 'ONE_TIME'
+  );
+
+  return {
+    oneTimeRules: oneTimeRules.length > 0 ? reorderDeadlineRules(oneTimeRules) : null,
+    recurringRules: recurringRules.length > 0 ? reorderDeadlineRules(recurringRules) : null,
+  };
+}
+
+/**
+ * Create two linked services (one-time + recurring) for "BOTH" service type
+ */
+export async function createBothServices(
+  data: CreateContractServiceInput,
+  params: TenantAwareParams
+): Promise<CreateBothServicesResult> {
+  const { tenantId, userId } = params;
+
+  // Default suffixes if not provided
+  const oneTimeSuffix = data.oneTimeSuffix?.trim() || ' (Setup)';
+  const recurringSuffix = data.recurringSuffix?.trim() || ' (Recurring)';
+  const { oneTimeRules, recurringRules } = splitDeadlineRulesForBothServices(data.deadlineRules);
+
+  // Use a transaction to ensure both services are created or none
+  return await prisma.$transaction(async (tx) => {
+    // Create the one-time service first
+    const oneTimeData: CreateContractServiceInput = {
+      ...data,
+      name: data.name + oneTimeSuffix,
+      serviceType: 'ONE_TIME',
+      frequency: 'ONE_TIME',
+      rate: data.oneTimeRate ?? data.rate,
+      deadlineRules: oneTimeRules,
+    };
+
+    const oneTimeService = await createContractService(oneTimeData, {
+      tenantId,
+      userId,
+      tx: tx as unknown as PrismaTransactionClient
+    });
+
+    // Create the recurring service, linked to the one-time service
+    const recurringData: CreateContractServiceInput = {
+      ...data,
+      name: data.name + recurringSuffix,
+      serviceType: 'RECURRING',
+      frequency: data.frequency === 'ONE_TIME' ? 'ANNUALLY' : data.frequency,
+      // Rate stays as the original rate for recurring
+      deadlineRules: recurringRules,
+    };
+
+    const recurringService = await createContractService(recurringData, {
+      tenantId,
+      userId,
+      tx: tx as unknown as PrismaTransactionClient
+    });
+
+    // Link the services together
+    await tx.contractService.update({
+      where: { id: oneTimeService.id },
+      data: { linkedServiceId: recurringService.id },
+    });
+
+    // Create audit log for the linked creation
+    await createAuditLog({
+      tenantId,
+      userId,
+      action: 'CREATE',
+      entityType: 'ContractService',
+      entityId: oneTimeService.id,
+      entityName: data.name,
+      summary: `Created linked services: "${oneTimeService.name}" and "${recurringService.name}"`,
+      changeSource: 'MANUAL',
+      metadata: {
+        linkedServiceIds: [oneTimeService.id, recurringService.id],
+        oneTimeServiceId: oneTimeService.id,
+        recurringServiceId: recurringService.id,
+      },
+    }, tx);
+
+    return {
+      oneTimeService: { ...oneTimeService, linkedServiceId: recurringService.id },
+      recurringService,
+    };
+  });
 }
 
 /**
@@ -307,7 +462,7 @@ export async function updateContractService(
     entityName: service.name,
     summary: `Updated service "${service.name}" in contract "${existing.contract.title}"`,
     changeSource: 'MANUAL',
-  });
+  }, tx as unknown as Prisma.TransactionClient | undefined);
 
   return service;
 }
@@ -335,14 +490,12 @@ export async function deleteContractService(
     throw new Error('Service not found');
   }
 
-  const deletionDate = new Date();
-
   const service = await db.contractService.update({
     where: { id },
-    data: { deletedAt: deletionDate },
+    data: { deletedAt: new Date() },
   });
 
-  await pruneServiceDeadlinesAfterDate(id, existing.contract.companyId, deletionDate, {
+  await deleteAllServiceDeadlines(id, existing.contract.companyId, {
     tenantId,
     tx,
   });
@@ -358,7 +511,7 @@ export async function deleteContractService(
     entityName: existing.name,
     summary: `Deleted service "${existing.name}" from contract "${existing.contract.title}"`,
     changeSource: 'MANUAL',
-  });
+  }, tx as unknown as Prisma.TransactionClient | undefined);
 
   return service;
 }
@@ -434,7 +587,7 @@ export async function bulkUpdateServiceEndDate(
       serviceIds: services.map((service) => service.id),
       endDate: normalizedEndDate ? normalizedEndDate.toISOString() : null,
     },
-  });
+  }, tx as unknown as Prisma.TransactionClient | undefined);
 
   return result.count;
 }
@@ -490,7 +643,7 @@ export async function bulkHardDeleteServices(
     metadata: {
       serviceIds: services.map((service) => service.id),
     },
-  });
+  }, tx as unknown as Prisma.TransactionClient | undefined);
 
   return result.count;
 }
@@ -607,7 +760,8 @@ export async function getAllServices(
     ...(contractId && { contractId }),
     ...(companyId && { contract: { companyId } }),
     ...(status && { status }),
-    ...(serviceType && { serviceType }),
+    // BOTH is not a valid Prisma ServiceType - skip filter if BOTH (shows all types)
+    ...(serviceType && serviceType !== 'BOTH' && { serviceType: serviceType as ServiceType }),
     ...(query && {
       OR: [
         { name: { contains: query, mode: 'insensitive' } },
@@ -619,11 +773,11 @@ export async function getAllServices(
     ...(andFilters.length > 0 ? { AND: andFilters } : {}),
     ...(rateFrom !== undefined || rateTo !== undefined
       ? {
-          rate: {
-            ...(rateFrom !== undefined ? { gte: rateFrom } : {}),
-            ...(rateTo !== undefined ? { lte: rateTo } : {}),
-          },
-        }
+        rate: {
+          ...(rateFrom !== undefined ? { gte: rateFrom } : {}),
+          ...(rateTo !== undefined ? { lte: rateTo } : {}),
+        },
+      }
       : {}),
   };
 
@@ -632,8 +786,8 @@ export async function getAllServices(
   if (sortBy === 'company') {
     orderBy = { contract: { company: { name: sortOrder } } };
   } else if (sortBy === 'name' || sortBy === 'startDate' || sortBy === 'endDate' ||
-      sortBy === 'status' || sortBy === 'rate' || sortBy === 'serviceType' ||
-      sortBy === 'updatedAt' || sortBy === 'createdAt') {
+    sortBy === 'status' || sortBy === 'rate' || sortBy === 'serviceType' ||
+    sortBy === 'updatedAt' || sortBy === 'createdAt') {
     orderBy = { [sortBy]: sortOrder };
   }
 

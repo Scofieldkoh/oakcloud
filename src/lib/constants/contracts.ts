@@ -22,6 +22,7 @@ export const CONTRACT_STATUSES = [
 export const SERVICE_TYPES = [
   { value: 'RECURRING', label: 'Recurring' },
   { value: 'ONE_TIME', label: 'One-time' },
+  { value: 'BOTH', label: 'Both (Recurring + One-time)' },
 ] as const;
 
 export const SERVICE_STATUSES = [

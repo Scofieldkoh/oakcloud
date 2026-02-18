@@ -60,6 +60,7 @@ export type ContractServiceMinAggregateOutputType = {
   customRate: runtime.Decimal | null
   hasCustomDeadlines: boolean | null
   fyeYearOverride: number | null
+  linkedServiceId: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -85,6 +86,7 @@ export type ContractServiceMaxAggregateOutputType = {
   customRate: runtime.Decimal | null
   hasCustomDeadlines: boolean | null
   fyeYearOverride: number | null
+  linkedServiceId: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -110,6 +112,7 @@ export type ContractServiceCountAggregateOutputType = {
   customRate: number
   hasCustomDeadlines: number
   fyeYearOverride: number
+  linkedServiceId: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -151,6 +154,7 @@ export type ContractServiceMinAggregateInputType = {
   customRate?: true
   hasCustomDeadlines?: true
   fyeYearOverride?: true
+  linkedServiceId?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -176,6 +180,7 @@ export type ContractServiceMaxAggregateInputType = {
   customRate?: true
   hasCustomDeadlines?: true
   fyeYearOverride?: true
+  linkedServiceId?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -201,6 +206,7 @@ export type ContractServiceCountAggregateInputType = {
   customRate?: true
   hasCustomDeadlines?: true
   fyeYearOverride?: true
+  linkedServiceId?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -313,6 +319,7 @@ export type ContractServiceGroupByOutputType = {
   customRate: runtime.Decimal | null
   hasCustomDeadlines: boolean
   fyeYearOverride: number | null
+  linkedServiceId: string | null
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -361,11 +368,14 @@ export type ContractServiceWhereInput = {
   customRate?: Prisma.DecimalNullableFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFilter<"ContractService"> | boolean
   fyeYearOverride?: Prisma.IntNullableFilter<"ContractService"> | number | null
+  linkedServiceId?: Prisma.StringNullableFilter<"ContractService"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContractService"> | Date | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   contract?: Prisma.XOR<Prisma.ContractScalarRelationFilter, Prisma.ContractWhereInput>
+  linkedService?: Prisma.XOR<Prisma.ContractServiceNullableScalarRelationFilter, Prisma.ContractServiceWhereInput> | null
+  linkedBy?: Prisma.XOR<Prisma.ContractServiceNullableScalarRelationFilter, Prisma.ContractServiceWhereInput> | null
   deadlines?: Prisma.DeadlineListRelationFilter
   deadlineRules?: Prisma.DeadlineRuleListRelationFilter
 }
@@ -390,17 +400,21 @@ export type ContractServiceOrderByWithRelationInput = {
   customRate?: Prisma.SortOrderInput | Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
   fyeYearOverride?: Prisma.SortOrderInput | Prisma.SortOrder
+  linkedServiceId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
   contract?: Prisma.ContractOrderByWithRelationInput
+  linkedService?: Prisma.ContractServiceOrderByWithRelationInput
+  linkedBy?: Prisma.ContractServiceOrderByWithRelationInput
   deadlines?: Prisma.DeadlineOrderByRelationAggregateInput
   deadlineRules?: Prisma.DeadlineRuleOrderByRelationAggregateInput
 }
 
 export type ContractServiceWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  linkedServiceId?: string
   AND?: Prisma.ContractServiceWhereInput | Prisma.ContractServiceWhereInput[]
   OR?: Prisma.ContractServiceWhereInput[]
   NOT?: Prisma.ContractServiceWhereInput | Prisma.ContractServiceWhereInput[]
@@ -427,9 +441,11 @@ export type ContractServiceWhereUniqueInput = Prisma.AtLeast<{
   deletedAt?: Prisma.DateTimeNullableFilter<"ContractService"> | Date | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   contract?: Prisma.XOR<Prisma.ContractScalarRelationFilter, Prisma.ContractWhereInput>
+  linkedService?: Prisma.XOR<Prisma.ContractServiceNullableScalarRelationFilter, Prisma.ContractServiceWhereInput> | null
+  linkedBy?: Prisma.XOR<Prisma.ContractServiceNullableScalarRelationFilter, Prisma.ContractServiceWhereInput> | null
   deadlines?: Prisma.DeadlineListRelationFilter
   deadlineRules?: Prisma.DeadlineRuleListRelationFilter
-}, "id">
+}, "id" | "linkedServiceId">
 
 export type ContractServiceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -451,6 +467,7 @@ export type ContractServiceOrderByWithAggregationInput = {
   customRate?: Prisma.SortOrderInput | Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
   fyeYearOverride?: Prisma.SortOrderInput | Prisma.SortOrder
+  linkedServiceId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -484,6 +501,7 @@ export type ContractServiceScalarWhereWithAggregatesInput = {
   customRate?: Prisma.DecimalNullableWithAggregatesFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolWithAggregatesFilter<"ContractService"> | boolean
   fyeYearOverride?: Prisma.IntNullableWithAggregatesFilter<"ContractService"> | number | null
+  linkedServiceId?: Prisma.StringNullableWithAggregatesFilter<"ContractService"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ContractService"> | Date | string | null
@@ -512,6 +530,8 @@ export type ContractServiceCreateInput = {
   deletedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
   contract: Prisma.ContractCreateNestedOneWithoutServicesInput
+  linkedService?: Prisma.ContractServiceCreateNestedOneWithoutLinkedByInput
+  linkedBy?: Prisma.ContractServiceCreateNestedOneWithoutLinkedServiceInput
   deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
   deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
 }
@@ -536,9 +556,11 @@ export type ContractServiceUncheckedCreateInput = {
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
   fyeYearOverride?: number | null
+  linkedServiceId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedCreateNestedOneWithoutLinkedServiceInput
   deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
   deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
 }
@@ -566,6 +588,8 @@ export type ContractServiceUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
   contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
+  linkedService?: Prisma.ContractServiceUpdateOneWithoutLinkedByNestedInput
+  linkedBy?: Prisma.ContractServiceUpdateOneWithoutLinkedServiceNestedInput
   deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
   deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
 }
@@ -590,9 +614,11 @@ export type ContractServiceUncheckedUpdateInput = {
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  linkedServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedUpdateOneWithoutLinkedServiceNestedInput
   deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
   deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
 }
@@ -617,6 +643,7 @@ export type ContractServiceCreateManyInput = {
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
   fyeYearOverride?: number | null
+  linkedServiceId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -665,6 +692,7 @@ export type ContractServiceUncheckedUpdateManyInput = {
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  linkedServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -678,6 +706,11 @@ export type ContractServiceListRelationFilter = {
 
 export type ContractServiceOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type ContractServiceNullableScalarRelationFilter = {
+  is?: Prisma.ContractServiceWhereInput | null
+  isNot?: Prisma.ContractServiceWhereInput | null
 }
 
 export type ContractServiceCountOrderByAggregateInput = {
@@ -700,6 +733,7 @@ export type ContractServiceCountOrderByAggregateInput = {
   customRate?: Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
   fyeYearOverride?: Prisma.SortOrder
+  linkedServiceId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -732,6 +766,7 @@ export type ContractServiceMaxOrderByAggregateInput = {
   customRate?: Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
   fyeYearOverride?: Prisma.SortOrder
+  linkedServiceId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -757,6 +792,7 @@ export type ContractServiceMinOrderByAggregateInput = {
   customRate?: Prisma.SortOrder
   hasCustomDeadlines?: Prisma.SortOrder
   fyeYearOverride?: Prisma.SortOrder
+  linkedServiceId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -772,11 +808,6 @@ export type ContractServiceSumOrderByAggregateInput = {
 export type ContractServiceScalarRelationFilter = {
   is?: Prisma.ContractServiceWhereInput
   isNot?: Prisma.ContractServiceWhereInput
-}
-
-export type ContractServiceNullableScalarRelationFilter = {
-  is?: Prisma.ContractServiceWhereInput | null
-  isNot?: Prisma.ContractServiceWhereInput | null
 }
 
 export type ContractServiceCreateNestedManyWithoutTenantInput = {
@@ -863,6 +894,24 @@ export type ContractServiceUncheckedUpdateManyWithoutContractNestedInput = {
   deleteMany?: Prisma.ContractServiceScalarWhereInput | Prisma.ContractServiceScalarWhereInput[]
 }
 
+export type ContractServiceCreateNestedOneWithoutLinkedByInput = {
+  create?: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedByInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedByInput>
+  connectOrCreate?: Prisma.ContractServiceCreateOrConnectWithoutLinkedByInput
+  connect?: Prisma.ContractServiceWhereUniqueInput
+}
+
+export type ContractServiceCreateNestedOneWithoutLinkedServiceInput = {
+  create?: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedServiceInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedServiceInput>
+  connectOrCreate?: Prisma.ContractServiceCreateOrConnectWithoutLinkedServiceInput
+  connect?: Prisma.ContractServiceWhereUniqueInput
+}
+
+export type ContractServiceUncheckedCreateNestedOneWithoutLinkedServiceInput = {
+  create?: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedServiceInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedServiceInput>
+  connectOrCreate?: Prisma.ContractServiceCreateOrConnectWithoutLinkedServiceInput
+  connect?: Prisma.ContractServiceWhereUniqueInput
+}
+
 export type EnumServiceTypeFieldUpdateOperationsInput = {
   set?: $Enums.ServiceType
 }
@@ -877,6 +926,36 @@ export type EnumBillingFrequencyFieldUpdateOperationsInput = {
 
 export type NullableBoolFieldUpdateOperationsInput = {
   set?: boolean | null
+}
+
+export type ContractServiceUpdateOneWithoutLinkedByNestedInput = {
+  create?: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedByInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedByInput>
+  connectOrCreate?: Prisma.ContractServiceCreateOrConnectWithoutLinkedByInput
+  upsert?: Prisma.ContractServiceUpsertWithoutLinkedByInput
+  disconnect?: Prisma.ContractServiceWhereInput | boolean
+  delete?: Prisma.ContractServiceWhereInput | boolean
+  connect?: Prisma.ContractServiceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ContractServiceUpdateToOneWithWhereWithoutLinkedByInput, Prisma.ContractServiceUpdateWithoutLinkedByInput>, Prisma.ContractServiceUncheckedUpdateWithoutLinkedByInput>
+}
+
+export type ContractServiceUpdateOneWithoutLinkedServiceNestedInput = {
+  create?: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedServiceInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedServiceInput>
+  connectOrCreate?: Prisma.ContractServiceCreateOrConnectWithoutLinkedServiceInput
+  upsert?: Prisma.ContractServiceUpsertWithoutLinkedServiceInput
+  disconnect?: Prisma.ContractServiceWhereInput | boolean
+  delete?: Prisma.ContractServiceWhereInput | boolean
+  connect?: Prisma.ContractServiceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ContractServiceUpdateToOneWithWhereWithoutLinkedServiceInput, Prisma.ContractServiceUpdateWithoutLinkedServiceInput>, Prisma.ContractServiceUncheckedUpdateWithoutLinkedServiceInput>
+}
+
+export type ContractServiceUncheckedUpdateOneWithoutLinkedServiceNestedInput = {
+  create?: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedServiceInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedServiceInput>
+  connectOrCreate?: Prisma.ContractServiceCreateOrConnectWithoutLinkedServiceInput
+  upsert?: Prisma.ContractServiceUpsertWithoutLinkedServiceInput
+  disconnect?: Prisma.ContractServiceWhereInput | boolean
+  delete?: Prisma.ContractServiceWhereInput | boolean
+  connect?: Prisma.ContractServiceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ContractServiceUpdateToOneWithWhereWithoutLinkedServiceInput, Prisma.ContractServiceUpdateWithoutLinkedServiceInput>, Prisma.ContractServiceUncheckedUpdateWithoutLinkedServiceInput>
 }
 
 export type ContractServiceCreateNestedOneWithoutDeadlineRulesInput = {
@@ -931,6 +1010,8 @@ export type ContractServiceCreateWithoutTenantInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   contract: Prisma.ContractCreateNestedOneWithoutServicesInput
+  linkedService?: Prisma.ContractServiceCreateNestedOneWithoutLinkedByInput
+  linkedBy?: Prisma.ContractServiceCreateNestedOneWithoutLinkedServiceInput
   deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
   deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
 }
@@ -954,9 +1035,11 @@ export type ContractServiceUncheckedCreateWithoutTenantInput = {
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
   fyeYearOverride?: number | null
+  linkedServiceId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedCreateNestedOneWithoutLinkedServiceInput
   deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
   deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
 }
@@ -1010,6 +1093,7 @@ export type ContractServiceScalarWhereInput = {
   customRate?: Prisma.DecimalNullableFilter<"ContractService"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFilter<"ContractService"> | boolean
   fyeYearOverride?: Prisma.IntNullableFilter<"ContractService"> | number | null
+  linkedServiceId?: Prisma.StringNullableFilter<"ContractService"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ContractService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ContractService"> | Date | string | null
@@ -1037,6 +1121,8 @@ export type ContractServiceCreateWithoutContractInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
+  linkedService?: Prisma.ContractServiceCreateNestedOneWithoutLinkedByInput
+  linkedBy?: Prisma.ContractServiceCreateNestedOneWithoutLinkedServiceInput
   deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
   deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
 }
@@ -1060,9 +1146,11 @@ export type ContractServiceUncheckedCreateWithoutContractInput = {
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
   fyeYearOverride?: number | null
+  linkedServiceId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedCreateNestedOneWithoutLinkedServiceInput
   deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
   deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
 }
@@ -1093,6 +1181,262 @@ export type ContractServiceUpdateManyWithWhereWithoutContractInput = {
   data: Prisma.XOR<Prisma.ContractServiceUpdateManyMutationInput, Prisma.ContractServiceUncheckedUpdateManyWithoutContractInput>
 }
 
+export type ContractServiceCreateWithoutLinkedByInput = {
+  id?: string
+  name: string
+  serviceType?: $Enums.ServiceType
+  status?: $Enums.ServiceStatus
+  rate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: string
+  frequency?: $Enums.BillingFrequency
+  startDate: Date | string
+  endDate?: Date | string | null
+  scope?: string | null
+  displayOrder?: number
+  serviceTemplateCode?: string | null
+  gstFilingFrequency?: $Enums.GstFilingFrequency | null
+  overrideBillable?: boolean | null
+  customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
+  contract: Prisma.ContractCreateNestedOneWithoutServicesInput
+  linkedService?: Prisma.ContractServiceCreateNestedOneWithoutLinkedByInput
+  deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
+}
+
+export type ContractServiceUncheckedCreateWithoutLinkedByInput = {
+  id?: string
+  tenantId: string
+  contractId: string
+  name: string
+  serviceType?: $Enums.ServiceType
+  status?: $Enums.ServiceStatus
+  rate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: string
+  frequency?: $Enums.BillingFrequency
+  startDate: Date | string
+  endDate?: Date | string | null
+  scope?: string | null
+  displayOrder?: number
+  serviceTemplateCode?: string | null
+  gstFilingFrequency?: $Enums.GstFilingFrequency | null
+  overrideBillable?: boolean | null
+  customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
+  linkedServiceId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
+}
+
+export type ContractServiceCreateOrConnectWithoutLinkedByInput = {
+  where: Prisma.ContractServiceWhereUniqueInput
+  create: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedByInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedByInput>
+}
+
+export type ContractServiceCreateWithoutLinkedServiceInput = {
+  id?: string
+  name: string
+  serviceType?: $Enums.ServiceType
+  status?: $Enums.ServiceStatus
+  rate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: string
+  frequency?: $Enums.BillingFrequency
+  startDate: Date | string
+  endDate?: Date | string | null
+  scope?: string | null
+  displayOrder?: number
+  serviceTemplateCode?: string | null
+  gstFilingFrequency?: $Enums.GstFilingFrequency | null
+  overrideBillable?: boolean | null
+  customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
+  contract: Prisma.ContractCreateNestedOneWithoutServicesInput
+  linkedBy?: Prisma.ContractServiceCreateNestedOneWithoutLinkedServiceInput
+  deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
+}
+
+export type ContractServiceUncheckedCreateWithoutLinkedServiceInput = {
+  id?: string
+  tenantId: string
+  contractId: string
+  name: string
+  serviceType?: $Enums.ServiceType
+  status?: $Enums.ServiceStatus
+  rate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: string
+  frequency?: $Enums.BillingFrequency
+  startDate: Date | string
+  endDate?: Date | string | null
+  scope?: string | null
+  displayOrder?: number
+  serviceTemplateCode?: string | null
+  gstFilingFrequency?: $Enums.GstFilingFrequency | null
+  overrideBillable?: boolean | null
+  customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: boolean
+  fyeYearOverride?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedCreateNestedOneWithoutLinkedServiceInput
+  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
+}
+
+export type ContractServiceCreateOrConnectWithoutLinkedServiceInput = {
+  where: Prisma.ContractServiceWhereUniqueInput
+  create: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedServiceInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedServiceInput>
+}
+
+export type ContractServiceUpsertWithoutLinkedByInput = {
+  update: Prisma.XOR<Prisma.ContractServiceUpdateWithoutLinkedByInput, Prisma.ContractServiceUncheckedUpdateWithoutLinkedByInput>
+  create: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedByInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedByInput>
+  where?: Prisma.ContractServiceWhereInput
+}
+
+export type ContractServiceUpdateToOneWithWhereWithoutLinkedByInput = {
+  where?: Prisma.ContractServiceWhereInput
+  data: Prisma.XOR<Prisma.ContractServiceUpdateWithoutLinkedByInput, Prisma.ContractServiceUncheckedUpdateWithoutLinkedByInput>
+}
+
+export type ContractServiceUpdateWithoutLinkedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceType?: Prisma.EnumServiceTypeFieldUpdateOperationsInput | $Enums.ServiceType
+  status?: Prisma.EnumServiceStatusFieldUpdateOperationsInput | $Enums.ServiceStatus
+  rate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  frequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  scope?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  serviceTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
+  overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
+  contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
+  linkedService?: Prisma.ContractServiceUpdateOneWithoutLinkedByNestedInput
+  deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
+}
+
+export type ContractServiceUncheckedUpdateWithoutLinkedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  contractId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceType?: Prisma.EnumServiceTypeFieldUpdateOperationsInput | $Enums.ServiceType
+  status?: Prisma.EnumServiceStatusFieldUpdateOperationsInput | $Enums.ServiceStatus
+  rate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  frequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  scope?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  serviceTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
+  overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  linkedServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
+}
+
+export type ContractServiceUpsertWithoutLinkedServiceInput = {
+  update: Prisma.XOR<Prisma.ContractServiceUpdateWithoutLinkedServiceInput, Prisma.ContractServiceUncheckedUpdateWithoutLinkedServiceInput>
+  create: Prisma.XOR<Prisma.ContractServiceCreateWithoutLinkedServiceInput, Prisma.ContractServiceUncheckedCreateWithoutLinkedServiceInput>
+  where?: Prisma.ContractServiceWhereInput
+}
+
+export type ContractServiceUpdateToOneWithWhereWithoutLinkedServiceInput = {
+  where?: Prisma.ContractServiceWhereInput
+  data: Prisma.XOR<Prisma.ContractServiceUpdateWithoutLinkedServiceInput, Prisma.ContractServiceUncheckedUpdateWithoutLinkedServiceInput>
+}
+
+export type ContractServiceUpdateWithoutLinkedServiceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceType?: Prisma.EnumServiceTypeFieldUpdateOperationsInput | $Enums.ServiceType
+  status?: Prisma.EnumServiceStatusFieldUpdateOperationsInput | $Enums.ServiceStatus
+  rate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  frequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  scope?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  serviceTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
+  overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
+  contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
+  linkedBy?: Prisma.ContractServiceUpdateOneWithoutLinkedServiceNestedInput
+  deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
+}
+
+export type ContractServiceUncheckedUpdateWithoutLinkedServiceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  contractId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceType?: Prisma.EnumServiceTypeFieldUpdateOperationsInput | $Enums.ServiceType
+  status?: Prisma.EnumServiceStatusFieldUpdateOperationsInput | $Enums.ServiceStatus
+  rate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  frequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  scope?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  serviceTemplateCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
+  overrideBillable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedUpdateOneWithoutLinkedServiceNestedInput
+  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
+}
+
 export type ContractServiceCreateWithoutDeadlineRulesInput = {
   id?: string
   name: string
@@ -1116,6 +1460,8 @@ export type ContractServiceCreateWithoutDeadlineRulesInput = {
   deletedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
   contract: Prisma.ContractCreateNestedOneWithoutServicesInput
+  linkedService?: Prisma.ContractServiceCreateNestedOneWithoutLinkedByInput
+  linkedBy?: Prisma.ContractServiceCreateNestedOneWithoutLinkedServiceInput
   deadlines?: Prisma.DeadlineCreateNestedManyWithoutContractServiceInput
 }
 
@@ -1139,9 +1485,11 @@ export type ContractServiceUncheckedCreateWithoutDeadlineRulesInput = {
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
   fyeYearOverride?: number | null
+  linkedServiceId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedCreateNestedOneWithoutLinkedServiceInput
   deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutContractServiceInput
 }
 
@@ -1184,6 +1532,8 @@ export type ContractServiceUpdateWithoutDeadlineRulesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
   contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
+  linkedService?: Prisma.ContractServiceUpdateOneWithoutLinkedByNestedInput
+  linkedBy?: Prisma.ContractServiceUpdateOneWithoutLinkedServiceNestedInput
   deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
 }
 
@@ -1207,9 +1557,11 @@ export type ContractServiceUncheckedUpdateWithoutDeadlineRulesInput = {
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  linkedServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedUpdateOneWithoutLinkedServiceNestedInput
   deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
 }
 
@@ -1236,6 +1588,8 @@ export type ContractServiceCreateWithoutDeadlinesInput = {
   deletedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutContractServicesInput
   contract: Prisma.ContractCreateNestedOneWithoutServicesInput
+  linkedService?: Prisma.ContractServiceCreateNestedOneWithoutLinkedByInput
+  linkedBy?: Prisma.ContractServiceCreateNestedOneWithoutLinkedServiceInput
   deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutContractServiceInput
 }
 
@@ -1259,9 +1613,11 @@ export type ContractServiceUncheckedCreateWithoutDeadlinesInput = {
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
   fyeYearOverride?: number | null
+  linkedServiceId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedCreateNestedOneWithoutLinkedServiceInput
   deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutContractServiceInput
 }
 
@@ -1304,6 +1660,8 @@ export type ContractServiceUpdateWithoutDeadlinesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
   contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
+  linkedService?: Prisma.ContractServiceUpdateOneWithoutLinkedByNestedInput
+  linkedBy?: Prisma.ContractServiceUpdateOneWithoutLinkedServiceNestedInput
   deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
 }
 
@@ -1327,9 +1685,11 @@ export type ContractServiceUncheckedUpdateWithoutDeadlinesInput = {
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  linkedServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedUpdateOneWithoutLinkedServiceNestedInput
   deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
 }
 
@@ -1352,6 +1712,7 @@ export type ContractServiceCreateManyTenantInput = {
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
   fyeYearOverride?: number | null
+  linkedServiceId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1379,6 +1740,8 @@ export type ContractServiceUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   contract?: Prisma.ContractUpdateOneRequiredWithoutServicesNestedInput
+  linkedService?: Prisma.ContractServiceUpdateOneWithoutLinkedByNestedInput
+  linkedBy?: Prisma.ContractServiceUpdateOneWithoutLinkedServiceNestedInput
   deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
   deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
 }
@@ -1402,9 +1765,11 @@ export type ContractServiceUncheckedUpdateWithoutTenantInput = {
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  linkedServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedUpdateOneWithoutLinkedServiceNestedInput
   deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
   deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
 }
@@ -1428,6 +1793,7 @@ export type ContractServiceUncheckedUpdateManyWithoutTenantInput = {
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  linkedServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1452,6 +1818,7 @@ export type ContractServiceCreateManyContractInput = {
   customRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: boolean
   fyeYearOverride?: number | null
+  linkedServiceId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1479,6 +1846,8 @@ export type ContractServiceUpdateWithoutContractInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutContractServicesNestedInput
+  linkedService?: Prisma.ContractServiceUpdateOneWithoutLinkedByNestedInput
+  linkedBy?: Prisma.ContractServiceUpdateOneWithoutLinkedServiceNestedInput
   deadlines?: Prisma.DeadlineUpdateManyWithoutContractServiceNestedInput
   deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutContractServiceNestedInput
 }
@@ -1502,9 +1871,11 @@ export type ContractServiceUncheckedUpdateWithoutContractInput = {
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  linkedServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  linkedBy?: Prisma.ContractServiceUncheckedUpdateOneWithoutLinkedServiceNestedInput
   deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutContractServiceNestedInput
   deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutContractServiceNestedInput
 }
@@ -1528,6 +1899,7 @@ export type ContractServiceUncheckedUpdateManyWithoutContractInput = {
   customRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCustomDeadlines?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fyeYearOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  linkedServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1593,11 +1965,14 @@ export type ContractServiceSelect<ExtArgs extends runtime.Types.Extensions.Inter
   customRate?: boolean
   hasCustomDeadlines?: boolean
   fyeYearOverride?: boolean
+  linkedServiceId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contract?: boolean | Prisma.ContractDefaultArgs<ExtArgs>
+  linkedService?: boolean | Prisma.ContractService$linkedServiceArgs<ExtArgs>
+  linkedBy?: boolean | Prisma.ContractService$linkedByArgs<ExtArgs>
   deadlines?: boolean | Prisma.ContractService$deadlinesArgs<ExtArgs>
   deadlineRules?: boolean | Prisma.ContractService$deadlineRulesArgs<ExtArgs>
   _count?: boolean | Prisma.ContractServiceCountOutputTypeDefaultArgs<ExtArgs>
@@ -1623,11 +1998,13 @@ export type ContractServiceSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   customRate?: boolean
   hasCustomDeadlines?: boolean
   fyeYearOverride?: boolean
+  linkedServiceId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contract?: boolean | Prisma.ContractDefaultArgs<ExtArgs>
+  linkedService?: boolean | Prisma.ContractService$linkedServiceArgs<ExtArgs>
 }, ExtArgs["result"]["contractService"]>
 
 export type ContractServiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1650,11 +2027,13 @@ export type ContractServiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   customRate?: boolean
   hasCustomDeadlines?: boolean
   fyeYearOverride?: boolean
+  linkedServiceId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contract?: boolean | Prisma.ContractDefaultArgs<ExtArgs>
+  linkedService?: boolean | Prisma.ContractService$linkedServiceArgs<ExtArgs>
 }, ExtArgs["result"]["contractService"]>
 
 export type ContractServiceSelectScalar = {
@@ -1677,15 +2056,18 @@ export type ContractServiceSelectScalar = {
   customRate?: boolean
   hasCustomDeadlines?: boolean
   fyeYearOverride?: boolean
+  linkedServiceId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type ContractServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contractId" | "name" | "serviceType" | "status" | "rate" | "currency" | "frequency" | "startDate" | "endDate" | "scope" | "displayOrder" | "serviceTemplateCode" | "gstFilingFrequency" | "overrideBillable" | "customRate" | "hasCustomDeadlines" | "fyeYearOverride" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contractService"]>
+export type ContractServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contractId" | "name" | "serviceType" | "status" | "rate" | "currency" | "frequency" | "startDate" | "endDate" | "scope" | "displayOrder" | "serviceTemplateCode" | "gstFilingFrequency" | "overrideBillable" | "customRate" | "hasCustomDeadlines" | "fyeYearOverride" | "linkedServiceId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contractService"]>
 export type ContractServiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contract?: boolean | Prisma.ContractDefaultArgs<ExtArgs>
+  linkedService?: boolean | Prisma.ContractService$linkedServiceArgs<ExtArgs>
+  linkedBy?: boolean | Prisma.ContractService$linkedByArgs<ExtArgs>
   deadlines?: boolean | Prisma.ContractService$deadlinesArgs<ExtArgs>
   deadlineRules?: boolean | Prisma.ContractService$deadlineRulesArgs<ExtArgs>
   _count?: boolean | Prisma.ContractServiceCountOutputTypeDefaultArgs<ExtArgs>
@@ -1693,10 +2075,12 @@ export type ContractServiceInclude<ExtArgs extends runtime.Types.Extensions.Inte
 export type ContractServiceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contract?: boolean | Prisma.ContractDefaultArgs<ExtArgs>
+  linkedService?: boolean | Prisma.ContractService$linkedServiceArgs<ExtArgs>
 }
 export type ContractServiceIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   contract?: boolean | Prisma.ContractDefaultArgs<ExtArgs>
+  linkedService?: boolean | Prisma.ContractService$linkedServiceArgs<ExtArgs>
 }
 
 export type $ContractServicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1704,6 +2088,8 @@ export type $ContractServicePayload<ExtArgs extends runtime.Types.Extensions.Int
   objects: {
     tenant: Prisma.$TenantPayload<ExtArgs>
     contract: Prisma.$ContractPayload<ExtArgs>
+    linkedService: Prisma.$ContractServicePayload<ExtArgs> | null
+    linkedBy: Prisma.$ContractServicePayload<ExtArgs> | null
     deadlines: Prisma.$DeadlinePayload<ExtArgs>[]
     deadlineRules: Prisma.$DeadlineRulePayload<ExtArgs>[]
   }
@@ -1727,6 +2113,7 @@ export type $ContractServicePayload<ExtArgs extends runtime.Types.Extensions.Int
     customRate: runtime.Decimal | null
     hasCustomDeadlines: boolean
     fyeYearOverride: number | null
+    linkedServiceId: string | null
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -2126,6 +2513,8 @@ export interface Prisma__ContractServiceClient<T, Null = never, ExtArgs extends 
   readonly [Symbol.toStringTag]: "PrismaPromise"
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   contract<T extends Prisma.ContractDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ContractDefaultArgs<ExtArgs>>): Prisma.Prisma__ContractClient<runtime.Types.Result.GetResult<Prisma.$ContractPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  linkedService<T extends Prisma.ContractService$linkedServiceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ContractService$linkedServiceArgs<ExtArgs>>): Prisma.Prisma__ContractServiceClient<runtime.Types.Result.GetResult<Prisma.$ContractServicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  linkedBy<T extends Prisma.ContractService$linkedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ContractService$linkedByArgs<ExtArgs>>): Prisma.Prisma__ContractServiceClient<runtime.Types.Result.GetResult<Prisma.$ContractServicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   deadlines<T extends Prisma.ContractService$deadlinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ContractService$deadlinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   deadlineRules<T extends Prisma.ContractService$deadlineRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ContractService$deadlineRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2176,6 +2565,7 @@ export interface ContractServiceFieldRefs {
   readonly customRate: Prisma.FieldRef<"ContractService", 'Decimal'>
   readonly hasCustomDeadlines: Prisma.FieldRef<"ContractService", 'Boolean'>
   readonly fyeYearOverride: Prisma.FieldRef<"ContractService", 'Int'>
+  readonly linkedServiceId: Prisma.FieldRef<"ContractService", 'String'>
   readonly createdAt: Prisma.FieldRef<"ContractService", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ContractService", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"ContractService", 'DateTime'>
@@ -2572,6 +2962,44 @@ export type ContractServiceDeleteManyArgs<ExtArgs extends runtime.Types.Extensio
    * Limit how many ContractServices to delete.
    */
   limit?: number
+}
+
+/**
+ * ContractService.linkedService
+ */
+export type ContractService$linkedServiceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ContractService
+   */
+  select?: Prisma.ContractServiceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ContractService
+   */
+  omit?: Prisma.ContractServiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ContractServiceInclude<ExtArgs> | null
+  where?: Prisma.ContractServiceWhereInput
+}
+
+/**
+ * ContractService.linkedBy
+ */
+export type ContractService$linkedByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ContractService
+   */
+  select?: Prisma.ContractServiceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ContractService
+   */
+  omit?: Prisma.ContractServiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ContractServiceInclude<ExtArgs> | null
+  where?: Prisma.ContractServiceWhereInput
 }
 
 /**

@@ -3311,6 +3311,11 @@ model ContractService {
   hasCustomDeadlines     Boolean             @default(false)  // Has custom deadline rules
   fyeYearOverride        Int?                  // Override FYE year used for deadline generation
 
+  // Linked Service (for "Both" type - pairs one-time and recurring services)
+  linkedServiceId        String?               @unique
+  linkedService          ContractService?      @relation("ServiceLink", fields: [linkedServiceId], references: [id])
+  linkedBy               ContractService?      @relation("ServiceLink")
+
   // Generated deadlines
   deadlines              Deadline[]
   deadlineRules          DeadlineRule[]
@@ -3325,6 +3330,7 @@ model ContractService {
   @@index([endDate])
   @@index([tenantId, deletedAt])
   @@index([tenantId, contractId])
+  @@index([linkedServiceId])
   @@map("contract_services")
 }
 

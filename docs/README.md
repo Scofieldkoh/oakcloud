@@ -102,7 +102,7 @@ npm run dev
 - MinIO Console: http://localhost:9001 (`oakcloud` / `oakcloud_minio_secret`)
 
 **Default Login:**
-- Super Admin: `admin@oakcloud.local` / `admin123`
+- Super Admin: `admin@oaktreesolutions.com.sg` / `Preparefortrouble!`
 
 > See [Getting Started](./GETTING_STARTED.md) for detailed instructions.
 

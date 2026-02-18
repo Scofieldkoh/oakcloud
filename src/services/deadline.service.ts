@@ -318,10 +318,10 @@ export async function updateDeadline(
   if (data.status) {
     if (data.status === 'COMPLETED') {
       completionUpdate.completedAt = new Date();
-      completionUpdate.completedById = userId;
+      completionUpdate.completedBy = { connect: { id: userId } };
     } else {
       completionUpdate.completedAt = null;
-      completionUpdate.completedById = null;
+      completionUpdate.completedBy = { disconnect: true };
       completionUpdate.completionNote = null;
       completionUpdate.filingDate = null;
       completionUpdate.filingReference = null;
@@ -379,7 +379,9 @@ export async function updateDeadline(
       amount: data.amount !== undefined ? data.amount : undefined,
       overrideAmount: data.overrideAmount !== undefined ? data.overrideAmount : undefined,
       currency: data.currency,
-      assigneeId: data.assigneeId !== undefined ? data.assigneeId : undefined,
+      assignee: data.assigneeId !== undefined
+        ? (data.assigneeId ? { connect: { id: data.assigneeId } } : { disconnect: true })
+        : undefined,
       assignedAt: data.assigneeId !== undefined && data.assigneeId !== existing.assigneeId
         ? (data.assigneeId ? new Date() : null)
         : undefined,
@@ -432,7 +434,7 @@ export async function completeDeadline(
   const updateData: Prisma.DeadlineUpdateInput = {
     status: 'COMPLETED',
     completedAt: new Date(),
-    completedById: userId,
+    completedBy: { connect: { id: userId } },
     completionNote: data.completionNote,
     filingDate: data.filingDate ? new Date(data.filingDate) : null,
     filingReference: data.filingReference,
@@ -523,7 +525,7 @@ export async function reopenDeadline(
     data: {
       status: 'PENDING',
       completedAt: null,
-      completedById: null,
+      completedBy: { disconnect: true },
       completionNote: null,
       filingDate: null,
       filingReference: null,
@@ -759,27 +761,27 @@ export async function searchDeadlines(
   tenantId: string,
   params?: DeadlineSearchParams
 ): Promise<{ deadlines: DeadlineWithRelations[]; total: number }> {
-    const {
-      companyId,
-      contractServiceId,
-      category,
-      status,
-      timing,
-      assigneeId,
-      isInScope,
-      isBacklog,
-      billingStatus,
-      amountFrom,
-      amountTo,
-      dueDateFrom,
-      dueDateTo,
-      query,
-      period,
-      includeDeleted = false,
-      page = 1,
-      limit = 20,
-      sortBy = 'statutoryDueDate',
-      sortOrder = 'asc',
+  const {
+    companyId,
+    contractServiceId,
+    category,
+    status,
+    timing,
+    assigneeId,
+    isInScope,
+    isBacklog,
+    billingStatus,
+    amountFrom,
+    amountTo,
+    dueDateFrom,
+    dueDateTo,
+    query,
+    period,
+    includeDeleted = false,
+    page = 1,
+    limit = 20,
+    sortBy = 'statutoryDueDate',
+    sortOrder = 'asc',
   } = params || {};
 
   const where: Prisma.DeadlineWhereInput = {
@@ -790,11 +792,11 @@ export async function searchDeadlines(
     ...(category && { category }),
     ...(status && { status: Array.isArray(status) ? { in: status } : status }),
     ...(assigneeId !== undefined && { assigneeId: assigneeId || null }),
-      ...(isInScope !== undefined && { isInScope }),
-      ...(isBacklog !== undefined && { isBacklog }),
-      ...(billingStatus && { billingStatus }),
-      ...(period && { periodLabel: { contains: period, mode: 'insensitive' } }),
-      ...(query && {
+    ...(isInScope !== undefined && { isInScope }),
+    ...(isBacklog !== undefined && { isBacklog }),
+    ...(billingStatus && { billingStatus }),
+    ...(period && { periodLabel: { contains: period, mode: 'insensitive' } }),
+    ...(query && {
       OR: [
         { title: { contains: query, mode: 'insensitive' } },
         { referenceCode: { contains: query, mode: 'insensitive' } },
@@ -806,11 +808,11 @@ export async function searchDeadlines(
     // Date range filters
     ...(dueDateFrom || dueDateTo
       ? {
-          statutoryDueDate: {
-            ...(dueDateFrom && { gte: new Date(dueDateFrom) }),
-            ...(dueDateTo && { lte: new Date(dueDateTo) }),
-          },
-        }
+        statutoryDueDate: {
+          ...(dueDateFrom && { gte: new Date(dueDateFrom) }),
+          ...(dueDateTo && { lte: new Date(dueDateTo) }),
+        },
+      }
       : {}),
   };
 
@@ -836,7 +838,8 @@ export async function searchDeadlines(
     }
 
     if (timingFilters.length > 0) {
-      where.AND = [...(where.AND || []), ...timingFilters];
+      const existingAnd = Array.isArray(where.AND) ? where.AND : (where.AND ? [where.AND] : []);
+      where.AND = [...existingAnd, ...timingFilters];
     }
   }
 
@@ -845,8 +848,9 @@ export async function searchDeadlines(
       ...(amountFrom !== undefined ? { gte: amountFrom } : {}),
       ...(amountTo !== undefined ? { lte: amountTo } : {}),
     };
+    const existingAnd = Array.isArray(where.AND) ? where.AND : (where.AND ? [where.AND] : []);
     where.AND = [
-      ...(where.AND || []),
+      ...existingAnd,
       {
         OR: [
           { overrideAmount: range },
@@ -868,8 +872,8 @@ export async function searchDeadlines(
       { assignee: { firstName: sortOrder } }
     );
   } else if (sortBy === 'title' || sortBy === 'periodLabel' || sortBy === 'billingStatus' ||
-             sortBy === 'amount' || sortBy === 'statutoryDueDate' || sortBy === 'status' ||
-             sortBy === 'category' || sortBy === 'createdAt' || sortBy === 'updatedAt') {
+    sortBy === 'amount' || sortBy === 'statutoryDueDate' || sortBy === 'status' ||
+    sortBy === 'category' || sortBy === 'createdAt' || sortBy === 'updatedAt') {
     orderBy.push({ [sortBy]: sortOrder });
   }
 
@@ -1271,12 +1275,12 @@ export async function bulkUpdateStatus(
       ...(status === 'COMPLETED'
         ? { completedAt: new Date(), completedById: userId }
         : {
-            completedAt: null,
-            completedById: null,
-            completionNote: null,
-            filingDate: null,
-            filingReference: null,
-          }),
+          completedAt: null,
+          completedById: null,
+          completionNote: null,
+          filingDate: null,
+          filingReference: null,
+        }),
     },
   });
 

@@ -84,9 +84,9 @@ export function ServiceRow({
                 <span>-</span>
                 {formatDate(service.endDate)}
               </>
-            ) : (
+            ) : service.serviceType === 'RECURRING' ? (
               <span className="text-text-muted"> - ongoing</span>
-            )}
+            ) : null}
           </span>
 
         </div>

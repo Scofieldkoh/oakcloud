@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, Filter, X, Pencil, Trash2, Ban, Calendar, ArrowRight } from 'lucide-react';
+import { Loader2, Plus, Filter, X, Pencil, Trash2, Ban, Calendar, ArrowRight, FilePenLine, Clock3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { useToast } from '@/components/ui/toast';
 import {
   useCompanyServices,
@@ -21,6 +22,12 @@ import {
 } from '@/lib/constants/contracts';
 import { formatDateShort, formatCurrency } from '@/lib/utils';
 import { ScopeModal } from './scope-modal';
+import {
+  deleteServiceDraft,
+  listServiceDrafts,
+  migrateLegacyServiceDrafts,
+  type PersistedServiceDraft,
+} from '@/lib/services/service-drafts';
 
 interface ContractsTabProps {
   companyId: string;
@@ -31,6 +38,14 @@ interface ServiceActionTarget {
   id: string;
   name: string;
   endDate: string | null;
+}
+
+interface StopServiceActionTarget extends ServiceActionTarget {
+  startDate: string;
+}
+
+interface DraftFormValues {
+  name?: string;
 }
 
 function canStopService(service: ContractServiceWithRelations): boolean {
@@ -52,16 +67,31 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
   });
 
   const deleteServiceMutation = useDeleteCompanyService(companyId);
-  const [stoppingService, setStoppingService] = useState<ServiceActionTarget | null>(null);
+  const [stoppingService, setStoppingService] = useState<StopServiceActionTarget | null>(null);
+  const [stopDate, setStopDate] = useState('');
+  const [stopDateError, setStopDateError] = useState<string | undefined>(undefined);
   const stopServiceMutation = useUpdateCompanyService(companyId, stoppingService?.id ?? '');
 
   const [showFilters, setShowFilters] = useState(false);
   const [showStopped, setShowStopped] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<ServiceActionTarget | null>(null);
+  const [serviceDrafts, setServiceDrafts] = useState<PersistedServiceDraft<DraftFormValues>[]>([]);
   const [showScopeModal, setShowScopeModal] = useState<{
     serviceName: string;
     scope: string;
   } | null>(null);
+
+  const refreshDrafts = useCallback(() => {
+    migrateLegacyServiceDrafts<DraftFormValues>(companyId);
+    setServiceDrafts(listServiceDrafts<DraftFormValues>(companyId));
+  }, [companyId]);
+
+  useEffect(() => {
+    refreshDrafts();
+    const handleFocus = () => refreshDrafts();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refreshDrafts]);
 
   const allServices = data?.services || [];
   const services = allServices.filter((service) => (showStopped ? true : !isStoppedService(service)));
@@ -76,6 +106,24 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
     router.push(`/companies/${companyId}/services/${serviceId}`);
   };
 
+  const handleResumeDraft = (draft: PersistedServiceDraft<DraftFormValues>) => {
+    const params = new URLSearchParams();
+    if (draft.contractId) {
+      params.set('contractId', draft.contractId);
+    }
+    params.set('draft', draft.id);
+    router.push(`/companies/${companyId}/services/new?${params.toString()}`);
+  };
+
+  const handleDeleteDraft = (draftId: string) => {
+    try {
+      deleteServiceDraft(companyId, draftId);
+      refreshDrafts();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to delete draft');
+    }
+  };
+
   const handleDeleteService = async () => {
     if (!deleteConfirm) return;
 
@@ -87,17 +135,48 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
     }
   };
 
+  const getTodayLocalIsoDate = () => {
+    const now = new Date();
+    const tzOffsetMs = now.getTimezoneOffset() * 60 * 1000;
+    return new Date(now.getTime() - tzOffsetMs).toISOString().split('T')[0];
+  };
+
+  const handleOpenStopDialog = (service: ContractServiceWithRelations) => {
+    setStoppingService({
+      id: service.id,
+      name: service.name,
+      startDate: service.startDate.split('T')[0],
+      endDate: service.endDate,
+    });
+    setStopDate(getTodayLocalIsoDate());
+    setStopDateError(undefined);
+  };
+
+  const handleCloseStopDialog = () => {
+    setStoppingService(null);
+    setStopDate('');
+    setStopDateError(undefined);
+  };
+
   const handleStopService = async () => {
     if (!stoppingService) return;
 
-    const stopDate = new Date().toISOString().split('T')[0];
+    if (!stopDate) {
+      setStopDateError('Stop date is required');
+      return;
+    }
+
+    if (stopDate < stoppingService.startDate) {
+      setStopDateError('Stop date cannot be earlier than the service start date');
+      return;
+    }
 
     try {
       await stopServiceMutation.mutateAsync({
         status: 'CANCELLED',
-        endDate: stoppingService.endDate || stopDate,
+        endDate: stopDate,
       });
-      setStoppingService(null);
+      handleCloseStopDialog();
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to stop service');
     }
@@ -164,6 +243,61 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
             {activeCount} active
             {stoppedCount > 0 && <span className="ml-2">{stoppedCount} stopped</span>}
           </div>
+          {serviceDrafts.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border-secondary">
+              <div className="flex items-center gap-2 text-xs text-text-secondary mb-2">
+                <FilePenLine className="w-3.5 h-3.5" />
+                <span>{serviceDrafts.length} saved draft{serviceDrafts.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="space-y-1.5">
+                {serviceDrafts.slice(0, 6).map((draft) => (
+                  <div key={draft.id} className="flex items-center justify-between gap-3 rounded-md px-2.5 py-2 bg-background-secondary/30">
+                    <button
+                      type="button"
+                      onClick={() => handleResumeDraft(draft)}
+                      className="min-w-0 text-left flex-1 hover:opacity-85 transition-opacity"
+                    >
+                      <p className="text-xs text-text-primary truncate">{draft.title}</p>
+                      <p className="text-[11px] text-text-muted inline-flex items-center gap-1">
+                        <Clock3 className="w-3 h-3" />
+                        {new Date(draft.updatedAt).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => handleResumeDraft(draft)}
+                      >
+                        Resume
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDraft(draft.id)}
+                        className="p-1.5 rounded text-text-muted hover:text-status-error hover:bg-background-elevated transition-colors"
+                        aria-label="Delete draft"
+                        title="Delete draft"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {serviceDrafts.length > 6 && (
+                  <p className="text-[11px] text-text-muted px-1">
+                    +{serviceDrafts.length - 6} more draft{serviceDrafts.length - 6 !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
           {showFilters && (
             <div className="mt-3 pt-3 border-t border-border-secondary animate-fade-in">
               <div className="flex items-center gap-3">
@@ -236,7 +370,11 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
                       <span className="inline-flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
                         {formatDateShort(service.startDate)}
-                        {service.endDate ? ` - ${formatDateShort(service.endDate)}` : ' - ongoing'}
+                        {service.endDate
+                          ? ` - ${formatDateShort(service.endDate)}`
+                          : service.serviceType === 'RECURRING'
+                            ? ' - ongoing'
+                            : ''}
                       </span>
                     </div>
                   </div>
@@ -270,13 +408,7 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
                         {canStopService(service) && (
                           <button
                             type="button"
-                            onClick={() =>
-                              setStoppingService({
-                                id: service.id,
-                                name: service.name,
-                                endDate: service.endDate,
-                              })
-                            }
+                            onClick={() => handleOpenStopDialog(service)}
                             className="p-1.5 rounded text-text-muted hover:text-status-warning hover:bg-background-elevated transition-colors"
                             title="Stop service"
                             aria-label="Stop service"
@@ -334,14 +466,27 @@ export function ContractsTab({ companyId, canEdit }: ContractsTabProps) {
       {stoppingService && (
         <ConfirmDialog
           isOpen={true}
-          onClose={() => setStoppingService(null)}
+          onClose={handleCloseStopDialog}
           title="Stop Service"
-          description={`Stop "${stoppingService.name}"? This will mark it as cancelled and stop ongoing work tracking.`}
+          description={`Stop "${stoppingService.name}" from the selected date? This will mark it as cancelled and prune upcoming deadlines from that date onward.`}
           confirmLabel="Stop Service"
           variant="warning"
           isLoading={stopServiceMutation.isPending}
           onConfirm={handleStopService}
-        />
+        >
+          <SingleDateInput
+            label="Stop Date"
+            value={stopDate}
+            onChange={(value) => {
+              setStopDate(value);
+              if (stopDateError) {
+                setStopDateError(undefined);
+              }
+            }}
+            error={stopDateError}
+            required
+          />
+        </ConfirmDialog>
       )}
     </div>
   );

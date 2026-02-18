@@ -146,6 +146,15 @@ function getBundleDefaults(bundle: ServiceTemplateBundle): {
   return { serviceType: 'RECURRING', frequency: 'ANNUALLY' };
 }
 
+function normalizeTemplateServiceTypeForEdit(
+  serviceType: ServiceTemplateRecord['serviceType'] | undefined
+): ServiceFormValues['serviceType'] {
+  if (!serviceType || serviceType === 'BOTH') {
+    return 'RECURRING';
+  }
+  return serviceType;
+}
+
 export default function EditServicePage({ params }: PageProps) {
   const { id: companyId, serviceId } = use(params);
   const router = useRouter();
@@ -216,7 +225,9 @@ export default function EditServicePage({ params }: PageProps) {
         name: override?.name ?? bundle.name,
         category: override?.category ?? bundle.category,
         description: override ? (override.description || '') : bundle.description,
-        serviceType: override?.serviceType ?? defaults.serviceType,
+        serviceType: override
+          ? normalizeTemplateServiceTypeForEdit(override.serviceType)
+          : defaults.serviceType,
         status: override?.status,
         rate: override?.rate,
         currency: override?.currency,
@@ -239,7 +250,7 @@ export default function EditServicePage({ params }: PageProps) {
         name: template.name,
         category: template.category,
         description: template.description || '',
-        serviceType: template.serviceType,
+        serviceType: normalizeTemplateServiceTypeForEdit(template.serviceType),
         status: template.status,
         rate: template.rate,
         currency: template.currency,
@@ -386,7 +397,9 @@ export default function EditServicePage({ params }: PageProps) {
 
     setDeadlineRules(service.deadlineRules || []);
     setSelectedTemplate(service.serviceTemplateCode || null);
-    setFyeYearInput(String(service.fyeYearOverride ?? currentYear));
+    // Use type assertion since API response includes fyeYearOverride but ContractServiceWithRelations doesn't define it
+    const fyeOverride = (service as { fyeYearOverride?: number | null }).fyeYearOverride;
+    setFyeYearInput(String(fyeOverride ?? currentYear));
   }, [currentYear, reset, service]);
 
   const applyTemplate = useCallback((templateCode: string) => {
@@ -623,7 +636,8 @@ export default function EditServicePage({ params }: PageProps) {
     try {
       await updateServiceMutation.mutateAsync({
         name: validatedData.name.trim(),
-        serviceType: validatedData.serviceType,
+        // Existing services can only be RECURRING or ONE_TIME (BOTH is only for creation)
+        serviceType: validatedData.serviceType === 'BOTH' ? 'RECURRING' : validatedData.serviceType,
         status: validatedData.status,
         rate: validatedData.rate,
         currency: validatedData.currency,
@@ -886,7 +900,7 @@ export default function EditServicePage({ params }: PageProps) {
                       render={({ field }) => (
                         <SearchableSelect
                           label="Service Type"
-                          options={SERVICE_TYPES as unknown as { value: string; label: string }[]}
+                          options={SERVICE_TYPES.filter((type) => type.value !== 'BOTH') as unknown as { value: string; label: string }[]}
                           value={field.value || ''}
                           onChange={field.onChange}
                           size="sm"

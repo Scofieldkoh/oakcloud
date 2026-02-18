@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useMemo, useCallback, useEffect, type ChangeEvent } from 'react';
+import { use, useState, useMemo, useCallback, useEffect, useRef, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Copy, FileText, ListChecks, Info, WifiOff, RefreshCw, Eraser, BookmarkPlus, Pencil, Trash2, Building2 } from 'lucide-react';
@@ -21,7 +21,7 @@ import { useCreateCompanyService } from '@/hooks/use-contract-services';
 import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { createServiceSchema, type CreateServiceInput, type DeadlineRuleInput } from '@/lib/validations/service';
+import { createServiceSchema, type CreateServiceInput, type DeadlineExclusionInput, type DeadlineRuleInput } from '@/lib/validations/service';
 import { useCreateServiceTemplate, useDeleteServiceTemplate, useServiceTemplates, useUpdateServiceTemplate, type ServiceTemplateRecord } from '@/hooks/use-service-templates';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -36,15 +36,22 @@ import {
 import { DeadlineBuilderTable, UpcomingDeadlinesSection, type CompanyData } from '@/components/services/deadline-builder';
 import { convertTemplatesToRuleInputs } from '@/lib/utils/deadline-template-converter';
 import type { DeadlineCategory } from '@/generated/prisma';
+import {
+  buildServiceDraftRecord,
+  deleteServiceDraft,
+  getServiceDraft,
+  migrateLegacyServiceDrafts,
+  saveServiceDraft,
+} from '@/lib/services/service-drafts';
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ contractId?: string }>;
+  searchParams?: Promise<{ contractId?: string; draft?: string }>;
 }
 
 type ServiceFormValues = {
   name: string;
-  serviceType: 'RECURRING' | 'ONE_TIME';
+  serviceType: 'RECURRING' | 'ONE_TIME' | 'BOTH';
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'PENDING';
   rate: string;
   currency: string;
@@ -52,6 +59,10 @@ type ServiceFormValues = {
   startDate: string;
   endDate: string;
   scope: string;
+  // Suffix fields for BOTH type
+  oneTimeSuffix: string;
+  recurringSuffix: string;
+  oneTimeRate: string;
 };
 
 type TemplateSource = 'BUILT_IN' | 'CUSTOM';
@@ -106,6 +117,13 @@ function getTemplateDescriptionPreview(description: string | null | undefined, m
   return `${words.slice(0, maxWords).join(' ')}...`;
 }
 
+function formatBillingAmount(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 function buildBlankServiceFormValues(): ServiceFormValues {
   return {
     name: '',
@@ -117,6 +135,9 @@ function buildBlankServiceFormValues(): ServiceFormValues {
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     scope: '',
+    oneTimeSuffix: ' (Setup)',
+    recurringSuffix: ' (Recurring)',
+    oneTimeRate: '',
   };
 }
 
@@ -140,6 +161,7 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
   const { id: companyId } = use(params);
   const resolvedSearchParams = searchParams ? use(searchParams) : undefined;
   const preferredContractId = resolvedSearchParams?.contractId || null;
+  const preferredDraftId = resolvedSearchParams?.draft || null;
   const router = useRouter();
   const { success: toastSuccess } = useToast();
   const { data: session } = useSession();
@@ -158,8 +180,11 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
   });
   const [showDeleteTemplateConfirm, setShowDeleteTemplateConfirm] = useState(false);
   const [deadlineRules, setDeadlineRules] = useState<DeadlineRuleInput[]>([]);
+  const [excludedDeadlines, setExcludedDeadlines] = useState<DeadlineExclusionInput[]>([]);
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(preferredDraftId);
   const [selectedRuleIndex, setSelectedRuleIndex] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
+  const hasRestoredDraft = useRef(false);
   const currentYear = new Date().getFullYear();
   const [fyeYearInput, setFyeYearInput] = useState<string>(String(currentYear));
   const fyeYear = useMemo(() => {
@@ -364,11 +389,57 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
     defaultValues: buildBlankServiceFormValues(),
   });
 
+  const syncDraftQuery = useCallback((nextDraftId: string | null) => {
+    const params = new URLSearchParams();
+    if (preferredContractId) {
+      params.set('contractId', preferredContractId);
+    }
+    if (nextDraftId) {
+      params.set('draft', nextDraftId);
+    }
+    const query = params.toString();
+    router.replace(query ? `/companies/${companyId}/services/new?${query}` : `/companies/${companyId}/services/new`);
+  }, [companyId, preferredContractId, router]);
+
+  useEffect(() => {
+    if (hasRestoredDraft.current || typeof window === 'undefined') {
+      return;
+    }
+
+    hasRestoredDraft.current = true;
+    try {
+      migrateLegacyServiceDrafts<ServiceFormValues>(companyId);
+      if (!preferredDraftId) return;
+
+      const parsed = getServiceDraft<ServiceFormValues>(companyId, preferredDraftId);
+      if (!parsed?.formValues) return;
+
+      reset({
+        ...buildBlankServiceFormValues(),
+        ...parsed.formValues,
+      });
+
+      setDeadlineRules(Array.isArray(parsed.deadlineRules) ? parsed.deadlineRules : []);
+      setExcludedDeadlines(Array.isArray(parsed.excludedDeadlines) ? parsed.excludedDeadlines : []);
+      setSelectedTemplate(typeof parsed.selectedTemplate === 'string' ? parsed.selectedTemplate : null);
+      setActiveDraftId(parsed.id);
+
+      if (typeof parsed.fyeYearInput === 'string' && /^\d+$/.test(parsed.fyeYearInput)) {
+        setFyeYearInput(parsed.fyeYearInput);
+      }
+
+      toastSuccess('Draft restored');
+    } catch (error) {
+      console.warn('Failed to restore service draft:', error);
+    }
+  }, [companyId, preferredDraftId, reset, toastSuccess]);
+
   const applyTemplate = useCallback((templateCode: string) => {
     const template = templateByCode.get(templateCode);
     if (!template) return;
 
     setSelectedTemplate(templateCode);
+    setExcludedDeadlines([]);
     setValue('name', template.name);
     setValue('serviceType', template.serviceType);
     setValue('frequency', template.frequency);
@@ -424,11 +495,14 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
 
   const handleStartBlank = useCallback(() => {
     reset(buildBlankServiceFormValues());
+    setActiveDraftId(null);
     setSelectedTemplate(null);
     setPendingTemplateCode(null);
     setDeadlineRules([]);
+    setExcludedDeadlines([]);
     setSubmitError(null);
-  }, [reset]);
+    syncDraftQuery(null);
+  }, [reset, syncDraftQuery]);
 
   const buildTemplatePayload = useCallback((draft: TemplateDraftForm) => {
     const values = getValues();
@@ -518,6 +592,7 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
       ...templateDraft,
       name: templateName,
     });
+
     try {
       let nextCode = selectedTemplate ?? null;
       if (templateEditorMode === 'create') {
@@ -583,6 +658,7 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
     setSelectedTemplate(null);
     setPendingTemplateCode(null);
     setDeadlineRules([]);
+    setExcludedDeadlines([]);
 
     setValue('name', service.name);
     setValue('serviceType', service.serviceType as 'RECURRING' | 'ONE_TIME');
@@ -620,23 +696,84 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
   const serviceType = watch('serviceType');
   const startDate = watch('startDate');
   const rateInput = watch('rate');
+  const oneTimeRateInput = watch('oneTimeRate');
   const billingCurrency = watch('currency');
   const defaultBillingAmount = useMemo(() => {
     if (!rateInput) return null;
     const parsed = Number.parseFloat(rateInput);
     return Number.isNaN(parsed) ? null : parsed;
   }, [rateInput]);
+  const oneTimeBillingAmount = useMemo(() => {
+    if (!oneTimeRateInput) return null;
+    const parsed = Number.parseFloat(oneTimeRateInput);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [oneTimeRateInput]);
   const frequencyOptions = useMemo(
     () => (serviceType === 'ONE_TIME'
       ? BILLING_FREQUENCIES.filter((f) => f.value === 'ONE_TIME')
       : BILLING_FREQUENCIES.filter((f) => f.value !== 'ONE_TIME')),
     [serviceType]
   );
+  const deadlineBillingReconciliation = useMemo(() => {
+    const configuredTotals = deadlineRules.reduce(
+      (acc, rule) => {
+        if (!rule.isBillable || rule.amount == null) return acc;
+        const isOneTimeRule = !rule.isRecurring || rule.frequency === 'ONE_TIME';
+        if (isOneTimeRule) {
+          acc.oneTime += rule.amount;
+        } else {
+          acc.recurring += rule.amount;
+        }
+        return acc;
+      },
+      { oneTime: 0, recurring: 0 }
+    );
+
+    const rows =
+      serviceType === 'BOTH'
+        ? [
+          { key: 'one-time', label: 'One-time', target: oneTimeBillingAmount, configured: configuredTotals.oneTime },
+          { key: 'recurring', label: 'Recurring', target: defaultBillingAmount, configured: configuredTotals.recurring },
+        ]
+        : serviceType === 'ONE_TIME'
+          ? [
+            {
+              key: 'one-time',
+              label: 'One-time',
+              target: defaultBillingAmount,
+              configured: configuredTotals.oneTime,
+            },
+          ]
+          : [
+            {
+              key: 'recurring',
+              label: 'Recurring',
+              target: defaultBillingAmount,
+              configured: configuredTotals.recurring,
+            },
+          ];
+
+    const normalizedRows = rows.map((row) => {
+      const difference = row.target == null
+        ? null
+        : Math.round((row.target - row.configured) * 100) / 100;
+      return { ...row, difference };
+    });
+
+    const hasMismatch = normalizedRows.some((row) => row.difference != null && Math.abs(row.difference) > 0.009);
+    const hasMissingTarget = normalizedRows.some((row) => row.target == null && row.configured > 0);
+
+    return {
+      rows: normalizedRows,
+      hasMismatch,
+      hasMissingTarget,
+    };
+  }, [deadlineRules, defaultBillingAmount, oneTimeBillingAmount, serviceType]);
 
   useEffect(() => {
     if (serviceType === 'ONE_TIME') {
       setValue('frequency', 'ONE_TIME');
-    } else if (serviceType === 'RECURRING') {
+    } else {
       const currentFrequency = getValues('frequency');
       if (currentFrequency === 'ONE_TIME') {
         setValue('frequency', 'ANNUALLY');
@@ -646,12 +783,68 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
 
   // Note: Zod transforms string rate to numbers
   // so data here has the transformed (output) types
-  const onSubmit = useCallback(async (data: unknown) => {
-    setSubmitError(null);
-    const validatedData = data as CreateServiceInput;
+  const handleSaveDraft = useCallback((asNew = false) => {
+    const existingDraft = !asNew && activeDraftId
+      ? getServiceDraft<ServiceFormValues>(companyId, activeDraftId)
+      : null;
+    const snapshot = buildServiceDraftRecord<ServiceFormValues>({
+      id: existingDraft?.id,
+      companyId,
+      contractId: preferredContractId,
+      title: getValues('name')?.trim() || undefined,
+      formValues: getValues(),
+      deadlineRules,
+      excludedDeadlines,
+      selectedTemplate,
+      fyeYearInput,
+      createdAt: existingDraft?.createdAt,
+      updatedAt: new Date().toISOString(),
+    });
 
     try {
-      const result = await createServiceMutation.mutateAsync({
+      saveServiceDraft(companyId, snapshot);
+      setActiveDraftId(snapshot.id);
+      syncDraftQuery(snapshot.id);
+      toastSuccess(existingDraft ? 'Draft updated' : 'Draft saved');
+    } catch (error) {
+      console.warn('Failed to save service draft:', error);
+    }
+  }, [
+    activeDraftId,
+    companyId,
+    deadlineRules,
+    excludedDeadlines,
+    selectedTemplate,
+    fyeYearInput,
+    preferredContractId,
+    getValues,
+    syncDraftQuery,
+    toastSuccess,
+  ]);
+
+  const onSubmit = useCallback(async (data: unknown) => {
+    setSubmitError(null);
+    const validatedData = data as CreateServiceInput & {
+      oneTimeSuffix?: string;
+      recurringSuffix?: string;
+      oneTimeRate?: string;
+    };
+    const rawOneTimeSuffix = getValues('oneTimeSuffix');
+    const rawRecurringSuffix = getValues('recurringSuffix');
+    const rawOneTimeRate = getValues('oneTimeRate');
+    const parsedOneTimeRate = rawOneTimeRate ? Number.parseFloat(rawOneTimeRate) : null;
+    const normalizedOneTimeRate =
+      parsedOneTimeRate !== null && !Number.isNaN(parsedOneTimeRate)
+        ? parsedOneTimeRate
+        : null;
+
+    if (deadlineBillingReconciliation.hasMismatch || deadlineBillingReconciliation.hasMissingTarget) {
+      setSubmitError('Billing totals do not reconcile with billable deadlines. Reconcile before saving.');
+      return;
+    }
+
+    try {
+      const payload = {
         name: validatedData.name.trim(),
         serviceType: validatedData.serviceType,
         status: validatedData.status,
@@ -663,14 +856,29 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
         scope: validatedData.scope?.trim() || null,
         // Always use deadline rules (converted from template or custom)
         deadlineRules: deadlineRules.length > 0 ? deadlineRules : null,
+        excludedDeadlines: excludedDeadlines.length > 0 ? excludedDeadlines : null,
         serviceTemplateCode: selectedTemplate,
         contractId: preferredContractId,
         fyeYearOverride: company?.financialYearEndMonth && company?.financialYearEndDay ? fyeYear : null,
-      });
+        // Include suffix fields for BOTH type
+        ...(validatedData.serviceType === 'BOTH' && {
+          oneTimeSuffix: rawOneTimeSuffix?.trim() || ' (Setup)',
+          recurringSuffix: rawRecurringSuffix?.trim() || ' (Recurring)',
+          oneTimeRate: normalizedOneTimeRate,
+        }),
+      };
 
-      // Show success message with deadline count if applicable
-      if (result.deadlinesGenerated && result.deadlinesGenerated > 0) {
+      const result = await createServiceMutation.mutateAsync(payload);
+
+      // Handle response - BOTH type returns two services
+      if ('services' in result) {
+        toastSuccess(`Created linked services: "${result.services[0].name}" and "${result.services[1].name}"`);
+      } else if (result.deadlinesGenerated && result.deadlinesGenerated > 0) {
         toastSuccess(`Service created with ${result.deadlinesGenerated} deadlines generated`);
+      }
+
+      if (activeDraftId) {
+        deleteServiceDraft(companyId, activeDraftId);
       }
 
       router.push(`/companies/${companyId}?tab=services&refresh=1`);
@@ -680,14 +888,19 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
   }, [
     createServiceMutation,
     deadlineRules,
+    excludedDeadlines,
     selectedTemplate,
     toastSuccess,
     router,
     companyId,
+    activeDraftId,
     preferredContractId,
+    getValues,
     company?.financialYearEndMonth,
     company?.financialYearEndDay,
     fyeYear,
+    deadlineBillingReconciliation.hasMismatch,
+    deadlineBillingReconciliation.hasMissingTarget,
   ]);
 
   // Retry handler for failed submissions
@@ -871,6 +1084,7 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
               id="service-info"
             >
               <div className="space-y-4">
+                {/* Row 1: Service Name | Service Type | Start Date (same for all types) */}
                 <div className="grid grid-cols-12 gap-3">
                   <div className="col-span-12 md:col-span-6">
                     <FormInput
@@ -899,64 +1113,11 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
                   </div>
                   <div className="col-span-12 md:col-span-3">
                     <Controller
-                      name="frequency"
-                      control={control}
-                      render={({ field }) => (
-                        <SearchableSelect
-                          label="Frequency"
-                          options={frequencyOptions}
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          size="sm"
-                          clearable={false}
-                        />
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-12 gap-3">
-                  <div className="col-span-12 md:col-span-3">
-                    <FormInput
-                      label="Rate"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      error={errors.rate?.message}
-                      inputSize="sm"
-                      {...register('rate')}
-                    />
-                  </div>
-                  <div className="col-span-12 md:col-span-3">
-                    <Controller
-                      name="currency"
-                      control={control}
-                      render={({ field }) => (
-                        <SearchableSelect
-                          label="Currency"
-                          options={[
-                            { value: 'SGD', label: 'SGD - Singapore Dollar' },
-                            { value: 'USD', label: 'USD - US Dollar' },
-                            { value: 'EUR', label: 'EUR - Euro' },
-                            { value: 'GBP', label: 'GBP - British Pound' },
-                            { value: 'MYR', label: 'MYR - Malaysian Ringgit' },
-                          ]}
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          size="sm"
-                          clearable={false}
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className="col-span-12 md:col-span-3">
-                    <Controller
                       name="startDate"
                       control={control}
                       render={({ field }) => (
                         <SingleDateInput
-                          label="Service Start Date"
+                          label="Start Date"
                           value={field.value}
                           onChange={field.onChange}
                           error={errors.startDate?.message}
@@ -966,6 +1127,191 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
                     />
                   </div>
                 </div>
+
+                {/* Row 2 for ONE_TIME: Currency | One-time Rate */}
+                {serviceType === 'ONE_TIME' && (
+                  <div className="grid grid-cols-12 gap-3">
+                    <div className="col-span-12 md:col-span-3">
+                      <Controller
+                        name="currency"
+                        control={control}
+                        render={({ field }) => (
+                          <SearchableSelect
+                            label="Currency"
+                            options={[
+                              { value: 'SGD', label: 'SGD - Singapore Dollar' },
+                              { value: 'USD', label: 'USD - US Dollar' },
+                              { value: 'EUR', label: 'EUR - Euro' },
+                              { value: 'GBP', label: 'GBP - British Pound' },
+                              { value: 'MYR', label: 'MYR - Malaysian Ringgit' },
+                            ]}
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            size="sm"
+                            clearable={false}
+                          />
+                        )}
+                      />
+                    </div>
+                    <div className="col-span-12 md:col-span-3">
+                      <FormInput
+                        label="One-time Rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        error={errors.rate?.message}
+                        inputSize="sm"
+                        {...register('rate')}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Row 2 for RECURRING: Currency | Recurring Rate | Frequency */}
+                {serviceType === 'RECURRING' && (
+                  <div className="grid grid-cols-12 gap-3">
+                    <div className="col-span-12 md:col-span-3">
+                      <Controller
+                        name="currency"
+                        control={control}
+                        render={({ field }) => (
+                          <SearchableSelect
+                            label="Currency"
+                            options={[
+                              { value: 'SGD', label: 'SGD - Singapore Dollar' },
+                              { value: 'USD', label: 'USD - US Dollar' },
+                              { value: 'EUR', label: 'EUR - Euro' },
+                              { value: 'GBP', label: 'GBP - British Pound' },
+                              { value: 'MYR', label: 'MYR - Malaysian Ringgit' },
+                            ]}
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            size="sm"
+                            clearable={false}
+                          />
+                        )}
+                      />
+                    </div>
+                    <div className="col-span-12 md:col-span-3">
+                      <FormInput
+                        label="Recurring Rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        error={errors.rate?.message}
+                        inputSize="sm"
+                        {...register('rate')}
+                      />
+                    </div>
+                    <div className="col-span-12 md:col-span-3">
+                      <Controller
+                        name="frequency"
+                        control={control}
+                        render={({ field }) => (
+                          <SearchableSelect
+                            label="Frequency"
+                            options={frequencyOptions}
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            size="sm"
+                            clearable={false}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Rows for BOTH: Row 2 = One-time, Row 3 = Recurring */}
+                {serviceType === 'BOTH' && (
+                  <>
+                    {/* Row 2: Currency | One-time Rate | One-time Suffix */}
+                    <div className="grid grid-cols-12 gap-3">
+                      <div className="col-span-12 md:col-span-3">
+                        <Controller
+                          name="currency"
+                          control={control}
+                          render={({ field }) => (
+                            <SearchableSelect
+                              label="Currency"
+                              options={[
+                                { value: 'SGD', label: 'SGD - Singapore Dollar' },
+                                { value: 'USD', label: 'USD - US Dollar' },
+                                { value: 'EUR', label: 'EUR - Euro' },
+                                { value: 'GBP', label: 'GBP - British Pound' },
+                                { value: 'MYR', label: 'MYR - Malaysian Ringgit' },
+                              ]}
+                              value={field.value || ''}
+                              onChange={field.onChange}
+                              size="sm"
+                              clearable={false}
+                            />
+                          )}
+                        />
+                      </div>
+                      <div className="col-span-12 md:col-span-3">
+                        <FormInput
+                          label="One-time Rate"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          inputSize="sm"
+                          {...register('oneTimeRate')}
+                        />
+                      </div>
+                      <div className="col-span-12 md:col-span-3">
+                        <FormInput
+                          label="One-time Suffix"
+                          placeholder=" (Setup)"
+                          inputSize="sm"
+                          {...register('oneTimeSuffix')}
+                        />
+                      </div>
+                    </div>
+                    {/* Row 3: Recurring Rate | Frequency | Recurring Suffix */}
+                    <div className="grid grid-cols-12 gap-3">
+                      <div className="col-span-12 md:col-span-3">
+                        <FormInput
+                          label="Recurring Rate"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          error={errors.rate?.message}
+                          inputSize="sm"
+                          {...register('rate')}
+                        />
+                      </div>
+                      <div className="col-span-12 md:col-span-3">
+                        <Controller
+                          name="frequency"
+                          control={control}
+                          render={({ field }) => (
+                            <SearchableSelect
+                              label="Frequency"
+                              options={frequencyOptions}
+                              value={field.value || ''}
+                              onChange={field.onChange}
+                              size="sm"
+                              clearable={false}
+                            />
+                          )}
+                        />
+                      </div>
+                      <div className="col-span-12 md:col-span-3">
+                        <FormInput
+                          label="Recurring Suffix"
+                          placeholder=" (Recurring)"
+                          inputSize="sm"
+                          {...register('recurringSuffix')}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </CardSection>
 
@@ -999,6 +1345,46 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
             defaultOpen
             id="deadline-config"
           >
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-text-muted">
+              <span className="inline-flex items-center gap-1">
+                <Info className="w-3.5 h-3.5" />
+                Billing alignment
+              </span>
+              {deadlineBillingReconciliation.rows.map((row) => {
+                const currency = billingCurrency || 'SGD';
+                const targetLabel = row.target == null ? 'not set' : `${currency} ${formatBillingAmount(row.target)}`;
+                const configuredLabel = `${currency} ${formatBillingAmount(row.configured)}`;
+                const balanceLabel =
+                  row.difference == null
+                    ? 'no target'
+                    : Math.abs(row.difference) <= 0.009
+                      ? 'balanced'
+                      : row.difference > 0
+                        ? `remaining ${currency} ${formatBillingAmount(row.difference)}`
+                        : `over ${currency} ${formatBillingAmount(Math.abs(row.difference))}`;
+
+                return (
+                  <span
+                    key={row.key}
+                    className="inline-flex items-center gap-1 rounded-full border border-border-primary/70 px-2 py-0.5"
+                  >
+                    <span className="text-text-secondary">{row.label}:</span>
+                    <span>{targetLabel}</span>
+                    <span className="text-text-tertiary">/</span>
+                    <span>{configuredLabel}</span>
+                    <span className={Math.abs(row.difference ?? 1) <= 0.009 ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}>
+                      ({balanceLabel})
+                    </span>
+                  </span>
+                );
+              })}
+              {(deadlineBillingReconciliation.hasMismatch || deadlineBillingReconciliation.hasMissingTarget) && (
+                <span className="text-amber-700 dark:text-amber-400">
+                  Reconcile before saving.
+                </span>
+              )}
+            </div>
+
             <DeadlineBuilderTable
               companyId={companyId}
               companyData={companyData}
@@ -1007,6 +1393,7 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
               serviceStartDate={startDate}
               defaultBillingAmount={defaultBillingAmount}
               defaultBillingCurrency={billingCurrency}
+              defaultCategory={selectedTemplateItem?.category}
               selectedRuleIndex={selectedRuleIndex}
               onSelectRule={setSelectedRuleIndex}
             />
@@ -1016,6 +1403,8 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
             companyId={companyId}
             companyData={companyData}
             rules={deadlineRules}
+            excludedDeadlines={excludedDeadlines}
+            onExcludedDeadlinesChange={setExcludedDeadlines}
             serviceStartDate={startDate}
             highlightTaskName={selectedRuleName}
           />
@@ -1038,16 +1427,17 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
                 <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                   {canManageTemplates && (
                     <>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        leftIcon={<BookmarkPlus className="w-4 h-4" />}
-                        onClick={openCreateTemplateEditor}
-                      >
-                        Save as Template
-                      </Button>
-                      {selectedTemplateItem && (
+                      {!selectedTemplateItem ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          leftIcon={<BookmarkPlus className="w-4 h-4" />}
+                          onClick={openCreateTemplateEditor}
+                        >
+                          Save as Template
+                        </Button>
+                      ) : (
                         <Button
                           type="button"
                           variant="secondary"
@@ -1055,11 +1445,7 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
                           leftIcon={<Pencil className="w-4 h-4" />}
                           onClick={openUpdateTemplateEditor}
                         >
-                          {selectedTemplateItem.source === 'BUILT_IN'
-                            ? selectedTemplateItem.isSystemOverridden
-                              ? 'Update Template'
-                              : 'Overwrite Template'
-                            : 'Update Template'}
+                          Update Template
                         </Button>
                       )}
                       {selectedCustomTemplate && (
@@ -1075,6 +1461,16 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
                       )}
                     </>
                   )}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleSaveDraft()}
+                    disabled={isSubmitting}
+                    leftIcon={<Save className="w-4 h-4" />}
+                  >
+                    {activeDraftId ? 'Update Draft' : 'Save Draft'}
+                  </Button>
                   <Link href={`/companies/${companyId}?tab=services`}>
                     <Button variant="secondary" size="sm">
                       Cancel
@@ -1093,8 +1489,8 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
               </div>
             </div>
           </div>
-        </div>
-      </form>
+        </div >
+      </form >
 
       <Modal
         isOpen={showTemplateEditor}
@@ -1102,11 +1498,7 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
         title={
           templateEditorMode === 'create'
             ? 'Save Service Template'
-            : selectedTemplateItem?.source === 'BUILT_IN'
-              ? selectedTemplateItem?.isSystemOverridden
-                ? 'Update Template'
-                : 'Overwrite Template'
-              : 'Update Service Template'
+            : 'Update Template'
         }
         size="md"
       >
@@ -1176,13 +1568,7 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
             isLoading={createTemplateMutation.isPending || updateTemplateMutation.isPending}
             disabled={!templateDraft.name.trim()}
           >
-            {templateEditorMode === 'create'
-              ? 'Save Template'
-              : selectedTemplateItem?.source === 'BUILT_IN'
-                ? selectedTemplateItem?.isSystemOverridden
-                  ? 'Update Template'
-                  : 'Overwrite Template'
-                : 'Update Template'}
+            {templateEditorMode === 'create' ? 'Save Template' : 'Update Template'}
           </Button>
         </ModalFooter>
       </Modal>
@@ -1230,6 +1616,6 @@ export default function NewServicePage({ params, searchParams }: PageProps) {
         onCopy={handleCopyService}
         currentCompanyId={companyId}
       />
-    </div>
+    </div >
   );
 }

@@ -5,11 +5,22 @@ import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { contractKeys, type ContractService } from '@/hooks/use-contracts';
 import { deadlineKeys } from '@/hooks/use-deadlines';
 import type { ServiceType, ServiceStatus, BillingFrequency } from '@/generated/prisma';
-import type { DeadlineRuleInput } from '@/lib/validations/service';
+import type { DeadlineExclusionInput, DeadlineRuleInput } from '@/lib/validations/service';
 
 // ============================================================================
 // TYPES
 // ============================================================================
+
+export type InputServiceType = ServiceType | 'BOTH';
+export type CreatedServiceRecord = ContractService & { deadlinesGenerated?: number };
+
+export interface CreateLinkedServicesResponse {
+  services: CreatedServiceRecord[];
+  linkedServiceIds: string[];
+  deadlinesGenerated?: number;
+}
+
+export type CreateContractServiceResponse = CreatedServiceRecord | CreateLinkedServicesResponse;
 
 export interface ContractServiceWithRelations extends ContractService {
   deadlineRules?: DeadlineRuleInput[];
@@ -39,7 +50,7 @@ export interface CompanyServicesResponse {
 
 export interface CreateContractServiceInput {
   name: string;
-  serviceType?: ServiceType;
+  serviceType?: InputServiceType;
   status?: ServiceStatus;
   rate?: number | null;
   currency?: string;
@@ -52,8 +63,12 @@ export interface CreateContractServiceInput {
   serviceTemplateCode?: string | null;
   deadlineTemplateCodes?: string[] | null;
   deadlineRules?: DeadlineRuleInput[] | null;
+  excludedDeadlines?: DeadlineExclusionInput[] | null;
   generateDeadlines?: boolean;
   fyeYearOverride?: number | null;
+  oneTimeSuffix?: string | null;
+  recurringSuffix?: string | null;
+  oneTimeRate?: number | null;
 }
 
 export interface UpdateContractServiceInput {
@@ -69,13 +84,15 @@ export interface UpdateContractServiceInput {
   displayOrder?: number;
   serviceTemplateCode?: string | null;
   deadlineRules?: DeadlineRuleInput[] | null;
+  excludedDeadlines?: DeadlineExclusionInput[] | null;
   regenerateDeadlines?: boolean;
+  fyeYearOverride?: number | null;
 }
 
 export interface ServiceSearchParams {
   query?: string;
   status?: ServiceStatus;
-  serviceType?: ServiceType;
+  serviceType?: InputServiceType;
   companyId?: string;
   contractId?: string;
   startDateFrom?: string;
@@ -101,6 +118,20 @@ export const serviceKeys = {
   contract: (contractId: string) => [...serviceKeys.all, 'contract', contractId] as const,
   detail: (serviceId: string) => [...serviceKeys.all, 'detail', serviceId] as const,
 };
+
+function isLinkedServicesResponse(data: CreateContractServiceResponse): data is CreateLinkedServicesResponse {
+  return 'services' in data;
+}
+
+function getGeneratedDeadlineCount(data: CreateContractServiceResponse): number {
+  if (isLinkedServicesResponse(data)) {
+    if (typeof data.deadlinesGenerated === 'number') {
+      return data.deadlinesGenerated;
+    }
+    return data.services.reduce((sum, service) => sum + (service.deadlinesGenerated ?? 0), 0);
+  }
+  return data.deadlinesGenerated ?? 0;
+}
 
 // ============================================================================
 // HOOKS
@@ -260,7 +291,7 @@ export function useCreateContractService(companyId: string, contractId: string) 
   );
 
   return useMutation({
-    mutationFn: async (data: CreateContractServiceInput): Promise<ContractService & { deadlinesGenerated?: number }> => {
+    mutationFn: async (data: CreateContractServiceInput): Promise<CreateContractServiceResponse> => {
       const response = await fetch(
         `/api/companies/${companyId}/contracts/${contractId}/services`,
         {
@@ -284,11 +315,12 @@ export function useCreateContractService(companyId: string, contractId: string) 
       queryClient.invalidateQueries({ queryKey: serviceKeys.contract(contractId) });
       queryClient.invalidateQueries({ queryKey: serviceKeys.all });
       // If deadlines were generated, also invalidate deadline queries
-      if (data.deadlinesGenerated && data.deadlinesGenerated > 0) {
+      const generatedDeadlines = getGeneratedDeadlineCount(data);
+      if (generatedDeadlines > 0) {
         queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
       }
       // Only show basic toast if no deadlines were generated (custom message handled by caller)
-      if (!data.deadlinesGenerated) {
+      if (!isLinkedServicesResponse(data) && !data.deadlinesGenerated) {
         success(`Service "${data.name}" created successfully`);
       }
     },
@@ -402,7 +434,7 @@ export function useCreateCompanyService(companyId: string) {
   return useMutation({
     mutationFn: async (
       data: CreateContractServiceInput & { contractId?: string | null }
-    ): Promise<ContractService & { deadlinesGenerated?: number }> => {
+    ): Promise<CreateContractServiceResponse> => {
       const response = await fetch(`/api/companies/${companyId}/services`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -419,10 +451,11 @@ export function useCreateCompanyService(companyId: string) {
       queryClient.invalidateQueries({ queryKey: serviceKeys.company(companyId) });
       queryClient.invalidateQueries({ queryKey: serviceKeys.list() });
       queryClient.invalidateQueries({ queryKey: serviceKeys.all });
-      if (data.deadlinesGenerated && data.deadlinesGenerated > 0) {
+      const generatedDeadlines = getGeneratedDeadlineCount(data);
+      if (generatedDeadlines > 0) {
         queryClient.invalidateQueries({ queryKey: deadlineKeys.all });
       }
-      if (!data.deadlinesGenerated) {
+      if (!isLinkedServicesResponse(data) && !data.deadlinesGenerated) {
         success(`Service "${data.name}" created successfully`);
       }
     },

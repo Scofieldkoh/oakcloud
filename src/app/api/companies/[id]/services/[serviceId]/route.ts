@@ -140,6 +140,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const fyeYearOverride = data.fyeYearOverride ?? null;
     const {
       deadlineRules,
+      excludedDeadlines,
       ...serviceUpdateData
     } = data;
 
@@ -177,6 +178,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           }, {
             regenerate: true,
             fyeYearOverride: fyeYearOverride ?? undefined,
+            excludedDeadlines: excludedDeadlines ?? undefined,
           });
         } else {
           await prisma.deadline.deleteMany({

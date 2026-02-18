@@ -281,7 +281,7 @@ function CompanyDetailContent({ id }: { id: string }) {
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <button
-            onClick={handleRefresh}
+            onClick={() => handleRefresh()}
             className="btn-secondary btn-sm flex items-center gap-2"
             title="Refresh (Ctrl+R)"
             disabled={isRefreshing}

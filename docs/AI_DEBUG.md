@@ -5429,3 +5429,5485 @@ This file contains debug logs for AI extraction calls when `AI_DEBUG=true`.
 
 ---
 
+## AI Request - 2026-02-09T03:53:33.126Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 61522ms |
+| Input Tokens | 8580 |
+| Output Tokens | 1279 |
+| Total Tokens | 14899 |
+| Estimated Cost | $0.0111 |
+
+<details>
+<summary>Response (3341 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "PAYROLL",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "EXPENSE_CLAIM",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "Daphne Tan",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "Mylifestyle Sanitary Pte. Ltd.",
+    "confidence": 0.9
+  },
+  "documentNumber": {
+    "value": "SG3P 260202821172",
+    "confidence": 0.85
+  },
+  "documentDate": {
+    "value": "2026-02-02",
+    "confidence": 0.95
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "851.80",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "851.80",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Ong Seng Choong (7 cakes for korean)",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "7",
+        "confidence": 0.9
+      },
+      "unitPrice": null,
+      "amount": {
+        "value": "125.52",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "ZR",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "7040",
+        "confidence": 0.85
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Moutai for himpel chairman",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "310.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "310.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "ZR",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "7040",
+        "confidence": 0.85
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Wine for dinner in korea (won 218,000)",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.8
+      },
+      "unitPrice": {
+        "value": "193.50",
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "193.50",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "7040",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "Dinner with korea team (won 250,000)",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.8
+      },
+      "unitPrice": {
+        "value": "222.78",
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "222.78",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "7040",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-09T03:54:34.664Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | PAYROLL | 0.95 |
+| Vendor | Daphne Tan | 0.95 |
+| Total Amount | 851.80 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7040 | 0.85 | Ong Seng Choong (7 cakes for korean) |
+| 2 | 7040 | 0.85 | Moutai for himpel chairman |
+| 3 | 7040 | 0.80 | Wine for dinner in korea (won 218,000) |
+| 4 | 7040 | 0.80 | Dinner with korea team (won 250,000) |
+
+---
+
+## AI Request - 2026-02-09T03:53:57.501Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 50977ms |
+| Input Tokens | 6466 |
+| Output Tokens | 473 |
+| Total Tokens | 12279 |
+| Estimated Cost | $0.0074 |
+
+<details>
+<summary>Response (1222 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "TREASURY",
+    "confidence": 0.9
+  },
+  "documentSubCategory": {
+    "value": "RECEIPT_VOUCHER",
+    "confidence": 0.85
+  },
+  "vendorName": null,
+  "customerName": null,
+  "documentNumber": null,
+  "documentDate": {
+    "value": "2026-02-05",
+    "confidence": 0.95
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": null,
+  "taxAmount": null,
+  "totalAmount": {
+    "value": "29000.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Incoming Transfer from POSB eEveryday Savings Account 170-79369-2",
+        "confidence": 0.9
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "29000.00",
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "29000.00",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "4100",
+        "confidence": 0.6
+      }
+    }
+  ],
+  "overallConfidence": 0.85
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-09T03:54:48.488Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | TREASURY | 0.90 |
+| Total Amount | 29000.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4100 | 0.60 | Incoming Transfer from POSB eEveryday Savings A... |
+
+---
+
+## AI Request - 2026-02-09T08:42:15.865Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 34877ms |
+| Input Tokens | 6468 |
+| Output Tokens | 669 |
+| Total Tokens | 9540 |
+| Estimated Cost | $0.0078 |
+
+<details>
+<summary>Response (1661 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.9
+  },
+  "vendorName": {
+    "value": "Accounting And Corporate Regulatory Authority",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "TAN WEI JIE",
+    "confidence": 0.85
+  },
+  "documentNumber": {
+    "value": "ACRA260204004679",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-02-04",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-02-04",
+    "confidence": 0.9
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "5.05",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.45",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "5.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0008879-T",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Business Profile (Co) - KATHRYN STANFORD CONSULTING PTE. LTD.",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "5.05",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "5.05",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.45",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "7810",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-09T08:42:50.759Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | Accounting And Corporate Regulatory Authority | 0.95 |
+| Total Amount | 5.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7810 | 0.80 | Business Profile (Co) - KATHRYN STANFORD CONSUL... |
+
+---
+
+## AI Request - 2026-02-10T01:37:25.435Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 22496ms |
+| Input Tokens | 4249 |
+| Output Tokens | 1101 |
+| Total Tokens | 6595 |
+| Estimated Cost | $0.0065 |
+
+<details>
+<summary>Response (2883 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202511582W",
+    "name": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "formerName": null,
+    "dateOfNameChange": null,
+    "formerNames": [],
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-03-17",
+    "incorporationDate": "2025-03-17",
+    "registrationDate": "2025-03-17"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "68103",
+      "description": "LETTING OF SELF-OWNED OR LEASED REAL ESTATE PROPERTY EXCEPT FOOD COURTS, COFFEE SHOPS AND CANTEENS (E.G. OFFICE/EXHIBITION SPACE, SHOPPING MALL, SELF-STORAGE FACILITIES)"
+    },
+    "secondary": {
+      "code": "70201",
+      "description": "MANAGEMENT CONSULTANCY SERVICES"
+    }
+  },
+  "registeredAddress": {
+    "block": "10P",
+    "streetName": "BRADDELL HILL",
+    "level": "04",
+    "unit": "68",
+    "buildingName": "BRADDELL VIEW",
+    "postalCode": "579733",
+    "effectiveFrom": "2025-03-17"
+  },
+  "mailingAddress": null,
+  "paidUpCapital": {
+    "amount": 35000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 35000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 35000,
+      "parValue": null,
+      "totalValue": null,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "treasuryShares": {
+    "numberOfShares": 0,
+    "currency": null
+  },
+  "shareholders": [
+    {
+      "name": "ANG CHEE WEI (HONG ZHIWEI)",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8132861G",
+      "nationality": "SINGAPORE CITIZEN",
+      "placeOfOrigin": null,
+      "address": "10P BRADDELL HILL, #04-68, BRADDELL VIEW, SINGAPORE 579733",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 35000,
+      "percentageHeld": null,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "ANG CHEE WEI (HONG ZHIWEI)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8132861G",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "10P BRADDELL HILL, #04-68, BRADDELL VIEW, SINGAPORE 579733",
+      "appointmentDate": "2025-03-17",
+      "cessationDate": null
+    },
+    {
+      "name": "LIEW PIOW LING",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7772412E",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "735 UPPER CHANGI ROAD EAST, EAST VIEW GARDEN, SINGAPORE 486863",
+      "appointmentDate": "2025-03-17",
+      "cessationDate": null
+    }
+  ],
+  "auditor": null,
+  "financialYear": null,
+  "homeCurrency": "SGD",
+  "compliance": {
+    "lastAgmDate": null,
+    "lastArFiledDate": null,
+    "fyeAsAtLastAr": null,
+    "accountsDueDate": null
+  },
+  "charges": [],
+  "documentMetadata": {
+    "receiptNo": "FREE_COPY",
+    "receiptDate": "2025-03-17"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-10T01:40:37.785Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 22071ms |
+| Input Tokens | 7008 |
+| Output Tokens | 693 |
+| Total Tokens | 9197 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1670 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke CleanPro Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "CLI-25889",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-17",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "255.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "22.95",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "277.95",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202118077G",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Weekly Cleaning conducted for the month of Dec 2025 (04 11 18)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "3.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "85.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "255.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "22.95",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:40:59.867Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke CleanPro Pte. Ltd. | 0.99 |
+| Total Amount | 277.95 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6810 | 0.85 | Weekly Cleaning conducted for the month of Dec ... |
+
+---
+
+## AI Request - 2026-02-10T01:40:37.171Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 22870ms |
+| Input Tokens | 7008 |
+| Output Tokens | 693 |
+| Total Tokens | 9321 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1670 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke CleanPro Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "CLI-25868",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-17",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "217.50",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "19.58",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "237.08",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202118077G",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Weekly Cleaning conducted for the month of Dec 2025 (04 11 18)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "3.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "72.50",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "217.50",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "19.58",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:00.051Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke CleanPro Pte. Ltd. | 0.99 |
+| Total Amount | 237.08 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6810 | 0.85 | Weekly Cleaning conducted for the month of Dec ... |
+
+---
+
+## AI Request - 2026-02-10T01:40:38.416Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 23268ms |
+| Input Tokens | 7008 |
+| Output Tokens | 695 |
+| Total Tokens | 9235 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1673 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke CleanPro Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "CLI-25929",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-17",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "240.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "21.60",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "261.60",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202118077G",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Weekly Cleaning conducted for the month of Dec 2025 (05 12 19 26)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "4.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "60.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "240.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "21.60",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:01.694Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke CleanPro Pte. Ltd. | 0.99 |
+| Total Amount | 261.60 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6810 | 0.85 | Weekly Cleaning conducted for the month of Dec ... |
+
+---
+
+## AI Request - 2026-02-10T01:40:36.520Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 29126ms |
+| Input Tokens | 7008 |
+| Output Tokens | 699 |
+| Total Tokens | 9923 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1682 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke CleanPro Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA SPACE PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "CLI-25697",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-17",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "425.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "38.25",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "463.25",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202118077G",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Weekly Cleaning conducted for the month of Dec 2025 (02 09 16 23 30)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "5.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "85.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "425.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "38.25",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:05.656Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke CleanPro Pte. Ltd. | 0.99 |
+| Total Amount | 463.25 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6810 | 0.85 | Weekly Cleaning conducted for the month of Dec ... |
+
+---
+
+## AI Request - 2026-02-10T01:40:42.644Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 32883ms |
+| Input Tokens | 7008 |
+| Output Tokens | 959 |
+| Total Tokens | 10441 |
+| Estimated Cost | $0.0089 |
+
+<details>
+<summary>Response (2332 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "SALES_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "Bespoke Habitat Pte Ltd",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "MF- 12519",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-15",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "100.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "9.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "109.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201924330Z",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "ECON1 - AZRA KATERINA MAXWELL - Period between 07/12/2025 and 6/1/2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4420",
+        "confidence": 0.85
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "CR2 - YANG JYE-RU - Period between 23/12/2025 and 22/1/2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4420",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:15.537Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.99 |
+| Vendor | BESPOKE HABITAT B47WA PTE. LTD. | 0.99 |
+| Total Amount | 109.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4420 | 0.85 | ECON1 - AZRA KATERINA MAXWELL - Period between ... |
+| 2 | 4420 | 0.85 | CR2 - YANG JYE-RU - Period between 23/12/2025 a... |
+
+---
+
+## AI Request - 2026-02-10T01:40:39.653Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 35941ms |
+| Input Tokens | 7008 |
+| Output Tokens | 673 |
+| Total Tokens | 10679 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1649 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "BH PROPERTY MANAGEMENT PTE. LTD.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "INV-0454",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-11-28",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2025-12-12",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "30.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "30.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Stamping fee for tenancy agreement from 22/11/2025 to 21/06/2026 - LUCES JONALD BRYAN FRANCIA",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "30.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "30.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "7800",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:15.604Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | BH PROPERTY MANAGEMENT PTE. LTD. | 0.99 |
+| Total Amount | 30.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7800 | 0.80 | Stamping fee for tenancy agreement from 22/11/2... |
+
+---
+
+## AI Request - 2026-02-10T01:40:40.837Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 35638ms |
+| Input Tokens | 7008 |
+| Output Tokens | 673 |
+| Total Tokens | 10523 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1644 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "BH PROPERTY MANAGEMENT PTE. LTD.",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "INV-0465",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-17",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "19.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "19.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Stamping fee for tenancy agreement from 27/12/2025 to 26/03/2026 - NURMUKHAMED MUSSAYEV",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "19.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "19.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "7800",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:16.486Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | BH PROPERTY MANAGEMENT PTE. LTD. | 0.95 |
+| Total Amount | 19.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7800 | 0.85 | Stamping fee for tenancy agreement from 27/12/2... |
+
+---
+
+## AI Request - 2026-02-10T01:40:43.235Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 35259ms |
+| Input Tokens | 7008 |
+| Output Tokens | 703 |
+| Total Tokens | 10532 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1675 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "SALES_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "Bespoke Habitat Pte Ltd",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "MF- 12520",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-15",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "50.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "4.50",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "54.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201924330Z",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "CR3 - LUCES JONALD BRYAN FRANCIA - Period between 22/12/2025 and 21/1/2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:18.504Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.99 |
+| Vendor | BESPOKE HABITAT B47WA PTE. LTD. | 0.99 |
+| Total Amount | 54.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4200 | 0.80 | CR3 - LUCES JONALD BRYAN FRANCIA - Period betwe... |
+
+---
+
+## AI Request - 2026-02-10T01:40:40.238Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 39177ms |
+| Input Tokens | 7008 |
+| Output Tokens | 665 |
+| Total Tokens | 10818 |
+| Estimated Cost | $0.0083 |
+
+<details>
+<summary>Response (1628 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "BH PROPERTY MANAGEMENT PTE. LTD.",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "INV-0462",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-08",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2025-12-22",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "20.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "20.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Stamping fee for tenancy agreement from 12/12/2025 to 11/06/2026 RINALDI",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "20.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "20.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "7820",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:19.426Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | BH PROPERTY MANAGEMENT PTE. LTD. | 0.95 |
+| Total Amount | 20.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7820 | 0.80 | Stamping fee for tenancy agreement from 12/12/2... |
+
+---
+
+## AI Request - 2026-02-10T01:40:42.037Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 40777ms |
+| Input Tokens | 7008 |
+| Output Tokens | 693 |
+| Total Tokens | 11129 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1651 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "Bespoke Habitat Pte Ltd",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "MF- 12518",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.95
+  },
+  "dueDate": {
+    "value": "2026-01-15",
+    "confidence": 0.95
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "50.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "4.50",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "54.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201924330Z",
+    "confidence": 0.95
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "CR5 - XU HUA - Period between 03/12/2025 and 2/1/2026",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:22.824Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | Bespoke Habitat Pte Ltd | 0.95 |
+| Total Amount | 54.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6810 | 0.80 | CR5 - XU HUA - Period between 03/12/2025 and 2/... |
+
+---
+
+## AI Request - 2026-02-10T01:40:39.054Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 54862ms |
+| Input Tokens | 7008 |
+| Output Tokens | 673 |
+| Total Tokens | 12486 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1653 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "BH PROPERTY MANAGEMENT PTE. LTD.",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "INV-0451",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-11-28",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2025-12-12",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "30.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "30.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Stamping fee for tenancy agreement from 02/01/2026 to 10/05/2026 - Michel Elouan, Corentin, Marin",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "30.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "30.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6630",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:33.926Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | BH PROPERTY MANAGEMENT PTE. LTD. | 0.95 |
+| Total Amount | 30.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6630 | 0.80 | Stamping fee for tenancy agreement from 02/01/2... |
+
+---
+
+## AI Request - 2026-02-10T01:40:41.428Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 52553ms |
+| Input Tokens | 7008 |
+| Output Tokens | 1496 |
+| Total Tokens | 12429 |
+| Estimated Cost | $0.0100 |
+
+<details>
+<summary>Response (3729 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke Habitat Pte Ltd",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "L-000121",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-21",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "1000.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "90.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "1090.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201924330Z",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Tanglin View #07-07 - Licensing fee for Dec 2025 Staging Date : 13/06/2025",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "250.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "250.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "22.50",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5600",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Sunshine Plaza Residences B10 #10-18 - Licensing fee for Dec 2025 Staging Date : 22/10/2025",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "250.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "250.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "22.50",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5600",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Tanglin View B156A#15-19 - Licensing fee for Dec 2025 Staging Date : 05/09/2025",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "250.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "250.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "22.50",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5600",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "The Crest B101 #06-06 - Licensing fee for Dec 2025 Staging Date : 30/10/2025",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "250.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "250.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "22.50",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5600",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:41:33.992Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke Habitat Pte Ltd | 0.99 |
+| Total Amount | 1090.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5600 | 0.80 | Tanglin View #07-07 - Licensing fee for Dec 202... |
+| 2 | 5600 | 0.80 | Sunshine Plaza Residences B10 #10-18 - Licensin... |
+| 3 | 5600 | 0.80 | Tanglin View B156A#15-19 - Licensing fee for De... |
+| 4 | 5600 | 0.80 | The Crest B101 #06-06 - Licensing fee for Dec 2... |
+
+---
+
+## AI Request - 2026-02-10T01:50:29.539Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 26044ms |
+| Input Tokens | 7008 |
+| Output Tokens | 878 |
+| Total Tokens | 9956 |
+| Estimated Cost | $0.0088 |
+
+<details>
+<summary>Response (2244 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke Merchandise Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "BMI-2966",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-08",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-09",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "43.50",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "43.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Super Single Fitted Bedsheet + 1 Pillow cover + 1 bolster cover",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "18.50",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "18.50",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Super Single Comforter (Quilt)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "25.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "25.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:50:55.594Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke Merchandise Pte. Ltd. | 0.99 |
+| Total Amount | 43.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6810 | 0.80 | Super Single Fitted Bedsheet + 1 Pillow cover +... |
+| 2 | 6810 | 0.80 | Super Single Comforter (Quilt) |
+
+---
+
+## AI Request - 2026-02-10T01:50:30.155Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 36679ms |
+| Input Tokens | 7008 |
+| Output Tokens | 657 |
+| Total Tokens | 10477 |
+| Estimated Cost | $0.0083 |
+
+<details>
+<summary>Response (1637 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke Merchandise Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "BMI-3024",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-15",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-12",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "297.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "297.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Replacement of Foldable Study Table 80 x 40cm, Super Single Bedframe and Mattress",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "297.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "297.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6820",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:06.844Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke Merchandise Pte. Ltd. | 0.99 |
+| Total Amount | 297.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6820 | 0.80 | Replacement of Foldable Study Table 80 x 40cm, ... |
+
+---
+
+## AI Request - 2026-02-10T01:50:28.943Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 40998ms |
+| Input Tokens | 7008 |
+| Output Tokens | 833 |
+| Total Tokens | 11721 |
+| Estimated Cost | $0.0087 |
+
+<details>
+<summary>Response (2130 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke Merchandise Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "BMI-2964",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-08",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-09",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "43.50",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "43.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Super Single Fitted Bedsheet + 1 Pillow cover + 1 bolster cover",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "18.50",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "18.50",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.7
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Super Single Comforter (Quilt)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "25.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "25.00",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.7
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:09.952Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke Merchandise Pte. Ltd. | 0.99 |
+| Total Amount | 43.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6810 | 0.70 | Super Single Fitted Bedsheet + 1 Pillow cover +... |
+| 2 | 6810 | 0.70 | Super Single Comforter (Quilt) |
+
+---
+
+## AI Request - 2026-02-10T01:50:28.324Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 44697ms |
+| Input Tokens | 7008 |
+| Output Tokens | 869 |
+| Total Tokens | 11466 |
+| Estimated Cost | $0.0087 |
+
+<details>
+<summary>Response (2204 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke Merchandise Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "BMI-2933",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-08",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-09",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "49.50",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "49.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Queen Fitted Bedsheet",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "19.50",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "19.50",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.7
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Queen (Double) Comforter (Quilt)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "30.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "30.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.7
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:13.031Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke Merchandise Pte. Ltd. | 0.99 |
+| Total Amount | 49.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5210 | 0.70 | Queen Fitted Bedsheet |
+| 2 | 5210 | 0.70 | Queen (Double) Comforter (Quilt) |
+
+---
+
+## AI Request - 2026-02-10T01:50:33.132Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 41549ms |
+| Input Tokens | 7008 |
+| Output Tokens | 1988 |
+| Total Tokens | 11456 |
+| Estimated Cost | $0.0110 |
+
+<details>
+<summary>Response (4981 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "Bespoke Habitat Pte Ltd",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "MF- 12525",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.95
+  },
+  "dueDate": {
+    "value": "2026-01-15",
+    "confidence": 0.95
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "300.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "27.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "327.00",
+    "confidence": 0.95
+  },
+  "supplierGstNo": {
+    "value": "201924330Z",
+    "confidence": 0.95
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "MBR4 - HUANG SIHAN - Period between 02/12/2025 and 1/1/2026",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "PRS3 - LU JUN JIE - Period between 08/12/2025 and 7/1/2026",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "CR5 - NURMUKHAMED MUSSAYEV - Period between 27/12/2025 and 26/1/2026",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "MBR1 - PADILLA GARCIA DANIEL - Period between 01/12/2025 and 31/12/2025",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 5,
+      "description": {
+        "value": "ECON6 - RINALDI - Period between 12/12/2025 and 11/1/2026",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 6,
+      "description": {
+        "value": "PRS2 - SUTARIYA VATSAL HARSUKHBHAI - Period between 15/12/2025 and 14/1/2026",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:14.693Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | Bespoke Habitat Pte Ltd | 0.95 |
+| Total Amount | 327.00 SGD | 0.95 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6810 | 0.80 | MBR4 - HUANG SIHAN - Period between 02/12/2025 ... |
+| 2 | 6810 | 0.80 | PRS3 - LU JUN JIE - Period between 08/12/2025 a... |
+| 3 | 6810 | 0.80 | CR5 - NURMUKHAMED MUSSAYEV - Period between 27/... |
+| 4 | 6810 | 0.80 | MBR1 - PADILLA GARCIA DANIEL - Period between 0... |
+| 5 | 6810 | 0.80 | ECON6 - RINALDI - Period between 12/12/2025 and... |
+| 6 | 6810 | 0.80 | PRS2 - SUTARIYA VATSAL HARSUKHBHAI - Period bet... |
+
+---
+
+## AI Request - 2026-02-10T01:50:27.725Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 47079ms |
+| Input Tokens | 7008 |
+| Output Tokens | 872 |
+| Total Tokens | 11496 |
+| Estimated Cost | $0.0088 |
+
+<details>
+<summary>Response (2226 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "Bespoke Merchandise Pte. Ltd.",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "BMI-2684",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-11-19",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2025-12-10",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "42.50",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.9
+  },
+  "totalAmount": {
+    "value": "42.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Single Fitted Bedsheet + 1 Pillow Cover + 1 Bolster Cove",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "17.50",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "17.50",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Single Comforter (Quilt)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "25.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "25.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:14.815Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | Bespoke Merchandise Pte. Ltd. | 0.95 |
+| Total Amount | 42.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6810 | 0.80 | Single Fitted Bedsheet + 1 Pillow Cover + 1 Bol... |
+| 2 | 6810 | 0.80 | Single Comforter (Quilt) |
+
+---
+
+## AI Request - 2026-02-10T01:50:31.342Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 47551ms |
+| Input Tokens | 7008 |
+| Output Tokens | 696 |
+| Total Tokens | 11667 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1656 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "SALES_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "Bespoke Habitat Pte Ltd",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "MF- 12522",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.95
+  },
+  "dueDate": {
+    "value": "2026-01-15",
+    "confidence": 0.95
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "50.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "4.50",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "54.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201924330Z",
+    "confidence": 0.95
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "MBR6 - DU YIFAN - Period between 23/12/2025 and 22/1/2026",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.9
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.7
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:18.904Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.95 |
+| Vendor | BESPOKE HABITAT B47WA PTE. LTD. | 0.95 |
+| Total Amount | 54.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4200 | 0.70 | MBR6 - DU YIFAN - Period between 23/12/2025 and... |
+
+---
+
+## AI Request - 2026-02-10T01:50:57.688Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 26234ms |
+| Input Tokens | 7564 |
+| Output Tokens | 696 |
+| Total Tokens | 10038 |
+| Estimated Cost | $0.0090 |
+
+<details>
+<summary>Response (1652 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "StarHub Ltd",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "MR ANG CHEE WEI",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "0326684637012026",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2026-01-20",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-02-03",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "54.44",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "4.90",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "59.34",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0005650-C",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Home Broadband - UltraSpeed (Aft 50% off Broadband) (16/01/26 - 15/02/26)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "54.4390",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "54.44",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "4.90",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.95
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:23.934Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | StarHub Ltd | 0.99 |
+| Total Amount | 59.34 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6900 | 0.95 | Home Broadband - UltraSpeed (Aft 50% off Broadb... |
+
+---
+
+## AI Request - 2026-02-10T01:50:31.946Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 52364ms |
+| Input Tokens | 7008 |
+| Output Tokens | 1476 |
+| Total Tokens | 12370 |
+| Estimated Cost | $0.0100 |
+
+<details>
+<summary>Response (3652 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "SALES_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "Bespoke Habitat Pte Ltd",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "MF- 12523",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-15",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "200.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "18.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "218.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201924330Z",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "CR4 - ELOUAN CORENTIN MARIN MICHEL - Period between 02/12/2025 and 1/1/2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4420",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "CR1 - GAO YUANHUI - Period between 12/12/2025 and 11/1/2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4420",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "MBR5 - HUANG HAOAN - Period between 26/12/2025 and 25/1/2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4420",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "ECON2 - WANG YUBO - Period between 01/12/2025 and 31/12/2025",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4420",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:24.321Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.99 |
+| Vendor | BESPOKE HABITAT B47WA PTE. LTD. | 0.99 |
+| Total Amount | 218.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4420 | 0.80 | CR4 - ELOUAN CORENTIN MARIN MICHEL - Period bet... |
+| 2 | 4420 | 0.80 | CR1 - GAO YUANHUI - Period between 12/12/2025 a... |
+| 3 | 4420 | 0.80 | MBR5 - HUANG HAOAN - Period between 26/12/2025 ... |
+| 4 | 4420 | 0.80 | ECON2 - WANG YUBO - Period between 01/12/2025 a... |
+
+---
+
+## AI Request - 2026-02-10T01:50:57.039Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 27670ms |
+| Input Tokens | 7564 |
+| Output Tokens | 693 |
+| Total Tokens | 10313 |
+| Estimated Cost | $0.0089 |
+
+<details>
+<summary>Response (1643 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "StarHub Ltd",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "MR ANG CHEE WEI",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "0325801169122025",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-20",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-03",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "54.44",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "4.90",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "59.34",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0005650-C",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "UltraSpeed (Aft 50% off Broadband) - Monthly (16/12/25 - 15/01/26)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "54.44",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "54.44",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "4.90",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.95
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:24.721Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | StarHub Ltd | 0.99 |
+| Total Amount | 59.34 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6900 | 0.95 | UltraSpeed (Aft 50% off Broadband) - Monthly (1... |
+
+---
+
+## AI Request - 2026-02-10T01:50:30.741Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 65253ms |
+| Input Tokens | 7008 |
+| Output Tokens | 697 |
+| Total Tokens | 13495 |
+| Estimated Cost | $0.0084 |
+
+<details>
+<summary>Response (1658 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "SALES_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "Bespoke Habitat Pte Ltd",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "MF-12521",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.95
+  },
+  "dueDate": {
+    "value": "2026-01-15",
+    "confidence": 0.95
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "50.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "4.50",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "54.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201924330Z",
+    "confidence": 0.95
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "CR4 - FAN KAIXUAN - Period between 30/12/2025 and 29/1/2026",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:36.005Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.95 |
+| Vendor | BESPOKE HABITAT B47WA PTE. LTD. | 0.95 |
+| Total Amount | 54.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4200 | 0.80 | CR4 - FAN KAIXUAN - Period between 30/12/2025 a... |
+
+---
+
+## AI Request - 2026-02-10T01:50:56.381Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 43690ms |
+| Input Tokens | 7564 |
+| Output Tokens | 1466 |
+| Total Tokens | 12089 |
+| Estimated Cost | $0.0105 |
+
+<details>
+<summary>Response (3743 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "StarHub Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "MR ANG CHEE WEI",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "0326303319012026",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-01-11",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-25",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "82.4336",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "7.42",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "89.85",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0005650-C",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Home Broadband @ 156 PRINCE CHARLES CRESCENT #15-19 TANGLIN VIEW - UltraSpeed 5Gbps (Aft 43% off Broadband)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "35.6909",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "35.6909",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "3.21",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Home Broadband @ 156 PRINCE CHARLES CRESCENT #15-19 TANGLIN VIEW - CyberProtect 3 (Disc 100%:12Mth)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "0.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "0.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Home Broadband @ 10P BRADDELL HILL #04-68 BRADDELL VIEW - UltraSpeed 5Gbps (Aft Disc)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "44.8819",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "44.8819",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "4.04",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "Home Broadband @ 10P BRADDELL HILL #04-68 BRADDELL VIEW - CyberProtect 3 (Aft Disc)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "1.8608",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "1.8608",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.17",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.9
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:40.083Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | StarHub Ltd. | 0.99 |
+| Total Amount | 89.85 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6900 | 0.90 | Home Broadband @ 156 PRINCE CHARLES CRESCENT #1... |
+| 2 | 6900 | 0.90 | Home Broadband @ 156 PRINCE CHARLES CRESCENT #1... |
+| 3 | 6900 | 0.90 | Home Broadband @ 10P BRADDELL HILL #04-68 BRADD... |
+| 4 | 6900 | 0.90 | Home Broadband @ 10P BRADDELL HILL #04-68 BRADD... |
+
+---
+
+## AI Request - 2026-02-10T01:50:58.313Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 45424ms |
+| Input Tokens | 7564 |
+| Output Tokens | 1416 |
+| Total Tokens | 12036 |
+| Estimated Cost | $0.0104 |
+
+<details>
+<summary>Response (3650 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "StarHub Ltd",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "MR ANG CHEE WEI",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "0325448309122025",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-11",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2025-12-25",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "82.43",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "7.42",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "89.85",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0005650-C",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Home Broadband @ 156 PRINCE CHARLES CRESCENT - UltraSpeed 5Gbps (Aft 43% off Broadband)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "35.69",
+        "confidence": 0.98
+      },
+      "amount": {
+        "value": "35.69",
+        "confidence": 0.98
+      },
+      "gstAmount": {
+        "value": "3.21",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.95
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Home Broadband @ 156 PRINCE CHARLES CRESCENT - CyberProtect 3 (Disc 100%:12Mth)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "0.00",
+        "confidence": 0.98
+      },
+      "amount": {
+        "value": "0.00",
+        "confidence": 0.98
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.95
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Home Broadband @ 10P BRADDELL HILL - UltraSpeed 5Gbps (Aft Disc)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "44.88",
+        "confidence": 0.98
+      },
+      "amount": {
+        "value": "44.88",
+        "confidence": 0.98
+      },
+      "gstAmount": {
+        "value": "4.04",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.95
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "Home Broadband @ 10P BRADDELL HILL - CyberProtect 3 (Aft Disc)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "1.86",
+        "confidence": 0.98
+      },
+      "amount": {
+        "value": "1.86",
+        "confidence": 0.98
+      },
+      "gstAmount": {
+        "value": "0.17",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.95
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:43.749Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | StarHub Ltd | 0.99 |
+| Total Amount | 89.85 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6900 | 0.95 | Home Broadband @ 156 PRINCE CHARLES CRESCENT - ... |
+| 2 | 6900 | 0.95 | Home Broadband @ 156 PRINCE CHARLES CRESCENT - ... |
+| 3 | 6900 | 0.95 | Home Broadband @ 10P BRADDELL HILL - UltraSpeed... |
+| 4 | 6900 | 0.95 | Home Broadband @ 10P BRADDELL HILL - CyberProte... |
+
+---
+
+## AI Request - 2026-02-10T01:51:23.183Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 21748ms |
+| Input Tokens | 9113 |
+| Output Tokens | 961 |
+| Total Tokens | 11485 |
+| Estimated Cost | $0.0110 |
+
+<details>
+<summary>Response (2452 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "TREASURY",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "BANK_STATEMENT",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "DBS Bank Ltd",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "072-134094-1",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-01-31",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "12325.38",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "12325.38",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "MR-8500180-3",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Opening Balance",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "9164.45",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "9164.45",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.99
+      },
+      "accountCode": null
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Total Deposits",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "36235.70",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "36235.70",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.99
+      },
+      "accountCode": null
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Total Withdrawals",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "-33074.77",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "-33074.77",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.99
+      },
+      "accountCode": null
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:44.944Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | TREASURY | 0.99 |
+| Vendor | DBS Bank Ltd | 0.99 |
+| Total Amount | 12325.38 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | ❌ NOT ASSIGNED | - | Opening Balance |
+| 2 | ❌ NOT ASSIGNED | - | Total Deposits |
+| 3 | ❌ NOT ASSIGNED | - | Total Withdrawals |
+
+---
+
+## AI Request - 2026-02-10T01:50:32.540Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 73388ms |
+| Input Tokens | 7008 |
+| Output Tokens | 1221 |
+| Total Tokens | 14698 |
+| Estimated Cost | $0.0095 |
+
+<details>
+<summary>Response (2996 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_RECEIVABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "SALES_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.98
+  },
+  "customerName": {
+    "value": "Bespoke Habitat Pte Ltd",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "MF- 12524",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-01-15",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "150.00",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "13.50",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "163.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201924330Z",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "MBR4 - HUANG CHAO & HUANG DONGYUAN - Period between 24/12/2025 and 23/1/2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "CR1 - LIAO TENGYU - Period between 11/12/2025 and 10/1/2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "CR3 - ZHANG HAOGANG - Period between 26/12/2025 and 25/1/2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "4200",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.96
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:51:45.940Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_RECEIVABLE | 0.95 |
+| Vendor | BESPOKE HABITAT B47WA PTE. LTD. | 0.98 |
+| Total Amount | 163.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 4200 | 0.80 | MBR4 - HUANG CHAO & HUANG DONGYUAN - Period bet... |
+| 2 | 4200 | 0.80 | CR1 - LIAO TENGYU - Period between 11/12/2025 a... |
+| 3 | 4200 | 0.80 | CR3 - ZHANG HAOGANG - Period between 26/12/2025... |
+
+---
+
+## AI Request - 2026-02-10T01:51:34.786Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 35799ms |
+| Input Tokens | 6489 |
+| Output Tokens | 627 |
+| Total Tokens | 9825 |
+| Estimated Cost | $0.0077 |
+
+<details>
+<summary>Response (1558 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_CREDIT_NOTE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Bespoke Merchandise Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "BMC-3146",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2025-12-31",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "432.18",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "432.18",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Refund for following invoices that are 0% tax but were charged with tax amount: O25101500017 O25102400027",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "432.18",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "432.18",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.6
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T01:52:10.599Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Bespoke Merchandise Pte. Ltd. | 0.99 |
+| Total Amount | 432.18 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5210 | 0.60 | Refund for following invoices that are 0% tax b... |
+
+---
+
+## AI Error - 2026-02-10T01:56:45.035Z
+
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+
+### Error Details
+- **Type**: GoogleGenerativeAIError
+- **Message**: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent: fetch failed
+- **Retryable**: false
+
+<details>
+<summary>Stack Trace</summary>
+
+```
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:14902:13
+    at async makeRequest (/app/.next/server/chunks/node_modules_@google_generative-ai_dist_index_mjs_2be827c7._.js:400:20)
+    at async generateContent (/app/.next/server/chunks/node_modules_@google_generative-ai_dist_index_mjs_2be827c7._.js:847:22)
+    at async callGoogle (/app/.next/server/chunks/[root-of-the-server]__5ebf7d25._.js:13992:20)
+    at async callAIWithConnector (/app/.next/server/chunks/[root-of-the-server]__5ebf7d25._.js:14246:32)
+    at async performAIExtraction (/app/.next/server/chunks/[root-of-the-server]__5ebf7d25._.js:17972:26)
+    at async extractFields (/app/.next/server/chunks/[root-of-the-server]__5ebf7d25._.js:17281:71)
+```
+</details>
+
+---
+
+## AI Request - 2026-02-10T02:07:13.263Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 76513ms |
+| Input Tokens | 11090 |
+| Output Tokens | 1775 |
+| Total Tokens | 18099 |
+| Estimated Cost | $0.0146 |
+
+<details>
+<summary>Response (4718 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "CONTRACTS",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "LEASE_AGREEMENT",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "BESPOKE HABITAT B47WA PTE. LTD.",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "DOLLE THOMAS HUGUES LEON ROBERT",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "81508-807078-ECON2",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2025-12-29",
+    "confidence": 0.95
+  },
+  "dueDate": {
+    "value": "2026-01-10",
+    "confidence": 0.9
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "2257.20",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.9
+  },
+  "totalAmount": {
+    "value": "2257.20",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": null,
+    "confidence": 0
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Administrative Fee",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "54.50",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "54.50",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6600",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Move-Out Cleaning Fee",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "32.70",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "32.70",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "First Month Rental Fee",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "1045.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "1045.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6710",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "First Month Maintenance Fee",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "55.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "55.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6810",
+        "confidence": 0.8
+      }
+    },
+    {
+      "lineNo": 5,
+      "description": {
+        "value": "Security Deposit (Inclusive of Booking Fee, if any)",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "1045.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "1045.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "7900",
+        "confidence": 0.6
+      }
+    },
+    {
+      "lineNo": 6,
+      "description": {
+        "value": "Stamp Duty Fee",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "25.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "25.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "7800",
+        "confidence": 0.9
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-10T02:08:29.790Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | CONTRACTS | 0.95 |
+| Vendor | BESPOKE HABITAT B47WA PTE. LTD. | 0.95 |
+| Total Amount | 2257.20 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6600 | 0.80 | Administrative Fee |
+| 2 | 6810 | 0.80 | Move-Out Cleaning Fee |
+| 3 | 6710 | 0.90 | First Month Rental Fee |
+| 4 | 6810 | 0.80 | First Month Maintenance Fee |
+| 5 | 7900 | 0.60 | Security Deposit (Inclusive of Booking Fee, if ... |
+| 6 | 7800 | 0.90 | Stamp Duty Fee |
+
+---
+

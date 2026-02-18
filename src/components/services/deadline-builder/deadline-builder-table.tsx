@@ -25,6 +25,7 @@ export interface DeadlineBuilderTableProps {
   serviceStartDate?: string;
   defaultBillingAmount?: number | null;
   defaultBillingCurrency?: string | null;
+  defaultCategory?: DeadlineRuleInput['category'];
   error?: string;
   selectedRuleIndex?: number | null;
   onSelectRule?: (index: number | null) => void;
@@ -37,10 +38,13 @@ interface RulePreset {
   buildRule: (displayOrder: number) => DeadlineRuleInput;
 }
 
-const createBlankRule = (displayOrder: number): DeadlineRuleInput => ({
+const createBlankRule = (
+  displayOrder: number,
+  category: DeadlineRuleInput['category'] = 'CORPORATE_SECRETARY'
+): DeadlineRuleInput => ({
   taskName: '',
   description: null,
-  category: 'CORPORATE_SECRETARY',
+  category,
   ruleType: 'RULE_BASED',
   anchorType: 'FYE',
   offsetMonths: 0,
@@ -141,6 +145,7 @@ export function DeadlineBuilderTable({
   serviceStartDate,
   defaultBillingAmount,
   defaultBillingCurrency,
+  defaultCategory,
   error,
   selectedRuleIndex,
   onSelectRule,
@@ -210,9 +215,14 @@ export function DeadlineBuilderTable({
   }, [defaultBillingAmount, defaultBillingCurrency, handleRulesChange, rules]);
 
   const handleAddRule = useCallback(() => {
-    const newRule = createBlankRule(rules.length);
+    const preferredCategory =
+      rules[rules.length - 1]?.category ??
+      rules[0]?.category ??
+      defaultCategory ??
+      'CORPORATE_SECRETARY';
+    const newRule = createBlankRule(rules.length, preferredCategory);
     handleRulesChange([...rules, newRule]);
-  }, [rules, handleRulesChange]);
+  }, [defaultCategory, rules, handleRulesChange]);
 
   const handleAddPresetRule = useCallback(
     (presetId: string) => {
@@ -301,29 +311,29 @@ export function DeadlineBuilderTable({
           <p className="text-sm text-text-secondary mb-4">
             No deadline rules configured yet.
           </p>
-            <div className="flex flex-wrap justify-center gap-2 mb-3">
+          <div className="flex flex-wrap justify-center gap-2 mb-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={handleAddRule}
+            >
+              Add First Deadline
+            </Button>
+            {QUICK_RULE_PRESETS.map((preset) => (
               <Button
+                key={preset.id}
+                type="button"
                 variant="secondary"
-                size="sm"
-                leftIcon={<Plus className="w-4 h-4" />}
-                onClick={handleAddRule}
+                size="xs"
+                leftIcon={<Wand2 className="w-3 h-3" />}
+                onClick={() => handleAddPresetRule(preset.id)}
+                className="rounded-full"
               >
-                Add First Deadline
+                {preset.label}
               </Button>
-              {QUICK_RULE_PRESETS.map((preset) => (
-                <Button
-                  key={preset.id}
-                  type="button"
-                  variant="secondary"
-                  size="xs"
-                  leftIcon={<Wand2 className="w-3 h-3" />}
-                  onClick={() => handleAddPresetRule(preset.id)}
-                  className="rounded-full"
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </div>
+            ))}
+          </div>
           <p className="text-[11px] text-text-muted">
             Start with a quick preset, then fine-tune the rule details.
           </p>
@@ -334,7 +344,7 @@ export function DeadlineBuilderTable({
         <div className="space-y-4">
           <div className="min-w-0">
             <div className="border border-border-primary rounded-lg overflow-hidden">
-              <div className="hidden md:grid grid-cols-[1.75fr_2fr_170px_240px_240px] gap-2 px-3 py-2 bg-background-secondary/50 border-b border-border-primary">
+              <div className="hidden md:grid grid-cols-[1.5fr_minmax(320px,2.5fr)_150px_200px_180px] gap-3 px-3 py-2 bg-background-secondary/50 border-b border-border-primary">
                 <div className="text-xs font-semibold text-text-secondary">Task Name</div>
                 <div className="text-xs font-semibold text-text-secondary">Due Date Rule</div>
                 <div className="text-xs font-semibold text-text-secondary">Frequency</div>

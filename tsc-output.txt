@@ -1,0 +1,38 @@
+﻿__tests__/services/contract-service.service.test.ts(60,60): error TS2339: Property 'gte' does not exist on type 'string | Date | DateTimeFilter<"Deadline">'.
+  Property 'gte' does not exist on type 'string'.
+__tests__/services/contract-service.service.test.ts(133,60): error TS2339: Property 'gte' does not exist on type 'string | Date | DateTimeFilter<"Deadline">'.
+  Property 'gte' does not exist on type 'string'.
+src/app/(dashboard)/companies/[id]/page.tsx(284,13): error TS2322: Type '(refreshAllTabs?: boolean) => void' is not assignable to type 'MouseEventHandler<HTMLButtonElement>'.
+  Types of parameters 'refreshAllTabs' and 'event' are incompatible.
+    Type 'MouseEvent<HTMLButtonElement, MouseEvent>' is not assignable to type 'boolean | undefined'.
+src/app/(dashboard)/companies/[id]/services/[serviceId]/page.tsx(389,36): error TS2339: Property 'fyeYearOverride' does not exist on type 'ContractServiceWithRelations'.
+src/app/(dashboard)/companies/[id]/services/[serviceId]/page.tsx(626,9): error TS2322: Type '"RECURRING" | "ONE_TIME" | "BOTH"' is not assignable to type 'ServiceType | undefined'.
+  Type '"BOTH"' is not assignable to type 'ServiceType | undefined'.
+src/app/api/companies/[id]/contracts/[contractId]/services/[serviceId]/route.ts(108,49): error TS2345: Argument of type '{ id: string; name?: string | undefined; status?: "ACTIVE" | "COMPLETED" | "CANCELLED" | "PENDING" | undefined; displayOrder?: number | undefined; currency?: string | undefined; rate?: number | ... 1 more ... | undefined; ... 10 more ...; oneTimeRate?: number | ... 1 more ... | undefined; }' is not assignable to parameter of type 'UpdateContractServiceInput'.
+  Types of property 'serviceType' are incompatible.
+    Type '"RECURRING" | "ONE_TIME" | "BOTH" | undefined' is not assignable to type 'ServiceType | undefined'.
+      Type '"BOTH"' is not assignable to type 'ServiceType | undefined'.
+src/app/api/companies/[id]/services/[serviceId]/route.ts(146,56): error TS2345: Argument of type '{ id: string; name?: string | undefined; status?: "ACTIVE" | "COMPLETED" | "CANCELLED" | "PENDING" | undefined; displayOrder?: number | undefined; currency?: string | undefined; rate?: number | ... 1 more ... | undefined; ... 9 more ...; oneTimeRate?: number | ... 1 more ... | undefined; }' is not assignable to parameter of type 'UpdateContractServiceInput'.
+  Types of property 'serviceType' are incompatible.
+    Type '"RECURRING" | "ONE_TIME" | "BOTH" | undefined' is not assignable to type 'ServiceType | undefined'.
+      Type '"BOTH"' is not assignable to type 'ServiceType | undefined'.
+src/components/companies/company-detail/contact-details-tab.tsx(488,27): error TS2322: Type '{ children: (string | Element)[]; variant: "secondary"; size: "xs"; onClick: () => void; title: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+src/services/deadline.service.ts(321,24): error TS2551: Property 'completedById' does not exist on type 'DeadlineUpdateInput'. Did you mean 'completedBy'?
+src/services/deadline.service.ts(324,24): error TS2551: Property 'completedById' does not exist on type 'DeadlineUpdateInput'. Did you mean 'completedBy'?
+src/services/deadline.service.ts(350,5): error TS2322: Type '{ id?: Prisma.StringFieldUpdateOperationsInput | string; title: Prisma.StringFieldUpdateOperationsInput | string; description: Prisma.NullableStringFieldUpdateOperationsInput | string | null; ... 41 more ...; assigneeId: string | ... 1 more ... | undefined; }' is not assignable to type '(Without<DeadlineUpdateInput, DeadlineUncheckedUpdateInput> & DeadlineUncheckedUpdateInput) | (Without<...> & DeadlineUpdateInput)'.
+  Type '{ id?: Prisma.StringFieldUpdateOperationsInput | string; title: Prisma.StringFieldUpdateOperationsInput | string; description: Prisma.NullableStringFieldUpdateOperationsInput | string | null; ... 41 more ...; assigneeId: string | ... 1 more ... | undefined; }' is not assignable to type 'Without<DeadlineUncheckedUpdateInput, DeadlineUpdateInput> & DeadlineUpdateInput'.
+    Type '{ id?: Prisma.StringFieldUpdateOperationsInput | string; title: Prisma.StringFieldUpdateOperationsInput | string; description: Prisma.NullableStringFieldUpdateOperationsInput | string | null; ... 41 more ...; assigneeId: string | ... 1 more ... | undefined; }' is not assignable to type 'Without<DeadlineUncheckedUpdateInput, DeadlineUpdateInput>'.
+      Types of property 'assigneeId' are incompatible.
+        Type 'string | null | undefined' is not assignable to type 'undefined'.
+          Type 'null' is not assignable to type 'undefined'.
+src/services/deadline.service.ts(435,5): error TS2561: Object literal may only specify known properties, but 'completedById' does not exist in type 'DeadlineUpdateInput'. Did you mean to write 'completedBy'?
+src/services/deadline.service.ts(523,5): error TS2322: Type '{ id?: Prisma.StringFieldUpdateOperationsInput | string; title?: Prisma.StringFieldUpdateOperationsInput | string; description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null; ... 41 more ...; completedById: null; }' is not assignable to type '(Without<DeadlineUpdateInput, DeadlineUncheckedUpdateInput> & DeadlineUncheckedUpdateInput) | (Without<...> & DeadlineUpdateInput)'.
+  Type '{ id?: Prisma.StringFieldUpdateOperationsInput | string; title?: Prisma.StringFieldUpdateOperationsInput | string; description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null; ... 41 more ...; completedById: null; }' is not assignable to type 'Without<DeadlineUpdateInput, DeadlineUncheckedUpdateInput> & DeadlineUncheckedUpdateInput'.
+    Type '{ id?: Prisma.StringFieldUpdateOperationsInput | string; title?: Prisma.StringFieldUpdateOperationsInput | string; description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null; ... 41 more ...; completedById: null; }' is not assignable to type 'Without<DeadlineUpdateInput, DeadlineUncheckedUpdateInput>'.
+      Types of property 'tenant' are incompatible.
+        Type 'TenantUpdateOneRequiredWithoutDeadlinesNestedInput | undefined' is not assignable to type 'undefined'.
+          Type 'TenantUpdateOneRequiredWithoutDeadlinesNestedInput' is not assignable to type 'undefined'.
+src/services/deadline.service.ts(839,23): error TS2488: Type 'DeadlineWhereInput | DeadlineWhereInput[]' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/services/document-ai.service.ts(486,67): error TS2694: Namespace '"C:/Users/Scofieldkoh/Documents/oakcloud/node_modules/@prisma/client/default"' has no exported member 'Prisma'.
+src/services/document-ai.service.ts(495,67): error TS2694: Namespace '"C:/Users/Scofieldkoh/Documents/oakcloud/node_modules/@prisma/client/default"' has no exported member 'Prisma'.

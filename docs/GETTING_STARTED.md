@@ -116,7 +116,7 @@ After seeding, login with:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Super Admin | `admin@oakcloud.local` | `admin123` |
+| Super Admin | `admin@oaktreesolutions.com.sg` | `Preparefortrouble!` |
 
 > **Security**: Change this password in production!
 

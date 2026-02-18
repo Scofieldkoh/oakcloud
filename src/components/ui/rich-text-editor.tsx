@@ -3,12 +3,15 @@
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 export type { Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import OrderedList from '@tiptap/extension-ordered-list';
+import ListItem from '@tiptap/extension-list-item';
 import { Link as TiptapLink } from '@tiptap/extension-link';
 import { Underline } from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import { FontFamily } from '@tiptap/extension-font-family';
 import { TextAlign } from '@tiptap/extension-text-align';
+import { Node as TiptapNode, Extension } from '@tiptap/core';
 import DOMPurify from 'dompurify';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
@@ -29,11 +32,12 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Indent,
+  Indent as IndentIcon,
   Outdent,
   Undo,
   Redo,
   Type,
+  CaseLower,
 } from 'lucide-react';
 
 // ============================================================================
@@ -114,11 +118,10 @@ function ToolbarButton({
       title={title}
       aria-label={title}
       aria-pressed={isToggle ? isActive : undefined}
-      className={`p-1.5 rounded transition-colors ${
-        isActive
-          ? 'bg-background-tertiary text-text-primary'
-          : 'text-text-muted hover:bg-background-secondary hover:text-text-primary'
-      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`p-1.5 rounded transition-colors ${isActive
+        ? 'bg-background-tertiary text-text-primary'
+        : 'text-text-muted hover:bg-background-secondary hover:text-text-primary'
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       {children}
     </button>
@@ -446,25 +449,43 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        isActive={editor.isActive('orderedList')}
+        isActive={editor.isActive('orderedList') && !editor.getAttributes('orderedList').class?.includes('list-alpha')}
         isToggle
-        title="Numbered List"
+        title="Numbered List (1, 2, 3)"
       >
         <ListOrdered className="w-4 h-4" />
       </ToolbarButton>
 
+      <ToolbarButton
+        onClick={() => {
+          // Toggle alphabet ordered list
+          if (editor.isActive('orderedList') && editor.getAttributes('orderedList').listStyleType === 'lower-alpha') {
+            editor.chain().focus().toggleOrderedList().run();
+          } else if (editor.isActive('orderedList')) {
+            // Already in ordered list, just change the style
+            editor.chain().focus().updateAttributes('orderedList', { listStyleType: 'lower-alpha' }).run();
+          } else {
+            // Not in list, create one and set style
+            editor.chain().focus().toggleOrderedList().updateAttributes('orderedList', { listStyleType: 'lower-alpha' }).run();
+          }
+        }}
+        isActive={editor.isActive('orderedList') && editor.getAttributes('orderedList').listStyleType === 'lower-alpha'}
+        isToggle
+        title="Alphabet List (a, b, c)"
+      >
+        <CaseLower className="w-4 h-4" />
+      </ToolbarButton>
+
       {/* Indent/Outdent */}
       <ToolbarButton
-        onClick={() => editor.chain().focus().sinkListItem('listItem').run()}
-        disabled={!editor.can().sinkListItem('listItem')}
+        onClick={() => editor.chain().focus().indent().run()}
         title="Increase Indent"
       >
-        <Indent className="w-4 h-4" />
+        <IndentIcon className="w-4 h-4" />
       </ToolbarButton>
 
       <ToolbarButton
-        onClick={() => editor.chain().focus().liftListItem('listItem').run()}
-        disabled={!editor.can().liftListItem('listItem')}
+        onClick={() => editor.chain().focus().outdent().run()}
         title="Decrease Indent"
       >
         <Outdent className="w-4 h-4" />
@@ -496,64 +517,66 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <div className="w-px h-5 bg-border-primary mx-1" />
 
       {/* Links */}
-      {showLinkInput ? (
-        <div className="flex items-center gap-1">
-          <input
-            type="text"
-            value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
-            placeholder="Enter URL..."
-            className="px-2 py-1 text-xs border border-border-primary rounded bg-background-elevated text-text-primary w-40"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                setLink();
-              } else if (e.key === 'Escape') {
+      {
+        showLinkInput ? (
+          <div className="flex items-center gap-1">
+            <input
+              type="text"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="Enter URL..."
+              className="px-2 py-1 text-xs border border-border-primary rounded bg-background-elevated text-text-primary w-40"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  setLink();
+                } else if (e.key === 'Escape') {
+                  setShowLinkInput(false);
+                  setLinkUrl('');
+                }
+              }}
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={setLink}
+              className="px-2 py-1 text-xs bg-accent-primary text-white rounded hover:bg-accent-primary/90"
+            >
+              Set
+            </button>
+            <button
+              type="button"
+              onClick={() => {
                 setShowLinkInput(false);
                 setLinkUrl('');
-              }
-            }}
-            autoFocus
-          />
-          <button
-            type="button"
-            onClick={setLink}
-            className="px-2 py-1 text-xs bg-accent-primary text-white rounded hover:bg-accent-primary/90"
-          >
-            Set
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setShowLinkInput(false);
-              setLinkUrl('');
-            }}
-            className="px-2 py-1 text-xs text-text-muted hover:text-text-primary"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <>
-          <ToolbarButton
-            onClick={handleLinkClick}
-            isActive={editor.isActive('link')}
-            isToggle
-            title="Add Link"
-          >
-            <LinkIcon className="w-4 h-4" />
-          </ToolbarButton>
-
-          {editor.isActive('link') && (
-            <ToolbarButton
-              onClick={() => editor.chain().focus().unsetLink().run()}
-              title="Remove Link"
+              }}
+              className="px-2 py-1 text-xs text-text-muted hover:text-text-primary"
             >
-              <Unlink className="w-4 h-4" />
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <>
+            <ToolbarButton
+              onClick={handleLinkClick}
+              isActive={editor.isActive('link')}
+              isToggle
+              title="Add Link"
+            >
+              <LinkIcon className="w-4 h-4" />
             </ToolbarButton>
-          )}
-        </>
-      )}
+
+            {editor.isActive('link') && (
+              <ToolbarButton
+                onClick={() => editor.chain().focus().unsetLink().run()}
+                title="Remove Link"
+              >
+                <Unlink className="w-4 h-4" />
+              </ToolbarButton>
+            )}
+          </>
+        )
+      }
 
       <div className="w-px h-5 bg-border-primary mx-1" />
 
@@ -580,7 +603,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <RemoveFormatting className="w-4 h-4" />
       </ToolbarButton>
-    </div>
+    </div >
   );
 }
 
@@ -613,6 +636,310 @@ const CustomTextStyle = TextStyle.extend({
 });
 
 // ============================================================================
+// Custom Ordered List Extension (with list-style-type and start number support)
+// ============================================================================
+
+const CustomOrderedList = OrderedList.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      start: {
+        default: 1,
+        parseHTML: (element) => {
+          return element.hasAttribute('start')
+            ? parseInt(element.getAttribute('start') || '1', 10)
+            : 1;
+        },
+        renderHTML: (attributes) => {
+          if (attributes.start === 1) {
+            return {};
+          }
+          return {
+            start: attributes.start,
+            style: `--list-start: ${attributes.start - 1}`, // CSS variable for counter offset
+          };
+        },
+      },
+      listStyleType: {
+        default: 'decimal',
+        parseHTML: (element) => {
+          // Check for list-alpha class or inline style
+          if (element.classList.contains('list-alpha')) {
+            return 'lower-alpha';
+          }
+          return element.style.listStyleType || 'decimal';
+        },
+        renderHTML: (attributes) => {
+          if (attributes.listStyleType === 'lower-alpha') {
+            // Use class for CSS counter-based styling
+            return {
+              class: 'list-alpha',
+            };
+          }
+          return {};
+        },
+      },
+    };
+  },
+});
+
+// ============================================================================
+// Custom List Item Extension (with multi-block content support)
+// ============================================================================
+
+const CustomListItem = ListItem.extend({
+  // Allow multiple block elements: paragraph followed by any blocks (paragraphs, lists)
+  content: 'paragraph block*',
+
+  addKeyboardShortcuts() {
+    return {
+      // Enter key: default behavior - create new list item
+      // (Empty paragraph at end of only content will exit list)
+      Enter: () => {
+        if (!this.editor.isActive('listItem')) {
+          return false;
+        }
+        // Use default TipTap behavior: split list item
+        return this.editor.commands.splitListItem('listItem');
+      },
+
+      // Shift+Enter: create new paragraph within the same list item
+      'Shift-Enter': () => {
+        if (!this.editor.isActive('listItem')) {
+          return false;
+        }
+        // Create a new paragraph within the current list item
+        return this.editor.chain().splitBlock().run();
+      },
+
+      // Backspace at start of empty paragraph in list item
+      Backspace: () => {
+        const { state } = this.editor;
+        const { selection } = state;
+        const { $from, empty } = selection;
+
+        if (!empty || !this.editor.isActive('listItem')) {
+          return false;
+        }
+
+        const parentNode = $from.parent;
+        const isEmptyParagraph = parentNode.type.name === 'paragraph' && parentNode.content.size === 0;
+        const isAtStart = $from.parentOffset === 0;
+
+        if (isEmptyParagraph && isAtStart) {
+          // Find the list item
+          let listItemDepth = -1;
+          for (let d = $from.depth; d > 0; d--) {
+            if ($from.node(d).type.name === 'listItem') {
+              listItemDepth = d;
+              break;
+            }
+          }
+
+          if (listItemDepth !== -1) {
+            const listItem = $from.node(listItemDepth);
+
+            // If only one paragraph, use default backspace (lifts out of list)
+            if (listItem.childCount === 1) {
+              return false; // Let default handler deal with it
+            }
+
+            // Multiple blocks: delete the empty paragraph
+            return this.editor.commands.deleteNode('paragraph');
+          }
+        }
+
+        return false;
+      },
+    };
+  },
+});
+
+// ============================================================================
+// Custom Indent Extension (for general text indentation)
+// ============================================================================
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    indent: {
+      indent: () => ReturnType;
+      outdent: () => ReturnType;
+    };
+  }
+}
+
+const IndentExtension = Extension.create({
+  name: 'indent',
+
+  addOptions() {
+    return {
+      // Only indent top-level paragraphs/headings and list wrappers
+      // Don't include 'paragraph' here as it would indent paragraphs inside lists
+      types: ['bulletList', 'orderedList'],
+      paragraphTypes: ['paragraph', 'heading'], // For standalone paragraphs only
+      indentRange: 24, // pixels per indent level
+      minIndent: 0,
+      maxIndent: 144, // max 6 levels of indentation
+    };
+  },
+
+  addGlobalAttributes() {
+    return [
+      {
+        // Include both list types and paragraph types for indent attribute
+        types: [...this.options.types, ...this.options.paragraphTypes],
+        attributes: {
+          indent: {
+            default: 0,
+            parseHTML: element => {
+              const marginLeft = element.style.marginLeft;
+              if (marginLeft) {
+                return parseInt(marginLeft, 10) || 0;
+              }
+              return 0;
+            },
+            renderHTML: attributes => {
+              if (!attributes.indent || attributes.indent === 0) {
+                return {};
+              }
+              return {
+                style: `margin-left: ${attributes.indent}px`,
+              };
+            },
+          },
+        },
+      },
+    ];
+  },
+
+  addCommands() {
+    return {
+      indent:
+        () =>
+          ({ editor, tr, state, dispatch }) => {
+            // First, try to use TipTap's built-in sinkListItem for nested lists
+            if (editor.can().sinkListItem('listItem')) {
+              return editor.chain().sinkListItem('listItem').run();
+            }
+
+            // Otherwise, apply margin-left indentation for paragraphs/headings
+            const { selection } = state;
+            const { from, to } = selection;
+            let changed = false;
+
+            state.doc.nodesBetween(from, to, (node, pos, parent) => {
+              const nodeTypeName = node.type.name;
+
+              // For top-level lists, apply margin-left indent
+              if (this.options.types.includes(nodeTypeName) && parent?.type.name === 'doc') {
+                const currentIndent = node.attrs.indent || 0;
+                const newIndent = Math.min(
+                  currentIndent + this.options.indentRange,
+                  this.options.maxIndent
+                );
+                if (newIndent !== currentIndent) {
+                  tr.setNodeMarkup(pos, undefined, {
+                    ...node.attrs,
+                    indent: newIndent,
+                  });
+                  changed = true;
+                }
+              }
+              // For paragraphs/headings at document root, apply margin-left
+              else if (
+                this.options.paragraphTypes.includes(nodeTypeName) &&
+                parent?.type.name === 'doc'
+              ) {
+                const currentIndent = node.attrs.indent || 0;
+                const newIndent = Math.min(
+                  currentIndent + this.options.indentRange,
+                  this.options.maxIndent
+                );
+                if (newIndent !== currentIndent) {
+                  tr.setNodeMarkup(pos, undefined, {
+                    ...node.attrs,
+                    indent: newIndent,
+                  });
+                  changed = true;
+                }
+              }
+            });
+
+            if (changed && dispatch) {
+              dispatch(tr);
+            }
+
+            return changed;
+          },
+      outdent:
+        () =>
+          ({ editor, tr, state, dispatch }) => {
+            // First, try to use TipTap's built-in liftListItem for nested lists
+            if (editor.can().liftListItem('listItem')) {
+              return editor.chain().liftListItem('listItem').run();
+            }
+
+            // Otherwise, apply margin-left outdent for paragraphs/headings
+            const { selection } = state;
+            const { from, to } = selection;
+            let changed = false;
+
+            state.doc.nodesBetween(from, to, (node, pos, parent) => {
+              const nodeTypeName = node.type.name;
+
+              // For top-level lists, apply margin-left outdent
+              if (this.options.types.includes(nodeTypeName) && parent?.type.name === 'doc') {
+                const currentIndent = node.attrs.indent || 0;
+                const newIndent = Math.max(
+                  currentIndent - this.options.indentRange,
+                  this.options.minIndent
+                );
+                if (newIndent !== currentIndent) {
+                  tr.setNodeMarkup(pos, undefined, {
+                    ...node.attrs,
+                    indent: newIndent,
+                  });
+                  changed = true;
+                }
+              }
+              // For paragraphs/headings at document root, apply margin-left
+              else if (
+                this.options.paragraphTypes.includes(nodeTypeName) &&
+                parent?.type.name === 'doc'
+              ) {
+                const currentIndent = node.attrs.indent || 0;
+                const newIndent = Math.max(
+                  currentIndent - this.options.indentRange,
+                  this.options.minIndent
+                );
+                if (newIndent !== currentIndent) {
+                  tr.setNodeMarkup(pos, undefined, {
+                    ...node.attrs,
+                    indent: newIndent,
+                  });
+                  changed = true;
+                }
+              }
+            });
+
+            if (changed && dispatch) {
+              dispatch(tr);
+            }
+
+            return changed;
+          },
+    };
+  },
+
+  addKeyboardShortcuts() {
+    return {
+      Tab: () => this.editor.commands.indent(),
+      'Shift-Tab': () => this.editor.commands.outdent(),
+    };
+  },
+});
+
+// ============================================================================
 // Main Editor Component
 // ============================================================================
 
@@ -632,7 +959,11 @@ export function RichTextEditor({
         heading: false,
         codeBlock: false,
         blockquote: false,
+        orderedList: false, // Use CustomOrderedList instead
+        listItem: false, // Use CustomListItem instead
       }),
+      CustomOrderedList,
+      CustomListItem,
       Underline,
       CustomTextStyle,
       Color,
@@ -650,6 +981,7 @@ export function RichTextEditor({
           rel: 'noopener noreferrer',
         },
       }),
+      IndentExtension,
     ],
     content: value,
     editable: !readOnly,

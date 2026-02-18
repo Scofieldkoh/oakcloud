@@ -25,7 +25,10 @@ describe('Contract Service deadline cascade cleanup', () => {
     vi.useRealTimers();
   });
 
-  it('removes future deadlines when a service is stopped with an end date', async () => {
+  it('stopping a service removes future deadlines from the provided stop date', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-05T10:30:00.000Z'));
+
     vi.mocked(prisma.contractService.findFirst).mockResolvedValue({
       id: 'service-1',
       name: 'Bookkeeping',
@@ -51,15 +54,16 @@ describe('Contract Service deadline cascade cleanup', () => {
       {
         id: 'service-1',
         status: 'CANCELLED',
-        endDate: '2026-02-05',
+        endDate: '2026-02-20',
       },
       { tenantId: 'tenant-1', userId: 'user-1' }
     );
 
     const call = vi.mocked(prisma.deadline.deleteMany).mock.calls[0][0];
-    const actualThreshold = call?.where?.statutoryDueDate?.gte as Date;
+    const statutoryDueDate = call?.where?.statutoryDueDate as { gte: Date } | undefined;
+    const actualThreshold = statutoryDueDate?.gte as Date;
 
-    const expectedThreshold = new Date('2026-02-05');
+    const expectedThreshold = new Date('2026-02-20');
     expectedThreshold.setHours(0, 0, 0, 0);
     expectedThreshold.setDate(expectedThreshold.getDate() + 1);
 
@@ -104,9 +108,6 @@ describe('Contract Service deadline cascade cleanup', () => {
   });
 
   it('removes future deadlines when deleting a service (cutoff = deletion date)', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-02-05T10:30:00.000Z'));
-
     vi.mocked(prisma.contractService.findFirst).mockResolvedValue({
       id: 'service-1',
       name: 'Bookkeeping',
@@ -130,18 +131,57 @@ describe('Contract Service deadline cascade cleanup', () => {
     await deleteContractService('service-1', { tenantId: 'tenant-1', userId: 'user-1' });
 
     const call = vi.mocked(prisma.deadline.deleteMany).mock.calls[0][0];
-    const actualThreshold = call?.where?.statutoryDueDate?.gte as Date;
-    const now = new Date();
-    const expectedThreshold = new Date(now);
-    expectedThreshold.setHours(0, 0, 0, 0);
-    expectedThreshold.setDate(expectedThreshold.getDate() + 1);
-
-    expect(actualThreshold.toISOString()).toBe(expectedThreshold.toISOString());
     expect(call?.where).toMatchObject({
       tenantId: 'tenant-1',
       companyId: 'company-1',
       contractServiceId: 'service-1',
       deletedAt: null,
     });
+    expect(call?.where?.statutoryDueDate).toBeUndefined();
+  });
+
+  it('stopping a service uses existing end date as stop date when no end date is provided in update', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-05T10:30:00.000Z'));
+
+    vi.mocked(prisma.contractService.findFirst).mockResolvedValue({
+      id: 'service-1',
+      name: 'Bookkeeping',
+      tenantId: 'tenant-1',
+      status: 'ACTIVE',
+      endDate: new Date('2026-12-31T00:00:00.000Z'),
+      contract: {
+        id: 'contract-1',
+        title: 'Main contract',
+        companyId: 'company-1',
+      },
+    } as never);
+
+    vi.mocked(prisma.contractService.update).mockResolvedValue({
+      id: 'service-1',
+      name: 'Bookkeeping',
+      status: 'CANCELLED',
+      endDate: new Date('2026-12-31T00:00:00.000Z'),
+    } as never);
+
+    vi.mocked(prisma.deadline.deleteMany).mockResolvedValue({ count: 4 } as never);
+
+    await updateContractService(
+      {
+        id: 'service-1',
+        status: 'CANCELLED',
+      },
+      { tenantId: 'tenant-1', userId: 'user-1' }
+    );
+
+    const call = vi.mocked(prisma.deadline.deleteMany).mock.calls[0][0];
+    const statutoryDueDate = call?.where?.statutoryDueDate as { gte: Date } | undefined;
+    const actualThreshold = statutoryDueDate?.gte as Date;
+
+    const expectedThreshold = new Date('2026-12-31T00:00:00.000Z');
+    expectedThreshold.setHours(0, 0, 0, 0);
+    expectedThreshold.setDate(expectedThreshold.getDate() + 1);
+
+    expect(actualThreshold.toISOString()).toBe(expectedThreshold.toISOString());
   });
 });

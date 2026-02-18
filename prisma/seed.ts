@@ -32,23 +32,39 @@ async function main() {
   // =========================================================================
   console.log('Step 1: Creating SUPER_ADMIN user...');
 
-  const passwordHash = await bcrypt.hash('admin123', 10);
+  const superAdminEmail = 'admin@oaktreesolutions.com.sg';
+  const legacySuperAdminEmail = 'admin@oakcloud.local';
+  const superAdminPassword = 'Preparefortrouble!';
+  const passwordHash = await bcrypt.hash(superAdminPassword, 10);
 
   // Super Admin (no tenant - system-wide admin)
-  const superAdmin = await prisma.user.upsert({
-    where: { email: 'admin@oakcloud.local' },
-    update: {
-      passwordHash,
-      isActive: true,
-    },
-    create: {
-      email: 'admin@oakcloud.local',
-      passwordHash,
-      firstName: 'Super',
-      lastName: 'Admin',
-      isActive: true,
+  const existingSuperAdmin = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: superAdminEmail },
+        { email: legacySuperAdminEmail },
+      ],
     },
   });
+
+  const superAdmin = existingSuperAdmin
+    ? await prisma.user.update({
+      where: { id: existingSuperAdmin.id },
+      data: {
+        email: superAdminEmail,
+        passwordHash,
+        isActive: true,
+      },
+    })
+    : await prisma.user.create({
+      data: {
+        email: superAdminEmail,
+        passwordHash,
+        firstName: 'Super',
+        lastName: 'Admin',
+        isActive: true,
+      },
+    });
   console.log(`  Created/updated SUPER_ADMIN: ${superAdmin.email}\n`);
 
   // =========================================================================
@@ -526,8 +542,8 @@ async function main() {
   console.log('========================================');
   console.log('\nDefault credentials:');
   console.log('  Super Admin:');
-  console.log('    Email: admin@oakcloud.local');
-  console.log('    Password: admin123');
+  console.log('    Email: admin@oaktreesolutions.com.sg');
+  console.log('    Password: Preparefortrouble!');
   console.log('\nNote: Change this password in production!');
   console.log('\nTo create tenants, users, and companies, use the');
   console.log('Super Admin account to access the Admin dashboard.\n');

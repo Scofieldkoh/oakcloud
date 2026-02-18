@@ -7,7 +7,9 @@ import {
   ArrowUpDown,
   CheckSquare,
   MinusSquare,
+  Plus,
   Square,
+  StickyNote,
   X,
 } from 'lucide-react';
 import { cn, formatCurrency, formatDateShort } from '@/lib/utils';
@@ -19,6 +21,7 @@ import {
   DeadlineStatusBadge,
   DeadlineTimingBadge,
   DeadlineCategoryBadge,
+  DeadlineBillingBadge,
 } from '@/components/deadlines/deadline-status-badge';
 import type { DeadlineWithRelations } from '@/hooks/use-deadlines';
 import type { DeadlineBillingStatus, DeadlineCategory, DeadlineStatus } from '@/generated/prisma';
@@ -68,7 +71,6 @@ const TIMING_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
 
 const WORKFLOW_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '', label: 'All' },
-  { value: 'ACTIVE', label: 'Active (Not Completed)' },
   { value: 'PENDING', label: 'Pending' },
   { value: 'PENDING_CLIENT', label: 'Pending Client' },
   { value: 'IN_PROGRESS', label: 'In Progress' },
@@ -101,9 +103,10 @@ const COLUMN_IDS = [
   'company',
   'service',
   'category',
+  'dueDate',
   'status',
   'internalStatus',
-  'dueDate',
+  'notes',
   'billing',
   'amount',
   'assignee',
@@ -117,9 +120,10 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
   company: 'Company',
   service: 'Service',
   category: 'Category',
+  dueDate: 'Due Date',
   status: 'Status',
   internalStatus: 'Internal Status',
-  dueDate: 'Due Date',
+  notes: 'Notes',
   billing: 'Billing',
   amount: 'Amount',
   assignee: 'Assignee',
@@ -131,9 +135,9 @@ const COLUMN_SORT_FIELDS: Partial<Record<ColumnId, string>> = {
   company: 'company',
   service: 'service',
   category: 'category',
+  dueDate: 'statutoryDueDate',
   status: 'statutoryDueDate',
   internalStatus: 'status',
-  dueDate: 'statutoryDueDate',
   billing: 'billingStatus',
   amount: 'amount',
   assignee: 'assignee',
@@ -145,9 +149,10 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<ColumnId, number>> = {
   company: 200,
   service: 200,
   category: 140,
+  dueDate: 170,
   status: 120,
   internalStatus: 150,
-  dueDate: 170,
+  notes: 60,
   billing: 140,
   amount: 140,
   assignee: 170,
@@ -171,20 +176,6 @@ function getStatusFilterValue(status?: DeadlineStatus[]): string {
   return status.length === 1 ? status[0] : '';
 }
 
-function getBillingLabel(
-  status?: DeadlineBillingStatus | null,
-  deadlineStatus?: DeadlineStatus
-): string {
-  if (!status) return 'Pending';
-  if (
-    deadlineStatus === 'COMPLETED' &&
-    (status === 'TO_BE_BILLED' || status === 'PENDING')
-  ) {
-    return 'To be billed';
-  }
-  return BILLING_STATUS_OPTIONS.find((s) => s.value === status)?.label ?? status;
-}
-
 export interface DeadlineTableProps {
   deadlines: DeadlineWithRelations[];
   isLoading?: boolean;
@@ -205,6 +196,7 @@ export interface DeadlineTableProps {
   assigneeFilterOptions?: DeadlineAssigneeOption[];
   columnWidths?: Partial<Record<ColumnId, number>>;
   onColumnWidthChange?: (columnId: ColumnId, width: number) => void;
+  onEditNotes?: (deadline: DeadlineWithRelations) => void;
 }
 
 export function DeadlineTable({
@@ -227,6 +219,7 @@ export function DeadlineTable({
   assigneeFilterOptions = [],
   columnWidths: externalColumnWidths,
   onColumnWidthChange,
+  onEditNotes,
 }: DeadlineTableProps) {
   const [internalColumnWidths, setInternalColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
   const columnWidths = externalColumnWidths ?? internalColumnWidths;
@@ -406,8 +399,6 @@ export function DeadlineTable({
               onChange={(val) => {
                 if (!val) {
                   onInlineFilterChange({ status: undefined });
-                } else if (val === 'ACTIVE') {
-                  onInlineFilterChange({ status: ['PENDING', 'PENDING_CLIENT', 'IN_PROGRESS', 'PENDING_REVIEW'] });
                 } else {
                   onInlineFilterChange({ status: [val as DeadlineStatus] });
                 }
@@ -421,18 +412,21 @@ export function DeadlineTable({
           );
         }
 
+        case 'notes':
+          return null;
+
         case 'dueDate':
           return (
             <DatePicker
               value={
                 inlineFilters.dueDateFrom || inlineFilters.dueDateTo
                   ? {
-                      mode: 'range' as const,
-                      range: {
-                        from: inlineFilters.dueDateFrom ? new Date(inlineFilters.dueDateFrom) : undefined,
-                        to: inlineFilters.dueDateTo ? new Date(inlineFilters.dueDateTo) : undefined,
-                      },
-                    }
+                    mode: 'range' as const,
+                    range: {
+                      from: inlineFilters.dueDateFrom ? new Date(inlineFilters.dueDateFrom) : undefined,
+                      to: inlineFilters.dueDateTo ? new Date(inlineFilters.dueDateTo) : undefined,
+                    },
+                  }
                   : undefined
               }
               onChange={(value: DatePickerValue | undefined) => {
@@ -475,12 +469,12 @@ export function DeadlineTable({
               value={
                 inlineFilters.amountFrom !== undefined || inlineFilters.amountTo !== undefined
                   ? {
-                      mode: 'range',
-                      range: {
-                        from: inlineFilters.amountFrom,
-                        to: inlineFilters.amountTo,
-                      },
-                    }
+                    mode: 'range',
+                    range: {
+                      from: inlineFilters.amountFrom,
+                      to: inlineFilters.amountTo,
+                    },
+                  }
                   : undefined
               }
               onChange={(value: AmountFilterValue | undefined) => {
@@ -679,8 +673,38 @@ export function DeadlineTable({
                     <CardDetailItem label="Service" value={deadline.contractService?.name || '-'} />
                     <CardDetailItem label="Assignee" value={deadline.assignee ? `${deadline.assignee.firstName} ${deadline.assignee.lastName}` : 'Unassigned'} />
                     <CardDetailItem
+                      label="Notes"
+                      value={
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditNotes?.(deadline);
+                          }}
+                          className="p-0.5 hover:bg-background-tertiary rounded transition-colors"
+                          aria-label={deadline.internalNotes ? 'View/Edit notes' : 'Add notes'}
+                        >
+                          {deadline.internalNotes ? (
+                            <StickyNote className="w-4 h-4 text-oak-primary" />
+                          ) : (
+                            <Plus className="w-4 h-4 text-text-muted/40" />
+                          )}
+                        </button>
+                      }
+                    />
+                    <CardDetailItem
                       label="Billing"
-                      value={effectiveBillable ? getBillingLabel(deadline.billingStatus, deadline.status) : '-'}
+                      value={
+                        effectiveBillable ? (
+                          <DeadlineBillingBadge
+                            status={deadline.billingStatus}
+                            deadlineStatus={deadline.status}
+                            size="xs"
+                          />
+                        ) : (
+                          '-'
+                        )
+                      }
                     />
                     <CardDetailItem
                       label="Amount"
@@ -826,6 +850,9 @@ export function DeadlineTable({
                         <DeadlineCategoryBadge category={deadline.category} size="xs" />
                       </td>
                       <td className="px-4 py-3 max-w-0">
+                        {renderDeadlineDueDate(deadline)}
+                      </td>
+                      <td className="px-4 py-3 max-w-0">
                         <DeadlineTimingBadge
                           status={deadline.status}
                           dueDate={deadline.statutoryDueDate}
@@ -837,13 +864,30 @@ export function DeadlineTable({
                       <td className="px-4 py-3 max-w-0">
                         <DeadlineStatusBadge status={deadline.status} size="xs" />
                       </td>
-                      <td className="px-4 py-3 max-w-0">
-                        {renderDeadlineDueDate(deadline)}
+                      <td className="px-4 py-3 max-w-0 text-center">
+                        <button
+                          type="button"
+                          onClick={() => onEditNotes?.(deadline)}
+                          className="p-1 hover:bg-background-tertiary rounded transition-colors"
+                          aria-label={deadline.internalNotes ? 'View/Edit notes' : 'Add notes'}
+                        >
+                          {deadline.internalNotes ? (
+                            <StickyNote className="w-4 h-4 text-oak-primary" />
+                          ) : (
+                            <Plus className="w-4 h-4 text-text-muted/40" />
+                          )}
+                        </button>
                       </td>
                       <td className="px-4 py-3 max-w-0">
-                        <span className="text-sm text-text-primary block truncate">
-                          {effectiveBillable ? getBillingLabel(deadline.billingStatus, deadline.status) : '-'}
-                        </span>
+                        {effectiveBillable ? (
+                          <DeadlineBillingBadge
+                            status={deadline.billingStatus}
+                            deadlineStatus={deadline.status}
+                            size="xs"
+                          />
+                        ) : (
+                          <span className="text-sm text-text-muted">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right max-w-0">
                         {amountToDisplay != null ? (

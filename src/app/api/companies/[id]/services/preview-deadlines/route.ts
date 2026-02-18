@@ -5,7 +5,7 @@ import { requirePermission } from '@/lib/rbac';
 import { requireTenantContext } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
 import { previewDeadlinesFromRuleInputs } from '@/services/deadline-generation.service';
-import { deadlineRuleInputSchema } from '@/lib/validations/service';
+import { deadlineExclusionInputSchema, deadlineRuleInputSchema } from '@/lib/validations/service';
 
 type RouteParams = {
   params: Promise<{ id: string }>;
@@ -14,6 +14,7 @@ type RouteParams = {
 const previewSchema = z.object({
   tenantId: z.string().optional(),
   rules: z.array(deadlineRuleInputSchema).default([]),
+  excludedDeadlines: z.array(deadlineExclusionInputSchema).optional().default([]),
   serviceStartDate: z.string().optional().nullable(),
   monthsAhead: z.number().int().min(1).max(60).optional(),
   fyeYearOverride: z.number().int().min(1900).max(2100).optional().nullable(),
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         monthsAhead: data.monthsAhead,
         serviceStartDate: data.serviceStartDate ?? undefined,
         fyeYearOverride: data.fyeYearOverride ?? undefined,
+        excludedDeadlines: data.excludedDeadlines,
       }
     );
 

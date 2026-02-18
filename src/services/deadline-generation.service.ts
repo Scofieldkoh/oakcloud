@@ -21,7 +21,7 @@ import type {
 } from '@/generated/prisma';
 import { ALL_DEADLINE_TEMPLATES, type DeadlineTemplateData } from '@/lib/constants/deadline-templates';
 import type { DeadlineRule, DeadlineRuleType } from '@/generated/prisma';
-import type { DeadlineRuleInput } from '@/lib/validations/service';
+import type { DeadlineExclusionInput, DeadlineRuleInput } from '@/lib/validations/service';
 
 /**
  * Type for Prisma transaction client
@@ -82,6 +82,35 @@ interface GeneratedDeadline {
 export interface PreviewDeadlinesResult {
   deadlines: GeneratedDeadline[];
   warnings: string[];
+}
+
+function normalizeDeadlineTaskName(taskName: string): string {
+  return taskName.trim().toLowerCase();
+}
+
+function normalizeDeadlineDateKey(dateInput: string | Date): string | null {
+  const parsed = new Date(dateInput);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().split('T')[0];
+}
+
+function buildExcludedDeadlineKey(taskName: string, statutoryDueDate: string | Date): string | null {
+  const normalizedTask = normalizeDeadlineTaskName(taskName);
+  if (!normalizedTask) return null;
+  const normalizedDate = normalizeDeadlineDateKey(statutoryDueDate);
+  if (!normalizedDate) return null;
+  return `${normalizedTask}|${normalizedDate}`;
+}
+
+function createExcludedDeadlineKeySet(excludedDeadlines?: DeadlineExclusionInput[] | null): Set<string> {
+  const keys = new Set<string>();
+  (excludedDeadlines || []).forEach((item) => {
+    const key = buildExcludedDeadlineKey(item.taskName, item.statutoryDueDate);
+    if (key) {
+      keys.add(key);
+    }
+  });
+  return keys;
 }
 
 // ============================================================================
@@ -1023,6 +1052,7 @@ export async function generateDeadlinesFromRules(
     monthsAhead?: number;
     regenerate?: boolean; // Delete existing and recreate
     fyeYearOverride?: number;
+    excludedDeadlines?: DeadlineExclusionInput[] | null;
   }
 ): Promise<{ created: number; skipped: number }> {
   const { tenantId, userId, tx } = params;
@@ -1103,10 +1133,9 @@ export async function generateDeadlinesFromRules(
   const lookbackStart = new Date(now);
   lookbackStart.setMonth(lookbackStart.getMonth() - monthsAhead);
 
-  let generationStart = lookbackStart;
-  if (service.startDate && service.startDate > generationStart) {
-    generationStart = new Date(service.startDate);
-  }
+  // Keep the lookback window so one-time SERVICE_START rules with negative offsets
+  // (e.g. "30 days before service start") are still generated.
+  const generationStart = lookbackStart;
 
   const endDate = new Date(now);
   endDate.setMonth(endDate.getMonth() + monthsAhead);
@@ -1120,6 +1149,7 @@ export async function generateDeadlinesFromRules(
 
   let created = 0;
   let skipped = 0;
+  const excludedDeadlineKeys = createExcludedDeadlineKeySet(options?.excludedDeadlines);
 
   // Fetch existing deadlines for deduplication
   const existingDeadlines = await db.deadline.findMany({
@@ -1176,6 +1206,15 @@ export async function generateDeadlinesFromRules(
     );
 
     for (const deadlineData of deadlines) {
+      const exclusionKey = buildExcludedDeadlineKey(
+        deadlineData.title,
+        deadlineData.statutoryDueDate
+      );
+      if (exclusionKey && excludedDeadlineKeys.has(exclusionKey)) {
+        skipped++;
+        continue;
+      }
+
       // Check if deadline already exists
       const key = `${deadlineData.periodLabel}|${deadlineData.referenceCode || ''}`;
       if (existingDeadlineKeys.has(key)) {
@@ -1251,6 +1290,7 @@ export async function previewDeadlinesFromRuleInputs(
     monthsAhead?: number;
     serviceStartDate?: string | Date | null;
     fyeYearOverride?: number | null;
+    excludedDeadlines?: DeadlineExclusionInput[] | null;
   }
 ): Promise<PreviewDeadlinesResult> {
   const { tenantId, tx } = params;
@@ -1302,10 +1342,9 @@ export async function previewDeadlinesFromRuleInputs(
   const lookbackStart = new Date(now);
   lookbackStart.setMonth(lookbackStart.getMonth() - monthsAhead);
 
-  let startDate = lookbackStart;
-  if (resolvedServiceStartDate && resolvedServiceStartDate > startDate) {
-    startDate = new Date(resolvedServiceStartDate);
-  }
+  // Keep the lookback window so one-time SERVICE_START rules with negative offsets
+  // remain visible in preview.
+  const startDate = lookbackStart;
 
   const endDate = new Date(now);
   endDate.setMonth(endDate.getMonth() + monthsAhead);
@@ -1400,9 +1439,17 @@ export async function previewDeadlinesFromRuleInputs(
     generated.push(...deadlines);
   });
 
-  generated.sort((a, b) => a.statutoryDueDate.getTime() - b.statutoryDueDate.getTime());
+  const excludedDeadlineKeys = createExcludedDeadlineKeySet(options?.excludedDeadlines);
+  const filteredGenerated = excludedDeadlineKeys.size > 0
+    ? generated.filter((deadline) => {
+      const key = buildExcludedDeadlineKey(deadline.title, deadline.statutoryDueDate);
+      return !key || !excludedDeadlineKeys.has(key);
+    })
+    : generated;
 
-  return { deadlines: generated, warnings };
+  filteredGenerated.sort((a, b) => a.statutoryDueDate.getTime() - b.statutoryDueDate.getTime());
+
+  return { deadlines: filteredGenerated, warnings };
 }
 
 /**

@@ -5,8 +5,12 @@ import { requirePermission } from '@/lib/rbac';
 import { requireTenantContext } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
 import { createContract, getContractById } from '@/services/contract.service';
-import { createContractService, getAllServices } from '@/services/contract-service.service';
-import { createContractServiceSchema, serviceSearchSchema } from '@/lib/validations/contract';
+import { createContractService, createBothServices, getAllServices } from '@/services/contract-service.service';
+import {
+  createContractServiceSchema,
+  getCreateServiceBillingAlignmentError,
+  serviceSearchSchema,
+} from '@/lib/validations/contract';
 
 type RouteParams = {
   params: Promise<{ id: string }>;
@@ -175,6 +179,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const tenantId = tenantResult.tenantId;
 
     const data = createContractServiceSchema.parse(serviceData);
+    const billingAlignmentError = getCreateServiceBillingAlignmentError(data);
+    if (billingAlignmentError) {
+      return NextResponse.json({ error: billingAlignmentError }, { status: 400 });
+    }
+
     const resolvedContractId = await resolveServiceContractId({
       companyId,
       tenantId,
@@ -182,6 +191,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       preferredContractId: contractId,
     });
 
+    // Handle "BOTH" service type - creates two linked services
+    if (data.serviceType === 'BOTH') {
+      const result = await createBothServices(
+        { ...data, contractId: resolvedContractId },
+        { tenantId, userId: session.id }
+      );
+
+      // Return both services in the response
+      return NextResponse.json({
+        services: [result.oneTimeService, result.recurringService],
+        linkedServiceIds: [result.oneTimeService.id, result.recurringService.id],
+        deadlinesGenerated:
+          (result.oneTimeService.deadlinesGenerated ?? 0) +
+          (result.recurringService.deadlinesGenerated ?? 0),
+      }, { status: 201 });
+    }
+
+    // Regular single service creation
     const service = await createContractService(
       { ...data, contractId: resolvedContractId },
       { tenantId, userId: session.id }

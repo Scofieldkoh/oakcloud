@@ -5,12 +5,14 @@ import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import type { BillingFrequency, DeadlineCategory, ServiceStatus, ServiceType } from '@/generated/prisma';
 import type { DeadlineRuleInput } from '@/lib/validations/service';
 
+type ServiceTemplateType = ServiceType | 'BOTH';
+
 export interface ServiceTemplateRecord {
   code: string;
   name: string;
   category: DeadlineCategory;
   description: string | null;
-  serviceType: ServiceType;
+  serviceType: ServiceTemplateType;
   status?: ServiceStatus | null;
   rate?: number | null;
   currency?: string | null;
@@ -29,7 +31,7 @@ export interface CreateServiceTemplatePayload {
   name: string;
   category: DeadlineCategory;
   description?: string | null;
-  serviceType: ServiceType;
+  serviceType: ServiceTemplateType;
   status?: ServiceStatus;
   rate?: number | null;
   currency?: string | null;
@@ -44,7 +46,7 @@ export interface UpdateServiceTemplatePayload {
   name?: string;
   category?: DeadlineCategory;
   description?: string | null;
-  serviceType?: ServiceType;
+  serviceType?: ServiceTemplateType;
   status?: ServiceStatus;
   rate?: number | null;
   currency?: string | null;

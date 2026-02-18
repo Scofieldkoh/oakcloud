@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { ChevronUp, ChevronDown, Trash2, Copy, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import type { DeadlineRuleInput } from '@/lib/validations/service';
 import type { CompanyData } from './deadline-builder-table';
 import { RecurrenceConfig } from './recurrence-config';
@@ -61,6 +62,15 @@ const currencyOptions = [
   { value: 'EUR', label: 'EUR' },
   { value: 'GBP', label: 'GBP' },
   { value: 'MYR', label: 'MYR' },
+];
+
+const categoryOptions: Array<{ value: DeadlineRuleInput['category']; label: string }> = [
+  { value: 'CORPORATE_SECRETARY', label: 'Corp Sec' },
+  { value: 'TAX', label: 'Tax' },
+  { value: 'ACCOUNTING', label: 'Accounting' },
+  { value: 'AUDIT', label: 'Audit' },
+  { value: 'COMPLIANCE', label: 'Compliance' },
+  { value: 'OTHER', label: 'Other' },
 ];
 
 type OffsetUnit = 'month' | 'days';
@@ -177,6 +187,27 @@ export function DeadlineRuleRow({
 
       commitRule(updatedRule);
     },
+    [commitRule, localRule, defaultBillingAmount, defaultBillingCurrency]
+  );
+
+  const handleBatchFieldChange = useCallback(
+    (updates: Partial<DeadlineRuleInput>) => {
+      if (Object.keys(updates).length === 0) return;
+      const normalizedUpdates: Partial<DeadlineRuleInput> = { ...updates };
+      if (normalizedUpdates.frequency === 'ONE_TIME') {
+        normalizedUpdates.isRecurring = false;
+      } else if (normalizedUpdates.frequency) {
+        normalizedUpdates.isRecurring = true;
+      } else if (normalizedUpdates.isRecurring === false) {
+        normalizedUpdates.frequency = 'ONE_TIME';
+      }
+
+      const updatedRule: DeadlineRuleInput = {
+        ...localRule,
+        ...normalizedUpdates,
+      };
+      commitRule(updatedRule);
+    },
     [commitRule, localRule]
   );
 
@@ -207,15 +238,15 @@ export function DeadlineRuleRow({
       const updatedRule: DeadlineRuleInput =
         offsetUnit === 'month'
           ? {
-              ...localRule,
-              offsetMonths: signedValue,
-              offsetDays: 0,
-            }
+            ...localRule,
+            offsetMonths: signedValue,
+            offsetDays: 0,
+          }
           : {
-              ...localRule,
-              offsetMonths: 0,
-              offsetDays: signedValue,
-            };
+            ...localRule,
+            offsetMonths: 0,
+            offsetDays: signedValue,
+          };
 
       commitRule(updatedRule);
     },
@@ -229,15 +260,15 @@ export function DeadlineRuleRow({
       const updatedRule: DeadlineRuleInput =
         nextUnit === 'month'
           ? {
-              ...localRule,
-              offsetMonths: signedValue,
-              offsetDays: 0,
-            }
+            ...localRule,
+            offsetMonths: signedValue,
+            offsetDays: 0,
+          }
           : {
-              ...localRule,
-              offsetMonths: 0,
-              offsetDays: signedValue,
-            };
+            ...localRule,
+            offsetMonths: 0,
+            offsetDays: signedValue,
+          };
       commitRule(updatedRule);
     },
     [commitRule, localRule, offsetMagnitude, offsetSign]
@@ -250,15 +281,15 @@ export function DeadlineRuleRow({
       const updatedRule: DeadlineRuleInput =
         offsetUnit === 'month'
           ? {
-              ...localRule,
-              offsetMonths: signedValue,
-              offsetDays: 0,
-            }
+            ...localRule,
+            offsetMonths: signedValue,
+            offsetDays: 0,
+          }
           : {
-              ...localRule,
-              offsetMonths: 0,
-              offsetDays: signedValue,
-            };
+            ...localRule,
+            offsetMonths: 0,
+            offsetDays: signedValue,
+          };
       commitRule(updatedRule);
     },
     [commitRule, localRule, offsetMagnitude, offsetUnit]
@@ -337,6 +368,23 @@ export function DeadlineRuleRow({
     >
       <option value="RULE_BASED">Relative rule</option>
       <option value="FIXED_DATE">Specific date</option>
+    </select>
+  );
+
+  const renderCategorySelect = (height: string = 'h-8', widthClass = 'w-28') => (
+    <select
+      value={localRule.category}
+      onChange={(e) => handleFieldChange('category', e.target.value as DeadlineRuleInput['category'])}
+      className={cn(
+        `${height} ${widthClass} px-2 text-sm rounded-lg appearance-none cursor-pointer shrink-0`,
+        inputBaseClasses
+      )}
+    >
+      {categoryOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
     </select>
   );
 
@@ -501,76 +549,71 @@ export function DeadlineRuleRow({
       >
         <div
           className={cn(
-            'grid gap-2 items-center',
+            'grid gap-3 items-center',
             previewEnabled
-              ? 'grid-cols-[1.75fr_2fr_170px_240px_1fr_240px]'
-              : 'grid-cols-[1.75fr_2fr_170px_240px_240px]'
+              ? 'grid-cols-[1.5fr_minmax(320px,2.5fr)_150px_200px_1fr_180px]'
+              : 'grid-cols-[1.5fr_minmax(320px,2.5fr)_150px_200px_180px]'
           )}
         >
           <div className="min-w-0">
-            <input
-              type="text"
-              value={localRule.taskName}
-              onChange={(e) => handleFieldChange('taskName', e.target.value)}
-              onFocus={onSelect}
-              placeholder="Task name"
-              className={cn(
-                'w-full h-8 px-3 text-sm font-medium rounded-lg',
-                inputBaseClasses,
-                'placeholder:text-text-muted'
-              )}
-            />
-          </div>
-
-          <div className="min-w-0">
-          {isRuleBased ? (
-            <div className="flex items-center gap-1.5 flex-nowrap text-sm">
-              {renderRuleTypeSelect()}
-              {isFixedCalendar ? (
-                <>
-                  {renderAnchorSelect('h-8', 'w-28 shrink-0')}
-                  <span className="text-text-muted whitespace-nowrap">on</span>
-                  {renderFixedCalendarMonthSelect()}
-                  {renderFixedCalendarDayInput()}
-                </>
-              ) : (
-                <>
-                  {renderOffsetInput()}
-                  {renderUnitSelect()}
-                  {renderDirectionSelect()}
-                  {renderAnchorSelect('h-8', 'w-28 shrink-0')}
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-sm">
-              {renderRuleTypeSelect()}
+            <div className="flex items-center gap-1.5">
+              {renderCategorySelect()}
               <input
-                type="date"
-                value={localRule.specificDate || ''}
-                onChange={(e) => handleFieldChange('specificDate', e.target.value)}
+                type="text"
+                value={localRule.taskName}
+                onChange={(e) => handleFieldChange('taskName', e.target.value)}
+                onFocus={onSelect}
+                placeholder="Task name"
                 className={cn(
-                  'h-8 px-2.5 text-sm rounded-lg',
-                  inputBaseClasses
+                  'flex-1 h-8 px-3 text-sm font-medium rounded-lg min-w-0',
+                  inputBaseClasses,
+                  'placeholder:text-text-muted'
                 )}
               />
             </div>
-          )}
           </div>
 
           <div className="min-w-0">
-          <RecurrenceConfig
-            isRecurring={localRule.isRecurring}
-            frequency={localRule.frequency ?? null}
-            generateOccurrences={localRule.generateOccurrences ?? null}
-            generateUntilDate={localRule.generateUntilDate ?? null}
-            size="sm"
-            onUpdate={(updates) => {
-              Object.entries(updates).forEach(([field, value]) => {
-                handleFieldChange(field as keyof DeadlineRuleInput, value);
-              });
-            }}
-          />
+            {isRuleBased ? (
+              <div className="flex items-center gap-1.5 flex-nowrap text-sm">
+                {renderRuleTypeSelect()}
+                {isFixedCalendar ? (
+                  <>
+                    {renderAnchorSelect('h-8', 'w-28 shrink-0')}
+                    <span className="text-text-muted whitespace-nowrap">on</span>
+                    {renderFixedCalendarMonthSelect()}
+                    {renderFixedCalendarDayInput()}
+                  </>
+                ) : (
+                  <>
+                    {renderOffsetInput()}
+                    {renderUnitSelect()}
+                    {renderDirectionSelect()}
+                    {renderAnchorSelect('h-8', 'w-28 shrink-0')}
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-sm">
+                {renderRuleTypeSelect()}
+                <SingleDateInput
+                  value={localRule.specificDate || ''}
+                  onChange={(value) => handleFieldChange('specificDate', value || null)}
+                  className="min-w-[168px]"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <RecurrenceConfig
+              isRecurring={localRule.isRecurring}
+              frequency={localRule.frequency ?? null}
+              generateOccurrences={localRule.generateOccurrences ?? null}
+              generateUntilDate={localRule.generateUntilDate ?? null}
+              size="sm"
+              onUpdate={handleBatchFieldChange}
+            />
           </div>
 
           <div className="min-w-0">
@@ -633,18 +676,21 @@ export function DeadlineRuleRow({
         onClick={onSelect}
       >
         <div className="flex items-center justify-between gap-2">
-          <input
-            type="text"
-            value={localRule.taskName}
-            onChange={(e) => handleFieldChange('taskName', e.target.value)}
-            onFocus={onSelect}
-            placeholder="Task name"
-            className={cn(
-              'flex-1 h-8 px-2 text-sm font-medium rounded-md',
-              inputBaseClasses,
-              'placeholder:text-text-muted'
-            )}
-          />
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {renderCategorySelect('h-8', 'w-24')}
+            <input
+              type="text"
+              value={localRule.taskName}
+              onChange={(e) => handleFieldChange('taskName', e.target.value)}
+              onFocus={onSelect}
+              placeholder="Task name"
+              className={cn(
+                'flex-1 min-w-0 h-8 px-2 text-sm font-medium rounded-md',
+                inputBaseClasses,
+                'placeholder:text-text-muted'
+              )}
+            />
+          </div>
           <div className="flex items-center gap-1">
             {renderActionButtons()}
           </div>
@@ -695,14 +741,10 @@ export function DeadlineRuleRow({
           ) : (
             <>
               {renderRuleTypeSelect('h-8')}
-              <input
-                type="date"
+              <SingleDateInput
                 value={localRule.specificDate || ''}
-                onChange={(e) => handleFieldChange('specificDate', e.target.value)}
-                className={cn(
-                  'h-8 px-2.5 text-sm rounded-lg flex-1',
-                  inputBaseClasses
-                )}
+                onChange={(value) => handleFieldChange('specificDate', value || null)}
+                className="flex-1"
               />
             </>
           )}
@@ -716,11 +758,7 @@ export function DeadlineRuleRow({
             generateOccurrences={localRule.generateOccurrences ?? null}
             generateUntilDate={localRule.generateUntilDate ?? null}
             size="sm"
-            onUpdate={(updates) => {
-              Object.entries(updates).forEach(([field, value]) => {
-                handleFieldChange(field as keyof DeadlineRuleInput, value);
-              });
-            }}
+            onUpdate={handleBatchFieldChange}
           />
         </div>
 

@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Calendar, AlertCircle } from 'lucide-react';
-import type { DeadlineRuleInput } from '@/lib/validations/service';
+import { Calendar, AlertCircle, RotateCcw, X } from 'lucide-react';
+import type { DeadlineExclusionInput, DeadlineRuleInput } from '@/lib/validations/service';
 import type { CompanyData } from './deadline-builder-table';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,9 @@ export interface ChronologicalDeadlinePreviewProps {
   highlightTaskName?: string | null;
   serverDeadlines?: Array<{ taskName: string; statutoryDueDate: string }>;
   serverWarnings?: string[];
+  excludedDeadlines?: DeadlineExclusionInput[];
+  onExcludeDeadline?: (deadline: DeadlineExclusionInput) => void;
+  onRestoreExcludedDeadlines?: () => void;
   loading?: boolean;
   error?: string | null;
 }
@@ -121,6 +124,14 @@ function quarterEndForOffset(baseDate: Date, offset: number): Date {
   return new Date(year, quarterEndMonth + 1, 0);
 }
 
+function normalizeDeadlineExclusionKey(taskName: string, statutoryDueDate: string | Date): string | null {
+  const normalizedTask = taskName.trim().toLowerCase();
+  if (!normalizedTask) return null;
+  const parsedDate = new Date(statutoryDueDate);
+  if (Number.isNaN(parsedDate.getTime())) return null;
+  return `${normalizedTask}|${parsedDate.toISOString().split('T')[0]}`;
+}
+
 /**
  * Chronological view of all upcoming deadlines across all rules
  */
@@ -131,9 +142,21 @@ export function ChronologicalDeadlinePreview({
   highlightTaskName,
   serverDeadlines,
   serverWarnings,
+  excludedDeadlines = [],
+  onExcludeDeadline,
+  onRestoreExcludedDeadlines,
   loading = false,
   error = null,
 }: ChronologicalDeadlinePreviewProps) {
+  const excludedDeadlineKeySet = useMemo(
+    () => new Set(
+      excludedDeadlines
+        .map((item) => normalizeDeadlineExclusionKey(item.taskName, item.statutoryDueDate))
+        .filter((key): key is string => Boolean(key))
+    ),
+    [excludedDeadlines]
+  );
+
   const previewData = useMemo(() => {
     if (serverDeadlines) {
       const rawDeadlines: Array<{ taskName: string; date: Date }> = [];
@@ -158,14 +181,18 @@ export function ChronologicalDeadlinePreview({
         };
       });
 
-      const visibleDeadlines = mappedDeadlines.slice(0, MAX_RENDER_ITEMS);
-      const overdueCount = mappedDeadlines.filter((deadline) => deadline.isPast).length;
+      const filteredDeadlines = mappedDeadlines.filter((deadline) => {
+        const key = normalizeDeadlineExclusionKey(deadline.taskName, deadline.date);
+        return !key || !excludedDeadlineKeySet.has(key);
+      });
+      const visibleDeadlines = filteredDeadlines.slice(0, MAX_RENDER_ITEMS);
+      const overdueCount = filteredDeadlines.filter((deadline) => deadline.isPast).length;
 
       return {
         deadlines: visibleDeadlines,
         warnings: serverWarnings ?? [],
-        totalCount: mappedDeadlines.length,
-        hiddenCount: Math.max(0, mappedDeadlines.length - visibleDeadlines.length),
+        totalCount: filteredDeadlines.length,
+        hiddenCount: Math.max(0, filteredDeadlines.length - visibleDeadlines.length),
         overdueCount,
       };
     }
@@ -319,17 +346,21 @@ export function ChronologicalDeadlinePreview({
       };
     });
 
-    const visibleDeadlines = mappedDeadlines.slice(0, MAX_RENDER_ITEMS);
-    const overdueCount = mappedDeadlines.filter((deadline) => deadline.isPast).length;
+    const filteredDeadlines = mappedDeadlines.filter((deadline) => {
+      const key = normalizeDeadlineExclusionKey(deadline.taskName, deadline.date);
+      return !key || !excludedDeadlineKeySet.has(key);
+    });
+    const visibleDeadlines = filteredDeadlines.slice(0, MAX_RENDER_ITEMS);
+    const overdueCount = filteredDeadlines.filter((deadline) => deadline.isPast).length;
 
     return {
       deadlines: visibleDeadlines,
       warnings: Array.from(warningSet),
-      totalCount: mappedDeadlines.length,
-      hiddenCount: Math.max(0, mappedDeadlines.length - visibleDeadlines.length),
+      totalCount: filteredDeadlines.length,
+      hiddenCount: Math.max(0, filteredDeadlines.length - visibleDeadlines.length),
       overdueCount,
     };
-  }, [rules, companyData, serviceStartDate, serverDeadlines, serverWarnings]);
+  }, [rules, companyData, serviceStartDate, serverDeadlines, serverWarnings, excludedDeadlineKeySet]);
 
   if (loading && !serverDeadlines) {
     return (
@@ -378,11 +409,23 @@ export function ChronologicalDeadlinePreview({
             <span className="text-[11px] text-text-muted">
               Showing {previewData.deadlines.length} of {previewData.totalCount} generated deadline{previewData.totalCount !== 1 ? 's' : ''}
             </span>
-            {previewData.overdueCount > 0 && (
-              <span className="text-[11px] text-red-600 dark:text-red-400">
-                {previewData.overdueCount} overdue
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {excludedDeadlines.length > 0 && onRestoreExcludedDeadlines && (
+                <button
+                  type="button"
+                  onClick={onRestoreExcludedDeadlines}
+                  className="inline-flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Undo {excludedDeadlines.length} removed
+                </button>
+              )}
+              {previewData.overdueCount > 0 && (
+                <span className="text-[11px] text-red-600 dark:text-red-400">
+                  {previewData.overdueCount} overdue
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -392,9 +435,17 @@ export function ChronologicalDeadlinePreview({
                 deadline.taskName.startsWith(`${highlightTaskName} -`)
               );
               const isDimmed = Boolean(highlightTaskName) && !isHighlighted;
+              const deadlineExclusion: DeadlineExclusionInput = {
+                taskName: deadline.taskName,
+                statutoryDueDate: deadline.date.toISOString(),
+              };
+              const deadlineKey = normalizeDeadlineExclusionKey(
+                deadlineExclusion.taskName,
+                deadlineExclusion.statutoryDueDate
+              ) ?? `${deadline.taskName}|${deadline.dateString}|${index}`;
               return (
               <div
-                key={index}
+                key={deadlineKey}
                 className={cn(
                   'flex items-start gap-2 p-3 rounded-md border transition-colors',
                   deadline.isPast
@@ -427,6 +478,17 @@ export function ChronologicalDeadlinePreview({
                     <span className="text-text-muted"> - {deadline.dateString} ({deadline.relativeLabel})</span>
                   </p>
                 </div>
+                {onExcludeDeadline && (
+                  <button
+                    type="button"
+                    onClick={() => onExcludeDeadline(deadlineExclusion)}
+                    className="text-text-muted hover:text-red-600 rounded-md p-1 transition-colors"
+                    title="Remove this generated deadline"
+                    aria-label={`Remove ${deadline.taskName} on ${deadline.dateString}`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
               );
             })}

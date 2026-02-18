@@ -1,0 +1,7 @@
+﻿__tests__/services/contract-service.service.test.ts(60,60): error TS2339: Property 'gte' does not exist on type 'string | Date | DateTimeFilter<"Deadline">'.
+  Property 'gte' does not exist on type 'string'.
+__tests__/services/contract-service.service.test.ts(133,60): error TS2339: Property 'gte' does not exist on type 'string | Date | DateTimeFilter<"Deadline">'.
+  Property 'gte' does not exist on type 'string'.
+src/app/(dashboard)/companies/[id]/services/[serviceId]/page.tsx(389,36): error TS2339: Property 'fyeYearOverride' does not exist on type 'ContractServiceWithRelations'.
+src/app/(dashboard)/companies/[id]/services/[serviceId]/page.tsx(626,9): error TS2322: Type '"RECURRING" | "ONE_TIME" | "BOTH"' is not assignable to type 'ServiceType | undefined'.
+  Type '"BOTH"' is not assignable to type 'ServiceType | undefined'.

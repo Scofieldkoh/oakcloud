@@ -10,16 +10,21 @@ import {
   ListFilter,
   RefreshCw,
   AlertCircle,
+  Save,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { Button } from '@/components/ui/button';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import {
   useDeadlines,
   useDeadlineStats,
+  useUpdateDeadline,
   useBulkUpdateStatus,
   useBulkUpdateBillingStatus,
   useBulkAssignDeadlines,
   useBulkDeleteDeadlines,
+  type DeadlineWithRelations,
 } from '@/hooks/use-deadlines';
 import { useTenantUsers } from '@/hooks/use-admin';
 import { useCompanies } from '@/hooks/use-companies';
@@ -137,7 +142,7 @@ export default function DeadlinesPage() {
       amountFrom: parseNumber(searchParams.get('amountFrom')),
       amountTo: parseNumber(searchParams.get('amountTo')),
       isInScope: searchParams.get('isInScope') === 'true' ? true :
-                 searchParams.get('isInScope') === 'false' ? false : undefined,
+        searchParams.get('isInScope') === 'false' ? false : undefined,
     };
   }, [searchParams]);
 
@@ -163,6 +168,11 @@ export default function DeadlinesPage() {
   const bulkAssignDeadlines = useBulkAssignDeadlines();
   const bulkDeleteDeadlines = useBulkDeleteDeadlines();
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+
+  // Notes modal state
+  const [notesModalDeadline, setNotesModalDeadline] = useState<DeadlineWithRelations | null>(null);
+  const [notesValue, setNotesValue] = useState('');
+  const updateDeadline = useUpdateDeadline(notesModalDeadline?.id || '');
 
   // Selection
   const {
@@ -555,11 +565,27 @@ export default function DeadlinesPage() {
     }
   }, [selectedIds, bulkDeleteDeadlines, clearSelection]);
 
+  const handleEditNotes = useCallback((deadline: DeadlineWithRelations) => {
+    setNotesModalDeadline(deadline);
+    setNotesValue(deadline.internalNotes || '');
+  }, []);
+
+  const handleSaveNotes = useCallback(async () => {
+    if (!notesModalDeadline) return;
+    try {
+      await updateDeadline.mutateAsync({ internalNotes: notesValue });
+      setNotesModalDeadline(null);
+      refetch();
+    } catch {
+      // Error handled by mutation
+    }
+  }, [notesModalDeadline, notesValue, updateDeadline, refetch]);
+
   const activeWorkflowCount = stats
     ? (stats.byStatus.PENDING || 0)
-      + (stats.byStatus.PENDING_CLIENT || 0)
-      + (stats.byStatus.IN_PROGRESS || 0)
-      + (stats.byStatus.PENDING_REVIEW || 0)
+    + (stats.byStatus.PENDING_CLIENT || 0)
+    + (stats.byStatus.IN_PROGRESS || 0)
+    + (stats.byStatus.PENDING_REVIEW || 0)
     : 0;
   const upcomingCount = Math.max(
     0,
@@ -749,6 +775,7 @@ export default function DeadlinesPage() {
             assigneeFilterOptions={assigneeFilterOptions}
             columnWidths={columnWidths}
             onColumnWidthChange={handleColumnWidthChange}
+            onEditNotes={handleEditNotes}
           />
           {data && data.totalPages > 0 && (
             <div className="mt-4">
@@ -799,6 +826,36 @@ export default function DeadlinesPage() {
         variant="danger"
         isLoading={bulkDeleteDeadlines.isPending}
       />
+
+      {/* Notes Edit Modal */}
+      <Modal
+        isOpen={!!notesModalDeadline}
+        onClose={() => setNotesModalDeadline(null)}
+        title={`Notes: ${notesModalDeadline?.title || ''}`}
+        size="lg"
+      >
+        <ModalBody>
+          <RichTextEditor
+            value={notesValue}
+            onChange={setNotesValue}
+            minHeight={200}
+            className="bg-background-secondary"
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setNotesModalDeadline(null)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSaveNotes}
+            disabled={updateDeadline.isPending}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {updateDeadline.isPending ? 'Saving...' : 'Save Notes'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

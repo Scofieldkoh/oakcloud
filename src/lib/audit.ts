@@ -62,7 +62,10 @@ export interface AuditHistoryOptions {
 /**
  * Create a single audit log entry
  */
-export async function createAuditLog(params: AuditLogParams) {
+export async function createAuditLog(
+  params: AuditLogParams,
+  tx?: Prisma.TransactionClient
+) {
   // Get request context if not provided
   let requestContext: {
     ipAddress: string | null | undefined;
@@ -82,7 +85,9 @@ export async function createAuditLog(params: AuditLogParams) {
     }
   }
 
-  return prisma.auditLog.create({
+  const db = tx ?? prisma;
+
+  return db.auditLog.create({
     data: {
       tenantId: params.tenantId,
       userId: params.userId,
@@ -111,7 +116,10 @@ export async function createAuditLog(params: AuditLogParams) {
 /**
  * Create multiple audit log entries in a batch (transaction)
  */
-export async function createAuditLogBatch(entries: AuditLogParams[]) {
+export async function createAuditLogBatch(
+  entries: AuditLogParams[],
+  tx?: Prisma.TransactionClient
+) {
   // Get request context once for all entries
   let requestContext = { ipAddress: null as string | null, userAgent: null as string | null, requestId: '' };
   try {
@@ -120,7 +128,9 @@ export async function createAuditLogBatch(entries: AuditLogParams[]) {
     // Running outside of request context
   }
 
-  return prisma.auditLog.createMany({
+  const db = tx ?? prisma;
+
+  return db.auditLog.createMany({
     data: entries.map((params) => ({
       tenantId: params.tenantId,
       userId: params.userId,
