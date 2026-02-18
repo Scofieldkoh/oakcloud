@@ -279,8 +279,6 @@ export type UserWhereInput = {
   createdPartials?: Prisma.TemplatePartialListRelationFilter
   aiConversations?: Prisma.AiConversationListRelationFilter
   preferences?: Prisma.UserPreferenceListRelationFilter
-  assignedDeadlines?: Prisma.DeadlineListRelationFilter
-  completedDeadlines?: Prisma.DeadlineListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -316,8 +314,6 @@ export type UserOrderByWithRelationInput = {
   createdPartials?: Prisma.TemplatePartialOrderByRelationAggregateInput
   aiConversations?: Prisma.AiConversationOrderByRelationAggregateInput
   preferences?: Prisma.UserPreferenceOrderByRelationAggregateInput
-  assignedDeadlines?: Prisma.DeadlineOrderByRelationAggregateInput
-  completedDeadlines?: Prisma.DeadlineOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -356,8 +352,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   createdPartials?: Prisma.TemplatePartialListRelationFilter
   aiConversations?: Prisma.AiConversationListRelationFilter
   preferences?: Prisma.UserPreferenceListRelationFilter
-  assignedDeadlines?: Prisma.DeadlineListRelationFilter
-  completedDeadlines?: Prisma.DeadlineListRelationFilter
 }, "id" | "email" | "passwordResetToken">
 
 export type UserOrderByWithAggregationInput = {
@@ -434,8 +428,6 @@ export type UserCreateInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -470,8 +462,6 @@ export type UserUncheckedCreateInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUpdateInput = {
@@ -506,8 +496,6 @@ export type UserUpdateInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -542,8 +530,6 @@ export type UserUncheckedUpdateInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -951,38 +937,6 @@ export type UserUpdateOneRequiredWithoutAiConversationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAiConversationsInput, Prisma.UserUpdateWithoutAiConversationsInput>, Prisma.UserUncheckedUpdateWithoutAiConversationsInput>
 }
 
-export type UserCreateNestedOneWithoutCompletedDeadlinesInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutCompletedDeadlinesInput, Prisma.UserUncheckedCreateWithoutCompletedDeadlinesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCompletedDeadlinesInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserCreateNestedOneWithoutAssignedDeadlinesInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutAssignedDeadlinesInput, Prisma.UserUncheckedCreateWithoutAssignedDeadlinesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAssignedDeadlinesInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneWithoutCompletedDeadlinesNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutCompletedDeadlinesInput, Prisma.UserUncheckedCreateWithoutCompletedDeadlinesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCompletedDeadlinesInput
-  upsert?: Prisma.UserUpsertWithoutCompletedDeadlinesInput
-  disconnect?: Prisma.UserWhereInput | boolean
-  delete?: Prisma.UserWhereInput | boolean
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCompletedDeadlinesInput, Prisma.UserUpdateWithoutCompletedDeadlinesInput>, Prisma.UserUncheckedUpdateWithoutCompletedDeadlinesInput>
-}
-
-export type UserUpdateOneWithoutAssignedDeadlinesNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutAssignedDeadlinesInput, Prisma.UserUncheckedCreateWithoutAssignedDeadlinesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAssignedDeadlinesInput
-  upsert?: Prisma.UserUpsertWithoutAssignedDeadlinesInput
-  disconnect?: Prisma.UserWhereInput | boolean
-  delete?: Prisma.UserWhereInput | boolean
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAssignedDeadlinesInput, Prisma.UserUpdateWithoutAssignedDeadlinesInput>, Prisma.UserUncheckedUpdateWithoutAssignedDeadlinesInput>
-}
-
 export type UserCreateWithoutTenantInput = {
   id?: string
   email: string
@@ -1014,8 +968,6 @@ export type UserCreateWithoutTenantInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutTenantInput = {
@@ -1049,8 +1001,6 @@ export type UserUncheckedCreateWithoutTenantInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutTenantInput = {
@@ -1131,8 +1081,6 @@ export type UserCreateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -1166,8 +1114,6 @@ export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -1217,8 +1163,6 @@ export type UserUpdateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -1252,8 +1196,6 @@ export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutPreferencesInput = {
@@ -1287,8 +1229,6 @@ export type UserCreateWithoutPreferencesInput = {
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutPreferencesInput = {
@@ -1322,8 +1262,6 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutPreferencesInput = {
@@ -1373,8 +1311,6 @@ export type UserUpdateWithoutPreferencesInput = {
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPreferencesInput = {
@@ -1408,8 +1344,6 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutCompanyAssignmentsInput = {
@@ -1443,8 +1377,6 @@ export type UserCreateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
@@ -1478,8 +1410,6 @@ export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutCompanyAssignmentsInput = {
@@ -1529,8 +1459,6 @@ export type UserUpdateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
@@ -1564,8 +1492,6 @@ export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutUploadedDocumentsInput = {
@@ -1599,8 +1525,6 @@ export type UserCreateWithoutUploadedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
@@ -1634,8 +1558,6 @@ export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutUploadedDocumentsInput = {
@@ -1685,8 +1607,6 @@ export type UserUpdateWithoutUploadedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
@@ -1720,8 +1640,6 @@ export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -1755,8 +1673,6 @@ export type UserCreateWithoutAuditLogsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -1790,8 +1706,6 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -1841,8 +1755,6 @@ export type UserUpdateWithoutAuditLogsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -1876,8 +1788,6 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutConnectorUsageLogsInput = {
@@ -1911,8 +1821,6 @@ export type UserCreateWithoutConnectorUsageLogsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
@@ -1946,8 +1854,6 @@ export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutConnectorUsageLogsInput = {
@@ -1997,8 +1903,6 @@ export type UserUpdateWithoutConnectorUsageLogsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
@@ -2032,8 +1936,6 @@ export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutCreatedTemplatesInput = {
@@ -2067,8 +1969,6 @@ export type UserCreateWithoutCreatedTemplatesInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
@@ -2102,8 +2002,6 @@ export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedTemplatesInput = {
@@ -2153,8 +2051,6 @@ export type UserUpdateWithoutCreatedTemplatesInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
@@ -2188,8 +2084,6 @@ export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutFinalizedDocumentsInput = {
@@ -2223,8 +2117,6 @@ export type UserCreateWithoutFinalizedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
@@ -2258,8 +2150,6 @@ export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutFinalizedDocumentsInput = {
@@ -2298,8 +2188,6 @@ export type UserCreateWithoutCreatedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
@@ -2333,8 +2221,6 @@ export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedDocumentsInput = {
@@ -2384,8 +2270,6 @@ export type UserUpdateWithoutFinalizedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
@@ -2419,8 +2303,6 @@ export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUpsertWithoutCreatedDocumentsInput = {
@@ -2465,8 +2347,6 @@ export type UserUpdateWithoutCreatedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
@@ -2500,8 +2380,6 @@ export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutCreatedSharesInput = {
@@ -2535,8 +2413,6 @@ export type UserCreateWithoutCreatedSharesInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedSharesInput = {
@@ -2570,8 +2446,6 @@ export type UserUncheckedCreateWithoutCreatedSharesInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedSharesInput = {
@@ -2621,8 +2495,6 @@ export type UserUpdateWithoutCreatedSharesInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedSharesInput = {
@@ -2656,8 +2528,6 @@ export type UserUncheckedUpdateWithoutCreatedSharesInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutAuthoredCommentsInput = {
@@ -2691,8 +2561,6 @@ export type UserCreateWithoutAuthoredCommentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
@@ -2726,8 +2594,6 @@ export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutAuthoredCommentsInput = {
@@ -2766,8 +2632,6 @@ export type UserCreateWithoutResolvedCommentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutResolvedCommentsInput = {
@@ -2801,8 +2665,6 @@ export type UserUncheckedCreateWithoutResolvedCommentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutResolvedCommentsInput = {
@@ -2841,8 +2703,6 @@ export type UserCreateWithoutHiddenCommentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutHiddenCommentsInput = {
@@ -2876,8 +2736,6 @@ export type UserUncheckedCreateWithoutHiddenCommentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutHiddenCommentsInput = {
@@ -2927,8 +2785,6 @@ export type UserUpdateWithoutAuthoredCommentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
@@ -2962,8 +2818,6 @@ export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUpsertWithoutResolvedCommentsInput = {
@@ -3008,8 +2862,6 @@ export type UserUpdateWithoutResolvedCommentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
@@ -3043,8 +2895,6 @@ export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUpsertWithoutHiddenCommentsInput = {
@@ -3089,8 +2939,6 @@ export type UserUpdateWithoutHiddenCommentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
@@ -3124,8 +2972,6 @@ export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutDocumentDraftsInput = {
@@ -3159,8 +3005,6 @@ export type UserCreateWithoutDocumentDraftsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutDocumentDraftsInput = {
@@ -3194,8 +3038,6 @@ export type UserUncheckedCreateWithoutDocumentDraftsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutDocumentDraftsInput = {
@@ -3245,8 +3087,6 @@ export type UserUpdateWithoutDocumentDraftsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
@@ -3280,8 +3120,6 @@ export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutCreatedPartialsInput = {
@@ -3315,8 +3153,6 @@ export type UserCreateWithoutCreatedPartialsInput = {
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedPartialsInput = {
@@ -3350,8 +3186,6 @@ export type UserUncheckedCreateWithoutCreatedPartialsInput = {
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedPartialsInput = {
@@ -3401,8 +3235,6 @@ export type UserUpdateWithoutCreatedPartialsInput = {
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
@@ -3436,8 +3268,6 @@ export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateWithoutAiConversationsInput = {
@@ -3471,8 +3301,6 @@ export type UserCreateWithoutAiConversationsInput = {
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserUncheckedCreateWithoutAiConversationsInput = {
@@ -3506,8 +3334,6 @@ export type UserUncheckedCreateWithoutAiConversationsInput = {
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
 }
 
 export type UserCreateOrConnectWithoutAiConversationsInput = {
@@ -3557,8 +3383,6 @@ export type UserUpdateWithoutAiConversationsInput = {
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAiConversationsInput = {
@@ -3592,320 +3416,6 @@ export type UserUncheckedUpdateWithoutAiConversationsInput = {
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
-}
-
-export type UserCreateWithoutCompletedDeadlinesInput = {
-  id?: string
-  email: string
-  passwordHash: string
-  firstName: string
-  lastName: string
-  isActive?: boolean
-  lastLoginAt?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  mustChangePassword?: boolean
-  passwordResetToken?: string | null
-  passwordResetExpires?: Date | string | null
-  passwordChangedAt?: Date | string | null
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
-  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
-  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
-  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
-  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
-  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
-  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
-  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutAssigneeInput
-}
-
-export type UserUncheckedCreateWithoutCompletedDeadlinesInput = {
-  id?: string
-  email: string
-  passwordHash: string
-  firstName: string
-  lastName: string
-  isActive?: boolean
-  lastLoginAt?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  mustChangePassword?: boolean
-  passwordResetToken?: string | null
-  passwordResetExpires?: Date | string | null
-  passwordChangedAt?: Date | string | null
-  tenantId?: string | null
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
-  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
-  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
-  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
-  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
-  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
-  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
-  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
-  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutAssigneeInput
-}
-
-export type UserCreateOrConnectWithoutCompletedDeadlinesInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutCompletedDeadlinesInput, Prisma.UserUncheckedCreateWithoutCompletedDeadlinesInput>
-}
-
-export type UserCreateWithoutAssignedDeadlinesInput = {
-  id?: string
-  email: string
-  passwordHash: string
-  firstName: string
-  lastName: string
-  isActive?: boolean
-  lastLoginAt?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  mustChangePassword?: boolean
-  passwordResetToken?: string | null
-  passwordResetExpires?: Date | string | null
-  passwordChangedAt?: Date | string | null
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
-  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
-  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
-  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
-  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
-  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
-  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
-  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  completedDeadlines?: Prisma.DeadlineCreateNestedManyWithoutCompletedByInput
-}
-
-export type UserUncheckedCreateWithoutAssignedDeadlinesInput = {
-  id?: string
-  email: string
-  passwordHash: string
-  firstName: string
-  lastName: string
-  isActive?: boolean
-  lastLoginAt?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  mustChangePassword?: boolean
-  passwordResetToken?: string | null
-  passwordResetExpires?: Date | string | null
-  passwordChangedAt?: Date | string | null
-  tenantId?: string | null
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
-  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
-  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
-  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
-  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
-  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
-  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
-  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
-  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  completedDeadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompletedByInput
-}
-
-export type UserCreateOrConnectWithoutAssignedDeadlinesInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutAssignedDeadlinesInput, Prisma.UserUncheckedCreateWithoutAssignedDeadlinesInput>
-}
-
-export type UserUpsertWithoutCompletedDeadlinesInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutCompletedDeadlinesInput, Prisma.UserUncheckedUpdateWithoutCompletedDeadlinesInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutCompletedDeadlinesInput, Prisma.UserUncheckedCreateWithoutCompletedDeadlinesInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutCompletedDeadlinesInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutCompletedDeadlinesInput, Prisma.UserUncheckedUpdateWithoutCompletedDeadlinesInput>
-}
-
-export type UserUpdateWithoutCompletedDeadlinesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
-  firstName?: Prisma.StringFieldUpdateOperationsInput | string
-  lastName?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
-  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
-  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
-  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
-  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
-  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
-  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
-  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-}
-
-export type UserUncheckedUpdateWithoutCompletedDeadlinesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
-  firstName?: Prisma.StringFieldUpdateOperationsInput | string
-  lastName?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
-  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
-  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
-  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
-  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
-  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
-  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
-  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-}
-
-export type UserUpsertWithoutAssignedDeadlinesInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutAssignedDeadlinesInput, Prisma.UserUncheckedUpdateWithoutAssignedDeadlinesInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutAssignedDeadlinesInput, Prisma.UserUncheckedCreateWithoutAssignedDeadlinesInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutAssignedDeadlinesInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutAssignedDeadlinesInput, Prisma.UserUncheckedUpdateWithoutAssignedDeadlinesInput>
-}
-
-export type UserUpdateWithoutAssignedDeadlinesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
-  firstName?: Prisma.StringFieldUpdateOperationsInput | string
-  lastName?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
-  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
-  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
-  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
-  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
-  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
-  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
-  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
-}
-
-export type UserUncheckedUpdateWithoutAssignedDeadlinesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
-  firstName?: Prisma.StringFieldUpdateOperationsInput | string
-  lastName?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
-  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
-  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
-  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
-  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
-  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
-  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
-  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserCreateManyTenantInput = {
@@ -3956,8 +3466,6 @@ export type UserUpdateWithoutTenantInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTenantInput = {
@@ -3991,8 +3499,6 @@ export type UserUncheckedUpdateWithoutTenantInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  assignedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutAssigneeNestedInput
-  completedDeadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompletedByNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutTenantInput = {
@@ -4034,8 +3540,6 @@ export type UserCountOutputType = {
   createdPartials: number
   aiConversations: number
   preferences: number
-  assignedDeadlines: number
-  completedDeadlines: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4055,8 +3559,6 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   createdPartials?: boolean | UserCountOutputTypeCountCreatedPartialsArgs
   aiConversations?: boolean | UserCountOutputTypeCountAiConversationsArgs
   preferences?: boolean | UserCountOutputTypeCountPreferencesArgs
-  assignedDeadlines?: boolean | UserCountOutputTypeCountAssignedDeadlinesArgs
-  completedDeadlines?: boolean | UserCountOutputTypeCountCompletedDeadlinesArgs
 }
 
 /**
@@ -4181,20 +3683,6 @@ export type UserCountOutputTypeCountPreferencesArgs<ExtArgs extends runtime.Type
   where?: Prisma.UserPreferenceWhereInput
 }
 
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountAssignedDeadlinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DeadlineWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountCompletedDeadlinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DeadlineWhereInput
-}
-
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -4229,8 +3717,6 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   createdPartials?: boolean | Prisma.User$createdPartialsArgs<ExtArgs>
   aiConversations?: boolean | Prisma.User$aiConversationsArgs<ExtArgs>
   preferences?: boolean | Prisma.User$preferencesArgs<ExtArgs>
-  assignedDeadlines?: boolean | Prisma.User$assignedDeadlinesArgs<ExtArgs>
-  completedDeadlines?: boolean | Prisma.User$completedDeadlinesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -4309,8 +3795,6 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   createdPartials?: boolean | Prisma.User$createdPartialsArgs<ExtArgs>
   aiConversations?: boolean | Prisma.User$aiConversationsArgs<ExtArgs>
   preferences?: boolean | Prisma.User$preferencesArgs<ExtArgs>
-  assignedDeadlines?: boolean | Prisma.User$assignedDeadlinesArgs<ExtArgs>
-  completedDeadlines?: boolean | Prisma.User$completedDeadlinesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4340,8 +3824,6 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     createdPartials: Prisma.$TemplatePartialPayload<ExtArgs>[]
     aiConversations: Prisma.$AiConversationPayload<ExtArgs>[]
     preferences: Prisma.$UserPreferencePayload<ExtArgs>[]
-    assignedDeadlines: Prisma.$DeadlinePayload<ExtArgs>[]
-    completedDeadlines: Prisma.$DeadlinePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -4770,8 +4252,6 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   createdPartials<T extends Prisma.User$createdPartialsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdPartialsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TemplatePartialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   aiConversations<T extends Prisma.User$aiConversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$aiConversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiConversationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   preferences<T extends Prisma.User$preferencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$preferencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPreferencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  assignedDeadlines<T extends Prisma.User$assignedDeadlinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignedDeadlinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  completedDeadlines<T extends Prisma.User$completedDeadlinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$completedDeadlinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5612,54 +5092,6 @@ export type User$preferencesArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.UserPreferenceScalarFieldEnum | Prisma.UserPreferenceScalarFieldEnum[]
-}
-
-/**
- * User.assignedDeadlines
- */
-export type User$assignedDeadlinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Deadline
-   */
-  select?: Prisma.DeadlineSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Deadline
-   */
-  omit?: Prisma.DeadlineOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DeadlineInclude<ExtArgs> | null
-  where?: Prisma.DeadlineWhereInput
-  orderBy?: Prisma.DeadlineOrderByWithRelationInput | Prisma.DeadlineOrderByWithRelationInput[]
-  cursor?: Prisma.DeadlineWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DeadlineScalarFieldEnum | Prisma.DeadlineScalarFieldEnum[]
-}
-
-/**
- * User.completedDeadlines
- */
-export type User$completedDeadlinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Deadline
-   */
-  select?: Prisma.DeadlineSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Deadline
-   */
-  omit?: Prisma.DeadlineOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DeadlineInclude<ExtArgs> | null
-  where?: Prisma.DeadlineWhereInput
-  orderBy?: Prisma.DeadlineOrderByWithRelationInput | Prisma.DeadlineOrderByWithRelationInput[]
-  cursor?: Prisma.DeadlineWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DeadlineScalarFieldEnum | Prisma.DeadlineScalarFieldEnum[]
 }
 
 /**

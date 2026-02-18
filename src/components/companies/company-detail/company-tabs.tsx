@@ -2,10 +2,10 @@
 
 import { useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Building2, Contact, FileText, AlertTriangle, Clock } from 'lucide-react';
+import { Building2, Contact, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-export type TabId = 'profile' | 'contacts' | 'services' | 'deadlines';
+export type TabId = 'profile' | 'contacts';
 
 interface Tab {
   id: TabId;
@@ -16,8 +16,6 @@ interface Tab {
 const tabs: Tab[] = [
   { id: 'profile', label: 'Company Profile', icon: Building2 },
   { id: 'contacts', label: 'Contact Details', icon: Contact },
-  { id: 'services', label: 'Services', icon: FileText },
-  { id: 'deadlines', label: 'Deadlines', icon: Clock },
 ];
 
 interface CompanyTabsProps {
@@ -69,11 +67,15 @@ export function useTabState(): [TabId, (tabId: TabId) => void] {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Get current tab from URL, default to 'profile'
-  // Supports legacy `tab=contracts` links by mapping them to `services`.
+  // Get current tab from URL, default to 'profile'.
+  // Supports legacy service/deadline tabs by mapping them to `profile`.
   const tabParam = searchParams.get('tab');
-  const currentTab = (tabParam === 'contracts' ? 'services' : tabParam) as TabId | null;
-  const validTabs: TabId[] = ['profile', 'contacts', 'services', 'deadlines'];
+  const remappedTab =
+    tabParam === 'contracts' || tabParam === 'services' || tabParam === 'deadlines'
+      ? 'profile'
+      : tabParam;
+  const currentTab = remappedTab as TabId | null;
+  const validTabs: TabId[] = ['profile', 'contacts'];
   const validTab: TabId = currentTab && validTabs.includes(currentTab) ? currentTab : 'profile';
 
   // Update URL when tab changes

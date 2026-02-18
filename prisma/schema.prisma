@@ -226,174 +226,68 @@ enum ConnectorProvider {
 }
 
 // ============================================================================
-// CONTRACTS & SERVICES
-// ============================================================================
-
-enum ContractType {
-  ENGAGEMENT_LETTER
-  SERVICE_AGREEMENT
-  RETAINER_CONTRACT
-  NDA
-  VENDOR_AGREEMENT
-  OTHER
-}
-
-enum ContractStatus {
-  DRAFT
-  ACTIVE
-  TERMINATED
-}
-
-enum ServiceType {
-  RECURRING
-  ONE_TIME
-}
-
-enum ServiceStatus {
-  ACTIVE
-  COMPLETED
-  CANCELLED
-  PENDING
-}
-
-enum BillingFrequency {
-  MONTHLY
-  QUARTERLY
-  SEMI_ANNUALLY
-  ANNUALLY
-  ONE_TIME
-}
-
-// ============================================================================
-// DEADLINE MANAGEMENT
-// ============================================================================
-
-enum DeadlineCategory {
-  CORPORATE_SECRETARY
-  TAX
-  ACCOUNTING
-  AUDIT
-  COMPLIANCE
-  OTHER
-}
-
-enum DeadlineStatus {
-  PENDING
-  PENDING_CLIENT
-  IN_PROGRESS
-  PENDING_REVIEW
-  COMPLETED
-  CANCELLED
-  WAIVED
-}
-
-enum DeadlineBillingStatus {
-  NOT_APPLICABLE
-  PENDING
-  TO_BE_BILLED
-  INVOICED
-  PAID
-}
-
-enum DeadlineAnchorType {
-  FYE           // Financial Year End
-  SERVICE_START // Service start anniversary
-  FIXED_CALENDAR // Fixed date each year (e.g., 30 Nov)
-  QUARTER_END   // End of calendar quarter
-  MONTH_END     // End of month
-  INCORPORATION // Company incorporation date
-  IPC_EXPIRY    // IPC status expiry date
-}
-
-enum DeadlineFrequency {
-  ANNUALLY
-  QUARTERLY
-  MONTHLY
-  ONE_TIME
-}
-
-enum DeadlineGenerationType {
-  AUTO
-  MANUAL
-}
-
-enum DeadlineRuleType {
-  RULE_BASED    // Calculate from anchor + offset
-  FIXED_DATE    // Specific date, never recalculates
-}
-
-// ============================================================================
 // TENANT (Multi-Tenancy Core)
 // ============================================================================
 
 model Tenant {
-  id                String       @id @default(uuid())
-  name              String
-  slug              String       @unique // URL-friendly identifier
-  status            TenantStatus @default(PENDING_SETUP)
+  id     String       @id @default(uuid())
+  name   String
+  slug   String       @unique // URL-friendly identifier
+  status TenantStatus @default(PENDING_SETUP)
 
   // Contact Info
-  contactEmail      String?
-  contactPhone      String?
+  contactEmail String?
+  contactPhone String?
 
   // Settings & Limits
-  settings          Json?        // Tenant-specific configuration
-  maxUsers          Int          @default(50)
-  maxCompanies      Int          @default(100)
-  maxStorageMb      Int          @default(10240) // 10GB default
+  settings     Json? // Tenant-specific configuration
+  maxUsers     Int   @default(50)
+  maxCompanies Int   @default(100)
+  maxStorageMb Int   @default(10240) // 10GB default
 
   // Branding (optional)
-  logoUrl           String?
-  primaryColor      String?      @default("#294d44")
+  logoUrl      String?
+  primaryColor String? @default("#294d44")
 
   // Timestamps
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  deletedAt         DateTime?
-  deletedReason     String?
-  activatedAt       DateTime?
-  suspendedAt       DateTime?
-  suspendReason     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  deletedReason String?
+  activatedAt   DateTime?
+  suspendedAt   DateTime?
+  suspendReason String?
 
   // Relations
-  users             User[]
-  companies         Company[]
-  contacts          Contact[]
-  documents         Document[]
-  auditLogs         AuditLog[]
-  roles             Role[]
-  connectors        Connector[]
-  connectorAccess   TenantConnectorAccess[]
+  users              User[]
+  companies          Company[]
+  contacts           Contact[]
+  documents          Document[]
+  auditLogs          AuditLog[]
+  roles              Role[]
+  connectors         Connector[]
+  connectorAccess    TenantConnectorAccess[]
   connectorUsageLogs ConnectorUsageLog[]
 
   // Document Generation Module
-  documentTemplates    DocumentTemplate[]
-  generatedDocuments   GeneratedDocument[]
-  letterhead           TenantLetterhead?
-  templatePartials     TemplatePartial[]
-  aiConversations      AiConversation[]
+  documentTemplates  DocumentTemplate[]
+  generatedDocuments GeneratedDocument[]
+  letterhead         TenantLetterhead?
+  templatePartials   TemplatePartial[]
+  aiConversations    AiConversation[]
 
   // Backup & Restore
-  backups              TenantBackup[]
-  backupSchedule       BackupSchedule?
+  backups        TenantBackup[]
+  backupSchedule BackupSchedule?
 
   // Exchange Rates
-  exchangeRates        ExchangeRate[]
+  exchangeRates ExchangeRate[]
 
   // Chart of Accounts
-  chartOfAccounts      ChartOfAccount[]
+  chartOfAccounts ChartOfAccount[]
 
   // Contact Details
-  contactDetails       ContactDetail[]
-
-  // Contracts & Services
-  contracts            Contract[]
-  contractServices     ContractService[]
-
-  // Deadline Management
-  deadlineTemplates    DeadlineTemplate[]
-  deadlines            Deadline[]
-  deadlineRules        DeadlineRule[]
+  contactDetails ContactDetail[]
 
   @@index([slug])
   @@index([status])
@@ -406,13 +300,13 @@ model Tenant {
 // ============================================================================
 
 model Role {
-  id          String   @id @default(uuid())
-  tenantId    String?  // Nullable for global roles (SUPER_ADMIN)
-  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
+  id       String  @id @default(uuid())
+  tenantId String? // Nullable for global roles (SUPER_ADMIN)
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
 
   name        String
   description String?
-  isSystem    Boolean  @default(false) // System roles cannot be deleted
+  isSystem    Boolean @default(false) // System roles cannot be deleted
 
   // System role type for special handling
   // "SUPER_ADMIN" - Global admin, bypasses all checks
@@ -420,8 +314,8 @@ model Role {
   // null - Regular custom role, permissions via RolePermission
   systemRoleType String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   permissions RolePermission[]
@@ -434,13 +328,13 @@ model Role {
 }
 
 model Permission {
-  id          String   @id @default(uuid())
-  resource    String   // e.g., "company", "document", "user", "contact"
-  action      String   // e.g., "create", "read", "update", "delete", "export"
+  id          String  @id @default(uuid())
+  resource    String // e.g., "company", "document", "user", "contact"
+  action      String // e.g., "create", "read", "update", "delete", "export"
   description String?
 
   // Relations
-  roles       RolePermission[]
+  roles RolePermission[]
 
   @@unique([resource, action])
   @@index([resource])
@@ -454,7 +348,7 @@ model RolePermission {
   permissionId String
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
-  createdAt    DateTime   @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -463,11 +357,11 @@ model RolePermission {
 }
 
 model UserRoleAssignment {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roleId    String
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   // Optional: scope to specific company (null = tenant-wide)
   companyId String?
@@ -488,50 +382,46 @@ model UserRoleAssignment {
 // ============================================================================
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String
-  firstName     String
-  lastName      String
-  isActive      Boolean   @default(true)
-  lastLoginAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
   // Password management
-  mustChangePassword    Boolean   @default(false)
-  passwordResetToken    String?   @unique
-  passwordResetExpires  DateTime?
-  passwordChangedAt     DateTime?
+  mustChangePassword   Boolean   @default(false)
+  passwordResetToken   String?   @unique
+  passwordResetExpires DateTime?
+  passwordChangedAt    DateTime?
 
   // Tenant relation (required for all non-SUPER_ADMIN users)
-  tenantId      String?
-  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
 
   // Relations
-  auditLogs     AuditLog[]
-  uploadedDocuments Document[]
-  roleAssignments UserRoleAssignment[]
+  auditLogs          AuditLog[]
+  uploadedDocuments  Document[]
+  roleAssignments    UserRoleAssignment[]
   companyAssignments UserCompanyAssignment[]
   connectorUsageLogs ConnectorUsageLog[]
 
   // Document Generation Module
-  createdTemplates      DocumentTemplate[]    @relation("TemplateCreator")
-  createdDocuments      GeneratedDocument[]   @relation("DocumentCreator")
-  finalizedDocuments    GeneratedDocument[]   @relation("DocumentFinalizer")
-  createdShares         DocumentShare[]       @relation("ShareCreator")
-  authoredComments      DocumentComment[]     @relation("CommentAuthor")
-  resolvedComments      DocumentComment[]     @relation("CommentResolver")
-  hiddenComments        DocumentComment[]     @relation("CommentHider")
-  documentDrafts        DocumentDraft[]       @relation("DraftAuthor")
-  createdPartials       TemplatePartial[]     @relation("PartialCreator")
-  aiConversations       AiConversation[]      @relation("ConversationOwner")
-  preferences           UserPreference[]
-
-  // Deadline Management
-  assignedDeadlines     Deadline[]            @relation("DeadlineAssignee")
-  completedDeadlines    Deadline[]            @relation("DeadlineCompleter")
+  createdTemplates   DocumentTemplate[]  @relation("TemplateCreator")
+  createdDocuments   GeneratedDocument[] @relation("DocumentCreator")
+  finalizedDocuments GeneratedDocument[] @relation("DocumentFinalizer")
+  createdShares      DocumentShare[]     @relation("ShareCreator")
+  authoredComments   DocumentComment[]   @relation("CommentAuthor")
+  resolvedComments   DocumentComment[]   @relation("CommentResolver")
+  hiddenComments     DocumentComment[]   @relation("CommentHider")
+  documentDrafts     DocumentDraft[]     @relation("DraftAuthor")
+  createdPartials    TemplatePartial[]   @relation("PartialCreator")
+  aiConversations    AiConversation[]    @relation("ConversationOwner")
+  preferences        UserPreference[]
 
   @@index([email])
   @@index([tenantId])
@@ -544,12 +434,12 @@ model User {
 
 // Per-user UI/application preferences (persisted across devices)
 model UserPreference {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  key       String
-  value     Json
+  key   String
+  value Json
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -563,14 +453,14 @@ model UserPreference {
 // Note: Permissions are controlled via UserRoleAssignment (company-scoped roles)
 // This table only tracks WHICH companies a user can access
 model UserCompanyAssignment {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   companyId String
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   // Whether this is the user's primary company (for UI purposes)
-  isPrimary Boolean  @default(false)
+  isPrimary Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -586,109 +476,97 @@ model UserCompanyAssignment {
 // ============================================================================
 
 model Company {
-  id                    String        @id @default(uuid())
+  id String @id @default(uuid())
 
   // Tenant (multi-tenancy) - required
-  tenantId              String
-  tenant                Tenant        @relation(fields: [tenantId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  uen                   String        // Unique within tenant (see compound constraint)
-  name                  String
-  formerName            String?       // Previous company name (if any)
-  dateOfNameChange      DateTime?     // Date when name was changed
-  entityType            EntityType    @default(PRIVATE_LIMITED)
-  status                CompanyStatus @default(LIVE)
-  statusDate            DateTime?     // Date when status became effective
-  incorporationDate     DateTime?
-  registrationDate      DateTime?
+  uen               String // Unique within tenant (see compound constraint)
+  name              String
+  formerName        String? // Previous company name (if any)
+  dateOfNameChange  DateTime? // Date when name was changed
+  entityType        EntityType    @default(PRIVATE_LIMITED)
+  status            CompanyStatus @default(LIVE)
+  statusDate        DateTime? // Date when status became effective
+  incorporationDate DateTime?
+  registrationDate  DateTime?
 
   // Registered Office Address Date
-  dateOfAddress         DateTime?     // Date when registered address became effective
+  dateOfAddress DateTime? // Date when registered address became effective
 
   // Business Activity
-  primarySsicCode       String?
-  primarySsicDescription String?
-  secondarySsicCode     String?
+  primarySsicCode          String?
+  primarySsicDescription   String?
+  secondarySsicCode        String?
   secondarySsicDescription String?
 
   // Financial Year
   financialYearEndDay   Int?
   financialYearEndMonth Int?
-  fyeAsAtLastAr         DateTime?     // Financial year end as at last annual return
-  homeCurrency          String?       @default("SGD")
+  fyeAsAtLastAr         DateTime? // Financial year end as at last annual return
+  homeCurrency          String?   @default("SGD")
 
   // Compliance Dates
-  lastAgmDate           DateTime?
-  lastArFiledDate       DateTime?
-  nextAgmDueDate        DateTime?
-  nextArDueDate         DateTime?
-  accountsDueDate       DateTime?
+  lastAgmDate     DateTime?
+  lastArFiledDate DateTime?
+  nextAgmDueDate  DateTime?
+  nextArDueDate   DateTime?
+  accountsDueDate DateTime?
 
   // Capital
-  paidUpCapitalCurrency String?       @default("SGD")
-  paidUpCapitalAmount   Decimal?      @db.Decimal(18, 2)
-  issuedCapitalCurrency String?       @default("SGD")
-  issuedCapitalAmount   Decimal?      @db.Decimal(18, 2)
+  paidUpCapitalCurrency String?  @default("SGD")
+  paidUpCapitalAmount   Decimal? @db.Decimal(18, 2)
+  issuedCapitalCurrency String?  @default("SGD")
+  issuedCapitalAmount   Decimal? @db.Decimal(18, 2)
 
   // Flags
-  hasCharges            Boolean       @default(false)
-  isGstRegistered       Boolean       @default(false)
+  hasCharges            Boolean   @default(false)
+  isGstRegistered       Boolean   @default(false)
   gstRegistrationNumber String?
   gstRegistrationDate   DateTime?
 
-  // Deadline Management Flags
-  agmDispensed                 Boolean            @default(false)    // Company has dispensed with AGMs
-  isDormant                    Boolean            @default(false)    // Company is dormant (informational)
-  dormantTaxExemptionApproved  Boolean            @default(false)    // IRAS approved tax exemption
-  gstFilingFrequency           GstFilingFrequency? // MONTHLY or QUARTERLY if GST registered
-
   // Charity & IPC Status
-  isRegisteredCharity          Boolean            @default(false)
-  charityRegistrationDate      DateTime?
-  charityUEN                   String?
-  isIPC                        Boolean            @default(false)
-  ipcEffectiveDate             DateTime?
-  ipcExpiryDate                DateTime?
-  annualReceiptsOrExpenditure  Decimal?           @db.Decimal(18, 2) // Higher of receipts/expenditure
+  isRegisteredCharity         Boolean   @default(false)
+  charityRegistrationDate     DateTime?
+  charityUEN                  String?
+  isIPC                       Boolean   @default(false)
+  ipcEffectiveDate            DateTime?
+  ipcExpiryDate               DateTime?
+  annualReceiptsOrExpenditure Decimal?  @db.Decimal(18, 2) // Higher of receipts/expenditure
 
   // Audit & Soft Delete
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  deletedAt             DateTime?
-  deletedReason         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  deletedReason String?
 
   // Relations
-  formerNames           CompanyFormerName[]
-  addresses             CompanyAddress[]
-  officers              CompanyOfficer[]
-  shareholders          CompanyShareholder[]
-  shareCapital          ShareCapital[]
-  charges               CompanyCharge[]
-  documents             Document[]
-  auditLogs             AuditLog[]
-  contacts              CompanyContact[]
-  roleAssignments       UserRoleAssignment[]
-  userAssignments       UserCompanyAssignment[]
-  noteTabs              NoteTab[]
+  formerNames     CompanyFormerName[]
+  addresses       CompanyAddress[]
+  officers        CompanyOfficer[]
+  shareholders    CompanyShareholder[]
+  shareCapital    ShareCapital[]
+  charges         CompanyCharge[]
+  documents       Document[]
+  auditLogs       AuditLog[]
+  contacts        CompanyContact[]
+  roleAssignments UserRoleAssignment[]
+  userAssignments UserCompanyAssignment[]
+  noteTabs        NoteTab[]
 
   // Document Generation Module
-  generatedDocuments    GeneratedDocument[]
+  generatedDocuments GeneratedDocument[]
 
   // Document Tags
-  documentTags          DocumentTag[]
+  documentTags DocumentTag[]
 
   // Chart of Accounts
-  chartOfAccounts       ChartOfAccount[]
-  accountMappings       ChartOfAccountsMapping[]
+  chartOfAccounts ChartOfAccount[]
+  accountMappings ChartOfAccountsMapping[]
 
   // Contact Details
-  contactDetails        ContactDetail[]
-
-  // Contracts
-  contracts             Contract[]
-
-  // Deadline Management
-  deadlines             Deadline[]
+  contactDetails ContactDetail[]
 
   @@unique([tenantId, uen]) // UEN unique within tenant
   @@index([tenantId])
@@ -707,40 +585,40 @@ model Company {
 }
 
 model CompanyFormerName {
-  id              String   @id @default(uuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  formerName      String
-  effectiveFrom   DateTime
-  effectiveTo     DateTime?
+  id               String    @id @default(uuid())
+  companyId        String
+  company          Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  formerName       String
+  effectiveFrom    DateTime
+  effectiveTo      DateTime?
   sourceDocumentId String?
-  document        Document? @relation(fields: [sourceDocumentId], references: [id])
-  createdAt       DateTime @default(now())
+  document         Document? @relation(fields: [sourceDocumentId], references: [id])
+  createdAt        DateTime  @default(now())
 
   @@index([companyId])
   @@map("company_former_names")
 }
 
 model CompanyAddress {
-  id              String      @id @default(uuid())
-  companyId       String
-  company         Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  addressType     AddressType
-  block           String?
-  streetName      String
-  level           String?
-  unit            String?
-  buildingName    String?
-  postalCode      String
-  country         String      @default("SINGAPORE")
-  fullAddress     String
-  effectiveFrom   DateTime?
-  effectiveTo     DateTime?
-  isCurrent       Boolean     @default(true)
+  id               String      @id @default(uuid())
+  companyId        String
+  company          Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  addressType      AddressType
+  block            String?
+  streetName       String
+  level            String?
+  unit             String?
+  buildingName     String?
+  postalCode       String
+  country          String      @default("SINGAPORE")
+  fullAddress      String
+  effectiveFrom    DateTime?
+  effectiveTo      DateTime?
+  isCurrent        Boolean     @default(true)
   sourceDocumentId String?
-  document        Document?   @relation(fields: [sourceDocumentId], references: [id])
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  document         Document?   @relation(fields: [sourceDocumentId], references: [id])
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   @@index([companyId])
   @@index([addressType])
@@ -755,44 +633,44 @@ model CompanyAddress {
 // ============================================================================
 
 model Contact {
-  id                  String             @id @default(uuid())
+  id String @id @default(uuid())
 
   // Tenant (multi-tenancy) - required
-  tenantId            String
-  tenant              Tenant             @relation(fields: [tenantId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  contactType         ContactType        @default(INDIVIDUAL)
+  contactType ContactType @default(INDIVIDUAL)
 
   // For Individuals
-  firstName           String?
-  lastName            String?
-  fullName            String
-  alias               String?
-  identificationType  IdentificationType?
+  firstName            String?
+  lastName             String?
+  fullName             String
+  alias                String?
+  identificationType   IdentificationType?
   identificationNumber String?
-  nationality         String?
-  dateOfBirth         DateTime?
+  nationality          String?
+  dateOfBirth          DateTime?
 
   // For Corporate
-  corporateName       String?
-  corporateUen        String?
+  corporateName String?
+  corporateUen  String?
 
   // Address
-  fullAddress         String?
+  fullAddress String?
 
   // Meta
-  isActive            Boolean           @default(true)
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  deletedAt           DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relations
-  companyRelations    CompanyContact[]
-  officerPositions    CompanyOfficer[]
-  shareholdings       CompanyShareholder[]
-  chargeHoldings      CompanyCharge[]
-  noteTabs            NoteTab[]
-  contactDetails      ContactDetail[]
+  companyRelations CompanyContact[]
+  officerPositions CompanyOfficer[]
+  shareholdings    CompanyShareholder[]
+  chargeHoldings   CompanyCharge[]
+  noteTabs         NoteTab[]
+  contactDetails   ContactDetail[]
 
   @@unique([tenantId, identificationType, identificationNumber])
   @@index([tenantId])
@@ -804,16 +682,16 @@ model Contact {
 }
 
 model CompanyContact {
-  id          String    @id @default(uuid())
-  companyId   String
-  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contactId   String
-  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  relationship String   // E.g., "Director", "Shareholder", "Auditor"
-  isPrimary   Boolean   @default(false)
-  isPoc       Boolean   @default(false) // Point of Contact for this company
-  createdAt   DateTime  @default(now())
-  deletedAt   DateTime? // For soft delete support
+  id           String    @id @default(uuid())
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId    String
+  contact      Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  relationship String // E.g., "Director", "Shareholder", "Auditor"
+  isPrimary    Boolean   @default(false)
+  isPoc        Boolean   @default(false) // Point of Contact for this company
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime? // For soft delete support
 
   @@unique([companyId, contactId, relationship])
   @@index([companyId])
@@ -832,45 +710,45 @@ model CompanyContact {
 // - A Company only (company-level contact details like "accounts receivable email")
 // - Both Contact AND Company (contact's detail for a specific company function)
 model ContactDetail {
-  id             String            @id @default(uuid())
-  tenantId       String
-  tenant         Tenant            @relation(fields: [tenantId], references: [id])
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   // Optional link to Contact (for contact-level details)
-  contactId      String?
-  contact        Contact?          @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   // Optional link to Company (for company-level details)
-  companyId      String?
-  company        Company?          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   // Detail type and value
-  detailType     ContactDetailType
-  value          String            // The actual email, phone number, etc.
+  detailType ContactDetailType
+  value      String // The actual email, phone number, etc.
 
   // Function/purpose label (e.g., "Account Receivable", "Main Office", "Personal")
-  label          String?
+  label String?
 
   // Purposes for automation (e.g., ["INVOICE", "STATEMENT"])
   // Common purposes: INVOICE, STATEMENT, TAX_NOTICE, RECEIPT, REMINDER, GENERAL
-  purposes       String[]          @default([])
+  purposes String[] @default([])
 
   // Additional notes
-  description    String?
+  description String?
 
   // Ordering for display
-  displayOrder   Int               @default(0)
+  displayOrder Int @default(0)
 
   // Whether this is the primary detail of this type
-  isPrimary      Boolean           @default(false)
+  isPrimary Boolean @default(false)
 
   // Whether this contact detail is a Point of Contact (POC) for the company
-  isPoc          Boolean           @default(false)
+  isPoc Boolean @default(false)
 
   // Timestamps
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  deletedAt      DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([tenantId])
   @@index([contactId])
@@ -887,31 +765,31 @@ model ContactDetail {
 // ============================================================================
 
 model CompanyOfficer {
-  id                String      @id @default(uuid())
-  companyId         String
-  company           Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contactId         String?
-  contact           Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
-  role              OfficerRole
+  role OfficerRole
 
   // Officer Details (denormalized for historical record)
-  name              String
-  identificationType IdentificationType?
+  name                 String
+  identificationType   IdentificationType?
   identificationNumber String?
-  nationality       String?
-  address           String?
+  nationality          String?
+  address              String?
 
   // Appointment
-  appointmentDate   DateTime?
-  cessationDate     DateTime?
-  isCurrent         Boolean     @default(true)
+  appointmentDate DateTime?
+  cessationDate   DateTime?
+  isCurrent       Boolean   @default(true)
 
   // Source
-  sourceDocumentId  String?
-  document          Document?   @relation(fields: [sourceDocumentId], references: [id])
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  sourceDocumentId String?
+  document         Document? @relation(fields: [sourceDocumentId], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([companyId])
   @@index([contactId])
@@ -929,60 +807,60 @@ model CompanyOfficer {
 // ============================================================================
 
 model ShareCapital {
-  id              String   @id @default(uuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        String  @id @default(uuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  shareClass      String   @default("ORDINARY")
-  currency        String   @default("SGD")
-  numberOfShares  Int
-  parValue        Decimal? @db.Decimal(18, 4)
-  totalValue      Decimal  @db.Decimal(18, 2)
-  isPaidUp        Boolean  @default(true)
-  isTreasury      Boolean  @default(false)  // True for treasury shares
+  shareClass     String   @default("ORDINARY")
+  currency       String   @default("SGD")
+  numberOfShares Int
+  parValue       Decimal? @db.Decimal(18, 4)
+  totalValue     Decimal  @db.Decimal(18, 2)
+  isPaidUp       Boolean  @default(true)
+  isTreasury     Boolean  @default(false) // True for treasury shares
 
-  effectiveDate   DateTime?
+  effectiveDate    DateTime?
   sourceDocumentId String?
-  document        Document? @relation(fields: [sourceDocumentId], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  document         Document? @relation(fields: [sourceDocumentId], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([companyId])
   @@map("share_capital")
 }
 
 model CompanyShareholder {
-  id                String      @id @default(uuid())
-  companyId         String
-  company           Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contactId         String?
-  contact           Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   // Shareholder Details (denormalized for historical record)
-  name              String
-  shareholderType   ContactType @default(INDIVIDUAL)
-  identificationType IdentificationType?
+  name                 String
+  shareholderType      ContactType         @default(INDIVIDUAL)
+  identificationType   IdentificationType?
   identificationNumber String?
-  nationality       String?
-  placeOfOrigin     String?     // For corporate shareholders
-  address           String?
+  nationality          String?
+  placeOfOrigin        String? // For corporate shareholders
+  address              String?
 
   // Shareholding
-  shareClass        String      @default("ORDINARY")
-  numberOfShares    Int
-  percentageHeld    Decimal?    @db.Decimal(5, 2)
-  currency          String      @default("SGD")
+  shareClass     String   @default("ORDINARY")
+  numberOfShares Int
+  percentageHeld Decimal? @db.Decimal(5, 2)
+  currency       String   @default("SGD")
 
   // Dates
-  allotmentDate     DateTime?
-  transferDate      DateTime?
-  isCurrent         Boolean     @default(true)
+  allotmentDate DateTime?
+  transferDate  DateTime?
+  isCurrent     Boolean   @default(true)
 
   // Source
-  sourceDocumentId  String?
-  document          Document?   @relation(fields: [sourceDocumentId], references: [id])
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  sourceDocumentId String?
+  document         Document? @relation(fields: [sourceDocumentId], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([companyId])
   @@index([contactId])
@@ -999,28 +877,28 @@ model CompanyShareholder {
 // ============================================================================
 
 model CompanyCharge {
-  id                String    @id @default(uuid())
-  companyId         String
-  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  chargeHolderId    String?
-  chargeHolder      Contact?  @relation(fields: [chargeHolderId], references: [id])
+  id             String   @id @default(uuid())
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  chargeHolderId String?
+  chargeHolder   Contact? @relation(fields: [chargeHolderId], references: [id])
 
   chargeNumber      String?
   chargeType        String?
   description       String?
   chargeHolderName  String
-  amountSecured     Decimal?  @db.Decimal(18, 2)
-  amountSecuredText String?   // For text values like "All Monies"
-  currency          String?   @default("SGD")
+  amountSecured     Decimal? @db.Decimal(18, 2)
+  amountSecuredText String? // For text values like "All Monies"
+  currency          String?  @default("SGD")
 
   registrationDate  DateTime?
   dischargeDate     DateTime?
   isFullyDischarged Boolean   @default(false)
 
-  sourceDocumentId  String?
-  document          Document? @relation(fields: [sourceDocumentId], references: [id])
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  sourceDocumentId String?
+  document         Document? @relation(fields: [sourceDocumentId], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([companyId])
   @@index([chargeHolderId])
@@ -1034,55 +912,52 @@ model CompanyCharge {
 // ============================================================================
 
 model Document {
-  id              String    @id @default(uuid())
+  id String @id @default(uuid())
 
   // Tenant (multi-tenancy) - required
-  tenantId        String
-  tenant          Tenant    @relation(fields: [tenantId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   // Company is optional for pending documents (e.g., BizFile upload before extraction)
-  companyId       String?
-  company         Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  uploadedById    String
-  uploadedBy      User      @relation(fields: [uploadedById], references: [id])
+  companyId    String?
+  company      Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
 
-  documentType    String    // "BIZFILE", "CONSTITUTION", "RESOLUTION", etc.
-  fileName        String
+  documentType     String // "BIZFILE", "CONSTITUTION", "RESOLUTION", etc.
+  fileName         String
   originalFileName String
-  storageKey      String    @map("storage_key")  // Storage key for file in object storage
-  fileSize        Int
-  mimeType        String
+  storageKey       String @map("storage_key") // Storage key for file in object storage
+  fileSize         Int
+  mimeType         String
 
   // Extraction
-  extractedAt     DateTime?
+  extractedAt      DateTime?
   extractionStatus String?   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
-  extractionError String?
-  extractedData   Json?     // Raw extracted JSON data
+  extractionError  String?
+  extractedData    Json? // Raw extracted JSON data
 
   // Versioning
-  version         Int       @default(1)
-  isLatest        Boolean   @default(true)
+  version           Int     @default(1)
+  isLatest          Boolean @default(true)
   previousVersionId String?
 
   // Soft delete
-  deletedAt       DateTime? @map("deleted_at")
-  deletedReason   String?   @map("deleted_reason")
-  deletedById     String?   @map("deleted_by_id")
+  deletedAt     DateTime? @map("deleted_at")
+  deletedReason String?   @map("deleted_reason")
+  deletedById   String?   @map("deleted_by_id")
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations - data extracted from this document
-  formerNames     CompanyFormerName[]
-  addresses       CompanyAddress[]
-  officers        CompanyOfficer[]
-  shareCapital    ShareCapital[]
-  shareholders    CompanyShareholder[]
-  charges         CompanyCharge[]
+  formerNames        CompanyFormerName[]
+  addresses          CompanyAddress[]
+  officers           CompanyOfficer[]
+  shareCapital       ShareCapital[]
+  shareholders       CompanyShareholder[]
+  charges            CompanyCharge[]
   processingDocument ProcessingDocument?
-
-  // Contract attachment (one-to-one, optional)
-  contract        Contract?
 
   @@index([tenantId])
   @@index([companyId])
@@ -1099,36 +974,36 @@ model Document {
 // ============================================================================
 
 model AuditLog {
-  id            String       @id @default(uuid())
+  id String @id @default(uuid())
 
   // Tenant (multi-tenancy) - optional for system-level events
-  tenantId      String?
-  tenant        Tenant?      @relation(fields: [tenantId], references: [id])
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
 
-  userId        String?
-  user          User?        @relation(fields: [userId], references: [id])
-  companyId     String?
-  company       Company?     @relation(fields: [companyId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 
-  action        AuditAction
-  entityType    String       // "Tenant", "Company", "Contact", "Officer", etc.
-  entityId      String
+  action     AuditAction
+  entityType String // "Tenant", "Company", "Contact", "Officer", etc.
+  entityId   String
 
-  changeSource  ChangeSource @default(MANUAL)
-  changes       Json?        // { field: { old: value, new: value } }
-  reason        String?      // Required for deletions
-  summary       String?      // Human-readable description of the action
-  entityName    String?      // Name of the affected entity (e.g., company name, user name)
-  metadata      Json?        // Additional context
+  changeSource ChangeSource @default(MANUAL)
+  changes      Json? // { field: { old: value, new: value } }
+  reason       String? // Required for deletions
+  summary      String? // Human-readable description of the action
+  entityName   String? // Name of the affected entity (e.g., company name, user name)
+  metadata     Json? // Additional context
 
   // Request context
-  ipAddress     String?
-  userAgent     String?
-  requestId     String?      // For correlating related operations
-  sessionId     String?      // For tracking user sessions
+  ipAddress String?
+  userAgent String?
+  requestId String? // For correlating related operations
+  sessionId String? // For tracking user sessions
 
   // Timestamps
-  createdAt     DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   @@index([tenantId])
   @@index([userId])
@@ -1147,39 +1022,39 @@ model AuditLog {
 // ============================================================================
 
 model Connector {
-  id                String            @id @default(uuid())
+  id String @id @default(uuid())
 
   // Tenant scope: null = system connector, otherwise tenant-specific
-  tenantId          String?
-  tenant            Tenant?           @relation(fields: [tenantId], references: [id])
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
 
   // Connector identification
-  name              String            // Display name (e.g., "Production OpenAI")
-  type              ConnectorType     // AI_PROVIDER, STORAGE
-  provider          ConnectorProvider // OPENAI, ANTHROPIC, GOOGLE, ONEDRIVE
+  name     String // Display name (e.g., "Production OpenAI")
+  type     ConnectorType // AI_PROVIDER, STORAGE
+  provider ConnectorProvider // OPENAI, ANTHROPIC, GOOGLE, ONEDRIVE
 
   // Configuration
-  credentials       String            // Encrypted JSON: { apiKey, clientId, etc. }
-  settings          Json?             // Provider-specific settings (model preferences, etc.)
+  credentials String // Encrypted JSON: { apiKey, clientId, etc. }
+  settings    Json? // Provider-specific settings (model preferences, etc.)
 
   // Status
-  isEnabled         Boolean           @default(true)
-  isDefault         Boolean           @default(false) // Default for this type within scope
+  isEnabled Boolean @default(true)
+  isDefault Boolean @default(false) // Default for this type within scope
 
   // Usage tracking
-  callCount         Int               @default(0)
-  lastUsedAt        DateTime?
-  lastTestedAt      DateTime?
-  lastTestResult    String?           // "success" | "error:message"
+  callCount      Int       @default(0)
+  lastUsedAt     DateTime?
+  lastTestedAt   DateTime?
+  lastTestResult String? // "success" | "error:message"
 
   // Soft delete & timestamps
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  deletedAt         DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relations
-  tenantAccess      TenantConnectorAccess[]
-  usageLogs         ConnectorUsageLog[]
+  tenantAccess TenantConnectorAccess[]
+  usageLogs    ConnectorUsageLog[]
 
   @@unique([tenantId, provider, deletedAt])
   @@index([tenantId])
@@ -1192,16 +1067,16 @@ model Connector {
 
 // Per-tenant access control for system connectors
 model TenantConnectorAccess {
-  id            String    @id @default(uuid())
-  tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  connectorId   String
-  connector     Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectorId String
+  connector   Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
 
-  isEnabled     Boolean   @default(true)  // false = blocked for this tenant
+  isEnabled Boolean @default(true) // false = blocked for this tenant
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([tenantId, connectorId])
   @@index([tenantId])
@@ -1211,40 +1086,40 @@ model TenantConnectorAccess {
 
 // Detailed usage logging for connectors
 model ConnectorUsageLog {
-  id            String    @id @default(uuid())
+  id String @id @default(uuid())
 
   // References
-  connectorId   String
-  connector     Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
-  tenantId      String?   // Tenant that made the call (for billing attribution)
-  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  userId        String?   // User who triggered the call
-  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  connectorId String
+  connector   Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  tenantId    String? // Tenant that made the call (for billing attribution)
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  userId      String? // User who triggered the call
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   // AI Model details
-  model         String    // Model ID used (e.g., "gpt-4.1", "claude-sonnet-4.5")
-  provider      String    // Provider name (openai, anthropic, google)
+  model    String // Model ID used (e.g., "gpt-4.1", "claude-sonnet-4.5")
+  provider String // Provider name (openai, anthropic, google)
 
   // Token usage
-  inputTokens   Int       @default(0)
-  outputTokens  Int       @default(0)
-  totalTokens   Int       @default(0)
+  inputTokens  Int @default(0)
+  outputTokens Int @default(0)
+  totalTokens  Int @default(0)
 
   // Cost calculation (in USD cents for precision)
-  costCents     Int       @default(0) // Total cost in cents (e.g., 150 = $1.50)
+  costCents Int @default(0) // Total cost in cents (e.g., 150 = $1.50)
 
   // Performance
-  latencyMs     Int?      // Response time in milliseconds
+  latencyMs Int? // Response time in milliseconds
 
   // Request details
-  operation     String?   // e.g., "bizfile_extraction", "document_analysis"
-  success       Boolean   @default(true)
-  errorMessage  String?   // Error details if failed
+  operation    String? // e.g., "bizfile_extraction", "document_analysis"
+  success      Boolean @default(true)
+  errorMessage String? // Error details if failed
 
   // Metadata
-  metadata      Json?     // Additional context (document ID, company ID, etc.)
+  metadata Json? // Additional context (document ID, company ID, etc.)
 
-  createdAt     DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([connectorId])
   @@index([tenantId])
@@ -1260,10 +1135,10 @@ model ConnectorUsageLog {
 // ============================================================================
 
 model NoteTab {
-  id        String   @id @default(uuid())
-  title     String   @default("General")
-  content   String?  @db.Text  // Rich text HTML content
-  order     Int      @default(0)
+  id      String  @id @default(uuid())
+  title   String  @default("General")
+  content String? @db.Text // Rich text HTML content
+  order   Int     @default(0)
 
   // Relations (one of these will be set)
   companyId String?
@@ -1307,29 +1182,29 @@ enum DocumentCommentStatus {
 
 // Document Templates - Reusable templates with placeholders
 model DocumentTemplate {
-  id                    String                   @id @default(uuid())
-  tenantId              String                   @map("tenant_id")
-  tenant                Tenant                   @relation(fields: [tenantId], references: [id])
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  name                  String                   @db.VarChar(200)
-  description           String?                  @db.Text
-  category              DocumentTemplateCategory @default(OTHER)
-  content               String                   @db.Text // HTML content with placeholders
-  contentJson           Json?                    @map("content_json") // TipTap JSON format
-  placeholders          Json                     @default("[]") // Array of placeholder definitions
-  isActive              Boolean                  @default(true) @map("is_active")
-  defaultShareExpiryHours Int?                   @map("default_share_expiry_hours")
-  version               Int                      @default(1)
+  name                    String                   @db.VarChar(200)
+  description             String?                  @db.Text
+  category                DocumentTemplateCategory @default(OTHER)
+  content                 String                   @db.Text // HTML content with placeholders
+  contentJson             Json?                    @map("content_json") // TipTap JSON format
+  placeholders            Json                     @default("[]") // Array of placeholder definitions
+  isActive                Boolean                  @default(true) @map("is_active")
+  defaultShareExpiryHours Int?                     @map("default_share_expiry_hours")
+  version                 Int                      @default(1)
 
   // Audit
-  createdById           String                   @map("created_by_id")
-  createdBy             User                     @relation("TemplateCreator", fields: [createdById], references: [id])
-  createdAt             DateTime                 @default(now()) @map("created_at")
-  updatedAt             DateTime                 @updatedAt @map("updated_at")
-  deletedAt             DateTime?                @map("deleted_at")
+  createdById String    @map("created_by_id")
+  createdBy   User      @relation("TemplateCreator", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  generatedDocuments    GeneratedDocument[]
+  generatedDocuments GeneratedDocument[]
 
   @@index([tenantId])
   @@index([category])
@@ -1340,51 +1215,51 @@ model DocumentTemplate {
 
 // Generated Documents - Documents created from templates
 model GeneratedDocument {
-  id                    String                   @id @default(uuid())
-  tenantId              String                   @map("tenant_id")
-  tenant                Tenant                   @relation(fields: [tenantId], references: [id])
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   // Source template (nullable for documents without template)
-  templateId            String?                  @map("template_id")
-  template              DocumentTemplate?        @relation(fields: [templateId], references: [id])
-  templateVersion       Int?                     @map("template_version") // Snapshot of template version used
+  templateId      String?           @map("template_id")
+  template        DocumentTemplate? @relation(fields: [templateId], references: [id])
+  templateVersion Int?              @map("template_version") // Snapshot of template version used
 
   // Associated company (optional)
-  companyId             String?                  @map("company_id")
-  company               Company?                 @relation(fields: [companyId], references: [id])
+  companyId String?  @map("company_id")
+  company   Company? @relation(fields: [companyId], references: [id])
 
   // Document content
-  title                 String                   @db.VarChar(300)
-  content               String                   @db.Text // Resolved HTML content
-  contentJson           Json?                    @map("content_json") // TipTap JSON format
-  status                GeneratedDocumentStatus  @default(DRAFT)
+  title       String                  @db.VarChar(300)
+  content     String                  @db.Text // Resolved HTML content
+  contentJson Json?                   @map("content_json") // TipTap JSON format
+  status      GeneratedDocumentStatus @default(DRAFT)
 
   // Finalization tracking
-  finalizedAt           DateTime?                @map("finalized_at")
-  finalizedById         String?                  @map("finalized_by_id")
-  finalizedBy           User?                    @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
-  unfinalizedAt         DateTime?                @map("unfinalized_at") // Last time un-finalized
+  finalizedAt   DateTime? @map("finalized_at")
+  finalizedById String?   @map("finalized_by_id")
+  finalizedBy   User?     @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
+  unfinalizedAt DateTime? @map("unfinalized_at") // Last time un-finalized
 
   // PDF options
-  useLetterhead         Boolean                  @default(true) @map("use_letterhead")
-  shareExpiryHours      Int?                     @map("share_expiry_hours") // Override template default
+  useLetterhead    Boolean @default(true) @map("use_letterhead")
+  shareExpiryHours Int?    @map("share_expiry_hours") // Override template default
 
   // Metadata
-  placeholderData       Json?                    @map("placeholder_data") // Snapshot of data used
-  metadata              Json?                    // Additional metadata
+  placeholderData Json? @map("placeholder_data") // Snapshot of data used
+  metadata        Json? // Additional metadata
 
   // Audit
-  createdById           String                   @map("created_by_id")
-  createdBy             User                     @relation("DocumentCreator", fields: [createdById], references: [id])
-  createdAt             DateTime                 @default(now()) @map("created_at")
-  updatedAt             DateTime                 @updatedAt @map("updated_at")
-  deletedAt             DateTime?                @map("deleted_at")
+  createdById String    @map("created_by_id")
+  createdBy   User      @relation("DocumentCreator", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  sections              DocumentSection[]
-  shares                DocumentShare[]
-  comments              DocumentComment[]
-  drafts                DocumentDraft[]
+  sections DocumentSection[]
+  shares   DocumentShare[]
+  comments DocumentComment[]
+  drafts   DocumentDraft[]
 
   @@index([tenantId])
   @@index([templateId])
@@ -1397,17 +1272,17 @@ model GeneratedDocument {
 
 // Document Sections - For navigation sidebar
 model DocumentSection {
-  id                    String            @id @default(uuid())
-  documentId            String            @map("document_id")
-  document              GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String            @id @default(uuid())
+  documentId String            @map("document_id")
+  document   GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
-  title                 String            @db.VarChar(200)
-  anchor                String            @db.VarChar(100) // HTML anchor ID
-  order                 Int
-  level                 Int               @default(1) // Heading level (1, 2, 3)
-  pageBreakBefore       Boolean           @default(false) @map("page_break_before")
+  title           String  @db.VarChar(200)
+  anchor          String  @db.VarChar(100) // HTML anchor ID
+  order           Int
+  level           Int     @default(1) // Heading level (1, 2, 3)
+  pageBreakBefore Boolean @default(false) @map("page_break_before")
 
-  createdAt             DateTime          @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([documentId])
   @@index([documentId, order])
@@ -1416,34 +1291,34 @@ model DocumentSection {
 
 // Document Shares - Shareable links with access control
 model DocumentShare {
-  id                    String            @id @default(uuid())
-  documentId            String            @map("document_id")
-  document              GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String            @id @default(uuid())
+  documentId String            @map("document_id")
+  document   GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
-  shareToken            String            @unique @map("share_token") @db.VarChar(64)
-  expiresAt             DateTime?         @map("expires_at")
-  passwordHash          String?           @map("password_hash") @db.VarChar(255)
-  isActive              Boolean           @default(true) @map("is_active")
+  shareToken   String    @unique @map("share_token") @db.VarChar(64)
+  expiresAt    DateTime? @map("expires_at")
+  passwordHash String?   @map("password_hash") @db.VarChar(255)
+  isActive     Boolean   @default(true) @map("is_active")
 
   // Access tracking
-  viewCount             Int               @default(0) @map("view_count")
-  lastViewedAt          DateTime?         @map("last_viewed_at")
+  viewCount    Int       @default(0) @map("view_count")
+  lastViewedAt DateTime? @map("last_viewed_at")
 
   // Permissions
-  allowedActions        String[]          @default(["view"]) @map("allowed_actions") // view, download, print
-  allowComments         Boolean           @default(false) @map("allow_comments")
-  commentRateLimit      Int               @default(20) @map("comment_rate_limit") // Max comments/hour/IP
-  notifyOnComment       Boolean           @default(false) @map("notify_on_comment")
-  notifyOnView          Boolean           @default(false) @map("notify_on_view")
+  allowedActions   String[] @default(["view"]) @map("allowed_actions") // view, download, print
+  allowComments    Boolean  @default(false) @map("allow_comments")
+  commentRateLimit Int      @default(20) @map("comment_rate_limit") // Max comments/hour/IP
+  notifyOnComment  Boolean  @default(false) @map("notify_on_comment")
+  notifyOnView     Boolean  @default(false) @map("notify_on_view")
 
   // Audit
-  createdById           String            @map("created_by_id")
-  createdBy             User              @relation("ShareCreator", fields: [createdById], references: [id])
-  createdAt             DateTime          @default(now()) @map("created_at")
-  revokedAt             DateTime?         @map("revoked_at")
+  createdById String    @map("created_by_id")
+  createdBy   User      @relation("ShareCreator", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at")
+  revokedAt   DateTime? @map("revoked_at")
 
   // Relations
-  comments              DocumentComment[]
+  comments DocumentComment[]
 
   @@index([documentId])
   @@index([expiresAt])
@@ -1454,74 +1329,74 @@ model DocumentShare {
 
 // Tenant Letterheads - PDF letterhead configuration
 model TenantLetterhead {
-  id                    String   @id @default(uuid())
-  tenantId              String   @unique @map("tenant_id")
-  tenant                Tenant   @relation(fields: [tenantId], references: [id])
+  id       String @id @default(uuid())
+  tenantId String @unique @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  headerHtml            String?  @map("header_html") @db.Text
-  footerHtml            String?  @map("footer_html") @db.Text
-  headerImageUrl        String?  @map("header_image_url") @db.VarChar(500)
-  footerImageUrl        String?  @map("footer_image_url") @db.VarChar(500)
-  logoUrl               String?  @map("logo_url") @db.VarChar(500)
-  pageMargins           Json     @default("{\"top\": 25, \"right\": 20, \"bottom\": 25, \"left\": 20}") @map("page_margins")
-  isEnabled             Boolean  @default(true) @map("is_enabled")
+  headerHtml     String? @map("header_html") @db.Text
+  footerHtml     String? @map("footer_html") @db.Text
+  headerImageUrl String? @map("header_image_url") @db.VarChar(500)
+  footerImageUrl String? @map("footer_image_url") @db.VarChar(500)
+  logoUrl        String? @map("logo_url") @db.VarChar(500)
+  pageMargins    Json    @default("{\"top\": 25, \"right\": 20, \"bottom\": 25, \"left\": 20}") @map("page_margins")
+  isEnabled      Boolean @default(true) @map("is_enabled")
 
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("tenant_letterheads")
 }
 
 // Document Comments - Internal & external comments with text selection
 model DocumentComment {
-  id                    String               @id @default(uuid())
-  documentId            String               @map("document_id")
-  document              GeneratedDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String            @id @default(uuid())
+  documentId String            @map("document_id")
+  document   GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   // For external comments via share link
-  shareId               String?              @map("share_id")
-  share                 DocumentShare?       @relation(fields: [shareId], references: [id])
+  shareId String?        @map("share_id")
+  share   DocumentShare? @relation(fields: [shareId], references: [id])
 
   // Internal user (null for external commenters)
-  userId                String?              @map("user_id")
-  user                  User?                @relation("CommentAuthor", fields: [userId], references: [id])
+  userId String? @map("user_id")
+  user   User?   @relation("CommentAuthor", fields: [userId], references: [id])
 
   // External commenter info
-  guestName             String?              @map("guest_name") @db.VarChar(100)
-  guestEmail            String?              @map("guest_email") @db.VarChar(255)
+  guestName  String? @map("guest_name") @db.VarChar(100)
+  guestEmail String? @map("guest_email") @db.VarChar(255)
 
   // Comment content (max 1000 chars)
-  content               String               @db.VarChar(1000)
+  content String @db.VarChar(1000)
 
   // Text selection (for linked comments)
-  selectionStart        Int?                 @map("selection_start")
-  selectionEnd          Int?                 @map("selection_end")
-  selectedText          String?              @map("selected_text") @db.Text
+  selectionStart Int?    @map("selection_start")
+  selectionEnd   Int?    @map("selection_end")
+  selectedText   String? @map("selected_text") @db.Text
 
   // Threading
-  parentId              String?              @map("parent_id")
-  parent                DocumentComment?     @relation("CommentReplies", fields: [parentId], references: [id])
-  replies               DocumentComment[]    @relation("CommentReplies")
+  parentId String?           @map("parent_id")
+  parent   DocumentComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  DocumentComment[] @relation("CommentReplies")
 
   // Status
-  status                DocumentCommentStatus @default(OPEN)
-  resolvedById          String?              @map("resolved_by_id")
-  resolvedBy            User?                @relation("CommentResolver", fields: [resolvedById], references: [id])
-  resolvedAt            DateTime?            @map("resolved_at")
+  status       DocumentCommentStatus @default(OPEN)
+  resolvedById String?               @map("resolved_by_id")
+  resolvedBy   User?                 @relation("CommentResolver", fields: [resolvedById], references: [id])
+  resolvedAt   DateTime?             @map("resolved_at")
 
   // Moderation
-  hiddenAt              DateTime?            @map("hidden_at")
-  hiddenById            String?              @map("hidden_by_id")
-  hiddenBy              User?                @relation("CommentHider", fields: [hiddenById], references: [id])
-  hiddenReason          String?              @map("hidden_reason") @db.VarChar(255)
+  hiddenAt     DateTime? @map("hidden_at")
+  hiddenById   String?   @map("hidden_by_id")
+  hiddenBy     User?     @relation("CommentHider", fields: [hiddenById], references: [id])
+  hiddenReason String?   @map("hidden_reason") @db.VarChar(255)
 
   // Rate limiting
-  ipAddress             String?              @map("ip_address") @db.VarChar(45)
+  ipAddress String? @map("ip_address") @db.VarChar(45)
 
   // Timestamps
-  createdAt             DateTime             @default(now()) @map("created_at")
-  updatedAt             DateTime             @updatedAt @map("updated_at")
-  deletedAt             DateTime?            @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   @@index([documentId])
   @@index([shareId])
@@ -1534,17 +1409,17 @@ model DocumentComment {
 
 // Document Drafts - Auto-save storage
 model DocumentDraft {
-  id                    String            @id @default(uuid())
-  documentId            String            @map("document_id")
-  document              GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  userId                String            @map("user_id")
-  user                  User              @relation("DraftAuthor", fields: [userId], references: [id])
+  id         String            @id @default(uuid())
+  documentId String            @map("document_id")
+  document   GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String            @map("user_id")
+  user       User              @relation("DraftAuthor", fields: [userId], references: [id])
 
-  content               String            @db.Text
-  contentJson           Json?             @map("content_json")
-  metadata              Json?
+  content     String @db.Text
+  contentJson Json?  @map("content_json")
+  metadata    Json?
 
-  createdAt             DateTime          @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([documentId])
   @@index([userId, createdAt])
@@ -1553,21 +1428,21 @@ model DocumentDraft {
 
 // Template Partials - Reusable template blocks (Phase 7)
 model TemplatePartial {
-  id                    String    @id @default(uuid())
-  tenantId              String    @map("tenant_id")
-  tenant                Tenant    @relation(fields: [tenantId], references: [id])
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  name                  String    @db.VarChar(100)  // Identifier used in {{>name}} syntax
-  displayName           String?   @map("display_name") @db.VarChar(200)  // Human-readable name shown in UI
-  description           String?   @db.Text
-  content               String    @db.Text
-  placeholders          Json      @default("[]")
+  name         String  @db.VarChar(100) // Identifier used in {{>name}} syntax
+  displayName  String? @map("display_name") @db.VarChar(200) // Human-readable name shown in UI
+  description  String? @db.Text
+  content      String  @db.Text
+  placeholders Json    @default("[]")
 
-  createdById           String    @map("created_by_id")
-  createdBy             User      @relation("PartialCreator", fields: [createdById], references: [id])
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
-  deletedAt             DateTime? @map("deleted_at")
+  createdById String    @map("created_by_id")
+  createdBy   User      @relation("PartialCreator", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -1576,18 +1451,18 @@ model TemplatePartial {
 
 // AI Conversations - Chat history for AI assistant
 model AiConversation {
-  id                    String   @id @default(uuid())
-  tenantId              String   @map("tenant_id")
-  tenant                Tenant   @relation(fields: [tenantId], references: [id])
-  userId                String   @map("user_id")
-  user                  User     @relation("ConversationOwner", fields: [userId], references: [id])
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  userId   String @map("user_id")
+  user     User   @relation("ConversationOwner", fields: [userId], references: [id])
 
-  contextType           String   @db.VarChar(20) // 'template' or 'document'
-  contextId             String?  @map("context_id") // Template or Document ID
-  messages              Json     @default("[]") // Array of {role, content, timestamp}
+  contextType String  @db.VarChar(20) // 'template' or 'document'
+  contextId   String? @map("context_id") // Template or Document ID
+  messages    Json    @default("[]") // Array of {role, content, timestamp}
 
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([tenantId, userId])
   @@index([contextType, contextId])
@@ -1659,17 +1534,17 @@ enum RevisionStatus {
 
 // Document Category (ordered by expected volume: high → low)
 enum DocumentCategory {
-  ACCOUNTS_PAYABLE      // Vendor/Purchase documents
-  ACCOUNTS_RECEIVABLE   // Customer/Sales documents
-  TREASURY              // Banking & Cash management
-  TAX_COMPLIANCE        // Tax & Regulatory
-  PAYROLL               // HR & Payroll
+  ACCOUNTS_PAYABLE // Vendor/Purchase documents
+  ACCOUNTS_RECEIVABLE // Customer/Sales documents
+  TREASURY // Banking & Cash management
+  TAX_COMPLIANCE // Tax & Regulatory
+  PAYROLL // HR & Payroll
   CORPORATE_SECRETARIAL // Corporate governance
-  CONTRACTS             // Legal agreements
-  FINANCIAL_REPORTS     // Reporting & Analysis
-  INSURANCE             // Risk management
-  CORRESPONDENCE        // General communications
-  OTHER                 // Uncategorized
+  CONTRACTS // Legal agreements
+  FINANCIAL_REPORTS // Reporting & Analysis
+  INSURANCE // Risk management
+  CORRESPONDENCE // General communications
+  OTHER // Uncategorized
 }
 
 // Document Sub-Category
@@ -1687,69 +1562,69 @@ enum DocumentCategory {
 // OTHER: MISCELLANEOUS, SUPPORTING_DOCUMENT
 enum DocumentSubCategory {
   // ACCOUNTS_PAYABLE
-  VENDOR_INVOICE        // Purchase invoices & debit notes from suppliers
-  VENDOR_CREDIT_NOTE    // Credit notes from suppliers
-  PURCHASE_ORDER        // Purchase orders issued
-  DELIVERY_NOTE         // Goods received notes, delivery receipts
-  VENDOR_STATEMENT      // Supplier statements of account
-  VENDOR_QUOTATION      // Quotations from suppliers
+  VENDOR_INVOICE // Purchase invoices & debit notes from suppliers
+  VENDOR_CREDIT_NOTE // Credit notes from suppliers
+  PURCHASE_ORDER // Purchase orders issued
+  DELIVERY_NOTE // Goods received notes, delivery receipts
+  VENDOR_STATEMENT // Supplier statements of account
+  VENDOR_QUOTATION // Quotations from suppliers
 
   // ACCOUNTS_RECEIVABLE
-  SALES_INVOICE         // Invoices & debit notes to customers
-  SALES_CREDIT_NOTE     // Credit notes to customers
-  SALES_ORDER           // Sales orders & quotations
-  DELIVERY_ORDER        // Delivery orders issued
-  CUSTOMER_STATEMENT    // Customer statements of account
+  SALES_INVOICE // Invoices & debit notes to customers
+  SALES_CREDIT_NOTE // Credit notes to customers
+  SALES_ORDER // Sales orders & quotations
+  DELIVERY_ORDER // Delivery orders issued
+  CUSTOMER_STATEMENT // Customer statements of account
 
   // TREASURY
-  BANK_STATEMENT        // Monthly/periodic bank statements
-  BANK_ADVICE           // Debit/credit advices, TT advices, FD advices
-  PAYMENT_VOUCHER       // Payment vouchers, cheques
-  RECEIPT_VOUCHER       // Receipt vouchers
-  LOAN_DOCUMENT         // Loan agreements, facility letters
+  BANK_STATEMENT // Monthly/periodic bank statements
+  BANK_ADVICE // Debit/credit advices, TT advices, FD advices
+  PAYMENT_VOUCHER // Payment vouchers, cheques
+  RECEIPT_VOUCHER // Receipt vouchers
+  LOAN_DOCUMENT // Loan agreements, facility letters
 
   // TAX_COMPLIANCE
-  GST_RETURN            // GST F5/F7 returns & assessments
-  INCOME_TAX            // Form C/C-S, tax assessments, computations
-  WITHHOLDING_TAX       // WHT certificates (Form IR37)
-  TAX_INVOICE           // Tax invoices & receipts
+  GST_RETURN // GST F5/F7 returns & assessments
+  INCOME_TAX // Form C/C-S, tax assessments, computations
+  WITHHOLDING_TAX // WHT certificates (Form IR37)
+  TAX_INVOICE // Tax invoices & receipts
 
   // PAYROLL
-  PAYSLIP               // Employee payslips
-  CPF_SUBMISSION        // CPF contribution records
-  IR8A                  // Annual IR8A/IR8S forms
-  EXPENSE_CLAIM         // Employee expense claims, timesheets
+  PAYSLIP // Employee payslips
+  CPF_SUBMISSION // CPF contribution records
+  IR8A // Annual IR8A/IR8S forms
+  EXPENSE_CLAIM // Employee expense claims, timesheets
 
   // CORPORATE_SECRETARIAL
-  BIZFILE               // ACRA BizFile extracts
-  RESOLUTION            // Board/shareholder resolutions
-  REGISTER              // Statutory registers (members, directors, charges)
-  INCORPORATION         // Constitution, incorporation cert, share certs
-  ANNUAL_RETURN         // Annual returns, statutory forms
-  MEETING_MINUTES       // AGM, EGM, board meeting minutes
+  BIZFILE // ACRA BizFile extracts
+  RESOLUTION // Board/shareholder resolutions
+  REGISTER // Statutory registers (members, directors, charges)
+  INCORPORATION // Constitution, incorporation cert, share certs
+  ANNUAL_RETURN // Annual returns, statutory forms
+  MEETING_MINUTES // AGM, EGM, board meeting minutes
 
   // CONTRACTS
-  VENDOR_CONTRACT       // Supplier/service provider agreements, NDAs
-  CUSTOMER_CONTRACT     // Customer/client agreements
-  EMPLOYMENT_CONTRACT   // Employment agreements
-  LEASE_AGREEMENT       // Property/equipment leases, licenses
+  VENDOR_CONTRACT // Supplier/service provider agreements, NDAs
+  CUSTOMER_CONTRACT // Customer/client agreements
+  EMPLOYMENT_CONTRACT // Employment agreements
+  LEASE_AGREEMENT // Property/equipment leases, licenses
 
   // FINANCIAL_REPORTS
-  FINANCIAL_STATEMENT   // Balance sheet, P&L, cash flow
-  MANAGEMENT_REPORT     // Trial balance, GL reports, management accounts
-  AUDIT_REPORT          // Auditor's report, supporting schedules
+  FINANCIAL_STATEMENT // Balance sheet, P&L, cash flow
+  MANAGEMENT_REPORT // Trial balance, GL reports, management accounts
+  AUDIT_REPORT // Auditor's report, supporting schedules
 
   // INSURANCE
-  INSURANCE_POLICY      // Policies, certificates, renewals
-  INSURANCE_CLAIM       // Claim documents
+  INSURANCE_POLICY // Policies, certificates, renewals
+  INSURANCE_CLAIM // Claim documents
 
   // CORRESPONDENCE
-  LETTER                // Business letters, memos, notices
-  EMAIL                 // Email correspondence
+  LETTER // Business letters, memos, notices
+  EMAIL // Email correspondence
 
   // OTHER
-  MISCELLANEOUS         // Documents that don't fit other categories
-  SUPPORTING_DOCUMENT   // Supporting/backup documents
+  MISCELLANEOUS // Documents that don't fit other categories
+  SUPPORTING_DOCUMENT // Supporting/backup documents
 }
 
 // GST Treatment
@@ -1856,84 +1731,84 @@ enum CheckpointStatus {
 
 // Processing-specific document data
 model ProcessingDocument {
-  id                    String              @id @default(uuid())
-  documentId            String              @unique @map("document_id")
-  document              Document            @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  documentId String   @unique @map("document_id")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   // Container/child relationship
-  isContainer           Boolean             @default(false) @map("is_container")
-  parentProcessingDocId String?             @map("parent_processing_doc_id")
-  parentProcessingDoc   ProcessingDocument? @relation("ProcessingDocumentSplit", fields: [parentProcessingDocId], references: [id])
+  isContainer           Boolean              @default(false) @map("is_container")
+  parentProcessingDocId String?              @map("parent_processing_doc_id")
+  parentProcessingDoc   ProcessingDocument?  @relation("ProcessingDocumentSplit", fields: [parentProcessingDocId], references: [id])
   children              ProcessingDocument[] @relation("ProcessingDocumentSplit")
 
   // Page addressing (contiguous ranges only for child docs)
-  pageFrom              Int?                @map("page_from") // inclusive
-  pageTo                Int?                @map("page_to")   // inclusive
-  pageCount             Int?                @map("page_count") // container: computed on ingestion
+  pageFrom  Int? @map("page_from") // inclusive
+  pageTo    Int? @map("page_to") // inclusive
+  pageCount Int? @map("page_count") // container: computed on ingestion
 
   // File characteristics
-  fileHash              String?             @map("file_hash") // SHA-256 for duplicate detection
-  perceptualHash        String?             @map("perceptual_hash") // pHash for scanned similarity
-  isEncryptedPdf        Boolean             @default(false) @map("is_encrypted_pdf")
-  isPasswordProtected   Boolean             @default(false) @map("is_password_protected")
-  contentTypeDetected   String?             @map("content_type_detected")
+  fileHash            String? @map("file_hash") // SHA-256 for duplicate detection
+  perceptualHash      String? @map("perceptual_hash") // pHash for scanned similarity
+  isEncryptedPdf      Boolean @default(false) @map("is_encrypted_pdf")
+  isPasswordProtected Boolean @default(false) @map("is_password_protected")
+  contentTypeDetected String? @map("content_type_detected")
 
   // Processing lifecycle
-  pipelineStatus        PipelineStatus      @default(UPLOADED) @map("pipeline_status")
-  processingPriority    ProcessingPriority  @default(NORMAL) @map("processing_priority")
-  slaDeadline           DateTime?           @map("sla_deadline")
+  pipelineStatus     PipelineStatus     @default(UPLOADED) @map("pipeline_status")
+  processingPriority ProcessingPriority @default(NORMAL) @map("processing_priority")
+  slaDeadline        DateTime?          @map("sla_deadline")
 
   // Error tracking
-  lastError             Json?               @map("last_error")
-  errorCount            Int                 @default(0) @map("error_count")
-  firstErrorAt          DateTime?           @map("first_error_at")
-  canRetry              Boolean             @default(true) @map("can_retry")
-  nextRetryAt           DateTime?           @map("next_retry_at")
-  deadLetterAt          DateTime?           @map("dead_letter_at")
+  lastError    Json?     @map("last_error")
+  errorCount   Int       @default(0) @map("error_count")
+  firstErrorAt DateTime? @map("first_error_at")
+  canRetry     Boolean   @default(true) @map("can_retry")
+  nextRetryAt  DateTime? @map("next_retry_at")
+  deadLetterAt DateTime? @map("dead_letter_at")
 
   // Duplicate workflow
-  duplicateStatus       DuplicateStatus     @default(NONE) @map("duplicate_status")
-  duplicateOfId         String?             @map("duplicate_of_id")
-  duplicateOf           ProcessingDocument? @relation("DocumentDuplicates", fields: [duplicateOfId], references: [id])
-  duplicates            ProcessingDocument[] @relation("DocumentDuplicates")
-  duplicateScore        Float?              @map("duplicate_score")
-  duplicateReason       String?             @map("duplicate_reason")
+  duplicateStatus DuplicateStatus      @default(NONE) @map("duplicate_status")
+  duplicateOfId   String?              @map("duplicate_of_id")
+  duplicateOf     ProcessingDocument?  @relation("DocumentDuplicates", fields: [duplicateOfId], references: [id])
+  duplicates      ProcessingDocument[] @relation("DocumentDuplicates")
+  duplicateScore  Float?               @map("duplicate_score")
+  duplicateReason String?              @map("duplicate_reason")
 
   // Versioning (same economic document, better scan)
-  rootDocumentId        String?             @map("root_document_id")
-  rootDocument          ProcessingDocument? @relation("DocumentVersions", fields: [rootDocumentId], references: [id])
-  versions              ProcessingDocument[] @relation("DocumentVersions")
-  version               Int                 @default(1)
+  rootDocumentId String?              @map("root_document_id")
+  rootDocument   ProcessingDocument?  @relation("DocumentVersions", fields: [rootDocumentId], references: [id])
+  versions       ProcessingDocument[] @relation("DocumentVersions")
+  version        Int                  @default(1)
 
   // Soft delete (standardized with other entities)
-  deletedAt             DateTime?           @map("deleted_at")
-  deletedReason         String?             @map("deleted_reason")
+  deletedAt     DateTime? @map("deleted_at")
+  deletedReason String?   @map("deleted_reason")
 
   // Current revision pointer
-  currentRevisionId     String?             @unique @map("current_revision_id")
-  currentRevision       DocumentRevision?   @relation("CurrentRevision", fields: [currentRevisionId], references: [id])
+  currentRevisionId String?           @unique @map("current_revision_id")
+  currentRevision   DocumentRevision? @relation("CurrentRevision", fields: [currentRevisionId], references: [id])
 
   // Concurrency control
-  lockVersion           Int                 @default(0) @map("lock_version")
-  lockedById            String?             @map("locked_by_id")
-  lockedAt              DateTime?           @map("locked_at")
-  lockExpiresAt         DateTime?           @map("lock_expires_at")
+  lockVersion   Int       @default(0) @map("lock_version")
+  lockedById    String?   @map("locked_by_id")
+  lockedAt      DateTime? @map("locked_at")
+  lockExpiresAt DateTime? @map("lock_expires_at")
 
   // Upload context
-  uploadSource          UploadSource        @default(WEB) @map("upload_source")
+  uploadSource UploadSource @default(WEB) @map("upload_source")
 
   // Compliance
-  legalHold             Boolean             @default(false) @map("legal_hold")
-  retentionUntil        DateTime?           @map("retention_until")
+  legalHold      Boolean   @default(false) @map("legal_hold")
+  retentionUntil DateTime? @map("retention_until")
 
   // Timestamps
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   pages                 DocumentPage[]
   extractions           DocumentExtraction[]
-  revisions             DocumentRevision[]  @relation("DocumentRevisions")
+  revisions             DocumentRevision[]     @relation("DocumentRevisions")
   duplicateDecisions    DuplicateDecision[]
   processingAttempts    ProcessingAttempt[]
   processingCheckpoints ProcessingCheckpoint[]
@@ -1942,11 +1817,11 @@ model ProcessingDocument {
   splitPlans            SplitPlan[]
 
   // Document links (for PO->DN->Invoice chains)
-  linkedFrom            DocumentLink[]      @relation("DocumentLinkSource")
-  linkedTo              DocumentLink[]      @relation("DocumentLinkTarget")
+  linkedFrom DocumentLink[] @relation("DocumentLinkSource")
+  linkedTo   DocumentLink[] @relation("DocumentLinkTarget")
 
   // Document tags
-  documentTags          ProcessingDocumentTag[]
+  documentTags ProcessingDocumentTag[]
 
   @@index([documentId])
   @@index([pipelineStatus])
@@ -1964,36 +1839,36 @@ model ProcessingDocument {
 
 // Link type for document relationships
 enum DocumentLinkType {
-  PO_TO_DN          // Purchase Order -> Delivery Note
-  PO_TO_INVOICE     // Purchase Order -> Invoice
-  DN_TO_INVOICE     // Delivery Note -> Invoice
-  INVOICE_TO_CN     // Invoice -> Credit Note
+  PO_TO_DN // Purchase Order -> Delivery Note
+  PO_TO_INVOICE // Purchase Order -> Invoice
+  DN_TO_INVOICE // Delivery Note -> Invoice
+  INVOICE_TO_CN // Invoice -> Credit Note
   INVOICE_TO_DN_ADJ // Invoice -> Debit Note
-  QUOTE_TO_PO       // Quotation -> Purchase Order
-  CONTRACT_TO_PO    // Contract -> Purchase Order
-  RELATED           // Generic related document
+  QUOTE_TO_PO // Quotation -> Purchase Order
+  CONTRACT_TO_PO // Contract -> Purchase Order
+  RELATED // Generic related document
 }
 
 model DocumentLink {
-  id                String              @id @default(uuid())
+  id String @id @default(uuid())
 
   // Source document (e.g., PO)
-  sourceDocumentId  String              @map("source_document_id")
-  sourceDocument    ProcessingDocument  @relation("DocumentLinkSource", fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  sourceDocumentId String             @map("source_document_id")
+  sourceDocument   ProcessingDocument @relation("DocumentLinkSource", fields: [sourceDocumentId], references: [id], onDelete: Cascade)
 
   // Target document (e.g., Invoice)
-  targetDocumentId  String              @map("target_document_id")
-  targetDocument    ProcessingDocument  @relation("DocumentLinkTarget", fields: [targetDocumentId], references: [id], onDelete: Cascade)
+  targetDocumentId String             @map("target_document_id")
+  targetDocument   ProcessingDocument @relation("DocumentLinkTarget", fields: [targetDocumentId], references: [id], onDelete: Cascade)
 
   // Link metadata
-  linkType          DocumentLinkType    @map("link_type")
-  notes             String?             // Optional notes about the link
-  linkedById        String              @map("linked_by_id")
-  linkedAt          DateTime            @default(now()) @map("linked_at")
+  linkType   DocumentLinkType @map("link_type")
+  notes      String? // Optional notes about the link
+  linkedById String           @map("linked_by_id")
+  linkedAt   DateTime         @default(now()) @map("linked_at")
 
   // Timestamps
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Prevent duplicate links
   @@unique([sourceDocumentId, targetDocumentId, linkType])
@@ -2008,72 +1883,72 @@ model DocumentLink {
 
 // Predefined tag colors
 enum TagColor {
-  GRAY      // #6B7280 - Default/neutral
-  RED       // #EF4444 - Urgent/important
-  ORANGE    // #F97316 - Review needed
-  AMBER     // #F59E0B - Warning/attention
-  GREEN     // #22C55E - Completed/approved
-  TEAL      // #14B8A6 - In progress
-  BLUE      // #3B82F6 - Information
-  INDIGO    // #6366F1 - Processing
-  PURPLE    // #A855F7 - Special
-  PINK      // #EC4899 - Highlight
+  GRAY // #6B7280 - Default/neutral
+  RED // #EF4444 - Urgent/important
+  ORANGE // #F97316 - Review needed
+  AMBER // #F59E0B - Warning/attention
+  GREEN // #22C55E - Completed/approved
+  TEAL // #14B8A6 - In progress
+  BLUE // #3B82F6 - Information
+  INDIGO // #6366F1 - Processing
+  PURPLE // #A855F7 - Special
+  PINK // #EC4899 - Highlight
 }
 
 model DocumentTag {
-  id            String    @id @default(uuid())
+  id String @id @default(uuid())
 
   // Multi-tenant with optional company scope
   // companyId = NULL means tenant-level tag (shared across all companies)
   // companyId = UUID means company-specific tag
-  tenantId      String    @map("tenant_id")
-  companyId     String?   @map("company_id")
-  company       Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tenantId  String   @map("tenant_id")
+  companyId String?  @map("company_id")
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   // Tag definition
-  name          String    // e.g., "Quarterly", "Urgent", "Tax Filing"
-  color         TagColor  @default(GRAY)
-  description   String?   // Optional description
+  name        String // e.g., "Quarterly", "Urgent", "Tax Filing"
+  color       TagColor @default(GRAY)
+  description String? // Optional description
 
   // Usage tracking for "recent tags" feature
-  usageCount    Int       @default(0) @map("usage_count")
-  lastUsedAt    DateTime? @map("last_used_at")
+  usageCount Int       @default(0) @map("usage_count")
+  lastUsedAt DateTime? @map("last_used_at")
 
   // Soft delete
-  deletedAt     DateTime? @map("deleted_at")
+  deletedAt DateTime? @map("deleted_at")
 
   // Timestamps
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  createdById   String    @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
 
   // Relations
-  documentTags  ProcessingDocumentTag[]
+  documentTags ProcessingDocumentTag[]
 
   // Unique tag name per tenant+company scope (handles both tenant and company tags)
   // For tenant tags: unique on [tenantId, NULL, name, deletedAt]
   // For company tags: unique on [tenantId, companyId, name, deletedAt]
   @@unique([tenantId, companyId, name, deletedAt])
   @@index([tenantId, companyId])
-  @@index([tenantId, deletedAt])  // For fetching tenant tags (companyId IS NULL)
+  @@index([tenantId, deletedAt]) // For fetching tenant tags (companyId IS NULL)
   @@index([companyId, lastUsedAt])
   @@map("document_tags")
 }
 
 model ProcessingDocumentTag {
-  id                    String              @id @default(uuid())
+  id String @id @default(uuid())
 
   // Document reference
-  processingDocumentId  String              @map("processing_document_id")
-  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
   // Tag reference
-  tagId                 String              @map("tag_id")
-  tag                   DocumentTag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId String      @map("tag_id")
+  tag   DocumentTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   // Audit
-  addedAt               DateTime            @default(now()) @map("added_at")
-  addedById             String              @map("added_by_id")
+  addedAt   DateTime @default(now()) @map("added_at")
+  addedById String   @map("added_by_id")
 
   @@unique([processingDocumentId, tagId])
   @@index([processingDocumentId])
@@ -2086,31 +1961,31 @@ model ProcessingDocumentTag {
 // ============================================================================
 
 model DocumentPage {
-  id                    String              @id @default(uuid())
-  processingDocumentId  String              @map("processing_document_id")
-  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(uuid())
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
-  pageNumber            Int                 @map("page_number")
+  pageNumber Int @map("page_number")
 
   // Rendered image for UI highlights
-  renderDpi             Int                 @default(200) @map("render_dpi") // e.g., 200
-  storageKey            String              @map("storage_key") // Storage key for page image in object storage
-  imageFingerprint      String?             @map("image_fingerprint") // sha256 of rendered image bytes
+  renderDpi        Int     @default(200) @map("render_dpi") // e.g., 200
+  storageKey       String  @map("storage_key") // Storage key for page image in object storage
+  imageFingerprint String? @map("image_fingerprint") // sha256 of rendered image bytes
 
   // Geometry
-  widthPx               Int                 @map("width_px")
-  heightPx              Int                 @map("height_px")
-  rotationDeg           Int                 @default(0) @map("rotation_deg") // 0/90/180/270
+  widthPx     Int @map("width_px")
+  heightPx    Int @map("height_px")
+  rotationDeg Int @default(0) @map("rotation_deg") // 0/90/180/270
 
   // OCR outputs
-  ocrProvider           String?             @map("ocr_provider")
-  ocrJson               Json?               @map("ocr_json") // Word boxes and confidence scores
+  ocrProvider String? @map("ocr_provider")
+  ocrJson     Json?   @map("ocr_json") // Word boxes and confidence scores
 
   // Text acquisition decision
-  textAcquisitionDecision String?           @map("text_acquisition_decision") // EMBEDDED/OCR/HYBRID
-  textAcquisitionSignals  Json?             @map("text_acquisition_signals")
+  textAcquisitionDecision String? @map("text_acquisition_decision") // EMBEDDED/OCR/HYBRID
+  textAcquisitionSignals  Json?   @map("text_acquisition_signals")
 
-  createdAt             DateTime            @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([processingDocumentId, pageNumber])
   @@index([processingDocumentId])
@@ -2122,45 +1997,45 @@ model DocumentPage {
 // ============================================================================
 
 model DocumentExtraction {
-  id                      String              @id @default(uuid())
-  processingDocumentId    String              @map("processing_document_id")
-  processingDocument      ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(uuid())
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
-  extractionType          ExtractionType      @map("extraction_type")
+  extractionType ExtractionType @map("extraction_type")
 
   // Provider details
-  provider                String              // e.g., "openai", "anthropic"
-  model                   String              // e.g., "gpt-4-vision"
-  promptVersion           String              @map("prompt_version")
-  extractionSchemaVersion String              @map("extraction_schema_version") // e.g., "1.0.0"
+  provider                String // e.g., "openai", "anthropic"
+  model                   String // e.g., "gpt-4-vision"
+  promptVersion           String @map("prompt_version")
+  extractionSchemaVersion String @map("extraction_schema_version") // e.g., "1.0.0"
 
   // Inputs and reproducibility
-  inputFingerprint        String?             @map("input_fingerprint") // hash of prompt+tools+file/page ranges
-  selectorVersion         String?             @map("selector_version") // model selector version
+  inputFingerprint String? @map("input_fingerprint") // hash of prompt+tools+file/page ranges
+  selectorVersion  String? @map("selector_version") // model selector version
 
   // Results
-  rawJson                 Json                @map("raw_json")
-  rawText                 String?             @map("raw_text")
-  confidenceJson          Json                @map("confidence_json")
-  evidenceJson            Json?               @map("evidence_json") // includes evidence per Appendix A
-  overallConfidence       Float?              @map("overall_confidence")
+  rawJson           Json    @map("raw_json")
+  rawText           String? @map("raw_text")
+  confidenceJson    Json    @map("confidence_json")
+  evidenceJson      Json?   @map("evidence_json") // includes evidence per Appendix A
+  overallConfidence Float?  @map("overall_confidence")
 
   // Text acquisition metadata
-  hasEmbeddedText         Boolean             @default(false) @map("has_embedded_text")
-  textAcquisitionJson     Json?               @map("text_acquisition_json") // selector signals and per-page choice
-  ocrProvider             String?             @map("ocr_provider")
+  hasEmbeddedText     Boolean @default(false) @map("has_embedded_text")
+  textAcquisitionJson Json?   @map("text_acquisition_json") // selector signals and per-page choice
+  ocrProvider         String? @map("ocr_provider")
 
   // Cost/usage
-  promptTokens            Int?                @map("prompt_tokens")
-  completionTokens        Int?                @map("completion_tokens")
-  tokensUsed              Int?                @map("tokens_used")
-  latencyMs               Int?                @map("latency_ms")
-  providerRequestId       String?             @map("provider_request_id")
+  promptTokens      Int?    @map("prompt_tokens")
+  completionTokens  Int?    @map("completion_tokens")
+  tokensUsed        Int?    @map("tokens_used")
+  latencyMs         Int?    @map("latency_ms")
+  providerRequestId String? @map("provider_request_id")
 
-  createdAt               DateTime            @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  revisions               DocumentRevision[]
+  revisions DocumentRevision[]
 
   @@index([processingDocumentId, extractionType])
   @@index([providerRequestId])
@@ -2172,94 +2047,94 @@ model DocumentExtraction {
 // ============================================================================
 
 model DocumentRevision {
-  id                      String                      @id @default(uuid())
-  processingDocumentId    String                      @map("processing_document_id")
-  processingDocument      ProcessingDocument          @relation("DocumentRevisions", fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(uuid())
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation("DocumentRevisions", fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
   // Lineage
-  basedOnRevisionId       String?                     @map("based_on_revision_id")
-  basedOnRevision         DocumentRevision?           @relation("RevisionChain", fields: [basedOnRevisionId], references: [id])
-  derivedRevisions        DocumentRevision[]          @relation("RevisionChain")
-  extractionId            String?                     @map("extraction_id")
-  extraction              DocumentExtraction?         @relation(fields: [extractionId], references: [id])
+  basedOnRevisionId String?             @map("based_on_revision_id")
+  basedOnRevision   DocumentRevision?   @relation("RevisionChain", fields: [basedOnRevisionId], references: [id])
+  derivedRevisions  DocumentRevision[]  @relation("RevisionChain")
+  extractionId      String?             @map("extraction_id")
+  extraction        DocumentExtraction? @relation(fields: [extractionId], references: [id])
 
-  revisionNumber          Int                         @map("revision_number")
-  revisionType            RevisionType                @map("revision_type")
-  status                  RevisionStatus              @default(DRAFT)
-  reason                  String?                     // initial_extraction, user_edit, reprocess
+  revisionNumber Int            @map("revision_number")
+  revisionType   RevisionType   @map("revision_type")
+  status         RevisionStatus @default(DRAFT)
+  reason         String? // initial_extraction, user_edit, reprocess
 
   // Classification
-  documentCategory        DocumentCategory            @map("document_category")
-  documentSubCategory     DocumentSubCategory?        @map("document_sub_category")
+  documentCategory    DocumentCategory     @map("document_category")
+  documentSubCategory DocumentSubCategory? @map("document_sub_category")
 
   // Header fields
-  vendorName              String?                     @map("vendor_name")
-  vendorId                String?                     @map("vendor_id")
-  customerName            String?                     @map("customer_name")
-  customerId              String?                     @map("customer_id")
-  documentNumber          String?                     @map("document_number")
-  documentDate            DateTime?                   @db.Date @map("document_date")
-  dueDate                 DateTime?                   @db.Date @map("due_date")
+  vendorName     String?   @map("vendor_name")
+  vendorId       String?   @map("vendor_id")
+  customerName   String?   @map("customer_name")
+  customerId     String?   @map("customer_id")
+  documentNumber String?   @map("document_number")
+  documentDate   DateTime? @map("document_date") @db.Date
+  dueDate        DateTime? @map("due_date") @db.Date
 
   // Amounts (document currency)
-  currency                String
-  subtotal                Decimal?                    @db.Decimal(18, 4)
-  taxAmount               Decimal?                    @db.Decimal(18, 4) @map("tax_amount")
-  totalAmount             Decimal                     @db.Decimal(18, 4) @map("total_amount") // CREDIT_NOTE must be negative
+  currency    String
+  subtotal    Decimal? @db.Decimal(18, 4)
+  taxAmount   Decimal? @map("tax_amount") @db.Decimal(18, 4)
+  totalAmount Decimal  @map("total_amount") @db.Decimal(18, 4) // CREDIT_NOTE must be negative
 
   // Rounding policy used at approval time
-  roundingMode            RoundingMode                @default(HALF_UP) @map("rounding_mode")
+  roundingMode RoundingMode @default(HALF_UP) @map("rounding_mode")
 
   // GST
-  gstTreatment            GstTreatment?               @map("gst_treatment")
-  supplierGstNo           String?                     @map("supplier_gst_no")
+  gstTreatment  GstTreatment? @map("gst_treatment")
+  supplierGstNo String?       @map("supplier_gst_no")
 
   // Currency conversion (home currency)
-  homeCurrency            String?                     @map("home_currency")
-  homeExchangeRateSource  ExchangeRateSource?         @map("home_exchange_rate_source")
-  homeExchangeRate        Decimal?                    @db.Decimal(18, 8) @map("home_exchange_rate")
-  exchangeRateDate        DateTime?                   @db.Date @map("exchange_rate_date")
-  homeEquivalent          Decimal?                    @db.Decimal(18, 4) @map("home_equivalent")
+  homeCurrency               String?             @map("home_currency")
+  homeExchangeRateSource     ExchangeRateSource? @map("home_exchange_rate_source")
+  homeExchangeRate           Decimal?            @map("home_exchange_rate") @db.Decimal(18, 8)
+  exchangeRateDate           DateTime?           @map("exchange_rate_date") @db.Date
+  homeEquivalent             Decimal?            @map("home_equivalent") @db.Decimal(18, 4)
   // Phase 2: Additional home currency fields
-  homeSubtotal            Decimal?                    @db.Decimal(18, 4) @map("home_subtotal")
-  homeTaxAmount           Decimal?                    @db.Decimal(18, 4) @map("home_tax_amount")
-  isHomeExchangeRateOverride Boolean                  @default(false) @map("is_home_exchange_rate_override")
+  homeSubtotal               Decimal?            @map("home_subtotal") @db.Decimal(18, 4)
+  homeTaxAmount              Decimal?            @map("home_tax_amount") @db.Decimal(18, 4)
+  isHomeExchangeRateOverride Boolean             @default(false) @map("is_home_exchange_rate_override")
 
   // Validation
-  validationStatus        ValidationStatus            @default(PENDING) @map("validation_status")
-  validationIssues        Json?                       @map("validation_issues")
+  validationStatus ValidationStatus @default(PENDING) @map("validation_status")
+  validationIssues Json?            @map("validation_issues")
 
   // Document key for duplicates
-  documentKey             String?                     @map("document_key")
-  documentKeyVersion      String?                     @map("document_key_version") // e.g., "1"
-  documentKeyConfidence   Float?                      @map("document_key_confidence")
+  documentKey           String? @map("document_key")
+  documentKeyVersion    String? @map("document_key_version") // e.g., "1"
+  documentKeyConfidence Float?  @map("document_key_confidence")
 
   // Evidence for header fields
-  headerEvidenceJson      Json?                       @map("header_evidence_json")
+  headerEvidenceJson Json? @map("header_evidence_json")
 
   // Posting/export lifecycle
-  postingStatus           RevisionPostingStatus       @default(NOT_POSTED) @map("posting_status")
-  postedAt                DateTime?                   @map("posted_at")
-  postingLock             Boolean                     @default(false) @map("posting_lock") // set true when posted
+  postingStatus RevisionPostingStatus @default(NOT_POSTED) @map("posting_status")
+  postedAt      DateTime?             @map("posted_at")
+  postingLock   Boolean               @default(false) @map("posting_lock") // set true when posted
 
   // Reconciliation lifecycle
-  reconciliationStatus    RevisionReconciliationStatus @default(NOT_RECONCILED) @map("reconciliation_status")
+  reconciliationStatus RevisionReconciliationStatus @default(NOT_RECONCILED) @map("reconciliation_status")
 
   // Full-text search
-  searchText              String?                     @map("search_text") // normalized searchable text
+  searchText String? @map("search_text") // normalized searchable text
 
   // Audit fields
-  createdById             String                      @map("created_by_id")
-  createdAt               DateTime                    @default(now()) @map("created_at")
-  approvedById            String?                     @map("approved_by_id")
-  approvedAt              DateTime?                   @map("approved_at")
-  supersededAt            DateTime?                   @map("superseded_at")
+  createdById  String    @map("created_by_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  approvedById String?   @map("approved_by_id")
+  approvedAt   DateTime? @map("approved_at")
+  supersededAt DateTime? @map("superseded_at")
 
   // Relations
-  currentForDocument      ProcessingDocument?         @relation("CurrentRevision")
-  items                   DocumentRevisionLineItem[]
-  matchGroupItems         MatchGroupItem[]
-  postings                ExternalPosting[]
+  currentForDocument ProcessingDocument?        @relation("CurrentRevision")
+  items              DocumentRevisionLineItem[]
+  matchGroupItems    MatchGroupItem[]
+  postings           ExternalPosting[]
 
   @@unique([processingDocumentId, revisionNumber])
   @@index([processingDocumentId, status])
@@ -2275,31 +2150,31 @@ model DocumentRevision {
 // ============================================================================
 
 model DocumentRevisionLineItem {
-  id            String           @id @default(uuid())
-  revisionId    String           @map("revision_id")
-  revision      DocumentRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  id         String           @id @default(uuid())
+  revisionId String           @map("revision_id")
+  revision   DocumentRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
 
-  lineNo        Int              @map("line_no")
+  lineNo Int @map("line_no")
 
-  description   String
-  quantity      Decimal?         @db.Decimal(18, 4)
-  unitPrice     Decimal?         @db.Decimal(18, 4) @map("unit_price")
-  amount        Decimal          @db.Decimal(18, 4)
+  description String
+  quantity    Decimal? @db.Decimal(18, 4)
+  unitPrice   Decimal? @map("unit_price") @db.Decimal(18, 4)
+  amount      Decimal  @db.Decimal(18, 4)
 
-  gstAmount     Decimal?         @db.Decimal(18, 4) @map("gst_amount")
-  taxCode       String?          @map("tax_code")
+  gstAmount Decimal? @map("gst_amount") @db.Decimal(18, 4)
+  taxCode   String?  @map("tax_code")
 
   // Chart of accounts mapping
-  accountCode   String?          @map("account_code")
+  accountCode String? @map("account_code")
 
   // Evidence for this line item
-  evidenceJson  Json?            @map("evidence_json")
+  evidenceJson Json? @map("evidence_json")
 
   // Phase 2: Home currency conversion
-  homeAmount            Decimal?  @db.Decimal(18, 4) @map("home_amount")
-  homeGstAmount         Decimal?  @db.Decimal(18, 4) @map("home_gst_amount")
-  isHomeAmountOverride  Boolean   @default(false) @map("is_home_amount_override")
-  isHomeGstOverride     Boolean   @default(false) @map("is_home_gst_override")
+  homeAmount           Decimal? @map("home_amount") @db.Decimal(18, 4)
+  homeGstAmount        Decimal? @map("home_gst_amount") @db.Decimal(18, 4)
+  isHomeAmountOverride Boolean  @default(false) @map("is_home_amount_override")
+  isHomeGstOverride    Boolean  @default(false) @map("is_home_gst_override")
 
   @@unique([revisionId, lineNo])
   @@index([revisionId])
@@ -2312,20 +2187,20 @@ model DocumentRevisionLineItem {
 // ============================================================================
 
 model VendorAlias {
-  id                    String    @id @default(uuid())
-  tenantId              String    @map("tenant_id")
-  companyId             String?   @map("company_id")  // null = tenant-wide alias
+  id        String  @id @default(uuid())
+  tenantId  String  @map("tenant_id")
+  companyId String? @map("company_id") // null = tenant-wide alias
 
-  rawName               String    @map("raw_name")
-  normalizedContactId   String    @map("normalized_contact_id")
-  confidence            Float     @default(1.0)
+  rawName             String @map("raw_name")
+  normalizedContactId String @map("normalized_contact_id")
+  confidence          Float  @default(1.0)
 
-  createdById           String?   @map("created_by_id")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  deletedAt             DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   @@index([tenantId, companyId])
-  @@index([tenantId, rawName])  // For tenant-wide alias lookups
+  @@index([tenantId, rawName]) // For tenant-wide alias lookups
   @@index([companyId, rawName])
   @@map("vendor_aliases")
 }
@@ -2336,20 +2211,20 @@ model VendorAlias {
 // ============================================================================
 
 model CustomerAlias {
-  id                    String    @id @default(uuid())
-  tenantId              String    @map("tenant_id")
-  companyId             String?   @map("company_id")  // null = tenant-wide alias
+  id        String  @id @default(uuid())
+  tenantId  String  @map("tenant_id")
+  companyId String? @map("company_id") // null = tenant-wide alias
 
-  rawName               String    @map("raw_name")
-  normalizedContactId   String    @map("normalized_contact_id")
-  confidence            Float     @default(1.0)
+  rawName             String @map("raw_name")
+  normalizedContactId String @map("normalized_contact_id")
+  confidence          Float  @default(1.0)
 
-  createdById           String?   @map("created_by_id")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  deletedAt             DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   @@index([tenantId, companyId])
-  @@index([tenantId, rawName])  // For tenant-wide alias lookups
+  @@index([tenantId, rawName]) // For tenant-wide alias lookups
   @@index([companyId, rawName])
   @@map("customer_aliases")
 }
@@ -2359,16 +2234,16 @@ model CustomerAlias {
 // ============================================================================
 
 model DuplicateDecision {
-  id                    String              @id @default(uuid())
-  processingDocumentId  String              @map("processing_document_id")
-  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(uuid())
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
-  suspectedOfId         String              @map("suspected_of_id")
-  decision              DuplicateAction
-  reason                String?
+  suspectedOfId String          @map("suspected_of_id")
+  decision      DuplicateAction
+  reason        String?
 
-  decidedById           String              @map("decided_by_id")
-  decidedAt             DateTime            @default(now()) @map("decided_at")
+  decidedById String   @map("decided_by_id")
+  decidedAt   DateTime @default(now()) @map("decided_at")
 
   @@index([processingDocumentId])
   @@index([suspectedOfId])
@@ -2380,23 +2255,23 @@ model DuplicateDecision {
 // ============================================================================
 
 model ProcessingAttempt {
-  id                    String              @id @default(uuid())
-  processingDocumentId  String              @map("processing_document_id")
-  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(uuid())
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
-  attemptNumber         Int                 @map("attempt_number")
-  step                  ProcessingStep
-  status                AttemptStatus
+  attemptNumber Int            @map("attempt_number")
+  step          ProcessingStep
+  status        AttemptStatus
 
-  startedAt             DateTime            @map("started_at")
-  completedAt           DateTime?           @map("completed_at")
+  startedAt   DateTime  @map("started_at")
+  completedAt DateTime? @map("completed_at")
 
-  errorCode             String?             @map("error_code")
-  errorMessage          String?             @map("error_message")
-  errorDetails          Json?               @map("error_details")
+  errorCode    String? @map("error_code")
+  errorMessage String? @map("error_message")
+  errorDetails Json?   @map("error_details")
 
-  providerLatencyMs     Int?                @map("provider_latency_ms")
-  providerRequestId     String?             @map("provider_request_id")
+  providerLatencyMs Int?    @map("provider_latency_ms")
+  providerRequestId String? @map("provider_request_id")
 
   @@unique([processingDocumentId, attemptNumber, step])
   @@index([processingDocumentId, attemptNumber])
@@ -2409,15 +2284,15 @@ model ProcessingAttempt {
 // ============================================================================
 
 model ProcessingCheckpoint {
-  id                    String              @id @default(uuid())
-  processingDocumentId  String              @map("processing_document_id")
-  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(uuid())
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
-  step                  ProcessingStep
-  status                CheckpointStatus
-  stateJson             Json?               @map("state_json") // Step-specific state for resume
+  step      ProcessingStep
+  status    CheckpointStatus
+  stateJson Json?            @map("state_json") // Step-specific state for resume
 
-  createdAt             DateTime            @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([processingDocumentId, step])
   @@index([processingDocumentId])
@@ -2429,20 +2304,20 @@ model ProcessingCheckpoint {
 // ============================================================================
 
 model SplitPlan {
-  id                    String              @id @default(uuid())
-  processingDocumentId  String              @map("processing_document_id")
-  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(uuid())
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
-  tenantId              String              @map("tenant_id")
-  companyId             String              @map("company_id")
+  tenantId  String @map("tenant_id")
+  companyId String @map("company_id")
 
-  method                SplitMethod
-  schemaVersion         String              @map("schema_version") // e.g., "1.0"
-  rangesJson            Json                @map("ranges_json") // ordered page ranges and metadata
-  supersededAt          DateTime?           @map("superseded_at")
+  method        SplitMethod
+  schemaVersion String      @map("schema_version") // e.g., "1.0"
+  rangesJson    Json        @map("ranges_json") // ordered page ranges and metadata
+  supersededAt  DateTime?   @map("superseded_at")
 
-  createdById           String?             @map("created_by_id")
-  createdAt             DateTime            @default(now()) @map("created_at")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([processingDocumentId, createdAt])
   @@map("split_plans")
@@ -2453,23 +2328,23 @@ model SplitPlan {
 // ============================================================================
 
 model DocumentStateEvent {
-  id                    String              @id @default(uuid())
-  processingDocumentId  String              @map("processing_document_id")
-  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(uuid())
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
-  tenantId              String              @map("tenant_id")
-  companyId             String              @map("company_id")
+  tenantId  String @map("tenant_id")
+  companyId String @map("company_id")
 
-  eventType             String              @map("event_type") // PIPELINE_STATUS_CHANGED, LOCK_ACQUIRED, etc.
-  fromState             String?             @map("from_state")
-  toState               String?             @map("to_state")
-  reason                String?
-  metadata              Json?
+  eventType String  @map("event_type") // PIPELINE_STATUS_CHANGED, LOCK_ACQUIRED, etc.
+  fromState String? @map("from_state")
+  toState   String? @map("to_state")
+  reason    String?
+  metadata  Json?
 
-  actorUserId           String?             @map("actor_user_id")
-  actorServiceId        String?             @map("actor_service_id")
+  actorUserId    String? @map("actor_user_id")
+  actorServiceId String? @map("actor_service_id")
 
-  createdAt             DateTime            @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([tenantId, companyId, createdAt])
   @@index([processingDocumentId, createdAt])
@@ -2481,20 +2356,20 @@ model DocumentStateEvent {
 // ============================================================================
 
 model DocumentDerivedFile {
-  id                    String              @id @default(uuid())
-  processingDocumentId  String              @map("processing_document_id")
-  processingDocument    ProcessingDocument  @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(uuid())
+  processingDocumentId String             @map("processing_document_id")
+  processingDocument   ProcessingDocument @relation(fields: [processingDocumentId], references: [id], onDelete: Cascade)
 
-  tenantId              String              @map("tenant_id")
-  companyId             String              @map("company_id")
+  tenantId  String @map("tenant_id")
+  companyId String @map("company_id")
 
-  kind                  DerivedFileKind
-  storageKey            String              @map("storage_key")  // Storage key in object storage
-  mimeType              String              @map("mime_type")
-  sizeBytes             Int?                @map("size_bytes")
-  fingerprint           String?             // hash for cache/evidence compatibility
+  kind        DerivedFileKind
+  storageKey  String          @map("storage_key") // Storage key in object storage
+  mimeType    String          @map("mime_type")
+  sizeBytes   Int?            @map("size_bytes")
+  fingerprint String? // hash for cache/evidence compatibility
 
-  createdAt             DateTime            @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([processingDocumentId, kind])
   @@index([tenantId, companyId, createdAt])
@@ -2506,15 +2381,15 @@ model DocumentDerivedFile {
 // ============================================================================
 
 model IdempotencyRecord {
-  key                   String              @id
-  tenantId              String              @map("tenant_id")
-  endpoint              String
-  method                String
-  requestHash           String              @map("request_hash") // Hash of request body
-  response              Json
-  statusCode            Int                 @map("status_code")
-  expiresAt             DateTime            @map("expires_at")
-  createdAt             DateTime            @default(now()) @map("created_at")
+  key         String   @id
+  tenantId    String   @map("tenant_id")
+  endpoint    String
+  method      String
+  requestHash String   @map("request_hash") // Hash of request body
+  response    Json
+  statusCode  Int      @map("status_code")
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([expiresAt])
   @@index([tenantId])
@@ -2526,22 +2401,22 @@ model IdempotencyRecord {
 // ============================================================================
 
 model WebhookSubscription {
-  id                    String              @id @default(uuid())
-  tenantId              String              @map("tenant_id")
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
 
-  url                   String
-  events                String[]            // Array of event types
-  secret                String              // Encrypted HMAC secret
+  url    String
+  events String[] // Array of event types
+  secret String // Encrypted HMAC secret
 
-  isActive              Boolean             @default(true) @map("is_active")
+  isActive Boolean @default(true) @map("is_active")
 
   // Health tracking
-  lastDeliveryAt        DateTime?           @map("last_delivery_at")
-  lastDeliveryStatus    String?             @map("last_delivery_status")
-  failureCount          Int                 @default(0) @map("failure_count")
+  lastDeliveryAt     DateTime? @map("last_delivery_at")
+  lastDeliveryStatus String?   @map("last_delivery_status")
+  failureCount       Int       @default(0) @map("failure_count")
 
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([tenantId])
   @@index([isActive])
@@ -2562,31 +2437,31 @@ enum ExchangeRateType {
 
 // Exchange Rate - Currency conversion rates (system-wide and tenant overrides)
 model ExchangeRate {
-  id                    String              @id @default(uuid())
+  id String @id @default(uuid())
 
   // Scope: null = system-wide rate, tenantId = tenant-specific override
-  tenantId              String?             @map("tenant_id")
-  tenant                Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId String? @map("tenant_id")
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Currency pair
-  sourceCurrency        String              @map("source_currency") // ISO 4217 (e.g., USD, EUR)
-  targetCurrency        String              @default("SGD") @map("target_currency") // ISO 4217
-  rate                  Decimal             @db.Decimal(18, 8)
-  inverseRate           Decimal?            @db.Decimal(18, 8) @map("inverse_rate") // 1/rate for convenience
-  rateDate              DateTime            @db.Date @map("rate_date")
-  rateType              ExchangeRateType    @map("rate_type")
+  sourceCurrency String           @map("source_currency") // ISO 4217 (e.g., USD, EUR)
+  targetCurrency String           @default("SGD") @map("target_currency") // ISO 4217
+  rate           Decimal          @db.Decimal(18, 8)
+  inverseRate    Decimal?         @map("inverse_rate") @db.Decimal(18, 8) // 1/rate for convenience
+  rateDate       DateTime         @map("rate_date") @db.Date
+  rateType       ExchangeRateType @map("rate_type")
 
   // For manual overrides
-  isManualOverride      Boolean             @default(false) @map("is_manual_override")
-  manualReason          String?             @map("manual_reason")
-  createdById           String?             @map("created_by_id")
+  isManualOverride Boolean @default(false) @map("is_manual_override")
+  manualReason     String? @map("manual_reason")
+  createdById      String? @map("created_by_id")
 
   // Audit
-  fetchedAt             DateTime            @default(now()) @map("fetched_at")
-  sourceRef             String?             @map("source_ref") // URL or dataset identifier
-  sourceHash            String?             @map("source_hash") // Checksum for audit
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  fetchedAt  DateTime @default(now()) @map("fetched_at")
+  sourceRef  String?  @map("source_ref") // URL or dataset identifier
+  sourceHash String?  @map("source_hash") // Checksum for audit
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@unique([tenantId, sourceCurrency, targetCurrency, rateDate, rateType])
   @@index([tenantId])
@@ -2594,12 +2469,6 @@ model ExchangeRate {
   @@index([rateDate])
   @@index([sourceCurrency, rateDate])
   @@map("exchange_rates")
-}
-
-// GST Filing Frequency
-enum GstFilingFrequency {
-  MONTHLY
-  QUARTERLY
 }
 
 // ============================================================================
@@ -2656,22 +2525,22 @@ enum PeriodStatus {
 
 // Bank Account
 model BankAccount {
-  id                    String              @id @default(uuid())
-  tenantId              String              @map("tenant_id")
-  companyId             String              @map("company_id")
+  id        String @id @default(uuid())
+  tenantId  String @map("tenant_id")
+  companyId String @map("company_id")
 
-  name                  String
-  accountNumber         String              @map("account_number") // Encrypted
-  currency              String              // ISO 4217 - matching basis
+  name          String
+  accountNumber String @map("account_number") // Encrypted
+  currency      String // ISO 4217 - matching basis
 
   // Integration
-  bankProvider          String?             @map("bank_provider") // e.g., "plaid", "yodlee"
-  externalId            String?             @map("external_id")
-  lastSyncAt            DateTime?           @map("last_sync_at")
+  bankProvider String?   @map("bank_provider") // e.g., "plaid", "yodlee"
+  externalId   String?   @map("external_id")
+  lastSyncAt   DateTime? @map("last_sync_at")
 
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
-  deletedAt             DateTime?           @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   // Relations
   transactions          BankTransaction[]
@@ -2684,39 +2553,39 @@ model BankAccount {
 
 // Bank Transaction
 model BankTransaction {
-  id                    String              @id @default(uuid())
-  bankAccountId         String              @map("bank_account_id")
-  bankAccount           BankAccount         @relation(fields: [bankAccountId], references: [id])
-  tenantId              String              @map("tenant_id")
+  id            String      @id @default(uuid())
+  bankAccountId String      @map("bank_account_id")
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id])
+  tenantId      String      @map("tenant_id")
 
   // Transaction details
-  transactionDate       DateTime            @db.Date @map("transaction_date")
-  valueDate             DateTime?           @db.Date @map("value_date")
-  description           String
-  reference             String?
+  transactionDate DateTime  @map("transaction_date") @db.Date
+  valueDate       DateTime? @map("value_date") @db.Date
+  description     String
+  reference       String?
 
   // Amount in bank account currency
-  amount                Decimal             @db.Decimal(18, 4)
-  currency              String              // Should match bankAccount.currency
+  amount   Decimal @db.Decimal(18, 4)
+  currency String // Should match bankAccount.currency
 
   // Balance after transaction
-  runningBalance        Decimal?            @db.Decimal(18, 4) @map("running_balance")
+  runningBalance Decimal? @map("running_balance") @db.Decimal(18, 4)
 
   // Categorization
-  transactionType       BankTransactionType @map("transaction_type")
+  transactionType BankTransactionType @map("transaction_type")
 
   // Import tracking
-  importBatchId         String?             @map("import_batch_id")
-  externalId            String?             @map("external_id")
+  importBatchId String? @map("import_batch_id")
+  externalId    String? @map("external_id")
 
   // Reconciliation status
-  reconciliationStatus  ReconciliationStatus @default(UNMATCHED) @map("reconciliation_status")
+  reconciliationStatus ReconciliationStatus @default(UNMATCHED) @map("reconciliation_status")
 
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  matchGroupItems       MatchGroupItem[]
+  matchGroupItems MatchGroupItem[]
 
   @@index([tenantId, bankAccountId])
   @@index([bankAccountId, transactionDate])
@@ -2727,34 +2596,34 @@ model BankTransaction {
 
 // Match Group - Group of matched documents and transactions
 model MatchGroup {
-  id                      String              @id @default(uuid())
-  tenantId                String              @map("tenant_id")
-  companyId               String              @map("company_id")
+  id        String @id @default(uuid())
+  tenantId  String @map("tenant_id")
+  companyId String @map("company_id")
 
-  matchType               MatchType           @map("match_type")
-  matchMethod             MatchMethod         @map("match_method")
-  matchAlgorithmVersion   String              @map("match_algorithm_version")
+  matchType             MatchType   @map("match_type")
+  matchMethod           MatchMethod @map("match_method")
+  matchAlgorithmVersion String      @map("match_algorithm_version")
 
   // Confidence and reasoning
-  confidence              Float
-  matchReasons            Json                @map("match_reasons") // Detailed scoring breakdown
+  confidence   Float
+  matchReasons Json  @map("match_reasons") // Detailed scoring breakdown
 
   // Status
-  status                  MatchGroupStatus    @default(MATCH_SUGGESTED)
+  status MatchGroupStatus @default(MATCH_SUGGESTED)
 
   // FX conversion used (if applicable)
-  fxConversionJson        Json?               @map("fx_conversion_json") // Rate, date, source
+  fxConversionJson Json? @map("fx_conversion_json") // Rate, date, source
 
   // Audit
-  createdAt               DateTime            @default(now()) @map("created_at")
-  confirmedById           String?             @map("confirmed_by_id")
-  confirmedAt             DateTime?           @map("confirmed_at")
-  rejectedById            String?             @map("rejected_by_id")
-  rejectedAt              DateTime?           @map("rejected_at")
-  rejectionReason         String?             @map("rejection_reason")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  confirmedById   String?   @map("confirmed_by_id")
+  confirmedAt     DateTime? @map("confirmed_at")
+  rejectedById    String?   @map("rejected_by_id")
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason")
 
   // Relations
-  items                   MatchGroupItem[]
+  items MatchGroupItem[]
 
   @@index([tenantId, companyId])
   @@index([companyId, status])
@@ -2763,18 +2632,18 @@ model MatchGroup {
 
 // Match Group Item - Individual items in a match group
 model MatchGroupItem {
-  id                      String              @id @default(uuid())
-  matchGroupId            String              @map("match_group_id")
-  matchGroup              MatchGroup          @relation(fields: [matchGroupId], references: [id], onDelete: Cascade)
+  id           String     @id @default(uuid())
+  matchGroupId String     @map("match_group_id")
+  matchGroup   MatchGroup @relation(fields: [matchGroupId], references: [id], onDelete: Cascade)
 
-  bankTransactionId       String?             @map("bank_transaction_id")
-  bankTransaction         BankTransaction?    @relation(fields: [bankTransactionId], references: [id])
-  documentRevisionId      String?             @map("document_revision_id")
-  documentRevision        DocumentRevision?   @relation(fields: [documentRevisionId], references: [id])
+  bankTransactionId  String?           @map("bank_transaction_id")
+  bankTransaction    BankTransaction?  @relation(fields: [bankTransactionId], references: [id])
+  documentRevisionId String?           @map("document_revision_id")
+  documentRevision   DocumentRevision? @relation(fields: [documentRevisionId], references: [id])
 
   // Allocation for partial matches
-  allocatedAmount         Decimal?            @db.Decimal(18, 4) @map("allocated_amount")
-  allocationCurrency      String?             @map("allocation_currency")
+  allocatedAmount    Decimal? @map("allocated_amount") @db.Decimal(18, 4)
+  allocationCurrency String?  @map("allocation_currency")
 
   @@index([matchGroupId])
   @@index([bankTransactionId])
@@ -2784,22 +2653,22 @@ model MatchGroupItem {
 
 // Reconciliation Period - Lock periods for reconciliation
 model ReconciliationPeriod {
-  id                    String              @id @default(uuid())
-  tenantId              String              @map("tenant_id")
-  companyId             String              @map("company_id")
-  bankAccountId         String?             @map("bank_account_id") // Null = all accounts
-  bankAccount           BankAccount?        @relation(fields: [bankAccountId], references: [id])
+  id            String       @id @default(uuid())
+  tenantId      String       @map("tenant_id")
+  companyId     String       @map("company_id")
+  bankAccountId String?      @map("bank_account_id") // Null = all accounts
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id])
 
-  periodStart           DateTime            @db.Date @map("period_start")
-  periodEnd             DateTime            @db.Date @map("period_end")
+  periodStart DateTime @map("period_start") @db.Date
+  periodEnd   DateTime @map("period_end") @db.Date
 
-  status                PeriodStatus        @default(PERIOD_OPEN)
+  status PeriodStatus @default(PERIOD_OPEN)
 
-  lockedById            String?             @map("locked_by_id")
-  lockedAt              DateTime?           @map("locked_at")
+  lockedById String?   @map("locked_by_id")
+  lockedAt   DateTime? @map("locked_at")
 
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([companyId, bankAccountId, periodStart, periodEnd])
   @@index([tenantId, companyId])
@@ -2844,26 +2713,26 @@ enum CommunicationChannel {
 
 // Client Portal User - Separate from main User for security isolation
 model ClientPortalUser {
-  id                    String              @id @default(uuid())
-  tenantId              String              @map("tenant_id")
-  companyId             String              @map("company_id")
+  id        String @id @default(uuid())
+  tenantId  String @map("tenant_id")
+  companyId String @map("company_id")
 
-  email                 String
-  name                  String
+  email String
+  name  String
 
   // Authentication
-  passwordHash          String              @map("password_hash")
-  mfaEnabled            Boolean             @default(false) @map("mfa_enabled")
-  mfaSecret             String?             @map("mfa_secret") // Encrypted
+  passwordHash String  @map("password_hash")
+  mfaEnabled   Boolean @default(false) @map("mfa_enabled")
+  mfaSecret    String? @map("mfa_secret") // Encrypted
 
-  isActive              Boolean             @default(true) @map("is_active")
-  lastLoginAt           DateTime?           @map("last_login_at")
+  isActive    Boolean   @default(true) @map("is_active")
+  lastLoginAt DateTime? @map("last_login_at")
 
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  communications        Communication[]     @relation("ClientCommunications")
+  communications Communication[] @relation("ClientCommunications")
 
   @@unique([companyId, email])
   @@index([tenantId, companyId])
@@ -2872,25 +2741,25 @@ model ClientPortalUser {
 
 // Client Request - Requests for documents or information
 model ClientRequest {
-  id                    String              @id @default(uuid())
-  tenantId              String              @map("tenant_id")
-  companyId             String              @map("company_id")
+  id        String @id @default(uuid())
+  tenantId  String @map("tenant_id")
+  companyId String @map("company_id")
 
-  title                 String
-  description           String?
-  dueDate               DateTime?           @db.Date @map("due_date")
+  title       String
+  description String?
+  dueDate     DateTime? @map("due_date") @db.Date
 
-  status                ClientRequestStatus @default(REQUEST_PENDING)
-  priority              RequestPriority     @default(PRIORITY_NORMAL)
+  status   ClientRequestStatus @default(REQUEST_PENDING)
+  priority RequestPriority     @default(PRIORITY_NORMAL)
 
-  createdById           String              @map("created_by_id")
-  createdAt             DateTime            @default(now()) @map("created_at")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  resolvedById          String?             @map("resolved_by_id")
-  resolvedAt            DateTime?           @map("resolved_at")
+  resolvedById String?   @map("resolved_by_id")
+  resolvedAt   DateTime? @map("resolved_at")
 
   // Relations
-  communications        Communication[]
+  communications Communication[]
 
   @@index([tenantId, companyId])
   @@index([companyId, status])
@@ -2899,30 +2768,30 @@ model ClientRequest {
 
 // Communication - Messages between staff and clients
 model Communication {
-  id                    String              @id @default(uuid())
-  tenantId              String              @map("tenant_id")
-  companyId             String              @map("company_id")
-  clientRequestId       String?             @map("client_request_id")
-  clientRequest         ClientRequest?      @relation(fields: [clientRequestId], references: [id])
+  id              String         @id @default(uuid())
+  tenantId        String         @map("tenant_id")
+  companyId       String         @map("company_id")
+  clientRequestId String?        @map("client_request_id")
+  clientRequest   ClientRequest? @relation(fields: [clientRequestId], references: [id])
 
-  direction             CommunicationDirection
-  channel               CommunicationChannel
+  direction CommunicationDirection
+  channel   CommunicationChannel
 
-  subject               String?
-  body                  String
+  subject String?
+  body    String
 
-  fromUserId            String?             @map("from_user_id")
-  fromClientUserId      String?             @map("from_client_user_id")
-  fromClientUser        ClientPortalUser?   @relation("ClientCommunications", fields: [fromClientUserId], references: [id])
-  toEmails              String[]            @map("to_emails")
+  fromUserId       String?           @map("from_user_id")
+  fromClientUserId String?           @map("from_client_user_id")
+  fromClientUser   ClientPortalUser? @relation("ClientCommunications", fields: [fromClientUserId], references: [id])
+  toEmails         String[]          @map("to_emails")
 
-  externalMessageId     String?             @map("external_message_id")
-  threadId              String?             @map("thread_id")
+  externalMessageId String? @map("external_message_id")
+  threadId          String? @map("thread_id")
 
-  sentAt                DateTime?           @map("sent_at")
-  readAt                DateTime?           @map("read_at")
+  sentAt DateTime? @map("sent_at")
+  readAt DateTime? @map("read_at")
 
-  createdAt             DateTime            @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([tenantId, companyId])
   @@index([clientRequestId])
@@ -2954,31 +2823,31 @@ enum PostingStatus {
 
 // Accounting Integration - OAuth connections to accounting software
 model AccountingIntegration {
-  id                    String              @id @default(uuid())
-  tenantId              String              @map("tenant_id")
-  companyId             String              @map("company_id")
+  id        String @id @default(uuid())
+  tenantId  String @map("tenant_id")
+  companyId String @map("company_id")
 
-  provider              AccountingProvider
+  provider AccountingProvider
 
   // OAuth credentials (encrypted)
-  accessToken           String              @map("access_token")
-  refreshToken          String?             @map("refresh_token")
-  tokenExpiresAt        DateTime?           @map("token_expires_at")
+  accessToken    String    @map("access_token")
+  refreshToken   String?   @map("refresh_token")
+  tokenExpiresAt DateTime? @map("token_expires_at")
 
   // Connection status
-  isActive              Boolean             @default(true) @map("is_active")
-  lastSyncAt            DateTime?           @map("last_sync_at")
-  lastError             String?             @map("last_error")
+  isActive   Boolean   @default(true) @map("is_active")
+  lastSyncAt DateTime? @map("last_sync_at")
+  lastError  String?   @map("last_error")
 
   // Provider-specific settings
-  settings              Json?
+  settings Json?
 
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  postings              ExternalPosting[]
-  fieldMappings         FieldMapping[]
+  postings      ExternalPosting[]
+  fieldMappings FieldMapping[]
 
   @@unique([companyId, provider])
   @@index([tenantId, companyId])
@@ -2987,32 +2856,32 @@ model AccountingIntegration {
 
 // External Posting - Records of postings to accounting software
 model ExternalPosting {
-  id                    String              @id @default(uuid())
-  tenantId              String              @map("tenant_id")
-  documentRevisionId    String              @map("document_revision_id")
-  documentRevision      DocumentRevision    @relation(fields: [documentRevisionId], references: [id])
-  integrationId         String              @map("integration_id")
-  integration           AccountingIntegration @relation(fields: [integrationId], references: [id])
+  id                 String                @id @default(uuid())
+  tenantId           String                @map("tenant_id")
+  documentRevisionId String                @map("document_revision_id")
+  documentRevision   DocumentRevision      @relation(fields: [documentRevisionId], references: [id])
+  integrationId      String                @map("integration_id")
+  integration        AccountingIntegration @relation(fields: [integrationId], references: [id])
 
   // Idempotency
-  idempotencyKey        String              @unique @map("idempotency_key")
+  idempotencyKey String @unique @map("idempotency_key")
 
   // External reference
-  externalId            String?             @map("external_id")
-  externalType          String?             @map("external_type") // e.g., "Invoice", "Bill"
-  externalUrl           String?             @map("external_url")
+  externalId   String? @map("external_id")
+  externalType String? @map("external_type") // e.g., "Invoice", "Bill"
+  externalUrl  String? @map("external_url")
 
   // Status
-  status                PostingStatus       @default(POSTING_PENDING)
+  status PostingStatus @default(POSTING_PENDING)
 
   // Attempt tracking
-  attemptCount          Int                 @default(0) @map("attempt_count")
-  lastAttemptAt         DateTime?           @map("last_attempt_at")
-  lastError             Json?               @map("last_error")
+  attemptCount  Int       @default(0) @map("attempt_count")
+  lastAttemptAt DateTime? @map("last_attempt_at")
+  lastError     Json?     @map("last_error")
 
   // Timestamps
-  createdAt             DateTime            @default(now()) @map("created_at")
-  postedAt              DateTime?           @map("posted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  postedAt  DateTime? @map("posted_at")
 
   @@index([tenantId, status])
   @@index([documentRevisionId])
@@ -3022,18 +2891,18 @@ model ExternalPosting {
 
 // Field Mapping - Map Oakcloud fields to accounting software fields
 model FieldMapping {
-  id                    String              @id @default(uuid())
-  integrationId         String              @map("integration_id")
-  integration           AccountingIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  id            String                @id @default(uuid())
+  integrationId String                @map("integration_id")
+  integration   AccountingIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
 
-  sourceField           String              @map("source_field") // Oakcloud field path
-  targetField           String              @map("target_field") // Provider field path
-  transformRule         Json?               @map("transform_rule") // Transformation logic
+  sourceField   String @map("source_field") // Oakcloud field path
+  targetField   String @map("target_field") // Provider field path
+  transformRule Json?  @map("transform_rule") // Transformation logic
 
-  isActive              Boolean             @default(true) @map("is_active")
+  isActive Boolean @default(true) @map("is_active")
 
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([integrationId, sourceField, targetField])
   @@index([integrationId])
@@ -3046,50 +2915,50 @@ model FieldMapping {
 
 // Tenant Backup - Stores backup metadata and tracks backup operations
 model TenantBackup {
-  id                String        @id @default(uuid())
-  tenantId          String        @map("tenant_id")
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
 
   // Backup metadata
-  name              String?       // Optional user-friendly name
-  backupType        BackupType    @default(MANUAL) @map("backup_type")
-  status            BackupStatus  @default(PENDING)
+  name       String? // Optional user-friendly name
+  backupType BackupType   @default(MANUAL) @map("backup_type")
+  status     BackupStatus @default(PENDING)
 
   // Storage location
-  storageKey        String        @map("storage_key") // e.g., "backups/{backupId}/"
+  storageKey String @map("storage_key") // e.g., "backups/{backupId}/"
 
   // Content tracking
-  manifestJson      Json?         @map("manifest_json") // Cached manifest for quick access
+  manifestJson Json? @map("manifest_json") // Cached manifest for quick access
 
   // Size tracking
-  databaseSizeBytes BigInt        @default(0) @map("database_size_bytes")
-  filesSizeBytes    BigInt        @default(0) @map("files_size_bytes")
-  totalSizeBytes    BigInt        @default(0) @map("total_size_bytes")
-  filesCount        Int           @default(0) @map("files_count")
+  databaseSizeBytes BigInt @default(0) @map("database_size_bytes")
+  filesSizeBytes    BigInt @default(0) @map("files_size_bytes")
+  totalSizeBytes    BigInt @default(0) @map("total_size_bytes")
+  filesCount        Int    @default(0) @map("files_count")
 
   // Progress tracking
-  progress          Int           @default(0) // 0-100
-  currentStep       String?       @map("current_step") // Human-readable status
+  progress    Int     @default(0) // 0-100
+  currentStep String? @map("current_step") // Human-readable status
 
   // Error tracking
-  errorMessage      String?       @map("error_message")
-  errorDetails      Json?         @map("error_details")
+  errorMessage String? @map("error_message")
+  errorDetails Json?   @map("error_details")
 
   // Restoration tracking
-  restoredAt        DateTime?     @map("restored_at")
-  restoredById      String?       @map("restored_by_id")
+  restoredAt   DateTime? @map("restored_at")
+  restoredById String?   @map("restored_by_id")
 
   // Scheduling (for retention policy)
-  retentionDays     Int?          @map("retention_days") // Auto-delete after N days
-  expiresAt         DateTime?     @map("expires_at")
+  retentionDays Int?      @map("retention_days") // Auto-delete after N days
+  expiresAt     DateTime? @map("expires_at")
 
   // Audit
-  createdById       String?       @map("created_by_id") // Nullable for scheduled backups
-  createdAt         DateTime      @default(now()) @map("created_at")
-  completedAt       DateTime?     @map("completed_at")
-  deletedAt         DateTime?     @map("deleted_at")
+  createdById String?   @map("created_by_id") // Nullable for scheduled backups
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Relation
-  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([status])
@@ -3101,33 +2970,33 @@ model TenantBackup {
 
 // Backup Schedule - Configuration for automated backups (future use)
 model BackupSchedule {
-  id                String    @id @default(uuid())
-  tenantId          String    @unique @map("tenant_id") // One schedule per tenant
+  id       String @id @default(uuid())
+  tenantId String @unique @map("tenant_id") // One schedule per tenant
 
   // Cron configuration
-  cronPattern       String    @map("cron_pattern") // e.g., "0 2 * * *" for daily at 2 AM
-  isEnabled         Boolean   @default(false) @map("is_enabled")
-  timezone          String    @default("UTC")
+  cronPattern String  @map("cron_pattern") // e.g., "0 2 * * *" for daily at 2 AM
+  isEnabled   Boolean @default(false) @map("is_enabled")
+  timezone    String  @default("UTC")
 
   // Retention policy
-  retentionDays     Int       @default(30) @map("retention_days")
-  maxBackups        Int       @default(10) @map("max_backups")
+  retentionDays Int @default(30) @map("retention_days")
+  maxBackups    Int @default(10) @map("max_backups")
 
   // Last run tracking
-  lastRunAt         DateTime? @map("last_run_at")
-  lastBackupId      String?   @map("last_backup_id")
-  nextRunAt         DateTime? @map("next_run_at")
+  lastRunAt    DateTime? @map("last_run_at")
+  lastBackupId String?   @map("last_backup_id")
+  nextRunAt    DateTime? @map("next_run_at")
 
   // Error tracking
-  lastError         String?   @map("last_error")
+  lastError           String? @map("last_error")
   consecutiveFailures Int     @default(0) @map("consecutive_failures")
 
   // Audit
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relation
-  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("backup_schedules")
 }
@@ -3155,44 +3024,44 @@ enum AccountStatus {
 //        tenantId set/companyId=null = tenant-level account
 //        tenantId set/companyId set = company-level override
 model ChartOfAccount {
-  id                String        @id @default(uuid())
+  id String @id @default(uuid())
 
   // Scope (nullable for hierarchical resolution: system -> tenant -> company)
-  tenantId          String?       @map("tenant_id")
-  tenant            Tenant?       @relation(fields: [tenantId], references: [id])
-  companyId         String?       @map("company_id")
-  company           Company?      @relation(fields: [companyId], references: [id])
+  tenantId  String?  @map("tenant_id")
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
+  companyId String?  @map("company_id")
+  company   Company? @relation(fields: [companyId], references: [id])
 
   // Account details
-  code              String        // e.g., "5000", "6100"
-  name              String        // e.g., "Cost of Goods Sold"
-  description       String?
+  code        String // e.g., "5000", "6100"
+  name        String // e.g., "Cost of Goods Sold"
+  description String?
 
   // Classification
-  accountType       AccountType   @map("account_type")
-  status            AccountStatus @default(ACTIVE)
+  accountType AccountType   @map("account_type")
+  status      AccountStatus @default(ACTIVE)
 
   // Hierarchy (self-reference for parent-child relationships)
-  parentId          String?       @map("parent_id")
-  parent            ChartOfAccount? @relation("AccountHierarchy", fields: [parentId], references: [id])
-  children          ChartOfAccount[] @relation("AccountHierarchy")
+  parentId String?          @map("parent_id")
+  parent   ChartOfAccount?  @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children ChartOfAccount[] @relation("AccountHierarchy")
 
   // Display & ordering
-  sortOrder         Int           @default(0) @map("sort_order")
+  sortOrder Int @default(0) @map("sort_order")
 
   // Flags
-  isSystem          Boolean       @default(false) @map("is_system")  // Seeded account (system default)
-  isTaxApplicable   Boolean       @default(true) @map("is_tax_applicable")
-  isHeader          Boolean       @default(false) @map("is_header")  // Header account (not selectable in dropdowns)
+  isSystem        Boolean @default(false) @map("is_system") // Seeded account (system default)
+  isTaxApplicable Boolean @default(true) @map("is_tax_applicable")
+  isHeader        Boolean @default(false) @map("is_header") // Header account (not selectable in dropdowns)
 
   // Audit
-  createdById       String?       @map("created_by_id")
-  createdAt         DateTime      @default(now()) @map("created_at")
-  updatedAt         DateTime      @updatedAt @map("updated_at")
-  deletedAt         DateTime?     @map("deleted_at")
+  createdById String?   @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  externalMappings  ChartOfAccountsMapping[]
+  externalMappings ChartOfAccountsMapping[]
 
   @@unique([tenantId, companyId, code]) // Unique code per scope
   @@index([tenantId])
@@ -3208,344 +3077,33 @@ model ChartOfAccount {
 // Chart of Accounts Mapping - Maps internal accounts to external platform codes
 // Scoped per company since each company may have different external account codes
 model ChartOfAccountsMapping {
-  id                String              @id @default(uuid())
-  accountId         String              @map("account_id")
-  account           ChartOfAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id        String         @id @default(uuid())
+  accountId String         @map("account_id")
+  account   ChartOfAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   // Company scope (required - mappings are per company)
-  companyId         String              @map("company_id")
-  company           Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String  @map("company_id")
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   // External system
-  provider          AccountingProvider  // XERO, QUICKBOOKS, MYOB, SAGE
-  externalCode      String?             @map("external_code")     // Code in external system (optional)
-  externalId        String?             @map("external_id")       // ID in external system (if applicable)
-  externalName      String?             @map("external_name")     // Name in external system
+  provider     AccountingProvider // XERO, QUICKBOOKS, MYOB, SAGE
+  externalCode String?            @map("external_code") // Code in external system (optional)
+  externalId   String?            @map("external_id") // ID in external system (if applicable)
+  externalName String?            @map("external_name") // Name in external system
 
   // Sync status (for future use when integrating with external platforms)
-  lastSyncedAt      DateTime?           @map("last_synced_at")
-  syncStatus        String?             @map("sync_status")       // e.g., "SYNCED", "PENDING", "ERROR"
+  lastSyncedAt DateTime? @map("last_synced_at")
+  syncStatus   String?   @map("sync_status") // e.g., "SYNCED", "PENDING", "ERROR"
 
   // Audit
-  createdById       String?             @map("created_by_id")
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@unique([accountId, companyId, provider])  // One mapping per provider per account per company
+  @@unique([accountId, companyId, provider]) // One mapping per provider per account per company
   @@index([accountId])
   @@index([companyId])
   @@index([provider])
   @@index([companyId, provider]) // For getting all mappings for a company by provider
   @@map("chart_of_accounts_mappings")
-}
-
-// ============================================================================
-// CONTRACTS & SERVICES
-// ============================================================================
-
-model Contract {
-  id              String         @id @default(uuid())
-  tenantId        String
-  tenant          Tenant         @relation(fields: [tenantId], references: [id])
-  companyId       String
-  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  title           String
-  contractType    ContractType   @default(OTHER)
-  status          ContractStatus @default(DRAFT)
-  startDate       DateTime
-  signedDate      DateTime?
-
-  // Optional document attachment (simple storage, no processing pipeline)
-  documentId      String?        @unique
-  document        Document?      @relation(fields: [documentId], references: [id], onDelete: SetNull)
-
-  internalNotes   String?        @db.Text
-
-  // Services under this contract
-  services        ContractService[]
-
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  deletedAt       DateTime?
-  deletedReason   String?
-
-  @@index([tenantId])
-  @@index([companyId])
-  @@index([status])
-  @@index([tenantId, deletedAt])
-  @@index([tenantId, companyId])
-  @@map("contracts")
-}
-
-model ContractService {
-  id                  String           @id @default(uuid())
-  tenantId            String
-  tenant              Tenant           @relation(fields: [tenantId], references: [id])
-  contractId          String
-  contract            Contract         @relation(fields: [contractId], references: [id], onDelete: Cascade)
-
-  name                String
-  serviceType         ServiceType      @default(RECURRING)
-  status              ServiceStatus    @default(ACTIVE)
-
-  // Pricing
-  rate                Decimal?         @db.Decimal(18, 2)
-  currency            String           @default("SGD")
-  frequency           BillingFrequency @default(MONTHLY)
-
-  // Service-level dates
-  startDate           DateTime
-  endDate             DateTime?
-
-  // Scope / Statement of Work (rich text)
-  scope               String?          @db.Text
-
-  displayOrder        Int              @default(0)
-
-  // Deadline Management Integration
-  serviceTemplateCode    String?                // Reference to template code used
-  gstFilingFrequency     GstFilingFrequency?    // For GST services
-  overrideBillable       Boolean?               // Override template billable setting
-  customRate             Decimal?  @db.Decimal(18, 2)  // Custom rate for this client
-  hasCustomDeadlines     Boolean             @default(false)  // Has custom deadline rules
-  fyeYearOverride        Int?                  // Override FYE year used for deadline generation
-
-  // Linked Service (for "Both" type - pairs one-time and recurring services)
-  linkedServiceId        String?               @unique
-  linkedService          ContractService?      @relation("ServiceLink", fields: [linkedServiceId], references: [id])
-  linkedBy               ContractService?      @relation("ServiceLink")
-
-  // Generated deadlines
-  deadlines              Deadline[]
-  deadlineRules          DeadlineRule[]
-
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
-  deletedAt           DateTime?
-
-  @@index([tenantId])
-  @@index([contractId])
-  @@index([status])
-  @@index([endDate])
-  @@index([tenantId, deletedAt])
-  @@index([tenantId, contractId])
-  @@index([linkedServiceId])
-  @@map("contract_services")
-}
-
-// ============================================================================
-// DEADLINE MANAGEMENT
-// ============================================================================
-
-model DeadlineTemplate {
-  id                    String              @id @default(uuid())
-  tenantId              String?             // Null = system template, populated = tenant-specific
-  tenant                Tenant?             @relation(fields: [tenantId], references: [id])
-
-  code                  String              // Unique code (e.g., "AGM", "ECI")
-  name                  String              // Display name
-  category              DeadlineCategory
-  jurisdiction          String              @default("SG")
-  description           String?             @db.Text
-
-  // Applicability rules (JSON arrays)
-  entityTypes           Json?               // Array of applicable EntityTypes (null = all)
-  excludeEntityTypes    Json?               // Array of excluded EntityTypes
-  requiresGstRegistered Boolean?            // GST requirement (null = N/A)
-  requiresAudit         Boolean?            // Audit requirement
-  isTaxFiling           Boolean             @default(false) // Skip if dormantTaxExemptionApproved
-  requiresCharityStatus Boolean?            // Requires isRegisteredCharity = true
-  requiresIPCStatus     Boolean?            // Requires isIPC = true
-
-  // Deadline calculation
-  anchorType            DeadlineAnchorType
-  offsetMonths          Int                 @default(0)
-  offsetDays            Int                 @default(0)
-  offsetBusinessDays    Boolean             @default(false) // Skip weekends/holidays
-  fixedMonth            Int?                // For FIXED_CALENDAR (1-12)
-  fixedDay              Int?                // For FIXED_CALENDAR (1-31)
-
-  // Recurrence
-  frequency             DeadlineFrequency
-
-  // Generation settings
-  generateMonthsAhead   Int                 @default(18)
-  isOptional            Boolean             @default(false)
-  optionalNote          String?
-
-  // Billing defaults
-  isBillable            Boolean             @default(false)
-  defaultAmount         Decimal?            @db.Decimal(18, 2)
-
-  // Reminder intervals (JSON array of days before due)
-  reminderDaysBefore    Json                @default("[60, 30, 14, 7]")
-
-  isActive              Boolean             @default(true)
-
-  // Template metadata
-  isUserCreated         Boolean             @default(false)
-  basedOnTemplateCode   String?             // Which system template this was based on
-
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-
-  // Relations
-  deadlines             Deadline[]
-
-  @@unique([tenantId, code, jurisdiction])
-  @@index([tenantId])
-  @@index([code])
-  @@index([category])
-  @@index([jurisdiction])
-  @@index([isActive])
-  @@map("deadline_templates")
-}
-
-model DeadlineRule {
-  id                    String              @id @default(uuid())
-  tenantId              String
-  tenant                Tenant              @relation(fields: [tenantId], references: [id])
-
-  // Link to contract service
-  contractServiceId     String
-  contractService       ContractService     @relation(fields: [contractServiceId], references: [id], onDelete: Cascade)
-
-  // Core fields
-  taskName              String              // "AGM", "Annual Return", etc.
-  description           String?             @db.Text
-  category              DeadlineCategory
-
-  // Rule Type: RULE_BASED or FIXED_DATE
-  ruleType              DeadlineRuleType    @default(RULE_BASED)
-
-  // RULE_BASED fields (offset calculation)
-  anchorType            DeadlineAnchorType?
-  offsetMonths          Int?                @default(0)
-  offsetDays            Int?                @default(0)
-  offsetBusinessDays    Boolean?            @default(false)
-  fixedMonth            Int?                // For FIXED_CALENDAR anchor (1-12)
-  fixedDay              Int?                // For FIXED_CALENDAR anchor (1-31)
-
-  // FIXED_DATE fields (specific date)
-  specificDate          DateTime?           // Direct date entry
-
-  // Recurrence configuration
-  isRecurring           Boolean             @default(false)
-  frequency             DeadlineFrequency?  // MONTHLY, QUARTERLY, ANNUALLY, ONE_TIME
-  generateUntilDate     DateTime?           // End date for generation
-  generateOccurrences   Int?                // Or number of occurrences
-
-  // Billing
-  isBillable            Boolean             @default(false)
-  amount                Decimal?            @db.Decimal(18, 2)
-  currency              String              @default("SGD")
-
-  // Display order
-  displayOrder          Int                 @default(0)
-
-  // Metadata
-  sourceTemplateCode    String?             // Track which template this came from
-
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  deletedAt             DateTime?
-
-  @@index([tenantId])
-  @@index([contractServiceId])
-  @@index([tenantId, contractServiceId])
-  @@map("deadline_rules")
-}
-
-model Deadline {
-  id                    String              @id @default(uuid())
-  tenantId              String
-  tenant                Tenant              @relation(fields: [tenantId], references: [id])
-  companyId             String
-  company               Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  // Links to source
-  contractServiceId     String?
-  contractService       ContractService?    @relation(fields: [contractServiceId], references: [id], onDelete: SetNull)
-  deadlineTemplateId    String?
-  deadlineTemplate      DeadlineTemplate?   @relation(fields: [deadlineTemplateId], references: [id], onDelete: SetNull)
-
-  // Core fields
-  title                 String              // Display title (max 200 chars)
-  description           String?             @db.Text
-  internalNotes         String?             @db.Text
-  category              DeadlineCategory
-  referenceCode         String?             // For grouping (e.g., "AGM-2024")
-  periodLabel           String              // Human-readable period (e.g., "FY2024", "YA2025")
-  periodStart           DateTime?           // Period start date
-  periodEnd             DateTime?           // Period end date
-
-  // Deadline dates
-  statutoryDueDate      DateTime            // Original calculated deadline (immutable)
-  extendedDueDate       DateTime?           // EOT date if granted
-  internalDueDate       DateTime?           // Internal buffer date
-
-  // EOT tracking
-  eotReference          String?             // EOT approval reference
-  eotNote               String?
-  eotGrantedAt          DateTime?
-
-  // Scope & Status
-  isInScope             Boolean             @default(true)  // Are we responsible?
-  scopeNote             String?
-  isBacklog             Boolean             @default(false) // Inherited overdue?
-  backlogNote           String?
-  status                DeadlineStatus      @default(PENDING)
-
-  // Completion
-  completedAt           DateTime?
-  completedById         String?
-  completedBy           User?               @relation("DeadlineCompleter", fields: [completedById], references: [id], onDelete: SetNull)
-  completionNote        String?             @db.Text
-  filingDate            DateTime?           // Actual filing date with authority
-  filingReference       String?             // Filing reference (e.g., BizFile Transaction No)
-
-  // Billing
-  isBillable            Boolean             @default(false)
-  overrideBillable      Boolean?            // Override template setting
-  billingStatus         DeadlineBillingStatus?
-  amount                Decimal?            @db.Decimal(18, 2) // From template
-  overrideAmount        Decimal?            @db.Decimal(18, 2) // One-off override
-  currency              String              @default("SGD")
-  invoiceReference      String?
-  invoicedAt            DateTime?
-
-  // Assignment
-  assigneeId            String?
-  assignee              User?               @relation("DeadlineAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  assignedAt            DateTime?
-
-  // Meta
-  generationType        DeadlineGenerationType @default(MANUAL)
-  remindersSent         Json                @default("[]") // Array of reminder dates sent
-
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  deletedAt             DateTime?
-
-  @@index([tenantId])
-  @@index([companyId])
-  @@index([contractServiceId])
-  @@index([deadlineTemplateId])
-  @@index([status])
-  @@index([category])
-  @@index([statutoryDueDate])
-  @@index([extendedDueDate])
-  @@index([assigneeId])
-  @@index([isInScope])
-  @@index([isBacklog])
-  @@index([billingStatus])
-  @@index([tenantId, deletedAt])
-  @@index([tenantId, companyId])
-  @@index([tenantId, status])
-  @@index([tenantId, assigneeId])
-  @@index([companyId, status])
-  // Prevent duplicate deadlines for same template+period+company
-  @@unique([tenantId, companyId, deadlineTemplateId, periodLabel])
-  @@map("deadlines")
 }

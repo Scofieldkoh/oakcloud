@@ -8,4 +8,3 @@ export * from './application';
 export * from './a4';
 export * from './layout';
 export * from './automation-purposes';
-export * from './contracts';

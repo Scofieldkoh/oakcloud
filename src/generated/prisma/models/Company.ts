@@ -76,10 +76,6 @@ export type CompanyMinAggregateOutputType = {
   isGstRegistered: boolean | null
   gstRegistrationNumber: string | null
   gstRegistrationDate: Date | null
-  agmDispensed: boolean | null
-  isDormant: boolean | null
-  dormantTaxExemptionApproved: boolean | null
-  gstFilingFrequency: $Enums.GstFilingFrequency | null
   isRegisteredCharity: boolean | null
   charityRegistrationDate: Date | null
   charityUEN: string | null
@@ -127,10 +123,6 @@ export type CompanyMaxAggregateOutputType = {
   isGstRegistered: boolean | null
   gstRegistrationNumber: string | null
   gstRegistrationDate: Date | null
-  agmDispensed: boolean | null
-  isDormant: boolean | null
-  dormantTaxExemptionApproved: boolean | null
-  gstFilingFrequency: $Enums.GstFilingFrequency | null
   isRegisteredCharity: boolean | null
   charityRegistrationDate: Date | null
   charityUEN: string | null
@@ -178,10 +170,6 @@ export type CompanyCountAggregateOutputType = {
   isGstRegistered: number
   gstRegistrationNumber: number
   gstRegistrationDate: number
-  agmDispensed: number
-  isDormant: number
-  dormantTaxExemptionApproved: number
-  gstFilingFrequency: number
   isRegisteredCharity: number
   charityRegistrationDate: number
   charityUEN: number
@@ -247,10 +235,6 @@ export type CompanyMinAggregateInputType = {
   isGstRegistered?: true
   gstRegistrationNumber?: true
   gstRegistrationDate?: true
-  agmDispensed?: true
-  isDormant?: true
-  dormantTaxExemptionApproved?: true
-  gstFilingFrequency?: true
   isRegisteredCharity?: true
   charityRegistrationDate?: true
   charityUEN?: true
@@ -298,10 +282,6 @@ export type CompanyMaxAggregateInputType = {
   isGstRegistered?: true
   gstRegistrationNumber?: true
   gstRegistrationDate?: true
-  agmDispensed?: true
-  isDormant?: true
-  dormantTaxExemptionApproved?: true
-  gstFilingFrequency?: true
   isRegisteredCharity?: true
   charityRegistrationDate?: true
   charityUEN?: true
@@ -349,10 +329,6 @@ export type CompanyCountAggregateInputType = {
   isGstRegistered?: true
   gstRegistrationNumber?: true
   gstRegistrationDate?: true
-  agmDispensed?: true
-  isDormant?: true
-  dormantTaxExemptionApproved?: true
-  gstFilingFrequency?: true
   isRegisteredCharity?: true
   charityRegistrationDate?: true
   charityUEN?: true
@@ -487,10 +463,6 @@ export type CompanyGroupByOutputType = {
   isGstRegistered: boolean
   gstRegistrationNumber: string | null
   gstRegistrationDate: Date | null
-  agmDispensed: boolean
-  isDormant: boolean
-  dormantTaxExemptionApproved: boolean
-  gstFilingFrequency: $Enums.GstFilingFrequency | null
   isRegisteredCharity: boolean
   charityRegistrationDate: Date | null
   charityUEN: string | null
@@ -561,10 +533,6 @@ export type CompanyWhereInput = {
   isGstRegistered?: Prisma.BoolFilter<"Company"> | boolean
   gstRegistrationNumber?: Prisma.StringNullableFilter<"Company"> | string | null
   gstRegistrationDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
-  agmDispensed?: Prisma.BoolFilter<"Company"> | boolean
-  isDormant?: Prisma.BoolFilter<"Company"> | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFilter<"Company"> | boolean
-  gstFilingFrequency?: Prisma.EnumGstFilingFrequencyNullableFilter<"Company"> | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFilter<"Company"> | boolean
   charityRegistrationDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   charityUEN?: Prisma.StringNullableFilter<"Company"> | string | null
@@ -594,8 +562,6 @@ export type CompanyWhereInput = {
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
-  contracts?: Prisma.ContractListRelationFilter
-  deadlines?: Prisma.DeadlineListRelationFilter
 }
 
 export type CompanyOrderByWithRelationInput = {
@@ -632,10 +598,6 @@ export type CompanyOrderByWithRelationInput = {
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrderInput | Prisma.SortOrder
-  agmDispensed?: Prisma.SortOrder
-  isDormant?: Prisma.SortOrder
-  dormantTaxExemptionApproved?: Prisma.SortOrder
-  gstFilingFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
   isRegisteredCharity?: Prisma.SortOrder
   charityRegistrationDate?: Prisma.SortOrderInput | Prisma.SortOrder
   charityUEN?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -665,8 +627,6 @@ export type CompanyOrderByWithRelationInput = {
   chartOfAccounts?: Prisma.ChartOfAccountOrderByRelationAggregateInput
   accountMappings?: Prisma.ChartOfAccountsMappingOrderByRelationAggregateInput
   contactDetails?: Prisma.ContactDetailOrderByRelationAggregateInput
-  contracts?: Prisma.ContractOrderByRelationAggregateInput
-  deadlines?: Prisma.DeadlineOrderByRelationAggregateInput
 }
 
 export type CompanyWhereUniqueInput = Prisma.AtLeast<{
@@ -707,10 +667,6 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   isGstRegistered?: Prisma.BoolFilter<"Company"> | boolean
   gstRegistrationNumber?: Prisma.StringNullableFilter<"Company"> | string | null
   gstRegistrationDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
-  agmDispensed?: Prisma.BoolFilter<"Company"> | boolean
-  isDormant?: Prisma.BoolFilter<"Company"> | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFilter<"Company"> | boolean
-  gstFilingFrequency?: Prisma.EnumGstFilingFrequencyNullableFilter<"Company"> | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFilter<"Company"> | boolean
   charityRegistrationDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   charityUEN?: Prisma.StringNullableFilter<"Company"> | string | null
@@ -740,8 +696,6 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
-  contracts?: Prisma.ContractListRelationFilter
-  deadlines?: Prisma.DeadlineListRelationFilter
 }, "id" | "tenantId_uen">
 
 export type CompanyOrderByWithAggregationInput = {
@@ -778,10 +732,6 @@ export type CompanyOrderByWithAggregationInput = {
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrderInput | Prisma.SortOrder
-  agmDispensed?: Prisma.SortOrder
-  isDormant?: Prisma.SortOrder
-  dormantTaxExemptionApproved?: Prisma.SortOrder
-  gstFilingFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
   isRegisteredCharity?: Prisma.SortOrder
   charityRegistrationDate?: Prisma.SortOrderInput | Prisma.SortOrder
   charityUEN?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -837,10 +787,6 @@ export type CompanyScalarWhereWithAggregatesInput = {
   isGstRegistered?: Prisma.BoolWithAggregatesFilter<"Company"> | boolean
   gstRegistrationNumber?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
   gstRegistrationDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
-  agmDispensed?: Prisma.BoolWithAggregatesFilter<"Company"> | boolean
-  isDormant?: Prisma.BoolWithAggregatesFilter<"Company"> | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolWithAggregatesFilter<"Company"> | boolean
-  gstFilingFrequency?: Prisma.EnumGstFilingFrequencyNullableWithAggregatesFilter<"Company"> | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolWithAggregatesFilter<"Company"> | boolean
   charityRegistrationDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
   charityUEN?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
@@ -887,10 +833,6 @@ export type CompanyCreateInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -920,8 +862,6 @@ export type CompanyCreateInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateInput = {
@@ -958,10 +898,6 @@ export type CompanyUncheckedCreateInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -990,8 +926,6 @@ export type CompanyUncheckedCreateInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUpdateInput = {
@@ -1027,10 +961,6 @@ export type CompanyUpdateInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1060,8 +990,6 @@ export type CompanyUpdateInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateInput = {
@@ -1098,10 +1026,6 @@ export type CompanyUncheckedUpdateInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1130,8 +1054,6 @@ export type CompanyUncheckedUpdateInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyInput = {
@@ -1168,10 +1090,6 @@ export type CompanyCreateManyInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -1218,10 +1136,6 @@ export type CompanyUpdateManyMutationInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1269,10 +1183,6 @@ export type CompanyUncheckedUpdateManyInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1345,10 +1255,6 @@ export type CompanyCountOrderByAggregateInput = {
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrder
-  agmDispensed?: Prisma.SortOrder
-  isDormant?: Prisma.SortOrder
-  dormantTaxExemptionApproved?: Prisma.SortOrder
-  gstFilingFrequency?: Prisma.SortOrder
   isRegisteredCharity?: Prisma.SortOrder
   charityRegistrationDate?: Prisma.SortOrder
   charityUEN?: Prisma.SortOrder
@@ -1404,10 +1310,6 @@ export type CompanyMaxOrderByAggregateInput = {
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrder
-  agmDispensed?: Prisma.SortOrder
-  isDormant?: Prisma.SortOrder
-  dormantTaxExemptionApproved?: Prisma.SortOrder
-  gstFilingFrequency?: Prisma.SortOrder
   isRegisteredCharity?: Prisma.SortOrder
   charityRegistrationDate?: Prisma.SortOrder
   charityUEN?: Prisma.SortOrder
@@ -1455,10 +1357,6 @@ export type CompanyMinOrderByAggregateInput = {
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrder
-  agmDispensed?: Prisma.SortOrder
-  isDormant?: Prisma.SortOrder
-  dormantTaxExemptionApproved?: Prisma.SortOrder
-  gstFilingFrequency?: Prisma.SortOrder
   isRegisteredCharity?: Prisma.SortOrder
   charityRegistrationDate?: Prisma.SortOrder
   charityUEN?: Prisma.SortOrder
@@ -1574,10 +1472,6 @@ export type NullableDecimalFieldUpdateOperationsInput = {
   decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
   multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
-}
-
-export type NullableEnumGstFilingFrequencyFieldUpdateOperationsInput = {
-  set?: $Enums.GstFilingFrequency | null
 }
 
 export type CompanyCreateNestedOneWithoutFormerNamesInput = {
@@ -1804,34 +1698,6 @@ export type CompanyUpdateOneRequiredWithoutAccountMappingsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutAccountMappingsInput, Prisma.CompanyUpdateWithoutAccountMappingsInput>, Prisma.CompanyUncheckedUpdateWithoutAccountMappingsInput>
 }
 
-export type CompanyCreateNestedOneWithoutContractsInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutContractsInput, Prisma.CompanyUncheckedCreateWithoutContractsInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutContractsInput
-  connect?: Prisma.CompanyWhereUniqueInput
-}
-
-export type CompanyUpdateOneRequiredWithoutContractsNestedInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutContractsInput, Prisma.CompanyUncheckedCreateWithoutContractsInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutContractsInput
-  upsert?: Prisma.CompanyUpsertWithoutContractsInput
-  connect?: Prisma.CompanyWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutContractsInput, Prisma.CompanyUpdateWithoutContractsInput>, Prisma.CompanyUncheckedUpdateWithoutContractsInput>
-}
-
-export type CompanyCreateNestedOneWithoutDeadlinesInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutDeadlinesInput, Prisma.CompanyUncheckedCreateWithoutDeadlinesInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutDeadlinesInput
-  connect?: Prisma.CompanyWhereUniqueInput
-}
-
-export type CompanyUpdateOneRequiredWithoutDeadlinesNestedInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutDeadlinesInput, Prisma.CompanyUncheckedCreateWithoutDeadlinesInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutDeadlinesInput
-  upsert?: Prisma.CompanyUpsertWithoutDeadlinesInput
-  connect?: Prisma.CompanyWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutDeadlinesInput, Prisma.CompanyUpdateWithoutDeadlinesInput>, Prisma.CompanyUncheckedUpdateWithoutDeadlinesInput>
-}
-
 export type CompanyCreateWithoutTenantInput = {
   id?: string
   uen: string
@@ -1865,10 +1731,6 @@ export type CompanyCreateWithoutTenantInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -1897,8 +1759,6 @@ export type CompanyCreateWithoutTenantInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTenantInput = {
@@ -1934,10 +1794,6 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -1966,8 +1822,6 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTenantInput = {
@@ -2033,10 +1887,6 @@ export type CompanyScalarWhereInput = {
   isGstRegistered?: Prisma.BoolFilter<"Company"> | boolean
   gstRegistrationNumber?: Prisma.StringNullableFilter<"Company"> | string | null
   gstRegistrationDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
-  agmDispensed?: Prisma.BoolFilter<"Company"> | boolean
-  isDormant?: Prisma.BoolFilter<"Company"> | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFilter<"Company"> | boolean
-  gstFilingFrequency?: Prisma.EnumGstFilingFrequencyNullableFilter<"Company"> | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFilter<"Company"> | boolean
   charityRegistrationDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   charityUEN?: Prisma.StringNullableFilter<"Company"> | string | null
@@ -2083,10 +1933,6 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -2115,8 +1961,6 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -2153,10 +1997,6 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -2184,8 +2024,6 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -2237,10 +2075,6 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2269,8 +2103,6 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -2307,10 +2139,6 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2338,8 +2166,6 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutUserAssignmentsInput = {
@@ -2375,10 +2201,6 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -2407,8 +2229,6 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
@@ -2445,10 +2265,6 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -2476,8 +2292,6 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutUserAssignmentsInput = {
@@ -2529,10 +2343,6 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2561,8 +2371,6 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
@@ -2599,10 +2407,6 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2630,8 +2434,6 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutFormerNamesInput = {
@@ -2667,10 +2469,6 @@ export type CompanyCreateWithoutFormerNamesInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -2699,8 +2497,6 @@ export type CompanyCreateWithoutFormerNamesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutFormerNamesInput = {
@@ -2737,10 +2533,6 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -2768,8 +2560,6 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutFormerNamesInput = {
@@ -2821,10 +2611,6 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2853,8 +2639,6 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
@@ -2891,10 +2675,6 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2922,8 +2702,6 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAddressesInput = {
@@ -2959,10 +2737,6 @@ export type CompanyCreateWithoutAddressesInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -2991,8 +2765,6 @@ export type CompanyCreateWithoutAddressesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAddressesInput = {
@@ -3029,10 +2801,6 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -3060,8 +2828,6 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAddressesInput = {
@@ -3113,10 +2879,6 @@ export type CompanyUpdateWithoutAddressesInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3145,8 +2907,6 @@ export type CompanyUpdateWithoutAddressesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAddressesInput = {
@@ -3183,10 +2943,6 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3214,8 +2970,6 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactsInput = {
@@ -3251,10 +3005,6 @@ export type CompanyCreateWithoutContactsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -3283,8 +3033,6 @@ export type CompanyCreateWithoutContactsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactsInput = {
@@ -3321,10 +3069,6 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -3352,8 +3096,6 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactsInput = {
@@ -3405,10 +3147,6 @@ export type CompanyUpdateWithoutContactsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3437,8 +3175,6 @@ export type CompanyUpdateWithoutContactsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactsInput = {
@@ -3475,10 +3211,6 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3506,8 +3238,6 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactDetailsInput = {
@@ -3543,10 +3273,6 @@ export type CompanyCreateWithoutContactDetailsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -3575,8 +3301,6 @@ export type CompanyCreateWithoutContactDetailsInput = {
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactDetailsInput = {
@@ -3613,10 +3337,6 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -3644,8 +3364,6 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactDetailsInput = {
@@ -3697,10 +3415,6 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3729,8 +3443,6 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
@@ -3767,10 +3479,6 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3798,8 +3506,6 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutOfficersInput = {
@@ -3835,10 +3541,6 @@ export type CompanyCreateWithoutOfficersInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -3867,8 +3569,6 @@ export type CompanyCreateWithoutOfficersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutOfficersInput = {
@@ -3905,10 +3605,6 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -3936,8 +3632,6 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutOfficersInput = {
@@ -3989,10 +3683,6 @@ export type CompanyUpdateWithoutOfficersInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4021,8 +3711,6 @@ export type CompanyUpdateWithoutOfficersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutOfficersInput = {
@@ -4059,10 +3747,6 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4090,8 +3774,6 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareCapitalInput = {
@@ -4127,10 +3809,6 @@ export type CompanyCreateWithoutShareCapitalInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -4159,8 +3837,6 @@ export type CompanyCreateWithoutShareCapitalInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareCapitalInput = {
@@ -4197,10 +3873,6 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -4228,8 +3900,6 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareCapitalInput = {
@@ -4281,10 +3951,6 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4313,8 +3979,6 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
@@ -4351,10 +4015,6 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4382,8 +4042,6 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareholdersInput = {
@@ -4419,10 +4077,6 @@ export type CompanyCreateWithoutShareholdersInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -4451,8 +4105,6 @@ export type CompanyCreateWithoutShareholdersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareholdersInput = {
@@ -4489,10 +4141,6 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -4520,8 +4168,6 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareholdersInput = {
@@ -4573,10 +4219,6 @@ export type CompanyUpdateWithoutShareholdersInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4605,8 +4247,6 @@ export type CompanyUpdateWithoutShareholdersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareholdersInput = {
@@ -4643,10 +4283,6 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4674,8 +4310,6 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChargesInput = {
@@ -4711,10 +4345,6 @@ export type CompanyCreateWithoutChargesInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -4743,8 +4373,6 @@ export type CompanyCreateWithoutChargesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChargesInput = {
@@ -4781,10 +4409,6 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -4812,8 +4436,6 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChargesInput = {
@@ -4865,10 +4487,6 @@ export type CompanyUpdateWithoutChargesInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4897,8 +4515,6 @@ export type CompanyUpdateWithoutChargesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChargesInput = {
@@ -4935,10 +4551,6 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4966,8 +4578,6 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentsInput = {
@@ -5003,10 +4613,6 @@ export type CompanyCreateWithoutDocumentsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -5035,8 +4641,6 @@ export type CompanyCreateWithoutDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentsInput = {
@@ -5073,10 +4677,6 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -5104,8 +4704,6 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentsInput = {
@@ -5157,10 +4755,6 @@ export type CompanyUpdateWithoutDocumentsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5189,8 +4783,6 @@ export type CompanyUpdateWithoutDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentsInput = {
@@ -5227,10 +4819,6 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5258,8 +4846,6 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAuditLogsInput = {
@@ -5295,10 +4881,6 @@ export type CompanyCreateWithoutAuditLogsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -5327,8 +4909,6 @@ export type CompanyCreateWithoutAuditLogsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditLogsInput = {
@@ -5365,10 +4945,6 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -5396,8 +4972,6 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditLogsInput = {
@@ -5449,10 +5023,6 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5481,8 +5051,6 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
@@ -5519,10 +5087,6 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5550,8 +5114,6 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutNoteTabsInput = {
@@ -5587,10 +5149,6 @@ export type CompanyCreateWithoutNoteTabsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -5619,8 +5177,6 @@ export type CompanyCreateWithoutNoteTabsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutNoteTabsInput = {
@@ -5657,10 +5213,6 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -5688,8 +5240,6 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutNoteTabsInput = {
@@ -5741,10 +5291,6 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5773,8 +5319,6 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
@@ -5811,10 +5355,6 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5842,8 +5382,6 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutGeneratedDocumentsInput = {
@@ -5879,10 +5417,6 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -5911,8 +5445,6 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -5949,10 +5481,6 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -5980,8 +5508,6 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -6033,10 +5559,6 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6065,8 +5587,6 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -6103,10 +5623,6 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6134,8 +5650,6 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentTagsInput = {
@@ -6171,10 +5685,6 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -6203,8 +5713,6 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
@@ -6241,10 +5749,6 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -6272,8 +5776,6 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentTagsInput = {
@@ -6325,10 +5827,6 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6357,8 +5855,6 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
@@ -6395,10 +5891,6 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6426,8 +5918,6 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChartOfAccountsInput = {
@@ -6463,10 +5953,6 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -6495,8 +5981,6 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
@@ -6533,10 +6017,6 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -6564,8 +6044,6 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChartOfAccountsInput = {
@@ -6617,10 +6095,6 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6649,8 +6123,6 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -6687,10 +6159,6 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6718,8 +6186,6 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAccountMappingsInput = {
@@ -6755,10 +6221,6 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -6787,8 +6249,6 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
@@ -6825,10 +6285,6 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -6856,8 +6312,6 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAccountMappingsInput = {
@@ -6909,10 +6363,6 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6941,8 +6391,6 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
@@ -6979,10 +6427,6 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7010,592 +6454,6 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
-}
-
-export type CompanyCreateWithoutContractsInput = {
-  id?: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutCompanyInput
-}
-
-export type CompanyUncheckedCreateWithoutContractsInput = {
-  id?: string
-  tenantId: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutCompanyInput
-}
-
-export type CompanyCreateOrConnectWithoutContractsInput = {
-  where: Prisma.CompanyWhereUniqueInput
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutContractsInput, Prisma.CompanyUncheckedCreateWithoutContractsInput>
-}
-
-export type CompanyUpsertWithoutContractsInput = {
-  update: Prisma.XOR<Prisma.CompanyUpdateWithoutContractsInput, Prisma.CompanyUncheckedUpdateWithoutContractsInput>
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutContractsInput, Prisma.CompanyUncheckedCreateWithoutContractsInput>
-  where?: Prisma.CompanyWhereInput
-}
-
-export type CompanyUpdateToOneWithWhereWithoutContractsInput = {
-  where?: Prisma.CompanyWhereInput
-  data: Prisma.XOR<Prisma.CompanyUpdateWithoutContractsInput, Prisma.CompanyUncheckedUpdateWithoutContractsInput>
-}
-
-export type CompanyUpdateWithoutContractsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
-}
-
-export type CompanyUncheckedUpdateWithoutContractsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
-}
-
-export type CompanyCreateWithoutDeadlinesInput = {
-  id?: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutCompanyInput
-}
-
-export type CompanyUncheckedCreateWithoutDeadlinesInput = {
-  id?: string
-  tenantId: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutCompanyInput
-}
-
-export type CompanyCreateOrConnectWithoutDeadlinesInput = {
-  where: Prisma.CompanyWhereUniqueInput
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutDeadlinesInput, Prisma.CompanyUncheckedCreateWithoutDeadlinesInput>
-}
-
-export type CompanyUpsertWithoutDeadlinesInput = {
-  update: Prisma.XOR<Prisma.CompanyUpdateWithoutDeadlinesInput, Prisma.CompanyUncheckedUpdateWithoutDeadlinesInput>
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutDeadlinesInput, Prisma.CompanyUncheckedCreateWithoutDeadlinesInput>
-  where?: Prisma.CompanyWhereInput
-}
-
-export type CompanyUpdateToOneWithWhereWithoutDeadlinesInput = {
-  where?: Prisma.CompanyWhereInput
-  data: Prisma.XOR<Prisma.CompanyUpdateWithoutDeadlinesInput, Prisma.CompanyUncheckedUpdateWithoutDeadlinesInput>
-}
-
-export type CompanyUpdateWithoutDeadlinesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-}
-
-export type CompanyUncheckedUpdateWithoutDeadlinesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyTenantInput = {
@@ -7631,10 +6489,6 @@ export type CompanyCreateManyTenantInput = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: $Enums.GstFilingFrequency | null
   isRegisteredCharity?: boolean
   charityRegistrationDate?: Date | string | null
   charityUEN?: string | null
@@ -7681,10 +6535,6 @@ export type CompanyUpdateWithoutTenantInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7713,8 +6563,6 @@ export type CompanyUpdateWithoutTenantInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTenantInput = {
@@ -7750,10 +6598,6 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7782,8 +6626,6 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutCompanyNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateManyWithoutTenantInput = {
@@ -7819,10 +6661,6 @@ export type CompanyUncheckedUpdateManyWithoutTenantInput = {
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  agmDispensed?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isDormant?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  dormantTaxExemptionApproved?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstFilingFrequency?: Prisma.NullableEnumGstFilingFrequencyFieldUpdateOperationsInput | $Enums.GstFilingFrequency | null
   isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
   charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7859,8 +6697,6 @@ export type CompanyCountOutputType = {
   chartOfAccounts: number
   accountMappings: number
   contactDetails: number
-  contracts: number
-  deadlines: number
 }
 
 export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -7881,8 +6717,6 @@ export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   chartOfAccounts?: boolean | CompanyCountOutputTypeCountChartOfAccountsArgs
   accountMappings?: boolean | CompanyCountOutputTypeCountAccountMappingsArgs
   contactDetails?: boolean | CompanyCountOutputTypeCountContactDetailsArgs
-  contracts?: boolean | CompanyCountOutputTypeCountContractsArgs
-  deadlines?: boolean | CompanyCountOutputTypeCountDeadlinesArgs
 }
 
 /**
@@ -8014,20 +6848,6 @@ export type CompanyCountOutputTypeCountContactDetailsArgs<ExtArgs extends runtim
   where?: Prisma.ContactDetailWhereInput
 }
 
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountContractsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ContractWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountDeadlinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DeadlineWhereInput
-}
-
 
 export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -8063,10 +6883,6 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   isGstRegistered?: boolean
   gstRegistrationNumber?: boolean
   gstRegistrationDate?: boolean
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: boolean
   isRegisteredCharity?: boolean
   charityRegistrationDate?: boolean
   charityUEN?: boolean
@@ -8096,8 +6912,6 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
   accountMappings?: boolean | Prisma.Company$accountMappingsArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Company$contactDetailsArgs<ExtArgs>
-  contracts?: boolean | Prisma.Company$contractsArgs<ExtArgs>
-  deadlines?: boolean | Prisma.Company$deadlinesArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -8135,10 +6949,6 @@ export type CompanySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   isGstRegistered?: boolean
   gstRegistrationNumber?: boolean
   gstRegistrationDate?: boolean
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: boolean
   isRegisteredCharity?: boolean
   charityRegistrationDate?: boolean
   charityUEN?: boolean
@@ -8187,10 +6997,6 @@ export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   isGstRegistered?: boolean
   gstRegistrationNumber?: boolean
   gstRegistrationDate?: boolean
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: boolean
   isRegisteredCharity?: boolean
   charityRegistrationDate?: boolean
   charityUEN?: boolean
@@ -8239,10 +7045,6 @@ export type CompanySelectScalar = {
   isGstRegistered?: boolean
   gstRegistrationNumber?: boolean
   gstRegistrationDate?: boolean
-  agmDispensed?: boolean
-  isDormant?: boolean
-  dormantTaxExemptionApproved?: boolean
-  gstFilingFrequency?: boolean
   isRegisteredCharity?: boolean
   charityRegistrationDate?: boolean
   charityUEN?: boolean
@@ -8256,7 +7058,7 @@ export type CompanySelectScalar = {
   deletedReason?: boolean
 }
 
-export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "agmDispensed" | "isDormant" | "dormantTaxExemptionApproved" | "gstFilingFrequency" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["company"]>
+export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["company"]>
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   formerNames?: boolean | Prisma.Company$formerNamesArgs<ExtArgs>
@@ -8276,8 +7078,6 @@ export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
   accountMappings?: boolean | Prisma.Company$accountMappingsArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Company$contactDetailsArgs<ExtArgs>
-  contracts?: boolean | Prisma.Company$contractsArgs<ExtArgs>
-  deadlines?: boolean | Prisma.Company$deadlinesArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -8308,8 +7108,6 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     chartOfAccounts: Prisma.$ChartOfAccountPayload<ExtArgs>[]
     accountMappings: Prisma.$ChartOfAccountsMappingPayload<ExtArgs>[]
     contactDetails: Prisma.$ContactDetailPayload<ExtArgs>[]
-    contracts: Prisma.$ContractPayload<ExtArgs>[]
-    deadlines: Prisma.$DeadlinePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -8345,10 +7143,6 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     isGstRegistered: boolean
     gstRegistrationNumber: string | null
     gstRegistrationDate: Date | null
-    agmDispensed: boolean
-    isDormant: boolean
-    dormantTaxExemptionApproved: boolean
-    gstFilingFrequency: $Enums.GstFilingFrequency | null
     isRegisteredCharity: boolean
     charityRegistrationDate: Date | null
     charityUEN: string | null
@@ -8772,8 +7566,6 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   chartOfAccounts<T extends Prisma.Company$chartOfAccountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$chartOfAccountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   accountMappings<T extends Prisma.Company$accountMappingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$accountMappingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountsMappingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   contactDetails<T extends Prisma.Company$contactDetailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$contactDetailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  contracts<T extends Prisma.Company$contractsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$contractsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContractPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  deadlines<T extends Prisma.Company$deadlinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$deadlinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8836,10 +7628,6 @@ export interface CompanyFieldRefs {
   readonly isGstRegistered: Prisma.FieldRef<"Company", 'Boolean'>
   readonly gstRegistrationNumber: Prisma.FieldRef<"Company", 'String'>
   readonly gstRegistrationDate: Prisma.FieldRef<"Company", 'DateTime'>
-  readonly agmDispensed: Prisma.FieldRef<"Company", 'Boolean'>
-  readonly isDormant: Prisma.FieldRef<"Company", 'Boolean'>
-  readonly dormantTaxExemptionApproved: Prisma.FieldRef<"Company", 'Boolean'>
-  readonly gstFilingFrequency: Prisma.FieldRef<"Company", 'GstFilingFrequency'>
   readonly isRegisteredCharity: Prisma.FieldRef<"Company", 'Boolean'>
   readonly charityRegistrationDate: Prisma.FieldRef<"Company", 'DateTime'>
   readonly charityUEN: Prisma.FieldRef<"Company", 'String'>
@@ -9652,54 +8440,6 @@ export type Company$contactDetailsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.ContactDetailScalarFieldEnum | Prisma.ContactDetailScalarFieldEnum[]
-}
-
-/**
- * Company.contracts
- */
-export type Company$contractsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Contract
-   */
-  select?: Prisma.ContractSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Contract
-   */
-  omit?: Prisma.ContractOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ContractInclude<ExtArgs> | null
-  where?: Prisma.ContractWhereInput
-  orderBy?: Prisma.ContractOrderByWithRelationInput | Prisma.ContractOrderByWithRelationInput[]
-  cursor?: Prisma.ContractWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ContractScalarFieldEnum | Prisma.ContractScalarFieldEnum[]
-}
-
-/**
- * Company.deadlines
- */
-export type Company$deadlinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Deadline
-   */
-  select?: Prisma.DeadlineSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Deadline
-   */
-  omit?: Prisma.DeadlineOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DeadlineInclude<ExtArgs> | null
-  where?: Prisma.DeadlineWhereInput
-  orderBy?: Prisma.DeadlineOrderByWithRelationInput | Prisma.DeadlineOrderByWithRelationInput[]
-  cursor?: Prisma.DeadlineWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DeadlineScalarFieldEnum | Prisma.DeadlineScalarFieldEnum[]
 }
 
 /**

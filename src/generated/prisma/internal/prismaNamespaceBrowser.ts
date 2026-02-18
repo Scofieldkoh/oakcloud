@@ -117,12 +117,7 @@ export const ModelName = {
   TenantBackup: 'TenantBackup',
   BackupSchedule: 'BackupSchedule',
   ChartOfAccount: 'ChartOfAccount',
-  ChartOfAccountsMapping: 'ChartOfAccountsMapping',
-  Contract: 'Contract',
-  ContractService: 'ContractService',
-  DeadlineTemplate: 'DeadlineTemplate',
-  DeadlineRule: 'DeadlineRule',
-  Deadline: 'Deadline'
+  ChartOfAccountsMapping: 'ChartOfAccountsMapping'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -290,10 +285,6 @@ export const CompanyScalarFieldEnum = {
   isGstRegistered: 'isGstRegistered',
   gstRegistrationNumber: 'gstRegistrationNumber',
   gstRegistrationDate: 'gstRegistrationDate',
-  agmDispensed: 'agmDispensed',
-  isDormant: 'isDormant',
-  dormantTaxExemptionApproved: 'dormantTaxExemptionApproved',
-  gstFilingFrequency: 'gstFilingFrequency',
   isRegisteredCharity: 'isRegisteredCharity',
   charityRegistrationDate: 'charityRegistrationDate',
   charityUEN: 'charityUEN',
@@ -1466,175 +1457,6 @@ export const ChartOfAccountsMappingScalarFieldEnum = {
 } as const
 
 export type ChartOfAccountsMappingScalarFieldEnum = (typeof ChartOfAccountsMappingScalarFieldEnum)[keyof typeof ChartOfAccountsMappingScalarFieldEnum]
-
-
-export const ContractScalarFieldEnum = {
-  id: 'id',
-  tenantId: 'tenantId',
-  companyId: 'companyId',
-  title: 'title',
-  contractType: 'contractType',
-  status: 'status',
-  startDate: 'startDate',
-  signedDate: 'signedDate',
-  documentId: 'documentId',
-  internalNotes: 'internalNotes',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt',
-  deletedReason: 'deletedReason'
-} as const
-
-export type ContractScalarFieldEnum = (typeof ContractScalarFieldEnum)[keyof typeof ContractScalarFieldEnum]
-
-
-export const ContractServiceScalarFieldEnum = {
-  id: 'id',
-  tenantId: 'tenantId',
-  contractId: 'contractId',
-  name: 'name',
-  serviceType: 'serviceType',
-  status: 'status',
-  rate: 'rate',
-  currency: 'currency',
-  frequency: 'frequency',
-  startDate: 'startDate',
-  endDate: 'endDate',
-  scope: 'scope',
-  displayOrder: 'displayOrder',
-  serviceTemplateCode: 'serviceTemplateCode',
-  gstFilingFrequency: 'gstFilingFrequency',
-  overrideBillable: 'overrideBillable',
-  customRate: 'customRate',
-  hasCustomDeadlines: 'hasCustomDeadlines',
-  fyeYearOverride: 'fyeYearOverride',
-  linkedServiceId: 'linkedServiceId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type ContractServiceScalarFieldEnum = (typeof ContractServiceScalarFieldEnum)[keyof typeof ContractServiceScalarFieldEnum]
-
-
-export const DeadlineTemplateScalarFieldEnum = {
-  id: 'id',
-  tenantId: 'tenantId',
-  code: 'code',
-  name: 'name',
-  category: 'category',
-  jurisdiction: 'jurisdiction',
-  description: 'description',
-  entityTypes: 'entityTypes',
-  excludeEntityTypes: 'excludeEntityTypes',
-  requiresGstRegistered: 'requiresGstRegistered',
-  requiresAudit: 'requiresAudit',
-  isTaxFiling: 'isTaxFiling',
-  requiresCharityStatus: 'requiresCharityStatus',
-  requiresIPCStatus: 'requiresIPCStatus',
-  anchorType: 'anchorType',
-  offsetMonths: 'offsetMonths',
-  offsetDays: 'offsetDays',
-  offsetBusinessDays: 'offsetBusinessDays',
-  fixedMonth: 'fixedMonth',
-  fixedDay: 'fixedDay',
-  frequency: 'frequency',
-  generateMonthsAhead: 'generateMonthsAhead',
-  isOptional: 'isOptional',
-  optionalNote: 'optionalNote',
-  isBillable: 'isBillable',
-  defaultAmount: 'defaultAmount',
-  reminderDaysBefore: 'reminderDaysBefore',
-  isActive: 'isActive',
-  isUserCreated: 'isUserCreated',
-  basedOnTemplateCode: 'basedOnTemplateCode',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type DeadlineTemplateScalarFieldEnum = (typeof DeadlineTemplateScalarFieldEnum)[keyof typeof DeadlineTemplateScalarFieldEnum]
-
-
-export const DeadlineRuleScalarFieldEnum = {
-  id: 'id',
-  tenantId: 'tenantId',
-  contractServiceId: 'contractServiceId',
-  taskName: 'taskName',
-  description: 'description',
-  category: 'category',
-  ruleType: 'ruleType',
-  anchorType: 'anchorType',
-  offsetMonths: 'offsetMonths',
-  offsetDays: 'offsetDays',
-  offsetBusinessDays: 'offsetBusinessDays',
-  fixedMonth: 'fixedMonth',
-  fixedDay: 'fixedDay',
-  specificDate: 'specificDate',
-  isRecurring: 'isRecurring',
-  frequency: 'frequency',
-  generateUntilDate: 'generateUntilDate',
-  generateOccurrences: 'generateOccurrences',
-  isBillable: 'isBillable',
-  amount: 'amount',
-  currency: 'currency',
-  displayOrder: 'displayOrder',
-  sourceTemplateCode: 'sourceTemplateCode',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type DeadlineRuleScalarFieldEnum = (typeof DeadlineRuleScalarFieldEnum)[keyof typeof DeadlineRuleScalarFieldEnum]
-
-
-export const DeadlineScalarFieldEnum = {
-  id: 'id',
-  tenantId: 'tenantId',
-  companyId: 'companyId',
-  contractServiceId: 'contractServiceId',
-  deadlineTemplateId: 'deadlineTemplateId',
-  title: 'title',
-  description: 'description',
-  internalNotes: 'internalNotes',
-  category: 'category',
-  referenceCode: 'referenceCode',
-  periodLabel: 'periodLabel',
-  periodStart: 'periodStart',
-  periodEnd: 'periodEnd',
-  statutoryDueDate: 'statutoryDueDate',
-  extendedDueDate: 'extendedDueDate',
-  internalDueDate: 'internalDueDate',
-  eotReference: 'eotReference',
-  eotNote: 'eotNote',
-  eotGrantedAt: 'eotGrantedAt',
-  isInScope: 'isInScope',
-  scopeNote: 'scopeNote',
-  isBacklog: 'isBacklog',
-  backlogNote: 'backlogNote',
-  status: 'status',
-  completedAt: 'completedAt',
-  completedById: 'completedById',
-  completionNote: 'completionNote',
-  filingDate: 'filingDate',
-  filingReference: 'filingReference',
-  isBillable: 'isBillable',
-  overrideBillable: 'overrideBillable',
-  billingStatus: 'billingStatus',
-  amount: 'amount',
-  overrideAmount: 'overrideAmount',
-  currency: 'currency',
-  invoiceReference: 'invoiceReference',
-  invoicedAt: 'invoicedAt',
-  assigneeId: 'assigneeId',
-  assignedAt: 'assignedAt',
-  generationType: 'generationType',
-  remindersSent: 'remindersSent',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type DeadlineScalarFieldEnum = (typeof DeadlineScalarFieldEnum)[keyof typeof DeadlineScalarFieldEnum]
 
 
 export const SortOrder = {

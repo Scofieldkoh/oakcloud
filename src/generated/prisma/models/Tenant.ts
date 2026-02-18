@@ -351,11 +351,6 @@ export type TenantWhereInput = {
   exchangeRates?: Prisma.ExchangeRateListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
-  contracts?: Prisma.ContractListRelationFilter
-  contractServices?: Prisma.ContractServiceListRelationFilter
-  deadlineTemplates?: Prisma.DeadlineTemplateListRelationFilter
-  deadlines?: Prisma.DeadlineListRelationFilter
-  deadlineRules?: Prisma.DeadlineRuleListRelationFilter
 }
 
 export type TenantOrderByWithRelationInput = {
@@ -397,11 +392,6 @@ export type TenantOrderByWithRelationInput = {
   exchangeRates?: Prisma.ExchangeRateOrderByRelationAggregateInput
   chartOfAccounts?: Prisma.ChartOfAccountOrderByRelationAggregateInput
   contactDetails?: Prisma.ContactDetailOrderByRelationAggregateInput
-  contracts?: Prisma.ContractOrderByRelationAggregateInput
-  contractServices?: Prisma.ContractServiceOrderByRelationAggregateInput
-  deadlineTemplates?: Prisma.DeadlineTemplateOrderByRelationAggregateInput
-  deadlines?: Prisma.DeadlineOrderByRelationAggregateInput
-  deadlineRules?: Prisma.DeadlineRuleOrderByRelationAggregateInput
 }
 
 export type TenantWhereUniqueInput = Prisma.AtLeast<{
@@ -446,11 +436,6 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   exchangeRates?: Prisma.ExchangeRateListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
-  contracts?: Prisma.ContractListRelationFilter
-  contractServices?: Prisma.ContractServiceListRelationFilter
-  deadlineTemplates?: Prisma.DeadlineTemplateListRelationFilter
-  deadlines?: Prisma.DeadlineListRelationFilter
-  deadlineRules?: Prisma.DeadlineRuleListRelationFilter
 }, "id" | "slug">
 
 export type TenantOrderByWithAggregationInput = {
@@ -544,11 +529,6 @@ export type TenantCreateInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateInput = {
@@ -590,11 +570,6 @@ export type TenantUncheckedCreateInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUpdateInput = {
@@ -636,11 +611,6 @@ export type TenantUpdateInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateInput = {
@@ -682,11 +652,6 @@ export type TenantUncheckedUpdateInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateManyInput = {
@@ -1149,78 +1114,6 @@ export type TenantUpdateOneWithoutChartOfAccountsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutChartOfAccountsInput, Prisma.TenantUpdateWithoutChartOfAccountsInput>, Prisma.TenantUncheckedUpdateWithoutChartOfAccountsInput>
 }
 
-export type TenantCreateNestedOneWithoutContractsInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutContractsInput, Prisma.TenantUncheckedCreateWithoutContractsInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutContractsInput
-  connect?: Prisma.TenantWhereUniqueInput
-}
-
-export type TenantUpdateOneRequiredWithoutContractsNestedInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutContractsInput, Prisma.TenantUncheckedCreateWithoutContractsInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutContractsInput
-  upsert?: Prisma.TenantUpsertWithoutContractsInput
-  connect?: Prisma.TenantWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutContractsInput, Prisma.TenantUpdateWithoutContractsInput>, Prisma.TenantUncheckedUpdateWithoutContractsInput>
-}
-
-export type TenantCreateNestedOneWithoutContractServicesInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutContractServicesInput, Prisma.TenantUncheckedCreateWithoutContractServicesInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutContractServicesInput
-  connect?: Prisma.TenantWhereUniqueInput
-}
-
-export type TenantUpdateOneRequiredWithoutContractServicesNestedInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutContractServicesInput, Prisma.TenantUncheckedCreateWithoutContractServicesInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutContractServicesInput
-  upsert?: Prisma.TenantUpsertWithoutContractServicesInput
-  connect?: Prisma.TenantWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutContractServicesInput, Prisma.TenantUpdateWithoutContractServicesInput>, Prisma.TenantUncheckedUpdateWithoutContractServicesInput>
-}
-
-export type TenantCreateNestedOneWithoutDeadlineTemplatesInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutDeadlineTemplatesInput, Prisma.TenantUncheckedCreateWithoutDeadlineTemplatesInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutDeadlineTemplatesInput
-  connect?: Prisma.TenantWhereUniqueInput
-}
-
-export type TenantUpdateOneWithoutDeadlineTemplatesNestedInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutDeadlineTemplatesInput, Prisma.TenantUncheckedCreateWithoutDeadlineTemplatesInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutDeadlineTemplatesInput
-  upsert?: Prisma.TenantUpsertWithoutDeadlineTemplatesInput
-  disconnect?: Prisma.TenantWhereInput | boolean
-  delete?: Prisma.TenantWhereInput | boolean
-  connect?: Prisma.TenantWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutDeadlineTemplatesInput, Prisma.TenantUpdateWithoutDeadlineTemplatesInput>, Prisma.TenantUncheckedUpdateWithoutDeadlineTemplatesInput>
-}
-
-export type TenantCreateNestedOneWithoutDeadlineRulesInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutDeadlineRulesInput, Prisma.TenantUncheckedCreateWithoutDeadlineRulesInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutDeadlineRulesInput
-  connect?: Prisma.TenantWhereUniqueInput
-}
-
-export type TenantUpdateOneRequiredWithoutDeadlineRulesNestedInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutDeadlineRulesInput, Prisma.TenantUncheckedCreateWithoutDeadlineRulesInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutDeadlineRulesInput
-  upsert?: Prisma.TenantUpsertWithoutDeadlineRulesInput
-  connect?: Prisma.TenantWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutDeadlineRulesInput, Prisma.TenantUpdateWithoutDeadlineRulesInput>, Prisma.TenantUncheckedUpdateWithoutDeadlineRulesInput>
-}
-
-export type TenantCreateNestedOneWithoutDeadlinesInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutDeadlinesInput, Prisma.TenantUncheckedCreateWithoutDeadlinesInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutDeadlinesInput
-  connect?: Prisma.TenantWhereUniqueInput
-}
-
-export type TenantUpdateOneRequiredWithoutDeadlinesNestedInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutDeadlinesInput, Prisma.TenantUncheckedCreateWithoutDeadlinesInput>
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutDeadlinesInput
-  upsert?: Prisma.TenantUpsertWithoutDeadlinesInput
-  connect?: Prisma.TenantWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutDeadlinesInput, Prisma.TenantUpdateWithoutDeadlinesInput>, Prisma.TenantUncheckedUpdateWithoutDeadlinesInput>
-}
-
 export type TenantCreateWithoutRolesInput = {
   id?: string
   name: string
@@ -1259,11 +1152,6 @@ export type TenantCreateWithoutRolesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutRolesInput = {
@@ -1304,11 +1192,6 @@ export type TenantUncheckedCreateWithoutRolesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutRolesInput = {
@@ -1365,11 +1248,6 @@ export type TenantUpdateWithoutRolesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutRolesInput = {
@@ -1410,11 +1288,6 @@ export type TenantUncheckedUpdateWithoutRolesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutUsersInput = {
@@ -1455,11 +1328,6 @@ export type TenantCreateWithoutUsersInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutUsersInput = {
@@ -1500,11 +1368,6 @@ export type TenantUncheckedCreateWithoutUsersInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutUsersInput = {
@@ -1561,11 +1424,6 @@ export type TenantUpdateWithoutUsersInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutUsersInput = {
@@ -1606,11 +1464,6 @@ export type TenantUncheckedUpdateWithoutUsersInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutCompaniesInput = {
@@ -1651,11 +1504,6 @@ export type TenantCreateWithoutCompaniesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutCompaniesInput = {
@@ -1696,11 +1544,6 @@ export type TenantUncheckedCreateWithoutCompaniesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutCompaniesInput = {
@@ -1757,11 +1600,6 @@ export type TenantUpdateWithoutCompaniesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutCompaniesInput = {
@@ -1802,11 +1640,6 @@ export type TenantUncheckedUpdateWithoutCompaniesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutContactsInput = {
@@ -1847,11 +1680,6 @@ export type TenantCreateWithoutContactsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutContactsInput = {
@@ -1892,11 +1720,6 @@ export type TenantUncheckedCreateWithoutContactsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutContactsInput = {
@@ -1953,11 +1776,6 @@ export type TenantUpdateWithoutContactsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutContactsInput = {
@@ -1998,11 +1816,6 @@ export type TenantUncheckedUpdateWithoutContactsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutContactDetailsInput = {
@@ -2043,11 +1856,6 @@ export type TenantCreateWithoutContactDetailsInput = {
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutContactDetailsInput = {
@@ -2088,11 +1896,6 @@ export type TenantUncheckedCreateWithoutContactDetailsInput = {
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutContactDetailsInput = {
@@ -2149,11 +1952,6 @@ export type TenantUpdateWithoutContactDetailsInput = {
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutContactDetailsInput = {
@@ -2194,11 +1992,6 @@ export type TenantUncheckedUpdateWithoutContactDetailsInput = {
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutDocumentsInput = {
@@ -2239,11 +2032,6 @@ export type TenantCreateWithoutDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutDocumentsInput = {
@@ -2284,11 +2072,6 @@ export type TenantUncheckedCreateWithoutDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutDocumentsInput = {
@@ -2345,11 +2128,6 @@ export type TenantUpdateWithoutDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutDocumentsInput = {
@@ -2390,11 +2168,6 @@ export type TenantUncheckedUpdateWithoutDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutAuditLogsInput = {
@@ -2435,11 +2208,6 @@ export type TenantCreateWithoutAuditLogsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutAuditLogsInput = {
@@ -2480,11 +2248,6 @@ export type TenantUncheckedCreateWithoutAuditLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutAuditLogsInput = {
@@ -2541,11 +2304,6 @@ export type TenantUpdateWithoutAuditLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAuditLogsInput = {
@@ -2586,11 +2344,6 @@ export type TenantUncheckedUpdateWithoutAuditLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutConnectorsInput = {
@@ -2631,11 +2384,6 @@ export type TenantCreateWithoutConnectorsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutConnectorsInput = {
@@ -2676,11 +2424,6 @@ export type TenantUncheckedCreateWithoutConnectorsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutConnectorsInput = {
@@ -2737,11 +2480,6 @@ export type TenantUpdateWithoutConnectorsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutConnectorsInput = {
@@ -2782,11 +2520,6 @@ export type TenantUncheckedUpdateWithoutConnectorsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutConnectorAccessInput = {
@@ -2827,11 +2560,6 @@ export type TenantCreateWithoutConnectorAccessInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutConnectorAccessInput = {
@@ -2872,11 +2600,6 @@ export type TenantUncheckedCreateWithoutConnectorAccessInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutConnectorAccessInput = {
@@ -2933,11 +2656,6 @@ export type TenantUpdateWithoutConnectorAccessInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutConnectorAccessInput = {
@@ -2978,11 +2696,6 @@ export type TenantUncheckedUpdateWithoutConnectorAccessInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutConnectorUsageLogsInput = {
@@ -3023,11 +2736,6 @@ export type TenantCreateWithoutConnectorUsageLogsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutConnectorUsageLogsInput = {
@@ -3068,11 +2776,6 @@ export type TenantUncheckedCreateWithoutConnectorUsageLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutConnectorUsageLogsInput = {
@@ -3129,11 +2832,6 @@ export type TenantUpdateWithoutConnectorUsageLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutConnectorUsageLogsInput = {
@@ -3174,11 +2872,6 @@ export type TenantUncheckedUpdateWithoutConnectorUsageLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutDocumentTemplatesInput = {
@@ -3219,11 +2912,6 @@ export type TenantCreateWithoutDocumentTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutDocumentTemplatesInput = {
@@ -3264,11 +2952,6 @@ export type TenantUncheckedCreateWithoutDocumentTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutDocumentTemplatesInput = {
@@ -3325,11 +3008,6 @@ export type TenantUpdateWithoutDocumentTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutDocumentTemplatesInput = {
@@ -3370,11 +3048,6 @@ export type TenantUncheckedUpdateWithoutDocumentTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutGeneratedDocumentsInput = {
@@ -3415,11 +3088,6 @@ export type TenantCreateWithoutGeneratedDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -3460,11 +3128,6 @@ export type TenantUncheckedCreateWithoutGeneratedDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -3521,11 +3184,6 @@ export type TenantUpdateWithoutGeneratedDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -3566,11 +3224,6 @@ export type TenantUncheckedUpdateWithoutGeneratedDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutLetterheadInput = {
@@ -3611,11 +3264,6 @@ export type TenantCreateWithoutLetterheadInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutLetterheadInput = {
@@ -3656,11 +3304,6 @@ export type TenantUncheckedCreateWithoutLetterheadInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutLetterheadInput = {
@@ -3717,11 +3360,6 @@ export type TenantUpdateWithoutLetterheadInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutLetterheadInput = {
@@ -3762,11 +3400,6 @@ export type TenantUncheckedUpdateWithoutLetterheadInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutTemplatePartialsInput = {
@@ -3807,11 +3440,6 @@ export type TenantCreateWithoutTemplatePartialsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutTemplatePartialsInput = {
@@ -3852,11 +3480,6 @@ export type TenantUncheckedCreateWithoutTemplatePartialsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutTemplatePartialsInput = {
@@ -3913,11 +3536,6 @@ export type TenantUpdateWithoutTemplatePartialsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutTemplatePartialsInput = {
@@ -3958,11 +3576,6 @@ export type TenantUncheckedUpdateWithoutTemplatePartialsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutAiConversationsInput = {
@@ -4003,11 +3616,6 @@ export type TenantCreateWithoutAiConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutAiConversationsInput = {
@@ -4048,11 +3656,6 @@ export type TenantUncheckedCreateWithoutAiConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutAiConversationsInput = {
@@ -4109,11 +3712,6 @@ export type TenantUpdateWithoutAiConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAiConversationsInput = {
@@ -4154,11 +3752,6 @@ export type TenantUncheckedUpdateWithoutAiConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutExchangeRatesInput = {
@@ -4199,11 +3792,6 @@ export type TenantCreateWithoutExchangeRatesInput = {
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutExchangeRatesInput = {
@@ -4244,11 +3832,6 @@ export type TenantUncheckedCreateWithoutExchangeRatesInput = {
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutExchangeRatesInput = {
@@ -4305,11 +3888,6 @@ export type TenantUpdateWithoutExchangeRatesInput = {
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutExchangeRatesInput = {
@@ -4350,11 +3928,6 @@ export type TenantUncheckedUpdateWithoutExchangeRatesInput = {
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutBackupsInput = {
@@ -4395,11 +3968,6 @@ export type TenantCreateWithoutBackupsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutBackupsInput = {
@@ -4440,11 +4008,6 @@ export type TenantUncheckedCreateWithoutBackupsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutBackupsInput = {
@@ -4501,11 +4064,6 @@ export type TenantUpdateWithoutBackupsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutBackupsInput = {
@@ -4546,11 +4104,6 @@ export type TenantUncheckedUpdateWithoutBackupsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutBackupScheduleInput = {
@@ -4591,11 +4144,6 @@ export type TenantCreateWithoutBackupScheduleInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutBackupScheduleInput = {
@@ -4636,11 +4184,6 @@ export type TenantUncheckedCreateWithoutBackupScheduleInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutBackupScheduleInput = {
@@ -4697,11 +4240,6 @@ export type TenantUpdateWithoutBackupScheduleInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutBackupScheduleInput = {
@@ -4742,11 +4280,6 @@ export type TenantUncheckedUpdateWithoutBackupScheduleInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutChartOfAccountsInput = {
@@ -4787,11 +4320,6 @@ export type TenantCreateWithoutChartOfAccountsInput = {
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutChartOfAccountsInput = {
@@ -4832,11 +4360,6 @@ export type TenantUncheckedCreateWithoutChartOfAccountsInput = {
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutChartOfAccountsInput = {
@@ -4893,11 +4416,6 @@ export type TenantUpdateWithoutChartOfAccountsInput = {
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -4938,991 +4456,6 @@ export type TenantUncheckedUpdateWithoutChartOfAccountsInput = {
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantCreateWithoutContractsInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
-}
-
-export type TenantUncheckedCreateWithoutContractsInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
-}
-
-export type TenantCreateOrConnectWithoutContractsInput = {
-  where: Prisma.TenantWhereUniqueInput
-  create: Prisma.XOR<Prisma.TenantCreateWithoutContractsInput, Prisma.TenantUncheckedCreateWithoutContractsInput>
-}
-
-export type TenantUpsertWithoutContractsInput = {
-  update: Prisma.XOR<Prisma.TenantUpdateWithoutContractsInput, Prisma.TenantUncheckedUpdateWithoutContractsInput>
-  create: Prisma.XOR<Prisma.TenantCreateWithoutContractsInput, Prisma.TenantUncheckedCreateWithoutContractsInput>
-  where?: Prisma.TenantWhereInput
-}
-
-export type TenantUpdateToOneWithWhereWithoutContractsInput = {
-  where?: Prisma.TenantWhereInput
-  data: Prisma.XOR<Prisma.TenantUpdateWithoutContractsInput, Prisma.TenantUncheckedUpdateWithoutContractsInput>
-}
-
-export type TenantUpdateWithoutContractsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantUncheckedUpdateWithoutContractsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantCreateWithoutContractServicesInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
-}
-
-export type TenantUncheckedCreateWithoutContractServicesInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
-}
-
-export type TenantCreateOrConnectWithoutContractServicesInput = {
-  where: Prisma.TenantWhereUniqueInput
-  create: Prisma.XOR<Prisma.TenantCreateWithoutContractServicesInput, Prisma.TenantUncheckedCreateWithoutContractServicesInput>
-}
-
-export type TenantUpsertWithoutContractServicesInput = {
-  update: Prisma.XOR<Prisma.TenantUpdateWithoutContractServicesInput, Prisma.TenantUncheckedUpdateWithoutContractServicesInput>
-  create: Prisma.XOR<Prisma.TenantCreateWithoutContractServicesInput, Prisma.TenantUncheckedCreateWithoutContractServicesInput>
-  where?: Prisma.TenantWhereInput
-}
-
-export type TenantUpdateToOneWithWhereWithoutContractServicesInput = {
-  where?: Prisma.TenantWhereInput
-  data: Prisma.XOR<Prisma.TenantUpdateWithoutContractServicesInput, Prisma.TenantUncheckedUpdateWithoutContractServicesInput>
-}
-
-export type TenantUpdateWithoutContractServicesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantUncheckedUpdateWithoutContractServicesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantCreateWithoutDeadlineTemplatesInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
-}
-
-export type TenantUncheckedCreateWithoutDeadlineTemplatesInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
-}
-
-export type TenantCreateOrConnectWithoutDeadlineTemplatesInput = {
-  where: Prisma.TenantWhereUniqueInput
-  create: Prisma.XOR<Prisma.TenantCreateWithoutDeadlineTemplatesInput, Prisma.TenantUncheckedCreateWithoutDeadlineTemplatesInput>
-}
-
-export type TenantUpsertWithoutDeadlineTemplatesInput = {
-  update: Prisma.XOR<Prisma.TenantUpdateWithoutDeadlineTemplatesInput, Prisma.TenantUncheckedUpdateWithoutDeadlineTemplatesInput>
-  create: Prisma.XOR<Prisma.TenantCreateWithoutDeadlineTemplatesInput, Prisma.TenantUncheckedCreateWithoutDeadlineTemplatesInput>
-  where?: Prisma.TenantWhereInput
-}
-
-export type TenantUpdateToOneWithWhereWithoutDeadlineTemplatesInput = {
-  where?: Prisma.TenantWhereInput
-  data: Prisma.XOR<Prisma.TenantUpdateWithoutDeadlineTemplatesInput, Prisma.TenantUncheckedUpdateWithoutDeadlineTemplatesInput>
-}
-
-export type TenantUpdateWithoutDeadlineTemplatesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantUncheckedUpdateWithoutDeadlineTemplatesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantCreateWithoutDeadlineRulesInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineCreateNestedManyWithoutTenantInput
-}
-
-export type TenantUncheckedCreateWithoutDeadlineRulesInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlines?: Prisma.DeadlineUncheckedCreateNestedManyWithoutTenantInput
-}
-
-export type TenantCreateOrConnectWithoutDeadlineRulesInput = {
-  where: Prisma.TenantWhereUniqueInput
-  create: Prisma.XOR<Prisma.TenantCreateWithoutDeadlineRulesInput, Prisma.TenantUncheckedCreateWithoutDeadlineRulesInput>
-}
-
-export type TenantUpsertWithoutDeadlineRulesInput = {
-  update: Prisma.XOR<Prisma.TenantUpdateWithoutDeadlineRulesInput, Prisma.TenantUncheckedUpdateWithoutDeadlineRulesInput>
-  create: Prisma.XOR<Prisma.TenantCreateWithoutDeadlineRulesInput, Prisma.TenantUncheckedCreateWithoutDeadlineRulesInput>
-  where?: Prisma.TenantWhereInput
-}
-
-export type TenantUpdateToOneWithWhereWithoutDeadlineRulesInput = {
-  where?: Prisma.TenantWhereInput
-  data: Prisma.XOR<Prisma.TenantUpdateWithoutDeadlineRulesInput, Prisma.TenantUncheckedUpdateWithoutDeadlineRulesInput>
-}
-
-export type TenantUpdateWithoutDeadlineRulesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantUncheckedUpdateWithoutDeadlineRulesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlines?: Prisma.DeadlineUncheckedUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantCreateWithoutDeadlinesInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
-}
-
-export type TenantUncheckedCreateWithoutDeadlinesInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.TenantStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contracts?: Prisma.ContractUncheckedCreateNestedManyWithoutTenantInput
-  contractServices?: Prisma.ContractServiceUncheckedCreateNestedManyWithoutTenantInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedCreateNestedManyWithoutTenantInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
-}
-
-export type TenantCreateOrConnectWithoutDeadlinesInput = {
-  where: Prisma.TenantWhereUniqueInput
-  create: Prisma.XOR<Prisma.TenantCreateWithoutDeadlinesInput, Prisma.TenantUncheckedCreateWithoutDeadlinesInput>
-}
-
-export type TenantUpsertWithoutDeadlinesInput = {
-  update: Prisma.XOR<Prisma.TenantUpdateWithoutDeadlinesInput, Prisma.TenantUncheckedUpdateWithoutDeadlinesInput>
-  create: Prisma.XOR<Prisma.TenantCreateWithoutDeadlinesInput, Prisma.TenantUncheckedCreateWithoutDeadlinesInput>
-  where?: Prisma.TenantWhereInput
-}
-
-export type TenantUpdateToOneWithWhereWithoutDeadlinesInput = {
-  where?: Prisma.TenantWhereInput
-  data: Prisma.XOR<Prisma.TenantUpdateWithoutDeadlinesInput, Prisma.TenantUncheckedUpdateWithoutDeadlinesInput>
-}
-
-export type TenantUpdateWithoutDeadlinesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantUncheckedUpdateWithoutDeadlinesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contracts?: Prisma.ContractUncheckedUpdateManyWithoutTenantNestedInput
-  contractServices?: Prisma.ContractServiceUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineTemplates?: Prisma.DeadlineTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 
@@ -5948,11 +4481,6 @@ export type TenantCountOutputType = {
   exchangeRates: number
   chartOfAccounts: number
   contactDetails: number
-  contracts: number
-  contractServices: number
-  deadlineTemplates: number
-  deadlines: number
-  deadlineRules: number
 }
 
 export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -5973,11 +4501,6 @@ export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   exchangeRates?: boolean | TenantCountOutputTypeCountExchangeRatesArgs
   chartOfAccounts?: boolean | TenantCountOutputTypeCountChartOfAccountsArgs
   contactDetails?: boolean | TenantCountOutputTypeCountContactDetailsArgs
-  contracts?: boolean | TenantCountOutputTypeCountContractsArgs
-  contractServices?: boolean | TenantCountOutputTypeCountContractServicesArgs
-  deadlineTemplates?: boolean | TenantCountOutputTypeCountDeadlineTemplatesArgs
-  deadlines?: boolean | TenantCountOutputTypeCountDeadlinesArgs
-  deadlineRules?: boolean | TenantCountOutputTypeCountDeadlineRulesArgs
 }
 
 /**
@@ -6109,41 +4632,6 @@ export type TenantCountOutputTypeCountContactDetailsArgs<ExtArgs extends runtime
   where?: Prisma.ContactDetailWhereInput
 }
 
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountContractsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ContractWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountContractServicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ContractServiceWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountDeadlineTemplatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DeadlineTemplateWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountDeadlinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DeadlineWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DeadlineRuleWhereInput
-}
-
 
 export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -6184,11 +4672,6 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   exchangeRates?: boolean | Prisma.Tenant$exchangeRatesArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Tenant$chartOfAccountsArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Tenant$contactDetailsArgs<ExtArgs>
-  contracts?: boolean | Prisma.Tenant$contractsArgs<ExtArgs>
-  contractServices?: boolean | Prisma.Tenant$contractServicesArgs<ExtArgs>
-  deadlineTemplates?: boolean | Prisma.Tenant$deadlineTemplatesArgs<ExtArgs>
-  deadlines?: boolean | Prisma.Tenant$deadlinesArgs<ExtArgs>
-  deadlineRules?: boolean | Prisma.Tenant$deadlineRulesArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tenant"]>
 
@@ -6279,11 +4762,6 @@ export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   exchangeRates?: boolean | Prisma.Tenant$exchangeRatesArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Tenant$chartOfAccountsArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Tenant$contactDetailsArgs<ExtArgs>
-  contracts?: boolean | Prisma.Tenant$contractsArgs<ExtArgs>
-  contractServices?: boolean | Prisma.Tenant$contractServicesArgs<ExtArgs>
-  deadlineTemplates?: boolean | Prisma.Tenant$deadlineTemplatesArgs<ExtArgs>
-  deadlines?: boolean | Prisma.Tenant$deadlinesArgs<ExtArgs>
-  deadlineRules?: boolean | Prisma.Tenant$deadlineRulesArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TenantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -6311,11 +4789,6 @@ export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     exchangeRates: Prisma.$ExchangeRatePayload<ExtArgs>[]
     chartOfAccounts: Prisma.$ChartOfAccountPayload<ExtArgs>[]
     contactDetails: Prisma.$ContactDetailPayload<ExtArgs>[]
-    contracts: Prisma.$ContractPayload<ExtArgs>[]
-    contractServices: Prisma.$ContractServicePayload<ExtArgs>[]
-    deadlineTemplates: Prisma.$DeadlineTemplatePayload<ExtArgs>[]
-    deadlines: Prisma.$DeadlinePayload<ExtArgs>[]
-    deadlineRules: Prisma.$DeadlineRulePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -6750,11 +5223,6 @@ export interface Prisma__TenantClient<T, Null = never, ExtArgs extends runtime.T
   exchangeRates<T extends Prisma.Tenant$exchangeRatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$exchangeRatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExchangeRatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   chartOfAccounts<T extends Prisma.Tenant$chartOfAccountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$chartOfAccountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   contactDetails<T extends Prisma.Tenant$contactDetailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$contactDetailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  contracts<T extends Prisma.Tenant$contractsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$contractsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContractPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  contractServices<T extends Prisma.Tenant$contractServicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$contractServicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContractServicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  deadlineTemplates<T extends Prisma.Tenant$deadlineTemplatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$deadlineTemplatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineTemplatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  deadlines<T extends Prisma.Tenant$deadlinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$deadlinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  deadlineRules<T extends Prisma.Tenant$deadlineRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$deadlineRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -7634,126 +6102,6 @@ export type Tenant$contactDetailsArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.ContactDetailScalarFieldEnum | Prisma.ContactDetailScalarFieldEnum[]
-}
-
-/**
- * Tenant.contracts
- */
-export type Tenant$contractsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Contract
-   */
-  select?: Prisma.ContractSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Contract
-   */
-  omit?: Prisma.ContractOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ContractInclude<ExtArgs> | null
-  where?: Prisma.ContractWhereInput
-  orderBy?: Prisma.ContractOrderByWithRelationInput | Prisma.ContractOrderByWithRelationInput[]
-  cursor?: Prisma.ContractWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ContractScalarFieldEnum | Prisma.ContractScalarFieldEnum[]
-}
-
-/**
- * Tenant.contractServices
- */
-export type Tenant$contractServicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ContractService
-   */
-  select?: Prisma.ContractServiceSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ContractService
-   */
-  omit?: Prisma.ContractServiceOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ContractServiceInclude<ExtArgs> | null
-  where?: Prisma.ContractServiceWhereInput
-  orderBy?: Prisma.ContractServiceOrderByWithRelationInput | Prisma.ContractServiceOrderByWithRelationInput[]
-  cursor?: Prisma.ContractServiceWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ContractServiceScalarFieldEnum | Prisma.ContractServiceScalarFieldEnum[]
-}
-
-/**
- * Tenant.deadlineTemplates
- */
-export type Tenant$deadlineTemplatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DeadlineTemplate
-   */
-  select?: Prisma.DeadlineTemplateSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DeadlineTemplate
-   */
-  omit?: Prisma.DeadlineTemplateOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DeadlineTemplateInclude<ExtArgs> | null
-  where?: Prisma.DeadlineTemplateWhereInput
-  orderBy?: Prisma.DeadlineTemplateOrderByWithRelationInput | Prisma.DeadlineTemplateOrderByWithRelationInput[]
-  cursor?: Prisma.DeadlineTemplateWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DeadlineTemplateScalarFieldEnum | Prisma.DeadlineTemplateScalarFieldEnum[]
-}
-
-/**
- * Tenant.deadlines
- */
-export type Tenant$deadlinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Deadline
-   */
-  select?: Prisma.DeadlineSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Deadline
-   */
-  omit?: Prisma.DeadlineOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DeadlineInclude<ExtArgs> | null
-  where?: Prisma.DeadlineWhereInput
-  orderBy?: Prisma.DeadlineOrderByWithRelationInput | Prisma.DeadlineOrderByWithRelationInput[]
-  cursor?: Prisma.DeadlineWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DeadlineScalarFieldEnum | Prisma.DeadlineScalarFieldEnum[]
-}
-
-/**
- * Tenant.deadlineRules
- */
-export type Tenant$deadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DeadlineRule
-   */
-  select?: Prisma.DeadlineRuleSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DeadlineRule
-   */
-  omit?: Prisma.DeadlineRuleOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DeadlineRuleInclude<ExtArgs> | null
-  where?: Prisma.DeadlineRuleWhereInput
-  orderBy?: Prisma.DeadlineRuleOrderByWithRelationInput | Prisma.DeadlineRuleOrderByWithRelationInput[]
-  cursor?: Prisma.DeadlineRuleWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DeadlineRuleScalarFieldEnum | Prisma.DeadlineRuleScalarFieldEnum[]
 }
 
 /**

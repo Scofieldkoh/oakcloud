@@ -374,28 +374,3 @@ export type ChartOfAccount = Prisma.ChartOfAccountModel
  * 
  */
 export type ChartOfAccountsMapping = Prisma.ChartOfAccountsMappingModel
-/**
- * Model Contract
- * 
- */
-export type Contract = Prisma.ContractModel
-/**
- * Model ContractService
- * 
- */
-export type ContractService = Prisma.ContractServiceModel
-/**
- * Model DeadlineTemplate
- * 
- */
-export type DeadlineTemplate = Prisma.DeadlineTemplateModel
-/**
- * Model DeadlineRule
- * 
- */
-export type DeadlineRule = Prisma.DeadlineRuleModel
-/**
- * Model Deadline
- * 
- */
-export type Deadline = Prisma.DeadlineModel

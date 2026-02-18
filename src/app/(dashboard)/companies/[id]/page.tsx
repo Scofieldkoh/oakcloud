@@ -1,7 +1,6 @@
 'use client';
 
 import { use, useCallback, useEffect, useState, Suspense } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -32,19 +31,14 @@ import { InternalNotes } from '@/components/notes/internal-notes';
 import {
   CompanyProfileTab,
   ContactDetailsTab,
-  DeadlinesTab,
   CompanyTabs,
   useTabState,
 } from '@/components/companies/company-detail';
-import { ContractsTab } from '@/components/companies/contracts';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { serviceKeys } from '@/hooks/use-contract-services';
-import { deadlineKeys } from '@/hooks/use-deadlines';
 
 // Inner component that uses useSearchParams (needs Suspense boundary)
 function CompanyDetailContent({ id }: { id: string }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { data: company, isLoading, error, refetch, isFetching } = useCompany(id);
   const deleteCompany = useDeleteCompany();
   const retrieveFYEMutation = useRetrieveFYE(id);
@@ -98,20 +92,10 @@ function CompanyDetailContent({ id }: { id: string }) {
     }
   };
 
-  const handleRefresh = useCallback((refreshAllTabs = false) => {
+  const handleRefresh = useCallback(() => {
     refetch();
     refetchContactDetails();
-    if (refreshAllTabs || activeTab === 'services') {
-      queryClient.invalidateQueries({ queryKey: serviceKeys.company(id), refetchType: 'all' });
-    }
-    if (refreshAllTabs || activeTab === 'deadlines') {
-      queryClient.invalidateQueries({ queryKey: deadlineKeys.all, refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: deadlineKeys.stats(id), refetchType: 'all' });
-    }
   }, [
-    activeTab,
-    id,
-    queryClient,
     refetch,
     refetchContactDetails,
   ]);
@@ -123,7 +107,7 @@ function CompanyDetailContent({ id }: { id: string }) {
   useEffect(() => {
     if (!refreshToken) return;
 
-    handleRefresh(true);
+    handleRefresh();
 
     const params = new URLSearchParams(searchParamsString);
     params.delete('refresh');
@@ -357,15 +341,6 @@ function CompanyDetailContent({ id }: { id: string }) {
           companyName={company.name}
           canEdit={can.updateCompany}
         />
-      )}
-      {activeTab === 'services' && (
-        <ContractsTab
-          companyId={id}
-          canEdit={can.updateCompany}
-        />
-      )}
-      {activeTab === 'deadlines' && (
-        <DeadlinesTab companyId={id} />
       )}
 
       {/* Internal Notes - Full Width */}
