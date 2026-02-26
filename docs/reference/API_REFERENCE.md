@@ -44,6 +44,7 @@ Most endpoints require authentication via JWT token stored in an `auth-token` ht
 14. [Audit Logs](#audit-log-endpoints)
 15. [Exchange Rates](#exchange-rate-endpoints)
 16. [Admin](#admin-endpoints)
+17. [Workflow](#workflow-endpoints)
 
 ---
 
@@ -455,6 +456,26 @@ Delete a note.
 
 ### POST /api/companies/bulk
 Bulk operations on companies.
+
+---
+
+## Workflow Endpoints
+
+### GET /api/workflow/projects
+List workflow projects with live data derived from companies, processing documents, client requests, and user assignments.
+
+**Query Parameters:**
+- `q` (string, optional) - Search by project/client/template/assignee
+- `page` (number, default: 1)
+- `limit` (number, default: 20)
+- `sortBy` (string, optional) - One of: `projectName`, `clientName`, `templateName`, `status`, `progress`, `teamTaskCount`, `clientTaskCount`, `startDate`, `nextTaskDueDate`, `dueDate`
+- `sortOrder` (`asc` | `desc`, default: `asc`)
+- `status` (string, optional) - One of: `NOT_STARTED`, `IN_PROGRESS`, `AT_RISK`, `ON_HOLD`, `COMPLETED`
+- `dueBucket` (string, optional) - One of: `today`, `thisWeek`, `nextWeek`, `overdue`
+- `tenantId` (string, optional) - SUPER_ADMIN tenant scoping
+
+### GET /api/workflow/projects/[id]
+Get a workflow project detail payload for a specific company-backed project.
 
 ---
 

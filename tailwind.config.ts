@@ -1,5 +1,7 @@
 import type { Config } from 'tailwindcss';
 
+const withOpacity = (cssVariable: string) => `rgb(var(${cssVariable}) / <alpha-value>)`;
+
 const config: Config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -11,31 +13,31 @@ const config: Config = {
     extend: {
       colors: {
         oak: {
-          primary: 'var(--oak-primary)',
-          hover: 'var(--oak-hover)',
-          light: 'var(--oak-light)',
-          dark: 'var(--oak-dark)',
-          'row-alt': 'var(--oak-row-alt)',
-          'row-alt-hover': 'var(--oak-row-alt-hover)',
-          'row-selected': 'var(--oak-row-selected)',
-          'row-selected-hover': 'var(--oak-row-selected-hover)',
+          primary: withOpacity('--oak-primary-rgb'),
+          hover: withOpacity('--oak-hover-rgb'),
+          light: withOpacity('--oak-light-rgb'),
+          dark: withOpacity('--oak-dark-rgb'),
+          'row-alt': withOpacity('--oak-row-alt-rgb'),
+          'row-alt-hover': withOpacity('--oak-row-alt-hover-rgb'),
+          'row-selected': withOpacity('--oak-row-selected-rgb'),
+          'row-selected-hover': withOpacity('--oak-row-selected-hover-rgb'),
         },
         background: {
-          primary: 'var(--bg-primary)',
-          secondary: 'var(--bg-secondary)',
-          tertiary: 'var(--bg-tertiary)',
-          elevated: 'var(--bg-elevated)',
+          primary: withOpacity('--bg-primary-rgb'),
+          secondary: withOpacity('--bg-secondary-rgb'),
+          tertiary: withOpacity('--bg-tertiary-rgb'),
+          elevated: withOpacity('--bg-elevated-rgb'),
         },
         border: {
-          primary: 'var(--border-primary)',
-          secondary: 'var(--border-secondary)',
-          focus: 'var(--border-focus)',
+          primary: withOpacity('--border-primary-rgb'),
+          secondary: withOpacity('--border-secondary-rgb'),
+          focus: withOpacity('--border-focus-rgb'),
         },
         text: {
-          primary: 'var(--text-primary)',
-          secondary: 'var(--text-secondary)',
-          tertiary: 'var(--text-tertiary)',
-          muted: 'var(--text-muted)',
+          primary: withOpacity('--text-primary-rgb'),
+          secondary: withOpacity('--text-secondary-rgb'),
+          tertiary: withOpacity('--text-tertiary-rgb'),
+          muted: withOpacity('--text-muted-rgb'),
         },
         status: {
           success: '#22c55e',

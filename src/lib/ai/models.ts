@@ -76,11 +76,11 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
   },
 
   // Google Models
-  'gemini-3': {
-    id: 'gemini-3',
-    name: 'Gemini 3 Pro',
+  'gemini-3.1': {
+    id: 'gemini-3.1',
+    name: 'Gemini 3.1 Pro',
     provider: 'google',
-    providerModelId: 'gemini-3-pro-preview',
+    providerModelId: 'gemini-3.1-pro-preview',
     description: 'Most powerful Google model (preview)',
     maxTokens: 1000000,
     inputPricePerMillion: 2.5,

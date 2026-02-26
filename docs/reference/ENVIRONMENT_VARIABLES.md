@@ -72,7 +72,7 @@ Configure at least one provider for AI-powered features (BizFile extraction, doc
 **Available Models:**
 - `gpt-5`, `gpt-4.1` (OpenAI)
 - `claude-opus-4.5`, `claude-sonnet-4.5` (Anthropic)
-- `gemini-3`, `gemini-2.5-flash` (Google)
+- `gemini-3.1-pro`, `gemini-3-flash` (Google)
 
 ---
 

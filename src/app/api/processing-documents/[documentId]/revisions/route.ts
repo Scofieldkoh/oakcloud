@@ -12,6 +12,7 @@ import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { getProcessingDocument } from '@/services/document-processing.service';
 import {
+  createRevision,
   createRevisionFromEdit,
   getRevisionHistory,
   type RevisionPatchInput,
@@ -189,32 +190,28 @@ export async function POST(
 
     const body = await request.json();
     const { basedOnRevisionId, reason, patch } = body as {
-      basedOnRevisionId: string;
+      basedOnRevisionId?: string;
       reason?: string;
       patch?: RevisionPatchInput;
     };
 
-    if (!basedOnRevisionId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'basedOnRevisionId is required',
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // Create revision - use empty patch if none provided (copies base revision as-is)
-    const revision = await createRevisionFromEdit(
-      documentId,
-      basedOnRevisionId,
-      patch || {},
-      session.id,
-      reason || 'user_edit'
-    );
+    const revision = basedOnRevisionId
+      ? await createRevisionFromEdit(
+        documentId,
+        basedOnRevisionId,
+        patch || {},
+        session.id,
+        reason || 'user_edit'
+      )
+      : await createRevision({
+        processingDocumentId: documentId,
+        revisionType: 'USER_EDIT',
+        createdById: session.id,
+        reason: reason || 'manual_entry',
+        documentCategory: 'OTHER',
+        currency: 'SGD',
+        totalAmount: '0',
+      });
 
     // Update document to point to the new draft revision and increment lock version
     await prisma.processingDocument.update({
@@ -241,7 +238,7 @@ export async function POST(
       metadata: {
         revisionNumber: revision.revisionNumber,
         revisionType: revision.revisionType,
-        basedOnRevisionId,
+        basedOnRevisionId: basedOnRevisionId ?? null,
       },
     });
 
@@ -253,7 +250,7 @@ export async function POST(
           revisionNumber: revision.revisionNumber,
           status: revision.status,
           revisionType: revision.revisionType,
-          basedOnRevisionId,
+          basedOnRevisionId: basedOnRevisionId ?? null,
         },
         document: {
           lockVersion: updatedDoc?.lockVersion ?? processingDoc.lockVersion + 1,

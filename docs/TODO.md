@@ -1,6 +1,6 @@
 # TODO / Roadmap
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2026-02-24
 
 This document tracks known issues, planned features, and development roadmap for Oakcloud.
 
@@ -74,6 +74,7 @@ This web app is in development and testing stage. All data are dummy, and it's a
 |---------|----------|--------|-------------|
 | Deadline Management | P1 | Planned | Company deadline tracking and alerts |
 | KYC/CDD Module | P1 | Planned | Know Your Customer / Customer Due Diligence compliance |
+| Workflow Module | P1 | In Progress | Navigation scaffold + Projects list + Project detail task workspace with API-backed live data |
 
 ### Phase 2 - Medium Term
 
@@ -97,7 +98,20 @@ This web app is in development and testing stage. All data are dummy, and it's a
 
 | ID | Completed | Description |
 |----|-----------|-------------|
-| - | - | No completed items yet |
+| WF-001 | 2026-02-21 | Added Workflow navigation group (`Projects`, `Tasks`, `Templates`) and implemented first iteration of `/workflow/projects` with inline filters and table patterns |
+| WF-002 | 2026-02-21 | Implemented `/workflow/projects/[id]` detail workspace with grouped team/client tasks, right-click task actions, inline rename, and task detail side panel (time tracking/chat intentionally excluded) |
+| WF-003 | 2026-02-21 | Enhanced workflow project detail with editable task groupings, quick-add row per grouping, automation rules for follow-up task creation, rich-text task descriptions, task-level document attachments, company contact panel, skip checkbox status, and icon-based quick task actions |
+| WF-004 | 2026-02-21 | Refined workflow project detail header and task actions: removed top-right quick buttons and metadata row, moved tags beside project title with `+ tags`, added `+ Grouping` below tabs, aligned done/skip checkbox sizing, and replaced cycle-based action icons with explicit status/priority/assignee dropdown actions |
+| WF-005 | 2026-02-24 | Wired `/workflow/projects` and `/workflow/projects/[id]` to live API endpoints (`/api/workflow/projects`, `/api/workflow/projects/[id]`) backed by persisted company, processing document, client request, and assignment data |
+| WF-006 | 2026-02-25 | Implemented Workflow Project Billing tab with persisted fixed/tiered pricing configuration, automatic tiered calculation from entered quantity, and live document billing table sourced from processing API |
+| WF-007 | 2026-02-25 | Implemented Workflow Project Files tab with document-processing linking modal, upload shortcut (`/processing/upload` in new tab), and linked-documents table with inline filters across project/task attachments |
+| WF-008 | 2026-02-25 | Updated Workflow Project List billing card fields (removed budget/pricing-config, added tier rate), and added project-level Save action that persists task workspace, linked files, and billing quantity |
+| WF-009 | 2026-02-25 | Added billing status (Pending / To be billed / Billed) with auto rules based on amount and project completion, exposed status controls in Billing tab, and displayed status in List-tab billing card with persistence |
+| WF-010 | 2026-02-25 | Updated workflow status behavior: `In Progress`/`Completed` auto-track task outstanding counts (`Completed` when no outstanding tasks), while still supporting manual override to `At Risk`/`On Hold` |
+| WF-011 | 2026-02-25 | Improved List workspace ergonomics: moved `Add grouping` to bottom after all groups and added drag-and-drop reordering for both group sequence and task sequence (including cross-group moves) |
+| WF-012 | 2026-02-25 | Aligned Workflow Project Files table to Document Processing columns, switched inline filters to reusable controls (`SearchableSelect`, `DatePicker`, `AmountFilter`), and made first column `Linked at` filterable by `Project` plus all task names |
+| WF-013 | 2026-02-25 | Implemented Workflow Project Notes tab with persisted rich-text project notes, reset/save controls, and workspace-state/API wiring (`projectNotes`) |
+| WF-014 | 2026-02-25 | Extended Notes tab with collapsed per-task note panels (shown only for tasks with actual note content), inline rich-text editing, and note-reset behavior that treats fully deleted content as no task notes |
 
 ---
 

@@ -509,7 +509,7 @@ export function DatePicker({
   const tempDisplayValue = getDisplayValue(tempValue);
 
   const sizeClasses = {
-    sm: 'h-9 text-sm px-3',
+    sm: 'h-9 text-base md:text-sm px-3',
     md: 'h-10 text-base px-4',
   };
 

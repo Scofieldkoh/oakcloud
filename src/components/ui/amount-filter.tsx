@@ -268,7 +268,7 @@ export function AmountFilter({
         className={cn(
           'flex items-center justify-between gap-1 w-full rounded-lg border transition-colors',
           'bg-background-secondary/30',
-          size === 'sm' ? 'h-9 px-3 text-sm' : 'h-10 px-4 text-base',
+          size === 'sm' ? 'h-9 px-3 text-base md:text-sm' : 'h-10 px-4 text-base',
           isActive
             ? 'border-oak-primary ring-2 ring-oak-primary/30 text-text-primary font-medium'
             : 'border-border-primary hover:border-oak-primary/50',

@@ -1,6 +1,6 @@
 # Oakcloud - Practice Management System
 
-> **Last Updated**: 2026-02-05
+> **Last Updated**: 2026-02-21
 
 A modular internal management system designed for accounting practices. Clean, efficient, and runs completely locally.
 
@@ -66,6 +66,7 @@ Oakcloud is a local-first, modular system for managing accounting practice opera
 | Document Processing | AI-powered ingestion, extraction, revisions |
 | Exchange Rates | MAS API integration, manual overrides |
 | Chart of Accounts | Hierarchical accounts, platform mapping |
+| Workflow (Preview) | Project list and project detail task workspace with editable groupings, quick actions, automations, task document attachments, and API-backed live data |
 
 ### Planned 🔜
 | Module | Description |

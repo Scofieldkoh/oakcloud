@@ -26,6 +26,7 @@ import { useCompanies } from '@/hooks/use-companies';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
+import { Toggle } from '@/components/ui/toggle';
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
@@ -78,12 +79,21 @@ export default function ProcessingUploadPage() {
   const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [uploadWithoutAiExtraction, setUploadWithoutAiExtraction] = useState(false);
 
   // AI model selection and context (consistent with BizFile upload)
   const [selectedModelId, setSelectedModelId] = useState('');
   const [companyContext, setCompanyContext] = useState(''); // Auto-populated from company
   const [aiContext, setAiContext] = useState(''); // User's additional context
   const [selectedStandardContexts, setSelectedStandardContexts] = useState<string[]>([]);
+
+  // Clear extraction-specific fields when extraction is disabled
+  useEffect(() => {
+    if (!uploadWithoutAiExtraction) return;
+    setSelectedModelId('');
+    setAiContext('');
+    setSelectedStandardContexts([]);
+  }, [uploadWithoutAiExtraction]);
 
   // Update selected company when activeCompanyId changes or companies load
   useEffect(() => {
@@ -338,17 +348,12 @@ export default function ProcessingUploadPage() {
     let successCount = 0;
     let errorCount = 0;
 
-    // Build AI context from standard contexts and user's additional text
-    const standardAndUserContext = buildFullContext(selectedStandardContexts, aiContext);
-    // Combine company context with standard/user context (both fed to AI)
-    const combinedContextParts: string[] = [];
-    if (companyContext) {
-      combinedContextParts.push(companyContext);
-    }
-    if (standardAndUserContext) {
-      combinedContextParts.push(standardAndUserContext);
-    }
-    const fullContext = combinedContextParts.join('\n\n');
+    const fullContext = uploadWithoutAiExtraction
+      ? ''
+      : [
+        companyContext,
+        buildFullContext(selectedStandardContexts, aiContext),
+      ].filter(Boolean).join('\n\n');
 
     for (const queuedFile of queuedFiles) {
       if (queuedFile.status === 'success') {
@@ -410,11 +415,12 @@ export default function ProcessingUploadPage() {
         formData.append('companyId', selectedCompanyId);
         formData.append('priority', 'NORMAL');
         formData.append('uploadSource', 'WEB');
+        formData.append('skipExtraction', uploadWithoutAiExtraction ? 'true' : 'false');
         // Pass AI model and context if specified
-        if (selectedModelId) {
+        if (!uploadWithoutAiExtraction && selectedModelId) {
           formData.append('modelId', selectedModelId);
         }
-        if (fullContext) {
+        if (!uploadWithoutAiExtraction && fullContext) {
           formData.append('additionalContext', fullContext);
         }
 
@@ -470,7 +476,17 @@ export default function ProcessingUploadPage() {
     } else {
       toastError('All uploads failed');
     }
-  }, [selectedCompanyId, queuedFiles, selectedModelId, companyContext, selectedStandardContexts, aiContext, toastError, success]);
+  }, [
+    selectedCompanyId,
+    queuedFiles,
+    selectedModelId,
+    companyContext,
+    selectedStandardContexts,
+    aiContext,
+    uploadWithoutAiExtraction,
+    toastError,
+    success,
+  ]);
 
   const completedCount = queuedFiles.filter((f) => f.status === 'success').length;
   const pendingCount = queuedFiles.filter((f) => ['pending', 'processing'].includes(f.status)).length;
@@ -842,11 +858,22 @@ export default function ProcessingUploadPage() {
       </div>
 
       {/* AI Model Selector - consistent with BizFile upload */}
+      <div className="card mb-4">
+        <Toggle
+          checked={uploadWithoutAiExtraction}
+          onChange={setUploadWithoutAiExtraction}
+          disabled={isUploading}
+          label="Upload without AI extraction"
+          description="Skip automatic extraction now. You can manually enter fields from the document view."
+        />
+      </div>
+
       <AIModelSelector
         value={selectedModelId}
         onChange={setSelectedModelId}
         label="AI Model for Extraction"
         helpText="Select the AI model to use for extracting invoice/receipt data."
+        disabled={isUploading || uploadWithoutAiExtraction}
         jsonModeOnly
         showContextInput
         contextValue={aiContext}

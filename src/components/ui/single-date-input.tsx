@@ -448,7 +448,7 @@ export function SingleDateInput({
           autoComplete="off"
           aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           className={cn(
-            'flex-1 h-full px-3 bg-transparent text-sm text-text-primary placeholder-text-muted',
+            'flex-1 h-full px-3 bg-transparent text-base md:text-sm text-text-primary placeholder-text-muted',
             'focus:outline-none',
             disabled && 'cursor-not-allowed'
           )}

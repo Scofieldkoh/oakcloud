@@ -1072,7 +1072,7 @@ export function useUpdatePageRotation() {
 // ============================================================================
 
 interface CreateRevisionInput {
-  basedOnRevisionId: string;
+  basedOnRevisionId?: string;
   reason?: string;
   patch?: {
     set?: Partial<{
@@ -1108,7 +1108,7 @@ interface CreateRevisionResult {
     revisionNumber: number;
     status: string;
     revisionType: string;
-    basedOnRevisionId: string;
+    basedOnRevisionId: string | null;
   };
   document: {
     lockVersion: number;

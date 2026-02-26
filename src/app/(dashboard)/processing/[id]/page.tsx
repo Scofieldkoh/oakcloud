@@ -392,8 +392,9 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
   // Chart of accounts for line item assignment
   // Only fetch when user can edit and document has line items or is in editable state
-  const canEdit = can.updateDocument && data?.currentRevision?.status === 'DRAFT';
-  const shouldFetchAccounts = canEdit && data?.document?.pipelineStatus === 'EXTRACTION_DONE';
+  const hasInactiveExtraction = !data?.currentRevision && data?.document?.pipelineStatus === 'UPLOADED';
+  const canEdit = can.updateDocument && (data?.currentRevision?.status === 'DRAFT' || hasInactiveExtraction);
+  const shouldFetchAccounts = canEdit;
   const { data: accountsData } = useAccountsForSelect(
     {
       tenantId: data?.document?.tenantId,
@@ -543,6 +544,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     isHomeGstOverride: boolean;
   }>>([]);
   const [deletedLineItemIds, setDeletedLineItemIds] = useState<string[]>([]);
+  const [didInitializeManualEntry, setDidInitializeManualEntry] = useState(false);
 
   // Auto-open compare modal if query param is set
   useEffect(() => {
@@ -552,6 +554,37 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       router.replace(`/processing/${id}`, { scroll: false });
     }
   }, [shouldAutoCompare, duplicateData, id, router, showDuplicateModal]);
+
+  // Reset manual-entry initialization when navigating to a different document.
+  useEffect(() => {
+    setDidInitializeManualEntry(false);
+  }, [id]);
+
+  // For documents uploaded without active extraction, open in editable mode with empty fields.
+  useEffect(() => {
+    if (
+      !data?.document ||
+      data.currentRevision ||
+      data.document.pipelineStatus !== 'UPLOADED' ||
+      !can.updateDocument ||
+      didInitializeManualEntry
+    ) {
+      return;
+    }
+
+    const companyHomeCurrency = data.document.company?.homeCurrency || 'SGD';
+    setEditFormData((prev) => ({
+      ...prev,
+      documentCategory: prev.documentCategory || 'OTHER',
+      currency: prev.currency || 'SGD',
+      homeCurrency: companyHomeCurrency,
+      homeExchangeRate: prev.homeExchangeRate || '1',
+    }));
+    setDeletedLineItemIds([]);
+    setIsEditing(true);
+    setIsEditingApproved(false);
+    setDidInitializeManualEntry(true);
+  }, [data, can.updateDocument, didInitializeManualEntry]);
 
   // Helper function to initialize form data from revision with home currency calculation
   const initializeFormDataFromRevision = useCallback((revision: typeof revisionWithLineItems, fetchedRate?: string) => {
@@ -1045,8 +1078,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const handleStartEdit = useCallback(() => {
     if (revisionWithLineItems) {
       initializeFormDataFromRevision(revisionWithLineItems, rateLookupData?.rate);
-      setDeletedLineItemIds([]); // Reset deleted items when starting edit
     }
+    setDeletedLineItemIds([]); // Reset deleted items when starting edit
     setIsEditing(true);
   }, [revisionWithLineItems, rateLookupData?.rate, initializeFormDataFromRevision]);
 
@@ -1062,13 +1095,27 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   }, [data?.document, currentRevisionId, revisionWithLineItems, rateLookupData?.rate, initializeFormDataFromRevision]);
 
   const handleSaveEdit = useCallback(async () => {
-    if (!data?.document || !currentRevisionId) return;
+    if (!data?.document) return;
     try {
       let targetRevisionId = currentRevisionId;
       let lockVersion = data.document.lockVersion;
 
+      // If this document has no revision yet (uploaded without extraction), create an initial draft first.
+      if (!targetRevisionId) {
+        const result = await createRevision.mutateAsync({
+          documentId: id,
+          lockVersion,
+          input: {
+            reason: 'Manual entry without AI extraction',
+          },
+        });
+        targetRevisionId = result.revision.id;
+        lockVersion = result.document.lockVersion;
+        success(`Created draft revision #${result.revision.revisionNumber}`);
+      }
+
       // If editing an approved document, create a new revision first
-      if (isEditingApproved) {
+      if (isEditingApproved && currentRevisionId) {
         const result = await createRevision.mutateAsync({
           documentId: id,
           lockVersion,
@@ -1080,6 +1127,10 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         targetRevisionId = result.revision.id;
         lockVersion = result.document.lockVersion;
         success(`Created new draft revision #${result.revision.revisionNumber}`);
+      }
+
+      if (!targetRevisionId) {
+        throw new Error('Unable to determine revision to save');
       }
 
       // Now update the revision with the changes
@@ -1434,6 +1485,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
             handleStartEdit();
           } else if (currentRev?.status === 'APPROVED') {
             handleEditApproved();
+          } else if (!currentRev && doc.pipelineStatus === 'UPLOADED') {
+            handleStartEdit();
           }
         }
       }
@@ -1441,7 +1494,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       // F3 - Save (when editing)
       if (e.key === 'F3') {
         e.preventDefault();
-        if (isEditing && !updateRevision.isPending) {
+        if (isEditing && !updateRevision.isPending && !createRevision.isPending) {
           handleSaveEdit();
         }
       }
@@ -1463,6 +1516,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     data,
     can.updateDocument,
     updateRevision.isPending,
+    createRevision.isPending,
     triggerExtraction.isPending,
     handleStartEdit,
     handleEditApproved,
@@ -1518,6 +1572,29 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     (doc.duplicateStatus === 'NONE' || doc.duplicateStatus === 'REJECTED');
 
   const needsDuplicateDecision = doc.duplicateStatus === 'SUSPECTED' && currentRevision?.status === 'DRAFT';
+  const headerRevisionData = (revisionWithLineItems || currentRevision || {
+    documentCategory: (editFormData.documentCategory as DocumentCategory) || null,
+    documentSubCategory: editFormData.documentSubCategory || null,
+    vendorName: editFormData.vendorName || null,
+    documentNumber: editFormData.documentNumber || null,
+    documentDate: editFormData.documentDate || null,
+    dueDate: editFormData.dueDate || null,
+    currency: editFormData.currency || 'SGD',
+    subtotal: editFormData.subtotal || null,
+    taxAmount: editFormData.taxAmount || null,
+    totalAmount: editFormData.totalAmount || '0',
+  }) as {
+    documentCategory: DocumentCategory | null;
+    documentSubCategory?: string | null;
+    vendorName: string | null;
+    documentNumber: string | null;
+    documentDate: string | null;
+    dueDate?: string | null;
+    currency: string;
+    subtotal?: string | null;
+    taxAmount?: string | null;
+    totalAmount: string;
+  };
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden">
@@ -1631,11 +1708,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               </button>
               <button
                 onClick={handleSaveEdit}
-                disabled={updateRevision.isPending}
+                disabled={updateRevision.isPending || createRevision.isPending}
                 className="btn-primary btn-sm"
                 title="Save changes (F3)"
               >
-                {updateRevision.isPending ? (
+                {updateRevision.isPending || createRevision.isPending ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
                 ) : (
                   <Save className="w-3.5 h-3.5 mr-1.5" />
@@ -1665,6 +1742,12 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                   ) : (
                     <Pencil className="w-3.5 h-3.5 mr-1.5" />
                   )}
+                  Edit (F2)
+                </button>
+              )}
+              {!currentRevision && doc.pipelineStatus === 'UPLOADED' && can.updateDocument && (
+                <button onClick={handleStartEdit} className="btn-secondary btn-sm" title="Edit document (F2)">
+                  <Pencil className="w-3.5 h-3.5 mr-1.5" />
                   Edit (F2)
                 </button>
               )}
@@ -1787,7 +1870,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               rightPanel={
                 <div className="h-full overflow-y-auto bg-background-primary p-4">
                   {/* Header Information Section */}
-                  {!currentRevision ? (
+                  {!currentRevision && !isEditing ? (
                     <NoExtractionPlaceholder
                       canTrigger={canTriggerExtraction}
                       isPending={triggerExtraction.isPending}
@@ -1815,13 +1898,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                       {/* Header Fields */}
                       <div className="max-w-2xl space-y-4">
                         <ExtractedHeaderFields
-                          revision={revisionWithLineItems || currentRevision}
+                          revision={headerRevisionData}
                           isEditing={isEditing}
                           editFormData={editFormData}
                           setEditFormData={setEditFormData}
-                          onResolveAlias={handleResolveCounterpartyAlias}
+                          onResolveAlias={currentRevision ? handleResolveCounterpartyAlias : undefined}
                           isResolvingAlias={isResolvingAlias}
-                          disableResolveAlias={approveRevision.isPending}
+                          disableResolveAlias={approveRevision.isPending || !currentRevision}
                           focusedField={focusedField}
                           setFocusedField={setFocusedField}
                           getFieldConfidence={getFieldConfidence}
@@ -1830,10 +1913,10 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
                         {/* Amounts Section - Combined document and home currency */}
                         <AmountsSection
-                          documentCurrency={revisionWithLineItems?.currency || currentRevision.currency}
-                          documentSubtotal={revisionWithLineItems?.subtotal || null}
-                          documentTaxAmount={revisionWithLineItems?.taxAmount || null}
-                          documentTotalAmount={revisionWithLineItems?.totalAmount || currentRevision.totalAmount}
+                          documentCurrency={revisionWithLineItems?.currency || currentRevision?.currency || editFormData.currency || 'SGD'}
+                          documentSubtotal={revisionWithLineItems?.subtotal || (isEditing ? editFormData.subtotal || null : null)}
+                          documentTaxAmount={revisionWithLineItems?.taxAmount || (isEditing ? editFormData.taxAmount || null : null)}
+                          documentTotalAmount={revisionWithLineItems?.totalAmount || currentRevision?.totalAmount || editFormData.totalAmount || '0'}
                           isEditing={isEditing}
                           editFormData={editFormData}
                           setEditFormData={setEditFormData}
@@ -1874,12 +1957,12 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           }
           bottomPanel={
             <div className="overflow-auto bg-background-primary">
-              {currentRevision && (
+              {(currentRevision || isEditing) && (
                 <LineItemsSection
                   lineItems={isEditing ? editLineItems : revisionWithLineItems?.lineItems}
                   isEditing={isEditing}
-                  isLoading={lineItemsLoading}
-                  currency={isEditing ? editFormData.currency : (revisionWithLineItems?.currency || currentRevision.currency)}
+                  isLoading={currentRevision ? lineItemsLoading : false}
+                  currency={isEditing ? editFormData.currency : (revisionWithLineItems?.currency || currentRevision?.currency || 'SGD')}
                   homeCurrency={isEditing ? editFormData.homeCurrency : (revisionWithLineItems?.homeCurrency || 'SGD')}
                   exchangeRate={parseFloat(editFormData.homeExchangeRate) || 1}
                   chartOfAccounts={chartOfAccounts}

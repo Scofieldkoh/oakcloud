@@ -29,6 +29,9 @@ import {
   BookOpen,
   Lock,
   Calculator,
+  FolderKanban,
+  ListTodo,
+  LayoutTemplate,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -56,9 +59,23 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const navigation: NavItem[] = [
+const primaryNavigation: NavItem[] = [
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
+];
+
+const workflowNavGroup: NavGroup = {
+  id: 'workflow',
+  name: 'Workflow',
+  icon: FolderKanban,
+  items: [
+    { name: 'Projects', href: '/workflow/projects', icon: FolderKanban },
+    { name: 'Tasks', href: '/workflow/tasks', icon: ListTodo },
+    { name: 'Templates', href: '/workflow/templates', icon: LayoutTemplate },
+  ],
+};
+
+const secondaryNavigation: NavItem[] = [
   { name: 'Document Processing', href: '/processing', icon: ScanText },
   { name: 'Document Generation', href: '/generated-documents', icon: FileText },
   { name: 'Shared Documents', href: '/shared-documents', icon: Share2 },
@@ -326,7 +343,7 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
 
   // Collapse state - all groups collapsed by default
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    () => new Set(adminNavGroups.map((g) => g.id))
+    () => new Set([workflowNavGroup.id, ...adminNavGroups.map((g) => g.id)])
   );
 
   const toggleGroup = useCallback((groupId: string) => {
@@ -373,7 +390,47 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
 
   return (
     <nav aria-label="Main menu" className="p-2.5 space-y-1">
-      {navigation.map((item) => {
+      {primaryNavigation.map((item) => {
+        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        return (
+          <NavLink
+            key={item.name}
+            item={item}
+            collapsed={collapsed}
+            onNavigate={onNavigate}
+            isActive={isActive}
+          />
+        );
+      })}
+
+      {/* Workflow Group */}
+      {collapsed ? (
+        <CollapsedNavPopover
+          group={workflowNavGroup}
+          items={workflowNavGroup.items}
+          isActive={isGroupActive(workflowNavGroup)}
+          onNavigate={onNavigate}
+          pathname={pathname}
+        />
+      ) : (
+        <div>
+          <NavGroupHeader
+            group={workflowNavGroup}
+            isCollapsed={collapsedGroups.has(workflowNavGroup.id)}
+            onToggle={() => toggleGroup(workflowNavGroup.id)}
+            sidebarCollapsed={collapsed}
+            isActive={isGroupActive(workflowNavGroup)}
+          />
+          <NavGroupItems
+            items={workflowNavGroup.items}
+            collapsed={collapsedGroups.has(workflowNavGroup.id)}
+            onNavigate={onNavigate}
+            pathname={pathname}
+          />
+        </div>
+      )}
+
+      {secondaryNavigation.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <NavLink

@@ -17,7 +17,7 @@ export type AIModel =
   | 'claude-opus-4.5'
   | 'claude-sonnet-4.5'
   // Google models
-  | 'gemini-3'
+  | 'gemini-3.1'
   | 'gemini-3-flash';
   // | 'gemini-2.5-flash' // Disabled: use gemini-3-flash instead
 

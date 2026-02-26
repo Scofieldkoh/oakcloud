@@ -14,6 +14,7 @@ import { createAuditLog } from '@/lib/audit';
 import { getTenantById } from '@/services/tenant.service';
 import {
   uploadDocument,
+  prepareDocumentPages,
   queueDocumentForProcessing,
   listProcessingDocumentsPaged,
   PROCESSING_LIMITS,
@@ -382,6 +383,7 @@ export async function POST(request: NextRequest) {
     const uploadSource = (formData.get('uploadSource') as UploadSource) || 'WEB';
     const metadataStr = formData.get('metadata') as string | null;
     const idempotencyKey = request.headers.get('Idempotency-Key');
+    const skipExtraction = formData.get('skipExtraction') === 'true';
     // AI model selection (optional - consistent with BizFile upload)
     const modelId = formData.get('modelId') as string | null;
     const additionalContext = formData.get('additionalContext') as string | null;
@@ -543,37 +545,44 @@ export async function POST(request: NextRequest) {
       await updateDuplicateStatus(processingDocument.id, duplicateCheckResult);
     }
 
-    // Queue for processing - pass storage key so pages can be created
-    await queueDocumentForProcessing(
-      processingDocument.id,
-      company.tenantId,
-      companyId,
-      storageKey,
-      file.type
-    );
-
-    // Auto-trigger extraction immediately after upload (async, don't block response)
-    // This runs in the background so users don't have to manually trigger extraction
-    // Pass model and context if specified by user
-    const extractionConfig: { model?: string; additionalContext?: string } = {};
-    if (modelId) {
-      extractionConfig.model = modelId;
-    }
-    if (additionalContext) {
-      extractionConfig.additionalContext = additionalContext;
+    if (skipExtraction) {
+      // Keep status at UPLOADED so users can manually enter fields or trigger extraction later.
+      await prepareDocumentPages(processingDocument.id, storageKey, file.type);
+    } else {
+      // Queue for processing - pass storage key so pages can be created
+      await queueDocumentForProcessing(
+        processingDocument.id,
+        company.tenantId,
+        companyId,
+        storageKey,
+        file.type
+      );
     }
 
-    extractFields(processingDocument.id, company.tenantId, companyId, session.id, extractionConfig)
-      .then((result) => {
-        if (result.success) {
-          console.log(`Auto-extraction completed for document ${processingDocument.id}`);
-        } else {
-          console.error(`Auto-extraction failed for document ${processingDocument.id}:`, result.error);
-        }
-      })
-      .catch((error) => {
-        console.error(`Auto-extraction error for document ${processingDocument.id}:`, error);
-      });
+    if (!skipExtraction) {
+      // Auto-trigger extraction immediately after upload (async, don't block response)
+      // This runs in the background so users don't have to manually trigger extraction
+      // Pass model and context if specified by user
+      const extractionConfig: { model?: string; additionalContext?: string } = {};
+      if (modelId) {
+        extractionConfig.model = modelId;
+      }
+      if (additionalContext) {
+        extractionConfig.additionalContext = additionalContext;
+      }
+
+      extractFields(processingDocument.id, company.tenantId, companyId, session.id, extractionConfig)
+        .then((result) => {
+          if (result.success) {
+            console.log(`Auto-extraction completed for document ${processingDocument.id}`);
+          } else {
+            console.error(`Auto-extraction failed for document ${processingDocument.id}:`, result.error);
+          }
+        })
+        .catch((error) => {
+          console.error(`Auto-extraction error for document ${processingDocument.id}:`, error);
+        });
+    }
 
     // Create audit log
     await createAuditLog({
@@ -590,6 +599,7 @@ export async function POST(request: NextRequest) {
         priority,
         uploadSource,
         fileSize: file.size,
+        skipExtraction,
       },
     });
 
@@ -603,6 +613,7 @@ export async function POST(request: NextRequest) {
           pipelineStatus: processingDocument.pipelineStatus,
           isContainer: processingDocument.isContainer,
           duplicateStatus: duplicateCheckResult.hasPotentialDuplicate ? 'SUSPECTED' : 'NONE',
+          autoExtractionTriggered: !skipExtraction,
         },
         jobId,
         duplicateWarning: duplicateCheckResult.hasPotentialDuplicate

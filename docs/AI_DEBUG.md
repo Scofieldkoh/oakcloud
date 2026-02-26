@@ -10911,3 +10911,1050 @@ TypeError: fetch failed
 
 ---
 
+## AI Request - 2026-02-21T14:02:30.743Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 40310ms |
+| Input Tokens | 4309 |
+| Output Tokens | 792 |
+| Total Tokens | 7553 |
+| Estimated Cost | $0.0059 |
+
+<details>
+<summary>Response (2020 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202518616C",
+    "name": "DAWN & VINE PTE. LTD.",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-04-29",
+    "incorporationDate": "2025-04-29",
+    "registrationDate": "2025-04-29"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "47102",
+      "description": "MINI-MARTS, CONVENIENCE STORES AND PROVISION SHOPS"
+    },
+    "secondary": {
+      "code": "47539",
+      "description": "RETAIL SALE OF ELECTRICAL HOUSEHOLD APPLIANCES, FURNITURE, LIGHTING EQUIPMENT AND OTHER HOUSEHOLD ARTICLES N.E.C."
+    }
+  },
+  "registeredAddress": {
+    "block": "95",
+    "streetName": "PRINCE CHARLES CRESCENT",
+    "level": "13",
+    "unit": "12",
+    "buildingName": "PRINCIPAL GARDEN",
+    "postalCode": "159027",
+    "effectiveFrom": "2025-04-29"
+  },
+  "paidUpCapital": {
+    "amount": 0,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 30000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 30000,
+      "totalValue": 30000,
+      "isPaidUp": false,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "YANG YACI",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S9273498F",
+      "nationality": "CHINESE",
+      "address": "95 PRINCE CHARLES CRESCENT, #13-12, PRINCIPAL GARDEN, SINGAPORE 159027",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 30000,
+      "percentageHeld": 100,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "YANG YACI",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S9273498F",
+      "nationality": "CHINESE",
+      "address": "95 PRINCE CHARLES CRESCENT, #13-12, PRINCIPAL GARDEN, SINGAPORE 159027",
+      "appointmentDate": "2025-04-29",
+      "cessationDate": null
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "FREE",
+    "receiptDate": "2025-04-29"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-24T06:32:35.392Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 32524ms |
+| Input Tokens | 6468 |
+| Output Tokens | 636 |
+| Total Tokens | 8792 |
+| Estimated Cost | $0.0077 |
+
+<details>
+<summary>Response (1543 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "A8 GROUP PTE LTD",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "OAKTREE ACCOUNTING & CORP SOLUTIONS PL",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "007-2026",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-02-23",
+    "confidence": 0.95
+  },
+  "dueDate": {
+    "value": "2026-03-02",
+    "confidence": 0.9
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "600.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "54.00",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "654.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "21229807G",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "SERVICE RENDERED FOR ROOM WG A3 FOR PERIOD 1ST MAR 2026",
+        "confidence": 0.99
+      },
+      "quantity": null,
+      "unitPrice": null,
+      "amount": {
+        "value": "600.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "54.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6710",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-24T06:33:07.937Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | A8 GROUP PTE LTD | 0.99 |
+| Total Amount | 654.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6710 | 0.85 | SERVICE RENDERED FOR ROOM WG A3 FOR PERIOD 1ST ... |
+
+---
+
+## AI Request - 2026-02-24T08:22:43.520Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 29105ms |
+| Input Tokens | 6456 |
+| Output Tokens | 643 |
+| Total Tokens | 8333 |
+| Estimated Cost | $0.0077 |
+
+<details>
+<summary>Response (1590 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Xero (Singapore) Pte Ltd",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "Oaktree Accounting & Corporate Solutions Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "INV-646060",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-02-13",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-02-13",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "10.09",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.91",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "11.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201607789C",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "2 Ledger Price Plan organisations. Monthly Subscription, 13 Feb 2026 to 12 Mar 2026.",
+        "confidence": 0.99
+      },
+      "quantity": null,
+      "unitPrice": null,
+      "amount": {
+        "value": "10.09",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.91",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6920",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-24T08:23:12.644Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Xero (Singapore) Pte Ltd | 0.99 |
+| Total Amount | 11.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6920 | 0.85 | 2 Ledger Price Plan organisations. Monthly Subs... |
+
+---
+
+## AI Request - 2026-02-24T08:22:26.941Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 63820ms |
+| Input Tokens | 7006 |
+| Output Tokens | 638 |
+| Total Tokens | 10832 |
+| Estimated Cost | $0.0083 |
+
+<details>
+<summary>Response (1562 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "NTUC FairPrice Co-operative Limited",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "Wei Jie Tan",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "010002396274",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-02-09",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "119.62",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "10.77",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "130.39",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M4-0004578-0",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Office Pantry",
+        "confidence": 0.9
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "119.62",
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "119.62",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "10.77",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "7410",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-24T08:23:30.775Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | NTUC FairPrice Co-operative Limited | 0.99 |
+| Total Amount | 130.39 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7410 | 0.85 | Office Pantry |
+
+---
+
+## AI Request - 2026-02-24T08:22:27.895Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 72250ms |
+| Input Tokens | 6469 |
+| Output Tokens | 600 |
+| Total Tokens | 9507 |
+| Estimated Cost | $0.0077 |
+
+<details>
+<summary>Response (1477 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.9
+  },
+  "vendorName": {
+    "value": "NTUC FAIRPRICE",
+    "confidence": 0.98
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "007745",
+    "confidence": 0.95
+  },
+  "documentDate": {
+    "value": "2026-02-13",
+    "confidence": 0.95
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.98
+  },
+  "subtotal": {
+    "value": "35.55",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "3.20",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "38.75",
+    "confidence": 0.98
+  },
+  "supplierGstNo": {
+    "value": "M4-0004578-0",
+    "confidence": 0.98
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Office Pantry",
+        "confidence": 0.9
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "35.55",
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "35.55",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "3.20",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.98
+      },
+      "accountCode": {
+        "value": "6500",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.95
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-24T08:23:40.161Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | NTUC FAIRPRICE | 0.98 |
+| Total Amount | 38.75 SGD | 0.98 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6500 | 0.85 | Office Pantry |
+
+---
+
+## AI Request - 2026-02-24T08:22:38.157Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 75288ms |
+| Input Tokens | 6474 |
+| Output Tokens | 900 |
+| Total Tokens | 9298 |
+| Estimated Cost | $0.0083 |
+
+<details>
+<summary>Response (2305 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "CORPORATE_SECRETARIAL",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "BIZFILE",
+    "confidence": 0.95
+  },
+  "vendorName": {
+    "value": "Accounting and Corporate Regulatory Authority",
+    "confidence": 0.98
+  },
+  "customerName": {
+    "value": "TAN WEI JIE",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "ACRA260213003660",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-02-13",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "10.10",
+    "confidence": 0.98
+  },
+  "taxAmount": {
+    "value": "0.90",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "11.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0008879-T",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "GLOBAL DYNAMIC INVESTMENTS PTE. LTD. 201024398K - Business Profile (Co)",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "5.05",
+        "confidence": 0.98
+      },
+      "amount": {
+        "value": "5.05",
+        "confidence": 0.98
+      },
+      "gstAmount": {
+        "value": "0.45",
+        "confidence": 0.98
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.98
+      },
+      "accountCode": {
+        "value": "7810",
+        "confidence": 0.85
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "SINGAPORE HORIZON INTERNATIONAL INVESTMENT PTE. LTD. 201132556R - Business Profile (Co)",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "5.05",
+        "confidence": 0.98
+      },
+      "amount": {
+        "value": "5.05",
+        "confidence": 0.98
+      },
+      "gstAmount": {
+        "value": "0.45",
+        "confidence": 0.98
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.98
+      },
+      "accountCode": {
+        "value": "7810",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.96
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-24T08:23:53.459Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | CORPORATE_SECRETARIAL | 0.95 |
+| Vendor | Accounting and Corporate Regulatory Authority | 0.98 |
+| Total Amount | 11.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7810 | 0.85 | GLOBAL DYNAMIC INVESTMENTS PTE. LTD. 201024398K... |
+| 2 | 7810 | 0.85 | SINGAPORE HORIZON INTERNATIONAL INVESTMENT PTE.... |
+
+---
+
+## AI Request - 2026-02-24T08:40:29.455Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 85016ms |
+| Input Tokens | 4309 |
+| Output Tokens | 963 |
+| Total Tokens | 8381 |
+| Estimated Cost | $0.0062 |
+
+<details>
+<summary>Response (2426 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202512234H",
+    "name": "MRS BANANA SGP PTE. LTD.",
+    "entityType": "PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-03-20",
+    "incorporationDate": "2025-03-20"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "56123",
+      "description": "FOOD KIOSKS MAINLY FOR TAKEAWAY AND DELIVERY"
+    },
+    "secondary": {
+      "code": "56112",
+      "description": "CAFES"
+    }
+  },
+  "registeredAddress": {
+    "block": "598",
+    "streetName": "YISHUN RING ROAD",
+    "buildingName": "WISTERIA MALL",
+    "postalCode": "768698",
+    "effectiveFrom": "2025-03-20"
+  },
+  "paidUpCapital": {
+    "amount": 1,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 50000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 50000
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "SAIKAEW NARUEMON",
+      "type": "INDIVIDUAL",
+      "identificationType": "FIN",
+      "identificationNumber": "S7880004F",
+      "nationality": "THAI",
+      "address": "118A JALAN MEMBINA, MEMBINA 118, SINGAPORE 161118",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 50000,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "ISMARINA BINTE ISMAIL",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7909447A",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "160 ROBINSON ROAD, #14-04, SINGAPORE BUSINESS FEDERATION CENTER, SINGAPORE 068914",
+      "appointmentDate": "2025-03-20",
+      "cessationDate": null
+    },
+    {
+      "name": "NURUL ALIEYA BINTE RASHID",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S9931713B",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "160 ROBINSON ROAD, #14-04, SINGAPORE BUSINESS FEDERATION CENTER, SINGAPORE 068914",
+      "appointmentDate": "2025-03-20",
+      "cessationDate": null
+    },
+    {
+      "name": "SAIKAEW NARUEMON",
+      "role": "DIRECTOR",
+      "identificationType": "FIN",
+      "identificationNumber": "S7880004F",
+      "nationality": "THAI",
+      "address": "118A JALAN MEMBINA, MEMBINA 118, SINGAPORE 161118",
+      "appointmentDate": "2025-03-20",
+      "cessationDate": null
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "ACRA250320000212",
+    "receiptDate": "2025-03-20"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-26T08:23:54.193Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 10566ms |
+| Input Tokens | 6812 |
+| Output Tokens | 594 |
+| Total Tokens | 7406 |
+| Estimated Cost | $0.0080 |
+
+<details>
+<summary>Response (1748 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.78
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.55
+  },
+  "vendorName": {
+    "value": "HOTALI PRINTING (JM 0621426-K)",
+    "confidence": 0.95
+  },
+  "customerName": {
+    "value": "OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD.",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "SO-01372",
+    "confidence": 0.97
+  },
+  "documentDate": {
+    "value": "2026-02-26",
+    "confidence": 0.95
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "MYR",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "625.00",
+    "confidence": 0.9
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "625.00",
+    "confidence": 0.95
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "PRINT - A4 letter 80gsm simili paper; Printing B/W 1 side; Each x 1pc; Finishing - fold to DL size; Mailer - Feb 26 exercise (incorp) Qty 1893; Mailer - Feb 26 exercise (AR) Qty 316; Mailer - Feb 26 exercise (manual) Qty 291",
+        "confidence": 0.86
+      },
+      "quantity": {
+        "value": "2500.00",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "0.25",
+        "confidence": 0.92
+      },
+      "amount": {
+        "value": "625.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6510",
+        "confidence": 0.7
+      }
+    }
+  ],
+  "overallConfidence": 0.88
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-26T08:24:04.779Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.78 |
+| Vendor | HOTALI PRINTING (JM 0621426-K) | 0.95 |
+| Total Amount | 625.00 MYR | 0.95 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6510 | 0.70 | PRINT - A4 letter 80gsm simili paper; Printing ... |
+
+---
+
