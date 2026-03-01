@@ -12,6 +12,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { parseIdParams } from '@/lib/validations/params';
 import { prisma } from '@/lib/prisma';
+import { requireTenantContext } from '@/lib/api-helpers';
 import * as chartOfAccountsService from '@/services/chart-of-accounts.service';
 import { accountingProviderSchema, bulkMappingSchema } from '@/lib/validations/chart-of-accounts';
 import { ZodError } from 'zod';
@@ -28,10 +29,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id: companyId } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Check permission
     await requirePermission(session, 'chart_of_accounts', 'read', companyId);
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Verify company exists and belongs to tenant
     const company = await prisma.company.findUnique({
-      where: { id: companyId, tenantId: session.tenantId },
+      where: { id: companyId, tenantId },
       select: { id: true },
     });
 
@@ -52,7 +53,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get optional provider filter
-    const { searchParams } = new URL(request.url);
     const providerParam = searchParams.get('provider');
     let provider: 'XERO' | 'QUICKBOOKS' | 'MYOB' | 'SAGE' | undefined;
 
@@ -92,10 +92,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id: companyId } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
 
     // Check permission - need update permission for mappings
     await requirePermission(session, 'chart_of_accounts', 'update', companyId);
@@ -106,8 +103,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify company exists and get tenantId
+    const body = await request.json();
+    const tenantResult = await requireTenantContext(
+      session,
+      typeof body.tenantId === 'string' ? body.tenantId : searchParams.get('tenantId')
+    );
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
+
     const company = await prisma.company.findUnique({
-      where: { id: companyId, tenantId: session.tenantId },
+      where: { id: companyId, tenantId },
       select: { id: true, tenantId: true },
     });
 
@@ -115,7 +120,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
 
-    const body = await request.json();
     const data = bulkMappingSchema.parse({
       ...body,
       companyId, // Use companyId from URL params

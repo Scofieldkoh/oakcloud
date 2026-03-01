@@ -74,6 +74,7 @@ export const ModelName = {
   Connector: 'Connector',
   TenantConnectorAccess: 'TenantConnectorAccess',
   ConnectorUsageLog: 'ConnectorUsageLog',
+  ConnectorModelConfig: 'ConnectorModelConfig',
   NoteTab: 'NoteTab',
   DocumentTemplate: 'DocumentTemplate',
   GeneratedDocument: 'GeneratedDocument',
@@ -590,6 +591,18 @@ export const ConnectorUsageLogScalarFieldEnum = {
 } as const
 
 export type ConnectorUsageLogScalarFieldEnum = (typeof ConnectorUsageLogScalarFieldEnum)[keyof typeof ConnectorUsageLogScalarFieldEnum]
+
+
+export const ConnectorModelConfigScalarFieldEnum = {
+  id: 'id',
+  connectorId: 'connectorId',
+  modelId: 'modelId',
+  isEnabled: 'isEnabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ConnectorModelConfigScalarFieldEnum = (typeof ConnectorModelConfigScalarFieldEnum)[keyof typeof ConnectorModelConfigScalarFieldEnum]
 
 
 export const NoteTabScalarFieldEnum = {

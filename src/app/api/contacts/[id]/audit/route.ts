@@ -5,6 +5,7 @@ import { getAuditHistory } from '@/lib/audit';
 import type { AuditAction } from '@/generated/prisma';
 import { parseIdParams } from '@/lib/validations/params';
 import { prisma } from '@/lib/prisma';
+import { requireTenantContext } from '@/lib/api-helpers';
 
 export async function GET(
   request: NextRequest,
@@ -13,15 +14,15 @@ export async function GET(
   try {
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     const contact = await prisma.contact.findFirst({
       where: {
         id,
-        tenantId: session.tenantId,
+        tenantId,
         deletedAt: null,
       },
       select: { id: true },
@@ -38,7 +39,6 @@ export async function GET(
       await requirePermission(session, 'contact', 'read');
     }
 
-    const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
     const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
     const actions = searchParams.get('actions')?.split(',') as AuditAction[] | undefined;
@@ -47,7 +47,7 @@ export async function GET(
       limit,
       offset,
       actions,
-      tenantId: session.tenantId,
+      tenantId,
     });
 
     return NextResponse.json(auditLogs);

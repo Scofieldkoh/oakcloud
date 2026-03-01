@@ -1,6 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 
 // ============================================================================
 // Types
@@ -27,16 +29,23 @@ interface UpdateNoteTabInput {
   content?: string;
 }
 
+function withTenantId(url: string, tenantId?: string): string {
+  if (!tenantId) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}tenantId=${encodeURIComponent(tenantId)}`;
+}
+
 // ============================================================================
 // API Functions
 // ============================================================================
 
 async function fetchNoteTabs(
   entityType: EntityType,
-  entityId: string
+  entityId: string,
+  tenantId?: string
 ): Promise<NoteTab[]> {
   const baseUrl = entityType === 'company' ? 'companies' : 'contacts';
-  const response = await fetch(`/api/${baseUrl}/${entityId}/notes`);
+  const response = await fetch(withTenantId(`/api/${baseUrl}/${entityId}/notes`, tenantId));
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -49,10 +58,11 @@ async function fetchNoteTabs(
 async function createNoteTab(
   entityType: EntityType,
   entityId: string,
-  data: CreateNoteTabInput
+  data: CreateNoteTabInput,
+  tenantId?: string
 ): Promise<NoteTab> {
   const baseUrl = entityType === 'company' ? 'companies' : 'contacts';
-  const response = await fetch(`/api/${baseUrl}/${entityId}/notes`, {
+  const response = await fetch(withTenantId(`/api/${baseUrl}/${entityId}/notes`, tenantId), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -70,10 +80,11 @@ async function updateNoteTab(
   entityType: EntityType,
   entityId: string,
   tabId: string,
-  data: UpdateNoteTabInput
+  data: UpdateNoteTabInput,
+  tenantId?: string
 ): Promise<NoteTab> {
   const baseUrl = entityType === 'company' ? 'companies' : 'contacts';
-  const response = await fetch(`/api/${baseUrl}/${entityId}/notes/${tabId}`, {
+  const response = await fetch(withTenantId(`/api/${baseUrl}/${entityId}/notes/${tabId}`, tenantId), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -90,10 +101,11 @@ async function updateNoteTab(
 async function deleteNoteTab(
   entityType: EntityType,
   entityId: string,
-  tabId: string
+  tabId: string,
+  tenantId?: string
 ): Promise<void> {
   const baseUrl = entityType === 'company' ? 'companies' : 'contacts';
-  const response = await fetch(`/api/${baseUrl}/${entityId}/notes/${tabId}`, {
+  const response = await fetch(withTenantId(`/api/${baseUrl}/${entityId}/notes/${tabId}`, tenantId), {
     method: 'DELETE',
   });
 
@@ -111,9 +123,15 @@ async function deleteNoteTab(
  * Hook to fetch note tabs for an entity
  */
 export function useNoteTabs(entityType: EntityType, entityId: string) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
   return useQuery({
-    queryKey: ['notes', entityType, entityId],
-    queryFn: () => fetchNoteTabs(entityType, entityId),
+    queryKey: ['notes', entityType, entityId, activeTenantId ?? null],
+    queryFn: () => fetchNoteTabs(entityType, entityId, activeTenantId),
     enabled: !!entityId,
   });
 }
@@ -123,13 +141,18 @@ export function useNoteTabs(entityType: EntityType, entityId: string) {
  */
 export function useCreateNoteTab(entityType: EntityType, entityId: string) {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: (data: CreateNoteTabInput) =>
-      createNoteTab(entityType, entityId, data),
+      createNoteTab(entityType, entityId, data, activeTenantId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['notes', entityType, entityId],
+        queryKey: ['notes', entityType, entityId, activeTenantId ?? null],
       });
     },
   });
@@ -140,13 +163,18 @@ export function useCreateNoteTab(entityType: EntityType, entityId: string) {
  */
 export function useUpdateNoteTab(entityType: EntityType, entityId: string) {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: ({ tabId, data }: { tabId: string; data: UpdateNoteTabInput }) =>
-      updateNoteTab(entityType, entityId, tabId, data),
+      updateNoteTab(entityType, entityId, tabId, data, activeTenantId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['notes', entityType, entityId],
+        queryKey: ['notes', entityType, entityId, activeTenantId ?? null],
       });
     },
   });
@@ -157,12 +185,17 @@ export function useUpdateNoteTab(entityType: EntityType, entityId: string) {
  */
 export function useDeleteNoteTab(entityType: EntityType, entityId: string) {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
-    mutationFn: (tabId: string) => deleteNoteTab(entityType, entityId, tabId),
+    mutationFn: (tabId: string) => deleteNoteTab(entityType, entityId, tabId, activeTenantId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['notes', entityType, entityId],
+        queryKey: ['notes', entityType, entityId, activeTenantId ?? null],
       });
     },
   });

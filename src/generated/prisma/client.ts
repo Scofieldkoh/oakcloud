@@ -155,6 +155,11 @@ export type TenantConnectorAccess = Prisma.TenantConnectorAccessModel
  */
 export type ConnectorUsageLog = Prisma.ConnectorUsageLogModel
 /**
+ * Model ConnectorModelConfig
+ * 
+ */
+export type ConnectorModelConfig = Prisma.ConnectorModelConfigModel
+/**
  * Model NoteTab
  * 
  */

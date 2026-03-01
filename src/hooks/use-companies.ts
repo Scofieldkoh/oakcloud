@@ -13,6 +13,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Company, CompanyStatus, EntityType } from '@/generated/prisma';
 import type { CreateCompanyInput, UpdateCompanyInput } from '@/lib/validations/company';
 import type { CompanyWithRelations, CompanyStats, CompanyLinkInfo } from '@/services/company/types';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 
 interface CompanySearchParams {
   query?: string;
@@ -47,6 +49,12 @@ interface CompanySearchResult {
   totalPages: number;
 }
 
+function withTenantId(url: string, tenantId?: string): string {
+  if (!tenantId) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}tenantId=${encodeURIComponent(tenantId)}`;
+}
+
 async function fetchCompanies(params: CompanySearchParams): Promise<CompanySearchResult> {
   const searchParams = new URLSearchParams();
 
@@ -64,8 +72,8 @@ async function fetchCompanies(params: CompanySearchParams): Promise<CompanySearc
   return response.json();
 }
 
-async function fetchCompany(id: string): Promise<CompanyWithRelations> {
-  const response = await fetch(`/api/companies/${id}?full=true`);
+async function fetchCompany(id: string, tenantId?: string): Promise<CompanyWithRelations> {
+  const response = await fetch(withTenantId(`/api/companies/${id}?full=true`, tenantId));
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch company');
@@ -98,8 +106,8 @@ async function createCompany(data: CreateCompanyInput & { tenantId?: string }): 
   return response.json();
 }
 
-async function updateCompany(id: string, data: UpdateCompanyInput): Promise<Company> {
-  const response = await fetch(`/api/companies/${id}`, {
+async function updateCompany(id: string, data: UpdateCompanyInput, tenantId?: string): Promise<Company> {
+  const response = await fetch(withTenantId(`/api/companies/${id}`, tenantId), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -111,8 +119,8 @@ async function updateCompany(id: string, data: UpdateCompanyInput): Promise<Comp
   return response.json();
 }
 
-async function deleteCompany(id: string, reason: string): Promise<Company> {
-  const response = await fetch(`/api/companies/${id}`, {
+async function deleteCompany(id: string, reason: string, tenantId?: string): Promise<Company> {
+  const response = await fetch(withTenantId(`/api/companies/${id}`, tenantId), {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reason }),
@@ -182,9 +190,15 @@ export function useCompanies(params: CompanySearchParams = {}) {
  * ```
  */
 export function useCompany(id: string) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
   return useQuery({
-    queryKey: ['company', id],
-    queryFn: () => fetchCompany(id),
+    queryKey: ['company', id, activeTenantId ?? null],
+    queryFn: () => fetchCompany(id, activeTenantId),
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -227,11 +241,16 @@ export function useCompanyStats(tenantId?: string, options?: { enabled?: boolean
  */
 export function usePrefetchCompany() {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return (id: string) => {
     queryClient.prefetchQuery({
-      queryKey: ['company', id],
-      queryFn: () => fetchCompany(id),
+      queryKey: ['company', id, activeTenantId ?? null],
+      queryFn: () => fetchCompany(id, activeTenantId),
       staleTime: 5 * 60 * 1000, // 5 minutes
     });
   };
@@ -303,10 +322,15 @@ export function useCreateCompany() {
  */
 export function useUpdateCompany() {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateCompanyInput }) =>
-      updateCompany(id, data),
+      updateCompany(id, data, activeTenantId),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['company', id] });
@@ -335,10 +359,15 @@ export function useUpdateCompany() {
  */
 export function useDeleteCompany() {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
 
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      deleteCompany(id, reason),
+      deleteCompany(id, reason, activeTenantId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['company-stats'] });
@@ -707,8 +736,8 @@ export interface FYERetrievalResult {
   financialYearEndMonth: number;
 }
 
-async function retrieveFYE(companyId: string): Promise<FYERetrievalResult> {
-  const res = await fetch(`/api/companies/${companyId}/retrieve-fye`);
+async function retrieveFYE(companyId: string, tenantId?: string): Promise<FYERetrievalResult> {
+  const res = await fetch(withTenantId(`/api/companies/${companyId}/retrieve-fye`, tenantId));
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.error || 'Failed to retrieve FYE from ACRA');
@@ -736,7 +765,13 @@ async function retrieveFYE(companyId: string): Promise<FYERetrievalResult> {
  * ```
  */
 export function useRetrieveFYE(companyId: string) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
   return useMutation({
-    mutationFn: () => retrieveFYE(companyId),
+    mutationFn: () => retrieveFYE(companyId, activeTenantId),
   });
 }

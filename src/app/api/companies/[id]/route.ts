@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
+import { requireTenantContext } from '@/lib/api-helpers';
 import { updateCompanySchema, deleteCompanySchema } from '@/lib/validations/company';
 import { parseIdParams } from '@/lib/validations/params';
 import {
@@ -20,10 +21,10 @@ export async function GET(
     const session = await requireAuth();
     // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Check permission - RBAC will handle SUPER_ADMIN bypass
     await requirePermission(session, 'company', 'read', id);
@@ -33,12 +34,11 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { searchParams } = new URL(request.url);
     const full = searchParams.get('full') === 'true';
 
     const company = full
-      ? await getCompanyFullDetails(id, session.tenantId)
-      : await getCompanyById(id, session.tenantId);
+      ? await getCompanyFullDetails(id, tenantId)
+      : await getCompanyById(id, tenantId);
 
     if (!company) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
@@ -66,10 +66,7 @@ export async function PATCH(
     const session = await requireAuth();
     // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
 
     // Check permission - allows SUPER_ADMIN, TENANT_ADMIN, and COMPANY_ADMIN (for their company)
     await requirePermission(session, 'company', 'update', id);
@@ -81,10 +78,16 @@ export async function PATCH(
 
     const body = await request.json();
     const data = updateCompanySchema.parse({ ...body, id });
+    const tenantResult = await requireTenantContext(
+      session,
+      typeof body.tenantId === 'string' ? body.tenantId : searchParams.get('tenantId')
+    );
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Get the company with tenant validation
     const existingCompany = await prisma.company.findUnique({
-      where: { id, tenantId: session.tenantId },
+      where: { id, tenantId },
       select: { tenantId: true },
     });
 
@@ -124,20 +127,23 @@ export async function DELETE(
     const session = await requireAuth();
     // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
 
     // Check permission - allows SUPER_ADMIN and TENANT_ADMIN
     await requirePermission(session, 'company', 'delete', id);
 
     const body = await request.json();
     const data = deleteCompanySchema.parse({ id, reason: body.reason });
+    const tenantResult = await requireTenantContext(
+      session,
+      typeof body.tenantId === 'string' ? body.tenantId : searchParams.get('tenantId')
+    );
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Get the company with tenant validation
     const existingCompany = await prisma.company.findUnique({
-      where: { id, tenantId: session.tenantId },
+      where: { id, tenantId },
       select: { tenantId: true },
     });
 
@@ -178,19 +184,18 @@ export async function PUT(
     // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
 
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
     // Check permission for restore (treated as update)
     await requirePermission(session, 'company', 'update', id);
 
     const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
     const action = searchParams.get('action');
 
     if (action === 'restore') {
       const existingCompany = await prisma.company.findUnique({
-        where: { id, tenantId: session.tenantId },
+        where: { id, tenantId },
         select: { tenantId: true },
       });
 

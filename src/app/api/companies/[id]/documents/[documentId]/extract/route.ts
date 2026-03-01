@@ -6,6 +6,7 @@ import { extractBizFileData, processBizFileExtraction } from '@/services/bizfile
 import type { AIModel } from '@/lib/ai';
 import { storage } from '@/lib/storage';
 import { parseIdParams } from '@/lib/validations/params';
+import { requireTenantContext } from '@/lib/api-helpers';
 
 // Lazy load pdf-parse to reduce initial bundle size
 async function parsePdf(buffer: Buffer) {
@@ -20,10 +21,7 @@ export async function POST(
   try {
     const session = await requireAuth();
     const { id: companyId, documentId } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
 
     // Parse request body for optional model selection
     let modelId: AIModel | undefined;
@@ -33,6 +31,9 @@ export async function POST(
     } catch {
       // No body or invalid JSON - use default model
     }
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Check permission
     await requirePermission(session, 'document', 'update', companyId);
@@ -48,7 +49,7 @@ export async function POST(
         id: documentId,
         companyId,
         company: {
-          tenantId: session.tenantId,
+          tenantId,
         },
       },
       include: {
@@ -153,13 +154,12 @@ export async function GET(
   try {
     const session = await requireAuth();
     const { id: companyId, documentId } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Get optional model selection from query params
-    const { searchParams } = new URL(request.url);
     const modelId = searchParams.get('modelId') as AIModel | null;
 
     // Check permission
@@ -176,7 +176,7 @@ export async function GET(
         id: documentId,
         companyId,
         company: {
-          tenantId: session.tenantId,
+          tenantId,
         },
       },
       include: {
@@ -212,10 +212,10 @@ export async function GET(
     }
 
     // Use tenant's configured AI connector
-    const tenantId = document.company?.tenantId || document.tenantId;
+    const documentTenantId = document.company?.tenantId || document.tenantId;
     const extractionResult = await extractBizFileData(pdfText, {
       modelId: modelId || undefined,
-      tenantId,
+      tenantId: documentTenantId,
     });
 
     return NextResponse.json({

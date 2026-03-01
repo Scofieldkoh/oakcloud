@@ -8,6 +8,7 @@ import {
   AlertCircle,
   Calendar,
   Pencil,
+  Sparkles,
   Trash2,
   Upload,
   Hash,
@@ -34,6 +35,7 @@ import {
   CompanyTabs,
   useTabState,
 } from '@/components/companies/company-detail';
+import { EdenPanel } from '@/components/ai-helpbot';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 // Inner component that uses useSearchParams (needs Suspense boundary)
@@ -48,6 +50,7 @@ function CompanyDetailContent({ id }: { id: string }) {
   const { can } = usePermissions(id);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [edenOpen, setEdenOpen] = useState(false);
 
   // URL-persisted tab state
   const [activeTab, setActiveTab] = useTabState();
@@ -265,6 +268,15 @@ function CompanyDetailContent({ id }: { id: string }) {
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           <button
+            onClick={() => setEdenOpen(true)}
+            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
+            title="Open Eden"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden xl:inline">Eden</span>
+            <span className="xl:hidden">AI</span>
+          </button>
+          <button
             onClick={() => handleRefresh()}
             className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
             title="Refresh (Ctrl+R)"
@@ -365,6 +377,16 @@ function CompanyDetailContent({ id }: { id: string }) {
         reasonPlaceholder="Please provide a reason for deleting this company..."
         reasonMinLength={10}
         isLoading={deleteCompany.isPending}
+      />
+
+      <EdenPanel
+        isOpen={edenOpen}
+        onClose={() => setEdenOpen(false)}
+        companyId={id}
+        companyName={company.name}
+        activeTab={activeTab}
+        canReadCompany={can.readCompany}
+        canWriteCompany={can.updateCompany}
       />
     </div>
   );

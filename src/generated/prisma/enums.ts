@@ -225,6 +225,7 @@ export const ConnectorProvider = {
   OPENAI: 'OPENAI',
   ANTHROPIC: 'ANTHROPIC',
   GOOGLE: 'GOOGLE',
+  OPENROUTER: 'OPENROUTER',
   ONEDRIVE: 'ONEDRIVE',
   SHAREPOINT: 'SHAREPOINT'
 } as const

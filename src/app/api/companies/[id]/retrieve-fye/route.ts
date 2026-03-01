@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
+import { requireTenantContext } from '@/lib/api-helpers';
 import { parseIdParams } from '@/lib/validations/params';
 import {
   retrieveFYEFromACRA,
@@ -16,10 +17,10 @@ export async function GET(
   try {
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Check permission - need update permission since this is used to populate edit form
     await requirePermission(session, 'company', 'update', id);
@@ -31,7 +32,7 @@ export async function GET(
 
     // Get the company with tenant validation
     const company = await prisma.company.findUnique({
-      where: { id, tenantId: session.tenantId },
+      where: { id, tenantId },
       select: {
         id: true,
         name: true,

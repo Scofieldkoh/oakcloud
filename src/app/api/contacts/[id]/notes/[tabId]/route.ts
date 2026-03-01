@@ -4,6 +4,7 @@ import { requirePermission } from '@/lib/rbac';
 import { createAuditContext } from '@/lib/audit';
 import { parseIdParams } from '@/lib/validations/params';
 import { prisma } from '@/lib/prisma';
+import { requireTenantContext } from '@/lib/api-helpers';
 import {
   updateNoteTab,
   deleteNoteTab,
@@ -26,15 +27,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id, tabId } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     const contact = await prisma.contact.findFirst({
       where: {
         id,
-        tenantId: session.tenantId,
+        tenantId,
         deletedAt: null,
       },
       select: { id: true },
@@ -46,7 +47,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'contact', 'update');
 
     // Verify tab belongs to this contact
-    const isOwner = await verifyNoteTabOwnership(tabId, 'contact', id, session.tenantId);
+    const isOwner = await verifyNoteTabOwnership(tabId, 'contact', id, tenantId);
     if (!isOwner) {
       return NextResponse.json({ error: 'Note tab not found' }, { status: 404 });
     }
@@ -55,7 +56,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const validatedData = updateNoteTabSchema.parse(body);
 
     const auditContext = await createAuditContext({
-      tenantId: session.tenantId,
+      tenantId,
       userId: session.id,
       changeSource: 'MANUAL',
     });
@@ -96,15 +97,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id, tabId } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     const contact = await prisma.contact.findFirst({
       where: {
         id,
-        tenantId: session.tenantId,
+        tenantId,
         deletedAt: null,
       },
       select: { id: true },
@@ -116,13 +117,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'contact', 'update');
 
     // Verify tab belongs to this contact
-    const isOwner = await verifyNoteTabOwnership(tabId, 'contact', id, session.tenantId);
+    const isOwner = await verifyNoteTabOwnership(tabId, 'contact', id, tenantId);
     if (!isOwner) {
       return NextResponse.json({ error: 'Note tab not found' }, { status: 404 });
     }
 
     const auditContext = await createAuditContext({
-      tenantId: session.tenantId,
+      tenantId,
       userId: session.id,
       changeSource: 'MANUAL',
     });

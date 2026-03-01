@@ -3,6 +3,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditContext } from '@/lib/audit';
 import { parseIdParams } from '@/lib/validations/params';
+import { requireTenantContext } from '@/lib/api-helpers';
 import {
   getNoteTabs,
   createNoteTab,
@@ -25,10 +26,10 @@ export async function GET(
   try {
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Check permission
     await requirePermission(session, 'company', 'read', id);
@@ -38,7 +39,7 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const tabs = await getNoteTabs('company', id, session.tenantId);
+    const tabs = await getNoteTabs('company', id, tenantId);
 
     return NextResponse.json(tabs);
   } catch (error) {
@@ -65,10 +66,7 @@ export async function POST(
   try {
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
 
     // Check permission
     await requirePermission(session, 'company', 'update', id);
@@ -79,15 +77,21 @@ export async function POST(
     }
 
     const body = await request.json();
+    const tenantResult = await requireTenantContext(
+      session,
+      typeof body.tenantId === 'string' ? body.tenantId : searchParams.get('tenantId')
+    );
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
     const validatedData = createNoteTabSchema.parse(body);
 
     const auditContext = await createAuditContext({
-      tenantId: session.tenantId,
+      tenantId,
       userId: session.id,
       changeSource: 'MANUAL',
     });
 
-    const tab = await createNoteTab('company', id, validatedData, auditContext, session.tenantId);
+    const tab = await createNoteTab('company', id, validatedData, auditContext, tenantId);
 
     return NextResponse.json(tab, { status: 201 });
   } catch (error) {

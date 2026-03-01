@@ -407,6 +407,7 @@ export const ModelName = {
   Connector: 'Connector',
   TenantConnectorAccess: 'TenantConnectorAccess',
   ConnectorUsageLog: 'ConnectorUsageLog',
+  ConnectorModelConfig: 'ConnectorModelConfig',
   NoteTab: 'NoteTab',
   DocumentTemplate: 'DocumentTemplate',
   GeneratedDocument: 'GeneratedDocument',
@@ -466,7 +467,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2169,6 +2170,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ConnectorUsageLogCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ConnectorUsageLogCountAggregateOutputType> | number
+        }
+      }
+    }
+    ConnectorModelConfig: {
+      payload: Prisma.$ConnectorModelConfigPayload<ExtArgs>
+      fields: Prisma.ConnectorModelConfigFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ConnectorModelConfigFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ConnectorModelConfigFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload>
+        }
+        findFirst: {
+          args: Prisma.ConnectorModelConfigFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ConnectorModelConfigFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload>
+        }
+        findMany: {
+          args: Prisma.ConnectorModelConfigFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload>[]
+        }
+        create: {
+          args: Prisma.ConnectorModelConfigCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload>
+        }
+        createMany: {
+          args: Prisma.ConnectorModelConfigCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ConnectorModelConfigCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload>[]
+        }
+        delete: {
+          args: Prisma.ConnectorModelConfigDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload>
+        }
+        update: {
+          args: Prisma.ConnectorModelConfigUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload>
+        }
+        deleteMany: {
+          args: Prisma.ConnectorModelConfigDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ConnectorModelConfigUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ConnectorModelConfigUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload>[]
+        }
+        upsert: {
+          args: Prisma.ConnectorModelConfigUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ConnectorModelConfigPayload>
+        }
+        aggregate: {
+          args: Prisma.ConnectorModelConfigAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateConnectorModelConfig>
+        }
+        groupBy: {
+          args: Prisma.ConnectorModelConfigGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ConnectorModelConfigGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ConnectorModelConfigCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ConnectorModelConfigCountAggregateOutputType> | number
         }
       }
     }
@@ -5923,6 +5998,18 @@ export const ConnectorUsageLogScalarFieldEnum = {
 export type ConnectorUsageLogScalarFieldEnum = (typeof ConnectorUsageLogScalarFieldEnum)[keyof typeof ConnectorUsageLogScalarFieldEnum]
 
 
+export const ConnectorModelConfigScalarFieldEnum = {
+  id: 'id',
+  connectorId: 'connectorId',
+  modelId: 'modelId',
+  isEnabled: 'isEnabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ConnectorModelConfigScalarFieldEnum = (typeof ConnectorModelConfigScalarFieldEnum)[keyof typeof ConnectorModelConfigScalarFieldEnum]
+
+
 export const NoteTabScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -7836,6 +7923,7 @@ export type GlobalOmitConfig = {
   connector?: Prisma.ConnectorOmit
   tenantConnectorAccess?: Prisma.TenantConnectorAccessOmit
   connectorUsageLog?: Prisma.ConnectorUsageLogOmit
+  connectorModelConfig?: Prisma.ConnectorModelConfigOmit
   noteTab?: Prisma.NoteTabOmit
   documentTemplate?: Prisma.DocumentTemplateOmit
   generatedDocument?: Prisma.GeneratedDocumentOmit

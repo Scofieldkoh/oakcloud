@@ -4,6 +4,7 @@ import { requirePermission } from '@/lib/rbac';
 import { createAuditContext } from '@/lib/audit';
 import { parseIdParams } from '@/lib/validations/params';
 import { prisma } from '@/lib/prisma';
+import { requireTenantContext } from '@/lib/api-helpers';
 import {
   getNoteTabs,
   createNoteTab,
@@ -25,15 +26,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
-
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { searchParams } = new URL(request.url);
+    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     const contact = await prisma.contact.findFirst({
       where: {
         id,
-        tenantId: session.tenantId,
+        tenantId,
         deletedAt: null,
       },
       select: { id: true },
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     await requirePermission(session, 'contact', 'read');
 
-    const tabs = await getNoteTabs('contact', id, session.tenantId);
+    const tabs = await getNoteTabs('contact', id, tenantId);
 
     return NextResponse.json(tabs);
   } catch (error) {
@@ -68,15 +69,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
+    const { searchParams } = new URL(request.url);
 
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const body = await request.json();
+    const tenantResult = await requireTenantContext(
+      session,
+      typeof body.tenantId === 'string' ? body.tenantId : searchParams.get('tenantId')
+    );
+    if ('error' in tenantResult) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     const contact = await prisma.contact.findFirst({
       where: {
         id,
-        tenantId: session.tenantId,
+        tenantId,
         deletedAt: null,
       },
       select: { id: true },
@@ -87,16 +93,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     await requirePermission(session, 'contact', 'update');
 
-    const body = await request.json();
     const validatedData = createNoteTabSchema.parse(body);
 
     const auditContext = await createAuditContext({
-      tenantId: session.tenantId,
+      tenantId,
       userId: session.id,
       changeSource: 'MANUAL',
     });
 
-    const tab = await createNoteTab('contact', id, validatedData, auditContext, session.tenantId);
+    const tab = await createNoteTab('contact', id, validatedData, auditContext, tenantId);
 
     return NextResponse.json(tab, { status: 201 });
   } catch (error) {

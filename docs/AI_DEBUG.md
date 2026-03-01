@@ -13415,3 +13415,745 @@ TypeError: fetch failed
 
 ---
 
+## AI Request - 2026-03-01T14:11:24.726Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 58221ms |
+| Input Tokens | 6405 |
+| Output Tokens | 790 |
+| Total Tokens | 10619 |
+| Estimated Cost | $0.0080 |
+
+<details>
+<summary>Response (1979 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Anthropic, PBC",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "we.are.team.oaktree@gmail.com's Organization",
+    "confidence": 0.95
+  },
+  "documentNumber": {
+    "value": "LVT1C6FP-0001",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-03-01",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-03-01",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "13.76",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "1.24",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "15.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Claude Pro Mar 1–Apr 1, 2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "27.52",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "27.52",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6920",
+        "confidence": 0.95
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "3 Month Discount (50% off)",
+        "confidence": 0.99
+      },
+      "quantity": null,
+      "unitPrice": null,
+      "amount": {
+        "value": "-13.76",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "6920",
+        "confidence": 0.95
+      }
+    }
+  ],
+  "overallConfidence": 0.96
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-03-01T14:12:22.972Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Anthropic, PBC | 0.99 |
+| Total Amount | 15.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6920 | 0.95 | Claude Pro Mar 1–Apr 1, 2026 |
+| 2 | 6920 | 0.95 | 3 Month Discount (50% off) |
+
+---
+
+## AI Error - 2026-03-01T15:44:05.516Z
+
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+
+### Error Details
+- **Type**: GoogleGenerativeAIError
+- **Message**: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent: fetch failed
+- **Retryable**: false
+
+<details>
+<summary>Stack Trace</summary>
+
+```
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:14902:13
+    at async makeRequest (/app/.next/server/chunks/node_modules_@google_generative-ai_dist_index_mjs_2be827c7._.js:400:20)
+    at async generateContent (/app/.next/server/chunks/node_modules_@google_generative-ai_dist_index_mjs_2be827c7._.js:847:22)
+    at async callGoogle (/app/.next/server/chunks/[root-of-the-server]__3a13c8fc._.js:13908:20)
+    at async callAIWithConnector (/app/.next/server/chunks/[root-of-the-server]__3a13c8fc._.js:14305:32)
+    at async performAIExtraction (/app/.next/server/chunks/[root-of-the-server]__3a13c8fc._.js:18040:26)
+    at async extractFields (/app/.next/server/chunks/[root-of-the-server]__3a13c8fc._.js:17349:71)
+```
+</details>
+
+---
+
+## AI Request - 2026-03-01T15:44:35.479Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 185298ms |
+| Input Tokens | 6302 |
+| Output Tokens | 573 |
+| Total Tokens | 8357 |
+| Estimated Cost | $0.0074 |
+
+<details>
+<summary>Response (1433 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.95
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.9
+  },
+  "vendorName": {
+    "value": "OpenRouter, Inc",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "1634-6784",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-03-01",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "USD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "10.80",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "10.80",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "OpenRouter Credits",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.8
+      },
+      "unitPrice": {
+        "value": "10.80",
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "10.80",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "6920",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "overallConfidence": 0.96
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-03-01T15:47:40.796Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.95 |
+| Vendor | OpenRouter, Inc | 0.99 |
+| Total Amount | 10.80 USD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6920 | 0.85 | OpenRouter Credits |
+
+---
+
+## AI Request - 2026-03-01T16:01:53.074Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | qwen3-vl-235b-a22b-thinking |
+| Provider | openrouter |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 47194ms |
+| Input Tokens | 3478 |
+| Output Tokens | 625 |
+| Total Tokens | 4103 |
+| Estimated Cost | $0.0047 |
+
+<details>
+<summary>Response (1673 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202111661C",
+    "name": "THREE2TWO PTE. LTD.",
+    "formerName": "",
+    "dateOfNameChange": "",
+    "formerNames": [],
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2021-04-01",
+    "incorporationDate": "2021-04-01",
+    "registrationDate": "2021-04-01"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "64202",
+      "description": "OTHER HOLDING COMPANIES"
+    },
+    "secondary": {
+      "code": "",
+      "description": ""
+    }
+  },
+  "registeredAddress": {
+    "block": "111",
+    "streetName": "NORTH BRIDGE ROAD",
+    "level": "08",
+    "unit": "19",
+    "buildingName": "PENINSULA PLAZA",
+    "postalCode": "179098",
+    "effectiveFrom": "2023-09-11"
+  },
+  "mailingAddress": {
+    "block": "111",
+    "streetName": "NORTH BRIDGE ROAD",
+    "level": "08",
+    "unit": "19",
+    "buildingName": "PENINSULA PLAZA",
+    "postalCode": "179098",
+    "effectiveFrom": "2023-09-11"
+  },
+  "paidUpCapital": {
+    "amount": null,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": null,
+    "currency": "SGD"
+  },
+  "shareCapital": [],
+  "treasuryShares": {
+    "numberOfShares": null,
+    "currency": ""
+  },
+  "shareholders": [],
+  "officers": [],
+  "auditor": {
+    "name": "",
+    "address": "",
+    "appointmentDate": ""
+  },
+  "financialYear": {
+    "endDay": 31,
+    "endMonth": 3
+  },
+  "homeCurrency": "SGD",
+  "compliance": {
+    "lastAgmDate": "2024-10-14",
+    "lastArFiledDate": "2024-10-31",
+    "fyeAsAtLastAr": "2024-03-31",
+    "accountsDueDate": ""
+  },
+  "charges": [],
+  "documentMetadata": {
+    "receiptNo": "FREE",
+    "receiptDate": "2025-10-24"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-03-01T16:07:12.255Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 12877ms |
+| Input Tokens | 7073 |
+| Output Tokens | 914 |
+| Total Tokens | 7987 |
+| Estimated Cost | $0.0089 |
+
+<details>
+<summary>Response (2730 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202111661C",
+    "name": "THREE2TWO PTE. LTD.",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2021-04-01",
+    "incorporationDate": "2021-04-01"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "64202",
+      "description": "OTHER HOLDING COMPANIES"
+    }
+  },
+  "registeredAddress": {
+    "block": "111",
+    "streetName": "NORTH BRIDGE ROAD",
+    "level": "08",
+    "unit": "19",
+    "buildingName": "PENINSULA PLAZA",
+    "postalCode": "179098",
+    "effectiveFrom": "2023-09-11"
+  },
+  "paidUpCapital": {
+    "amount": 2,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 2,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 2,
+      "totalValue": 2,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "ROBERT JAMES MONCKTON",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8088566J",
+      "nationality": "AUSTRALIAN",
+      "address": "7L HILLCREST ROAD, HILLCREST VILLA, SINGAPORE 286694",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 2,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "MATHEW KURIAN",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S1659349D",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "111 NORTH BRIDGE ROAD, #10-01, PENINSULA PLAZA, SINGAPORE 179098",
+      "appointmentDate": "2021-04-01",
+      "cessationDate": null
+    },
+    {
+      "name": "ROBERT JAMES MONCKTON",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8088566J",
+      "nationality": "AUSTRALIAN",
+      "address": "7L HILLCREST ROAD, HILLCREST VILLA, SINGAPORE 286694",
+      "appointmentDate": "2021-04-01",
+      "cessationDate": null
+    }
+  ],
+  "financialYear": {
+    "endDay": 31,
+    "endMonth": 3
+  },
+  "homeCurrency": "SGD",
+  "compliance": {
+    "lastAgmDate": "2024-10-14",
+    "lastArFiledDate": "2024-10-31",
+    "fyeAsAtLastAr": "2024-03-31"
+  },
+  "charges": [
+    {
+      "chargeNumber": "C202509989",
+      "chargeHolderName": "UNITED OVERSEAS BANK LIMITED",
+      "amountSecuredText": "ALL MONIES",
+      "registrationDate": "2025-07-16",
+      "dischargeDate": null
+    },
+    {
+      "chargeNumber": "C202509991",
+      "chargeHolderName": "UNITED OVERSEAS BANK LIMITED",
+      "amountSecuredText": "ALL MONIES",
+      "registrationDate": "2025-07-16",
+      "dischargeDate": null
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "ACRA251024001757",
+    "receiptDate": "2025-10-24"
+  }
+}
+```
+</details>
+
+---
+
+## AI Error - 2026-03-01T16:09:49.348Z
+
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+
+### Error Details
+- **Type**: GoogleGenerativeAIError
+- **Message**: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent: fetch failed
+- **Retryable**: false
+
+<details>
+<summary>Stack Trace</summary>
+
+```
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:14902:13
+    at async makeRequest (/app/.next/server/chunks/node_modules_@google_generative-ai_dist_index_mjs_2be827c7._.js:400:20)
+    at async generateContent (/app/.next/server/chunks/node_modules_@google_generative-ai_dist_index_mjs_2be827c7._.js:847:22)
+    at async callGoogle (/app/.next/server/chunks/[root-of-the-server]__fa1e5469._.js:5005:20)
+    at async callAIWithConnector (/app/.next/server/chunks/[root-of-the-server]__fa1e5469._.js:5418:32)
+    at async extractBizFileWithVision (/app/.next/server/chunks/[root-of-the-server]__fa84d6c7._.js:5861:20)
+    at async POST (/app/.next/server/chunks/[root-of-the-server]__fa84d6c7._.js:13542:38)
+    at async AppRouteRouteModule.do (/app/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:38696)
+    at async AppRouteRouteModule.handle (/app/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45978)
+    at async responseGenerator (/app/.next/server/chunks/node_modules_next_af31d27a._.js:15721:38)
+    at async AppRouteRouteModule.handleResponse (/app/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:187643)
+    at async handleResponse (/app/.next/server/chunks/node_modules_next_af31d27a._.js:15783:32)
+    at async handler (/app/.next/server/chunks/node_modules_next_af31d27a._.js:15835:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1422:9)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1474:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1514:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:1025:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:393:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:916:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:399:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:395:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:240:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:437:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:485:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:226:13)
+```
+</details>
+
+---
+
+## AI Request - 2026-03-01T16:10:01.106Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gemini-3.1 |
+| Provider | google |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 191257ms |
+| Input Tokens | 4309 |
+| Output Tokens | 1015 |
+| Total Tokens | 8955 |
+| Estimated Cost | $0.0063 |
+
+<details>
+<summary>Response (2560 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202111661C",
+    "name": "THREE2TWO PTE. LTD.",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2021-04-01",
+    "incorporationDate": "2021-04-01"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "64202",
+      "description": "OTHER HOLDING COMPANIES"
+    }
+  },
+  "registeredAddress": {
+    "block": "111",
+    "streetName": "NORTH BRIDGE ROAD",
+    "level": "08",
+    "unit": "19",
+    "buildingName": "PENINSULA PLAZA",
+    "postalCode": "179098",
+    "effectiveFrom": "2023-09-11"
+  },
+  "paidUpCapital": {
+    "amount": 2,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 2,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 2,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "ROBERT JAMES MONCKTON",
+      "type": "INDIVIDUAL",
+      "identificationType": "FIN",
+      "identificationNumber": "S8088566J",
+      "nationality": "AUSTRALIAN",
+      "address": "7L HILLCREST ROAD, HILLCREST VILLA, SINGAPORE 286694",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 2,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "MATHEW KURIAN",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S1659349D",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "111 NORTH BRIDGE ROAD, #10-01, PENINSULA PLAZA, SINGAPORE 179098",
+      "appointmentDate": "2021-04-01",
+      "cessationDate": null
+    },
+    {
+      "name": "ROBERT JAMES MONCKTON",
+      "role": "DIRECTOR",
+      "identificationType": "FIN",
+      "identificationNumber": "S8088566J",
+      "nationality": "AUSTRALIAN",
+      "address": "7L HILLCREST ROAD, HILLCREST VILLA, SINGAPORE 286694",
+      "appointmentDate": "2021-04-01",
+      "cessationDate": null
+    }
+  ],
+  "compliance": {
+    "lastAgmDate": "2024-10-14",
+    "lastArFiledDate": "2024-10-31",
+    "fyeAsAtLastAr": "2024-03-31"
+  },
+  "charges": [
+    {
+      "chargeNumber": "C202509989",
+      "chargeHolderName": "UNITED OVERSEAS BANK LIMITED",
+      "amountSecuredText": "ALL MONIES",
+      "registrationDate": "2025-07-16"
+    },
+    {
+      "chargeNumber": "C202509991",
+      "chargeHolderName": "UNITED OVERSEAS BANK LIMITED",
+      "amountSecuredText": "ALL MONIES",
+      "registrationDate": "2025-07-16"
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "ACRA251024001757",
+    "receiptDate": "2025-10-24"
+  }
+}
+```
+</details>
+
+---
+
