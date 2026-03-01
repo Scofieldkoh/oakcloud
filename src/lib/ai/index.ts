@@ -25,6 +25,7 @@ import { AI_MODELS, getModelConfig, getDefaultModel } from './models';
 import { callOpenAI, isOpenAIConfigured } from './providers/openai';
 import { callAnthropic, isAnthropicConfigured } from './providers/anthropic';
 import { callGoogle, isGoogleConfigured } from './providers/google';
+import { callOpenRouter, isOpenRouterConfigured } from './providers/openrouter';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('ai');
@@ -67,6 +68,12 @@ export function getProviderStatus(provider: AIProvider): ProviderStatus {
         available: isGoogleConfigured(),
         configured: isGoogleConfigured(),
       };
+    case 'openrouter':
+      return {
+        provider: 'openrouter',
+        available: isOpenRouterConfigured(),
+        configured: isOpenRouterConfigured(),
+      };
     default:
       return {
         provider,
@@ -85,6 +92,7 @@ export function getAllProviderStatuses(): ProviderStatus[] {
     getProviderStatus('openai'),
     getProviderStatus('anthropic'),
     getProviderStatus('google'),
+    getProviderStatus('openrouter'),
   ];
 }
 
@@ -162,6 +170,8 @@ export async function callAI(options: AIRequestOptions): Promise<AIResponse> {
       return callAnthropic(options);
     case 'google':
       return callGoogle(options);
+    case 'openrouter':
+      return callOpenRouter(options);
     default:
       throw new Error(`Unknown provider: ${modelConfig.provider}`);
   }
@@ -211,7 +221,7 @@ export function createAICaller(defaultOptions: Partial<AIRequestOptions>) {
 /**
  * Map AI provider name to connector provider enum value
  */
-function mapProviderToConnectorProvider(provider: AIProvider): 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' {
+function mapProviderToConnectorProvider(provider: AIProvider): 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' {
   switch (provider) {
     case 'openai':
       return 'OPENAI';
@@ -219,6 +229,8 @@ function mapProviderToConnectorProvider(provider: AIProvider): 'OPENAI' | 'ANTHR
       return 'ANTHROPIC';
     case 'google':
       return 'GOOGLE';
+    case 'openrouter':
+      return 'OPENROUTER';
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }
@@ -290,6 +302,11 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
           break;
         case 'google':
           response = await callGoogle(options, {
+            apiKey: credentials.apiKey as string,
+          });
+          break;
+        case 'openrouter':
+          response = await callOpenRouter(options, {
             apiKey: credentials.apiKey as string,
           });
           break;
@@ -375,6 +392,9 @@ export async function getAvailableProvidersForTenant(
         case 'GOOGLE':
           availableProviders.add('google');
           break;
+        case 'OPENROUTER':
+          availableProviders.add('openrouter');
+          break;
       }
     }
   } catch (error) {
@@ -385,6 +405,7 @@ export async function getAvailableProvidersForTenant(
   if (isOpenAIConfigured()) availableProviders.add('openai');
   if (isAnthropicConfigured()) availableProviders.add('anthropic');
   if (isGoogleConfigured()) availableProviders.add('google');
+  if (isOpenRouterConfigured()) availableProviders.add('openrouter');
 
   return Array.from(availableProviders);
 }
