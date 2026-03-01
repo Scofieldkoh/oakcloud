@@ -77,7 +77,7 @@ function toLocalDateString(date: Date): string {
 // ============================================================================
 
 type ConnectorType = 'AI_PROVIDER' | 'STORAGE';
-type ConnectorProvider = 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'ONEDRIVE' | 'SHAREPOINT';
+type ConnectorProvider = 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' | 'ONEDRIVE' | 'SHAREPOINT';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 function parseMailboxUserIdsInput(raw: string): {

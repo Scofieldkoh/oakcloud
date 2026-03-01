@@ -31,6 +31,12 @@ export const PROVIDER_CONFIG: Record<string, {
     bgColor: 'bg-blue-100 dark:bg-blue-900/30',
     label: 'Google AI',
   },
+  OPENROUTER: {
+    icon: Zap,
+    color: 'text-violet-600 dark:text-violet-400',
+    bgColor: 'bg-violet-100 dark:bg-violet-900/30',
+    label: 'OpenRouter',
+  },
   // Storage Providers
   ONEDRIVE: {
     icon: Cloud,
