@@ -1,6 +1,11 @@
-import { createLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
-import { resolveConnector, incrementConnectorUsage } from '@/services/connector.service';
+import { createLogger } from '@/lib/logger';
+import { createAuditLog, createAuditLogBatch } from '@/lib/audit';
+import {
+  resolveConnector,
+  incrementConnectorUsage,
+  updateConnector,
+} from '@/services/connector.service';
 import { createContactDetail } from '@/services/contact-detail.service';
 
 const log = createLogger('outlook-email-ingestion');
@@ -20,34 +25,33 @@ interface GraphParticipant {
   emailAddress?: GraphEmailAddress | null;
 }
 
-export interface GraphMessage {
+interface GraphMessageBody {
+  contentType?: string | null;
+  content?: string | null;
+}
+
+interface GraphMessage {
+  id?: string;
+  conversationId?: string | null;
   subject?: string | null;
+  bodyPreview?: string | null;
+  body?: GraphMessageBody | null;
+  receivedDateTime?: string | null;
   from?: GraphParticipant | null;
-  sender?: GraphParticipant | null;
   toRecipients?: GraphParticipant[] | null;
   ccRecipients?: GraphParticipant[] | null;
-  bccRecipients?: GraphParticipant[] | null;
-  replyTo?: GraphParticipant[] | null;
 }
 
-export interface IngestOutlookCompanyEmailsInput {
-  tenantId: string;
-  userId: string;
-  companyId: string;
-  mailboxUserId?: string;
-  domains?: string[];
-  lookbackDays?: number;
-  maxMessages?: number;
+interface GraphMessageResponse {
+  value?: GraphMessage[];
+  '@odata.nextLink'?: string;
 }
 
-export interface IngestOutlookCompanyEmailsResult {
-  connectorProvider: 'ONEDRIVE' | 'SHAREPOINT';
-  connectorSource: 'tenant' | 'system';
-  mailboxUserId: string;
-  scannedMessages: number;
-  matchedEmails: string[];
-  importedEmails: string[];
-  skippedExistingEmails: string[];
+interface GraphErrorPayload {
+  error?: {
+    code?: string;
+    message?: string;
+  };
 }
 
 interface TokenCacheEntry {
@@ -55,45 +59,70 @@ interface TokenCacheEntry {
   expiresAt: number;
 }
 
+interface CompanyDomainState {
+  companyName: string;
+  domains: Set<string>;
+  existingEmails: Set<string>;
+  nextDisplayOrder: number;
+}
+
+interface CandidateCommunication {
+  companyId: string;
+  externalMessageId: string;
+  threadId: string | null;
+  subject: string | null;
+  body: string;
+  sentAt: Date | null;
+  toEmails: string[];
+}
+
+export interface OutlookConnectorStatus {
+  configured: boolean;
+  reason?: 'missing_connector' | 'missing_mailboxes';
+  message?: string;
+  provider?: 'ONEDRIVE' | 'SHAREPOINT';
+  source?: 'tenant' | 'system';
+  connectorId?: string;
+  mailboxUserIds: string[];
+}
+
+export interface TenantCommunicationListItem {
+  id: string;
+  companyId: string;
+  companyName: string;
+  subject: string | null;
+  preview: string;
+  body: string;
+  fromEmail: string | null;
+  toEmails: string[];
+  mailboxUserId: string | null;
+  receivedAt: string;
+}
+
+export interface IngestTenantOutlookCommunicationsInput {
+  tenantId: string;
+  userId: string;
+  lookbackDays?: number;
+  maxMessagesPerMailbox?: number;
+}
+
+export interface IngestTenantOutlookCommunicationsResult {
+  connectorProvider: 'ONEDRIVE' | 'SHAREPOINT';
+  connectorSource: 'tenant' | 'system';
+  mailboxUserIds: string[];
+  lookbackDays: number;
+  scannedMessages: number;
+  matchedCompanies: number;
+  storedCommunications: number;
+  skippedExistingCommunications: number;
+  importedCompanyEmails: number;
+}
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 const tokenCache = new Map<string, TokenCacheEntry>();
 
-// Generic company suffix/stop words that are too broad for matching.
-const COMPANY_STOP_WORDS = new Set([
-  'the',
-  'and',
-  'of',
-  'pte',
-  'ltd',
-  'private',
-  'limited',
-  'llp',
-  'llc',
-  'inc',
-  'corp',
-  'corporation',
-  'co',
-  'company',
-  'holdings',
-  'group',
-  'sg',
-  'singapore',
-]);
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
-}
-
-function normalizeText(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9@.\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function compactText(value: string): string {
-  return normalizeText(value).replace(/\s+/g, '');
 }
 
 function normalizeEmail(value: string): string {
@@ -104,111 +133,30 @@ function isValidEmail(value: string): boolean {
   return EMAIL_REGEX.test(value);
 }
 
-export function buildCompanyMatchTokens(companyName: string): string[] {
-  const tokens = normalizeText(companyName)
-    .split(' ')
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 3 && !COMPANY_STOP_WORDS.has(token));
-
-  return [...new Set(tokens)];
+function extractDomain(email: string): string | null {
+  const normalized = normalizeEmail(email);
+  if (!isValidEmail(normalized)) return null;
+  const parts = normalized.split('@');
+  const domain = parts[1]?.trim();
+  return domain || null;
 }
 
-function collectParticipants(message: GraphMessage): Array<{ email: string; name: string; subject: string }> {
-  const participants: Array<{ email: string; name: string; subject: string }> = [];
-  const subject = message.subject ?? '';
-  const participantGroups = [
-    message.from ? [message.from] : [],
-    message.sender ? [message.sender] : [],
-    message.replyTo ?? [],
-    message.toRecipients ?? [],
-    message.ccRecipients ?? [],
-    message.bccRecipients ?? [],
-  ];
-
-  for (const group of participantGroups) {
-    for (const participant of group) {
-      const rawEmail = participant?.emailAddress?.address;
-      if (!rawEmail || typeof rawEmail !== 'string') {
-        continue;
-      }
-
-      const email = normalizeEmail(rawEmail);
-      if (!isValidEmail(email)) {
-        continue;
-      }
-
-      participants.push({
-        email,
-        name: participant?.emailAddress?.name ?? '',
-        subject,
-      });
-    }
+function normalizeMessageBody(message: GraphMessage): string {
+  const bodyContent =
+    typeof message.body?.content === 'string'
+      ? message.body.content.trim()
+      : '';
+  if (bodyContent) {
+    return bodyContent.replace(/\r\n/g, '\n');
   }
-
-  return participants;
+  return (message.bodyPreview?.trim() || '').replace(/\r\n/g, '\n');
 }
 
-export function extractMatchingEmailsFromMessages(
-  messages: GraphMessage[],
-  options: { companyName: string; domains?: string[]; excludeEmails?: string[] }
-): string[] {
-  const tokens = buildCompanyMatchTokens(options.companyName);
-  const companyNeedle = compactText(options.companyName);
-
-  const normalizedDomains = new Set(
-    (options.domains ?? [])
-      .map((domain) => domain.trim().toLowerCase().replace(/^@/, ''))
-      .filter(Boolean)
-  );
-
-  const excludedEmails = new Set(
-    (options.excludeEmails ?? [])
-      .map((email) => normalizeEmail(email))
-      .filter(isValidEmail)
-  );
-
-  const matched = new Set<string>();
-
-  for (const message of messages) {
-    const participants = collectParticipants(message);
-
-    for (const participant of participants) {
-      if (excludedEmails.has(participant.email)) {
-        continue;
-      }
-
-      const domain = participant.email.split('@')[1] ?? '';
-      if (domain && normalizedDomains.has(domain)) {
-        matched.add(participant.email);
-        continue;
-      }
-
-      const context = normalizeText(
-        `${participant.name} ${participant.email} ${participant.subject}`
-      );
-
-      if (companyNeedle.length >= 4 && compactText(context).includes(companyNeedle)) {
-        matched.add(participant.email);
-        continue;
-      }
-
-      if (tokens.length === 0) {
-        continue;
-      }
-
-      const tokenMatches = tokens.reduce(
-        (count, token) => count + (context.includes(token) ? 1 : 0),
-        0
-      );
-      const minMatches = tokens.length >= 3 ? 2 : 1;
-
-      if (tokenMatches >= minMatches) {
-        matched.add(participant.email);
-      }
-    }
+function buildCommunicationPreview(body: string, maxLength: number = 220): string {
+  if (body.length <= maxLength) {
+    return body;
   }
-
-  return [...matched].sort();
+  return `${body.slice(0, maxLength - 3)}...`;
 }
 
 function getGraphCredentials(credentials: Record<string, unknown>): MicrosoftGraphCredentials {
@@ -224,34 +172,125 @@ function getGraphCredentials(credentials: Record<string, unknown>): MicrosoftGra
   return { clientId, clientSecret, tenantId };
 }
 
-function getMailboxUserId(
-  explicitMailboxUserId: string | undefined,
-  settings: unknown
-): string | null {
-  const fromInput = explicitMailboxUserId?.trim();
-  if (fromInput) {
-    return fromInput;
+function getMailboxUserIds(settings: unknown): string[] {
+  if (!settings || typeof settings !== 'object') {
+    return [];
   }
 
-  if (settings && typeof settings === 'object') {
-    const mailboxFromSettings = (settings as Record<string, unknown>).mailboxUserId;
-    if (typeof mailboxFromSettings === 'string' && mailboxFromSettings.trim()) {
-      return mailboxFromSettings.trim();
+  const raw = settings as Record<string, unknown>;
+  const values: string[] = [];
+
+  if (typeof raw.mailboxUserId === 'string' && raw.mailboxUserId.trim()) {
+    values.push(raw.mailboxUserId.trim());
+  }
+
+  if (Array.isArray(raw.mailboxUserIds)) {
+    for (const value of raw.mailboxUserIds) {
+      if (typeof value === 'string' && value.trim()) {
+        values.push(value.trim());
+      }
     }
   }
 
-  if (process.env.EMAIL_FROM_ADDRESS?.trim()) {
-    return process.env.EMAIL_FROM_ADDRESS.trim();
+  return [...new Set(values)];
+}
+
+function collectMessageEmails(message: GraphMessage): {
+  fromEmail: string | null;
+  emails: string[];
+} {
+  const ordered: string[] = [];
+  const seen = new Set<string>();
+
+  const pushEmail = (raw: string | null | undefined) => {
+    if (!raw || typeof raw !== 'string') return;
+    const email = normalizeEmail(raw);
+    if (!isValidEmail(email)) return;
+    if (seen.has(email)) return;
+    seen.add(email);
+    ordered.push(email);
+  };
+
+  const fromEmailRaw = message.from?.emailAddress?.address;
+  pushEmail(fromEmailRaw);
+
+  for (const participant of message.toRecipients ?? []) {
+    pushEmail(participant?.emailAddress?.address);
+  }
+  for (const participant of message.ccRecipients ?? []) {
+    pushEmail(participant?.emailAddress?.address);
   }
 
-  return null;
+  return {
+    fromEmail: ordered[0] ?? null,
+    emails: ordered,
+  };
+}
+
+function buildExternalMessageId(mailboxUserId: string, messageId: string): string {
+  return `outlook|${encodeURIComponent(mailboxUserId)}|${encodeURIComponent(messageId)}`;
+}
+
+function parseMailboxFromExternalMessageId(externalMessageId: string | null): string | null {
+  if (!externalMessageId) return null;
+  const [prefix, mailboxEncoded] = externalMessageId.split('|');
+  if (prefix !== 'outlook' || !mailboxEncoded) return null;
+  try {
+    return decodeURIComponent(mailboxEncoded);
+  } catch {
+    return null;
+  }
+}
+
+function buildOutlookFetchErrorMessage(
+  mailboxUserId: string,
+  status: number,
+  errorData: GraphErrorPayload
+): string {
+  const code = errorData.error?.code?.trim() || '';
+  const rawMessage = errorData.error?.message?.trim() || '';
+  const lowerCode = code.toLowerCase();
+  const lowerMessage = rawMessage.toLowerCase();
+
+  const isAccessDenied =
+    status === 401 ||
+    status === 403 ||
+    lowerCode.includes('accessdenied') ||
+    lowerCode.includes('authorization_requestdenied') ||
+    lowerMessage.includes('access is denied') ||
+    lowerMessage.includes('insufficient privileges');
+
+  if (isAccessDenied) {
+    return [
+      `Mailbox access denied for "${mailboxUserId}".`,
+      'Ensure Microsoft Graph has Mail.Read (Application) with admin consent, and that this mailbox allows app access (Exchange app access policy if configured).',
+      rawMessage ? `Graph: ${rawMessage}` : `Graph code: ${code || `HTTP ${status}`}`,
+    ].join(' ');
+  }
+
+  if (
+    status === 404 ||
+    lowerCode.includes('resourcenotfound') ||
+    lowerMessage.includes('resource could not be discovered')
+  ) {
+    return [
+      `Mailbox "${mailboxUserId}" was not found or is not accessible by this app.`,
+      'Verify the mailbox email/user ID is correct and exists in the same Microsoft tenant.',
+      rawMessage ? `Graph: ${rawMessage}` : `Graph code: ${code || `HTTP ${status}`}`,
+    ].join(' ');
+  }
+
+  return [
+    `Failed to fetch Outlook messages for mailbox "${mailboxUserId}".`,
+    rawMessage || code || `HTTP ${status}`,
+  ].join(' ');
 }
 
 async function getGraphAccessToken(credentials: MicrosoftGraphCredentials): Promise<string> {
   const cacheKey = `${credentials.tenantId}:${credentials.clientId}`;
   const cached = tokenCache.get(cacheKey);
 
-  // Reuse a valid token with a 5-minute safety window.
+  // Reuse valid token with safety buffer.
   if (cached && cached.expiresAt > Date.now() + 5 * 60 * 1000) {
     return cached.accessToken;
   }
@@ -301,48 +340,43 @@ async function fetchOutlookMessages(
   lookbackDays: number,
   maxMessages: number
 ): Promise<GraphMessage[]> {
-  const token = await getGraphAccessToken(credentials);
+  const accessToken = await getGraphAccessToken(credentials);
   const take = clamp(maxMessages, 1, 500);
   const pageSize = Math.min(take, 100);
-  const lookbackDate = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString();
+  const lookbackDate = new Date(
+    Date.now() - lookbackDays * 24 * 60 * 60 * 1000
+  ).toISOString();
 
   const params = new URLSearchParams({
-    '$select': 'subject,from,sender,toRecipients,ccRecipients,bccRecipients,replyTo',
+    '$select': 'id,conversationId,subject,bodyPreview,body,receivedDateTime,from,toRecipients,ccRecipients',
     '$orderby': 'receivedDateTime DESC',
     '$top': String(pageSize),
     '$filter': `receivedDateTime ge ${lookbackDate}`,
   });
 
-  let nextUrl: string | null =
-    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(mailboxUserId)}/messages?${params.toString()}`;
-
+  let nextUrl: string | null = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(mailboxUserId)}/messages?${params.toString()}`;
   const messages: GraphMessage[] = [];
 
   while (nextUrl && messages.length < take) {
     const response = await fetch(nextUrl, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
+        Prefer: 'outlook.body-content-type="text"',
       },
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as {
-        error?: { message?: string };
-      };
-      throw new Error(errorData.error?.message || 'Failed to fetch Outlook messages');
+      const errorData = await response.json().catch(() => ({})) as GraphErrorPayload;
+      throw new Error(
+        buildOutlookFetchErrorMessage(mailboxUserId, response.status, errorData)
+      );
     }
 
-    const payload = await response.json() as {
-      value?: GraphMessage[];
-      '@odata.nextLink'?: string;
-    };
-
-    const pageItems = payload.value ?? [];
-    for (const item of pageItems) {
-      messages.push(item);
-      if (messages.length >= take) {
-        break;
-      }
+    const payload = await response.json() as GraphMessageResponse;
+    const pageMessages = payload.value ?? [];
+    for (const message of pageMessages) {
+      messages.push(message);
+      if (messages.length >= take) break;
     }
 
     nextUrl = payload['@odata.nextLink'] ?? null;
@@ -351,123 +385,547 @@ async function fetchOutlookMessages(
   return messages;
 }
 
-export async function ingestOutlookCompanyEmails(
-  input: IngestOutlookCompanyEmailsInput
-): Promise<IngestOutlookCompanyEmailsResult> {
-  const company = await prisma.company.findFirst({
-    where: {
-      id: input.companyId,
+async function resolveOutlookConnector(tenantId: string) {
+  return (
+    (await resolveConnector(tenantId, 'STORAGE', 'ONEDRIVE')) ??
+    (await resolveConnector(tenantId, 'STORAGE', 'SHAREPOINT'))
+  );
+}
+
+export async function updateOutlookConnectorMailboxSettings(input: {
+  tenantId: string;
+  userId: string;
+  isSuperAdmin: boolean;
+  mailboxUserIds: string[];
+}): Promise<OutlookConnectorStatus> {
+  const resolved = await resolveOutlookConnector(input.tenantId);
+  if (!resolved) {
+    throw new Error('No Microsoft connector found. Configure OneDrive or SharePoint first.');
+  }
+
+  if (resolved.source === 'system' && !input.isSuperAdmin) {
+    throw new Error(
+      'Only super admins can update mailbox settings for a system connector.'
+    );
+  }
+
+  const normalizedMailboxUserIds = [...new Set(
+    input.mailboxUserIds
+      .map((mailbox) => mailbox.trim().toLowerCase())
+      .filter(Boolean)
+  )];
+
+  const existingSettings =
+    resolved.connector.settings && typeof resolved.connector.settings === 'object'
+      ? (resolved.connector.settings as Record<string, unknown>)
+      : {};
+
+  const nextSettings: Record<string, unknown> = {
+    ...existingSettings,
+    mailboxUserIds: normalizedMailboxUserIds,
+  };
+  delete nextSettings.mailboxUserId;
+
+  await updateConnector(
+    resolved.connector.id,
+    { settings: nextSettings },
+    {
       tenantId: input.tenantId,
+      userId: input.userId,
+      isSuperAdmin: input.isSuperAdmin,
+    }
+  );
+
+  return getOutlookConnectorStatus(input.tenantId);
+}
+
+async function buildCompanyDomainState(
+  tenantId: string
+): Promise<{
+  companyStateById: Map<string, CompanyDomainState>;
+  domainToCompanyIds: Map<string, Set<string>>;
+}> {
+  const companyDetails = await prisma.contactDetail.findMany({
+    where: {
+      tenantId,
+      contactId: null,
+      detailType: 'EMAIL',
       deletedAt: null,
+      company: {
+        deletedAt: null,
+      },
+    },
+    select: {
+      companyId: true,
+      value: true,
+      company: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: [{ companyId: 'asc' }, { displayOrder: 'asc' }, { createdAt: 'asc' }],
+  });
+
+  const companyStateById = new Map<string, CompanyDomainState>();
+  const domainToCompanyIds = new Map<string, Set<string>>();
+
+  for (const detail of companyDetails) {
+    const companyId = detail.companyId;
+    if (!companyId) continue;
+
+    const existing = companyStateById.get(companyId);
+    const state =
+      existing ??
+      {
+        companyName: detail.company?.name ?? 'Unknown Company',
+        domains: new Set<string>(),
+        existingEmails: new Set<string>(),
+        nextDisplayOrder: 0,
+      };
+
+    const normalizedEmail = normalizeEmail(detail.value);
+    if (isValidEmail(normalizedEmail)) {
+      state.existingEmails.add(normalizedEmail);
+      const domain = extractDomain(normalizedEmail);
+      if (domain) {
+        state.domains.add(domain);
+        if (!domainToCompanyIds.has(domain)) {
+          domainToCompanyIds.set(domain, new Set<string>());
+        }
+        domainToCompanyIds.get(domain)!.add(companyId);
+      }
+    }
+
+    state.nextDisplayOrder += 1;
+    companyStateById.set(companyId, state);
+  }
+
+  return { companyStateById, domainToCompanyIds };
+}
+
+export async function getOutlookConnectorStatus(tenantId: string): Promise<OutlookConnectorStatus> {
+  const resolved = await resolveOutlookConnector(tenantId);
+  if (!resolved) {
+    return {
+      configured: false,
+      reason: 'missing_connector',
+      message: 'No Microsoft connector found. Configure OneDrive or SharePoint first.',
+      mailboxUserIds: [],
+    };
+  }
+
+  const mailboxUserIds = getMailboxUserIds(resolved.connector.settings);
+  if (mailboxUserIds.length === 0) {
+    return {
+      configured: false,
+      reason: 'missing_mailboxes',
+      message:
+        'Mailbox list is not configured. Add settings.mailboxUserIds on the connector.',
+      provider: resolved.connector.provider as 'ONEDRIVE' | 'SHAREPOINT',
+      source: resolved.source,
+      connectorId: resolved.connector.id,
+      mailboxUserIds: [],
+    };
+  }
+
+  return {
+    configured: true,
+    provider: resolved.connector.provider as 'ONEDRIVE' | 'SHAREPOINT',
+    source: resolved.source,
+    connectorId: resolved.connector.id,
+    mailboxUserIds,
+  };
+}
+
+export async function listLatestTenantCommunications(
+  tenantId: string,
+  limit: number = 100
+): Promise<TenantCommunicationListItem[]> {
+  const take = clamp(limit, 1, 500);
+
+  const rows = await prisma.communication.findMany({
+    where: {
+      tenantId,
+      direction: 'INBOUND',
+      channel: 'EMAIL_CHANNEL',
+      externalMessageId: {
+        startsWith: 'outlook|',
+      },
+    },
+    orderBy: [{ sentAt: 'desc' }, { createdAt: 'desc' }],
+    take,
+  });
+
+  const companyIds = [...new Set(rows.map((row) => row.companyId))];
+  const companies = companyIds.length
+    ? await prisma.company.findMany({
+        where: {
+          id: { in: companyIds },
+          tenantId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      })
+    : [];
+  const companyNameMap = new Map(companies.map((company) => [company.id, company.name]));
+
+  return rows.map((row) => {
+    const body = row.body || '';
+    return {
+      id: row.id,
+      companyId: row.companyId,
+      companyName: companyNameMap.get(row.companyId) ?? 'Unknown Company',
+      subject: row.subject,
+      preview: buildCommunicationPreview(body),
+      body,
+      fromEmail: row.toEmails[0] ?? null,
+      toEmails: row.toEmails,
+      mailboxUserId: parseMailboxFromExternalMessageId(row.externalMessageId),
+      receivedAt: (row.sentAt ?? row.createdAt).toISOString(),
+    };
+  });
+}
+
+export async function deleteTenantCommunication(input: {
+  tenantId: string;
+  userId: string;
+  communicationId: string;
+}): Promise<void> {
+  const existing = await prisma.communication.findFirst({
+    where: {
+      id: input.communicationId,
+      tenantId: input.tenantId,
+      direction: 'INBOUND',
+      channel: 'EMAIL_CHANNEL',
+      externalMessageId: {
+        startsWith: 'outlook|',
+      },
     },
     select: {
       id: true,
-      name: true,
+      companyId: true,
+      subject: true,
+      externalMessageId: true,
     },
   });
 
-  if (!company) {
-    throw new Error('Company not found');
+  if (!existing) {
+    throw new Error('Communication not found');
   }
 
-  const resolvedConnector =
-    (await resolveConnector(input.tenantId, 'STORAGE', 'ONEDRIVE')) ??
-    (await resolveConnector(input.tenantId, 'STORAGE', 'SHAREPOINT'));
+  await prisma.communication.delete({
+    where: { id: existing.id },
+  });
 
+  await createAuditLog({
+    tenantId: input.tenantId,
+    userId: input.userId,
+    companyId: existing.companyId,
+    action: 'DELETE',
+    entityType: 'Communication',
+    entityId: existing.id,
+    entityName: existing.subject || existing.externalMessageId || existing.id,
+    summary: `Deleted ingested communication "${existing.subject || '(No subject)'}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      externalMessageId: existing.externalMessageId,
+      source: 'outlook',
+    },
+  });
+}
+
+export async function deleteTenantCommunicationsBulk(input: {
+  tenantId: string;
+  userId: string;
+  communicationIds: string[];
+}): Promise<{ deleted: number; skipped: number }> {
+  const communicationIds = [...new Set(
+    input.communicationIds
+      .map((id) => id.trim())
+      .filter(Boolean)
+  )];
+
+  if (communicationIds.length === 0) {
+    throw new Error('No communications selected');
+  }
+
+  const existing = await prisma.communication.findMany({
+    where: {
+      id: { in: communicationIds },
+      tenantId: input.tenantId,
+      direction: 'INBOUND',
+      channel: 'EMAIL_CHANNEL',
+      externalMessageId: {
+        startsWith: 'outlook|',
+      },
+    },
+    select: {
+      id: true,
+      companyId: true,
+      subject: true,
+      externalMessageId: true,
+    },
+  });
+
+  if (existing.length === 0) {
+    throw new Error('No matching communications found');
+  }
+
+  const existingIds = existing.map((row) => row.id);
+  await prisma.$transaction(async (tx) => {
+    await tx.communication.deleteMany({
+      where: {
+        id: { in: existingIds },
+      },
+    });
+
+    await createAuditLogBatch(
+      existing.map((row) => ({
+        tenantId: input.tenantId,
+        userId: input.userId,
+        companyId: row.companyId,
+        action: 'DELETE' as const,
+        entityType: 'Communication',
+        entityId: row.id,
+        entityName: row.subject || row.externalMessageId || row.id,
+        summary: `Deleted ingested communication "${row.subject || '(No subject)'}"`,
+        changeSource: 'MANUAL' as const,
+        metadata: {
+          externalMessageId: row.externalMessageId,
+          source: 'outlook',
+          bulk: true,
+        },
+      })),
+      tx
+    );
+  });
+
+  return {
+    deleted: existing.length,
+    skipped: communicationIds.length - existing.length,
+  };
+}
+
+export async function ingestTenantOutlookCommunications(
+  input: IngestTenantOutlookCommunicationsInput
+): Promise<IngestTenantOutlookCommunicationsResult> {
+  const lookbackDays = clamp(input.lookbackDays ?? 30, 1, 365);
+  const maxMessagesPerMailbox = clamp(input.maxMessagesPerMailbox ?? 200, 1, 500);
+
+  const connectorStatus = await getOutlookConnectorStatus(input.tenantId);
+  if (!connectorStatus.configured || !connectorStatus.connectorId) {
+    throw new Error(
+      connectorStatus.message ??
+        'Outlook connector is not configured. Configure connector and mailbox list first.'
+    );
+  }
+
+  const resolvedConnector = await resolveOutlookConnector(input.tenantId);
   if (!resolvedConnector) {
     throw new Error('No Microsoft connector found. Configure OneDrive or SharePoint first.');
   }
 
   const credentials = getGraphCredentials(resolvedConnector.connector.credentials);
-  const mailboxUserId = getMailboxUserId(
-    input.mailboxUserId,
-    resolvedConnector.connector.settings
-  );
+  const mailboxUserIds = connectorStatus.mailboxUserIds;
 
-  if (!mailboxUserId) {
-    throw new Error(
-      'Mailbox user is required. Pass mailboxUserId or configure connector settings.mailboxUserId.'
-    );
+  const { companyStateById, domainToCompanyIds } = await buildCompanyDomainState(input.tenantId);
+  if (companyStateById.size === 0 || domainToCompanyIds.size === 0) {
+    return {
+      connectorProvider: resolvedConnector.connector.provider as 'ONEDRIVE' | 'SHAREPOINT',
+      connectorSource: resolvedConnector.source,
+      mailboxUserIds,
+      lookbackDays,
+      scannedMessages: 0,
+      matchedCompanies: 0,
+      storedCommunications: 0,
+      skippedExistingCommunications: 0,
+      importedCompanyEmails: 0,
+    };
   }
 
-  const lookbackDays = clamp(input.lookbackDays ?? 180, 1, 3650);
-  const maxMessages = clamp(input.maxMessages ?? 200, 1, 500);
+  const candidateMap = new Map<string, CandidateCommunication>();
+  const newEmailsByCompany = new Map<string, Set<string>>();
+  let scannedMessages = 0;
 
-  const messages = await fetchOutlookMessages(
-    credentials,
-    mailboxUserId,
-    lookbackDays,
-    maxMessages
-  );
+  for (const mailboxUserId of mailboxUserIds) {
+    const messages = await fetchOutlookMessages(
+      credentials,
+      mailboxUserId,
+      lookbackDays,
+      maxMessagesPerMailbox
+    );
+    scannedMessages += messages.length;
 
-  const matchedEmails = extractMatchingEmailsFromMessages(messages, {
-    companyName: company.name,
-    domains: input.domains,
-    excludeEmails: [mailboxUserId],
-  });
+    for (const message of messages) {
+      if (!message.id) continue;
 
-  const existingDetails = await prisma.contactDetail.findMany({
-    where: {
-      tenantId: input.tenantId,
-      companyId: input.companyId,
-      contactId: null,
-      detailType: 'EMAIL',
-      deletedAt: null,
-    },
-    select: {
-      value: true,
-    },
-  });
+      const { fromEmail, emails } = collectMessageEmails(message);
+      if (emails.length === 0) continue;
 
-  const existingEmailSet = new Set(existingDetails.map((detail) => normalizeEmail(detail.value)));
-  const skippedExistingEmails = matchedEmails.filter((email) => existingEmailSet.has(email));
-  const newEmails = matchedEmails.filter((email) => !existingEmailSet.has(email));
-
-  const importedEmails: string[] = [];
-  for (const email of newEmails) {
-    await createContactDetail(
-      {
-        companyId: input.companyId,
-        detailType: 'EMAIL',
-        value: email,
-        label: 'Outlook Imported',
-        description: `Imported from Outlook mailbox ${mailboxUserId}`,
-        displayOrder: existingDetails.length + importedEmails.length,
-      },
-      {
-        tenantId: input.tenantId,
-        userId: input.userId,
+      const matchedCompanyIds = new Set<string>();
+      for (const email of emails) {
+        const domain = extractDomain(email);
+        if (!domain) continue;
+        const companyIds = domainToCompanyIds.get(domain);
+        if (!companyIds) continue;
+        for (const companyId of companyIds) {
+          matchedCompanyIds.add(companyId);
+        }
       }
-    );
 
-    importedEmails.push(email);
+      if (matchedCompanyIds.size === 0) continue;
+
+      const orderedToEmails = [...emails];
+      if (fromEmail && orderedToEmails[0] !== fromEmail) {
+        orderedToEmails.unshift(fromEmail);
+      }
+      const uniqueToEmails = [...new Set(orderedToEmails)];
+
+      const externalMessageId = buildExternalMessageId(mailboxUserId, message.id);
+      const sentAt = message.receivedDateTime ? new Date(message.receivedDateTime) : null;
+      const subject = message.subject?.trim() ? message.subject.trim() : null;
+      const body = normalizeMessageBody(message);
+
+      for (const companyId of matchedCompanyIds) {
+        const key = `${companyId}::${externalMessageId}`;
+        if (!candidateMap.has(key)) {
+          candidateMap.set(key, {
+            companyId,
+            externalMessageId,
+            threadId: message.conversationId ?? null,
+            subject,
+            body,
+            sentAt: sentAt && !Number.isNaN(sentAt.getTime()) ? sentAt : null,
+            toEmails: uniqueToEmails,
+          });
+        }
+
+        const companyState = companyStateById.get(companyId);
+        if (!companyState) continue;
+
+        const matchingEmailsForCompany = emails.filter((email) => {
+          const domain = extractDomain(email);
+          return !!domain && companyState.domains.has(domain);
+        });
+
+        if (matchingEmailsForCompany.length === 0) continue;
+        if (!newEmailsByCompany.has(companyId)) {
+          newEmailsByCompany.set(companyId, new Set<string>());
+        }
+
+        const pendingSet = newEmailsByCompany.get(companyId)!;
+        for (const email of matchingEmailsForCompany) {
+          if (!companyState.existingEmails.has(email)) {
+            pendingSet.add(email);
+            companyState.existingEmails.add(email);
+          }
+        }
+      }
+    }
   }
 
-  try {
-    await incrementConnectorUsage(resolvedConnector.connector.id);
-  } catch (error) {
-    log.warn('Failed to increment connector usage', {
-      connectorId: resolvedConnector.connector.id,
-      error: error instanceof Error ? error.message : 'Unknown error',
+  const candidates = [...candidateMap.values()];
+  const companyIds = [...new Set(candidates.map((candidate) => candidate.companyId))];
+  const externalMessageIds = [...new Set(candidates.map((candidate) => candidate.externalMessageId))];
+
+  const existingCommunications = companyIds.length
+    ? await prisma.communication.findMany({
+        where: {
+          tenantId: input.tenantId,
+          companyId: { in: companyIds },
+          externalMessageId: { in: externalMessageIds },
+        },
+        select: {
+          companyId: true,
+          externalMessageId: true,
+        },
+      })
+    : [];
+
+  const existingKeys = new Set(
+    existingCommunications.map((row) => `${row.companyId}::${row.externalMessageId}`)
+  );
+
+  const createRows = candidates
+    .filter((candidate) => !existingKeys.has(`${candidate.companyId}::${candidate.externalMessageId}`))
+    .map((candidate) => ({
+      tenantId: input.tenantId,
+      companyId: candidate.companyId,
+      direction: 'INBOUND' as const,
+      channel: 'EMAIL_CHANNEL' as const,
+      subject: candidate.subject,
+      body: candidate.body,
+      toEmails: candidate.toEmails,
+      externalMessageId: candidate.externalMessageId,
+      threadId: candidate.threadId,
+      sentAt: candidate.sentAt,
+    }));
+
+  if (createRows.length > 0) {
+    await prisma.communication.createMany({
+      data: createRows,
     });
   }
 
-  log.info('Outlook email ingestion completed', {
-    companyId: input.companyId,
-    connectorId: resolvedConnector.connector.id,
-    mailboxUserId,
-    scannedMessages: messages.length,
-    matchedCount: matchedEmails.length,
-    importedCount: importedEmails.length,
+  let importedCompanyEmails = 0;
+  for (const [companyId, emailSet] of newEmailsByCompany.entries()) {
+    const companyState = companyStateById.get(companyId);
+    if (!companyState) continue;
+
+    for (const email of emailSet) {
+      await createContactDetail(
+        {
+          companyId,
+          detailType: 'EMAIL',
+          value: email,
+          displayOrder: companyState.nextDisplayOrder,
+        },
+        {
+          tenantId: input.tenantId,
+          userId: input.userId,
+        }
+      );
+      companyState.nextDisplayOrder += 1;
+      importedCompanyEmails += 1;
+    }
+  }
+
+  try {
+    await incrementConnectorUsage(connectorStatus.connectorId);
+  } catch (error) {
+    log.warn('Failed to increment connector usage', error);
+  }
+
+  const matchedCompanies = new Set([
+    ...companyIds,
+    ...newEmailsByCompany.keys(),
+  ]).size;
+
+  log.info('Tenant Outlook ingestion completed', {
+    tenantId: input.tenantId,
+    connectorId: connectorStatus.connectorId,
+    lookbackDays,
+    mailboxCount: mailboxUserIds.length,
+    scannedMessages,
+    matchedCompanies,
+    storedCommunications: createRows.length,
+    skippedExistingCommunications: candidates.length - createRows.length,
+    importedCompanyEmails,
   });
 
   return {
     connectorProvider: resolvedConnector.connector.provider as 'ONEDRIVE' | 'SHAREPOINT',
     connectorSource: resolvedConnector.source,
-    mailboxUserId,
-    scannedMessages: messages.length,
-    matchedEmails,
-    importedEmails,
-    skippedExistingEmails,
+    mailboxUserIds,
+    lookbackDays,
+    scannedMessages,
+    matchedCompanies,
+    storedCommunications: createRows.length,
+    skippedExistingCommunications: candidates.length - createRows.length,
+    importedCompanyEmails,
   };
 }

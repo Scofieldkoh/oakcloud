@@ -737,7 +737,7 @@ export function CompanyTable({
   return (
     <>
       {/* Mobile Card View */}
-      <div className={cn('md:hidden space-y-3', isFetching && 'opacity-60')}>
+      <div className={cn('lg:hidden space-y-3', isFetching && 'opacity-60')}>
         {selectable && (
           <div className="flex items-center gap-2 px-1">
             <button
@@ -838,7 +838,7 @@ export function CompanyTable({
       </div>
 
       {/* Desktop Table View */}
-      <div className={cn('hidden md:block table-container overflow-hidden', isFetching && 'opacity-60')}>
+      <div className={cn('hidden lg:block table-container overflow-hidden', isFetching && 'opacity-60')}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-max">
             <colgroup>

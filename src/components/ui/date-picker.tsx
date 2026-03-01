@@ -509,8 +509,8 @@ export function DatePicker({
   const tempDisplayValue = getDisplayValue(tempValue);
 
   const sizeClasses = {
-    sm: 'h-9 text-base md:text-sm px-3',
-    md: 'h-10 text-base px-4',
+    sm: 'h-9 text-sm px-3',
+    md: 'h-10 text-sm md:text-base px-4',
   };
 
   const tabs: { key: TabType; label: string }[] = [

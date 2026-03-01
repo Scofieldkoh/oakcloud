@@ -190,7 +190,7 @@ export function CountFilter({
         className={cn(
           'flex items-center justify-between gap-1 w-full rounded-lg border transition-colors',
           'bg-background-secondary/30',
-          size === 'sm' ? 'h-9 px-3 text-base md:text-xs' : 'h-10 px-4 text-base md:text-sm',
+          size === 'sm' ? 'h-9 px-3 text-sm md:text-xs' : 'h-10 px-4 text-sm',
           isActive
             ? 'border-oak-primary ring-2 ring-oak-primary/30 text-text-primary font-medium'
             : 'border-border-primary hover:border-oak-primary/50',

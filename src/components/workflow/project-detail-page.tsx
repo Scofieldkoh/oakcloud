@@ -39,6 +39,7 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/compone
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -60,6 +61,7 @@ import {
 import { useCompanies } from '@/hooks/use-companies';
 import { useCompanyContactDetails } from '@/hooks/use-contact-details';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import {
   useProcessingDocuments,
@@ -229,6 +231,7 @@ const BILLING_STATUS_CLASS_MAP: Record<WorkflowProjectBillingStatus, string> = {
   TO_BE_BILLED: 'text-status-info',
   BILLED: 'text-status-success',
 };
+const UNSAVED_CHANGES_PROMPT_MESSAGE = 'You have unsaved changes. Leave this page without saving?';
 const FILES_COLUMN_PREF_KEY = 'workflow:project-detail:files:columns:v1';
 const FILES_COLUMN_IDS = [
   'linkedAt',
@@ -578,6 +581,62 @@ function parseNonNegativeIntegerInput(value: string): number | null {
   return parsed;
 }
 
+function normalizeMoneyInputForComparison(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const parsed = parseAmountInput(trimmed);
+  if (parsed === null) return trimmed;
+  return parsed.toFixed(2);
+}
+
+function normalizePositiveIntegerInputForComparison(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const parsed = parsePositiveIntegerInput(trimmed);
+  if (parsed === null) return trimmed;
+  return String(parsed);
+}
+
+function normalizeNonNegativeIntegerInputForComparison(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const parsed = parseNonNegativeIntegerInput(trimmed);
+  if (parsed === null) return trimmed;
+  return String(parsed);
+}
+
+function buildComparableProjectEditDraft(draft: WorkflowProjectEditDraft | null | undefined) {
+  if (!draft) return null;
+  return {
+    name: draft.name.trim(),
+    startDate: draft.startDate,
+    dueDate: draft.dueDate,
+    statusOverride: draft.statusOverride,
+    recurrenceMode: draft.recurrenceMode,
+    recurrenceMonths: normalizePositiveIntegerInputForComparison(draft.recurrenceMonths),
+  };
+}
+
+function buildComparableBillingDraft(
+  draft: WorkflowProjectBillingDraft | null | undefined,
+  fallbackCurrency: string
+) {
+  if (!draft) return null;
+  return {
+    mode: draft.mode,
+    currency: normalizeCurrencyInput(draft.currency, fallbackCurrency),
+    fixedPrice: normalizeMoneyInputForComparison(draft.fixedPrice),
+    quantity: normalizeNonNegativeIntegerInputForComparison(draft.quantity),
+    statusOverride: draft.statusOverride ?? null,
+    tiers: draft.tiers
+      .map((tier) => ({
+        upTo: normalizePositiveIntegerInputForComparison(tier.upTo),
+        unitPrice: normalizeMoneyInputForComparison(tier.unitPrice),
+      }))
+      .filter((tier) => tier.upTo.length > 0 || tier.unitPrice.length > 0),
+  };
+}
+
 function buildBillingDraft(project: WorkflowProjectDetail): WorkflowProjectBillingDraft {
   const tiers = project.billingConfig.tiers.length > 0
     ? project.billingConfig.tiers.map((tier, index) => ({
@@ -820,6 +879,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
   const dragModeRef = useRef<'GROUP' | 'TASK' | null>(null);
   const draggedGroupIdRef = useRef<string | null>(null);
   const draggedTaskRef = useRef<{ taskId: string; sourceGroupId: string } | null>(null);
+  const skipNextPopStateRef = useRef(false);
 
   const [activeTab, setActiveTab] = useState<WorkflowProjectTab>('LIST');
   const [groups, setGroups] = useState<WorkflowTaskGroup[]>(projectDetail?.groups ?? []);
@@ -1120,6 +1180,39 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
   }, [allTasks, projectDetail]);
 
   const notesDirty = projectNotesDirty || taskNotesDirty;
+
+  const groupsDirty = useMemo(() => {
+    if (!projectDetail) return false;
+    return JSON.stringify(groups) !== JSON.stringify(projectDetail.groups);
+  }, [groups, projectDetail]);
+
+  const projectAttachmentsDirty = useMemo(() => {
+    if (!projectDetail) return false;
+    return JSON.stringify(projectAttachments) !== JSON.stringify(projectDetail.projectAttachments);
+  }, [projectAttachments, projectDetail]);
+
+  const billingDraftDirty = useMemo(() => {
+    if (!projectDetail || !billingDraft) return false;
+    const fallbackCurrency = projectDetail.billingConfig.currency || 'SGD';
+    const baseline = buildComparableBillingDraft(buildBillingDraft(projectDetail), fallbackCurrency);
+    const current = buildComparableBillingDraft(billingDraft, fallbackCurrency);
+    return JSON.stringify(current) !== JSON.stringify(baseline);
+  }, [billingDraft, projectDetail]);
+
+  const projectEditDraftDirty = useMemo(() => {
+    if (!projectDetail || !projectEditDraft) return false;
+    const baseline = buildComparableProjectEditDraft(buildProjectEditDraft(projectDetail));
+    const current = buildComparableProjectEditDraft(projectEditDraft);
+    return JSON.stringify(current) !== JSON.stringify(baseline);
+  }, [projectDetail, projectEditDraft]);
+
+  const hasUnsavedChanges = groupsDirty
+    || projectAttachmentsDirty
+    || projectNotesDirty
+    || billingDraftDirty
+    || projectEditDraftDirty;
+
+  useUnsavedChangesWarning(hasUnsavedChanges, !updateProjectMutation.isPending);
 
   const pocContacts = useMemo(() => {
     const pickDetailValue = (details: Array<{ detailType: string; value: string; isPrimary: boolean }>, type: 'EMAIL' | 'PHONE') => {
@@ -1926,6 +2019,73 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
     setIsEditProjectModalOpen(false);
   }, []);
 
+  const confirmExitWithoutSaving = useCallback(() => {
+    if (!hasUnsavedChanges || updateProjectMutation.isPending) return true;
+    return window.confirm(UNSAVED_CHANGES_PROMPT_MESSAGE);
+  }, [hasUnsavedChanges, updateProjectMutation.isPending]);
+
+  const navigateBackToProjects = useCallback(() => {
+    if (!confirmExitWithoutSaving()) return;
+    router.push('/workflow/projects');
+  }, [confirmExitWithoutSaving, router]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges || updateProjectMutation.isPending) return;
+
+    const handleNavigationClick = (event: MouseEvent) => {
+      if (event.defaultPrevented) return;
+      if (event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (!(event.target instanceof Element)) return;
+
+      const anchor = event.target.closest('a');
+      if (!anchor) return;
+      if (anchor.target?.toLowerCase() === '_blank') return;
+      if (anchor.hasAttribute('download')) return;
+
+      const href = anchor.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
+
+      let destination: URL;
+      try {
+        destination = new URL(anchor.href, window.location.href);
+      } catch {
+        return;
+      }
+
+      if (destination.origin !== window.location.origin) return;
+
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const destinationPath = `${destination.pathname}${destination.search}${destination.hash}`;
+      if (destinationPath === currentPath) return;
+
+      if (!confirmExitWithoutSaving()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    const handlePopState = () => {
+      if (skipNextPopStateRef.current) {
+        skipNextPopStateRef.current = false;
+        return;
+      }
+
+      if (confirmExitWithoutSaving()) return;
+
+      skipNextPopStateRef.current = true;
+      window.history.go(1);
+    };
+
+    document.addEventListener('click', handleNavigationClick, true);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      document.removeEventListener('click', handleNavigationClick, true);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [confirmExitWithoutSaving, hasUnsavedChanges, updateProjectMutation.isPending]);
+
   const saveProjectEdit = useCallback(async () => {
     if (!projectEditDraft) return;
 
@@ -2323,7 +2483,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
     {
       key: 'backspace',
       ctrl: true,
-      handler: () => router.push('/workflow/projects'),
+      handler: navigateBackToProjects,
       description: 'Back to workflow projects',
     },
     ...(activeTab === 'FILES' ? [{
@@ -2385,14 +2545,15 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
     <div className="p-4 sm:p-6 space-y-4">
       <header className="space-y-3">
         <div>
-          <Link
-            href="/workflow/projects"
+          <button
+            type="button"
+            onClick={navigateBackToProjects}
             className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors mb-3"
             title="Back to Projects (Ctrl+Backspace)"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Projects
-          </Link>
+          </button>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -3484,16 +3645,6 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
             </div>
           </section>
         </div>
-      ) : activeTab !== 'LIST' ? (
-        <div className="card p-8 text-center">
-          <FolderOpen className="w-10 h-10 text-text-muted mx-auto mb-3" />
-          <h2 className="text-base sm:text-lg font-medium text-text-primary mb-1">
-            {TAB_OPTIONS.find((tab) => tab.id === activeTab)?.label} View
-          </h2>
-          <p className="text-sm text-text-secondary">
-            This section is reserved for the next iteration. List view is active for task operations in this phase.
-          </p>
-        </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-4">
           <div className="space-y-4">
@@ -4177,15 +4328,14 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                   </div>
 
                   <div>
-                    <label className="label">Due Date</label>
-                    <input
-                      type="date"
+                    <SingleDateInput
+                      label="Due Date"
                       value={openTask.dueDate ?? ''}
-                      onChange={(event) => {
-                        const nextDueDate = event.target.value || null;
+                      onChange={(value) => {
+                        const nextDueDate = value || null;
                         updateTask(openTask.id, (task) => ({ ...task, dueDate: nextDueDate }));
                       }}
-                      className="input input-sm"
+                      placeholder="Select date..."
                     />
                   </div>
                 </section>
@@ -4333,36 +4483,30 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="label">Start Date</label>
-              <input
-                type="date"
-                value={projectEditDraft?.startDate ?? ''}
-                onChange={(event) =>
-                  setProjectEditDraft((previous) =>
-                    previous
-                      ? { ...previous, startDate: event.target.value }
-                      : previous
-                  )
-                }
-                className="input input-sm"
-              />
-            </div>
-            <div>
-              <label className="label">Due Date</label>
-              <input
-                type="date"
-                value={projectEditDraft?.dueDate ?? ''}
-                onChange={(event) =>
-                  setProjectEditDraft((previous) =>
-                    previous
-                      ? { ...previous, dueDate: event.target.value }
-                      : previous
-                  )
-                }
-                className="input input-sm"
-              />
-            </div>
+            <SingleDateInput
+              label="Start Date"
+              value={projectEditDraft?.startDate ?? ''}
+              onChange={(value) =>
+                setProjectEditDraft((previous) =>
+                  previous
+                    ? { ...previous, startDate: value }
+                    : previous
+                )
+              }
+              placeholder="Select date..."
+            />
+            <SingleDateInput
+              label="Due Date"
+              value={projectEditDraft?.dueDate ?? ''}
+              onChange={(value) =>
+                setProjectEditDraft((previous) =>
+                  previous
+                    ? { ...previous, dueDate: value }
+                    : previous
+                )
+              }
+              placeholder="Select date..."
+            />
           </div>
 
           <div className="space-y-2">

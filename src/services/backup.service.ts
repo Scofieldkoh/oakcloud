@@ -12,12 +12,70 @@ import { StorageKeys } from '@/lib/storage/config';
 import { createAuditLog } from '@/lib/audit';
 import { hashBlake3 } from '@/lib/encryption';
 import { createLogger } from '@/lib/logger';
-import type { BackupStatus, Prisma } from '@/generated/prisma';
+import { Prisma } from '@/generated/prisma';
+import type { BackupStatus } from '@/generated/prisma';
 
 const log = createLogger('backup-service');
 
 // Compression settings
 const COMPRESSION_LEVEL = 6; // Default gzip level (1-9, higher = better compression but slower)
+
+// Models handled explicitly in export/delete/restore flows.
+// Any other model with a tenantId field can be handled dynamically.
+const MANUALLY_HANDLED_MODEL_DELEGATES = new Set([
+  'tenant',
+  'user',
+  'role',
+  'rolePermission',
+  'userRoleAssignment',
+  'userPreference',
+  'userCompanyAssignment',
+  'company',
+  'companyAddress',
+  'companyFormerName',
+  'companyOfficer',
+  'companyShareholder',
+  'companyCharge',
+  'shareCapital',
+  'companyContact',
+  'contact',
+  'document',
+  'processingDocument',
+  'documentLink',
+  'documentTag',
+  'processingDocumentTag',
+  'documentPage',
+  'documentExtraction',
+  'documentRevision',
+  'documentRevisionLineItem',
+  'duplicateDecision',
+  'processingAttempt',
+  'processingCheckpoint',
+  'documentTemplate',
+  'generatedDocument',
+  'documentSection',
+  'documentShare',
+  'documentComment',
+  'documentDraft',
+  'templatePartial',
+  'tenantLetterhead',
+  'connector',
+  'tenantConnectorAccess',
+  'connectorUsageLog',
+  'noteTab',
+  'fieldMapping',
+  'bankAccount',
+  'bankTransaction',
+  'matchGroup',
+  'matchGroupItem',
+  'reconciliationPeriod',
+  'aiConversation',
+  'chartOfAccount',
+  'chartOfAccountsMapping',
+  'auditLog',
+]);
+
+const EXCLUDED_DYNAMIC_DELEGATES = new Set(['permission', 'tenantBackup', 'backupSchedule']);
 
 // ============================================================================
 // Types
@@ -98,6 +156,191 @@ function formatBytes(bytes: number): string {
 // ============================================================================
 
 class BackupService {
+  private dynamicTenantScopedModelDelegatesPromise: Promise<string[]> | null = null;
+
+  private modelNameToDelegate(modelName: string): string {
+    return modelName.charAt(0).toLowerCase() + modelName.slice(1);
+  }
+
+  private isUnsupportedTenantIdFilterError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    return error.message.includes('Unknown argument `tenantId`');
+  }
+
+  private isForeignKeyConstraintError(error: unknown): boolean {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return error.code === 'P2003' || error.code === 'P2014';
+    }
+
+    return false;
+  }
+
+  private async getDynamicTenantScopedModelDelegates(): Promise<string[]> {
+    if (this.dynamicTenantScopedModelDelegatesPromise) {
+      return this.dynamicTenantScopedModelDelegatesPromise;
+    }
+
+    this.dynamicTenantScopedModelDelegatesPromise = (async () => {
+      const candidates = Object.values(Prisma.ModelName)
+        .map((modelName) => this.modelNameToDelegate(modelName))
+        .filter(
+          (delegateName) =>
+            !MANUALLY_HANDLED_MODEL_DELEGATES.has(delegateName) &&
+            !EXCLUDED_DYNAMIC_DELEGATES.has(delegateName)
+        );
+
+      const supported: string[] = [];
+
+      for (const delegateName of candidates) {
+        const delegate = (prisma as unknown as Record<string, { count?: (args: unknown) => Promise<number> }>)[
+          delegateName
+        ];
+
+        if (!delegate?.count) {
+          continue;
+        }
+
+        try {
+          await delegate.count({
+            where: { tenantId: '__backup_probe__' },
+          });
+          supported.push(delegateName);
+        } catch (error) {
+          if (this.isUnsupportedTenantIdFilterError(error)) {
+            continue;
+          }
+
+          throw error;
+        }
+      }
+
+      return supported;
+    })();
+
+    return this.dynamicTenantScopedModelDelegatesPromise;
+  }
+
+  private async exportDynamicTenantModelData(tenantId: string): Promise<Record<string, unknown>> {
+    const delegates = await this.getDynamicTenantScopedModelDelegates();
+    const data: Record<string, unknown> = {};
+
+    for (const delegateName of delegates) {
+      const delegate = (prisma as unknown as Record<string, { findMany?: (args: unknown) => Promise<unknown[]> }>)[
+        delegateName
+      ];
+
+      if (!delegate?.findMany) {
+        continue;
+      }
+
+      data[delegateName] = await delegate.findMany({
+        where: { tenantId },
+      });
+    }
+
+    return data;
+  }
+
+  private async deleteDynamicTenantModelData(
+    tx: Prisma.TransactionClient,
+    tenantId: string
+  ): Promise<void> {
+    const delegates = await this.getDynamicTenantScopedModelDelegates();
+    let pending = [...delegates];
+
+    while (pending.length > 0) {
+      let progress = false;
+      const retry: string[] = [];
+
+      for (const delegateName of pending) {
+        const delegate = (tx as unknown as Record<string, { deleteMany?: (args: unknown) => Promise<unknown> }>)[
+          delegateName
+        ];
+
+        if (!delegate?.deleteMany) {
+          continue;
+        }
+
+        try {
+          await delegate.deleteMany({ where: { tenantId } });
+          progress = true;
+        } catch (error) {
+          if (this.isForeignKeyConstraintError(error)) {
+            retry.push(delegateName);
+            continue;
+          }
+          throw error;
+        }
+      }
+
+      if (retry.length > 0 && !progress) {
+        throw new Error(
+          `Unable to clean dynamic tenant models due to unresolved dependencies: ${retry.join(', ')}`
+        );
+      }
+
+      pending = retry;
+    }
+  }
+
+  private async restoreDynamicTenantModelData(
+    tx: Prisma.TransactionClient,
+    data: Record<string, unknown>,
+    handledKeys: Set<string>
+  ): Promise<void> {
+    const delegates = await this.getDynamicTenantScopedModelDelegates();
+    const delegateSet = new Set(delegates);
+
+    let pending = Object.entries(data)
+      .filter(
+        ([key, value]) =>
+          !handledKeys.has(key) && delegateSet.has(key) && Array.isArray(value) && value.length > 0
+      )
+      .map(([key, value]) => ({ key, rows: value as unknown[] }));
+
+    while (pending.length > 0) {
+      let progress = false;
+      const retry: Array<{ key: string; rows: unknown[] }> = [];
+
+      for (const item of pending) {
+        const delegate = (tx as unknown as Record<string, { createMany?: (args: unknown) => Promise<unknown> }>)[
+          item.key
+        ];
+
+        if (!delegate?.createMany) {
+          continue;
+        }
+
+        try {
+          await delegate.createMany({
+            data: item.rows,
+            skipDuplicates: true,
+          });
+          progress = true;
+        } catch (error) {
+          if (this.isForeignKeyConstraintError(error)) {
+            retry.push(item);
+            continue;
+          }
+          throw error;
+        }
+      }
+
+      if (retry.length > 0 && !progress) {
+        throw new Error(
+          `Unable to restore dynamic tenant models due to unresolved dependencies: ${retry
+            .map((item) => item.key)
+            .join(', ')}`
+        );
+      }
+
+      pending = retry;
+    }
+  }
+
   /**
    * Create a backup for a tenant
    */
@@ -311,6 +554,7 @@ class BackupService {
       roles,
       rolePermissions,
       userRoleAssignments,
+      userPreferences,
       userCompanyAssignments,
       companies,
       companyAddresses,
@@ -323,10 +567,16 @@ class BackupService {
       contacts,
       documents,
       processingDocuments,
+      documentLinks,
+      documentTags,
+      processingDocumentTags,
       documentPages,
       documentRevisions,
       documentRevisionLineItems,
       documentExtractions,
+      duplicateDecisions,
+      processingAttempts,
+      processingCheckpoints,
       documentTemplates,
       generatedDocuments,
       documentSections,
@@ -339,18 +589,22 @@ class BackupService {
       connectorAccess,
       connectorUsageLogs,
       noteTabs,
+      fieldMappings,
       bankAccounts,
       bankTransactions,
       matchGroups,
       matchGroupItems,
       reconciliationPeriods,
       aiConversations,
+      chartOfAccounts,
+      chartOfAccountsMappings,
     ] = await Promise.all([
       prisma.tenant.findUnique({ where: { id: tenantId } }),
       prisma.user.findMany({ where: { tenantId } }),
       prisma.role.findMany({ where: { tenantId } }),
       prisma.rolePermission.findMany({ where: { role: { tenantId } } }),
       prisma.userRoleAssignment.findMany({ where: { user: { tenantId } } }),
+      prisma.userPreference.findMany({ where: { user: { tenantId } } }),
       prisma.userCompanyAssignment.findMany({ where: { user: { tenantId } } }),
       prisma.company.findMany({ where: { tenantId } }),
       prisma.companyAddress.findMany({ where: { company: { tenantId } } }),
@@ -363,12 +617,33 @@ class BackupService {
       prisma.contact.findMany({ where: { tenantId } }),
       prisma.document.findMany({ where: { tenantId } }),
       prisma.processingDocument.findMany({ where: { document: { tenantId } } }),
+      prisma.documentLink.findMany({
+        where: {
+          OR: [
+            { sourceDocument: { document: { tenantId } } },
+            { targetDocument: { document: { tenantId } } },
+          ],
+        },
+      }),
+      prisma.documentTag.findMany({ where: { tenantId } }),
+      prisma.processingDocumentTag.findMany({
+        where: { processingDocument: { document: { tenantId } } },
+      }),
       prisma.documentPage.findMany({ where: { processingDocument: { document: { tenantId } } } }),
       prisma.documentRevision.findMany({ where: { processingDocument: { document: { tenantId } } } }),
       prisma.documentRevisionLineItem.findMany({
         where: { revision: { processingDocument: { document: { tenantId } } } },
       }),
       prisma.documentExtraction.findMany({ where: { processingDocument: { document: { tenantId } } } }),
+      prisma.duplicateDecision.findMany({
+        where: { processingDocument: { document: { tenantId } } },
+      }),
+      prisma.processingAttempt.findMany({
+        where: { processingDocument: { document: { tenantId } } },
+      }),
+      prisma.processingCheckpoint.findMany({
+        where: { processingDocument: { document: { tenantId } } },
+      }),
       prisma.documentTemplate.findMany({ where: { tenantId } }),
       prisma.generatedDocument.findMany({ where: { tenantId } }),
       prisma.documentSection.findMany({ where: { document: { tenantId } } }),
@@ -383,13 +658,24 @@ class BackupService {
       prisma.noteTab.findMany({
         where: { OR: [{ company: { tenantId } }, { contact: { tenantId } }] },
       }),
+      prisma.fieldMapping.findMany({ where: { integration: { tenantId } } }),
       prisma.bankAccount.findMany({ where: { tenantId } }),
       prisma.bankTransaction.findMany({ where: { tenantId } }),
       prisma.matchGroup.findMany({ where: { tenantId } }),
       prisma.matchGroupItem.findMany({ where: { matchGroup: { tenantId } } }),
       prisma.reconciliationPeriod.findMany({ where: { tenantId } }),
       prisma.aiConversation.findMany({ where: { tenantId } }),
+      prisma.chartOfAccount.findMany({
+        where: {
+          OR: [{ tenantId }, { company: { tenantId } }],
+        },
+      }),
+      prisma.chartOfAccountsMapping.findMany({
+        where: { company: { tenantId } },
+      }),
     ]);
+
+    const dynamicData = await this.exportDynamicTenantModelData(tenantId);
 
     // Optionally include audit logs
     let auditLogs: unknown[] = [];
@@ -403,6 +689,7 @@ class BackupService {
       roles,
       rolePermissions,
       userRoleAssignments,
+      userPreferences,
       userCompanyAssignments,
       companies,
       companyAddresses,
@@ -415,10 +702,16 @@ class BackupService {
       contacts,
       documents,
       processingDocuments,
+      documentLinks,
+      documentTags,
+      processingDocumentTags,
       documentPages,
       documentRevisions,
       documentRevisionLineItems,
       documentExtractions,
+      duplicateDecisions,
+      processingAttempts,
+      processingCheckpoints,
       documentTemplates,
       generatedDocuments,
       documentSections,
@@ -431,13 +724,17 @@ class BackupService {
       connectorAccess,
       connectorUsageLogs,
       noteTabs,
+      fieldMappings,
       bankAccounts,
       bankTransactions,
       matchGroups,
       matchGroupItems,
       reconciliationPeriods,
       aiConversations,
+      chartOfAccounts,
+      chartOfAccountsMappings,
       auditLogs,
+      ...dynamicData,
     };
 
     // Calculate stats
@@ -733,6 +1030,52 @@ class BackupService {
   }
 
   /**
+   * Restore chart of accounts with parent-child dependency handling.
+   */
+  private async restoreChartOfAccounts(
+    tx: Prisma.TransactionClient,
+    rows: unknown[]
+  ): Promise<void> {
+    let pending = rows as Array<Record<string, unknown>>;
+    const insertedIds = new Set<string>();
+
+    while (pending.length > 0) {
+      const insertable = pending.filter((row) => {
+        const parentId = row.parentId as string | null | undefined;
+        return !parentId || insertedIds.has(parentId);
+      });
+
+      const batch =
+        insertable.length === 0 || insertable.length === pending.length ? pending : insertable;
+
+      await tx.chartOfAccount.createMany({
+        data: batch as Prisma.ChartOfAccountCreateManyInput[],
+        skipDuplicates: true,
+      });
+
+      // If we inserted all remaining rows (or had to fall back), we are done.
+      if (batch === pending) {
+        return;
+      }
+
+      const insertedBatchIds = new Set<string>();
+      for (const row of batch) {
+        if (typeof row.id === 'string') {
+          insertedIds.add(row.id);
+          insertedBatchIds.add(row.id);
+        }
+      }
+
+      pending = pending.filter((row) => {
+        if (typeof row.id !== 'string') {
+          return false;
+        }
+        return !insertedBatchIds.has(row.id);
+      });
+    }
+  }
+
+  /**
    * Delete all data for a tenant (used before restore)
    * Deletes both database records and S3 files
    */
@@ -758,7 +1101,33 @@ class BackupService {
       await tx.bankAccount.deleteMany({ where: { tenantId } });
       await tx.reconciliationPeriod.deleteMany({ where: { tenantId } });
 
-      // Delete document processing data
+      // Delete integrations/postings that depend on document revisions
+      await tx.externalPosting.deleteMany({ where: { tenantId } });
+      await tx.fieldMapping.deleteMany({ where: { integration: { tenantId } } });
+
+      // Delete document processing satellites
+      await tx.documentLink.deleteMany({
+        where: {
+          OR: [
+            { sourceDocument: { document: { tenantId } } },
+            { targetDocument: { document: { tenantId } } },
+          ],
+        },
+      });
+      await tx.processingDocumentTag.deleteMany({
+        where: { processingDocument: { document: { tenantId } } },
+      });
+      await tx.duplicateDecision.deleteMany({
+        where: { processingDocument: { document: { tenantId } } },
+      });
+      await tx.processingAttempt.deleteMany({
+        where: { processingDocument: { document: { tenantId } } },
+      });
+      await tx.processingCheckpoint.deleteMany({
+        where: { processingDocument: { document: { tenantId } } },
+      });
+
+      // Delete document processing core data
       await tx.documentRevisionLineItem.deleteMany({
         where: { revision: { processingDocument: { document: { tenantId } } } },
       });
@@ -788,6 +1157,13 @@ class BackupService {
 
       // Delete company data
       await tx.noteTab.deleteMany({ where: { OR: [{ company: { tenantId } }, { contact: { tenantId } }] } });
+      await tx.documentTag.deleteMany({ where: { tenantId } });
+      await tx.chartOfAccountsMapping.deleteMany({ where: { company: { tenantId } } });
+      await tx.chartOfAccount.deleteMany({
+        where: {
+          OR: [{ tenantId }, { company: { tenantId } }],
+        },
+      });
       await tx.companyCharge.deleteMany({ where: { company: { tenantId } } });
       await tx.shareCapital.deleteMany({ where: { company: { tenantId } } });
       await tx.companyShareholder.deleteMany({ where: { company: { tenantId } } });
@@ -801,6 +1177,7 @@ class BackupService {
       await tx.userRoleAssignment.deleteMany({ where: { user: { tenantId } } });
       await tx.rolePermission.deleteMany({ where: { role: { tenantId } } });
       await tx.role.deleteMany({ where: { tenantId } });
+      await tx.userPreference.deleteMany({ where: { user: { tenantId } } });
 
       // Delete connectors
       await tx.connectorUsageLog.deleteMany({ where: { tenantId } });
@@ -812,6 +1189,9 @@ class BackupService {
 
       // Delete audit logs
       await tx.auditLog.deleteMany({ where: { tenantId } });
+
+      // Delete any additional tenant-scoped models discovered dynamically
+      await this.deleteDynamicTenantModelData(tx, tenantId);
 
       // Delete contacts
       await tx.contact.deleteMany({ where: { tenantId } });
@@ -853,6 +1233,14 @@ class BackupService {
         });
       }
 
+      // 2b. User Preferences
+      if (Array.isArray(data.userPreferences) && data.userPreferences.length > 0) {
+        await tx.userPreference.createMany({
+          data: data.userPreferences as Prisma.UserPreferenceCreateManyInput[],
+          skipDuplicates: true,
+        });
+      }
+
       // 3. Roles
       if (Array.isArray(data.roles) && data.roles.length > 0) {
         await tx.role.createMany({
@@ -885,6 +1273,11 @@ class BackupService {
         });
       }
 
+      // 6b. Chart of Accounts (tenant + company scope)
+      if (Array.isArray(data.chartOfAccounts) && data.chartOfAccounts.length > 0) {
+        await this.restoreChartOfAccounts(tx, data.chartOfAccounts);
+      }
+
       // 7. User Company Assignments
       if (Array.isArray(data.userCompanyAssignments) && data.userCompanyAssignments.length > 0) {
         await tx.userCompanyAssignment.createMany({
@@ -909,10 +1302,26 @@ class BackupService {
         });
       }
 
+      // 9b. Document Tags
+      if (Array.isArray(data.documentTags) && data.documentTags.length > 0) {
+        await tx.documentTag.createMany({
+          data: data.documentTags as Prisma.DocumentTagCreateManyInput[],
+          skipDuplicates: true,
+        });
+      }
+
       // 10. Note Tabs
       if (Array.isArray(data.noteTabs) && data.noteTabs.length > 0) {
         await tx.noteTab.createMany({
           data: data.noteTabs as Prisma.NoteTabCreateManyInput[],
+          skipDuplicates: true,
+        });
+      }
+
+      // 10b. Chart of Accounts Mappings
+      if (Array.isArray(data.chartOfAccountsMappings) && data.chartOfAccountsMappings.length > 0) {
+        await tx.chartOfAccountsMapping.createMany({
+          data: data.chartOfAccountsMappings as Prisma.ChartOfAccountsMappingCreateManyInput[],
           skipDuplicates: true,
         });
       }
@@ -940,6 +1349,38 @@ class BackupService {
         });
         await tx.processingDocument.createMany({
           data: docsWithoutRevision as Prisma.ProcessingDocumentCreateManyInput[],
+          skipDuplicates: true,
+        });
+      }
+
+      // 12b. Document Links
+      if (Array.isArray(data.documentLinks) && data.documentLinks.length > 0) {
+        await tx.documentLink.createMany({
+          data: data.documentLinks as Prisma.DocumentLinkCreateManyInput[],
+          skipDuplicates: true,
+        });
+      }
+
+      // 12c. Duplicate Decisions
+      if (Array.isArray(data.duplicateDecisions) && data.duplicateDecisions.length > 0) {
+        await tx.duplicateDecision.createMany({
+          data: data.duplicateDecisions as Prisma.DuplicateDecisionCreateManyInput[],
+          skipDuplicates: true,
+        });
+      }
+
+      // 12d. Processing Attempts
+      if (Array.isArray(data.processingAttempts) && data.processingAttempts.length > 0) {
+        await tx.processingAttempt.createMany({
+          data: data.processingAttempts as Prisma.ProcessingAttemptCreateManyInput[],
+          skipDuplicates: true,
+        });
+      }
+
+      // 12e. Processing Checkpoints
+      if (Array.isArray(data.processingCheckpoints) && data.processingCheckpoints.length > 0) {
+        await tx.processingCheckpoint.createMany({
+          data: data.processingCheckpoints as Prisma.ProcessingCheckpointCreateManyInput[],
           skipDuplicates: true,
         });
       }
@@ -1028,6 +1469,14 @@ class BackupService {
       if (Array.isArray(data.documentRevisionLineItems) && data.documentRevisionLineItems.length > 0) {
         await tx.documentRevisionLineItem.createMany({
           data: data.documentRevisionLineItems as Prisma.DocumentRevisionLineItemCreateManyInput[],
+          skipDuplicates: true,
+        });
+      }
+
+      // 22b. Processing Document Tags
+      if (Array.isArray(data.processingDocumentTags) && data.processingDocumentTags.length > 0) {
+        await tx.processingDocumentTag.createMany({
+          data: data.processingDocumentTags as Prisma.ProcessingDocumentTagCreateManyInput[],
           skipDuplicates: true,
         });
       }
@@ -1170,7 +1619,73 @@ class BackupService {
         });
       }
 
-      // 40. Audit Logs (optional - only if included in backup)
+      // 40. Restore dynamically discovered tenant-scoped models
+      await this.restoreDynamicTenantModelData(
+        tx,
+        data,
+        new Set([
+          'tenant',
+          'users',
+          'roles',
+          'rolePermissions',
+          'userRoleAssignments',
+          'userPreferences',
+          'userCompanyAssignments',
+          'companies',
+          'chartOfAccounts',
+          'contacts',
+          'companyContacts',
+          'documentTags',
+          'noteTabs',
+          'chartOfAccountsMappings',
+          'documents',
+          'processingDocuments',
+          'documentLinks',
+          'duplicateDecisions',
+          'processingAttempts',
+          'processingCheckpoints',
+          'companyAddresses',
+          'companyFormerNames',
+          'companyOfficers',
+          'companyShareholders',
+          'shareCapital',
+          'companyCharges',
+          'documentPages',
+          'documentExtractions',
+          'documentRevisions',
+          'documentRevisionLineItems',
+          'processingDocumentTags',
+          'documentTemplates',
+          'templatePartials',
+          'letterhead',
+          'generatedDocuments',
+          'documentSections',
+          'documentShares',
+          'documentComments',
+          'documentDrafts',
+          'connectors',
+          'connectorAccess',
+          'connectorUsageLogs',
+          'bankAccounts',
+          'bankTransactions',
+          'matchGroups',
+          'matchGroupItems',
+          'reconciliationPeriods',
+          'aiConversations',
+          'fieldMappings',
+          'auditLogs',
+        ])
+      );
+
+      // 41. Field Mappings (depends on accounting integrations)
+      if (Array.isArray(data.fieldMappings) && data.fieldMappings.length > 0) {
+        await tx.fieldMapping.createMany({
+          data: data.fieldMappings as Prisma.FieldMappingCreateManyInput[],
+          skipDuplicates: true,
+        });
+      }
+
+      // 42. Audit Logs (optional - only if included in backup)
       if (Array.isArray(data.auditLogs) && data.auditLogs.length > 0) {
         await tx.auditLog.createMany({
           data: data.auditLogs as Prisma.AuditLogCreateManyInput[],

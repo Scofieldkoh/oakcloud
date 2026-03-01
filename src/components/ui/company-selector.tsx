@@ -116,8 +116,7 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
             placeholder="Search companies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-sm w-full"
-            autoFocus
+            className="input input-sm text-base md:text-sm w-full"
           />
         </div>
 

@@ -20,7 +20,6 @@ import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/res
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
-import { CountFilter, type CountFilterValue } from '@/components/ui/count-filter';
 import {
   type WorkflowProject,
   type WorkflowProjectStatus,
@@ -33,6 +32,7 @@ export interface WorkflowProjectInlineFilters {
   clientName?: string;
   templateName?: string;
   status?: WorkflowProjectStatus;
+  nextTaskName?: string;
   assignee?: string;
   startDateFrom?: string;
   startDateTo?: string;
@@ -81,10 +81,9 @@ const COLUMN_IDS = [
   'template',
   'status',
   'progress',
-  'teamTasks',
-  'clientTasks',
-  'startDate',
+  'nextTaskName',
   'nextTaskDueDate',
+  'startDate',
   'dueDate',
   'assignees',
   'billing',
@@ -101,11 +100,10 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
   template: 'Template',
   status: 'Status',
   progress: 'Progress',
-  teamTasks: 'Team Tasks',
-  clientTasks: 'Client Tasks',
+  nextTaskName: 'Next Task Name',
   billing: 'Billing',
-  startDate: 'Start Date',
   nextTaskDueDate: 'Next Task Due',
+  startDate: 'Start Date',
   dueDate: 'Due Date',
   assignees: 'Assignees',
   actions: '',
@@ -117,10 +115,9 @@ const COLUMN_SORT_FIELDS: Partial<Record<ColumnId, string>> = {
   template: 'templateName',
   status: 'status',
   progress: 'progress',
-  teamTasks: 'teamTaskCount',
-  clientTasks: 'clientTaskCount',
-  startDate: 'startDate',
+  nextTaskName: 'nextTaskName',
   nextTaskDueDate: 'nextTaskDueDate',
+  startDate: 'startDate',
   dueDate: 'dueDate',
 };
 
@@ -132,12 +129,11 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<ColumnId, number>> = {
   template: 200,
   status: 130,
   progress: 140,
-  teamTasks: 110,
-  clientTasks: 110,
-  billing: 120,
-  startDate: 120,
+  nextTaskName: 220,
   nextTaskDueDate: 130,
+  startDate: 120,
   dueDate: 120,
+  billing: 120,
   assignees: 220,
   actions: 56,
 };
@@ -348,7 +344,7 @@ export function WorkflowProjectTable({
 
     const onMove = (moveEvent: PointerEvent) => {
       const delta = moveEvent.clientX - startX;
-      latestWidth = Math.max(56, startWidth + delta);
+      latestWidth = Math.max(30, startWidth + delta);
       if (th) th.style.width = `${latestWidth}px`;
     };
 
@@ -464,31 +460,17 @@ export function WorkflowProjectTable({
             showChevron={false}
           />
         );
-      case 'teamTasks':
+      case 'nextTaskName':
         return (
-          <CountFilter
-            value={{ min: inlineFilters.teamTasksMin, max: inlineFilters.teamTasksMax }}
-            onChange={(value: CountFilterValue) => {
-              onInlineFilterChange({ teamTasksMin: value.min, teamTasksMax: value.max });
-            }}
-            placeholder="All"
-            label="tasks"
-            size="sm"
-            showChevron={false}
-          />
-        );
-      case 'clientTasks':
-        return (
-          <CountFilter
-            value={{ min: inlineFilters.clientTasksMin, max: inlineFilters.clientTasksMax }}
-            onChange={(value: CountFilterValue) => {
-              onInlineFilterChange({ clientTasksMin: value.min, clientTasksMax: value.max });
-            }}
-            placeholder="All"
-            label="tasks"
-            size="sm"
-            showChevron={false}
-          />
+          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
+            <input
+              type="text"
+              value={inlineFilters.nextTaskName || ''}
+              onChange={(event) => onInlineFilterChange({ nextTaskName: event.target.value || undefined })}
+              placeholder="All"
+              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
+            />
+          </div>
         );
       case 'billing':
         return (
@@ -630,7 +612,7 @@ export function WorkflowProjectTable({
 
   return (
     <>
-      <div className={cn('md:hidden space-y-3', isFetching && 'opacity-60')}>
+      <div className={cn('lg:hidden space-y-3', isFetching && 'opacity-60')}>
         {projects.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <button
@@ -704,7 +686,7 @@ export function WorkflowProjectTable({
         )}
       </div>
 
-      <div className={cn('hidden md:block table-container overflow-hidden', isFetching && 'opacity-60')}>
+      <div className={cn('hidden lg:block table-container overflow-hidden', isFetching && 'opacity-60')}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-max">
             <colgroup>
@@ -876,22 +858,18 @@ export function WorkflowProjectTable({
                         </div>
                       </td>
 
-                      <td className="px-4 py-3 text-text-secondary">
-                        {project.teamTaskCount}
-                      </td>
-
-                      <td className="px-4 py-3 text-text-secondary">
-                        {project.clientTaskCount}
-                      </td>
-
                       <td className="px-4 py-3 text-text-secondary max-w-0">
-                        <span className="block truncate">{formatDateShort(project.startDate)}</span>
+                        <span className="block truncate">{project.nextTaskName ?? '-'}</span>
                       </td>
 
                       <td className="px-4 py-3 text-text-secondary max-w-0">
                         <span className="block truncate">
                           {project.nextTaskDueDate ? formatDateShort(project.nextTaskDueDate) : '-'}
                         </span>
+                      </td>
+
+                      <td className="px-4 py-3 text-text-secondary max-w-0">
+                        <span className="block truncate">{formatDateShort(project.startDate)}</span>
                       </td>
 
                       <td className={cn('px-4 py-3 max-w-0', projectIsOverdue && 'text-status-error font-medium')}>

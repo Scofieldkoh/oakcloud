@@ -80,7 +80,8 @@ Configure at least one provider for AI-powered features (BizFile extraction, doc
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Public URL of the application |
+| `NEXT_PUBLIC_APP_URL` | `https://service.oakcloud.app` | Public URL of the application |
+| `EMAIL_APP_URL` | `https://service.oakcloud.app` | Optional override for links generated in email templates |
 | `NODE_ENV` | `development` | Environment (`development` or `production`) |
 | `MAX_FILE_SIZE` | `10485760` | Max upload size in bytes (10MB) |
 

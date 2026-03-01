@@ -18,8 +18,7 @@ export type WorkflowProjectSortField =
   | 'templateName'
   | 'status'
   | 'progress'
-  | 'teamTaskCount'
-  | 'clientTaskCount'
+  | 'nextTaskName'
   | 'startDate'
   | 'nextTaskDueDate'
   | 'dueDate';
@@ -40,6 +39,7 @@ export interface WorkflowProject {
   completedTaskCount: number;
   totalTaskCount: number;
   startDate: string;
+  nextTaskName: string | null;
   nextTaskDueDate?: string | null;
   dueDate: string;
   recurrenceMonths: number | null;
@@ -56,6 +56,7 @@ export interface WorkflowProjectSearchParams {
   projectName?: string;
   clientName?: string;
   templateName?: string;
+  nextTaskName?: string;
   assignee?: string;
   startDateFrom?: string;
   startDateTo?: string;
@@ -559,6 +560,24 @@ function deriveAutoProjectStatusFromWorkspace(groups: WorkflowTaskGroup[]): Work
   return 'NOT_STARTED';
 }
 
+function getNextOutstandingTask(groups: WorkflowTaskGroup[]): {
+  name: string | null;
+  dueDate: string | null;
+} {
+  for (const group of groups) {
+    for (const task of group.tasks) {
+      if (task.status === 'DONE' || task.status === 'SKIPPED') continue;
+      const normalizedName = task.title.trim();
+      return {
+        name: normalizedName.length > 0 ? normalizedName : null,
+        dueDate: task.dueDate ?? null,
+      };
+    }
+  }
+
+  return { name: null, dueDate: null };
+}
+
 function resolveBillingConfig(
   setting: WorkflowProjectSetting | undefined,
   defaults: {
@@ -710,10 +729,8 @@ function compareProjects(a: WorkflowProject, b: WorkflowProject, sortBy: Workflo
       return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
     case 'progress':
       return projectProgress(a) - projectProgress(b);
-    case 'teamTaskCount':
-      return a.teamTaskCount - b.teamTaskCount;
-    case 'clientTaskCount':
-      return a.clientTaskCount - b.clientTaskCount;
+    case 'nextTaskName':
+      return (a.nextTaskName ?? '').localeCompare(b.nextTaskName ?? '');
     case 'startDate':
       return startOfDay(a.startDate).getTime() - startOfDay(b.startDate).getTime();
     case 'nextTaskDueDate':
@@ -1355,6 +1372,7 @@ function buildProject(params: {
     completedTaskCount,
     totalTaskCount,
     startDate: isoDate(effectiveStartDate),
+    nextTaskName: null,
     nextTaskDueDate: nextTaskDueDate ? isoDate(nextTaskDueDate) : null,
     dueDate: isoDate(effectiveDueDate),
     recurrenceMonths: params.source?.recurrenceMonths ?? null,
@@ -1407,6 +1425,7 @@ function filterProjects(projects: WorkflowProject[], params: WorkflowProjectSear
     if (params.projectName && !project.name.toLowerCase().includes(params.projectName.toLowerCase())) return false;
     if (params.clientName && !project.clientName.toLowerCase().includes(params.clientName.toLowerCase())) return false;
     if (params.templateName && !project.templateName.toLowerCase().includes(params.templateName.toLowerCase())) return false;
+    if (params.nextTaskName && !(project.nextTaskName ?? '').toLowerCase().includes(params.nextTaskName.toLowerCase())) return false;
     if (params.assignee && !project.assignees.some((a) => a.toLowerCase() === params.assignee!.toLowerCase())) return false;
     if (params.status && project.status !== params.status) return false;
 
@@ -1457,8 +1476,6 @@ export async function searchWorkflowProjects(
       projectStatusOverride: null,
       projectNotes: '',
     });
-    const workspaceSummary = summarizeWorkspaceTasks(companyWorkspaceState.groups);
-    const autoStatusFromWorkspace = deriveAutoProjectStatusFromWorkspace(companyWorkspaceState.groups);
 
     if (instances.length === 0) return [];
 
@@ -1470,6 +1487,36 @@ export async function searchWorkflowProjects(
         docs,
         source: sourceFromInstance(instance),
       });
+      const fallbackGroups: WorkflowTaskGroup[] = [
+        {
+          id: `${instance.id}-group-team`,
+          lane: 'TEAM',
+          title: 'Team Tasks',
+          tasks: teamTasks({ docs, assignees: project.assignees }),
+          automations: [],
+        },
+        {
+          id: `${instance.id}-group-client`,
+          lane: 'CLIENT',
+          title: 'Client Request',
+          tasks: clientTasks({ requests, assignee: project.assignees[0] ?? null }),
+          automations: [],
+        },
+      ];
+      const groupsForProjection = companyWorkspaceState.groups.length > 0
+        ? companyWorkspaceState.groups
+        : fallbackGroups;
+      const projectedAssignees = dedupe(
+        groupsForProjection.flatMap((group) =>
+          group.tasks
+            .map((task) => task.assignee?.trim() ?? '')
+            .filter((assignee) => assignee.length > 0)
+        )
+      );
+      const assignees = projectedAssignees.length > 0 ? projectedAssignees : project.assignees;
+      const workspaceSummary = summarizeWorkspaceTasks(groupsForProjection);
+      const autoStatusFromWorkspace = deriveAutoProjectStatusFromWorkspace(groupsForProjection);
+      const nextOutstandingTask = getNextOutstandingTask(groupsForProjection);
       const billingConfig = resolveBillingConfig(companySettings, {
         defaultCurrency: company.homeCurrency || project.billingCurrency || 'SGD',
         defaultFixedPrice: project.billingAmount,
@@ -1480,8 +1527,11 @@ export async function searchWorkflowProjects(
       );
       return {
         ...project,
+        assignees,
         billingAmount: calculatedBillingAmount,
         billingCurrency: billingConfig.currency,
+        nextTaskName: nextOutstandingTask.name,
+        nextTaskDueDate: nextOutstandingTask.dueDate,
         teamTaskCount: workspaceSummary?.team ?? project.teamTaskCount,
         clientTaskCount: workspaceSummary?.client ?? project.clientTaskCount,
         completedTaskCount: workspaceSummary?.resolved ?? project.completedTaskCount,
@@ -1499,6 +1549,14 @@ export async function searchWorkflowProjects(
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
 
+  const statsProjects = filterProjects(allProjects, {
+    ...params,
+    page: undefined,
+    limit: undefined,
+    sortBy: undefined,
+    sortOrder: undefined,
+    dueBucket: undefined,
+  });
   const filtered = filterProjects(allProjects, params);
   const sorted = [...filtered].sort((a, b) => {
     const result = compareProjects(a, b, sortBy);
@@ -1516,7 +1574,7 @@ export async function searchWorkflowProjects(
     page: currentPage,
     limit,
     totalPages,
-    stats: calcStats(allProjects),
+    stats: calcStats(statsProjects),
     projectOptions: uniqueSorted(allProjects.map((project) => project.name)),
     clientOptions: uniqueSorted(allProjects.map((project) => project.clientName)),
     templateOptions: uniqueSorted(allProjects.map((project) => project.templateName)),

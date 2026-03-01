@@ -36,6 +36,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDocumentPages, useAppendPages, useReorderPages, useDeletePages } from '@/hooks/use-processing-documents';
+import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
@@ -104,6 +105,7 @@ interface DocumentPageViewerProps {
 
 const ZOOM_LEVELS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 const DEFAULT_ZOOM_INDEX = 6; // 150%
+const MOBILE_DEFAULT_ZOOM_INDEX = 4; // 100%
 
 // Fixed padding for bounding boxes (normalized 0-1 coordinates)
 const BBOX_HORIZONTAL_PADDING = 0.008;
@@ -313,6 +315,7 @@ export function DocumentPageViewer({
   const skipDataFetch = !!pdfUrlProp;
 
   // State
+  const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [pageCount, setPageCount] = useState(0);
   const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
@@ -466,6 +469,12 @@ export function DocumentPageViewer({
   // ==========================================================================
   // Effects
   // ==========================================================================
+
+  // On mobile, default initial zoom to 100% instead of 150%.
+  useEffect(() => {
+    if (!isMobile) return;
+    setZoomIndex((prev) => (prev === DEFAULT_ZOOM_INDEX ? MOBILE_DEFAULT_ZOOM_INDEX : prev));
+  }, [isMobile]);
 
   // Load PDF when URL is available
   useEffect(() => {
@@ -860,7 +869,7 @@ export function DocumentPageViewer({
               disabled={isLoading}
               className={cn(
                 'sticky top-0 left-0 z-20 self-stretch flex-shrink-0',
-                'w-12 flex items-center justify-center',
+                'w-12 hidden sm:flex items-center justify-center',
                 'bg-black/5 hover:bg-black/20 dark:bg-white/5 dark:hover:bg-white/20',
                 'transition-colors duration-200',
                 'disabled:opacity-30 disabled:cursor-not-allowed'
@@ -880,7 +889,7 @@ export function DocumentPageViewer({
             <div className="inline-flex min-w-full min-h-full items-center justify-center">
               <div className="relative">
                 {isPdfLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary rounded z-10 min-w-[600px] min-h-[800px]">
+                  <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary rounded z-10 min-w-[260px] min-h-[360px] sm:min-w-[600px] sm:min-h-[800px]">
                     <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
                     <span className="ml-3 text-text-secondary">Loading PDF...</span>
                   </div>
@@ -939,7 +948,7 @@ export function DocumentPageViewer({
               disabled={isLoading}
               className={cn(
                 'sticky top-0 right-0 z-20 self-stretch flex-shrink-0',
-                'w-12 flex items-center justify-center',
+                'w-12 hidden sm:flex items-center justify-center',
                 'bg-black/5 hover:bg-black/20 dark:bg-white/5 dark:hover:bg-white/20',
                 'transition-colors duration-200',
                 'disabled:opacity-30 disabled:cursor-not-allowed'

@@ -80,6 +80,7 @@ export function SearchableSelect({
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0, inputTop: 0 });
   const [openAbove, setOpenAbove] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   // Generate unique IDs for ARIA relationships
   const baseId = useId();
@@ -89,6 +90,12 @@ export function SearchableSelect({
   // Mount check for portal
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Detect touch-first devices to avoid force-focusing inputs on open (iOS Safari zoom/jump).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setIsTouchDevice(window.matchMedia('(hover: none) and (pointer: coarse)').matches);
   }, []);
 
   // Filter options based on search
@@ -116,14 +123,14 @@ export function SearchableSelect({
 
   // Focus input when opening
   useEffect(() => {
-    if (isOpen && inputRef.current) {
+    if (isOpen && inputRef.current && !isTouchDevice) {
       inputRef.current.focus();
       // Select all text when opening with existing value
       if (selectedOption) {
         inputRef.current.select();
       }
     }
-  }, [isOpen, selectedOption]);
+  }, [isOpen, selectedOption, isTouchDevice]);
 
   // Reset search when closing
   useEffect(() => {
@@ -303,7 +310,7 @@ export function SearchableSelect({
 
   const sizeClasses = {
     sm: 'h-8 text-base md:text-sm',
-    md: 'h-9 text-base md:text-sm',
+    md: 'h-9 text-base',
   };
 
   // Display value in input: show search when typing, otherwise show selected label

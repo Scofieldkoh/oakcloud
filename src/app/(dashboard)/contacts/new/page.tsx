@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert, Mail, Building2, User } from 'lucide-react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createContactSchema, type CreateContactInput } from '@/lib/validations/contact';
+import { createContactSchema, type CreateContactInput, type CreateContactWithDetailsInput } from '@/lib/validations/contact';
 import { useCreateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
@@ -14,6 +14,9 @@ import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { PurposeToggle } from '@/components/contacts/purpose-toggle';
+import { AsyncSearchSelect } from '@/components/ui/async-search-select';
+import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
 
 const contactTypes = [
   { value: 'INDIVIDUAL', label: 'Individual' },
@@ -32,6 +35,39 @@ const corporateIdTypes = [
   { value: 'UEN', label: 'UEN' },
   { value: 'OTHER', label: 'Other' },
 ];
+
+interface ContactDetailDraft {
+  phone: {
+    countryCode: string;
+    number: string;
+  };
+  email: {
+    value: string;
+    purposes: string[];
+  };
+}
+
+function createInitialContactDetailDraft(): ContactDetailDraft {
+  return {
+    phone: {
+      countryCode: '+65',
+      number: '',
+    },
+    email: {
+      value: '',
+      purposes: [],
+    },
+  };
+}
+
+function buildPhoneValue(countryCode: string, number: string): string | null {
+  const normalizedNumber = number.trim();
+  if (!normalizedNumber) {
+    return null;
+  }
+  const normalizedCountryCode = countryCode.trim() || '+65';
+  return `${normalizedCountryCode} ${normalizedNumber}`.trim();
+}
 
 export default function NewContactPage() {
   const router = useRouter();
@@ -57,8 +93,38 @@ export default function NewContactPage() {
     },
   });
 
+  const [defaultContactDetails, setDefaultContactDetails] = useState<ContactDetailDraft>(
+    createInitialContactDetailDraft
+  );
+  const [companyContactDetails, setCompanyContactDetails] = useState<ContactDetailDraft>(
+    createInitialContactDetailDraft
+  );
+  const {
+    searchQuery: companySearchQuery,
+    setSearchQuery: setCompanySearchQuery,
+    options: companyOptions,
+    isLoading: isSearchingCompanies,
+    selectedCompany,
+    setSelectedCompany,
+  } = useCompanySearch();
+
+  const hasDefaultContactDetailChanges =
+    Boolean(defaultContactDetails.email.value.trim()) ||
+    Boolean(defaultContactDetails.phone.number.trim()) ||
+    defaultContactDetails.phone.countryCode.trim() !== '+65' ||
+    defaultContactDetails.email.purposes.length > 0;
+
+  const hasCompanyContactDetailChanges =
+    Boolean(selectedCompany) ||
+    Boolean(companyContactDetails.email.value.trim()) ||
+    Boolean(companyContactDetails.phone.number.trim()) ||
+    companyContactDetails.phone.countryCode.trim() !== '+65' ||
+    companyContactDetails.email.purposes.length > 0;
+
+  const hasContactDetailChanges = hasDefaultContactDetailChanges || hasCompanyContactDetailChanges;
+
   // Warn about unsaved changes when leaving the page
-  useUnsavedChangesWarning(isDirty, !isSubmitting);
+  useUnsavedChangesWarning(isDirty || hasContactDetailChanges, !isSubmitting);
 
   const contactType = watch('contactType');
 
@@ -92,11 +158,80 @@ export default function NewContactPage() {
       return;
     }
 
-    try {
-      const contact = await createContact.mutateAsync({
-        ...data,
-        ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
+    const defaultPhoneValue = buildPhoneValue(
+      defaultContactDetails.phone.countryCode,
+      defaultContactDetails.phone.number
+    );
+    const companyPhoneValue = buildPhoneValue(
+      companyContactDetails.phone.countryCode,
+      companyContactDetails.phone.number
+    );
+    const defaultEmailValue = defaultContactDetails.email.value.trim();
+    const companyEmailValue = companyContactDetails.email.value.trim();
+    const hasCompanySpecificInput = Boolean(companyPhoneValue || companyEmailValue);
+
+    if (defaultContactDetails.email.purposes.length > 0 && !defaultEmailValue) {
+      const message = 'Please enter a default email before selecting its purposes';
+      setSubmitError(message);
+      toast.error(message);
+      return;
+    }
+    if (companyContactDetails.email.purposes.length > 0 && !companyEmailValue) {
+      const message = 'Please enter a company-specific email before selecting its purposes';
+      setSubmitError(message);
+      toast.error(message);
+      return;
+    }
+
+    if (hasCompanySpecificInput && !selectedCompany) {
+      const message = 'Please select a company when adding company-specific contact details';
+      setSubmitError(message);
+      toast.error(message);
+      return;
+    }
+
+    const contactDetails: NonNullable<CreateContactWithDetailsInput['contactDetails']> = [];
+
+    if (defaultEmailValue) {
+      contactDetails.push({
+        detailType: 'EMAIL',
+        value: defaultEmailValue,
+        purposes: defaultContactDetails.email.purposes,
       });
+    }
+    if (defaultPhoneValue) {
+      contactDetails.push({
+        detailType: 'PHONE',
+        value: defaultPhoneValue,
+        purposes: [],
+      });
+    }
+    if (hasCompanySpecificInput && selectedCompany) {
+      if (companyEmailValue) {
+        contactDetails.push({
+          detailType: 'EMAIL',
+          value: companyEmailValue,
+          purposes: companyContactDetails.email.purposes,
+          companyId: selectedCompany.id,
+        });
+      }
+      if (companyPhoneValue) {
+        contactDetails.push({
+          detailType: 'PHONE',
+          value: companyPhoneValue,
+          purposes: [],
+          companyId: selectedCompany.id,
+        });
+      }
+    }
+
+    try {
+      const payload: CreateContactWithDetailsInput & { tenantId?: string } = {
+        ...data,
+        ...(contactDetails.length > 0 ? { contactDetails } : {}),
+        ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
+      };
+      const contact = await createContact.mutateAsync(payload);
       router.push(`/contacts/${contact.id}`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create contact');
@@ -340,6 +475,166 @@ export default function NewContactPage() {
                 {...register('fullAddress')}
                 placeholder="123 Main Street, #01-02, Singapore 123456"
                 className="input input-sm"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Details */}
+        <div className="card">
+          <div className="p-4 border-b border-border-primary">
+            <h2 className="text-lg font-semibold text-text-primary">Contact Details</h2>
+            <p className="text-xs text-text-secondary mt-1">
+              Optional details for default usage and one company-specific override.
+            </p>
+          </div>
+          <div className="p-4 space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                <User className="w-4 h-4 text-text-tertiary" />
+                Default
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Phone</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={defaultContactDetails.phone.countryCode}
+                      onChange={(e) =>
+                        setDefaultContactDetails((prev) => ({
+                          ...prev,
+                          phone: { ...prev.phone, countryCode: e.target.value },
+                        }))
+                      }
+                      className="input input-sm w-20"
+                      placeholder="+65"
+                    />
+                    <input
+                      type="tel"
+                      value={defaultContactDetails.phone.number}
+                      onChange={(e) =>
+                        setDefaultContactDetails((prev) => ({
+                          ...prev,
+                          phone: { ...prev.phone, number: e.target.value },
+                        }))
+                      }
+                      className="input input-sm flex-1"
+                      placeholder="1234 5678"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Email</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      value={defaultContactDetails.email.value}
+                      onChange={(e) =>
+                        setDefaultContactDetails((prev) => ({
+                          ...prev,
+                          email: { ...prev.email, value: e.target.value },
+                        }))
+                      }
+                      className="input input-sm pl-10"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+              </div>
+              <PurposeToggle
+                selectedPurposes={defaultContactDetails.email.purposes}
+                onChange={(purposes) =>
+                  setDefaultContactDetails((prev) => ({
+                    ...prev,
+                    email: { ...prev.email, purposes },
+                  }))
+                }
+                showLabel
+                size="sm"
+              />
+            </div>
+
+            <div className="pt-4 border-t border-border-primary space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                <Building2 className="w-4 h-4 text-text-tertiary" />
+                Company Specific
+              </div>
+              <div>
+                <label className="label">Company</label>
+                <AsyncSearchSelect<CompanySearchOption>
+                  value={selectedCompany?.id ?? ''}
+                  onChange={(_id, company) => setSelectedCompany(company)}
+                  options={companyOptions}
+                  isLoading={isSearchingCompanies}
+                  searchQuery={companySearchQuery}
+                  onSearchChange={setCompanySearchQuery}
+                  placeholder="Search companies..."
+                  icon={<Building2 className="w-4 h-4" />}
+                  emptySearchText="Type to search companies"
+                  noResultsText="No companies found"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Phone</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={companyContactDetails.phone.countryCode}
+                      onChange={(e) =>
+                        setCompanyContactDetails((prev) => ({
+                          ...prev,
+                          phone: { ...prev.phone, countryCode: e.target.value },
+                        }))
+                      }
+                      className="input input-sm w-20"
+                      placeholder="+65"
+                    />
+                    <input
+                      type="tel"
+                      value={companyContactDetails.phone.number}
+                      onChange={(e) =>
+                        setCompanyContactDetails((prev) => ({
+                          ...prev,
+                          phone: { ...prev.phone, number: e.target.value },
+                        }))
+                      }
+                      className="input input-sm flex-1"
+                      placeholder="1234 5678"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Email</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      value={companyContactDetails.email.value}
+                      onChange={(e) =>
+                        setCompanyContactDetails((prev) => ({
+                          ...prev,
+                          email: { ...prev.email, value: e.target.value },
+                        }))
+                      }
+                      className="input input-sm pl-10"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+              </div>
+              <PurposeToggle
+                selectedPurposes={companyContactDetails.email.purposes}
+                onChange={(purposes) =>
+                  setCompanyContactDetails((prev) => ({
+                    ...prev,
+                    email: { ...prev.email, purposes },
+                  }))
+                }
+                showLabel
+                size="sm"
               />
             </div>
           </div>

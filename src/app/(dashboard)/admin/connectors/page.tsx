@@ -78,6 +78,45 @@ function toLocalDateString(date: Date): string {
 
 type ConnectorType = 'AI_PROVIDER' | 'STORAGE';
 type ConnectorProvider = 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'ONEDRIVE' | 'SHAREPOINT';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+
+function parseMailboxUserIdsInput(raw: string): {
+  mailboxUserIds: string[];
+  invalidValues: string[];
+} {
+  const values = raw
+    .split(/[,\n]/)
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+
+  const unique = [...new Set(values)];
+  const invalidValues = unique.filter((value) => !EMAIL_REGEX.test(value));
+  return {
+    mailboxUserIds: unique.filter((value) => EMAIL_REGEX.test(value)),
+    invalidValues,
+  };
+}
+
+function extractMailboxUserIdsFromSettings(settings: Record<string, unknown> | null): string[] {
+  if (!settings || typeof settings !== 'object') return [];
+
+  const results: string[] = [];
+  const mailboxUserId = settings.mailboxUserId;
+  if (typeof mailboxUserId === 'string' && mailboxUserId.trim()) {
+    results.push(mailboxUserId.trim().toLowerCase());
+  }
+
+  const mailboxUserIds = settings.mailboxUserIds;
+  if (Array.isArray(mailboxUserIds)) {
+    for (const value of mailboxUserIds) {
+      if (typeof value === 'string' && value.trim()) {
+        results.push(value.trim().toLowerCase());
+      }
+    }
+  }
+
+  return [...new Set(results)];
+}
 
 interface CreateFormData {
   name: string;
@@ -85,12 +124,14 @@ interface CreateFormData {
   provider: ConnectorProvider;
   tenantId: string | null;
   credentials: Record<string, string>;
+  mailboxUserIdsText: string;
   isEnabled: boolean;
 }
 
 interface EditFormData {
   name: string;
   credentials: Record<string, string>;
+  mailboxUserIdsText: string;
   isEnabled: boolean;
 }
 
@@ -104,6 +145,7 @@ const INITIAL_CREATE_FORM: CreateFormData = {
   provider: 'OPENAI',
   tenantId: null,
   credentials: {},
+  mailboxUserIdsText: '',
   isEnabled: true,
 };
 
@@ -168,6 +210,7 @@ export default function ConnectorsPage() {
   const [editForm, setEditForm] = useState<EditFormData>({
     name: '',
     credentials: {},
+    mailboxUserIdsText: '',
     isEnabled: true,
   });
   const [formError, setFormError] = useState('');
@@ -271,13 +314,27 @@ export default function ConnectorsPage() {
       }
     }
 
+    const isStorageProvider =
+      createForm.provider === 'ONEDRIVE' || createForm.provider === 'SHAREPOINT';
+    const parsedMailboxInput = parseMailboxUserIdsInput(createForm.mailboxUserIdsText);
+    if (isStorageProvider && parsedMailboxInput.invalidValues.length > 0) {
+      setFormError(`Invalid mailbox email(s): ${parsedMailboxInput.invalidValues.join(', ')}`);
+      return;
+    }
+
     try {
+      const settings =
+        isStorageProvider && parsedMailboxInput.mailboxUserIds.length > 0
+          ? { mailboxUserIds: parsedMailboxInput.mailboxUserIds }
+          : undefined;
+
       await createMutation.mutateAsync({
         name: createForm.name,
         type: createForm.type,
         provider: createForm.provider,
         tenantId: isSuperAdmin ? createForm.tenantId : session?.tenantId || null,
         credentials: createForm.credentials,
+        settings,
         isEnabled: createForm.isEnabled,
       });
       success('Connector created successfully');
@@ -309,6 +366,31 @@ export default function ConnectorsPage() {
       const hasCredentialChanges = Object.values(editForm.credentials).some((v) => v);
       if (hasCredentialChanges) {
         updateData.credentials = editForm.credentials;
+      }
+
+      const isStorageProvider =
+        editingConnector.provider === 'ONEDRIVE' || editingConnector.provider === 'SHAREPOINT';
+      if (isStorageProvider) {
+        const parsedMailboxInput = parseMailboxUserIdsInput(editForm.mailboxUserIdsText);
+        if (parsedMailboxInput.invalidValues.length > 0) {
+          setFormError(`Invalid mailbox email(s): ${parsedMailboxInput.invalidValues.join(', ')}`);
+          return;
+        }
+
+        const existingSettings =
+          editingConnector.settings && typeof editingConnector.settings === 'object'
+            ? editingConnector.settings
+            : {};
+        const nextSettings: Record<string, unknown> = { ...existingSettings };
+
+        if (parsedMailboxInput.mailboxUserIds.length > 0) {
+          nextSettings.mailboxUserIds = parsedMailboxInput.mailboxUserIds;
+        } else {
+          delete nextSettings.mailboxUserIds;
+        }
+        delete nextSettings.mailboxUserId;
+
+        updateData.settings = nextSettings;
       }
 
       await updateMutation.mutateAsync(updateData);
@@ -360,10 +442,12 @@ export default function ConnectorsPage() {
   };
 
   const openEditModal = (connector: Connector) => {
+    const mailboxUserIds = extractMailboxUserIdsFromSettings(connector.settings);
     setEditingConnector(connector);
     setEditForm({
       name: connector.name,
       credentials: {}, // Don't pre-fill credentials
+      mailboxUserIdsText: mailboxUserIds.join(', '),
       isEnabled: connector.isEnabled,
     });
     setFormError('');
@@ -587,7 +671,7 @@ export default function ConnectorsPage() {
             Connectors Hub
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            Manage external service integrations for AI and storage
+            Manage external service integrations for AI and storage/email
           </p>
         </div>
         <Button variant="primary" size="sm" onClick={() => setIsCreateModalOpen(true)}>
@@ -615,7 +699,7 @@ export default function ConnectorsPage() {
         >
           <option value="">All Types</option>
           <option value="AI_PROVIDER">AI Provider</option>
-          <option value="STORAGE">Storage</option>
+          <option value="STORAGE">Storage/ Email</option>
         </select>
         <select
           value={providerFilter}
@@ -642,7 +726,7 @@ export default function ConnectorsPage() {
           <Zap className="w-12 h-12 mx-auto text-text-muted mb-4" />
           <p className="text-text-secondary">No connectors configured yet</p>
           <p className="text-sm text-text-muted mt-1">
-            Add a connector to enable AI features and storage integrations
+            Add a connector to enable AI features and storage/email integrations
           </p>
         </div>
       ) : (
@@ -696,13 +780,13 @@ export default function ConnectorsPage() {
             </div>
           )}
 
-          {/* Storage */}
+          {/* Storage/ Email */}
           {(connectorsByType['STORAGE']?.length ?? 0) > 0 && (
             <div className="card">
               <div className="p-4 border-b border-border-primary">
                 <h2 className="font-medium text-text-primary flex items-center gap-2">
                   <Cloud className="w-5 h-5 text-sky-500" />
-                  Storage
+                  Storage/ Email
                 </h2>
               </div>
               {/* Mobile Card View */}
@@ -806,7 +890,7 @@ export default function ConnectorsPage() {
                   className="input input-sm w-full"
                 >
                   <option value="AI_PROVIDER">AI Provider</option>
-                  <option value="STORAGE">Storage</option>
+                  <option value="STORAGE">Storage/ Email</option>
                 </select>
               </div>
 
@@ -894,6 +978,29 @@ export default function ConnectorsPage() {
                   </div>
                 ))}
               </div>
+
+              {(createForm.provider === 'ONEDRIVE' || createForm.provider === 'SHAREPOINT') && (
+                <div className="space-y-2">
+                  <label className="label mb-0">
+                    Mailbox Emails (Communication)
+                  </label>
+                  <textarea
+                    value={createForm.mailboxUserIdsText}
+                    onChange={(e) =>
+                      setCreateForm({
+                        ...createForm,
+                        mailboxUserIdsText: e.target.value,
+                      })
+                    }
+                    placeholder="mailbox1@tenant.com, mailbox2@tenant.com"
+                    className="input w-full min-h-24 p-3"
+                  />
+                  <p className="text-xs text-text-muted">
+                    Optional now. Used by Communication sync to read Outlook mailboxes.
+                    Separate multiple values with comma or newline.
+                  </p>
+                </div>
+              )}
 
               {/* Options */}
               <div className="space-y-3">
@@ -1038,6 +1145,30 @@ export default function ConnectorsPage() {
                   ))}
                 </div>
               )}
+
+              {editingConnector &&
+                (editingConnector.provider === 'ONEDRIVE' || editingConnector.provider === 'SHAREPOINT') && (
+                  <div className="space-y-2">
+                    <label className="label mb-0">
+                      Mailbox Emails (Communication)
+                    </label>
+                    <textarea
+                      value={editForm.mailboxUserIdsText}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          mailboxUserIdsText: e.target.value,
+                        })
+                      }
+                      placeholder="mailbox1@tenant.com, mailbox2@tenant.com"
+                      className="input w-full min-h-24 p-3"
+                    />
+                    <p className="text-xs text-text-muted">
+                      Used by Communication sync to read Outlook mailboxes. Separate multiple
+                      values with comma or newline.
+                    </p>
+                  </div>
+                )}
 
               {/* Options */}
               <div className="space-y-3">
@@ -1470,10 +1601,18 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
                     <>
                       <li><code className="bg-bg-tertiary px-1 rounded">Sites.ReadWrite.All</code></li>
                       <li><code className="bg-bg-tertiary px-1 rounded">Files.ReadWrite.All</code></li>
+                      <li>
+                        <code className="bg-bg-tertiary px-1 rounded">Mail.Read</code>
+                        {' '}<span className="text-xs text-text-muted">(required for Communication sync)</span>
+                      </li>
                     </>
                   ) : (
                     <>
                       <li><code className="bg-bg-tertiary px-1 rounded">Files.ReadWrite.All</code></li>
+                      <li>
+                        <code className="bg-bg-tertiary px-1 rounded">Mail.Read</code>
+                        {' '}<span className="text-xs text-text-muted">(required for Communication sync)</span>
+                      </li>
                     </>
                   )}
                 </ul>
@@ -1526,6 +1665,7 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
               <li>Admin consent has been granted for the API permissions</li>
               <li>The client secret has not expired</li>
               {isSharePoint && <li>The Site ID is correct and accessible</li>}
+              <li>For Communication sync, <code className="bg-bg-primary px-1 rounded">Mail.Read</code> (Application) is granted</li>
               <li>Your tenant allows application access</li>
             </ul>
           </section>

@@ -37,11 +37,11 @@ export function ContactDetailRow({
 
   if (isEditing && canEdit) {
     return (
-      <div className="flex flex-col gap-2 py-3 px-4 bg-surface-secondary">
+      <div className="flex w-full flex-col gap-2 py-3 px-3 lg:px-4 bg-surface-secondary">
         {/* Main row with inputs */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2.5 lg:gap-4">
           {/* Label column - w-[360px] */}
-          <div className="flex-shrink-0 w-[360px]">
+          <div className="flex-shrink-0 w-[280px] lg:w-[360px]">
             <input
               type="text"
               value={editForm.label}
@@ -52,7 +52,7 @@ export function ContactDetailRow({
           </div>
 
           {/* Type column - w-[300px] */}
-          <div className="flex-shrink-0 w-[300px]">
+          <div className="flex-shrink-0 w-[220px] lg:w-[300px]">
             <select
               value={editForm.detailType}
               onChange={(e) => {
@@ -71,7 +71,7 @@ export function ContactDetailRow({
           </div>
 
           {/* POC column - w-[80px] */}
-          <div className="flex-shrink-0 w-[80px] flex items-center justify-center">
+          <div className="flex-shrink-0 w-[72px] lg:w-[80px] flex items-center justify-center">
             <button
               type="button"
               onClick={() => onUpdateForm('isPoc', !editForm.isPoc)}
@@ -87,7 +87,7 @@ export function ContactDetailRow({
           </div>
 
           {/* Value column - flex-1 */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-[220px]">
             <input
               type="text"
               value={editForm.value}
@@ -120,11 +120,11 @@ export function ContactDetailRow({
 
         {/* Purposes row - only for EMAIL type */}
         {editForm.detailType === 'EMAIL' && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5 lg:gap-4">
             {/* Empty spacers for Label, Type, and POC columns */}
-            <div className="flex-shrink-0 w-[360px]" />
-            <div className="flex-shrink-0 w-[300px]" />
-            <div className="flex-shrink-0 w-[80px]" />
+            <div className="flex-shrink-0 w-[280px] lg:w-[360px]" />
+            <div className="flex-shrink-0 w-[220px] lg:w-[300px]" />
+            <div className="flex-shrink-0 w-[72px] lg:w-[80px]" />
             {/* Automation aligned with Value column */}
             <div className="flex-1 flex items-center gap-2 min-w-0">
               <span className="text-xs text-text-muted flex-shrink-0">Automation:</span>
@@ -159,22 +159,22 @@ export function ContactDetailRow({
   }
 
   return (
-    <div className="flex items-center gap-4 py-2.5 px-4 hover:bg-surface-secondary transition-colors group">
+    <div className="flex w-full items-center gap-2.5 lg:gap-4 py-2.5 px-3 lg:px-4 hover:bg-surface-secondary transition-colors group">
       {/* Label column - aligned with Name (360px) */}
-      <div className="flex-shrink-0 w-[360px]">
+      <div className="flex-shrink-0 w-[280px] lg:w-[360px]">
         <span className="text-sm text-text-primary truncate">
           {detail.label || <span className="text-text-muted italic">No label</span>}
         </span>
       </div>
 
       {/* Type column - w-[300px] */}
-      <div className="flex-shrink-0 w-[300px] flex items-center gap-1.5">
+      <div className="flex-shrink-0 w-[220px] lg:w-[300px] flex items-center gap-1.5">
         <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" />
         <span className="text-sm text-text-secondary">{config.label}</span>
       </div>
 
       {/* POC column - w-[80px] */}
-      <div className="flex-shrink-0 w-[80px] flex items-center justify-center">
+      <div className="flex-shrink-0 w-[72px] lg:w-[80px] flex items-center justify-center">
         {detail.isPoc && (
           <span className="text-amber-500" title="Point of Contact">
             <Star className="w-4 h-4 fill-current" />
@@ -183,12 +183,12 @@ export function ContactDetailRow({
       </div>
 
       {/* Value column - aligned with Phone+Email */}
-      <div className="flex-1 flex items-center gap-1.5 min-w-0">
+      <div className="flex-1 flex items-center gap-1.5 min-w-[220px]">
         <span className="text-sm text-text-primary truncate">{detail.value}</span>
         <CopyButton value={detail.value} />
         {/* Only show purposes for EMAIL type - pill badge design */}
         {detail.detailType === 'EMAIL' && detail.purposes && detail.purposes.length > 0 && (
-          <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+          <div className="hidden xl:flex items-center gap-1 flex-shrink-0">
             {detail.purposes.slice(0, 2).map((purpose) => (
               <span key={purpose} className="text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                 {purpose}
@@ -203,7 +203,7 @@ export function ContactDetailRow({
 
       {/* Actions column */}
       {canEdit && (
-        <div className="flex-shrink-0 flex items-center gap-1">
+        <div className="flex-shrink-0 w-[56px] flex items-center justify-end gap-1">
           <button
             onClick={onStartEdit}
             className="text-text-muted hover:text-oak-light p-1 rounded hover:bg-surface-tertiary"

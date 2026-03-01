@@ -90,7 +90,7 @@ export function ContactFilters({
           aria-expanded={showFilters}
           aria-controls="contact-filter-panel"
           aria-label={`${showFilters ? 'Hide' : 'Show'} filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
-          className={`md:hidden btn-secondary btn-sm flex items-center gap-2 ${
+          className={`lg:hidden btn-secondary btn-sm flex items-center gap-2 ${
             activeFilterCount > 0 ? 'border-oak-primary' : ''
           }`}
         >
@@ -110,7 +110,7 @@ export function ContactFilters({
 
       {/* Filter Panel - Mobile only */}
       {showFilters && (
-        <div id="contact-filter-panel" className="card animate-fade-in md:hidden">
+        <div id="contact-filter-panel" className="card animate-fade-in lg:hidden">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Filters</h3>
             {activeFilterCount > 0 && (

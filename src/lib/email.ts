@@ -351,5 +351,23 @@ function stripHtml(html: string): string {
  * Get the base URL for email links
  */
 export function getAppBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const normalize = (value: string): string => value.trim().replace(/\/+$/, '');
+
+  // Optional override specifically for email links.
+  const emailBaseUrl = process.env.EMAIL_APP_URL;
+  if (emailBaseUrl) {
+    return normalize(emailBaseUrl);
+  }
+
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appBaseUrl) {
+    return 'https://service.oakcloud.app';
+  }
+
+  const normalized = normalize(appBaseUrl);
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalized)) {
+    return 'https://service.oakcloud.app';
+  }
+
+  return normalized;
 }

@@ -335,7 +335,7 @@ export function getProviderDisplayName(
 export function getTypeDisplayName(type: 'AI_PROVIDER' | 'STORAGE'): string {
   const names: Record<string, string> = {
     AI_PROVIDER: 'AI Provider',
-    STORAGE: 'Storage',
+    STORAGE: 'Storage/ Email',
   };
   return names[type] || type;
 }

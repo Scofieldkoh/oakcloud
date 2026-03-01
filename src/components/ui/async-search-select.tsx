@@ -198,7 +198,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   const defaultRenderSelected = (item: T) => (
     <div className="flex-1 flex items-center gap-2 px-3 min-w-0">
       {icon && <span className="text-text-tertiary shrink-0">{icon}</span>}
-      <span className="text-base md:text-sm text-text-primary truncate">{item.label}</span>
+      <span className="text-sm text-text-primary truncate">{item.label}</span>
       {item.description && (
         <span className="text-xs text-text-muted truncate hidden sm:inline">
           ({item.description})
@@ -266,7 +266,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={disabled}
-              className="flex-1 bg-transparent outline-none text-base md:text-sm text-text-primary placeholder:text-text-muted min-w-0 pr-3"
+              className="flex-1 bg-transparent outline-none text-sm text-text-primary placeholder:text-text-muted min-w-0 pr-3"
             />
           </>
         )}

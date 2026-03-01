@@ -216,7 +216,7 @@ export function ContactTable({
   inlineFilters = {},
   onInlineFilterChange,
   contactFilterOptions = [],
-  columnWidths = {},
+  columnWidths: externalColumnWidths,
   onColumnWidthChange,
 }: ContactTableProps) {
   const checkCanEdit = (contactId: string): boolean => {
@@ -231,16 +231,8 @@ export function ContactTable({
 
   // Internal column widths state (used if external not provided)
   const [internalColumnWidths, setInternalColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
-  const effectiveColumnWidths = columnWidths ?? internalColumnWidths;
+  const columnWidths = externalColumnWidths ?? internalColumnWidths;
   const isResizingRef = useRef(false);
-
-  // Helper function to get column width
-  const getColumnWidth = useCallback(
-    (columnId: ColumnId): number => {
-      return effectiveColumnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId] ?? 100;
-    },
-    [effectiveColumnWidths]
-  );
 
   // Column resize handler (matches company-table pattern)
   const startResize = useCallback((e: React.PointerEvent, columnId: ColumnId) => {
@@ -249,7 +241,7 @@ export function ContactTable({
 
     const handle = e.currentTarget as HTMLElement | null;
     const th = handle?.closest('th') as HTMLTableCellElement | null;
-    const startWidth = effectiveColumnWidths[columnId] ?? th?.getBoundingClientRect().width ?? DEFAULT_COLUMN_WIDTHS[columnId] ?? 120;
+    const startWidth = columnWidths[columnId] ?? th?.getBoundingClientRect().width ?? DEFAULT_COLUMN_WIDTHS[columnId] ?? 120;
     const startX = e.clientX;
     const pointerId = e.pointerId;
 
@@ -285,7 +277,7 @@ export function ContactTable({
 
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
-  }, [effectiveColumnWidths, onColumnWidthChange]);
+  }, [columnWidths, onColumnWidthChange]);
 
   // Helper function to get ID display
   const getIdDisplay = (contact: ContactWithCount) => {
@@ -304,7 +296,7 @@ export function ContactTable({
     const label = COLUMN_LABELS[columnId];
     const sortField = COLUMN_SORT_FIELDS[columnId];
     const isActive = sortBy === sortField;
-    const width = getColumnWidth(columnId);
+    const width = columnWidths[columnId];
     const isSortable = sortField && onSort;
     const isResizable = !['open', 'actions'].includes(columnId);
 
@@ -315,7 +307,7 @@ export function ContactTable({
     return (
       <th
         key={columnId}
-        style={{ width: `${width}px` }}
+        style={width ? { width: `${width}px` } : undefined}
         className={cn(
           'relative text-xs font-medium text-text-secondary py-2.5 whitespace-nowrap text-left',
           columnId === 'actions' ? 'px-2' : 'px-4'
@@ -559,7 +551,7 @@ export function ContactTable({
   return (
     <>
       {/* Mobile Card View */}
-      <div className="md:hidden space-y-3">
+      <div className="lg:hidden space-y-3">
         {selectable && contacts.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <button
@@ -663,7 +655,7 @@ export function ContactTable({
       </div>
 
       {/* Desktop Table View */}
-      <div className={cn('hidden md:block table-container overflow-hidden', isFetching && 'opacity-60')}>
+      <div className={cn('hidden lg:block table-container overflow-hidden', isFetching && 'opacity-60')}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-max">
             <colgroup>
@@ -674,8 +666,8 @@ export function ContactTable({
                   style={
                     id === 'open'
                       ? { width: '44px' }
-                      : effectiveColumnWidths[id]
-                        ? { width: `${effectiveColumnWidths[id]}px` }
+                      : columnWidths[id]
+                        ? { width: `${columnWidths[id]}px` }
                         : undefined
                   }
                 />
@@ -690,7 +682,7 @@ export function ContactTable({
                     <th
                       key={columnId}
                       className={cn(
-                        'py-2',
+                        'py-2 max-w-0',
                         columnId === 'open' ? 'w-[44px] px-2' : columnId === 'actions' ? 'px-2' : 'px-4'
                       )}
                     >

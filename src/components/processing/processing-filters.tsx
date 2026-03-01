@@ -361,7 +361,7 @@ export function ProcessingFilters({
             placeholder="Search by file name, vendor, document number..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="input input-sm pl-10 w-full"
+            className="input input-sm pl-10 w-full !text-sm"
           />
           {searchQuery && (
             <button

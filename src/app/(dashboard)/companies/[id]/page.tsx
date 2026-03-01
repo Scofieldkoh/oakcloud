@@ -263,54 +263,55 @@ function CompanyDetailContent({ id }: { id: string }) {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           <button
             onClick={() => handleRefresh()}
-            className="btn-secondary btn-sm flex items-center gap-2"
+            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
             title="Refresh (Ctrl+R)"
             disabled={isRefreshing}
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
-            <span className="sm:hidden">Refresh</span>
+            <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
+            <span className="xl:hidden">Refresh</span>
           </button>
           {showRetrieveFYEButton && (
             <button
               onClick={handleRetrieveFYE}
-              className="btn-secondary btn-sm flex items-center gap-2"
+              className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
               title="Retrieve FYE (F3)"
               disabled={isRetrievingFYE}
             >
               <RefreshCw className={`w-4 h-4 ${isRetrievingFYE ? 'animate-spin' : ''}`} />
-              <span>Retrieve FYE (F3)</span>
+              <span className="hidden xl:inline">Retrieve FYE (F3)</span>
+              <span className="xl:hidden">Retrieve FYE</span>
             </button>
           )}
           {can.updateCompany && (
             <Link
               href={`/companies/${id}/edit`}
-              className="btn-primary btn-sm flex items-center gap-2"
+              className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap"
               title="Edit (Ctrl+E)"
             >
               <Pencil className="w-4 h-4" />
-              <span className="hidden sm:inline">Edit (Ctrl+E)</span>
-              <span className="sm:hidden">Edit</span>
+              <span className="hidden xl:inline">Edit (Ctrl+E)</span>
+              <span className="xl:hidden">Edit</span>
             </Link>
           )}
           {can.updateDocument && (
             <Link
               href={`/companies/upload?companyId=${id}`}
-              className="btn-secondary btn-sm flex items-center gap-2"
+              className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
               title="Update via BizFile (F2)"
             >
               <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">Update via BizFile (F2)</span>
-              <span className="sm:hidden">BizFile</span>
+              <span className="hidden xl:inline">Update via BizFile (F2)</span>
+              <span className="xl:hidden">BizFile</span>
             </Link>
           )}
           {can.deleteCompany && (
             <button
               onClick={() => setDeleteDialogOpen(true)}
-              className="btn-danger btn-sm flex items-center gap-2"
+              className="btn-danger btn-sm flex items-center gap-2 whitespace-nowrap"
             >
               <Trash2 className="w-4 h-4" />
               Delete

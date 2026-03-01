@@ -112,6 +112,7 @@ This web app is in development and testing stage. All data are dummy, and it's a
 | WF-012 | 2026-02-25 | Aligned Workflow Project Files table to Document Processing columns, switched inline filters to reusable controls (`SearchableSelect`, `DatePicker`, `AmountFilter`), and made first column `Linked at` filterable by `Project` plus all task names |
 | WF-013 | 2026-02-25 | Implemented Workflow Project Notes tab with persisted rich-text project notes, reset/save controls, and workspace-state/API wiring (`projectNotes`) |
 | WF-014 | 2026-02-25 | Extended Notes tab with collapsed per-task note panels (shown only for tasks with actual note content), inline rich-text editing, and note-reset behavior that treats fully deleted content as no task notes |
+| WF-015 | 2026-02-26 | Removed remaining Workflow Project placeholder fallback content (project detail non-list branch) to ensure project pages use only live implemented flows and no static “next iteration” stubs |
 
 ---
 

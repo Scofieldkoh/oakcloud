@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, type MouseEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { Square, CheckSquare, MinusSquare } from 'lucide-react';
 
@@ -171,6 +171,8 @@ interface MobileCardProps {
   actions?: ReactNode;
   /** Additional details to show below the header */
   details?: ReactNode;
+  /** Optional click handler for non-interactive card areas */
+  onCardClick?: () => void;
   /** Optional className */
   className?: string;
   /** Accessible label for selection button */
@@ -186,23 +188,40 @@ export function MobileCard({
   badge,
   actions,
   details,
+  onCardClick,
   className,
   selectionLabel,
 }: MobileCardProps) {
+  const hasSubtitle = !!subtitle;
+
+  const handleCardClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (!onCardClick) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('a,button,input,select,textarea,label,[role="button"],[data-prevent-card-click="true"]')) {
+      return;
+    }
+    onCardClick();
+  };
+
   return (
     <div
+      onClick={onCardClick ? handleCardClick : undefined}
       className={cn(
         'card transition-colors',
+        onCardClick && 'cursor-pointer',
         isSelected && 'ring-2 ring-oak-primary/50 bg-oak-row-selected',
         className
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
+      <div className={cn('flex justify-between gap-3', hasSubtitle ? 'items-start' : 'items-center')}>
+        <div className={cn('flex gap-3 flex-1 min-w-0', hasSubtitle ? 'items-start' : 'items-center')}>
           {selectable && (
             <button
               onClick={onToggle}
-              className="p-1 hover:bg-background-secondary rounded transition-colors flex-shrink-0 mt-0.5"
+              className={cn(
+                'p-1 hover:bg-background-secondary rounded transition-colors flex-shrink-0',
+                hasSubtitle && 'mt-0.5'
+              )}
               aria-label={selectionLabel || (isSelected ? 'Deselect item' : 'Select item')}
               aria-pressed={isSelected}
             >

@@ -10,6 +10,7 @@ import { useExportContactDetails } from '@/hooks/use-contact-details';
 import { usePermissions, useCompanyPermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
 import { useSelection } from '@/hooks/use-selection';
 import { CompanyTable, type CompanyInlineFilters, type CompanyFilterOption } from '@/components/companies/company-table';
 import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
@@ -71,6 +72,7 @@ export default function CompaniesPage() {
   // OPTIMIZED: Defer stats loading until after main list has loaded
   // This prevents stats query from competing with the primary companies query
   const shouldLoadStats = !isLoading && !!data;
+  const { data: allCompanyOptions = [] } = useAllCompanyOptions(activeTenantId);
   const { data: stats, error: statsError, isFetching: isStatsFetching, refetch: refetchStats } = useCompanyStats(activeTenantId, {
     enabled: shouldLoadStats,
   });
@@ -500,10 +502,10 @@ export default function CompaniesPage() {
     }));
   }, []);
 
-  // Derive company filter options from the loaded companies for the dropdown
+  // Company filter options are loaded across all pages for inline dropdown search
   const companyFilterOptions: CompanyFilterOption[] = useMemo(() => {
-    return data?.companies?.map(c => ({ id: c.id, name: c.name })) || [];
-  }, [data?.companies]);
+    return allCompanyOptions;
+  }, [allCompanyOptions]);
 
   const handleSort = (field: string) => {
     setParams((prev) => {
@@ -613,31 +615,31 @@ export default function CompaniesPage() {
             Manage company records, BizFile uploads, and compliance tracking
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={handleRefresh}
-            className="btn-secondary btn-sm flex items-center gap-2"
+            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
             aria-label="Refresh companies"
             title="Refresh list (Ctrl+R)"
             disabled={isRefreshing}
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
-            <span className="sm:hidden">Refresh</span>
+            <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
+            <span className="xl:hidden">Refresh</span>
           </button>
           {can.createDocument && (
-            <Link href="/companies/upload" className="btn-secondary btn-sm flex items-center gap-2" title="Upload BizFile (F2)">
+            <Link href="/companies/upload" className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap" title="Upload BizFile (F2)">
               <FileUp className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload BizFile (F2)</span>
-              <span className="sm:hidden">Upload</span>
+              <span className="hidden xl:inline">Upload BizFile (F2)</span>
+              <span className="xl:hidden">Upload</span>
             </Link>
           )}
           {can.createCompany && (
-            <Link href="/companies/new" className="btn-primary btn-sm flex items-center gap-2" title="Add company (F1)">
+            <Link href="/companies/new" className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap" title="Add company (F1)">
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Company (F1)</span>
-              <span className="sm:hidden">Add</span>
+              <span className="hidden xl:inline">Add Company (F1)</span>
+              <span className="xl:hidden">Add</span>
             </Link>
           )}
         </div>
@@ -745,7 +747,7 @@ export default function CompaniesPage() {
 
       {/* Active Filter Chips - Desktop Only */}
       {activeFilterChips.length > 0 && (
-        <div className="hidden md:flex items-center gap-2 mb-4 flex-wrap">
+        <div className="hidden lg:flex items-center gap-2 mb-4 flex-wrap">
           <span className="text-sm text-text-secondary font-medium">Active filters:</span>
           {activeFilterChips.map((chip) => (
             <FilterChip

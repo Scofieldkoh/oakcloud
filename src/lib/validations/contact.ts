@@ -1,11 +1,13 @@
 import { z } from 'zod';
+import { contactDetailTypeEnum, contactPurposeEnum } from '@/lib/validations/contact-detail';
 
 export const contactTypeEnum = z.enum(['INDIVIDUAL', 'CORPORATE']);
 
 export const identificationTypeEnum = z.enum(['NRIC', 'FIN', 'PASSPORT', 'UEN', 'OTHER']);
-
-// Phone number validation - allows common formats
-const phoneRegex = /^[+\d\s\-()]+$/;
+const optionalIdentificationTypeSchema = z.preprocess(
+  (val) => (val === '' ? null : val),
+  identificationTypeEnum.optional().nullable()
+);
 
 // Base schema without refinements for partial operations
 const contactBaseSchema = z.object({
@@ -15,7 +17,7 @@ const contactBaseSchema = z.object({
   firstName: z.string().max(100).optional().nullable(),
   lastName: z.string().max(100).optional().nullable(),
   alias: z.string().max(100).optional().nullable(),
-  identificationType: identificationTypeEnum.optional().nullable(),
+  identificationType: optionalIdentificationTypeSchema,
   identificationNumber: z.string().max(50).optional().nullable(),
   nationality: z.string().max(100).optional().nullable(),
   dateOfBirth: z.preprocess(
@@ -73,6 +75,31 @@ export const createContactSchema = contactBaseSchema.refine(
   }
 );
 
+const createContactDetailOnCreateSchema = z.object({
+  detailType: contactDetailTypeEnum,
+  value: z.string().trim().min(1, 'Value is required').max(500, 'Value too long'),
+  label: z.string().trim().max(100, 'Label too long').optional(),
+  purposes: z.array(contactPurposeEnum).optional().default([]),
+  description: z.string().trim().max(500, 'Description too long').optional(),
+  displayOrder: z.number().int().min(0).max(1000).optional(),
+  isPrimary: z.boolean().optional(),
+  companyId: z.string().uuid().optional(),
+});
+
+export const createContactWithDetailsSchema = contactBaseSchema.extend({
+  contactDetails: z.array(createContactDetailOnCreateSchema).optional(),
+}).refine(
+  (data) => {
+    if (data.contactType === 'INDIVIDUAL') {
+      return data.firstName || data.lastName;
+    }
+    return data.corporateName;
+  },
+  {
+    message: 'Individual contacts require a name; Corporate contacts require a corporate name',
+  }
+);
+
 export const updateContactSchema = contactBaseSchema.partial().extend({
   id: z.string().uuid(),
 });
@@ -96,5 +123,6 @@ export const contactSearchSchema = z.object({
 });
 
 export type CreateContactInput = z.infer<typeof createContactSchema>;
+export type CreateContactWithDetailsInput = z.infer<typeof createContactWithDetailsSchema>;
 export type UpdateContactInput = z.infer<typeof updateContactSchema>;
 export type ContactSearchInput = z.infer<typeof contactSearchSchema>;

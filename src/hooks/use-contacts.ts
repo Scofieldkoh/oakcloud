@@ -2,7 +2,11 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Contact, ContactType } from '@/generated/prisma';
-import type { CreateContactInput, UpdateContactInput } from '@/lib/validations/contact';
+import type { CreateContactWithDetailsInput, UpdateContactInput } from '@/lib/validations/contact';
+
+type CreateContactPayload = CreateContactWithDetailsInput & {
+  tenantId?: string;
+};
 
 interface ContactWithCount extends Contact {
   _count?: {
@@ -105,7 +109,7 @@ async function fetchContact(id: string, full = true): Promise<ContactWithRelatio
   return response.json();
 }
 
-async function createContact(data: CreateContactInput & { tenantId?: string }): Promise<Contact> {
+async function createContact(data: CreateContactPayload): Promise<Contact> {
   const response = await fetch('/api/contacts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -257,7 +261,7 @@ export function useCreateContact() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateContactInput & { tenantId?: string }) => createContact(data),
+    mutationFn: (data: CreateContactPayload) => createContact(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
     },

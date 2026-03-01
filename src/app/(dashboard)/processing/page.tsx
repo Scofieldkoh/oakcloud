@@ -45,7 +45,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
 import { Pagination } from '@/components/ui/pagination';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { useCompanies } from '@/hooks/use-companies';
+import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
@@ -433,6 +433,7 @@ export default function ProcessingDocumentsPage() {
 
   const [params, setParams] = useState(getParamsFromUrl);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [expandedMobileCardIds, setExpandedMobileCardIds] = useState<string[]>([]);
   const isResizingRef = useRef(false);
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
 
@@ -722,7 +723,7 @@ export default function ProcessingDocumentsPage() {
     }
 
     const onMove = (ev: globalThis.PointerEvent) => {
-      const nextWidth = Math.max(40, startWidth + (ev.clientX - startX)); // Reduced minimum from 80px to 40px for user flexibility
+      const nextWidth = Math.max(30, startWidth + (ev.clientX - startX));
       latestWidth = nextWidth;
       setColumnWidths((prev) => ({ ...prev, [columnId]: nextWidth }));
     };
@@ -791,11 +792,8 @@ export default function ProcessingDocumentsPage() {
   );
   const pendingApprovalCount = pendingNavData?.total ?? 0;
 
-  // Fetch companies for filter dropdown
-  const { data: companiesData } = useCompanies({
-    tenantId: activeTenantId || undefined,
-    limit: 200, // Fetch all companies for dropdown
-  });
+  // Fetch company options across all pages for inline company filter search
+  const { data: allCompanyOptions = [] } = useAllCompanyOptions(activeTenantId);
 
   // Fetch tags for filter dropdown (uses effectiveCompanyId if available, otherwise just tenant tags)
   const { data: tagsData } = useAvailableTags(effectiveCompanyId, activeTenantId);
@@ -809,6 +807,7 @@ export default function ProcessingDocumentsPage() {
   // Clear selection when params change (e.g., page change, filter change)
   useEffect(() => {
     setSelectedIds([]);
+    setExpandedMobileCardIds([]);
   }, [params]);
 
   // Selection handlers
@@ -827,6 +826,12 @@ export default function ProcessingDocumentsPage() {
 
   const clearSelection = useCallback(() => {
     setSelectedIds([]);
+  }, []);
+
+  const toggleMobileCardExpanded = useCallback((id: string) => {
+    setExpandedMobileCardIds((prev) =>
+      prev.includes(id) ? prev.filter((existingId) => existingId !== id) : [...prev, id]
+    );
   }, []);
 
   // Get selected documents for bulk actions summary
@@ -1416,32 +1421,32 @@ export default function ProcessingDocumentsPage() {
             AI-powered document extraction, classification, and revision workflow
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => { refetch(); refetchPendingCount(); }}
-            className="btn-secondary btn-sm flex items-center gap-2"
+            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
             title="Refresh list (Ctrl+R)"
           >
             <RefreshCw className="w-4 h-4" />
-            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
-            <span className="sm:hidden">Refresh</span>
+            <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
+            <span className="xl:hidden">Refresh</span>
           </button>
           {pendingApprovalCount > 0 && (
             <button
               onClick={handleReviewNext}
-              className="btn-secondary btn-sm flex items-center gap-2"
+              className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
               title="Approve next document pending approval (F2)"
             >
               <Play className="w-4 h-4" />
-              <span className="hidden sm:inline">Approve ({pendingApprovalCount}) (F2)</span>
-              <span className="sm:hidden">Approve ({pendingApprovalCount})</span>
+              <span className="hidden xl:inline">Approve ({pendingApprovalCount}) (F2)</span>
+              <span className="xl:hidden">Approve ({pendingApprovalCount})</span>
             </button>
           )}
           {can.createDocument && (
-            <Link href="/processing/upload" className="btn-primary btn-sm flex items-center gap-2" title="Upload documents (F1)">
+            <Link href="/processing/upload" className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap" title="Upload documents (F1)">
               <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload (F1)</span>
-              <span className="sm:hidden">Upload</span>
+              <span className="hidden xl:inline">Upload (F1)</span>
+              <span className="xl:hidden">Upload</span>
             </Link>
           )}
         </div>
@@ -1527,7 +1532,7 @@ export default function ProcessingDocumentsPage() {
       )}
 
       {/* Filters - Desktop: Integrated in table. Mobile: Separate panel */}
-      <div className="mb-4 md:hidden">
+      <div className="mb-4 lg:hidden">
         <ProcessingFilters
           onFilterChange={handleFiltersChange}
           initialFilters={{
@@ -1578,7 +1583,7 @@ export default function ProcessingDocumentsPage() {
 
       {/* Document Cards - Mobile View */}
       {!error && data && (
-        <div className={cn('md:hidden space-y-3 mb-6 relative', isFetching && 'opacity-60')}>
+        <div className={cn('lg:hidden space-y-3 mb-6 relative', isFetching && 'opacity-60')}>
           {data.documents.length === 0 ? (
             <div className="card p-8 text-center">
               <p className="text-sm text-text-secondary">No documents found</p>
@@ -1586,6 +1591,7 @@ export default function ProcessingDocumentsPage() {
           ) : (
             data.documents.map((doc, index) => {
               const isSelected = selectedIds.includes(doc.id);
+              const isExpanded = expandedMobileCardIds.includes(doc.id);
               const isAlternate = index % 2 === 1;
               return (
                 <MobileCard
@@ -1593,28 +1599,21 @@ export default function ProcessingDocumentsPage() {
                   isSelected={isSelected}
                   selectable
                   onToggle={() => toggleSelect(doc.id)}
+                  onCardClick={() => toggleMobileCardExpanded(doc.id)}
                   className={!isSelected && isAlternate ? 'bg-oak-row-alt' : undefined}
                   title={
                     <Link href={`/processing/${doc.id}`} className="hover:underline">
                       {doc.document.fileName}
                     </Link>
                   }
-                  subtitle={
-                    <span className="text-text-muted">
-                      {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
-                      {doc.document.company && ` • ${doc.document.company.name}`}
-                    </span>
-                  }
-                  badge={
-                    <StatusBadge
-                      status={doc.pipelineStatus}
-                      config={pipelineStatusConfig[doc.pipelineStatus]}
-                    />
-                  }
                   details={
                     <div className="space-y-3">
                       {/* Status Badges Row */}
                       <div className="flex flex-wrap gap-2">
+                        <StatusBadge
+                          status={doc.pipelineStatus}
+                          config={pipelineStatusConfig[doc.pipelineStatus]}
+                        />
                         {doc.currentRevision && (
                           <span className={cn(
                             'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
@@ -1648,6 +1647,10 @@ export default function ProcessingDocumentsPage() {
                           label="Vendor"
                           value={doc.currentRevision?.vendorName || '-'}
                         />
+                      </CardDetailsGrid>
+
+                      {isExpanded && (
+                        <CardDetailsGrid className="pt-3 border-t border-border-primary">
                         <CardDetailItem
                           label="Doc #"
                           value={doc.currentRevision?.documentNumber || '-'}
@@ -1696,29 +1699,21 @@ export default function ProcessingDocumentsPage() {
                           label="Uploaded"
                           value={formatDate(doc.createdAt)}
                         />
-                      </CardDetailsGrid>
+                        </CardDetailsGrid>
+                      )}
                     </div>
                   }
                   actions={
-                    <div className="flex items-center gap-2">
-                      {doc.duplicateStatus === 'SUSPECTED' && (
-                        <Link
-                          href={`/processing/${doc.id}?compare=true`}
-                          className="btn-ghost btn-xs inline-flex items-center gap-1 text-status-warning min-h-[44px]"
-                          title="Compare with suspected duplicate"
-                        >
-                          <Copy className="w-4 h-4" />
-                          Compare
-                        </Link>
-                      )}
+                    doc.duplicateStatus === 'SUSPECTED' ? (
                       <Link
-                        href={`/processing/${doc.id}`}
-                        className="btn-secondary btn-xs inline-flex items-center gap-1 min-h-[44px]"
+                        href={`/processing/${doc.id}?compare=true`}
+                        className="btn-ghost btn-xs inline-flex items-center gap-1 text-status-warning min-h-[44px]"
+                        title="Compare with suspected duplicate"
                       >
-                        <Eye className="w-4 h-4" />
-                        View
+                        <Copy className="w-4 h-4" />
+                        Compare
                       </Link>
-                    </div>
+                    ) : undefined
                   }
                 />
               );
@@ -1756,7 +1751,7 @@ export default function ProcessingDocumentsPage() {
       )}
 
       {/* Desktop Toolbar */}
-      <div className="hidden md:block mb-4">
+      <div className="hidden lg:block mb-4">
         <ProcessingToolbar
           search={params.search || ''}
           onSearchChange={handleSearchChange}
@@ -1775,7 +1770,7 @@ export default function ProcessingDocumentsPage() {
 
       {/* Active Filter Chips - Desktop Only */}
       {activeFilterChips.length > 0 && (
-        <div className="hidden md:flex items-center gap-2 mb-4 flex-wrap">
+        <div className="hidden lg:flex items-center gap-2 mb-4 flex-wrap">
           <span className="text-sm text-text-secondary font-medium">Active filters:</span>
           {activeFilterChips.map((chip) => (
             <FilterChip
@@ -1797,7 +1792,7 @@ export default function ProcessingDocumentsPage() {
 
       {/* Document Table - Desktop View */}
       {!error && data && (
-        <div className={cn('hidden md:block table-container overflow-hidden relative', isFetching && 'opacity-60')}>
+        <div className={cn('hidden lg:block table-container overflow-hidden relative', isFetching && 'opacity-60')}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-max">
               <colgroup>
@@ -1844,7 +1839,7 @@ export default function ProcessingDocumentsPage() {
                         <SearchableSelect
                           options={[
                             { value: '', label: 'All' },
-                            ...companiesData?.companies.map(c => ({ value: c.id, label: c.name })) || []
+                            ...allCompanyOptions.map((company) => ({ value: company.id, label: company.name })),
                           ]}
                           value={params.companyId || ''}
                           onChange={(value) => handleFiltersChange({ companyId: value || undefined })}
@@ -2350,3 +2345,4 @@ export default function ProcessingDocumentsPage() {
     </div>
   );
 }
+

@@ -32,6 +32,7 @@ import {
   FolderKanban,
   ListTodo,
   LayoutTemplate,
+  Mail,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -79,6 +80,7 @@ const secondaryNavigation: NavItem[] = [
   { name: 'Document Processing', href: '/processing', icon: ScanText },
   { name: 'Document Generation', href: '/generated-documents', icon: FileText },
   { name: 'Shared Documents', href: '/shared-documents', icon: Share2 },
+  { name: 'Communication', href: '/communication', icon: Mail, adminOnly: true },
   { name: 'Settings', href: '/settings', icon: Settings, badge: 'Soon' },
 ];
 
@@ -358,6 +360,18 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
     });
   }, []);
 
+  const canSeeItem = useCallback(
+    (item: NavItem): boolean => {
+      if (item.superAdminOnly) return !!user?.isSuperAdmin;
+      if (item.adminOnly) return !!user && (user.isSuperAdmin || user.isTenantAdmin);
+      return true;
+    },
+    [user]
+  );
+
+  const visiblePrimaryNavigation = primaryNavigation.filter(canSeeItem);
+  const visibleSecondaryNavigation = secondaryNavigation.filter(canSeeItem);
+
   // Filter ungrouped items based on permissions
   const filteredUngroupedItems = ungroupedAdminItems.filter((item) => {
     if (!user) return false;
@@ -390,7 +404,7 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
 
   return (
     <nav aria-label="Main menu" className="p-2.5 space-y-1">
-      {primaryNavigation.map((item) => {
+      {visiblePrimaryNavigation.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <NavLink
@@ -430,7 +444,7 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
         </div>
       )}
 
-      {secondaryNavigation.map((item) => {
+      {visibleSecondaryNavigation.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <NavLink
@@ -559,9 +573,9 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
   return (
     <div className={cn(
       "border-t border-border-primary bg-background-tertiary",
-      // Desktop: absolute positioned at bottom
-      // Mobile: relative positioned, stays in flow
-      isMobile ? "relative mt-auto" : "absolute bottom-0 left-0 right-0"
+      // Keep footer in normal flex flow so nav overflow is calculated correctly.
+      "relative flex-shrink-0",
+      isMobile && "mt-auto"
     )}>
       {/* All items use consistent p-2.5 with space-y-1 for uniform spacing */}
       <div className="p-2.5 space-y-1">
@@ -663,7 +677,7 @@ function DesktopSidebar() {
       </div>
 
       {/* Scrollable navigation area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <NavigationContent collapsed={sidebarCollapsed} />
       </div>
 
@@ -763,7 +777,7 @@ function MobileDrawer() {
         </div>
 
         {/* Scrollable navigation area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <NavigationContent collapsed={false} onNavigate={() => setMobileSidebarOpen(false)} />
         </div>
 

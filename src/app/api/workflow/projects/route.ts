@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
       projectName: searchParams.get('projectName') || undefined,
       clientName: searchParams.get('clientName') || undefined,
       templateName: searchParams.get('templateName') || undefined,
+      nextTaskName: searchParams.get('nextTaskName') || undefined,
       assignee: searchParams.get('assignee') || undefined,
       startDateFrom: searchParams.get('startDateFrom') || undefined,
       startDateTo: searchParams.get('startDateTo') || undefined,

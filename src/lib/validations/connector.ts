@@ -264,7 +264,7 @@ export function getProviderDisplayName(provider: ConnectorProvider): string {
 export function getTypeDisplayName(type: ConnectorType): string {
   const names: Record<ConnectorType, string> = {
     AI_PROVIDER: 'AI Provider',
-    STORAGE: 'Storage',
+    STORAGE: 'Storage/ Email',
   };
   return names[type] || type;
 }

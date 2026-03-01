@@ -78,6 +78,7 @@ import { convertToHomeCurrency } from '@/lib/currency-conversion';
 import { useRateLookup } from '@/hooks/use-exchange-rates';
 import { useAccountsForSelect } from '@/hooks/use-chart-of-accounts';
 import { useCompany } from '@/hooks/use-companies';
+import { useIsMobile } from '@/hooks/use-media-query';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 
@@ -278,6 +279,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
   // UI State for controlling data fetching
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
+  const isMobile = useIsMobile();
+  const [mobileActivePanel, setMobileActivePanel] = useState<'document' | 'details' | 'lineItems'>('document');
 
   // Data fetching - consolidated API for initial load
   // This replaces multiple hooks: useProcessingDocument, useDocumentPages, useRevisionWithLineItems
@@ -1596,11 +1599,134 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     totalAmount: string;
   };
 
+  const viewerPanel = (
+    <DocumentPageViewer
+      documentId={id}
+      pdfUrl={pagesData?.pdfUrl || undefined}
+      highlights={highlights}
+      fieldValues={fieldValues}
+      className="h-full"
+      onRotationChange={handleRotationChange}
+      documentStatus={currentRevision?.status}
+      onPagesChanged={refetch}
+    />
+  );
+
+  const detailsPanel = (
+    <div className="h-full overflow-y-auto bg-background-primary p-4">
+      {/* Header Information Section */}
+      {!currentRevision && !isEditing ? (
+        <NoExtractionPlaceholder
+          canTrigger={canTriggerExtraction}
+          isPending={triggerExtraction.isPending}
+          pipelineStatus={doc.pipelineStatus}
+          onTrigger={handleTriggerExtraction}
+        />
+      ) : (
+        <div className="space-y-4">
+          {/* Section Header - Company Name - Full width like PDF toolbar */}
+          <div className="-mx-4 -mt-4 px-4 py-3 bg-background-tertiary border-b border-border-primary">
+            <span className="text-sm font-medium text-text-primary">
+              {doc.company?.name || 'Unassigned Company'}
+            </span>
+          </div>
+
+          {/* Tags Section - Above document type, always editable */}
+          <div className="pt-2">
+            <DocumentTags
+              documentId={id}
+              companyId={doc.company?.id || null}
+              tenantId={activeTenantId}
+            />
+          </div>
+
+          {/* Header Fields */}
+          <div className="max-w-2xl space-y-4">
+            <ExtractedHeaderFields
+              revision={headerRevisionData}
+              isEditing={isEditing}
+              editFormData={editFormData}
+              setEditFormData={setEditFormData}
+              onResolveAlias={currentRevision ? handleResolveCounterpartyAlias : undefined}
+              isResolvingAlias={isResolvingAlias}
+              disableResolveAlias={approveRevision.isPending || !currentRevision}
+              focusedField={focusedField}
+              setFocusedField={setFocusedField}
+              getFieldConfidence={getFieldConfidence}
+              categoryLabels={categoryLabels}
+            />
+
+            {/* Amounts Section - Combined document and home currency */}
+            <AmountsSection
+              documentCurrency={revisionWithLineItems?.currency || currentRevision?.currency || editFormData.currency || 'SGD'}
+              documentSubtotal={revisionWithLineItems?.subtotal || (isEditing ? editFormData.subtotal || null : null)}
+              documentTaxAmount={revisionWithLineItems?.taxAmount || (isEditing ? editFormData.taxAmount || null : null)}
+              documentTotalAmount={revisionWithLineItems?.totalAmount || currentRevision?.totalAmount || editFormData.totalAmount || '0'}
+              isEditing={isEditing}
+              editFormData={editFormData}
+              setEditFormData={setEditFormData}
+              currencyOptions={currencyOptions}
+              focusedField={focusedField}
+              setFocusedField={setFocusedField}
+              getFieldConfidence={getFieldConfidence}
+              tenantId={data?.document?.tenantId}
+              validationIssues={(revisionWithLineItems?.validationIssues as { issues?: ValidationIssue[] })?.issues}
+            />
+
+            {/* Validation Status */}
+            {revisionWithLineItems?.validationStatus && revisionWithLineItems.validationStatus !== 'PENDING' && (
+              <div className="pt-2">
+                <ValidationStatusSection
+                  status={revisionWithLineItems.validationStatus}
+                  issues={(revisionWithLineItems.validationIssues as { issues?: ValidationIssue[] })?.issues}
+                />
+              </div>
+            )}
+
+            {/* Document Links - Only show when not viewing a snapshot */}
+            {!isViewingSnapshot && (
+              <DocumentLinks
+                documentId={id}
+                canUpdate={can.updateDocument}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const lineItemsPanel = (
+    <div className="h-full overflow-auto bg-background-primary">
+      {(currentRevision || isEditing) ? (
+        <LineItemsSection
+          lineItems={isEditing ? editLineItems : revisionWithLineItems?.lineItems}
+          isEditing={isEditing}
+          isLoading={currentRevision ? lineItemsLoading : false}
+          currency={isEditing ? editFormData.currency : (revisionWithLineItems?.currency || currentRevision?.currency || 'SGD')}
+          homeCurrency={isEditing ? editFormData.homeCurrency : (revisionWithLineItems?.homeCurrency || 'SGD')}
+          exchangeRate={parseFloat(editFormData.homeExchangeRate) || 1}
+          chartOfAccounts={chartOfAccounts}
+          onAdd={handleAddLineItem}
+          onRemove={handleRemoveLineItem}
+          onChange={handleLineItemChange}
+          fullWidth
+          validationIssues={(revisionWithLineItems?.validationIssues as { issues?: ValidationIssue[] })?.issues}
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center px-6 text-sm text-text-muted text-center">
+          Line items will appear after extraction.
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-background-primary flex-shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="px-3 md:px-4 py-3 border-b border-border-primary bg-background-primary flex-shrink-0">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-wrap md:flex-nowrap">
           <Link href="/processing" className="btn-ghost btn-sm p-2" title="Back to list (Ctrl+Backspace)">
             <ArrowLeft className="w-4 h-4" />
           </Link>
@@ -1617,7 +1743,9 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span className="text-sm text-text-secondary whitespace-nowrap" title="Documents pending approval">
-                {navData.currentIndex + 1} / {navData.total} Pending approval
+                {navData.currentIndex + 1} / {navData.total}{' '}
+                <span className="hidden sm:inline">Pending approval</span>
+                <span className="sm:hidden">Pending</span>
               </span>
               <button
                 onClick={handleNavigateNext}
@@ -1643,10 +1771,10 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           <span className={cn('px-2 py-0.5 rounded text-xs font-medium', pipelineConfig.bgColor, pipelineConfig.color)}>
             {pipelineConfig.label}
           </span>
-        </div>
+          </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2">
+          {/* Action buttons */}
+          <div className="flex w-full md:w-auto items-center gap-2 overflow-x-auto flex-nowrap pb-1 md:pb-0 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
           {/* Hide action buttons when viewing snapshot - only show Exit Snapshot in banner */}
           {!isViewingSnapshot && canTriggerExtraction && can.updateDocument && (
             <button
@@ -1690,13 +1818,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           )}
           {!isViewingSnapshot && isEditing ? (
             <>
-              <button onClick={() => { setIsEditing(false); setIsEditingApproved(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm" title="Cancel editing (Ctrl+Backspace)">
-                Cancel (Ctrl+Backspace)
+              <button onClick={() => { setIsEditing(false); setIsEditingApproved(false); setDeletedLineItemIds([]); }} className="btn-ghost btn-sm px-3" title="Cancel editing (Ctrl+Backspace)">
+                {isMobile ? 'Cancel' : 'Cancel (Ctrl+Backspace)'}
               </button>
               <button
                 onClick={() => handleShowModelSelector(true)}
                 disabled={triggerExtraction.isPending}
-                className="btn-secondary btn-sm"
+                className="btn-secondary btn-sm px-3"
                 title="Re-run AI extraction with model selection (F4)"
               >
                 {triggerExtraction.isPending ? (
@@ -1704,12 +1832,12 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 ) : (
                   <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                 )}
-                Re-extract (F4)
+                {isMobile ? 'Re-extract' : 'Re-extract (F4)'}
               </button>
               <button
                 onClick={handleSaveEdit}
                 disabled={updateRevision.isPending || createRevision.isPending}
-                className="btn-primary btn-sm"
+                className="btn-primary btn-sm px-3"
                 title="Save changes (F3)"
               >
                 {updateRevision.isPending || createRevision.isPending ? (
@@ -1717,16 +1845,16 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 ) : (
                   <Save className="w-3.5 h-3.5 mr-1.5" />
                 )}
-                Save (F3)
+                {isMobile ? 'Save' : 'Save (F3)'}
               </button>
             </>
           ) : !isViewingSnapshot ? (
             <>
               {/* Edit button for DRAFT revisions - edits directly */}
               {currentRevision?.status === 'DRAFT' && can.updateDocument && (
-                <button onClick={handleStartEdit} className="btn-secondary btn-sm" title="Edit document (F2)">
+                <button onClick={handleStartEdit} className="btn-secondary btn-sm px-3" title="Edit document (F2)">
                   <Pencil className="w-3.5 h-3.5 mr-1.5" />
-                  Edit (F2)
+                  {isMobile ? 'Edit' : 'Edit (F2)'}
                 </button>
               )}
               {/* Edit button for APPROVED revisions - creates new draft revision */}
@@ -1734,7 +1862,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                 <button
                   onClick={handleEditApproved}
                   disabled={createRevision.isPending}
-                  className="btn-secondary btn-sm"
+                  className="btn-secondary btn-sm px-3"
                   title="Create a new draft revision from the approved document (F2)"
                 >
                   {createRevision.isPending ? (
@@ -1742,13 +1870,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                   ) : (
                     <Pencil className="w-3.5 h-3.5 mr-1.5" />
                   )}
-                  Edit (F2)
+                  {isMobile ? 'Edit' : 'Edit (F2)'}
                 </button>
               )}
               {!currentRevision && doc.pipelineStatus === 'UPLOADED' && can.updateDocument && (
-                <button onClick={handleStartEdit} className="btn-secondary btn-sm" title="Edit document (F2)">
+                <button onClick={handleStartEdit} className="btn-secondary btn-sm px-3" title="Edit document (F2)">
                   <Pencil className="w-3.5 h-3.5 mr-1.5" />
-                  Edit (F2)
+                  {isMobile ? 'Edit' : 'Edit (F2)'}
                 </button>
               )}
               {canApprove && can.updateDocument && (
@@ -1757,11 +1885,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
                     setSkipAliasLearning(false);
                     setShowApproveDialog(true);
                   }}
-                  className="btn-primary btn-sm"
+                  className="btn-primary btn-sm px-3"
                   title="Approve document (F1)"
                 >
                   <Check className="w-3.5 h-3.5 mr-1.5" />
-                  Approve (F1)
+                  {isMobile ? 'Approve' : 'Approve (F1)'}
                 </button>
               )}
               {/* Download and Export buttons */}
@@ -1803,6 +1931,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           <button onClick={() => refetch()} className="btn-ghost btn-sm p-2" title="Refresh (Ctrl+R)">
             <RefreshCw className="w-4 h-4" />
           </button>
+          </div>
         </div>
       </div>
 
@@ -1847,140 +1976,108 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         </div>
       )}
 
+      {/* Mobile panel switcher */}
+      {isMobile && (
+        <div className="px-3 py-2 border-b border-border-primary bg-background-primary flex-shrink-0">
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => setMobileActivePanel('document')}
+              className={cn(
+                'btn-ghost btn-sm justify-center',
+                mobileActivePanel === 'document' && 'bg-oak-primary/10 text-oak-primary'
+              )}
+            >
+              Document
+            </button>
+            <button
+              onClick={() => setMobileActivePanel('details')}
+              className={cn(
+                'btn-ghost btn-sm justify-center',
+                mobileActivePanel === 'details' && 'bg-oak-primary/10 text-oak-primary'
+              )}
+            >
+              Details
+            </button>
+            <button
+              onClick={() => setMobileActivePanel('lineItems')}
+              className={cn(
+                'btn-ghost btn-sm justify-center',
+                mobileActivePanel === 'lineItems' && 'bg-oak-primary/10 text-oak-primary'
+              )}
+            >
+              Line Items
+            </button>
+          </div>
+          {!isViewingSnapshot && isEditing && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setIsEditingApproved(false);
+                  setDeletedLineItemIds([]);
+                }}
+                className="btn-ghost btn-sm justify-center"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={updateRevision.isPending || createRevision.isPending}
+                className="btn-primary btn-sm justify-center"
+              >
+                {updateRevision.isPending || createRevision.isPending ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    Saving
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5 mr-1.5" />
+                    Save
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Main Content - Vertical Split: Top (Preview + Header) | Bottom (Line Items) */}
       <div className="flex-1 overflow-hidden">
-        <VerticalSplitView
-          defaultTopHeight={75}
-          minTopHeight={40}
-          maxTopHeight={85}
-          topPanel={
-            <ResizableSplitView
-              leftPanel={
-                <DocumentPageViewer
-                  documentId={id}
-                  pdfUrl={pagesData?.pdfUrl || undefined}
-                  highlights={highlights}
-                  fieldValues={fieldValues}
-                  className="h-full"
-                  onRotationChange={handleRotationChange}
-                  documentStatus={currentRevision?.status}
-                  onPagesChanged={refetch}
-                />
-              }
-              rightPanel={
-                <div className="h-full overflow-y-auto bg-background-primary p-4">
-                  {/* Header Information Section */}
-                  {!currentRevision && !isEditing ? (
-                    <NoExtractionPlaceholder
-                      canTrigger={canTriggerExtraction}
-                      isPending={triggerExtraction.isPending}
-                      pipelineStatus={doc.pipelineStatus}
-                      onTrigger={handleTriggerExtraction}
-                    />
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Section Header - Company Name - Full width like PDF toolbar */}
-                      <div className="-mx-4 -mt-4 px-4 py-3 bg-background-tertiary border-b border-border-primary">
-                        <span className="text-sm font-medium text-text-primary">
-                          {doc.company?.name || 'Unassigned Company'}
-                        </span>
-                      </div>
-
-                      {/* Tags Section - Above document type, always editable */}
-                      <div className="pt-2">
-                        <DocumentTags
-                          documentId={id}
-                          companyId={doc.company?.id || null}
-                          tenantId={activeTenantId}
-                        />
-                      </div>
-
-                      {/* Header Fields */}
-                      <div className="max-w-2xl space-y-4">
-                        <ExtractedHeaderFields
-                          revision={headerRevisionData}
-                          isEditing={isEditing}
-                          editFormData={editFormData}
-                          setEditFormData={setEditFormData}
-                          onResolveAlias={currentRevision ? handleResolveCounterpartyAlias : undefined}
-                          isResolvingAlias={isResolvingAlias}
-                          disableResolveAlias={approveRevision.isPending || !currentRevision}
-                          focusedField={focusedField}
-                          setFocusedField={setFocusedField}
-                          getFieldConfidence={getFieldConfidence}
-                          categoryLabels={categoryLabels}
-                        />
-
-                        {/* Amounts Section - Combined document and home currency */}
-                        <AmountsSection
-                          documentCurrency={revisionWithLineItems?.currency || currentRevision?.currency || editFormData.currency || 'SGD'}
-                          documentSubtotal={revisionWithLineItems?.subtotal || (isEditing ? editFormData.subtotal || null : null)}
-                          documentTaxAmount={revisionWithLineItems?.taxAmount || (isEditing ? editFormData.taxAmount || null : null)}
-                          documentTotalAmount={revisionWithLineItems?.totalAmount || currentRevision?.totalAmount || editFormData.totalAmount || '0'}
-                          isEditing={isEditing}
-                          editFormData={editFormData}
-                          setEditFormData={setEditFormData}
-                          currencyOptions={currencyOptions}
-                          focusedField={focusedField}
-                          setFocusedField={setFocusedField}
-                          getFieldConfidence={getFieldConfidence}
-                          tenantId={data?.document?.tenantId}
-                          validationIssues={(revisionWithLineItems?.validationIssues as { issues?: ValidationIssue[] })?.issues}
-                        />
-
-                        {/* Validation Status */}
-                        {revisionWithLineItems?.validationStatus && revisionWithLineItems.validationStatus !== 'PENDING' && (
-                          <div className="pt-2">
-                            <ValidationStatusSection
-                              status={revisionWithLineItems.validationStatus}
-                              issues={(revisionWithLineItems.validationIssues as { issues?: ValidationIssue[] })?.issues}
-                            />
-                          </div>
-                        )}
-
-                        {/* Document Links - Only show when not viewing a snapshot */}
-                        {!isViewingSnapshot && (
-                          <DocumentLinks
-                            documentId={id}
-                            canUpdate={can.updateDocument}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              }
-              defaultLeftWidth={70}
-              minLeftWidth={50}
-              maxLeftWidth={80}
-            />
-          }
-          bottomPanel={
-            <div className="overflow-auto bg-background-primary">
-              {(currentRevision || isEditing) && (
-                <LineItemsSection
-                  lineItems={isEditing ? editLineItems : revisionWithLineItems?.lineItems}
-                  isEditing={isEditing}
-                  isLoading={currentRevision ? lineItemsLoading : false}
-                  currency={isEditing ? editFormData.currency : (revisionWithLineItems?.currency || currentRevision?.currency || 'SGD')}
-                  homeCurrency={isEditing ? editFormData.homeCurrency : (revisionWithLineItems?.homeCurrency || 'SGD')}
-                  exchangeRate={parseFloat(editFormData.homeExchangeRate) || 1}
-                  chartOfAccounts={chartOfAccounts}
-                  onAdd={handleAddLineItem}
-                  onRemove={handleRemoveLineItem}
-                  onChange={handleLineItemChange}
-                  fullWidth
-                  validationIssues={(revisionWithLineItems?.validationIssues as { issues?: ValidationIssue[] })?.issues}
-                />
-              )}
+        {isMobile ? (
+          <div className="h-full">
+            <div className={cn('h-full', mobileActivePanel !== 'document' && 'hidden')}>
+              {viewerPanel}
             </div>
-          }
-        />
+            <div className={cn('h-full', mobileActivePanel !== 'details' && 'hidden')}>
+              {detailsPanel}
+            </div>
+            <div className={cn('h-full', mobileActivePanel !== 'lineItems' && 'hidden')}>
+              {lineItemsPanel}
+            </div>
+          </div>
+        ) : (
+          <VerticalSplitView
+            defaultTopHeight={75}
+            minTopHeight={40}
+            maxTopHeight={85}
+            topPanel={
+              <ResizableSplitView
+                leftPanel={viewerPanel}
+                rightPanel={detailsPanel}
+                defaultLeftWidth={70}
+                minLeftWidth={50}
+                maxLeftWidth={80}
+              />
+            }
+            bottomPanel={lineItemsPanel}
+          />
+        )}
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-border-primary bg-background-tertiary text-xs flex-shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 border-t border-border-primary bg-background-tertiary text-xs flex-shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           <span className="flex items-center gap-1.5">
             <span className="text-text-muted">Pipeline:</span>
             <span className={cn('font-medium', pipelineConfig.color)}>{pipelineConfig.label}</span>

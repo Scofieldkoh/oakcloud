@@ -9,6 +9,7 @@ import { useContacts, useDeleteContact, useBulkDeleteContacts } from '@/hooks/us
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useAllContactOptions } from '@/hooks/use-all-contact-options';
 import { useSelection } from '@/hooks/use-selection';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -108,6 +109,7 @@ export default function ContactsPage() {
     ...params,
     tenantId: activeTenantId,
   });
+  const { data: allContactOptions = [] } = useAllContactOptions(activeTenantId);
   const deleteContact = useDeleteContact();
   const bulkDeleteContacts = useBulkDeleteContacts();
 
@@ -138,9 +140,8 @@ export default function ContactsPage() {
 
   // Generate contact filter options for the name dropdown
   const contactFilterOptions: ContactFilterOption[] = useMemo(() => {
-    if (!data?.contacts) return [];
-    return data.contacts.map((c) => ({ id: c.id, name: c.fullName }));
-  }, [data?.contacts]);
+    return allContactOptions;
+  }, [allContactOptions]);
 
   // Memoize URL construction
   const targetUrl = useMemo(() => {
@@ -422,24 +423,24 @@ export default function ContactsPage() {
             Manage individuals and corporate contacts linked to companies
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={handleRefresh}
-            className="btn-secondary btn-sm flex items-center gap-2"
+            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
             aria-label="Refresh contacts"
             title="Refresh list (Ctrl+R)"
             disabled={isFetching}
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
-            <span className="sm:hidden">Refresh</span>
+            <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
+            <span className="xl:hidden">Refresh</span>
           </button>
           {can.createContact && (
-            <Link href="/contacts/new" className="btn-primary btn-sm flex items-center gap-2" title="Add contact (F1)">
+            <Link href="/contacts/new" className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap" title="Add contact (F1)">
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Contact (F1)</span>
-              <span className="sm:hidden">Add</span>
+              <span className="hidden xl:inline">Add Contact (F1)</span>
+              <span className="xl:hidden">Add</span>
             </Link>
           )}
         </div>

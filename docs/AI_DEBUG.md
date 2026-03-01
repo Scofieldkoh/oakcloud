@@ -11958,3 +11958,1224 @@ TypeError: fetch failed
 
 ---
 
+## AI Request - 2026-02-27T05:51:00.288Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 12312ms |
+| Input Tokens | 6328 |
+| Output Tokens | 544 |
+| Total Tokens | 6872 |
+| Estimated Cost | $0.0074 |
+
+<details>
+<summary>Response (1618 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "TAX_COMPLIANCE",
+    "confidence": 0.78
+  },
+  "documentSubCategory": {
+    "value": "TAX_INVOICE",
+    "confidence": 0.72
+  },
+  "vendorName": {
+    "value": "DON DON DONKI (JEM)",
+    "confidence": 0.87
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "436229",
+    "confidence": 0.72
+  },
+  "documentDate": {
+    "value": "2026-02-27",
+    "confidence": 0.9
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "39.82",
+    "confidence": 0.75
+  },
+  "taxAmount": {
+    "value": "3.58",
+    "confidence": 0.8
+  },
+  "totalAmount": {
+    "value": "43.40",
+    "confidence": 0.9
+  },
+  "supplierGstNo": {
+    "value": "201318665C",
+    "confidence": 0.9
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Food & Beverage (retail receipt items aggregated: Chicken Karaage w Ma, Fresh Chicken Teriy, Mount Ebi Fry Don, Una Jyu, Okonomiyaki Tangoyak, KaniKama Mentaiko)",
+        "confidence": 0.74
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.85
+      },
+      "unitPrice": {
+        "value": "39.82",
+        "confidence": 0.75
+      },
+      "amount": {
+        "value": "39.82",
+        "confidence": 0.75
+      },
+      "gstAmount": {
+        "value": "3.58",
+        "confidence": 0.78
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.85
+      },
+      "accountCode": {
+        "value": "7030",
+        "confidence": 0.6
+      }
+    }
+  ],
+  "overallConfidence": 0.82
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-02-27T05:51:12.616Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | TAX_COMPLIANCE | 0.78 |
+| Vendor | DON DON DONKI (JEM) | 0.87 |
+| Total Amount | 43.40 SGD | 0.90 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7030 | 0.60 | Food & Beverage (retail receipt items aggregate... |
+
+---
+
+## AI Request - 2026-02-27T08:54:02.573Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 12186ms |
+| Input Tokens | 7132 |
+| Output Tokens | 850 |
+| Total Tokens | 7982 |
+| Estimated Cost | $0.0088 |
+
+<details>
+<summary>Response (2479 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "201943184W",
+    "name": "88 DURIAN FRUIT PTE. LTD.",
+    "formerName": "88 DRUIAN & FRUITS PTE. LTD.",
+    "dateOfNameChange": "2020-01-04",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2019-12-21",
+    "incorporationDate": "2019-12-21"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "47211",
+      "description": "RETAIL SALE OF FRUITS AND VEGETABLES"
+    }
+  },
+  "registeredAddress": {
+    "block": "88",
+    "streetName": "WHAMPOA DRIVE",
+    "level": "01",
+    "unit": "853",
+    "postalCode": "320088",
+    "effectiveFrom": "2025-01-24"
+  },
+  "paidUpCapital": {
+    "amount": 5000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 5000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 5000,
+      "totalValue": 5000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "NG MAN TING",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8759501C",
+      "nationality": "MALAYSIAN",
+      "address": "677C YISHUN RING ROAD, #05-1962, PARK GROVE @ YISHUN, SINGAPORE 763677",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 5000,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "LIM WEI SIANG",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8369742C",
+      "nationality": "MALAYSIAN",
+      "address": "88 WHAMPOA DRIVE, #01-853, SINGAPORE 320088",
+      "appointmentDate": "2025-01-24",
+      "cessationDate": null
+    },
+    {
+      "name": "NG MAN TING",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8759501C",
+      "nationality": "MALAYSIAN",
+      "address": "677C YISHUN RING ROAD, #05-1962, PARK GROVE @ YISHUN, SINGAPORE 763677",
+      "appointmentDate": "2025-01-24",
+      "cessationDate": null
+    },
+    {
+      "name": "HO WEI XIONG",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8942737A",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "924 HOUGANG AVENUE 9, #07-68, SINGAPORE 530924",
+      "appointmentDate": "2019-12-21",
+      "cessationDate": null
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "ACRA260130003906",
+    "receiptDate": "2026-01-30"
+  },
+  "homeCurrency": "SGD"
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-27T09:02:04.677Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 8743ms |
+| Input Tokens | 6972 |
+| Output Tokens | 646 |
+| Total Tokens | 7618 |
+| Estimated Cost | $0.0083 |
+
+<details>
+<summary>Response (1925 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202515376E",
+    "name": "ABZON PTE. LTD.",
+    "entityType": "PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-04-09",
+    "incorporationDate": "2025-04-09"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "74909",
+      "description": "OTHER PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES N.E.C."
+    }
+  },
+  "registeredAddress": {
+    "block": "60",
+    "streetName": "PAYA LEBAR ROAD",
+    "level": "06",
+    "unit": "28",
+    "buildingName": "PAYA LEBAR SQUARE",
+    "postalCode": "409051",
+    "effectiveFrom": "2025-11-01"
+  },
+  "paidUpCapital": {
+    "amount": 10,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 100,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 100,
+      "totalValue": 100,
+      "isPaidUp": false,
+      "isTreasury": false
+    },
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 100,
+      "totalValue": 10,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "CHOPRA KARAN SUNIL",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8256090D",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "55 PIPIT ROAD, #2-2, SINGAPORE 370055",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 100,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "WONG LIQING",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8819252D",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "55 PIPIT ROAD, #2-2, SINGAPORE 370055",
+      "appointmentDate": "2025-07-01",
+      "cessationDate": null
+    }
+  ],
+  "homeCurrency": "SGD",
+  "documentMetadata": {
+    "receiptNo": "ACRA260119001302",
+    "receiptDate": "2026-01-19"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-27T09:17:51.676Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 15553ms |
+| Input Tokens | 7294 |
+| Output Tokens | 1229 |
+| Total Tokens | 8523 |
+| Estimated Cost | $0.0098 |
+
+<details>
+<summary>Response (3648 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202423926K",
+    "name": "AIRWALLEX CAPITAL HOLDING (SINGAPORE) PTE. LTD.",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2024-06-13",
+    "incorporationDate": "2024-06-13"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "64202",
+      "description": "OTHER HOLDING COMPANIES"
+    }
+  },
+  "registeredAddress": {
+    "block": "36",
+    "streetName": "ROBINSON ROAD",
+    "level": "20",
+    "unit": "01",
+    "buildingName": "CITY HOUSE",
+    "postalCode": "068877",
+    "effectiveFrom": "2025-01-13"
+  },
+  "paidUpCapital": [
+    {
+      "amount": 4731203,
+      "currency": "SINGAPORE DOLLAR",
+      "shareType": "ORDINARY",
+      "numberOfShares": 4731203
+    },
+    {
+      "amount": 2000000,
+      "currency": "UNITED STATES OF AMERICA DOLLAR",
+      "shareType": "ORDINARY",
+      "numberOfShares": 2000000
+    }
+  ],
+  "issuedCapital": [
+    {
+      "amount": 4731203,
+      "currency": "SINGAPORE DOLLAR",
+      "shareType": "ORDINARY",
+      "numberOfShares": 4731203
+    },
+    {
+      "amount": 2000000,
+      "currency": "UNITED STATES OF AMERICA DOLLAR",
+      "shareType": "ORDINARY",
+      "numberOfShares": 2000000
+    }
+  ],
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SINGAPORE DOLLAR",
+      "numberOfShares": 4731203,
+      "totalValue": 4731203,
+      "isPaidUp": true,
+      "isTreasury": false
+    },
+    {
+      "shareClass": "ORDINARY",
+      "currency": "UNITED STATES OF AMERICA DOLLAR",
+      "numberOfShares": 2000000,
+      "totalValue": 2000000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "auditor": {
+    "name": "ERNST & YOUNG LLP"
+  },
+  "shareholders": [
+    {
+      "name": "AIRWALLEX (CAYMAN) LIMITED",
+      "type": "CORPORATE",
+      "identificationType": "OTHER",
+      "identificationNumber": "T22UF8786K",
+      "nationality": "CAYMAN ISLANDS",
+      "placeOfOrigin": "CAYMAN ISLANDS",
+      "address": "C/O PO BOX 309, UGLAND HOUSE, GRAND CAYMAN, KY1-1104, CAYMAN ISLANDS",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 4731203,
+      "currency": "SINGAPORE DOLLAR"
+    },
+    {
+      "name": "AIRWALLEX (CAYMAN) LIMITED",
+      "type": "CORPORATE",
+      "identificationType": "OTHER",
+      "identificationNumber": "T22UF8786K",
+      "nationality": "CAYMAN ISLANDS",
+      "placeOfOrigin": "CAYMAN ISLANDS",
+      "address": "C/O PO BOX 309, UGLAND HOUSE, GRAND CAYMAN, KY1-1104, CAYMAN ISLANDS",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 2000000,
+      "currency": "UNITED STATES OF AMERICA DOLLAR"
+    }
+  ],
+  "officers": [
+    {
+      "name": "LEE SOCK WEI (LI SHUHUI)",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8242814C",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "36 ROBINSON ROAD, #20-01, CITY HOUSE, SINGAPORE 068877",
+      "appointmentDate": "2024-09-04",
+      "cessationDate": null
+    },
+    {
+      "name": "YEK JIA JIN, JUSTIN (YE JIAJIN)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8528476B",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "28 FARRER ROAD, #05-06, SUTTON PLACE, SINGAPORE 268831",
+      "appointmentDate": "2024-06-13",
+      "cessationDate": null
+    }
+  ],
+  "financialYear": {
+    "endDay": 31,
+    "endMonth": 12
+  },
+  "homeCurrency": "SGD",
+  "compliance": {
+    "lastAgmDate": "2025-06-16",
+    "lastArFiledDate": "2025-07-22",
+    "fyeAsAtLastAr": "2024-12-31"
+  },
+  "documentMetadata": {
+    "receiptNo": "ACRA251226001049",
+    "receiptDate": "2025-12-26"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-27T09:40:23.941Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 17116ms |
+| Input Tokens | 7300 |
+| Output Tokens | 1238 |
+| Total Tokens | 8538 |
+| Estimated Cost | $0.0098 |
+
+<details>
+<summary>Response (3679 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "201626561Z",
+    "name": "AIRWALLEX (SINGAPORE) PTE. LTD.",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2016-09-28",
+    "incorporationDate": "2016-09-28"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "64999",
+      "description": "OTHER FINANCIAL SERVICE ACTIVITIES, EXCEPT INSURANCE AND PENSION FUNDING ACTIVITIES N.E.C."
+    }
+  },
+  "registeredAddress": {
+    "block": "36",
+    "streetName": "ROBINSON ROAD",
+    "level": "20",
+    "unit": "01",
+    "buildingName": "CITY HOUSE",
+    "postalCode": "068877",
+    "effectiveFrom": "2025-01-13"
+  },
+  "paidUpCapital": {
+    "amount": 539806159,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 539806159,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 539806159,
+      "totalValue": 539806159,
+      "isPaidUp": false,
+      "isTreasury": false
+    },
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 539806159,
+      "totalValue": 539806159,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "auditor": {
+    "name": "ERNST & YOUNG LLP"
+  },
+  "shareholders": [
+    {
+      "name": "AIRWALLEX (CAYMAN) LIMITED",
+      "type": "CORPORATE",
+      "identificationType": "OTHER",
+      "identificationNumber": "T22UF8786K",
+      "nationality": "CAYMAN ISLANDS",
+      "placeOfOrigin": "CAYMAN ISLANDS",
+      "address": "C/O PO BOX 309, UGLAND HOUSE, GRAND CAYMAN, KY1-1104, CAYMAN ISLANDS",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 539806159,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "LEE SOCK WEI (LI SHUHUI)",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8242814C",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "36 ROBINSON ROAD, #20-01, CITY HOUSE, SINGAPORE 068877",
+      "appointmentDate": "2024-09-04",
+      "cessationDate": null
+    },
+    {
+      "name": "YEK JIA JIN, JUSTIN (YE JIAJIN)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8528476B",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "28 FARRER ROAD, #05-06, SUTTON PLACE, SINGAPORE 268831",
+      "appointmentDate": "2024-06-25",
+      "cessationDate": null
+    },
+    {
+      "name": "WU KAI",
+      "role": "CEO",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8959411A",
+      "nationality": "CHINESE",
+      "address": "11 CUSCADEN WALK, #27-01, BOULEVARD VUE, SINGAPORE 249697",
+      "appointmentDate": "2023-06-16",
+      "cessationDate": null
+    },
+    {
+      "name": "WU KAI",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8959411A",
+      "nationality": "CHINESE",
+      "address": "11 CUSCADEN WALK, #27-01, BOULEVARD VUE, SINGAPORE 249697",
+      "appointmentDate": "2023-06-16",
+      "cessationDate": null
+    },
+    {
+      "name": "JACK ZHANG",
+      "role": "DIRECTOR",
+      "identificationType": "PASSPORT",
+      "identificationNumber": "RA7797088",
+      "nationality": "AUSTRALIAN",
+      "address": "34/F, OXFORD HOUSE, 979 KING'S ROAD, QUARRY BAY, HONG KONG",
+      "appointmentDate": "2016-09-28",
+      "cessationDate": null
+    }
+  ],
+  "financialYear": {
+    "endDay": 31,
+    "endMonth": 12
+  },
+  "homeCurrency": "SGD",
+  "compliance": {
+    "lastAgmDate": "2025-05-13",
+    "lastArFiledDate": "2025-07-25",
+    "fyeAsAtLastAr": "2024-12-31"
+  },
+  "documentMetadata": {
+    "receiptNo": "ACRA251205001853",
+    "receiptDate": "2025-12-05"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-27T09:58:24.574Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 18935ms |
+| Input Tokens | 7301 |
+| Output Tokens | 1230 |
+| Total Tokens | 8531 |
+| Estimated Cost | $0.0098 |
+
+<details>
+<summary>Response (3681 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "200416459H",
+    "name": "AKAI PRECISION ENGINEERING PTE. LTD.",
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2004-12-22",
+    "incorporationDate": "2004-12-22"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "28223",
+      "description": "MANUFACTURE OF DIES, MOULDS, TOOLS, JIGS AND FIXTURES"
+    },
+    "secondary": {
+      "code": "28221",
+      "description": "MANUFACTURE AND REPAIR OF MACHINERY AND MACHINE-TOOLS - METAL CUTTING TYPES (E.G. LATHES, MILLING MACHINES, SHAPING MACHINES)"
+    }
+  },
+  "registeredAddress": {
+    "block": "2",
+    "streetName": "WOODLANDS SECTOR 1",
+    "level": "03",
+    "unit": "02",
+    "buildingName": "WOODLANDS SPECTRUM",
+    "postalCode": "738068",
+    "effectiveFrom": "2016-07-08"
+  },
+  "paidUpCapital": {
+    "amount": 231000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 231000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 231000,
+      "totalValue": 231000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "TAN YONG KAI",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S1135060G",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "429 BUKIT PANJANG RING ROAD, #11-715, SINGAPORE 670429",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 115500,
+      "currency": "SGD"
+    },
+    {
+      "name": "TIEW BENG CHUAN",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7075009J",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "670 WOODLANDS DRIVE 71, #05-19, SINGAPORE 730670",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 115500,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "TIEW BENG CHUAN",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7075009J",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "670 WOODLANDS DRIVE 71, #05-19, SINGAPORE 730670",
+      "appointmentDate": "2013-03-08",
+      "cessationDate": null
+    },
+    {
+      "name": "TEO CHOR HUA",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S1325713B",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "336 SMITH STREET, #05-311, NEW BRIDGE CENTRE, SINGAPORE 050336",
+      "appointmentDate": "2011-04-06",
+      "cessationDate": null
+    },
+    {
+      "name": "TAN YONG KAI",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S1135060G",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "429 BUKIT PANJANG RING ROAD, #11-715, SINGAPORE 670429",
+      "appointmentDate": "2004-12-22",
+      "cessationDate": null
+    }
+  ],
+  "financialYear": {
+    "endDay": 31,
+    "endMonth": 12
+  },
+  "homeCurrency": "SGD",
+  "compliance": {
+    "lastAgmDate": "2025-06-26",
+    "lastArFiledDate": "2025-07-18",
+    "fyeAsAtLastAr": "2024-12-31"
+  },
+  "charges": [
+    {
+      "chargeNumber": "C202403464",
+      "chargeHolderName": "UNITED OVERSEAS BANK LIMITED",
+      "amountSecuredText": "ALL MONIES",
+      "registrationDate": "2024-04-02",
+      "dischargeDate": null
+    },
+    {
+      "chargeNumber": "C202403823",
+      "chargeHolderName": "UNITED OVERSEAS BANK LIMITED",
+      "amountSecuredText": "ALL MONIES",
+      "registrationDate": "2024-04-11",
+      "dischargeDate": null
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "ACRA250821002073",
+    "receiptDate": "2025-08-21"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-27T10:11:21.306Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 11055ms |
+| Input Tokens | 7003 |
+| Output Tokens | 591 |
+| Total Tokens | 7594 |
+| Estimated Cost | $0.0082 |
+
+<details>
+<summary>Response (1742 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202523367H",
+    "name": "AURION DIGITAL CORE PTE. LTD.",
+    "incorporationDate": "2025-05-28",
+    "entityType": "PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-05-28"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "62021",
+      "description": "INFORMATION TECHNOLOGY CONSULTANCY (EXCEPT CYBERSECURITY)"
+    }
+  },
+  "registeredAddress": {
+    "block": "39",
+    "streetName": "EWE BOON ROAD",
+    "level": "07",
+    "unit": "06",
+    "postalCode": "259334",
+    "effectiveFrom": "2025-05-28"
+  },
+  "paidUpCapital": {
+    "amount": 1000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 1000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 1000,
+      "totalValue": 1000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "officers": [
+    {
+      "name": "LAU CHEE SAM (LIU ZHISEN)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7970335D",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "39 EWE BOON ROAD, #07-06, SINGAPORE 259334",
+      "appointmentDate": "2025-05-28",
+      "cessationDate": null
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "LAU CHEE SAM (LIU ZHISEN)",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7970335D",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "39 EWE BOON ROAD, #07-06, SINGAPORE 259334",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 1000,
+      "currency": "SGD"
+    }
+  ],
+  "homeCurrency": "SGD",
+  "documentMetadata": {
+    "receiptNo": "FREE",
+    "receiptDate": "2025-05-28"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-27T10:19:33.658Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 8934ms |
+| Input Tokens | 6991 |
+| Output Tokens | 594 |
+| Total Tokens | 7585 |
+| Estimated Cost | $0.0082 |
+
+<details>
+<summary>Response (1748 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202523176C",
+    "name": "AURION ID PTE. LTD.",
+    "entityType": "PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-05-28",
+    "incorporationDate": "2025-05-28"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "62011",
+      "description": "DEVELOPMENT OF SOFTWARE AND APPLICATIONS (EXCEPT GAMES AND CYBERSECURITY)"
+    }
+  },
+  "registeredAddress": {
+    "block": "39",
+    "streetName": "EWE BOON ROAD",
+    "level": "07",
+    "unit": "06",
+    "postalCode": "259334",
+    "effectiveFrom": "2025-05-28"
+  },
+  "paidUpCapital": {
+    "amount": 1000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 1000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 1000,
+      "totalValue": 1000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "LAU CHEE SAM (LIU ZHISEN)",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7970335D",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "39 EWE BOON ROAD, #07-06, SINGAPORE 259334",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 1000,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "LAU CHEE SAM (LIU ZHISEN)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7970335D",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "39 EWE BOON ROAD, #07-06, SINGAPORE 259334",
+      "appointmentDate": "2025-05-28",
+      "cessationDate": null
+    }
+  ],
+  "homeCurrency": "SGD",
+  "documentMetadata": {
+    "receiptNo": "FREE",
+    "receiptDate": "2025-05-28"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-02-27T10:27:32.418Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 12733ms |
+| Input Tokens | 7200 |
+| Output Tokens | 975 |
+| Total Tokens | 8175 |
+| Estimated Cost | $0.0092 |
+
+<details>
+<summary>Response (2932 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202408327Z",
+    "name": "B2C2 ASIA PTE. LTD.",
+    "entityType": "PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2024-03-01",
+    "incorporationDate": "2024-03-01"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "66129",
+      "description": "SECURITY DEALINGS AND COMMODITY CONTRACTS BROKERAGE ACTIVITIES N.E.C."
+    }
+  },
+  "registeredAddress": {
+    "block": "68",
+    "streetName": "DUXTON ROAD",
+    "level": "02",
+    "unit": "01",
+    "buildingName": "68 DUXTON",
+    "postalCode": "089527",
+    "effectiveFrom": "2025-07-15"
+  },
+  "paidUpCapital": {
+    "amount": 1000,
+    "currency": "USD"
+  },
+  "issuedCapital": {
+    "amount": 1000,
+    "currency": "USD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "USD",
+      "numberOfShares": 1000,
+      "totalValue": 1000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "auditor": {
+    "name": "RSM SG ASSURANCE LLP"
+  },
+  "shareholders": [
+    {
+      "name": "B2C2 LTD",
+      "type": "CORPORATE",
+      "identificationType": "OTHER",
+      "identificationNumber": "T24UF1524B",
+      "nationality": "UNITED KINGDOM",
+      "placeOfOrigin": "UNITED KINGDOM",
+      "address": "86-90 PAUL STREET, LONDON, UK, EC2A 4NE",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 1000,
+      "currency": "USD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "LAURA TEO WHEI LYN (LAURA ZHANG WEILING)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S7711830F",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "29 CHARTWELL DRIVE, SERANGOON GARDEN ESTATE, SINGAPORE 558723",
+      "appointmentDate": "2025-08-12",
+      "cessationDate": null
+    },
+    {
+      "name": "MARC MARINUS JOSEPHUS JOHANNES VAN EIJCK",
+      "role": "DIRECTOR",
+      "identificationType": "PASSPORT",
+      "identificationNumber": "BFCCP30C2",
+      "nationality": "NETHERLANDS",
+      "address": "CLEALE HOUSE, THE STREET, SUTTON WALDRON, BLANDFORD FORUM, DORSET DT11 8NZ",
+      "appointmentDate": "2024-05-21",
+      "cessationDate": null
+    },
+    {
+      "name": "KOH LING XI JACE (XU QIYUN)",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8438963C",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "6001 BEACH ROAD, #22-01, GOLDEN MILE TOWER, SINGAPORE 199589",
+      "appointmentDate": "2024-03-01",
+      "cessationDate": null
+    },
+    {
+      "name": "ROGERS DAVID ANDREW",
+      "role": "DIRECTOR",
+      "identificationType": "PASSPORT",
+      "identificationNumber": "548404120",
+      "nationality": "BRITISH",
+      "address": "26 BIRT AVENUE SURFERS PARADISE, QLD 4217 AUSTRALIA",
+      "appointmentDate": "2024-03-01",
+      "cessationDate": null
+    }
+  ],
+  "documentMetadata": {
+    "receiptNo": "ACRA250912000194",
+    "receiptDate": "2025-09-12"
+  }
+}
+```
+</details>
+
+---
+

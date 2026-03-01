@@ -99,6 +99,7 @@ export default function WorkflowProjectsPage() {
       projectName: searchParams.get('projectName') || undefined,
       clientName: searchParams.get('clientName') || undefined,
       templateName: searchParams.get('templateName') || undefined,
+      nextTaskName: searchParams.get('nextTaskName') || undefined,
       assignee: searchParams.get('assignee') || undefined,
       startDateFrom: searchParams.get('startDateFrom') || undefined,
       startDateTo: searchParams.get('startDateTo') || undefined,
@@ -229,6 +230,7 @@ export default function WorkflowProjectsPage() {
     if (params.projectName) query.set('projectName', params.projectName);
     if (params.clientName) query.set('clientName', params.clientName);
     if (params.templateName) query.set('templateName', params.templateName);
+    if (params.nextTaskName) query.set('nextTaskName', params.nextTaskName);
     if (params.assignee) query.set('assignee', params.assignee);
     if (params.startDateFrom) query.set('startDateFrom', params.startDateFrom);
     if (params.startDateTo) query.set('startDateTo', params.startDateTo);
@@ -318,6 +320,7 @@ export default function WorkflowProjectsPage() {
       projectName: undefined,
       clientName: undefined,
       templateName: undefined,
+      nextTaskName: undefined,
       assignee: undefined,
       startDateFrom: undefined,
       startDateTo: undefined,
@@ -386,6 +389,14 @@ export default function WorkflowProjectsPage() {
         label: 'Template',
         value: params.templateName,
         onRemove: () => setParams((previous) => ({ ...previous, templateName: undefined, page: 1 })),
+      });
+    }
+    if (params.nextTaskName) {
+      chips.push({
+        key: 'nextTaskName',
+        label: 'Next Task',
+        value: params.nextTaskName,
+        onRemove: () => setParams((previous) => ({ ...previous, nextTaskName: undefined, page: 1 })),
       });
     }
     if (params.assignee) {
@@ -465,6 +476,7 @@ export default function WorkflowProjectsPage() {
     projectName: params.projectName,
     clientName: params.clientName,
     templateName: params.templateName,
+    nextTaskName: params.nextTaskName,
     status: params.status,
     assignee: params.assignee,
     startDateFrom: params.startDateFrom,
@@ -568,29 +580,29 @@ export default function WorkflowProjectsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={handleRefresh}
-            className="btn-secondary btn-sm flex items-center gap-2"
+            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
             aria-label="Refresh projects"
             title="Refresh list (Ctrl+R)"
             disabled={isFetching}
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
-            <span className="sm:hidden">Refresh</span>
+            <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
+            <span className="xl:hidden">Refresh</span>
           </button>
 
-          <Link href="/workflow/projects/new" className="btn-primary btn-sm flex items-center gap-2" title="Create project (F1)">
+          <Link href="/workflow/projects/new" className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap" title="Create project (F1)">
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">New Project (F1)</span>
-            <span className="sm:hidden">New</span>
+            <span className="hidden xl:inline">New Project (F1)</span>
+            <span className="xl:hidden">New</span>
           </Link>
         </div>
       </div>
 
-      <MobileCollapsibleSection title="Workload Snapshot" count={4} className="mb-6">
+      <MobileCollapsibleSection title="Workload Snapshot" count={dueCards.length} className="mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {dueCards.map((card) => {
             const Icon = card.icon;
@@ -673,7 +685,7 @@ export default function WorkflowProjectsPage() {
       )}
 
       {activeFilterChips.length > 0 && (
-        <div className="hidden md:flex items-center gap-2 mb-4 flex-wrap">
+        <div className="hidden lg:flex items-center gap-2 mb-4 flex-wrap">
           <span className="text-sm text-text-secondary font-medium">Active filters:</span>
           {activeFilterChips.map((chip) => (
             <FilterChip
@@ -778,8 +790,8 @@ export default function WorkflowProjectsPage() {
               disabled={bulkDeleteWorkflowProjects.isPending}
             >
               <Trash2 className="w-4 h-4" />
-              <span className="text-xs sm:text-sm hidden sm:inline">Delete (F2)</span>
-              <span className="text-xs sm:text-sm sm:hidden">Delete</span>
+              <span className="text-xs sm:text-sm hidden lg:inline">Delete (F2)</span>
+              <span className="text-xs sm:text-sm lg:hidden">Delete</span>
             </button>
           )}
         </div>

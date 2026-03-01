@@ -17,8 +17,7 @@ export type WorkflowProjectSortField =
   | 'templateName'
   | 'status'
   | 'progress'
-  | 'teamTaskCount'
-  | 'clientTaskCount'
+  | 'nextTaskName'
   | 'startDate'
   | 'nextTaskDueDate'
   | 'dueDate';
@@ -39,6 +38,7 @@ export interface WorkflowProject {
   completedTaskCount: number;
   totalTaskCount: number;
   startDate: string;
+  nextTaskName: string | null;
   nextTaskDueDate?: string | null;
   dueDate: string;
   recurrenceMonths: number | null;
@@ -55,6 +55,7 @@ export interface WorkflowProjectSearchParams {
   projectName?: string;
   clientName?: string;
   templateName?: string;
+  nextTaskName?: string;
   assignee?: string;
   startDateFrom?: string;
   startDateTo?: string;

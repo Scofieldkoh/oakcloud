@@ -701,23 +701,25 @@ export function ContactDetailsModal({
                   </div>
                   <div className="px-4 py-3">
                     {data.companyDetails.length > 0 ? (
-                      <div className="space-y-1">
-                        {data.companyDetails.map((detail) => (
-                          <ContactDetailRow
-                            key={detail.id}
-                            detail={detail}
-                            canEdit={canEdit}
-                            isEditing={editingDetailId === detail.id}
-                            editForm={editForm}
-                            onStartEdit={() => startEdit(detail)}
-                            onCancelEdit={cancelEdit}
-                            onSaveEdit={handleUpdateDetail}
-                            onDelete={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
-                            onUpdateForm={updateEditForm}
-                            isSaving={updateDetailMutation.isPending}
-                            isDeleting={deletingDetailId === detail.id}
-                          />
-                        ))}
+                      <div className="overflow-x-auto overflow-y-hidden">
+                        <div className="w-max min-w-[860px] space-y-1">
+                          {data.companyDetails.map((detail) => (
+                            <ContactDetailRow
+                              key={detail.id}
+                              detail={detail}
+                              canEdit={canEdit}
+                              isEditing={editingDetailId === detail.id}
+                              editForm={editForm}
+                              onStartEdit={() => startEdit(detail)}
+                              onCancelEdit={cancelEdit}
+                              onSaveEdit={handleUpdateDetail}
+                              onDelete={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
+                              onUpdateForm={updateEditForm}
+                              isSaving={updateDetailMutation.isPending}
+                              isDeleting={deletingDetailId === detail.id}
+                            />
+                          ))}
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center py-6">
@@ -758,25 +760,30 @@ export function ContactDetailsModal({
                   <div className="py-2">
                     {data.contactDetails.length > 0 ? (
                       <>
-                        {/* Header row */}
-                        <div className="flex items-center gap-4 py-2 px-4 text-xs font-medium text-text-muted border-b border-border-secondary">
-                          <div className="flex-shrink-0 w-[320px]">Name</div>
-                          <div className="flex-shrink-0 w-[180px]">Role</div>
-                          <div className="flex-1">Email</div>
-                          <div className="flex-shrink-0 w-[120px]">Phone</div>
-                          <div className="flex-shrink-0 w-[32px]"></div>
-                        </div>
-                        {/* Contact rows */}
-                        <div className="divide-y divide-border-secondary">
-                          {data.contactDetails.map((item) => (
-                            <ContactRow
-                              key={item.contact.id}
-                              item={item}
-                              companyId={companyId}
-                              canEdit={canEdit}
-                              onAddDetail={() => openAddDetailForContact(item)}
-                            />
-                          ))}
+                        <div className="overflow-x-auto overflow-y-hidden">
+                          <div className="w-max min-w-[1040px]">
+                            {/* Header row */}
+                            <div className="flex w-full items-center gap-2.5 lg:gap-4 py-2 px-3 lg:px-4 text-xs font-medium text-text-muted border-b border-border-secondary">
+                              <div className="flex-shrink-0 w-[280px] lg:w-[360px]">Name</div>
+                              <div className="flex-shrink-0 w-[220px] lg:w-[300px]">Role</div>
+                              <div className="flex-shrink-0 w-[72px] lg:w-[80px] text-center">POC</div>
+                              <div className="flex-shrink-0 w-[170px] lg:w-[210px]">Phone</div>
+                              <div className="flex-1 min-w-[220px]">Email</div>
+                              <div className="flex-shrink-0 w-[56px]"></div>
+                            </div>
+                            {/* Contact rows */}
+                            <div className="w-full divide-y divide-border-secondary">
+                              {data.contactDetails.map((item) => (
+                                <ContactRow
+                                  key={item.contact.id}
+                                  item={item}
+                                  companyId={companyId}
+                                  canEdit={canEdit}
+                                  onAddDetail={() => openAddDetailForContact(item)}
+                                />
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </>
                     ) : (

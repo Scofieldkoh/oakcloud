@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createContactSchema, contactSearchSchema } from '@/lib/validations/contact';
+import { createContactWithDetailsSchema, contactSearchSchema } from '@/lib/validations/contact';
 import { createContact, searchContactsWithCounts } from '@/services/contact.service';
+import { createContactDetail } from '@/services/contact-detail.service';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -77,7 +79,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { tenantId: bodyTenantId, ...contactData } = body;
-    const data = createContactSchema.parse(contactData);
+    const data = createContactWithDetailsSchema.parse(contactData);
+    const { contactDetails = [], ...createData } = data;
 
     // Determine tenant ID: SUPER_ADMIN can specify tenantId, others use session
     let tenantId = session.tenantId;
@@ -89,7 +92,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
 
-    const contact = await createContact(data, { tenantId, userId: session.id });
+    const contact = await prisma.$transaction(async (tx) => {
+      const createdContact = await createContact(createData, {
+        tenantId,
+        userId: session.id,
+        tx,
+      });
+
+      if (contactDetails.length > 0) {
+        for (let i = 0; i < contactDetails.length; i++) {
+          const detail = contactDetails[i];
+          await createContactDetail(
+            {
+              contactId: createdContact.id,
+              companyId: detail.companyId,
+              detailType: detail.detailType,
+              value: detail.value,
+              label: detail.label,
+              purposes: detail.purposes,
+              description: detail.description,
+              displayOrder: detail.displayOrder ?? i,
+              isPrimary: detail.isPrimary,
+            },
+            {
+              tenantId,
+              userId: session.id,
+              tx,
+            }
+          );
+        }
+      }
+
+      return createdContact;
+    });
 
     return NextResponse.json(contact, { status: 201 });
   } catch (error) {

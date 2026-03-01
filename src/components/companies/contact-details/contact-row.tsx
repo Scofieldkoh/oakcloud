@@ -117,9 +117,9 @@ export function ContactRow({
   };
 
   return (
-    <div className="flex items-center gap-4 py-3 px-4 hover:bg-surface-secondary rounded-lg transition-colors group">
+    <div className="flex w-full items-center gap-2.5 lg:gap-4 py-3 px-3 lg:px-4 hover:bg-surface-secondary transition-colors group">
       {/* Name with link - widened 1.5x */}
-      <div className="flex-shrink-0 w-[360px] min-w-0">
+      <div className="flex-shrink-0 w-[280px] lg:w-[360px] min-w-0">
         <Link
           href={`/contacts/${item.contact.id}`}
           className="font-medium text-text-primary hover:text-oak-light flex items-center gap-1.5 truncate"
@@ -134,8 +134,8 @@ export function ContactRow({
       </div>
 
       {/* Relationship badges - w-[300px] */}
-      <div className="flex-shrink-0 w-[300px]">
-        <div className="flex flex-wrap gap-1 items-center">
+      <div className="flex-shrink-0 w-[220px] lg:w-[300px] min-w-0">
+        <div className="flex flex-wrap gap-1 items-center min-w-0">
           {relationships.length > 0 ? (
             <>
               {relationships.slice(0, 2).map((rel, idx) => (
@@ -163,7 +163,7 @@ export function ContactRow({
       </div>
 
       {/* POC column - w-[80px] */}
-      <div className="flex-shrink-0 w-[80px] flex items-center justify-center">
+      <div className="flex-shrink-0 w-[72px] lg:w-[80px] flex items-center justify-center">
         {canEdit ? (
           <button
             onClick={handlePocClick}
@@ -190,11 +190,11 @@ export function ContactRow({
       </div>
 
       {/* Phone */}
-      <div className="flex-shrink-0 w-[210px]">
+      <div className="flex-shrink-0 w-[170px] lg:w-[210px] min-w-0">
         {displayedPhone ? (
-          <div className="flex items-center gap-1.5">
-            <Phone className="w-3.5 h-3.5 text-text-tertiary" aria-hidden="true" />
-            <span className="text-sm text-text-primary">{displayedPhone}</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Phone className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" aria-hidden="true" />
+            <span className="text-sm text-text-primary truncate">{displayedPhone}</span>
             <CopyButton value={displayedPhone} label="phone number" />
           </div>
         ) : (
@@ -203,14 +203,14 @@ export function ContactRow({
       </div>
 
       {/* Email with automation badges */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-[220px]">
         {displayedEmail ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
             <Mail className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" aria-hidden="true" />
             <span className="text-sm text-text-primary truncate">{displayedEmail}</span>
             <CopyButton value={displayedEmail} label="email address" />
             {emailPurposes.length > 0 && (
-              <div className="flex gap-1 flex-shrink-0">
+              <div className="hidden xl:flex gap-1 flex-shrink-0">
                 {emailPurposes.slice(0, 2).map((purpose) => (
                   <span key={purpose} className="text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                     {purpose}
@@ -229,7 +229,7 @@ export function ContactRow({
 
       {/* Actions - always visible */}
       {canEdit && (
-        <div className="flex-shrink-0 flex items-center gap-2">
+        <div className="flex-shrink-0 w-[56px] flex items-center justify-end gap-2">
           <button
             onClick={onAddDetail}
             className="text-text-muted hover:text-oak-light transition-colors"

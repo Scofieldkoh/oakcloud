@@ -486,12 +486,21 @@ export async function inviteUserToTenant(
     throw new Error(`Tenant has reached the maximum number of users (${limits.maxUsers})`);
   }
 
-  // Check if email already exists
+  const normalizedEmail = data.email.toLowerCase();
+
+  // Check if email already exists. If user was soft-deleted in this tenant,
+  // we restore that account instead of creating a new one.
   const existingUser = await prisma.user.findUnique({
-    where: { email: data.email.toLowerCase() },
+    where: { email: normalizedEmail },
   });
 
-  if (existingUser) {
+  const canRestoreSoftDeletedUser = Boolean(
+    existingUser &&
+    existingUser.tenantId === tenantId &&
+    existingUser.deletedAt !== null
+  );
+
+  if (existingUser && !canRestoreSoftDeletedUser) {
     throw new Error('A user with this email already exists');
   }
 
@@ -537,18 +546,6 @@ export async function inviteUserToTenant(
   const tempPassword = generateTemporaryPassword();
   const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_SALT_ROUNDS);
 
-  const user = await prisma.user.create({
-    data: {
-      email: data.email.toLowerCase(),
-      firstName: data.firstName,
-      lastName: data.lastName,
-      passwordHash,
-      tenantId,
-      isActive: true,
-      mustChangePassword: true, // Force password change on first login
-    },
-  });
-
   // Collect all company IDs that need UserCompanyAssignment
   const companyIdsToAssign = new Set<string>();
 
@@ -564,29 +561,100 @@ export async function inviteUserToTenant(
       .forEach((a) => companyIdsToAssign.add(a.companyId as string));
   }
 
-  // Create company assignments for all unique companies
-  if (companyIdsToAssign.size > 0) {
-    const companyIds = Array.from(companyIdsToAssign);
-    const primaryCompanyIdForAssignment = data.companyAssignments?.find((a) => a.isPrimary)?.companyId
-      || companyIds[0];
+  const assignUserAccess = async (userId: string) => {
+    // Create company assignments for all unique companies
+    if (companyIdsToAssign.size > 0) {
+      const companyIds = Array.from(companyIdsToAssign);
+      const primaryCompanyIdForAssignment = data.companyAssignments?.find((a) => a.isPrimary)?.companyId
+        || companyIds[0];
 
-    await prisma.userCompanyAssignment.createMany({
-      data: companyIds.map((companyId) => ({
-        userId: user.id,
-        companyId,
-        isPrimary: companyId === primaryCompanyIdForAssignment,
+      await prisma.userCompanyAssignment.createMany({
+        data: companyIds.map((companyId) => ({
+          userId,
+          companyId,
+          isPrimary: companyId === primaryCompanyIdForAssignment,
+        })),
+      });
+    }
+
+    // Handle role assignments (required - at least one must be provided)
+    await prisma.userRoleAssignment.createMany({
+      data: data.roleAssignments.map((assignment) => ({
+        userId,
+        roleId: assignment.roleId,
+        companyId: assignment.companyId || null, // null = "All Companies"
       })),
     });
-  }
+  };
 
-  // Handle role assignments (required - at least one must be provided)
-  await prisma.userRoleAssignment.createMany({
-    data: data.roleAssignments.map((assignment) => ({
-      userId: user.id,
-      roleId: assignment.roleId,
-      companyId: assignment.companyId || null, // null = "All Companies"
-    })),
-  });
+  let user: Awaited<ReturnType<typeof prisma.user.create>>;
+
+  if (canRestoreSoftDeletedUser && existingUser) {
+    user = await prisma.$transaction(async (tx) => {
+      const restoredUser = await tx.user.update({
+        where: { id: existingUser.id },
+        data: {
+          email: normalizedEmail,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          passwordHash,
+          tenantId,
+          isActive: true,
+          deletedAt: null,
+          mustChangePassword: true, // Force password change on first login
+          passwordResetToken: null,
+          passwordResetExpires: null,
+          passwordChangedAt: null,
+        },
+      });
+
+      // Replace existing access assignments so re-invite reflects current selections.
+      await tx.userCompanyAssignment.deleteMany({
+        where: { userId: restoredUser.id },
+      });
+      await tx.userRoleAssignment.deleteMany({
+        where: { userId: restoredUser.id },
+      });
+
+      if (companyIdsToAssign.size > 0) {
+        const companyIds = Array.from(companyIdsToAssign);
+        const primaryCompanyIdForAssignment = data.companyAssignments?.find((a) => a.isPrimary)?.companyId
+          || companyIds[0];
+
+        await tx.userCompanyAssignment.createMany({
+          data: companyIds.map((companyId) => ({
+            userId: restoredUser.id,
+            companyId,
+            isPrimary: companyId === primaryCompanyIdForAssignment,
+          })),
+        });
+      }
+
+      await tx.userRoleAssignment.createMany({
+        data: data.roleAssignments.map((assignment) => ({
+          userId: restoredUser.id,
+          roleId: assignment.roleId,
+          companyId: assignment.companyId || null,
+        })),
+      });
+
+      return restoredUser;
+    });
+  } else {
+    user = await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        passwordHash,
+        tenantId,
+        isActive: true,
+        mustChangePassword: true, // Force password change on first login
+      },
+    });
+
+    await assignUserAccess(user.id);
+  }
 
   // Log user invitation
   const auditContext: AuditContext = {
@@ -598,6 +666,7 @@ export async function inviteUserToTenant(
     email: user.email,
     companyAssignments: data.companyAssignments?.length || 0,
     roleAssignments: data.roleAssignments.length,
+    reactivated: canRestoreSoftDeletedUser,
   });
 
   // Get tenant name for email
