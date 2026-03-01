@@ -38,6 +38,7 @@ interface AIModelsResponse {
     openai: GroupedModel[];
     anthropic: GroupedModel[];
     google: GroupedModel[];
+    openrouter: GroupedModel[];
   };
 }
 

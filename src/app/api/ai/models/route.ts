@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // Build provider status based on tenant's available providers
-    const providerList: AIProvider[] = ['openai', 'anthropic', 'google'];
+    const providerList: AIProvider[] = ['openai', 'anthropic', 'google', 'openrouter'];
     const providers = providerList.map((provider) => ({
       provider,
       available: availableProviders.includes(provider),
@@ -103,6 +103,12 @@ export async function GET(request: NextRequest) {
           name: m.name,
           description: m.description,
           available: availableProviders.includes('google'),
+        })),
+        openrouter: groupedModels.openrouter.map((m) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          available: availableProviders.includes('openrouter'),
         })),
       },
     };
