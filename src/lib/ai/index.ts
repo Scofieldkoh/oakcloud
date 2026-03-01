@@ -283,6 +283,26 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
   if (resolved) {
     // Credentials are already decrypted by resolveConnector
     const credentials = resolved.connector.credentials as Record<string, unknown>;
+
+    // For OpenRouter, verify the requested model is not disabled for this connector
+    if (provider === 'openrouter') {
+      const { prisma } = await import('@/lib/prisma');
+      const modelOverride = await prisma.connectorModelConfig.findUnique({
+        where: {
+          connectorId_modelId: {
+            connectorId: resolved.connector.id,
+            modelId: options.model,
+          },
+        },
+      });
+      // A row with isEnabled: false means the model is explicitly disabled
+      if (modelOverride && !modelOverride.isEnabled) {
+        throw new Error(
+          `Model "${options.model}" is disabled for this OpenRouter connector.`
+        );
+      }
+    }
+
     const startTime = Date.now();
     let response: AIResponse | undefined;
     let error: Error | null = null;
