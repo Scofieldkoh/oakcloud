@@ -51,8 +51,10 @@ vi.mock('@/lib/logger', () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
+    trace: vi.fn(),
   })),
   getPrismaLogConfig: vi.fn(() => ['error', 'warn']),
+  isLogLevelEnabled: vi.fn(() => false),
 }));
 
 describe('Prisma 7 Client', () => {

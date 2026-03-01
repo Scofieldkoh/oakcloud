@@ -6,6 +6,15 @@ import { logAuthEvent } from '@/lib/audit';
 import { createLogger, safeErrorMessage } from '@/lib/logger';
 import { verifyPassword, hashPassword } from '@/lib/encryption';
 import {
+  checkRateLimit,
+  recordFailure,
+  recordSuccess,
+  getClientIp,
+  createRateLimitHeaders,
+  getRateLimitKey,
+  RATE_LIMIT_CONFIGS,
+} from '@/lib/rate-limit';
+import {
   AUTH_COOKIE_NAME,
   COOKIE_MAX_AGE_SECONDS,
   COOKIE_OPTIONS,
@@ -17,6 +26,7 @@ const log = createLogger('auth:login');
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIp(request);
     const body = await request.json();
     const { email, password } = body;
 
@@ -27,9 +37,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedEmail = String(email).toLowerCase();
+    const ipRateLimitKey = getRateLimitKey('login_ip', clientIp);
+    const emailRateLimitKey = getRateLimitKey('login_email', normalizedEmail);
+
+    const ipRateLimitResult = checkRateLimit(ipRateLimitKey, RATE_LIMIT_CONFIGS.LOGIN);
+    if (!ipRateLimitResult.allowed) {
+      const headers = createRateLimitHeaders(ipRateLimitResult);
+      const errorMessage = ipRateLimitResult.isLockedOut
+        ? 'Too many failed login attempts. Please try again later.'
+        : 'Rate limit exceeded. Please wait before trying again.';
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: HTTP_STATUS.TOO_MANY_REQUESTS, headers }
+      );
+    }
+
+    const emailRateLimitResult = checkRateLimit(emailRateLimitKey, RATE_LIMIT_CONFIGS.LOGIN);
+    if (!emailRateLimitResult.allowed) {
+      const headers = createRateLimitHeaders(emailRateLimitResult);
+      const errorMessage = emailRateLimitResult.isLockedOut
+        ? 'Too many failed login attempts. Please try again later.'
+        : 'Rate limit exceeded. Please wait before trying again.';
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: HTTP_STATUS.TOO_MANY_REQUESTS, headers }
+      );
+    }
+
     // Find user by email with tenant info and role assignments
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: normalizedEmail },
       include: {
         tenant: true,
         roleAssignments: {
@@ -45,9 +83,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user || !user.isActive || user.deletedAt) {
+      recordFailure(ipRateLimitKey, RATE_LIMIT_CONFIGS.LOGIN);
+      recordFailure(emailRateLimitKey, RATE_LIMIT_CONFIGS.LOGIN);
       // Log failed login attempt
       await logAuthEvent('LOGIN_FAILED', undefined, {
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         reason: !user ? 'User not found' : 'Account inactive or deleted',
       });
       return NextResponse.json(
@@ -110,6 +150,8 @@ export async function POST(request: NextRequest) {
     // Verify password (supports both Argon2id and legacy bcrypt)
     const verification = await verifyPassword(password, user.passwordHash);
     if (!verification.isValid) {
+      recordFailure(ipRateLimitKey, RATE_LIMIT_CONFIGS.LOGIN);
+      recordFailure(emailRateLimitKey, RATE_LIMIT_CONFIGS.LOGIN);
       await logAuthEvent('LOGIN_FAILED', user.id, {
         email: user.email,
         userName: `${user.firstName} ${user.lastName}`,
@@ -151,6 +193,10 @@ export async function POST(request: NextRequest) {
       tenantId: user.tenantId,
       tenantName: user.tenant?.name,
     });
+
+    // Successful login resets failure counters.
+    recordSuccess(ipRateLimitKey);
+    recordSuccess(emailRateLimitKey);
 
     // Create JWT token
     const token = await createToken({

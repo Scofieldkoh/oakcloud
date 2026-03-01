@@ -18,6 +18,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { AIModelSelector, useAIModels } from '@/components/ui/ai-model-selector';
+import { useSession } from '@/hooks/use-auth';
+import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { cn } from '@/lib/utils';
 
 // Document category type (string union for flexibility)
@@ -145,8 +147,14 @@ export function AISidebar({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Hooks - pass tenantId for connector-aware model availability
-  const { hasAvailableModels, isLoading: modelsLoading } = useAIModels(context.tenantId);
+  // Resolve tenant context for connector-aware model selection/calls.
+  // For SUPER_ADMIN, fall back to the active tenant store selection.
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const effectiveTenantId = context.tenantId || activeTenantId;
+
+  // Hooks - pass resolved tenantId for connector-aware model availability
+  const { hasAvailableModels, isLoading: modelsLoading } = useAIModels(effectiveTenantId);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -200,7 +208,7 @@ export function AISidebar({
                 mode: context.mode,
                 templateCategory: context.templateCategory,
                 templateName: context.templateName,
-                tenantId: context.tenantId,
+                tenantId: effectiveTenantId,
                 tenantName: context.tenantName,
                 companyContext: context.companyContext,
                 selectedText: context.selectedText,
@@ -221,7 +229,7 @@ export function AISidebar({
                 mode: context.mode,
                 templateCategory: context.templateCategory,
                 templateName: context.templateName,
-                tenantId: context.tenantId,
+                tenantId: effectiveTenantId,
                 tenantName: context.tenantName,
                 companyContext: context.companyContext,
                 selectedText: context.selectedText,
@@ -265,7 +273,7 @@ export function AISidebar({
         setIsLoading(false);
       }
     },
-    [context, selectedModel, messages]
+    [context, effectiveTenantId, selectedModel, messages]
   );
 
   // Handle quick action click
@@ -438,7 +446,7 @@ export function AISidebar({
               variant="compact"
               label="Model"
               showDetails={false}
-              tenantId={context.tenantId}
+              tenantId={effectiveTenantId}
             />
           </div>
         )}

@@ -3,6 +3,8 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { getAuditHistory } from '@/lib/audit';
 import type { AuditAction } from '@/generated/prisma';
+import { parseIdParams } from '@/lib/validations/params';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +12,23 @@ export async function GET(
 ) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    const { id } = await parseIdParams(params);
+
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
+    const contact = await prisma.contact.findFirst({
+      where: {
+        id,
+        tenantId: session.tenantId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (!contact) {
+      return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+    }
 
     // Check audit log read permission (or contact read permission as fallback)
     try {
@@ -29,6 +47,7 @@ export async function GET(
       limit,
       offset,
       actions,
+      tenantId: session.tenantId,
     });
 
     return NextResponse.json(auditLogs);

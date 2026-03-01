@@ -115,6 +115,26 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
   // },
 };
 
+// Backward-compatible model ID aliases for env/config values.
+// This lets older deployments keep working while docs/config are updated.
+const MODEL_ID_ALIASES: Record<string, AIModel> = {
+  'gpt-5': 'gpt-5.2',
+  'gemini-3': 'gemini-3.1',
+  'gemini-3.1-pro': 'gemini-3.1',
+  'gemini-2.5-flash': 'gemini-3-flash',
+};
+
+/**
+ * Normalize external model IDs (env vars, legacy config) into supported AIModel IDs.
+ */
+function normalizeModelId(modelId?: string): AIModel | undefined {
+  if (!modelId) return undefined;
+  if (AI_MODELS[modelId as AIModel]) {
+    return modelId as AIModel;
+  }
+  return MODEL_ID_ALIASES[modelId];
+}
+
 // Get model config by ID
 export function getModelConfig(modelId: AIModel): AIModelConfig {
   const config = AI_MODELS[modelId];
@@ -141,8 +161,8 @@ export function getModelsGroupedByProvider(): Record<AIProvider, AIModelConfig[]
 // Get the default model (checks env variable first, then falls back to code default)
 export function getDefaultModel(): AIModelConfig {
   // Check for environment variable override
-  const envDefault = process.env.DEFAULT_AI_MODEL as AIModel | undefined;
-  if (envDefault && AI_MODELS[envDefault]) {
+  const envDefault = normalizeModelId(process.env.DEFAULT_AI_MODEL);
+  if (envDefault) {
     return AI_MODELS[envDefault];
   }
 

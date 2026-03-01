@@ -7,13 +7,30 @@
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, type AuditContext } from '@/lib/audit';
-import type { NoteTab } from '@/generated/prisma';
+import type { NoteTab, Prisma } from '@/generated/prisma';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export type EntityType = 'company' | 'contact';
+
+function buildEntityWhere(
+  entityType: EntityType,
+  entityId: string,
+  tenantId?: string
+): Prisma.NoteTabWhereInput {
+  const entityScope =
+    entityType === 'company' ? { companyId: entityId } : { contactId: entityId };
+
+  if (!tenantId) {
+    return entityScope;
+  }
+
+  return entityType === 'company'
+    ? { ...entityScope, company: { tenantId, deletedAt: null } }
+    : { ...entityScope, contact: { tenantId, deletedAt: null } };
+}
 
 export interface NoteTabData {
   id: string;
@@ -43,13 +60,11 @@ export interface UpdateNoteTabInput {
  */
 export async function getNoteTabs(
   entityType: EntityType,
-  entityId: string
+  entityId: string,
+  tenantId?: string
 ): Promise<NoteTabData[]> {
-  const where =
-    entityType === 'company' ? { companyId: entityId } : { contactId: entityId };
-
   const tabs = await prisma.noteTab.findMany({
-    where,
+    where: buildEntityWhere(entityType, entityId, tenantId),
     orderBy: { order: 'asc' },
   });
 
@@ -76,14 +91,29 @@ export async function createNoteTab(
   entityType: EntityType,
   entityId: string,
   input: CreateNoteTabInput,
-  auditContext?: AuditContext
+  auditContext?: AuditContext,
+  tenantId?: string
 ): Promise<NoteTab> {
-  // Get the next order number
-  const where =
-    entityType === 'company' ? { companyId: entityId } : { contactId: entityId };
+  // Guard against cross-tenant note creation when tenant context is provided.
+  if (tenantId) {
+    const entity = entityType === 'company'
+      ? await prisma.company.findFirst({
+          where: { id: entityId, tenantId, deletedAt: null },
+          select: { id: true },
+        })
+      : await prisma.contact.findFirst({
+          where: { id: entityId, tenantId, deletedAt: null },
+          select: { id: true },
+        });
 
+    if (!entity) {
+      throw new Error('Parent entity not found');
+    }
+  }
+
+  // Get the next order number
   const maxOrder = await prisma.noteTab.aggregate({
-    where,
+    where: buildEntityWhere(entityType, entityId, tenantId),
     _max: { order: true },
   });
 
@@ -248,17 +278,28 @@ export async function reorderNoteTabs(
 export async function verifyNoteTabOwnership(
   tabId: string,
   entityType: EntityType,
-  entityId: string
+  entityId: string,
+  tenantId?: string
 ): Promise<boolean> {
   const tab = await prisma.noteTab.findUnique({
     where: { id: tabId },
+    include: {
+      company: { select: { tenantId: true, deletedAt: true } },
+      contact: { select: { tenantId: true, deletedAt: true } },
+    },
   });
 
   if (!tab) return false;
 
   if (entityType === 'company') {
-    return tab.companyId === entityId;
+    return (
+      tab.companyId === entityId &&
+      (!tenantId || (tab.company?.tenantId === tenantId && tab.company.deletedAt === null))
+    );
   } else {
-    return tab.contactId === entityId;
+    return (
+      tab.contactId === entityId &&
+      (!tenantId || (tab.contact?.tenantId === tenantId && tab.contact.deletedAt === null))
+    );
   }
 }

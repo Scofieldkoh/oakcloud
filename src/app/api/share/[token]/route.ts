@@ -6,30 +6,10 @@ import {
   createDocumentComment,
   checkCommentRateLimit,
 } from '@/services/document-generator.service';
+import { verifyShareVerificationToken } from '@/lib/share-verification-token';
 
 interface RouteParams {
   params: Promise<{ token: string }>;
-}
-
-/**
- * Helper function to verify the verification token from POST /api/share/[token]/verify
- */
-function verifyVerificationToken(
-  verificationToken: string,
-  shareId: string
-): boolean {
-  try {
-    const decoded = JSON.parse(
-      Buffer.from(verificationToken, 'base64url').toString('utf-8')
-    );
-    return (
-      decoded.shareId === shareId &&
-      decoded.verified === true &&
-      decoded.exp > Date.now()
-    );
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -69,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
 
       // Verify the token
-      if (!verifyVerificationToken(verificationToken, share.id)) {
+      if (!(await verifyShareVerificationToken(verificationToken, share.id))) {
         return NextResponse.json(
           { error: 'Invalid or expired verification', requiresPassword: true },
           { status: 401 }
@@ -153,7 +133,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
 
       // Verify the token
-      if (!verifyVerificationToken(verificationToken, share.id)) {
+      if (!(await verifyShareVerificationToken(verificationToken, share.id))) {
         return NextResponse.json(
           { error: 'Invalid or expired verification', requiresPassword: true },
           { status: 401 }

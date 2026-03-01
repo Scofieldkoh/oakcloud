@@ -106,6 +106,7 @@ interface DocumentPageViewerProps {
 const ZOOM_LEVELS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 const DEFAULT_ZOOM_INDEX = 6; // 150%
 const MOBILE_DEFAULT_ZOOM_INDEX = 4; // 100%
+const PINCH_ZOOM_STEP_PX = 40; // Pinch distance (px) required to move one zoom level
 
 // Fixed padding for bounding boxes (normalized 0-1 coordinates)
 const BBOX_HORIZONTAL_PADDING = 0.008;
@@ -114,6 +115,12 @@ const BBOX_VERTICAL_PADDING = 0.003;
 // Empty arrays to avoid creating new references on each render
 const EMPTY_HIGHLIGHTS: BoundingBox[] = [];
 const EMPTY_FIELD_VALUES: FieldValue[] = [];
+
+function getTouchDistance(touchA: Touch, touchB: Touch): number {
+  const deltaX = touchA.clientX - touchB.clientX;
+  const deltaY = touchA.clientY - touchB.clientY;
+  return Math.hypot(deltaX, deltaY);
+}
 
 // =============================================================================
 // PDF.js Initialization
@@ -338,6 +345,9 @@ export function DocumentPageViewer({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
+  const zoomIndexRef = useRef(zoomIndex);
+  const pinchStartDistanceRef = useRef<number | null>(null);
+  const pinchStartZoomIndexRef = useRef(zoomIndex);
 
   // ==========================================================================
   // Handlers
@@ -548,6 +558,11 @@ export function DocumentPageViewer({
     }
   }, [currentPage, zoom, rotation, isPdfLoading, renderPage]);
 
+  // Keep latest zoom index for gesture handlers without re-binding event listeners.
+  useEffect(() => {
+    zoomIndexRef.current = zoomIndex;
+  }, [zoomIndex]);
+
   // Notify parent of page changes
   useEffect(() => {
     onPageChange?.(currentPage);
@@ -665,6 +680,62 @@ export function DocumentPageViewer({
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
   }, [handleZoomIn, handleZoomOut]);
+
+  // Mobile pinch-to-zoom inside document preview.
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      pinchStartDistanceRef.current = getTouchDistance(e.touches[0], e.touches[1]);
+      pinchStartZoomIndexRef.current = zoomIndexRef.current;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || pinchStartDistanceRef.current === null) return;
+
+      // Prevent browser viewport zoom while pinching on the PDF panel.
+      e.preventDefault();
+
+      const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      const pinchDelta = currentDistance - pinchStartDistanceRef.current;
+      const zoomDelta = Math.round(pinchDelta / PINCH_ZOOM_STEP_PX);
+      const nextZoomIndex = Math.max(
+        0,
+        Math.min(ZOOM_LEVELS.length - 1, pinchStartZoomIndexRef.current + zoomDelta)
+      );
+
+      setZoomIndex((prev) => (prev === nextZoomIndex ? prev : nextZoomIndex));
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        pinchStartDistanceRef.current = getTouchDistance(e.touches[0], e.touches[1]);
+        pinchStartZoomIndexRef.current = zoomIndexRef.current;
+        return;
+      }
+      pinchStartDistanceRef.current = null;
+    };
+
+    const handleTouchCancel = () => {
+      pinchStartDistanceRef.current = null;
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchcancel', handleTouchCancel);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchCancel);
+    };
+  }, [isMobile]);
 
   // ==========================================================================
   // Computed values
@@ -1026,6 +1097,9 @@ interface PageInfo {
 const MIN_SIDEBAR_WIDTH = 80;
 const MAX_SIDEBAR_WIDTH = 200;
 const DEFAULT_SIDEBAR_WIDTH = 150;
+const MOBILE_MIN_SIDEBAR_WIDTH = 40;
+const MOBILE_MAX_SIDEBAR_WIDTH = 100;
+const MOBILE_DEFAULT_SIDEBAR_WIDTH = 75;
 const THUMBNAIL_SCALE = 0.5; // Scale for thumbnail rendering (higher = sharper)
 
 // Component for rendering a single PDF page thumbnail using canvas
@@ -1305,9 +1379,15 @@ export function PageThumbnailSidebar({
   isPdf?: boolean;
   onPagesChanged?: () => void;
 }) {
-  const [width, setWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const isMobile = useIsMobile();
+  const minSidebarWidth = isMobile ? MOBILE_MIN_SIDEBAR_WIDTH : MIN_SIDEBAR_WIDTH;
+  const maxSidebarWidth = isMobile ? MOBILE_MAX_SIDEBAR_WIDTH : MAX_SIDEBAR_WIDTH;
+  const defaultSidebarWidth = isMobile ? MOBILE_DEFAULT_SIDEBAR_WIDTH : DEFAULT_SIDEBAR_WIDTH;
+
+  const [width, setWidth] = useState(() => defaultSidebarWidth);
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const wasMobileRef = useRef(isMobile);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [loadingImages, setLoadingImages] = useState<Set<string>>(() => new Set(pages.map(p => p.id)));
@@ -1336,6 +1416,18 @@ export function PageThumbnailSidebar({
     // Clear failed state since we have fresh data
     setFailedImages(new Set());
   }, [pages]);
+
+  // Keep sidebar width within device-specific bounds (mobile vs desktop).
+  // When crossing breakpoints, reset to that mode's default width.
+  useEffect(() => {
+    if (wasMobileRef.current !== isMobile) {
+      wasMobileRef.current = isMobile;
+      setWidth(defaultSidebarWidth);
+      return;
+    }
+
+    setWidth((prev) => Math.min(maxSidebarWidth, Math.max(minSidebarWidth, prev)));
+  }, [isMobile, defaultSidebarWidth, minSidebarWidth, maxSidebarWidth]);
 
   // DnD sensors
   const sensors = useSensors(
@@ -1597,7 +1689,7 @@ export function PageThumbnailSidebar({
       if (!sidebarRef.current) return;
       const rect = sidebarRef.current.getBoundingClientRect();
       const newWidth = e.clientX - rect.left;
-      setWidth(Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, newWidth)));
+      setWidth(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, newWidth)));
     };
 
     const handleMouseUp = () => {
@@ -1611,7 +1703,7 @@ export function PageThumbnailSidebar({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizing]);
+  }, [isResizing, minSidebarWidth, maxSidebarWidth]);
 
   if (pages.length === 0 && !documentId) {
     return null;
@@ -1641,7 +1733,7 @@ export function PageThumbnailSidebar({
 
         {/* Thumbnails container */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="flex flex-col gap-2 p-2">
+          <div className="flex flex-col gap-1.5 p-1.5 sm:gap-2 sm:p-2">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -1714,7 +1806,7 @@ export function PageThumbnailSidebar({
         {/* Resize handle */}
         <div
           className={cn(
-            'absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize',
+            'absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize hidden md:block',
             'hover:bg-oak-primary/30 transition-colors',
             isResizing && 'bg-oak-primary/50'
           )}

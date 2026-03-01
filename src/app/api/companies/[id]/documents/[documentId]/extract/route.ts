@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { extractBizFileData, processBizFileExtraction } from '@/services/bizfile';
 import type { AIModel } from '@/lib/ai';
 import { storage } from '@/lib/storage';
+import { parseIdParams } from '@/lib/validations/params';
 
 // Lazy load pdf-parse to reduce initial bundle size
 async function parsePdf(buffer: Buffer) {
@@ -18,7 +19,11 @@ export async function POST(
 ) {
   try {
     const session = await requireAuth();
-    const { id: companyId, documentId } = await params;
+    const { id: companyId, documentId } = await parseIdParams(params);
+
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
 
     // Parse request body for optional model selection
     let modelId: AIModel | undefined;
@@ -32,11 +37,19 @@ export async function POST(
     // Check permission
     await requirePermission(session, 'document', 'update', companyId);
 
+    // Ensure company belongs to the active tenant and user has access
+    if (!(await canAccessCompany(session, companyId))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Get document with company info for tenantId
     const document = await prisma.document.findFirst({
       where: {
         id: documentId,
         companyId,
+        company: {
+          tenantId: session.tenantId,
+        },
       },
       include: {
         company: { select: { tenantId: true } },
@@ -139,7 +152,11 @@ export async function GET(
 ) {
   try {
     const session = await requireAuth();
-    const { id: companyId, documentId } = await params;
+    const { id: companyId, documentId } = await parseIdParams(params);
+
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
 
     // Get optional model selection from query params
     const { searchParams } = new URL(request.url);
@@ -148,11 +165,19 @@ export async function GET(
     // Check permission
     await requirePermission(session, 'document', 'read', companyId);
 
+    // Ensure company belongs to the active tenant and user has access
+    if (!(await canAccessCompany(session, companyId))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Get document with company info for tenantId
     const document = await prisma.document.findFirst({
       where: {
         id: documentId,
         companyId,
+        company: {
+          tenantId: session.tenantId,
+        },
       },
       include: {
         company: { select: { tenantId: true } },

@@ -13179,3 +13179,239 @@ TypeError: fetch failed
 
 ---
 
+## AI Request - 2026-03-01T03:17:02.922Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 9469ms |
+| Input Tokens | 6377 |
+| Output Tokens | 442 |
+| Total Tokens | 6819 |
+| Estimated Cost | $0.0073 |
+
+<details>
+<summary>Response (1344 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "TAX_COMPLIANCE",
+    "confidence": 0.62
+  },
+  "documentSubCategory": {
+    "value": "TAX_INVOICE",
+    "confidence": 0.58
+  },
+  "vendorName": null,
+  "customerName": null,
+  "documentNumber": {
+    "value": "Queue No: 14",
+    "confidence": 0.9
+  },
+  "documentDate": {
+    "value": "2026-03-01",
+    "confidence": 0.95
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.75
+  },
+  "subtotal": {
+    "value": "33.00",
+    "confidence": 0.9
+  },
+  "taxAmount": null,
+  "totalAmount": {
+    "value": "33.00",
+    "confidence": 0.95
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Meals / Food & Beverage (Big Breakfast; Pancakes & Spinach Mushroom Omelette; Original - COLD)",
+        "confidence": 0.74
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.6
+      },
+      "unitPrice": {
+        "value": "33.00",
+        "confidence": 0.75
+      },
+      "amount": {
+        "value": "33.00",
+        "confidence": 0.9
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.9
+      },
+      "accountCode": {
+        "value": "7030",
+        "confidence": 0.72
+      }
+    }
+  ],
+  "overallConfidence": 0.72
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-03-01T03:17:12.410Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | TAX_COMPLIANCE | 0.62 |
+| Total Amount | 33.00 SGD | 0.95 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7030 | 0.72 | Meals / Food & Beverage (Big Breakfast; Pancake... |
+
+---
+
+## AI Request - 2026-03-01T03:19:07.673Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.2 |
+| Provider | openai |
+| Tenant | 34d9ef41-361e-4159-8746-e6528c4f6a2c |
+| User | 8820e69e-8cb6-40dd-a4cf-1d670be4ecf9 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 8921ms |
+| Input Tokens | 6337 |
+| Output Tokens | 460 |
+| Total Tokens | 6797 |
+| Estimated Cost | $0.0073 |
+
+<details>
+<summary>Response (1391 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.78
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.6
+  },
+  "vendorName": {
+    "value": "Shen & Co",
+    "confidence": 0.55
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "Queue No: 14",
+    "confidence": 0.93
+  },
+  "documentDate": {
+    "value": "2026-03-01",
+    "confidence": 0.92
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.7
+  },
+  "subtotal": {
+    "value": "33.00",
+    "confidence": 0.95
+  },
+  "taxAmount": null,
+  "totalAmount": {
+    "value": "33.00",
+    "confidence": 0.96
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Food & Beverage (Big Breakfast; Pancakes & Spinach Mushroom Omelette; Original - COLD)",
+        "confidence": 0.8
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.85
+      },
+      "unitPrice": {
+        "value": "33.00",
+        "confidence": 0.85
+      },
+      "amount": {
+        "value": "33.00",
+        "confidence": 0.9
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.88
+      },
+      "accountCode": {
+        "value": "7030",
+        "confidence": 0.7
+      }
+    }
+  ],
+  "overallConfidence": 0.72
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-03-01T03:19:16.615Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.78 |
+| Vendor | Shen & Co | 0.55 |
+| Total Amount | 33.00 SGD | 0.96 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7030 | 0.70 | Food & Beverage (Big Breakfast; Pancakes & Spin... |
+
+---
+

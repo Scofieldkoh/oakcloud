@@ -15,7 +15,7 @@ import type { SessionUser } from './auth';
 interface CachedPermissions {
   permissions: Set<string>;
   isSuperAdmin: boolean;
-  isTenantAdmin: boolean;
+  hasScopedTenantAdminAccess: boolean;
   timestamp: number;
 }
 
@@ -36,10 +36,34 @@ function getPermissionCacheKey(userId: string, companyId?: string): string {
 export function clearPermissionCache(userId: string): void {
   // Clear all cache entries for this user
   for (const key of permissionCache.keys()) {
-    if (key.startsWith(userId)) {
+    if (key === userId || key.startsWith(`${userId}:`)) {
       permissionCache.delete(key);
     }
   }
+}
+
+/**
+ * Resolve whether a TENANT_ADMIN role applies in the current scope.
+ */
+async function hasTenantAdminAccessForScope(
+  hasTenantAdminRole: boolean,
+  userTenantId: string | null,
+  companyId?: string
+): Promise<boolean> {
+  if (!hasTenantAdminRole || !userTenantId) {
+    return false;
+  }
+
+  if (!companyId) {
+    return true;
+  }
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { tenantId: true },
+  });
+
+  return company?.tenantId === userTenantId;
 }
 
 /**
@@ -304,7 +328,7 @@ export async function hasPermission(
     if (cached.isSuperAdmin) {
       return true;
     }
-    if (cached.isTenantAdmin) {
+    if (cached.hasScopedTenantAdminAccess) {
       return true;
     }
     // Check if permission exists in cached set
@@ -343,6 +367,11 @@ export async function hasPermission(
   const hasTenantAdminRole = user.roleAssignments.some(
     (a) => a.role.systemRoleType === 'TENANT_ADMIN'
   );
+  const hasScopedTenantAdminAccess = await hasTenantAdminAccessForScope(
+    hasTenantAdminRole,
+    user.tenantId,
+    companyId
+  );
 
   // Build permission set for caching
   const permissionSet = new Set<string>();
@@ -357,7 +386,7 @@ export async function hasPermission(
   permissionCache.set(cacheKey, {
     permissions: permissionSet,
     isSuperAdmin: hasSuperAdminRole,
-    isTenantAdmin: hasTenantAdminRole,
+    hasScopedTenantAdminAccess,
     timestamp: now,
   });
 
@@ -367,17 +396,7 @@ export async function hasPermission(
   }
 
   // TENANT_ADMIN has all permissions within their tenant
-  if (hasTenantAdminRole) {
-    // If checking for a specific company, verify it belongs to user's tenant
-    if (companyId && user.tenantId) {
-      const company = await prisma.company.findUnique({
-        where: { id: companyId },
-        select: { tenantId: true },
-      });
-      if (!company || company.tenantId !== user.tenantId) {
-        return false;
-      }
-    }
+  if (hasScopedTenantAdminAccess) {
     return true;
   }
 
@@ -479,7 +498,7 @@ export async function getUserPermissions(
   const cached = permissionCache.get(cacheKey);
   if (cached && (now - cached.timestamp) < PERMISSION_CACHE_TTL) {
     // Fast path: return cached permissions
-    if (cached.isSuperAdmin || cached.isTenantAdmin) {
+    if (cached.isSuperAdmin || cached.hasScopedTenantAdminAccess) {
       const allPermissions: PermissionString[] = [];
       for (const resource of RESOURCES) {
         for (const action of ACTIONS) {
@@ -498,6 +517,7 @@ export async function getUserPermissions(
       id: true,
       deletedAt: true,
       isActive: true,
+      tenantId: true,
       roleAssignments: {
         select: {
           companyId: true,
@@ -532,6 +552,11 @@ export async function getUserPermissions(
   const hasTenantAdminRole = user.roleAssignments.some(
     (a) => a.role.systemRoleType === 'TENANT_ADMIN'
   );
+  const hasScopedTenantAdminAccess = await hasTenantAdminAccessForScope(
+    hasTenantAdminRole,
+    user.tenantId,
+    companyId
+  );
 
   // Get effective role assignments using specificity priority
   const effectiveAssignments = getEffectiveRoleAssignments(user.roleAssignments, companyId);
@@ -547,12 +572,12 @@ export async function getUserPermissions(
   permissionCache.set(cacheKey, {
     permissions: permissionSet,
     isSuperAdmin: hasSuperAdminRole,
-    isTenantAdmin: hasTenantAdminRole,
+    hasScopedTenantAdminAccess,
     timestamp: now,
   });
 
-  // SUPER_ADMIN and TENANT_ADMIN have all permissions
-  if (hasSuperAdminRole || hasTenantAdminRole) {
+  // SUPER_ADMIN and in-scope TENANT_ADMIN have all permissions
+  if (hasSuperAdminRole || hasScopedTenantAdminAccess) {
     const allPermissions: PermissionString[] = [];
     for (const resource of RESOURCES) {
       for (const action of ACTIONS) {
@@ -584,11 +609,6 @@ export async function requirePermission(
     return;
   }
 
-  // TENANT_ADMIN has full access within their tenant
-  if (session.isTenantAdmin) {
-    return;
-  }
-
   const granted = await hasPermission(session.id, resource, action, companyId);
 
   if (!granted) {
@@ -605,8 +625,8 @@ export async function requireAnyPermission(
   permissions: Array<{ resource: Resource; action: Action }>,
   companyId?: string
 ): Promise<void> {
-  // SUPER_ADMIN and TENANT_ADMIN bypass all permission checks
-  if (session.isSuperAdmin || session.isTenantAdmin) {
+  // SUPER_ADMIN bypasses all permission checks
+  if (session.isSuperAdmin) {
     return;
   }
 
@@ -688,6 +708,7 @@ export async function assignRoleToUser(
       companyId: companyId || null, // Explicitly set to null for "All Companies"
     },
   });
+  clearPermissionCache(userId);
 }
 
 /**
@@ -705,6 +726,7 @@ export async function removeRoleFromUser(
       companyId: companyId || null,
     },
   });
+  clearPermissionCache(userId);
 }
 
 // ============================================================================

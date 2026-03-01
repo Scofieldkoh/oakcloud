@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditContext } from '@/lib/audit';
+import { parseIdParams } from '@/lib/validations/params';
 import {
   getNoteTabs,
   createNoteTab,
@@ -23,7 +24,11 @@ export async function GET(
 ) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    const { id } = await parseIdParams(params);
+
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
 
     // Check permission
     await requirePermission(session, 'company', 'read', id);
@@ -33,7 +38,7 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const tabs = await getNoteTabs('company', id);
+    const tabs = await getNoteTabs('company', id, session.tenantId);
 
     return NextResponse.json(tabs);
   } catch (error) {
@@ -59,7 +64,11 @@ export async function POST(
 ) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    const { id } = await parseIdParams(params);
+
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
 
     // Check permission
     await requirePermission(session, 'company', 'update', id);
@@ -73,12 +82,12 @@ export async function POST(
     const validatedData = createNoteTabSchema.parse(body);
 
     const auditContext = await createAuditContext({
-      tenantId: session.tenantId ?? undefined,
+      tenantId: session.tenantId,
       userId: session.id,
       changeSource: 'MANUAL',
     });
 
-    const tab = await createNoteTab('company', id, validatedData, auditContext);
+    const tab = await createNoteTab('company', id, validatedData, auditContext, session.tenantId);
 
     return NextResponse.json(tab, { status: 201 });
   } catch (error) {
@@ -94,6 +103,9 @@ export async function POST(
       }
       if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      if (error.message === 'Parent entity not found') {
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
       }
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

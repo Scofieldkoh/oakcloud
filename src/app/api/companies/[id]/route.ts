@@ -21,6 +21,10 @@ export async function GET(
     // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
 
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
     // Check permission - RBAC will handle SUPER_ADMIN bypass
     await requirePermission(session, 'company', 'read', id);
 
@@ -32,11 +36,9 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const full = searchParams.get('full') === 'true';
 
-    // SUPER_ADMIN can access cross-tenant, others must have tenantId
-    const skipTenantFilter = session.isSuperAdmin && !session.tenantId;
     const company = full
-      ? await getCompanyFullDetails(id, session.tenantId, { skipTenantFilter })
-      : await getCompanyById(id, session.tenantId, { skipTenantFilter });
+      ? await getCompanyFullDetails(id, session.tenantId)
+      : await getCompanyById(id, session.tenantId);
 
     if (!company) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
@@ -65,11 +67,15 @@ export async function PATCH(
     // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
 
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
     // Check permission - allows SUPER_ADMIN, TENANT_ADMIN, and COMPANY_ADMIN (for their company)
     await requirePermission(session, 'company', 'update', id);
 
-    // Additional check for company-scoped users
-    if (!session.isSuperAdmin && !session.isTenantAdmin && !(await canAccessCompany(session, id))) {
+    // Additional check for company access
+    if (!(await canAccessCompany(session, id))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -77,13 +83,8 @@ export async function PATCH(
     const data = updateCompanySchema.parse({ ...body, id });
 
     // Get the company with tenant validation
-    const whereClause: { id: string; tenantId?: string } = { id };
-    if (!session.isSuperAdmin && session.tenantId) {
-      whereClause.tenantId = session.tenantId;
-    }
-
     const existingCompany = await prisma.company.findUnique({
-      where: whereClause,
+      where: { id, tenantId: session.tenantId },
       select: { tenantId: true },
     });
 
@@ -124,6 +125,10 @@ export async function DELETE(
     // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
 
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
     // Check permission - allows SUPER_ADMIN and TENANT_ADMIN
     await requirePermission(session, 'company', 'delete', id);
 
@@ -131,13 +136,8 @@ export async function DELETE(
     const data = deleteCompanySchema.parse({ id, reason: body.reason });
 
     // Get the company with tenant validation
-    const whereClause: { id: string; tenantId?: string } = { id };
-    if (!session.isSuperAdmin && session.tenantId) {
-      whereClause.tenantId = session.tenantId;
-    }
-
     const existingCompany = await prisma.company.findUnique({
-      where: whereClause,
+      where: { id, tenantId: session.tenantId },
       select: { tenantId: true },
     });
 
@@ -178,6 +178,10 @@ export async function PUT(
     // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
 
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
     // Check permission for restore (treated as update)
     await requirePermission(session, 'company', 'update', id);
 
@@ -185,14 +189,8 @@ export async function PUT(
     const action = searchParams.get('action');
 
     if (action === 'restore') {
-      // Get the company with tenant validation
-      const whereClause: { id: string; tenantId?: string } = { id };
-      if (!session.isSuperAdmin && session.tenantId) {
-        whereClause.tenantId = session.tenantId;
-      }
-
       const existingCompany = await prisma.company.findUnique({
-        where: whereClause,
+        where: { id, tenantId: session.tenantId },
         select: { tenantId: true },
       });
 

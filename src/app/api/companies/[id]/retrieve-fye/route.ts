@@ -17,22 +17,21 @@ export async function GET(
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
 
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
     // Check permission - need update permission since this is used to populate edit form
     await requirePermission(session, 'company', 'update', id);
 
-    // Additional check for company-scoped users
-    if (!session.isSuperAdmin && !session.isTenantAdmin && !(await canAccessCompany(session, id))) {
+    // Additional check for company access
+    if (!(await canAccessCompany(session, id))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Get the company with tenant validation
-    const whereClause: { id: string; tenantId?: string } = { id };
-    if (!session.isSuperAdmin && session.tenantId) {
-      whereClause.tenantId = session.tenantId;
-    }
-
     const company = await prisma.company.findUnique({
-      where: whereClause,
+      where: { id, tenantId: session.tenantId },
       select: {
         id: true,
         name: true,

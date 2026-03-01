@@ -41,7 +41,7 @@ export function TenantSelector({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="input input-sm text-base md:text-sm w-full max-w-md"
+      className="input input-sm text-sm w-full max-w-md"
       disabled={disabled || isLoading}
     >
       <option value="">{isLoading ? 'Loading tenants...' : placeholder}</option>
@@ -188,7 +188,7 @@ export function TenantSelectorModal({ isOpen, onClose }: TenantSelectorModalProp
             placeholder="Search tenants..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-sm text-base md:text-sm w-full"
+            className="input input-sm text-sm w-full"
           />
         </div>
 

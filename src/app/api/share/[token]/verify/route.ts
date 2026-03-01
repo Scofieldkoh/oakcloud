@@ -14,6 +14,7 @@ import {
   RATE_LIMIT_CONFIGS,
 } from '@/lib/rate-limit';
 import { HTTP_STATUS } from '@/lib/constants/application';
+import { createShareVerificationToken } from '@/lib/share-verification-token';
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -96,16 +97,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Record success - resets failure count
     recordSuccess(rateLimitKey);
 
-    // Generate a session token for this share access
-    // This token is stored in memory/session and used for subsequent requests
-    // We use a simple signed token approach here
-    const verificationToken = Buffer.from(
-      JSON.stringify({
-        shareId: share.id,
-        verified: true,
-        exp: Date.now() + 3600000, // 1 hour expiry
-      })
-    ).toString('base64url');
+    // Generate a signed verification token for subsequent share requests.
+    const verificationToken = await createShareVerificationToken(share.id);
 
     return NextResponse.json({
       verified: true,

@@ -1234,6 +1234,32 @@ External service connector configuration with encrypted credentials.
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 
+**AI Provider Settings (Recommended Structure):**
+```json
+{
+  "defaultModel": "gpt-4.1-mini",
+  "costControl": {
+    "enabled": true,
+    "currency": "USD",
+    "period": "MONTHLY",
+    "timezone": "UTC",
+    "hardLimitMicrosUsd": 50000000,
+    "softLimitMicrosUsd": 40000000,
+    "perRequestMaxMicrosUsd": 250000,
+    "reserveBeforeCall": true,
+    "failMode": "BLOCK",
+    "fallbackConnectorId": "optional-uuid",
+    "allowReadOnlyFallback": true
+  }
+}
+```
+
+**Hard Cost Control (Connector-Level):**
+1. Budget checks execute before provider call at connector middleware layer
+2. Request is blocked when projected cost exceeds `perRequestMaxMicrosUsd`
+3. Request is blocked when period usage + reservation exceeds `hardLimitMicrosUsd`
+4. Cost controls are enforced per tenant connector (or system connector with tenant access scope)
+
 **System vs Tenant Connectors:**
 - `tenant_id = NULL` - System connector, managed by SUPER_ADMIN only
 - `tenant_id = <id>` - Tenant connector, managed by TENANT_ADMIN
@@ -1298,6 +1324,9 @@ Detailed usage logging for connectors with cost tracking.
 | created_at | TIMESTAMP | No | Record creation time |
 
 **Use Case:** Provides detailed usage tracking for billing, analytics, and auditing. Includes token usage, cost calculation, latency metrics, and operation context.
+
+**Budget Enforcement Dependency:**
+- This table is the source of truth for period spend aggregation used by connector hard cost controls.
 
 **Indexes:**
 - `connector_usage_logs_connector_id_idx` on connector_id

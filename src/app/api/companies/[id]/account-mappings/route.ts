@@ -29,6 +29,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { id: companyId } = await parseIdParams(params);
 
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
     // Check permission
     await requirePermission(session, 'chart_of_accounts', 'read', companyId);
 
@@ -38,13 +42,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify company exists and belongs to tenant
-    const whereClause: { id: string; tenantId?: string } = { id: companyId };
-    if (!session.isSuperAdmin && session.tenantId) {
-      whereClause.tenantId = session.tenantId;
-    }
-
     const company = await prisma.company.findUnique({
-      where: whereClause,
+      where: { id: companyId, tenantId: session.tenantId },
       select: { id: true },
     });
 
@@ -94,22 +93,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { id: companyId } = await parseIdParams(params);
 
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
     // Check permission - need update permission for mappings
     await requirePermission(session, 'chart_of_accounts', 'update', companyId);
 
-    // Additional check for company-scoped users
-    if (!session.isSuperAdmin && !session.isTenantAdmin && !(await canAccessCompany(session, companyId))) {
+    // Additional check for company access
+    if (!(await canAccessCompany(session, companyId))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Verify company exists and get tenantId
-    const whereClause: { id: string; tenantId?: string } = { id: companyId };
-    if (!session.isSuperAdmin && session.tenantId) {
-      whereClause.tenantId = session.tenantId;
-    }
-
     const company = await prisma.company.findUnique({
-      where: whereClause,
+      where: { id: companyId, tenantId: session.tenantId },
       select: { id: true, tenantId: true },
     });
 

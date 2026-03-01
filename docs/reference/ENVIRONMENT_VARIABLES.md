@@ -70,9 +70,9 @@ Configure at least one provider for AI-powered features (BizFile extraction, doc
 | `DEFAULT_AI_MODEL` | Default model to use (optional) |
 
 **Available Models:**
-- `gpt-5`, `gpt-4.1` (OpenAI)
+- `gpt-5.2`, `gpt-4.1` (OpenAI)
 - `claude-opus-4.5`, `claude-sonnet-4.5` (Anthropic)
-- `gemini-3.1-pro`, `gemini-3-flash` (Google)
+- `gemini-3.1`, `gemini-3-flash` (Google)
 
 ---
 

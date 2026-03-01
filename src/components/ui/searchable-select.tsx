@@ -309,8 +309,8 @@ export function SearchableSelect({
   );
 
   const sizeClasses = {
-    sm: 'h-8 text-base md:text-sm',
-    md: 'h-9 text-base',
+    sm: 'h-8 text-sm',
+    md: 'h-9 text-sm',
   };
 
   // Display value in input: show search when typing, otherwise show selected label

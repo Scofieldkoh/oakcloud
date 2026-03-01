@@ -22,11 +22,12 @@ vi.mock('@/lib/prisma', () => ({
     userRoleAssignment: {
       findMany: vi.fn(),
       create: vi.fn(),
-      delete: vi.fn(),
+      deleteMany: vi.fn(),
     },
     permission: {
       findMany: vi.fn(),
       createMany: vi.fn(),
+      upsert: vi.fn(),
     },
     rolePermission: {
       createMany: vi.fn(),
@@ -46,6 +47,8 @@ import {
   hasAnyPermission,
   hasAllPermissions,
   getUserPermissions,
+  requirePermission,
+  clearAllPermissionCache,
   SYSTEM_ROLES,
   RESOURCES,
   ACTIONS,
@@ -116,6 +119,7 @@ function createMockUserWithRoles(options: {
 describe('RBAC', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearAllPermissionCache();
   });
 
   // ============================================================================
@@ -294,6 +298,24 @@ describe('RBAC', () => {
       expect(result).toBe(false);
     });
 
+    it('should not grant TENANT_ADMIN cross-tenant access from cached result', async () => {
+      const mockUser = createMockUserWithRoles({
+        systemRoleType: 'TENANT_ADMIN',
+        tenantId: 'tenant-1',
+      });
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as never);
+      vi.mocked(prisma.company.findUnique).mockResolvedValue({
+        id: 'company-1',
+        tenantId: 'tenant-2',
+      } as never);
+
+      const firstAttempt = await hasPermission('user-1', 'company', 'read', 'company-1');
+      const secondAttempt = await hasPermission('user-1', 'company', 'read', 'company-1');
+
+      expect(firstAttempt).toBe(false);
+      expect(secondAttempt).toBe(false);
+    });
+
     it('should check specific permission for regular user', async () => {
       const mockUser = createMockUserWithRoles({
         permissions: [{ resource: 'company', action: 'read' }],
@@ -423,6 +445,29 @@ describe('RBAC', () => {
         { resource: 'company', action: 'update' },
       ]);
       expect(result).toBe(false);
+    });
+  });
+
+  describe('requirePermission', () => {
+    it('should deny TENANT_ADMIN access to company outside their tenant', async () => {
+      const session = createMockSession({
+        id: 'user-1',
+        tenantId: 'tenant-1',
+        isTenantAdmin: true,
+      });
+      const mockUser = createMockUserWithRoles({
+        systemRoleType: 'TENANT_ADMIN',
+        tenantId: 'tenant-1',
+      });
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as never);
+      vi.mocked(prisma.company.findUnique).mockResolvedValue({
+        id: 'company-1',
+        tenantId: 'tenant-2',
+      } as never);
+
+      await expect(requirePermission(session, 'company', 'read', 'company-1')).rejects.toThrow(
+        'Permission denied: company:read'
+      );
     });
   });
 

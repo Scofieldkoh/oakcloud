@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditContext } from '@/lib/audit';
+import { parseIdParams } from '@/lib/validations/params';
+import { prisma } from '@/lib/prisma';
 import {
   getNoteTabs,
   createNoteTab,
@@ -22,11 +24,27 @@ type RouteParams = { params: Promise<{ id: string }> };
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    const { id } = await parseIdParams(params);
+
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
+    const contact = await prisma.contact.findFirst({
+      where: {
+        id,
+        tenantId: session.tenantId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (!contact) {
+      return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+    }
 
     await requirePermission(session, 'contact', 'read');
 
-    const tabs = await getNoteTabs('contact', id);
+    const tabs = await getNoteTabs('contact', id, session.tenantId);
 
     return NextResponse.json(tabs);
   } catch (error) {
@@ -49,7 +67,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    const { id } = await parseIdParams(params);
+
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
+    const contact = await prisma.contact.findFirst({
+      where: {
+        id,
+        tenantId: session.tenantId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (!contact) {
+      return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+    }
 
     await requirePermission(session, 'contact', 'update');
 
@@ -57,12 +91,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const validatedData = createNoteTabSchema.parse(body);
 
     const auditContext = await createAuditContext({
-      tenantId: session.tenantId ?? undefined,
+      tenantId: session.tenantId,
       userId: session.id,
       changeSource: 'MANUAL',
     });
 
-    const tab = await createNoteTab('contact', id, validatedData, auditContext);
+    const tab = await createNoteTab('contact', id, validatedData, auditContext, session.tenantId);
 
     return NextResponse.json(tab, { status: 201 });
   } catch (error) {
@@ -78,6 +112,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
       if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      if (error.message === 'Parent entity not found') {
+        return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
       }
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -1036,7 +1036,22 @@ Create a new connector.
   "provider": "openai | google | anthropic",
   "name": "string",
   "apiKey": "string",
-  "isActive": "boolean"
+  "isActive": "boolean",
+  "settings": {
+    "defaultModel": "string",
+    "costControl": {
+      "enabled": true,
+      "period": "MONTHLY",
+      "timezone": "UTC",
+      "hardLimitMicrosUsd": 50000000,
+      "softLimitMicrosUsd": 40000000,
+      "perRequestMaxMicrosUsd": 250000,
+      "reserveBeforeCall": true,
+      "failMode": "BLOCK",
+      "fallbackConnectorId": "uuid (optional)",
+      "allowReadOnlyFallback": true
+    }
+  }
 }
 ```
 
@@ -1049,6 +1064,23 @@ Get a specific connector.
 
 ### PUT /api/connectors/[id]
 Update a connector.
+
+**Request Body (partial updates):**
+```json
+{
+  "name": "string (optional)",
+  "isEnabled": "boolean (optional)",
+  "isDefault": "boolean (optional)",
+  "settings": {
+    "costControl": {
+      "enabled": "boolean (optional)",
+      "hardLimitMicrosUsd": "number (optional)",
+      "softLimitMicrosUsd": "number (optional)",
+      "perRequestMaxMicrosUsd": "number (optional)"
+    }
+  }
+}
+```
 
 ---
 
@@ -1069,6 +1101,13 @@ Check connector access permissions.
 
 ### GET /api/connectors/[id]/usage
 Get usage statistics for a connector.
+
+**Expected Usage Fields (AI providers):**
+- `periodSpendMicrosUsd`
+- `remainingBudgetMicrosUsd`
+- `budgetUtilizationPct`
+- `blockedByCostControlCount`
+- `lastBudgetResetAt`
 
 ---
 

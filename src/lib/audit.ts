@@ -52,6 +52,7 @@ export interface AuditHistoryOptions {
   startDate?: Date;
   endDate?: Date;
   userId?: string;
+  tenantId?: string;
   entityTypes?: string[];
 }
 
@@ -306,6 +307,7 @@ export async function getAuditHistory(
     ...(options?.startDate && { createdAt: { gte: options.startDate } }),
     ...(options?.endDate && { createdAt: { lte: options.endDate } }),
     ...(options?.userId && { userId: options.userId }),
+    ...(options?.tenantId && { tenantId: options.tenantId }),
   };
 
   return prisma.auditLog.findMany({

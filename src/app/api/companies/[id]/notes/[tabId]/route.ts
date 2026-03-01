@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditContext } from '@/lib/audit';
+import { parseIdParams } from '@/lib/validations/params';
 import {
   updateNoteTab,
   deleteNoteTab,
@@ -24,7 +25,11 @@ export async function PATCH(
 ) {
   try {
     const session = await requireAuth();
-    const { id, tabId } = await params;
+    const { id, tabId } = await parseIdParams(params);
+
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
 
     // Check permission
     await requirePermission(session, 'company', 'update', id);
@@ -35,7 +40,7 @@ export async function PATCH(
     }
 
     // Verify tab belongs to this company
-    const isOwner = await verifyNoteTabOwnership(tabId, 'company', id);
+    const isOwner = await verifyNoteTabOwnership(tabId, 'company', id, session.tenantId);
     if (!isOwner) {
       return NextResponse.json({ error: 'Note tab not found' }, { status: 404 });
     }
@@ -44,7 +49,7 @@ export async function PATCH(
     const validatedData = updateNoteTabSchema.parse(body);
 
     const auditContext = await createAuditContext({
-      tenantId: session.tenantId ?? undefined,
+      tenantId: session.tenantId,
       userId: session.id,
       changeSource: 'MANUAL',
     });
@@ -84,7 +89,11 @@ export async function DELETE(
 ) {
   try {
     const session = await requireAuth();
-    const { id, tabId } = await params;
+    const { id, tabId } = await parseIdParams(params);
+
+    if (!session.tenantId) {
+      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
 
     // Check permission
     await requirePermission(session, 'company', 'update', id);
@@ -95,13 +104,13 @@ export async function DELETE(
     }
 
     // Verify tab belongs to this company
-    const isOwner = await verifyNoteTabOwnership(tabId, 'company', id);
+    const isOwner = await verifyNoteTabOwnership(tabId, 'company', id, session.tenantId);
     if (!isOwner) {
       return NextResponse.json({ error: 'Note tab not found' }, { status: 404 });
     }
 
     const auditContext = await createAuditContext({
-      tenantId: session.tenantId ?? undefined,
+      tenantId: session.tenantId,
       userId: session.id,
       changeSource: 'MANUAL',
     });

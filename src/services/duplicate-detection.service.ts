@@ -77,13 +77,20 @@ const THRESHOLDS = {
  */
 export async function checkForDuplicates(
   processingDocumentId: string,
-  _tenantId: string,
-  _companyId: string
+  tenantId: string,
+  companyId: string
 ): Promise<DuplicateCheckResult> {
   log.info(`Checking for duplicates of document ${processingDocumentId}`);
 
-  const processingDoc = await prisma.processingDocument.findUnique({
-    where: { id: processingDocumentId },
+  const processingDoc = await prisma.processingDocument.findFirst({
+    where: {
+      id: processingDocumentId,
+      document: {
+        tenantId,
+        companyId,
+        deletedAt: null,
+      },
+    },
     select: {
       fileHash: true,
       currentRevisionId: true,
@@ -106,6 +113,11 @@ export async function checkForDuplicates(
         fileHash: processingDoc.fileHash,
         id: { not: processingDocumentId },
         deletedAt: null,
+        document: {
+          tenantId,
+          companyId,
+          deletedAt: null,
+        },
       },
       select: {
         id: true,
@@ -180,6 +192,11 @@ export async function checkForDuplicates(
       id: { not: processingDocumentId },
       deletedAt: null,
       currentRevisionId: { not: null },
+      document: {
+        tenantId,
+        companyId,
+        deletedAt: null,
+      },
     },
     select: {
       id: true,
