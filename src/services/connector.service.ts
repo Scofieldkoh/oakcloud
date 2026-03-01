@@ -577,7 +577,7 @@ export async function getAvailableConnectors(
 
   // Define all providers per type
   const providersPerType: Record<ConnectorType, ConnectorProvider[]> = {
-    AI_PROVIDER: ['OPENAI', 'ANTHROPIC', 'GOOGLE'],
+    AI_PROVIDER: ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'OPENROUTER'],
     STORAGE: ['ONEDRIVE', 'SHAREPOINT'],
   };
 
@@ -622,6 +622,9 @@ export async function testConnector(
         break;
       case 'GOOGLE':
         await testGoogle(connector.credentials as { apiKey: string });
+        break;
+      case 'OPENROUTER':
+        await testOpenRouter(connector.credentials as { apiKey: string });
         break;
       case 'ONEDRIVE':
         await testOneDrive(
@@ -696,6 +699,15 @@ async function testGoogle(credentials: { apiKey: string }): Promise<void> {
   const client = new GoogleGenerativeAI(credentials.apiKey);
   const model = client.getGenerativeModel({ model: 'gemini-2.5-flash' });
   await model.generateContent('Hi');
+}
+
+async function testOpenRouter(credentials: { apiKey: string }): Promise<void> {
+  const OpenAI = (await import('openai')).default;
+  const client = new OpenAI({
+    apiKey: credentials.apiKey,
+    baseURL: 'https://openrouter.ai/api/v1',
+  });
+  await client.models.list();
 }
 
 async function testOneDrive(credentials: {
