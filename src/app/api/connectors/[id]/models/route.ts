@@ -37,6 +37,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
     }
 
+    // TENANT_ADMINs cannot access system connectors
+    if (!session.isSuperAdmin && !connector.tenantId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Get all models for this provider from the registry
     const registryModels = Object.values(AI_MODELS).filter(
       (m) => m.provider === connector.provider.toLowerCase()
@@ -68,6 +73,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -100,6 +106,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
     }
 
+    // TENANT_ADMINs cannot access system connectors
+    if (!session.isSuperAdmin && !connector.tenantId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { modelId, isEnabled } = toggleModelSchema.parse(body);
 
@@ -129,6 +140,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
