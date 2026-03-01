@@ -13,7 +13,7 @@ import { z } from 'zod';
 export const connectorTypeEnum = z.enum(['AI_PROVIDER', 'STORAGE']);
 export type ConnectorType = z.infer<typeof connectorTypeEnum>;
 
-export const connectorProviderEnum = z.enum(['OPENAI', 'ANTHROPIC', 'GOOGLE', 'ONEDRIVE', 'SHAREPOINT']);
+export const connectorProviderEnum = z.enum(['OPENAI', 'ANTHROPIC', 'GOOGLE', 'OPENROUTER', 'ONEDRIVE', 'SHAREPOINT']);
 export type ConnectorProvider = z.infer<typeof connectorProviderEnum>;
 
 // ============================================================================
@@ -32,6 +32,12 @@ export const anthropicCredentialsSchema = z.object({
 export const googleCredentialsSchema = z.object({
   apiKey: z.string().min(1, 'API key is required'),
 });
+
+export const openrouterCredentialsSchema = z.object({
+  apiKey: z.string().min(1, 'API key is required'),
+});
+
+export type OpenRouterCredentials = z.infer<typeof openrouterCredentialsSchema>;
 
 export const onedriveCredentialsSchema = z.object({
   clientId: z.string().min(1, 'Client ID is required'),
@@ -58,6 +64,7 @@ export type ConnectorCredentials =
   | OpenAICredentials
   | AnthropicCredentials
   | GoogleCredentials
+  | OpenRouterCredentials
   | OneDriveCredentials
   | SharePointCredentials;
 
@@ -192,6 +199,13 @@ export function validateCredentials(
       }
       break;
     }
+    case 'OPENROUTER': {
+      const result = openrouterCredentialsSchema.safeParse(credentials);
+      if (!result.success) {
+        errors.push(...result.error.issues.map((i) => i.message));
+      }
+      break;
+    }
     case 'ONEDRIVE': {
       const result = onedriveCredentialsSchema.safeParse(credentials);
       if (!result.success) {
@@ -221,6 +235,7 @@ export function getProviderType(provider: ConnectorProvider): ConnectorType {
     case 'OPENAI':
     case 'ANTHROPIC':
     case 'GOOGLE':
+    case 'OPENROUTER':
       return 'AI_PROVIDER';
     case 'ONEDRIVE':
     case 'SHAREPOINT':
@@ -236,7 +251,7 @@ export function getProviderType(provider: ConnectorProvider): ConnectorType {
 export function getProvidersForType(type: ConnectorType): ConnectorProvider[] {
   switch (type) {
     case 'AI_PROVIDER':
-      return ['OPENAI', 'ANTHROPIC', 'GOOGLE'];
+      return ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'OPENROUTER'];
     case 'STORAGE':
       return ['ONEDRIVE', 'SHAREPOINT'];
     default:
@@ -252,6 +267,7 @@ export function getProviderDisplayName(provider: ConnectorProvider): string {
     OPENAI: 'OpenAI',
     ANTHROPIC: 'Anthropic',
     GOOGLE: 'Google AI',
+    OPENROUTER: 'OpenRouter',
     ONEDRIVE: 'OneDrive',
     SHAREPOINT: 'SharePoint',
   };
