@@ -220,6 +220,7 @@ enum ConnectorProvider {
   OPENAI
   ANTHROPIC
   GOOGLE
+  OPENROUTER
   // Storage Providers
   ONEDRIVE
   SHAREPOINT
