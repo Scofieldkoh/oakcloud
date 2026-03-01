@@ -1056,6 +1056,7 @@ model Connector {
   // Relations
   tenantAccess TenantConnectorAccess[]
   usageLogs    ConnectorUsageLog[]
+  modelConfigs ConnectorModelConfig[]
 
   @@unique([tenantId, provider, deletedAt])
   @@index([tenantId])
@@ -1129,6 +1130,20 @@ model ConnectorUsageLog {
   @@index([connectorId, createdAt])
   @@index([tenantId, createdAt])
   @@map("connector_usage_logs")
+}
+
+model ConnectorModelConfig {
+  id          String    @id @default(uuid())
+  connectorId String
+  connector   Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  modelId     String
+  isEnabled   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([connectorId, modelId])
+  @@index([connectorId])
+  @@map("connector_model_configs")
 }
 
 // ============================================================================
