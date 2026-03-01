@@ -63,6 +63,15 @@ export interface UpdateConnectorData {
   isDefault?: boolean;
 }
 
+export interface ConnectorModelConfig {
+  modelId: string;
+  name: string;
+  description: string;
+  providerModelId: string;
+  isEnabled: boolean;
+  hasOverride: boolean;
+}
+
 export interface TestResult {
   success: boolean;
   error?: string;
@@ -574,4 +583,53 @@ export function formatLatency(ms: number | null): string {
     return `${(ms / 1000).toFixed(1)}s`;
   }
   return `${ms}ms`;
+}
+
+// ============================================================================
+// Connector Model Config Hooks
+// ============================================================================
+
+/**
+ * Fetch model configs for a connector (only meaningful for OPENROUTER connectors)
+ */
+export function useConnectorModels(connectorId: string | undefined) {
+  return useQuery<ConnectorModelConfig[]>({
+    queryKey: ['connector-models', connectorId],
+    queryFn: async () => {
+      if (!connectorId) throw new Error('Connector ID required');
+      const res = await fetch(`/api/connectors/${connectorId}/models`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to fetch model configs');
+      }
+      return res.json();
+    },
+    enabled: !!connectorId,
+  });
+}
+
+/**
+ * Toggle a model's enabled state for a connector
+ */
+export function useToggleConnectorModel(connectorId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation<ConnectorModelConfig, Error, { modelId: string; isEnabled: boolean }>({
+    mutationFn: async ({ modelId, isEnabled }) => {
+      if (!connectorId) throw new Error('Connector ID required');
+      const res = await fetch(`/api/connectors/${connectorId}/models`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modelId, isEnabled }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to toggle model');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['connector-models', connectorId] });
+    },
+  });
 }
