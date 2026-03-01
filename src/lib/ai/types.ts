@@ -5,7 +5,7 @@
  */
 
 // Supported AI providers
-export type AIProvider = 'openai' | 'anthropic' | 'google';
+export type AIProvider = 'openai' | 'anthropic' | 'google' | 'openrouter';
 
 // Supported AI models
 export type AIModel =
@@ -18,8 +18,10 @@ export type AIModel =
   | 'claude-sonnet-4.5'
   // Google models
   | 'gemini-3.1'
-  | 'gemini-3-flash';
+  | 'gemini-3-flash'
   // | 'gemini-2.5-flash' // Disabled: use gemini-3-flash instead
+  // OpenRouter models
+  | 'qwen3-vl-235b-a22b-thinking';
 
 // Model configuration
 export interface AIModelConfig {
@@ -35,6 +37,7 @@ export interface AIModelConfig {
   supportsVision: boolean;
   supportsTemperature?: boolean; // Whether the model supports custom temperature (default: true)
   isDefault?: boolean;
+  enabled?: boolean; // When false, model is hidden from available/usable lists (default: true)
 }
 
 // Image input for vision models
@@ -94,6 +97,9 @@ export interface AICredentials {
     apiKey: string;
   };
   google: {
+    apiKey: string;
+  };
+  openrouter: {
     apiKey: string;
   };
 }
