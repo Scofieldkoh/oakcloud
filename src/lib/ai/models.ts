@@ -100,6 +100,21 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
     supportsJson: true,
     supportsVision: true,
   },
+
+  // OpenRouter Models
+  'qwen3-vl-235b-a22b-thinking': {
+    id: 'qwen3-vl-235b-a22b-thinking',
+    name: 'Qwen3 VL 235B Thinking',
+    provider: 'openrouter',
+    providerModelId: 'qwen/qwen3-vl-235b-a22b-thinking',
+    description: 'Qwen3 large vision-language model with extended thinking',
+    maxTokens: 131072,
+    inputPricePerMillion: 2.18,
+    outputPricePerMillion: 6.28,
+    supportsJson: true,
+    supportsVision: true,
+    enabled: true,
+  },
   // Gemini 2.5 Flash disabled - use Gemini 3 Flash instead
   // 'gemini-2.5-flash': {
   //   id: 'gemini-2.5-flash',
@@ -155,6 +170,7 @@ export function getModelsGroupedByProvider(): Record<AIProvider, AIModelConfig[]
     openai: getModelsByProvider('openai'),
     anthropic: getModelsByProvider('anthropic'),
     google: getModelsByProvider('google'),
+    openrouter: getModelsByProvider('openrouter'),
   };
 }
 
@@ -186,13 +202,15 @@ export const PROVIDER_NAMES: Record<AIProvider, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   google: 'Google',
+  openrouter: 'OpenRouter',
 };
 
 // Provider icons (for UI)
 export const PROVIDER_ICONS: Record<AIProvider, string> = {
-  openai: 'ðŸ¤–',
-  anthropic: 'ðŸ”®',
-  google: 'âœ¨',
+  openai: '🤖',
+  anthropic: '🔮',
+  google: '✨',
+  openrouter: '🔀',
 };
 
 /**

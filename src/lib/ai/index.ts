@@ -92,14 +92,16 @@ export function getAllProviderStatuses(): ProviderStatus[] {
  * Get available models with their availability status
  */
 export function getAvailableModels(): ModelAvailability[] {
-  return Object.values(AI_MODELS).map((model) => {
-    const providerStatus = getProviderStatus(model.provider);
-    return {
-      ...model,
-      available: providerStatus.available,
-      providerConfigured: providerStatus.configured,
-    };
-  });
+  return Object.values(AI_MODELS)
+    .filter((model) => model.enabled !== false)
+    .map((model) => {
+      const providerStatus = getProviderStatus(model.provider);
+      return {
+        ...model,
+        available: providerStatus.available,
+        providerConfigured: providerStatus.configured,
+      };
+    });
 }
 
 /**
