@@ -10,28 +10,36 @@ import { getModelConfig } from '../models';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
-// Lazy-loaded instances keyed by API key (connector-based calls use different keys)
-const instanceCache = new Map<string, import('openai').default>();
+// Lazy-loaded singleton for env-var based calls
+let openrouterInstance: import('openai').default | null = null;
 
 async function getOpenRouter(credentials?: AICredentials['openrouter']) {
-  const apiKey = credentials?.apiKey ?? process.env.OPENROUTER_API_KEY ?? '';
-
-  if (instanceCache.has(apiKey)) {
-    return instanceCache.get(apiKey)!;
+  // If custom credentials provided, create a new instance
+  if (credentials?.apiKey) {
+    const OpenAI = (await import('openai')).default;
+    return new OpenAI({
+      apiKey: credentials.apiKey,
+      baseURL: OPENROUTER_BASE_URL,
+      defaultHeaders: {
+        'HTTP-Referer': process.env.OPENROUTER_SITE_URL ?? 'https://localhost',
+        'X-Title': process.env.OPENROUTER_APP_NAME ?? 'OakCloud',
+      },
+    });
   }
 
-  const OpenAI = (await import('openai')).default;
-  const instance = new OpenAI({
-    apiKey,
-    baseURL: OPENROUTER_BASE_URL,
-    defaultHeaders: {
-      'HTTP-Referer': process.env.OPENROUTER_SITE_URL ?? 'https://localhost',
-      'X-Title': process.env.OPENROUTER_APP_NAME ?? 'OakCloud',
-    },
-  });
-
-  instanceCache.set(apiKey, instance);
-  return instance;
+  // Fall back to singleton with env var
+  if (!openrouterInstance) {
+    const OpenAI = (await import('openai')).default;
+    openrouterInstance = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: OPENROUTER_BASE_URL,
+      defaultHeaders: {
+        'HTTP-Referer': process.env.OPENROUTER_SITE_URL ?? 'https://localhost',
+        'X-Title': process.env.OPENROUTER_APP_NAME ?? 'OakCloud',
+      },
+    });
+  }
+  return openrouterInstance;
 }
 
 /**
@@ -61,6 +69,7 @@ export async function callOpenRouter(
 
   const client = await getOpenRouter(credentials);
 
+  // We use 'any' for messages to avoid complex SDK type gymnastics while ensuring runtime correctness
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages: any[] = [];
 
