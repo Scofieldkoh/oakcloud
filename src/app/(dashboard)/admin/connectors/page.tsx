@@ -243,7 +243,7 @@ export default function ConnectorsPage() {
   const testMutation = useTestConnector();
   const _toggleMutation = useToggleConnector(undefined);
   const { data: connectorModels, isLoading: isLoadingModels } = useConnectorModels(
-    editingConnector?.provider === 'OPENROUTER' ? editingConnector?.id : undefined
+    editingConnector?.type === 'AI_PROVIDER' ? editingConnector?.id : undefined
   );
   const toggleModelMutation = useToggleConnectorModel(editingConnector?.id);
 
@@ -1177,8 +1177,8 @@ export default function ConnectorsPage() {
                   </div>
                 )}
 
-              {/* Models — OpenRouter only */}
-              {editingConnector?.provider === 'OPENROUTER' && (
+              {/* Models — AI providers only */}
+              {editingConnector?.type === 'AI_PROVIDER' && (
                 <div className="space-y-3">
                   <label className="label mb-0">Models</label>
                   {isLoadingModels ? (
