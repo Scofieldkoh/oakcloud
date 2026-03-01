@@ -11,6 +11,8 @@ import {
   useToggleConnector,
   useTenantAccess,
   useUpdateTenantAccess,
+  useConnectorModels,
+  useToggleConnectorModel,
   useConnectorUsage,
   useExportUsage,
   getProviderDisplayName,
@@ -23,6 +25,7 @@ import {
   type Connector,
   type ConnectorSearchParams,
   type UsageSearchParams,
+  type ConnectorModelConfig,
 } from '@/hooks/use-connectors';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
@@ -239,6 +242,10 @@ export default function ConnectorsPage() {
   const deleteMutation = useDeleteConnector();
   const testMutation = useTestConnector();
   const _toggleMutation = useToggleConnector(undefined);
+  const { data: connectorModels, isLoading: isLoadingModels } = useConnectorModels(
+    editingConnector?.provider === 'OPENROUTER' ? editingConnector?.id : undefined
+  );
+  const toggleModelMutation = useToggleConnectorModel(editingConnector?.id);
 
   // Extract dates from DatePickerValue for API
   const getUsageDates = () => {
@@ -1169,6 +1176,68 @@ export default function ConnectorsPage() {
                     </p>
                   </div>
                 )}
+
+              {/* Models — OpenRouter only */}
+              {editingConnector?.provider === 'OPENROUTER' && (
+                <div className="space-y-3">
+                  <label className="label mb-0">Models</label>
+                  {isLoadingModels ? (
+                    <div className="space-y-2">
+                      {[1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="h-14 rounded-lg bg-bg-tertiary animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : connectorModels && connectorModels.length > 0 ? (
+                    <div className="space-y-2">
+                      {connectorModels.map((model: ConnectorModelConfig) => (
+                        <div
+                          key={model.modelId}
+                          className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-bg-tertiary"
+                        >
+                          <div className="flex flex-col min-w-0 mr-3">
+                            <span className="text-sm font-medium text-text-primary truncate">
+                              {model.name}
+                            </span>
+                            <span className="text-xs text-text-muted truncate">
+                              {model.providerModelId}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={model.isEnabled}
+                            disabled={toggleModelMutation.isPending}
+                            onClick={() =>
+                              toggleModelMutation.mutate({
+                                modelId: model.modelId,
+                                isEnabled: !model.isEnabled,
+                              })
+                            }
+                            className={cn(
+                              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+                              model.isEnabled
+                                ? 'bg-oak-primary border-oak-primary'
+                                : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
+                                model.isEnabled ? 'translate-x-5' : 'translate-x-0'
+                              )}
+                            />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-text-muted">No models registered for this provider.</p>
+                  )}
+                </div>
+              )}
 
               {/* Options */}
               <div className="space-y-3">
