@@ -15,8 +15,8 @@ export type AIModel =
   // | 'gpt-5' // Disabled: use gpt-5.2 instead
   | 'gpt-4.1'
   // Anthropic models
-  | 'claude-opus-4.5'
-  | 'claude-sonnet-4.5'
+  | 'claude-opus-4.6'
+  | 'claude-sonnet-4.6'
   // Google models
   | 'gemini-3.1'
   | 'gemini-3-flash'
