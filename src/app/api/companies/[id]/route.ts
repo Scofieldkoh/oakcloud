@@ -179,6 +179,12 @@ export async function DELETE(
       if (error.message === 'Company not found') {
         return NextResponse.json({ error: 'Company not found' }, { status: 404 });
       }
+      if (error.message === 'Company must be soft-deleted before permanent deletion') {
+        return NextResponse.json(
+          { error: 'Company must be in the recycle bin before it can be permanently deleted' },
+          { status: 422 }
+        );
+      }
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
