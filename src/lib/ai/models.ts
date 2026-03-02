@@ -58,7 +58,7 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
     maxTokens: 200000,
     inputPricePerMillion: 2.0,
     outputPricePerMillion: 8.0,
-    supportsJson: false,
+    supportsJson: true,
     supportsVision: true,
     supportsTemperature: false,
     enabled: true,
