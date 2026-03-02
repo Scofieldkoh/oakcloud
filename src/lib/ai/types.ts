@@ -12,6 +12,7 @@ export type AIModel =
   // OpenAI models
   | 'gpt-5.2'
   | 'gpt-5-mini'
+  | 'o4-mini-deep-research'
   // | 'gpt-5' // Disabled: use gpt-5.2 instead
   | 'gpt-4.1'
   // Anthropic models
