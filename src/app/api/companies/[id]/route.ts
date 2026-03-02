@@ -11,6 +11,7 @@ import {
   updateCompany,
   deleteCompany,
   restoreCompany,
+  permanentDeleteCompany,
 } from '@/services/company.service';
 
 export async function GET(
@@ -125,23 +126,20 @@ export async function DELETE(
 ) {
   try {
     const session = await requireAuth();
-    // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
     const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
 
     // Check permission - allows SUPER_ADMIN and TENANT_ADMIN
     await requirePermission(session, 'company', 'delete', id);
 
-    const body = await request.json();
-    const data = deleteCompanySchema.parse({ id, reason: body.reason });
     const tenantResult = await requireTenantContext(
       session,
-      typeof body.tenantId === 'string' ? body.tenantId : searchParams.get('tenantId')
+      searchParams.get('tenantId')
     );
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 
-    // Get the company with tenant validation
     const existingCompany = await prisma.company.findUnique({
       where: { id, tenantId },
       select: { tenantId: true },
@@ -150,6 +148,18 @@ export async function DELETE(
     if (!existingCompany) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
+
+    if (action === 'permanent') {
+      await permanentDeleteCompany(id, {
+        tenantId: existingCompany.tenantId,
+        userId: session.id,
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    // Default: soft delete — requires reason in body
+    const body = await request.json();
+    const data = deleteCompanySchema.parse({ id, reason: body.reason });
 
     const company = await deleteCompany(
       data.id,
