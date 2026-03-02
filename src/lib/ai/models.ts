@@ -47,6 +47,7 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
     outputPricePerMillion: 2.0,
     supportsJson: true,
     supportsVision: true,
+    supportsTemperature: false,
     enabled: true,
   },
   'o4-mini-deep-research': {
