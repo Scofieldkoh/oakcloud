@@ -162,6 +162,14 @@ export default function UploadBizFilePage() {
   const [shareholderChanges, setShareholderChanges] = useState<{ added: number; updated: number; removed: number } | null>(null);
   const [companyUpdatedAt, setCompanyUpdatedAt] = useState<string | null>(null); // For concurrent update detection
   const [concurrentUpdateWarning, setConcurrentUpdateWarning] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<{
+    type: 'IN_RECYCLE_BIN' | 'ALREADY_EXISTS';
+    companyId: string;
+    companyName: string;
+    uen: string;
+  } | null>(null);
+  const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
+  const [conflictLoading, setConflictLoading] = useState(false);
 
   // Check if updating an existing company
   const existingCompanyId = searchParams.get('companyId');
@@ -290,11 +298,17 @@ export default function UploadBizFilePage() {
           throw new Error(err.error || 'Failed to extract data');
         }
 
-        const { extractedData: data, companyId: cId, aiMetadata: metadata } = await extractResponse.json();
+        const { extractedData: data, conflict: conflictData, aiMetadata: metadata } = await extractResponse.json();
         setExtractedData(data);
-        setCompanyId(cId);
         setAiMetadata(metadata);
-        setStep('preview');
+
+        if (conflictData) {
+          setConflict(conflictData);
+          setConflictDialogOpen(true);
+          setStep('upload');
+        } else {
+          setStep('preview');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -383,6 +397,55 @@ export default function UploadBizFilePage() {
     setShareholderChanges(null);
     setCompanyUpdatedAt(null);
     setConcurrentUpdateWarning(null);
+    setConflict(null);
+    setConflictDialogOpen(false);
+    setConflictLoading(false);
+  };
+
+  const cleanupDocument = async (docId: string) => {
+    try {
+      await fetch(`/api/documents/${docId}`, { method: 'DELETE' });
+    } catch {
+      // Best-effort cleanup
+    }
+  };
+
+  const handleConflictCancel = async () => {
+    setConflictDialogOpen(false);
+    if (documentId) {
+      await cleanupDocument(documentId);
+    }
+    handleReset();
+  };
+
+  const handleConflictPermanentDelete = async () => {
+    if (!conflict || !documentId) return;
+    setConflictLoading(true);
+    try {
+      const response = await fetch(
+        `/api/companies/${conflict.companyId}?action=permanent`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to permanently delete company');
+      }
+      setConflictDialogOpen(false);
+      setConflict(null);
+      setStep('preview');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to permanently delete company');
+      setConflictDialogOpen(false);
+    } finally {
+      setConflictLoading(false);
+    }
+  };
+
+  const handleConflictViewDiff = async () => {
+    if (!conflict || !documentId) return;
+    await cleanupDocument(documentId);
+    setConflictDialogOpen(false);
+    router.push(`/companies/upload?companyId=${conflict.companyId}`);
   };
 
   const handleCancel = () => {
@@ -392,6 +455,9 @@ export default function UploadBizFilePage() {
     }
 
     if (step === 'preview' || step === 'diff-preview') {
+      if (step === 'preview' && documentId) {
+        cleanupDocument(documentId);
+      }
       handleReset();
       return;
     }
@@ -1294,6 +1360,77 @@ export default function UploadBizFilePage() {
                 View Company
               </Link>
             )}
+          </div>
+        </div>
+      )}
+      {/* Conflict: Company in recycle bin */}
+      {conflictDialogOpen && conflict?.type === 'IN_RECYCLE_BIN' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-background-primary border border-border-primary rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex items-start gap-3 mb-4">
+              <AlertCircle className="w-5 h-5 text-warning mt-0.5 shrink-0" />
+              <div>
+                <h3 className="text-base font-semibold text-text-primary mb-1">
+                  Company in Recycle Bin
+                </h3>
+                <p className="text-sm text-text-secondary">
+                  <span className="font-medium">{conflict.companyName}</span>{' '}
+                  ({conflict.uen}) is in the recycle bin. You must permanently delete it
+                  before creating a new record. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleConflictCancel}
+                disabled={conflictLoading}
+                className="btn-secondary btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConflictPermanentDelete}
+                disabled={conflictLoading}
+                className="btn-danger btn-sm flex items-center gap-2"
+              >
+                {conflictLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                Permanently Delete &amp; Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conflict: Company already exists (active) */}
+      {conflictDialogOpen && conflict?.type === 'ALREADY_EXISTS' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-background-primary border border-border-primary rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex items-start gap-3 mb-4">
+              <AlertCircle className="w-5 h-5 text-warning mt-0.5 shrink-0" />
+              <div>
+                <h3 className="text-base font-semibold text-text-primary mb-1">
+                  Company Already Exists
+                </h3>
+                <p className="text-sm text-text-secondary">
+                  <span className="font-medium">{conflict.companyName}</span>{' '}
+                  ({conflict.uen}) already exists. Would you like to update it instead?
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleConflictCancel}
+                className="btn-secondary btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConflictViewDiff}
+                className="btn-primary btn-sm"
+              >
+                View Diff &amp; Update
+              </button>
+            </div>
           </div>
         </div>
       )}
