@@ -571,20 +571,6 @@ export async function permanentDeleteCompany(
     throw new Error('Company must be soft-deleted before permanent deletion');
   }
 
-  await createAuditLog({
-    tenantId,
-    userId,
-    companyId: existing.id,
-    action: 'DELETE',
-    entityType: 'Company',
-    entityId: existing.id,
-    entityName: existing.name,
-    summary: `Permanently deleted company "${existing.name}" (UEN: ${existing.uen})`,
-    changeSource: 'MANUAL',
-    reason: 'Permanent deletion to allow re-creation via BizFile upload',
-    metadata: { uen: existing.uen, name: existing.name, permanent: true },
-  });
-
   await prisma.$transaction(async (tx) => {
     await tx.companyCharge.deleteMany({ where: { companyId: id } });
     await tx.companyShareholder.deleteMany({ where: { companyId: id } });
@@ -595,12 +581,48 @@ export async function permanentDeleteCompany(
     await tx.companyContact.deleteMany({ where: { companyId: id } });
     await tx.userCompanyAssignment.deleteMany({ where: { companyId: id } });
     await tx.userRoleAssignment.deleteMany({ where: { companyId: id } });
-    // Documents linked to this company become unlinked (not deleted)
+    // AuditLog.companyId has no onDelete directive (defaults to Restrict).
+    // Nullify the FK so the company row can be deleted; the audit history is
+    // retained but the company reference is cleared.
+    await tx.auditLog.updateMany({
+      where: { companyId: id },
+      data: { companyId: null },
+    });
+    // ChartOfAccount.companyId has no onDelete directive (defaults to Restrict).
+    // Nullify the FK so the company row can be deleted; account definitions are
+    // retained but unlinked from this company.
+    await tx.chartOfAccount.updateMany({
+      where: { companyId: id },
+      data: { companyId: null },
+    });
+    // Documents and GeneratedDocuments linked to this company become unlinked
+    // (not deleted). GeneratedDocument.companyId has no onDelete directive
+    // (defaults to Restrict) so must be nullified before company.delete.
     await tx.document.updateMany({
       where: { companyId: id },
       data: { companyId: null },
     });
+    await tx.generatedDocument.updateMany({
+      where: { companyId: id },
+      data: { companyId: null },
+    });
     await tx.company.delete({ where: { id } });
+  });
+
+  // Audit log is written AFTER the transaction succeeds so there is no dangling
+  // audit record if the transaction rolls back.
+  await createAuditLog({
+    tenantId,
+    userId,
+    companyId: undefined,
+    action: 'DELETE',
+    entityType: 'Company',
+    entityId: existing.id,
+    entityName: existing.name,
+    summary: `Permanently deleted company "${existing.name}" (UEN: ${existing.uen})`,
+    changeSource: 'MANUAL',
+    reason: 'Permanent deletion to allow re-creation via BizFile upload',
+    metadata: { uen: existing.uen, name: existing.name, permanent: true },
   });
 }
 
