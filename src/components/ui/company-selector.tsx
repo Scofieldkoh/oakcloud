@@ -1,7 +1,7 @@
 'use client';
 
 import { Briefcase, ChevronDown, Check, Building2 } from 'lucide-react';
-import { useCompanies } from '@/hooks/use-companies';
+import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
 import { useCompanyStore } from '@/stores/company-store';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useSession } from '@/hooks/use-auth';
@@ -42,13 +42,8 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
     session?.tenantId
   );
 
-  // Fetch companies for the active tenant
-  const { data: companiesData, isLoading } = useCompanies({
-    tenantId: activeTenantId,
-    limit: 100,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  });
+  // Fetch all companies for the active tenant
+  const { data: allCompanies = [], isLoading } = useAllCompanyOptions(activeTenantId);
 
   const { selectedCompanyId, setSelectedCompany } = useCompanyStore();
   const [tempSelectedId, setTempSelectedId] = useState(selectedCompanyId);
@@ -66,28 +61,27 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
   useEffect(() => {
     if (activeTenantId && selectedCompanyId) {
       // Check if current company belongs to active tenant
-      const companyExists = companiesData?.companies?.some(c => c.id === selectedCompanyId);
-      if (!companyExists && companiesData?.companies) {
+      const companyExists = allCompanies.some(c => c.id === selectedCompanyId);
+      if (!companyExists && allCompanies.length > 0) {
         setSelectedCompany('', '');
       }
     }
-  }, [activeTenantId, selectedCompanyId, companiesData?.companies, setSelectedCompany]);
+  }, [activeTenantId, selectedCompanyId, allCompanies, setSelectedCompany]);
 
   const filteredCompanies = useMemo(() => {
-    if (!companiesData?.companies) return [];
-    return companiesData.companies.filter(
+    return allCompanies.filter(
       (company) =>
         company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (company.uen && company.uen.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-  }, [companiesData?.companies, searchQuery]);
+  }, [allCompanies, searchQuery]);
 
   const handleSelect = (companyId: string) => {
     setTempSelectedId(companyId);
   };
 
   const handleConfirm = () => {
-    const company = companiesData?.companies?.find((c) => c.id === tempSelectedId);
+    const company = allCompanies.find((c) => c.id === tempSelectedId);
     if (company) {
       setSelectedCompany(company.id, company.name);
     } else {
@@ -196,7 +190,7 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
           <div className="mt-3 p-2 bg-oak-primary/5 rounded-lg flex items-center justify-between">
             <span className="text-sm text-text-secondary">
               Selected: <span className="font-medium text-text-primary">
-                {filteredCompanies.find((c) => c.id === tempSelectedId)?.name || companiesData?.companies?.find((c) => c.id === tempSelectedId)?.name}
+                {filteredCompanies.find((c) => c.id === tempSelectedId)?.name || allCompanies.find((c) => c.id === tempSelectedId)?.name}
               </span>
             </span>
             <button

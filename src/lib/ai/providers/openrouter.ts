@@ -104,14 +104,31 @@ export async function callOpenRouter(
     model: modelConfig.providerModelId,
     messages,
     max_tokens: options.maxTokens,
-    ...(options.jsonMode && { response_format: { type: 'json_object' } }),
+    ...(options.jsonMode &&
+      modelConfig.supportsJsonResponseFormat !== false && {
+        response_format: { type: 'json_object' },
+      }),
   };
 
   if (modelConfig.supportsTemperature !== false) {
     requestOptions.temperature = options.temperature ?? 0.1;
   }
 
-  const response = await client.chat.completions.create(requestOptions);
+  let response;
+  try {
+    response = await client.chat.completions.create(requestOptions);
+  } catch (err: unknown) {
+    // Log full error details for debugging OpenRouter provider errors
+    const apiErr = err as { status?: number; message?: string; error?: unknown };
+    console.error('[OpenRouter] API error:', {
+      model: modelConfig.providerModelId,
+      status: apiErr.status,
+      message: apiErr.message,
+      error: apiErr.error,
+      requestOptions: { ...requestOptions, messages: `[${requestOptions.messages?.length} messages]` },
+    });
+    throw err;
+  }
 
   const content = response.choices[0]?.message?.content;
   if (!content) {

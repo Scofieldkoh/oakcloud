@@ -11,6 +11,7 @@ import {
   getBestAvailableModel,
   getBestAvailableModelForTenant,
   getModelConfig,
+  stripMarkdownCodeBlocks,
 } from '@/lib/ai';
 import type { AIModel, AIImageInput } from '@/lib/ai';
 import type {
@@ -175,26 +176,11 @@ function buildUserPrompt(additionalContext?: string): string {
 }
 
 /**
- * Clean AI response content by removing markdown code blocks
- * Some models (especially Claude) wrap JSON in ```json ... ``` blocks
+ * Clean AI response content by removing markdown code blocks, thinking tags, etc.
+ * Delegates to the shared stripMarkdownCodeBlocks utility.
  */
 function cleanJsonResponse(content: string): string {
-  let cleaned = content.trim();
-
-  // Remove markdown code blocks (```json ... ``` or ``` ... ```)
-  const codeBlockMatch = cleaned.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  if (codeBlockMatch) {
-    cleaned = codeBlockMatch[1].trim();
-  }
-
-  // Also handle case where there's text before/after the JSON
-  // Try to extract JSON object from the content
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    cleaned = jsonMatch[0];
-  }
-
-  return cleaned;
+  return stripMarkdownCodeBlocks(content);
 }
 
 /**

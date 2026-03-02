@@ -17,7 +17,7 @@ import {
   type TenantUser,
   type Role,
 } from '@/hooks/use-admin';
-import { useCompanies } from '@/hooks/use-companies';
+import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -227,11 +227,10 @@ export default function UsersPage() {
     ? data?.users.find((u: TenantUser) => u.id === managingUserId) || null
     : null;
 
-  // Fetch companies scoped to selected tenant for SUPER_ADMIN
-  const { data: companiesData } = useCompanies({
-    limit: 100,
-    tenantId: isSuperAdmin ? selectedTenantId || undefined : undefined,
-  });
+  // Fetch all companies scoped to selected tenant for SUPER_ADMIN
+  const { data: allCompanies = [] } = useAllCompanyOptions(
+    isSuperAdmin ? selectedTenantId || undefined : undefined
+  );
   const inviteUser = useInviteUser(activeTenantId || undefined);
   const updateUser = useUpdateUser(activeTenantId || undefined, editingUser?.id);
   const deleteUser = useDeleteUser(activeTenantId || undefined);
@@ -429,7 +428,7 @@ export default function UsersPage() {
     if (!role) return;
 
     const company = selectedRoleCompanyId
-      ? companiesData?.companies.find((c) => c.id === selectedRoleCompanyId)
+      ? allCompanies.find((c) => c.id === selectedRoleCompanyId)
       : null;
 
     // Check for duplicate
@@ -1071,7 +1070,7 @@ export default function UsersPage() {
                       className="input input-sm w-full"
                     >
                       <option value="">All Companies</option>
-                      {companiesData?.companies.map((company) => (
+                      {allCompanies.map((company) => (
                         <option key={company.id} value={company.id}>
                           {company.name}
                         </option>
@@ -1306,7 +1305,7 @@ export default function UsersPage() {
                   >
                     <option value="">Select company...</option>
                     <option value="__all__">All Companies</option>
-                    {companiesData?.companies
+                    {allCompanies
                       .map((company) => (
                         <option key={company.id} value={company.id}>
                           {company.name}

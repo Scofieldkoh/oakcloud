@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDropzone } from 'react-dropzone';
@@ -22,7 +22,7 @@ import {
   Copy,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
-import { useCompanies } from '@/hooks/use-companies';
+import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
@@ -71,8 +71,7 @@ export default function ProcessingUploadPage() {
   const activeCompanyId = useActiveCompanyId();
 
   // Fetch companies for selection
-  const { data: companiesData, isLoading: isLoadingCompanies } = useCompanies({ tenantId: activeTenantId });
-  const companies = useMemo(() => companiesData?.companies || [], [companiesData?.companies]);
+  const { data: companies = [], isLoading: isLoadingCompanies } = useAllCompanyOptions(activeTenantId);
 
   // State
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');

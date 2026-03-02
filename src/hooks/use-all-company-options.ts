@@ -5,12 +5,18 @@ import { useQuery } from '@tanstack/react-query';
 export interface CompanyOption {
   id: string;
   name: string;
+  uen?: string | null;
+  primarySsicDescription?: string | null;
+  homeCurrency?: string | null;
 }
 
 interface CompaniesPageResponse {
   companies: Array<{
     id: string;
     name: string;
+    uen?: string | null;
+    primarySsicDescription?: string | null;
+    homeCurrency?: string | null;
   }>;
   totalPages: number;
 }
@@ -31,7 +37,7 @@ export function useAllCompanyOptions(tenantId?: string | null) {
         params.set('tenantId', tenantId);
       }
 
-      const byId = new Map<string, string>();
+      const byId = new Map<string, Omit<CompanyOption, 'id'>>();
       let page = 1;
       let totalPages = 1;
 
@@ -46,7 +52,12 @@ export function useAllCompanyOptions(tenantId?: string | null) {
         const payload = await response.json() as CompaniesPageResponse;
 
         for (const company of payload.companies) {
-          byId.set(company.id, company.name);
+          byId.set(company.id, {
+            name: company.name,
+            uen: company.uen,
+            primarySsicDescription: company.primarySsicDescription,
+            homeCurrency: company.homeCurrency,
+          });
         }
 
         totalPages = Math.max(payload.totalPages || 1, 1);
@@ -54,7 +65,7 @@ export function useAllCompanyOptions(tenantId?: string | null) {
       }
 
       return Array.from(byId.entries())
-        .map(([id, name]) => ({ id, name }))
+        .map(([id, data]) => ({ id, ...data }))
         .sort((left, right) => left.name.localeCompare(right.name));
     },
     staleTime: 5 * 60 * 1000,

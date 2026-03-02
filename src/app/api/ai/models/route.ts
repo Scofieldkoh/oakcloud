@@ -65,6 +65,12 @@ export async function GET(request: NextRequest) {
       ? configuredDefault
       : bestAvailableModel;
 
+    console.log('[DEBUG ai/models] DEFAULT_AI_MODEL env:', process.env.DEFAULT_AI_MODEL);
+    console.log('[DEBUG ai/models] configuredDefault:', configuredDefault);
+    console.log('[DEBUG ai/models] bestAvailableModel:', bestAvailableModel);
+    console.log('[DEBUG ai/models] configuredDefaultAvailable:', configuredDefaultAvailable?.id);
+    console.log('[DEBUG ai/models] defaultModel returned:', defaultModel);
+
     // Format for frontend consumption
     const response = {
       models: models.map((m) => ({

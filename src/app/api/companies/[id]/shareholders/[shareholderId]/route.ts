@@ -6,6 +6,7 @@ import {
   unlinkShareholderFromContact,
   updateShareholder,
   removeShareholder,
+  reactivateShareholder,
   deleteShareholder,
   getCompanyById,
 } from '@/services/company.service';
@@ -51,6 +52,12 @@ export async function PATCH(
     } else if (!tenantId) {
       // Non-SUPER_ADMIN without tenantId should not reach here, but guard anyway
       return NextResponse.json({ error: 'Tenant context required' }, { status: 403 });
+    }
+
+    // Handle reactivate action (no body needed)
+    if (action === 'reactivate') {
+      await reactivateShareholder(shareholderId, companyId, tenantId, session.id);
+      return NextResponse.json({ success: true });
     }
 
     const body = await request.json();

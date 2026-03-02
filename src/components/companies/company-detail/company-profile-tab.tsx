@@ -25,12 +25,14 @@ import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { useToast } from '@/components/ui/toast';
 import {
   useUpdateOfficer,
   useUpdateShareholder,
   useDeleteOfficer,
   useRemoveShareholder,
+  useReactivateShareholder,
   useDeleteShareholder,
   useCompanyBizFile,
 } from '@/hooks/use-companies';
@@ -129,6 +131,7 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
   const updateShareholderMutation = useUpdateShareholder(companyId);
   const deleteOfficerMutation = useDeleteOfficer(companyId);
   const removeShareholderMutation = useRemoveShareholder(companyId);
+  const reactivateShareholderMutation = useReactivateShareholder(companyId);
   const deleteShareholderMutation = useDeleteShareholder(companyId);
 
   // Edit modals state
@@ -291,6 +294,19 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
       setSelectedShareholder(null);
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to mark shareholder as former');
+    }
+  };
+
+  const handleMarkShareholderActive = async () => {
+    if (!selectedShareholder) return;
+
+    try {
+      await reactivateShareholderMutation.mutateAsync(selectedShareholder.id);
+      success('Shareholder marked as active');
+      setEditShareholderModalOpen(false);
+      setSelectedShareholder(null);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to mark shareholder as active');
     }
   };
 
@@ -989,27 +1005,17 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
                 <span className="mx-2">-</span>
                 <span>{toTitleCase(selectedOfficer.role)}</span>
               </div>
-              <div>
-                <label className="label">Date of Appointment</label>
-                <input
-                  type="date"
-                  value={editOfficerForm.appointmentDate}
-                  onChange={(e) => setEditOfficerForm((prev) => ({ ...prev, appointmentDate: e.target.value }))}
-                  className="input input-sm w-full"
-                />
-              </div>
-              <div>
-                <label className="label">Date of Cessation</label>
-                <input
-                  type="date"
-                  value={editOfficerForm.cessationDate}
-                  onChange={(e) => setEditOfficerForm((prev) => ({ ...prev, cessationDate: e.target.value }))}
-                  className="input input-sm w-full"
-                />
-                <p className="text-xs text-text-muted mt-1">
-                  Leave empty if the position is still active
-                </p>
-              </div>
+              <SingleDateInput
+                label="Date of Appointment"
+                value={editOfficerForm.appointmentDate}
+                onChange={(value) => setEditOfficerForm((prev) => ({ ...prev, appointmentDate: value }))}
+              />
+              <SingleDateInput
+                label="Date of Cessation"
+                value={editOfficerForm.cessationDate}
+                onChange={(value) => setEditOfficerForm((prev) => ({ ...prev, cessationDate: value }))}
+                hint="Leave empty if the position is still active"
+              />
             </div>
           )}
         </ModalBody>
@@ -1096,13 +1102,21 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
           )}
         </ModalBody>
         <ModalFooter>
-          {selectedShareholder?.isCurrent && (
+          {selectedShareholder?.isCurrent ? (
             <Button
               variant="secondary"
               onClick={handleMarkShareholderFormer}
               disabled={removeShareholderMutation.isPending}
             >
               Mark as Former
+            </Button>
+          ) : selectedShareholder && (
+            <Button
+              variant="secondary"
+              onClick={handleMarkShareholderActive}
+              disabled={reactivateShareholderMutation.isPending}
+            >
+              Mark as Active
             </Button>
           )}
           {can.deleteShareholder && selectedShareholder && (

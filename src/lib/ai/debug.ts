@@ -14,7 +14,7 @@ import * as path from 'path';
 const log = createLogger('ai-debug');
 
 // Path to the debug log file
-const DEBUG_FILE_PATH = path.join(process.cwd(), 'docs', 'AI_DEBUG.md');
+const DEBUG_FILE_PATH = path.join(process.cwd(), 'docs', 'debug', 'AI_DEBUG.md');
 
 // Check if AI debug mode is enabled
 export function isAIDebugEnabled(): boolean {

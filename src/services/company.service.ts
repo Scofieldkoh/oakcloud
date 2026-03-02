@@ -1933,6 +1933,82 @@ export async function removeShareholder(
 }
 
 /**
+ * Reactivate a former shareholder (mark as current)
+ * SECURITY: Uses transaction to prevent race conditions in percentage recalculation
+ */
+export async function reactivateShareholder(
+  shareholderId: string,
+  companyId: string,
+  tenantId: string,
+  userId: string
+): Promise<void> {
+  // Verify shareholder exists and belongs to this company in this tenant
+  const shareholder = await prisma.companyShareholder.findFirst({
+    where: { id: shareholderId, companyId },
+    include: { company: { select: { id: true, tenantId: true, name: true } } },
+  });
+
+  if (!shareholder || shareholder.company.tenantId !== tenantId) {
+    throw new Error('Shareholder not found');
+  }
+
+  if (shareholder.isCurrent) {
+    throw new Error('Shareholder is already active');
+  }
+
+  // Use transaction to ensure atomicity of reactivation and percentage recalculation
+  await prisma.$transaction(async (tx) => {
+    // Mark as current
+    await tx.companyShareholder.update({
+      where: { id: shareholderId },
+      data: {
+        isCurrent: true,
+      },
+    });
+
+    // Recalculate percentages for all current shareholders (including reactivated one)
+    const currentShareholders = await tx.companyShareholder.findMany({
+      where: { companyId, isCurrent: true },
+      select: { id: true, numberOfShares: true },
+    });
+
+    const totalShares = currentShareholders.reduce((sum, sh) => sum + sh.numberOfShares, 0);
+
+    if (totalShares > 0) {
+      await Promise.all(
+        currentShareholders.map((sh) => {
+          const percentage = (sh.numberOfShares / totalShares) * 100;
+          return tx.companyShareholder.update({
+            where: { id: sh.id },
+            data: { percentageHeld: percentage },
+          });
+        })
+      );
+    }
+  });
+
+  // Log the action (outside transaction - non-critical)
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'UPDATE',
+    entityType: 'CompanyShareholder',
+    entityId: shareholderId,
+    summary: `Reactivated shareholder "${shareholder.name}" in company "${shareholder.company.name}"`,
+    changeSource: 'MANUAL',
+    changes: {
+      isCurrent: { old: false, new: true },
+    },
+    metadata: {
+      companyId: shareholder.company.id,
+      companyName: shareholder.company.name,
+      shareholderName: shareholder.name,
+      numberOfShares: shareholder.numberOfShares,
+    },
+  });
+}
+
+/**
  * Delete a shareholder record (hard delete)
  */
 export async function deleteShareholder(

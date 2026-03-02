@@ -31,18 +31,31 @@ import { createLogger } from '@/lib/logger';
 const log = createLogger('ai');
 
 /**
- * Strip markdown code blocks from AI response content.
- * AI models (especially Claude) sometimes wrap JSON in ```json ... ``` blocks
- * despite being instructed to respond with only valid JSON.
+ * Extract JSON from AI response content.
+ * Handles various wrapping patterns:
+ * - Markdown code blocks: ```json ... ``` or ``` ... ```
+ * - Thinking/reasoning tags: <think>...</think> before the JSON
+ * - Plain text preamble before the first { or [
  */
 export function stripMarkdownCodeBlocks(content: string): string {
-  const codeBlockRegex = /^```(?:json)?\s*\n?([\s\S]*?)\n?```$/;
-  const trimmed = content.trim();
-  const match = trimmed.match(codeBlockRegex);
-  if (match) {
-    return match[1].trim();
+  let text = content.trim();
+
+  // Remove thinking/reasoning tags (e.g. Qwen3 <think>...</think>)
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+  // Strip markdown code block wrapper
+  const codeBlockMatch = text.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+  if (codeBlockMatch) {
+    return codeBlockMatch[1].trim();
   }
-  return trimmed;
+
+  // Extract first JSON object or array (handles preamble text)
+  const jsonMatch = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+  if (jsonMatch) {
+    return jsonMatch[1].trim();
+  }
+
+  return text;
 }
 
 /**

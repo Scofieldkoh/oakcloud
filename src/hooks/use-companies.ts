@@ -663,6 +663,28 @@ export function useRemoveShareholder(companyId: string) {
   });
 }
 
+async function reactivateShareholderFn(companyId: string, shareholderId: string): Promise<void> {
+  const res = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}?action=reactivate`, {
+    method: 'PATCH',
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to reactivate shareholder');
+  }
+}
+
+export function useReactivateShareholder(companyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (shareholderId: string) => reactivateShareholderFn(companyId, shareholderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+  });
+}
+
 async function deleteShareholderFn(companyId: string, shareholderId: string): Promise<void> {
   const res = await fetch(`/api/companies/${companyId}/shareholders/${shareholderId}?action=delete`, {
     method: 'DELETE',

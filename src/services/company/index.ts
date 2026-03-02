@@ -50,6 +50,7 @@ export {
   linkShareholderToContact,
   unlinkShareholderFromContact,
   removeShareholder,
+  reactivateShareholder,
   deleteShareholder,
 } from '../company.service';
 

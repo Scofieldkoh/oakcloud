@@ -13,7 +13,6 @@ export type AIModel =
   | 'gpt-5.2'
   | 'gpt-5-mini'
   | 'o4-mini-deep-research'
-  // | 'gpt-5' // Disabled: use gpt-5.2 instead
   | 'gpt-4.1'
   // Anthropic models
   | 'claude-opus-4.6'
@@ -21,10 +20,9 @@ export type AIModel =
   // Google models
   | 'gemini-3.1'
   | 'gemini-3-flash'
-  // | 'gemini-2.5-flash' // Disabled: use gemini-3-flash instead
   // OpenRouter models
   | 'qwen3-vl-235b-a22b-thinking'
-  | 'google/gemma-3-27b-it'
+  | 'bytedance-seed/seed-2.0-mini'
   | 'perplexity/sonar-pro-search';
 
 // Model configuration
@@ -40,6 +38,7 @@ export interface AIModelConfig {
   supportsJson: boolean;
   supportsVision: boolean;
   supportsTemperature?: boolean; // Whether the model supports custom temperature (default: true)
+  supportsJsonResponseFormat?: boolean; // Whether the model supports response_format: { type: 'json_object' } (default: true)
   isDefault?: boolean;
   enabled?: boolean; // When false, model is hidden from available/usable lists (default: true)
 }

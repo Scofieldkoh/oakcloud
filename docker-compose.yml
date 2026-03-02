@@ -23,7 +23,6 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-      - /app/.next
 
   cloudflared:
     image: cloudflare/cloudflared:latest
