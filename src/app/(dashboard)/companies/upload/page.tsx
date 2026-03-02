@@ -1368,7 +1368,7 @@ export default function UploadBizFilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-background-primary border border-border-primary rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
             <div className="flex items-start gap-3 mb-4">
-              <AlertCircle className="w-5 h-5 text-warning mt-0.5 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-status-warning mt-0.5 shrink-0" />
               <div>
                 <h3 className="text-base font-semibold text-text-primary mb-1">
                   Company in Recycle Bin
@@ -1406,7 +1406,7 @@ export default function UploadBizFilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-background-primary border border-border-primary rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
             <div className="flex items-start gap-3 mb-4">
-              <AlertCircle className="w-5 h-5 text-warning mt-0.5 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-status-warning mt-0.5 shrink-0" />
               <div>
                 <h3 className="text-base font-semibold text-text-primary mb-1">
                   Company Already Exists
