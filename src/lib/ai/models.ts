@@ -36,6 +36,19 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
   //   supportsVision: true,
   //   supportsTemperature: false,
   // },
+  'gpt-5-mini': {
+    id: 'gpt-5-mini',
+    name: 'GPT-5 Mini',
+    provider: 'openai',
+    providerModelId: 'gpt-5-mini',
+    description: 'Faster, cost-efficient GPT-5 for well-defined tasks',
+    maxTokens: 400000,
+    inputPricePerMillion: 0.25,
+    outputPricePerMillion: 2.0,
+    supportsJson: true,
+    supportsVision: true,
+    enabled: true,
+  },
   'gpt-4.1': {
     id: 'gpt-4.1',
     name: 'GPT-4.1',
@@ -115,19 +128,19 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
     supportsVision: true,
     enabled: true,
   },
-  // Gemini 2.5 Flash disabled - use Gemini 3 Flash instead
-  // 'gemini-2.5-flash': {
-  //   id: 'gemini-2.5-flash',
-  //   name: 'Gemini 2.5 Flash',
-  //   provider: 'google',
-  //   providerModelId: 'gemini-2.5-flash',
-  //   description: 'Fast and cost-effective (previous gen)',
-  //   maxTokens: 1000000,
-  //   inputPricePerMillion: 0.15,
-  //   outputPricePerMillion: 0.6,
-  //   supportsJson: true,
-  //   supportsVision: true,
-  // },
+  'google/gemma-3-27b-it': {
+    id: 'google/gemma-3-27b-it',
+    name: 'Gemma 3 27B',
+    provider: 'openrouter',
+    providerModelId: 'google/gemma-3-27b-it',
+    description: 'Google Gemma 3 27B instruction-tuned, multilingual vision-language model',
+    maxTokens: 128000,
+    inputPricePerMillion: 0.04,
+    outputPricePerMillion: 0.15,
+    supportsJson: true,
+    supportsVision: true,
+    enabled: true,
+  },
 };
 
 // Backward-compatible model ID aliases for env/config values.

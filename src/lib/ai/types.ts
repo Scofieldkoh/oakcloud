@@ -11,6 +11,7 @@ export type AIProvider = 'openai' | 'anthropic' | 'google' | 'openrouter';
 export type AIModel =
   // OpenAI models
   | 'gpt-5.2'
+  | 'gpt-5-mini'
   // | 'gpt-5' // Disabled: use gpt-5.2 instead
   | 'gpt-4.1'
   // Anthropic models
@@ -21,7 +22,8 @@ export type AIModel =
   | 'gemini-3-flash'
   // | 'gemini-2.5-flash' // Disabled: use gemini-3-flash instead
   // OpenRouter models
-  | 'qwen3-vl-235b-a22b-thinking';
+  | 'qwen3-vl-235b-a22b-thinking'
+  | 'google/gemma-3-27b-it';
 
 // Model configuration
 export interface AIModelConfig {
