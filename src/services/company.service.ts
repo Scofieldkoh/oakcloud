@@ -550,6 +550,61 @@ export async function restoreCompany(
 }
 
 // ============================================================================
+// Permanent Delete Company (hard delete — only for soft-deleted companies)
+// ============================================================================
+
+export async function permanentDeleteCompany(
+  id: string,
+  params: TenantAwareParams
+): Promise<void> {
+  const { tenantId, userId } = params;
+
+  const existing = await prisma.company.findFirst({
+    where: { id, tenantId },
+  });
+
+  if (!existing) {
+    throw new Error('Company not found');
+  }
+
+  if (!existing.deletedAt) {
+    throw new Error('Company must be soft-deleted before permanent deletion');
+  }
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    companyId: existing.id,
+    action: 'DELETE',
+    entityType: 'Company',
+    entityId: existing.id,
+    entityName: existing.name,
+    summary: `Permanently deleted company "${existing.name}" (UEN: ${existing.uen})`,
+    changeSource: 'MANUAL',
+    reason: 'Permanent deletion to allow re-creation via BizFile upload',
+    metadata: { uen: existing.uen, name: existing.name, permanent: true },
+  });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.companyCharge.deleteMany({ where: { companyId: id } });
+    await tx.companyShareholder.deleteMany({ where: { companyId: id } });
+    await tx.shareCapital.deleteMany({ where: { companyId: id } });
+    await tx.companyOfficer.deleteMany({ where: { companyId: id } });
+    await tx.companyAddress.deleteMany({ where: { companyId: id } });
+    await tx.companyFormerName.deleteMany({ where: { companyId: id } });
+    await tx.companyContact.deleteMany({ where: { companyId: id } });
+    await tx.userCompanyAssignment.deleteMany({ where: { companyId: id } });
+    await tx.userRoleAssignment.deleteMany({ where: { companyId: id } });
+    // Documents linked to this company become unlinked (not deleted)
+    await tx.document.updateMany({
+      where: { companyId: id },
+      data: { companyId: null },
+    });
+    await tx.company.delete({ where: { id } });
+  });
+}
+
+// ============================================================================
 // Get Company
 // ============================================================================
 
