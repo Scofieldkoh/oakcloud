@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { extractBizFileWithVision, processBizFileExtraction, normalizeExtractedData } from '@/services/bizfile';
+import { extractBizFileWithVision, normalizeExtractedData } from '@/services/bizfile';
 import { mapEntityType } from '@/services/bizfile/types';
 import { calculateCost, formatCost, getModelConfig } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
@@ -22,8 +22,12 @@ const VISION_SUPPORTED_TYPES = [
  * POST /api/documents/:documentId/extract
  *
  * Extract data from a pending document using AI vision.
- * Supports PDF and image files (PNG, JPG, WebP).
- * Creates/updates the company and links the document to it.
+ * Stores extracted data on the document but does NOT create/update any company records.
+ * Returns extracted data + conflict info (if UEN already exists).
+ *
+ * Conflict types:
+ *   - IN_RECYCLE_BIN: company exists but is soft-deleted
+ *   - ALREADY_EXISTS: company exists and is active
  */
 export async function POST(
   request: NextRequest,
@@ -33,7 +37,6 @@ export async function POST(
     const session = await requireAuth();
     const { documentId } = await params;
 
-    // Parse request body for optional model selection and context
     let modelId: AIModel | undefined;
     let additionalContext: string | undefined;
     try {
@@ -44,7 +47,6 @@ export async function POST(
       // No body or invalid JSON - use defaults
     }
 
-    // Get document
     const document = await prisma.document.findUnique({
       where: { id: documentId },
     });
@@ -53,15 +55,15 @@ export async function POST(
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    // Check tenant access
-    if (!session.isSuperAdmin) {
-      if (document.tenantId !== session.tenantId) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
+    if (!session.isSuperAdmin && document.tenantId !== session.tenantId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Verify the document was uploaded by this user or user has admin access
-    if (document.uploadedById !== session.id && !session.isSuperAdmin && !session.isTenantAdmin) {
+    if (
+      document.uploadedById !== session.id &&
+      !session.isSuperAdmin &&
+      !session.isTenantAdmin
+    ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -69,7 +71,6 @@ export async function POST(
       return NextResponse.json({ error: 'Extraction already in progress' }, { status: 409 });
     }
 
-    // Validate file type for vision extraction
     if (!VISION_SUPPORTED_TYPES.includes(document.mimeType)) {
       return NextResponse.json(
         { error: `Unsupported file type: ${document.mimeType}. Supported types: PDF, PNG, JPG, WebP` },
@@ -77,77 +78,93 @@ export async function POST(
       );
     }
 
-    // Update status to processing
     await prisma.document.update({
       where: { id: documentId },
       data: { extractionStatus: 'PROCESSING' },
     });
 
     try {
-      // Download file from storage and convert to base64 for vision extraction
       if (!document.storageKey) {
         throw new Error('Document has no storage key');
       }
       const fileBuffer = await storage.download(document.storageKey);
       const base64Data = fileBuffer.toString('base64');
 
-      // Extract data using AI vision (connector-aware for tenant)
       const extractionResult = await extractBizFileWithVision(
-        {
-          base64: base64Data,
-          mimeType: document.mimeType,
-        },
+        { base64: base64Data, mimeType: document.mimeType },
         {
           modelId,
           additionalContext,
-          tenantId: document.tenantId, // Use tenant's configured AI connector
+          tenantId: document.tenantId,
         }
       );
 
-      // If FYE not extracted and entity type is a company, try to retrieve from ACRA
+      // Optionally retrieve FYE from ACRA if not in BizFile
       const extractedEntityType = mapEntityType(extractionResult.data.entityDetails?.entityType);
-      const hasFYE = extractionResult.data.financialYear?.endDay && extractionResult.data.financialYear?.endMonth;
+      const hasFYE =
+        extractionResult.data.financialYear?.endDay &&
+        extractionResult.data.financialYear?.endMonth;
 
       if (!hasFYE && isCompanyEntityType(extractedEntityType)) {
         const companyName = extractionResult.data.entityDetails?.name;
         const uen = extractionResult.data.entityDetails?.uen;
-
         if (companyName && uen) {
           try {
-            logger.info('FYE not in BizFile, attempting ACRA retrieval', { companyName, uen, entityType: extractedEntityType });
+            logger.info('FYE not in BizFile, attempting ACRA retrieval', { companyName, uen });
             const fyeResult = await retrieveFYEFromACRA(companyName, uen, extractedEntityType);
-
             if (fyeResult) {
-              // Add FYE to extracted data
               extractionResult.data.financialYear = {
                 ...extractionResult.data.financialYear,
                 endDay: fyeResult.day,
                 endMonth: fyeResult.month,
               };
-              logger.info('FYE retrieved from ACRA and added to extraction', { fyeResult });
             }
           } catch (fyeError) {
-            // Log but don't fail the extraction if FYE retrieval fails
-            logger.warn('Failed to retrieve FYE from ACRA, continuing without it', { error: fyeError });
+            logger.warn('Failed to retrieve FYE from ACRA', { error: fyeError });
           }
         }
       }
 
-      // Process and save extracted data
-      const result = await processBizFileExtraction(
-        documentId,
-        extractionResult.data,
-        session.id,
-        document.tenantId,
-        document.storageKey || undefined,
-        document.mimeType
-      );
+      const normalizedData = normalizeExtractedData(extractionResult.data);
+      const uen = normalizedData.entityDetails?.uen;
 
-      // Calculate estimated cost
+      // Check for UEN conflict
+      let conflict: {
+        type: 'IN_RECYCLE_BIN' | 'ALREADY_EXISTS';
+        companyId: string;
+        companyName: string;
+        uen: string;
+      } | null = null;
+
+      if (uen) {
+        const existingCompany = await prisma.company.findFirst({
+          where: { tenantId: document.tenantId, uen },
+          select: { id: true, name: true, uen: true, deletedAt: true },
+        });
+
+        if (existingCompany) {
+          conflict = {
+            type: existingCompany.deletedAt ? 'IN_RECYCLE_BIN' : 'ALREADY_EXISTS',
+            companyId: existingCompany.id,
+            companyName: existingCompany.name,
+            uen: existingCompany.uen,
+          };
+        }
+      }
+
+      // Store extracted data on document, mark as EXTRACTED (awaiting confirm)
+      await prisma.document.update({
+        where: { id: documentId },
+        data: {
+          extractionStatus: 'EXTRACTED',
+          extractedAt: new Date(),
+          extractedData: normalizedData as object,
+        },
+      });
+
       const modelConfig = getModelConfig(extractionResult.modelUsed);
       let estimatedCost: number | undefined;
       let formattedCost: string | undefined;
-
       if (extractionResult.usage) {
         estimatedCost = calculateCost(
           extractionResult.modelUsed,
@@ -157,14 +174,10 @@ export async function POST(
         formattedCost = formatCost(estimatedCost);
       }
 
-      // Normalize the extracted data for preview (same normalization applied when saving)
-      const normalizedData = normalizeExtractedData(extractionResult.data);
-
       return NextResponse.json({
         success: true,
-        companyId: result.companyId,
-        created: result.created,
         extractedData: normalizedData,
+        conflict,
         aiMetadata: {
           modelUsed: extractionResult.modelUsed,
           modelName: modelConfig.name,
@@ -175,7 +188,6 @@ export async function POST(
         },
       });
     } catch (extractionError) {
-      // Update document with error
       await prisma.document.update({
         where: { id: documentId },
         data: {
@@ -184,7 +196,6 @@ export async function POST(
             extractionError instanceof Error ? extractionError.message : 'Unknown error',
         },
       });
-
       throw extractionError;
     }
   } catch (error) {
