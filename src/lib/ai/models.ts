@@ -155,6 +155,19 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
     supportsVision: true,
     enabled: true,
   },
+  'perplexity/sonar-pro-search': {
+    id: 'perplexity/sonar-pro-search',
+    name: 'Sonar Pro Search',
+    provider: 'openrouter',
+    providerModelId: 'perplexity/sonar-pro-search',
+    description: 'Perplexity Sonar Pro with real-time web search and multi-step reasoning',
+    maxTokens: 200000,
+    inputPricePerMillion: 3.0,
+    outputPricePerMillion: 15.0,
+    supportsJson: true,
+    supportsVision: true,
+    enabled: true,
+  },
 };
 
 // Backward-compatible model ID aliases for env/config values.

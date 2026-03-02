@@ -24,7 +24,8 @@ export type AIModel =
   // | 'gemini-2.5-flash' // Disabled: use gemini-3-flash instead
   // OpenRouter models
   | 'qwen3-vl-235b-a22b-thinking'
-  | 'google/gemma-3-27b-it';
+  | 'google/gemma-3-27b-it'
+  | 'perplexity/sonar-pro-search';
 
 // Model configuration
 export interface AIModelConfig {
