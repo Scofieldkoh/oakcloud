@@ -129,6 +129,16 @@ interface ExtractedData {
   };
 }
 
+/** Safely extract error message from a non-ok fetch response (handles HTML error pages) */
+async function safeJsonError(response: Response, fallback: string): Promise<string> {
+  try {
+    const data = await response.json();
+    return data?.error || fallback;
+  } catch {
+    return `${fallback} (HTTP ${response.status})`;
+  }
+}
+
 // AI metadata from extraction
 interface AIMetadata {
   modelUsed: string;
@@ -248,8 +258,8 @@ export default function UploadBizFilePage() {
       });
 
       if (!uploadResponse.ok) {
-        const err = await uploadResponse.json();
-        throw new Error(err.error || 'Failed to upload file');
+        const err = await safeJsonError(uploadResponse, 'Failed to upload file');
+        throw new Error(err);
       }
 
       const { documentId: docId } = await uploadResponse.json();
@@ -271,8 +281,8 @@ export default function UploadBizFilePage() {
         });
 
         if (!diffResponse.ok) {
-          const err = await diffResponse.json();
-          throw new Error(err.error || 'Failed to extract and compare data');
+          const err = await safeJsonError(diffResponse, 'Failed to extract and compare data');
+          throw new Error(err);
         }
 
         const { extractedData: data, diff, aiMetadata: metadata, companyUpdatedAt: updatedAt } = await diffResponse.json();
@@ -294,8 +304,8 @@ export default function UploadBizFilePage() {
         });
 
         if (!extractResponse.ok) {
-          const err = await extractResponse.json();
-          throw new Error(err.error || 'Failed to extract data');
+          const err = await safeJsonError(extractResponse, 'Failed to extract data');
+          throw new Error(err);
         }
 
         const { extractedData: data, conflict: conflictData, aiMetadata: metadata } = await extractResponse.json();
@@ -331,8 +341,8 @@ export default function UploadBizFilePage() {
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to save data');
+        const err = await safeJsonError(response, 'Failed to save data');
+        throw new Error(err);
       }
 
       const { companyId: cId } = await response.json();
@@ -364,8 +374,8 @@ export default function UploadBizFilePage() {
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to apply update');
+        const err = await safeJsonError(response, 'Failed to apply update');
+        throw new Error(err);
       }
 
       const result = await response.json();
@@ -427,8 +437,8 @@ export default function UploadBizFilePage() {
         { method: 'DELETE' }
       );
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to permanently delete company');
+        const err = await safeJsonError(response, 'Failed to permanently delete company');
+        throw new Error(err);
       }
       setConflictDialogOpen(false);
       setConflict(null);
@@ -443,9 +453,39 @@ export default function UploadBizFilePage() {
 
   const handleConflictViewDiff = async () => {
     if (!conflict || !documentId) return;
-    await cleanupDocument(documentId);
-    setConflictDialogOpen(false);
-    router.push(`/companies/upload?companyId=${conflict.companyId}`);
+    setConflictLoading(true);
+    try {
+      const fullContext = buildFullContext(selectedStandardContexts, aiContext);
+      const diffResponse = await fetch(`/api/documents/${documentId}/preview-diff`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyId: conflict.companyId,
+          modelId: selectedModelId || undefined,
+          additionalContext: fullContext || undefined,
+        }),
+      });
+
+      if (!diffResponse.ok) {
+        const err = await diffResponse.json();
+        throw new Error(err.error || 'Failed to generate diff');
+      }
+
+      const { extractedData: data, diff, aiMetadata: metadata, companyUpdatedAt: updatedAt } = await diffResponse.json();
+      setExtractedData(data);
+      setDiffResult(diff);
+      setCompanyId(conflict.companyId);
+      setAiMetadata(metadata);
+      setCompanyUpdatedAt(updatedAt);
+      setConflictDialogOpen(false);
+      setConflict(null);
+      setStep('diff-preview');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate diff');
+      setConflictDialogOpen(false);
+    } finally {
+      setConflictLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -455,7 +495,9 @@ export default function UploadBizFilePage() {
     }
 
     if (step === 'preview' || step === 'diff-preview') {
-      if (step === 'preview' && documentId) {
+      // Clean up pending document when cancelling from preview/diff-preview in create mode
+      // (not in update mode, which navigated here with ?companyId= and has no pending doc)
+      if (!isUpdateMode && documentId) {
         cleanupDocument(documentId);
       }
       handleReset();
