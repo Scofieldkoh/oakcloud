@@ -89,9 +89,9 @@ GRANT ALL PRIVILEGES ON DATABASE oakcloud TO oakcloud;
 GRANT ALL ON SCHEMA public TO oakcloud;
 ```
 
-3. **Update `.env`** to use port 5432:
+3. **Update `.env`** to use port 5433:
 ```
-DATABASE_URL="postgresql://oakcloud:oakcloud_password@localhost:5432/oakcloud?schema=public"
+DATABASE_URL="postgresql://oakcloud:oakcloud_password@localhost:5433/oakcloud?schema=public"
 ```
 
 ---

@@ -304,8 +304,8 @@ export type CompanyChargeWhereInput = {
   sourceDocumentId?: Prisma.StringNullableFilter<"CompanyCharge"> | string | null
   createdAt?: Prisma.DateTimeFilter<"CompanyCharge"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"CompanyCharge"> | Date | string
-  company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   chargeHolder?: Prisma.XOR<Prisma.ContactNullableScalarRelationFilter, Prisma.ContactWhereInput> | null
+  company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   document?: Prisma.XOR<Prisma.DocumentNullableScalarRelationFilter, Prisma.DocumentWhereInput> | null
 }
 
@@ -326,8 +326,8 @@ export type CompanyChargeOrderByWithRelationInput = {
   sourceDocumentId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  company?: Prisma.CompanyOrderByWithRelationInput
   chargeHolder?: Prisma.ContactOrderByWithRelationInput
+  company?: Prisma.CompanyOrderByWithRelationInput
   document?: Prisma.DocumentOrderByWithRelationInput
 }
 
@@ -351,8 +351,8 @@ export type CompanyChargeWhereUniqueInput = Prisma.AtLeast<{
   sourceDocumentId?: Prisma.StringNullableFilter<"CompanyCharge"> | string | null
   createdAt?: Prisma.DateTimeFilter<"CompanyCharge"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"CompanyCharge"> | Date | string
-  company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   chargeHolder?: Prisma.XOR<Prisma.ContactNullableScalarRelationFilter, Prisma.ContactWhereInput> | null
+  company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   document?: Prisma.XOR<Prisma.DocumentNullableScalarRelationFilter, Prisma.DocumentWhereInput> | null
 }, "id">
 
@@ -416,8 +416,8 @@ export type CompanyChargeCreateInput = {
   isFullyDischarged?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  company: Prisma.CompanyCreateNestedOneWithoutChargesInput
   chargeHolder?: Prisma.ContactCreateNestedOneWithoutChargeHoldingsInput
+  company: Prisma.CompanyCreateNestedOneWithoutChargesInput
   document?: Prisma.DocumentCreateNestedOneWithoutChargesInput
 }
 
@@ -454,8 +454,8 @@ export type CompanyChargeUpdateInput = {
   isFullyDischarged?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  company?: Prisma.CompanyUpdateOneRequiredWithoutChargesNestedInput
   chargeHolder?: Prisma.ContactUpdateOneWithoutChargeHoldingsNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutChargesNestedInput
   document?: Prisma.DocumentUpdateOneWithoutChargesNestedInput
 }
 
@@ -893,8 +893,8 @@ export type CompanyChargeCreateWithoutDocumentInput = {
   isFullyDischarged?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  company: Prisma.CompanyCreateNestedOneWithoutChargesInput
   chargeHolder?: Prisma.ContactCreateNestedOneWithoutChargeHoldingsInput
+  company: Prisma.CompanyCreateNestedOneWithoutChargesInput
 }
 
 export type CompanyChargeUncheckedCreateWithoutDocumentInput = {
@@ -1117,8 +1117,8 @@ export type CompanyChargeUpdateWithoutDocumentInput = {
   isFullyDischarged?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  company?: Prisma.CompanyUpdateOneRequiredWithoutChargesNestedInput
   chargeHolder?: Prisma.ContactUpdateOneWithoutChargeHoldingsNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutChargesNestedInput
 }
 
 export type CompanyChargeUncheckedUpdateWithoutDocumentInput = {
@@ -1176,8 +1176,8 @@ export type CompanyChargeSelect<ExtArgs extends runtime.Types.Extensions.Interna
   sourceDocumentId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   chargeHolder?: boolean | Prisma.CompanyCharge$chargeHolderArgs<ExtArgs>
+  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   document?: boolean | Prisma.CompanyCharge$documentArgs<ExtArgs>
 }, ExtArgs["result"]["companyCharge"]>
 
@@ -1198,8 +1198,8 @@ export type CompanyChargeSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   sourceDocumentId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   chargeHolder?: boolean | Prisma.CompanyCharge$chargeHolderArgs<ExtArgs>
+  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   document?: boolean | Prisma.CompanyCharge$documentArgs<ExtArgs>
 }, ExtArgs["result"]["companyCharge"]>
 
@@ -1220,8 +1220,8 @@ export type CompanyChargeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   sourceDocumentId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   chargeHolder?: boolean | Prisma.CompanyCharge$chargeHolderArgs<ExtArgs>
+  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   document?: boolean | Prisma.CompanyCharge$documentArgs<ExtArgs>
 }, ExtArgs["result"]["companyCharge"]>
 
@@ -1246,26 +1246,26 @@ export type CompanyChargeSelectScalar = {
 
 export type CompanyChargeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "companyId" | "chargeHolderId" | "chargeNumber" | "chargeType" | "description" | "chargeHolderName" | "amountSecured" | "amountSecuredText" | "currency" | "registrationDate" | "dischargeDate" | "isFullyDischarged" | "sourceDocumentId" | "createdAt" | "updatedAt", ExtArgs["result"]["companyCharge"]>
 export type CompanyChargeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   chargeHolder?: boolean | Prisma.CompanyCharge$chargeHolderArgs<ExtArgs>
+  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   document?: boolean | Prisma.CompanyCharge$documentArgs<ExtArgs>
 }
 export type CompanyChargeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   chargeHolder?: boolean | Prisma.CompanyCharge$chargeHolderArgs<ExtArgs>
+  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   document?: boolean | Prisma.CompanyCharge$documentArgs<ExtArgs>
 }
 export type CompanyChargeIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   chargeHolder?: boolean | Prisma.CompanyCharge$chargeHolderArgs<ExtArgs>
+  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   document?: boolean | Prisma.CompanyCharge$documentArgs<ExtArgs>
 }
 
 export type $CompanyChargePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "CompanyCharge"
   objects: {
-    company: Prisma.$CompanyPayload<ExtArgs>
     chargeHolder: Prisma.$ContactPayload<ExtArgs> | null
+    company: Prisma.$CompanyPayload<ExtArgs>
     document: Prisma.$DocumentPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1679,8 +1679,8 @@ readonly fields: CompanyChargeFieldRefs;
  */
 export interface Prisma__CompanyChargeClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  company<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   chargeHolder<T extends Prisma.CompanyCharge$chargeHolderArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyCharge$chargeHolderArgs<ExtArgs>>): Prisma.Prisma__ContactClient<runtime.Types.Result.GetResult<Prisma.$ContactPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  company<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   document<T extends Prisma.CompanyCharge$documentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyCharge$documentArgs<ExtArgs>>): Prisma.Prisma__DocumentClient<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.

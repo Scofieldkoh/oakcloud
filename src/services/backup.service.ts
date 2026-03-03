@@ -2092,12 +2092,13 @@ class BackupService {
   }
 
   /**
-   * Calculate the next run time based on cron pattern
+   * Calculate the next run time based on cron pattern and timezone.
+   * Returns a UTC Date representing when the backup should next run.
    *
-   * This is a simplified implementation. For production, consider using
-   * a proper cron parser library like 'cron-parser' or 'croner'.
+   * The cron hour/minute are interpreted in the given timezone, then
+   * converted to UTC for storage so the scheduler can compare with Date.now().
    */
-  private calculateNextRun(cronPattern: string, _timezone: string): Date {
+  private calculateNextRun(cronPattern: string, timezone: string): Date {
     // Parse cron pattern: minute hour dayOfMonth month dayOfWeek
     const parts = cronPattern.split(' ');
     if (parts.length !== 5) {
@@ -2108,22 +2109,45 @@ class BackupService {
     const [minute, hour] = parts;
     const now = new Date();
 
-    // Simple implementation: calculate next occurrence based on hour and minute
-    // For a more robust solution, use a cron parser library
-    const nextRun = new Date(now);
-
-    // Parse minute and hour (handle wildcards as "every hour/minute")
     const targetMinute = minute === '*' ? 0 : parseInt(minute, 10);
-    const targetHour = hour === '*' ? now.getHours() : parseInt(hour, 10);
+    const targetHour = hour === '*' ? now.getUTCHours() : parseInt(hour, 10);
 
-    nextRun.setHours(targetHour, targetMinute, 0, 0);
+    // Get the UTC offset for the target timezone using Intl
+    const tz = timezone || 'UTC';
+    const offsetMinutes = this.getTimezoneOffsetMinutes(tz, now);
+
+    // Build next run in UTC: target time in timezone converted to UTC
+    const nextRun = new Date(now);
+    // Set to target hour/minute in UTC, adjusted by timezone offset
+    nextRun.setUTCHours(targetHour, targetMinute, 0, 0);
+    // Subtract timezone offset to convert from local timezone to UTC
+    // e.g. SGT is +480 min, so 22:30 SGT = 22:30 - 480min = 14:30 UTC
+    nextRun.setUTCMinutes(nextRun.getUTCMinutes() - offsetMinutes);
 
     // If the calculated time is in the past, move to next day
     if (nextRun <= now) {
-      nextRun.setDate(nextRun.getDate() + 1);
+      nextRun.setUTCDate(nextRun.getUTCDate() + 1);
     }
 
     return nextRun;
+  }
+
+  /**
+   * Get the UTC offset in minutes for a given IANA timezone at a specific date.
+   * Positive = east of UTC (e.g. Asia/Singapore = +480).
+   */
+  private getTimezoneOffsetMinutes(timezone: string, date: Date): number {
+    try {
+      // Format the date in the target timezone and in UTC, then compute difference
+      const utcStr = date.toLocaleString('en-US', { timeZone: 'UTC' });
+      const tzStr = date.toLocaleString('en-US', { timeZone: timezone });
+      const utcDate = new Date(utcStr);
+      const tzDate = new Date(tzStr);
+      return (tzDate.getTime() - utcDate.getTime()) / (60 * 1000);
+    } catch {
+      log.warn(`Invalid timezone: ${timezone}, falling back to UTC`);
+      return 0;
+    }
   }
 
   /**

@@ -18,7 +18,7 @@ Write-Host "[1/4] Created backup directory: $BackupDir" -ForegroundColor Green
 $postgresRunning = docker ps --filter "name=oakcloud-postgres" --format "{{.Names}}" 2>$null
 if (-not $postgresRunning) {
     Write-Host "Error: oakcloud-postgres container is not running!" -ForegroundColor Red
-    Write-Host "Start it with: docker compose up -d" -ForegroundColor Yellow
+    Write-Host "Start it with: npm run docker:db:up" -ForegroundColor Yellow
     exit 1
 }
 
@@ -27,13 +27,14 @@ Write-Host "[2/4] Exporting PostgreSQL database..." -ForegroundColor Yellow
 docker exec oakcloud-postgres pg_dump -U oakcloud oakcloud > "$BackupDir\database.sql"
 Write-Host "      Database exported to $BackupDir\database.sql" -ForegroundColor Green
 
-# Export MinIO data
+# Export MinIO data (from bind-mounted local directory)
 Write-Host "[3/4] Exporting MinIO data (documents/files)..." -ForegroundColor Yellow
-docker run --rm `
-    -v oakcloud_minio_data:/data `
-    -v "${PWD}\${BackupDir}:/backup" `
-    alpine tar cvf /backup/minio_data.tar -C /data . 2>$null
-Write-Host "      MinIO data exported to $BackupDir\minio_data.tar" -ForegroundColor Green
+if (Test-Path ".\docker-data\minio") {
+    tar cvf "$BackupDir\minio_data.tar" -C ".\docker-data\minio" . 2>$null
+    Write-Host "      MinIO data exported to $BackupDir\minio_data.tar" -ForegroundColor Green
+} else {
+    Write-Host "      Warning: docker-data\minio not found, skipping MinIO backup" -ForegroundColor Yellow
+}
 
 # Export Redis data (optional but included)
 Write-Host "[4/4] Exporting Redis data..." -ForegroundColor Yellow

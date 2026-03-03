@@ -224,9 +224,9 @@ export type MatchGroupItemWhereInput = {
   documentRevisionId?: Prisma.StringNullableFilter<"MatchGroupItem"> | string | null
   allocatedAmount?: Prisma.DecimalNullableFilter<"MatchGroupItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   allocationCurrency?: Prisma.StringNullableFilter<"MatchGroupItem"> | string | null
-  matchGroup?: Prisma.XOR<Prisma.MatchGroupScalarRelationFilter, Prisma.MatchGroupWhereInput>
   bankTransaction?: Prisma.XOR<Prisma.BankTransactionNullableScalarRelationFilter, Prisma.BankTransactionWhereInput> | null
   documentRevision?: Prisma.XOR<Prisma.DocumentRevisionNullableScalarRelationFilter, Prisma.DocumentRevisionWhereInput> | null
+  matchGroup?: Prisma.XOR<Prisma.MatchGroupScalarRelationFilter, Prisma.MatchGroupWhereInput>
 }
 
 export type MatchGroupItemOrderByWithRelationInput = {
@@ -236,9 +236,9 @@ export type MatchGroupItemOrderByWithRelationInput = {
   documentRevisionId?: Prisma.SortOrderInput | Prisma.SortOrder
   allocatedAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   allocationCurrency?: Prisma.SortOrderInput | Prisma.SortOrder
-  matchGroup?: Prisma.MatchGroupOrderByWithRelationInput
   bankTransaction?: Prisma.BankTransactionOrderByWithRelationInput
   documentRevision?: Prisma.DocumentRevisionOrderByWithRelationInput
+  matchGroup?: Prisma.MatchGroupOrderByWithRelationInput
 }
 
 export type MatchGroupItemWhereUniqueInput = Prisma.AtLeast<{
@@ -251,9 +251,9 @@ export type MatchGroupItemWhereUniqueInput = Prisma.AtLeast<{
   documentRevisionId?: Prisma.StringNullableFilter<"MatchGroupItem"> | string | null
   allocatedAmount?: Prisma.DecimalNullableFilter<"MatchGroupItem"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   allocationCurrency?: Prisma.StringNullableFilter<"MatchGroupItem"> | string | null
-  matchGroup?: Prisma.XOR<Prisma.MatchGroupScalarRelationFilter, Prisma.MatchGroupWhereInput>
   bankTransaction?: Prisma.XOR<Prisma.BankTransactionNullableScalarRelationFilter, Prisma.BankTransactionWhereInput> | null
   documentRevision?: Prisma.XOR<Prisma.DocumentRevisionNullableScalarRelationFilter, Prisma.DocumentRevisionWhereInput> | null
+  matchGroup?: Prisma.XOR<Prisma.MatchGroupScalarRelationFilter, Prisma.MatchGroupWhereInput>
 }, "id">
 
 export type MatchGroupItemOrderByWithAggregationInput = {
@@ -286,9 +286,9 @@ export type MatchGroupItemCreateInput = {
   id?: string
   allocatedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   allocationCurrency?: string | null
-  matchGroup: Prisma.MatchGroupCreateNestedOneWithoutItemsInput
   bankTransaction?: Prisma.BankTransactionCreateNestedOneWithoutMatchGroupItemsInput
   documentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutMatchGroupItemsInput
+  matchGroup: Prisma.MatchGroupCreateNestedOneWithoutItemsInput
 }
 
 export type MatchGroupItemUncheckedCreateInput = {
@@ -304,9 +304,9 @@ export type MatchGroupItemUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   allocatedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   allocationCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matchGroup?: Prisma.MatchGroupUpdateOneRequiredWithoutItemsNestedInput
   bankTransaction?: Prisma.BankTransactionUpdateOneWithoutMatchGroupItemsNestedInput
   documentRevision?: Prisma.DocumentRevisionUpdateOneWithoutMatchGroupItemsNestedInput
+  matchGroup?: Prisma.MatchGroupUpdateOneRequiredWithoutItemsNestedInput
 }
 
 export type MatchGroupItemUncheckedUpdateInput = {
@@ -517,8 +517,8 @@ export type MatchGroupItemCreateWithoutDocumentRevisionInput = {
   id?: string
   allocatedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   allocationCurrency?: string | null
-  matchGroup: Prisma.MatchGroupCreateNestedOneWithoutItemsInput
   bankTransaction?: Prisma.BankTransactionCreateNestedOneWithoutMatchGroupItemsInput
+  matchGroup: Prisma.MatchGroupCreateNestedOneWithoutItemsInput
 }
 
 export type MatchGroupItemUncheckedCreateWithoutDocumentRevisionInput = {
@@ -571,8 +571,8 @@ export type MatchGroupItemCreateWithoutBankTransactionInput = {
   id?: string
   allocatedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   allocationCurrency?: string | null
-  matchGroup: Prisma.MatchGroupCreateNestedOneWithoutItemsInput
   documentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutMatchGroupItemsInput
+  matchGroup: Prisma.MatchGroupCreateNestedOneWithoutItemsInput
 }
 
 export type MatchGroupItemUncheckedCreateWithoutBankTransactionInput = {
@@ -663,8 +663,8 @@ export type MatchGroupItemUpdateWithoutDocumentRevisionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   allocatedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   allocationCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matchGroup?: Prisma.MatchGroupUpdateOneRequiredWithoutItemsNestedInput
   bankTransaction?: Prisma.BankTransactionUpdateOneWithoutMatchGroupItemsNestedInput
+  matchGroup?: Prisma.MatchGroupUpdateOneRequiredWithoutItemsNestedInput
 }
 
 export type MatchGroupItemUncheckedUpdateWithoutDocumentRevisionInput = {
@@ -695,8 +695,8 @@ export type MatchGroupItemUpdateWithoutBankTransactionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   allocatedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   allocationCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matchGroup?: Prisma.MatchGroupUpdateOneRequiredWithoutItemsNestedInput
   documentRevision?: Prisma.DocumentRevisionUpdateOneWithoutMatchGroupItemsNestedInput
+  matchGroup?: Prisma.MatchGroupUpdateOneRequiredWithoutItemsNestedInput
 }
 
 export type MatchGroupItemUncheckedUpdateWithoutBankTransactionInput = {
@@ -756,9 +756,9 @@ export type MatchGroupItemSelect<ExtArgs extends runtime.Types.Extensions.Intern
   documentRevisionId?: boolean
   allocatedAmount?: boolean
   allocationCurrency?: boolean
-  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
   bankTransaction?: boolean | Prisma.MatchGroupItem$bankTransactionArgs<ExtArgs>
   documentRevision?: boolean | Prisma.MatchGroupItem$documentRevisionArgs<ExtArgs>
+  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["matchGroupItem"]>
 
 export type MatchGroupItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -768,9 +768,9 @@ export type MatchGroupItemSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   documentRevisionId?: boolean
   allocatedAmount?: boolean
   allocationCurrency?: boolean
-  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
   bankTransaction?: boolean | Prisma.MatchGroupItem$bankTransactionArgs<ExtArgs>
   documentRevision?: boolean | Prisma.MatchGroupItem$documentRevisionArgs<ExtArgs>
+  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["matchGroupItem"]>
 
 export type MatchGroupItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -780,9 +780,9 @@ export type MatchGroupItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   documentRevisionId?: boolean
   allocatedAmount?: boolean
   allocationCurrency?: boolean
-  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
   bankTransaction?: boolean | Prisma.MatchGroupItem$bankTransactionArgs<ExtArgs>
   documentRevision?: boolean | Prisma.MatchGroupItem$documentRevisionArgs<ExtArgs>
+  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["matchGroupItem"]>
 
 export type MatchGroupItemSelectScalar = {
@@ -796,27 +796,27 @@ export type MatchGroupItemSelectScalar = {
 
 export type MatchGroupItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "matchGroupId" | "bankTransactionId" | "documentRevisionId" | "allocatedAmount" | "allocationCurrency", ExtArgs["result"]["matchGroupItem"]>
 export type MatchGroupItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
   bankTransaction?: boolean | Prisma.MatchGroupItem$bankTransactionArgs<ExtArgs>
   documentRevision?: boolean | Prisma.MatchGroupItem$documentRevisionArgs<ExtArgs>
+  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
 }
 export type MatchGroupItemIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
   bankTransaction?: boolean | Prisma.MatchGroupItem$bankTransactionArgs<ExtArgs>
   documentRevision?: boolean | Prisma.MatchGroupItem$documentRevisionArgs<ExtArgs>
+  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
 }
 export type MatchGroupItemIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
   bankTransaction?: boolean | Prisma.MatchGroupItem$bankTransactionArgs<ExtArgs>
   documentRevision?: boolean | Prisma.MatchGroupItem$documentRevisionArgs<ExtArgs>
+  matchGroup?: boolean | Prisma.MatchGroupDefaultArgs<ExtArgs>
 }
 
 export type $MatchGroupItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "MatchGroupItem"
   objects: {
-    matchGroup: Prisma.$MatchGroupPayload<ExtArgs>
     bankTransaction: Prisma.$BankTransactionPayload<ExtArgs> | null
     documentRevision: Prisma.$DocumentRevisionPayload<ExtArgs> | null
+    matchGroup: Prisma.$MatchGroupPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1219,9 +1219,9 @@ readonly fields: MatchGroupItemFieldRefs;
  */
 export interface Prisma__MatchGroupItemClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  matchGroup<T extends Prisma.MatchGroupDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MatchGroupDefaultArgs<ExtArgs>>): Prisma.Prisma__MatchGroupClient<runtime.Types.Result.GetResult<Prisma.$MatchGroupPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   bankTransaction<T extends Prisma.MatchGroupItem$bankTransactionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MatchGroupItem$bankTransactionArgs<ExtArgs>>): Prisma.Prisma__BankTransactionClient<runtime.Types.Result.GetResult<Prisma.$BankTransactionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   documentRevision<T extends Prisma.MatchGroupItem$documentRevisionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MatchGroupItem$documentRevisionArgs<ExtArgs>>): Prisma.Prisma__DocumentRevisionClient<runtime.Types.Result.GetResult<Prisma.$DocumentRevisionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  matchGroup<T extends Prisma.MatchGroupDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MatchGroupDefaultArgs<ExtArgs>>): Prisma.Prisma__MatchGroupClient<runtime.Types.Result.GetResult<Prisma.$MatchGroupPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

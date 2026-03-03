@@ -346,7 +346,7 @@ export async function updateCompany(
           if (levelUnit) addressParts.push(`#${levelUnit}`);
         }
         if (addr.buildingName) addressParts.push(addr.buildingName);
-        if (addr.country || 'SINGAPORE') addressParts.push(addr.country || 'SINGAPORE');
+        if (addr.country || 'Singapore') addressParts.push(addr.country || 'Singapore');
         if (addr.postalCode) addressParts.push(addr.postalCode);
         const fullAddress = addressParts.join(' ');
 
@@ -406,7 +406,7 @@ export async function updateCompany(
               unit: addr.unit,
               buildingName: addr.buildingName,
               postalCode: addr.postalCode || '',
-              country: addr.country || 'SINGAPORE',
+              country: addr.country || 'Singapore',
               fullAddress,
               isCurrent: true,
               effectiveFrom: new Date(),

@@ -44,7 +44,7 @@ const ACRA_DATASETS: Record<string, string> = {
 
 const DATA_GOV_BASE_URL = 'https://data.gov.sg/api/action/datastore_search';
 const MAX_RETRY_ATTEMPTS = 2; // Total attempts = 1 initial + 2 retries
-const BASE_RETRY_DELAY_MS = 1000;
+const BASE_RETRY_DELAY_MS = 10000;
 const MAX_RETRY_DELAY_MS = 10000;
 
 // Entity types that are considered "company" structures

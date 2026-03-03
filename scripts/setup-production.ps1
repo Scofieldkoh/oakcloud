@@ -43,8 +43,8 @@ if (-not (Test-Path ".\.env")) {
     exit 1
 }
 
-Write-Host "[1/5] Starting Docker services (first run will pull images)..." -ForegroundColor Yellow
-docker compose up -d
+Write-Host "[1/5] Starting data services (PostgreSQL, MinIO)..." -ForegroundColor Yellow
+docker compose -f oakcloud_db.yml up -d
 Write-Host "      Waiting for services to be healthy..." -ForegroundColor Gray
 
 # Wait for postgres to be ready
@@ -62,27 +62,29 @@ while ($attempts -lt $maxAttempts) {
 
 if ($attempts -eq $maxAttempts) {
     Write-Host "Error: PostgreSQL failed to start!" -ForegroundColor Red
-    docker compose logs postgres
+    docker compose -f oakcloud_db.yml logs postgres
     exit 1
 }
-Write-Host "      Services are healthy" -ForegroundColor Green
+Write-Host "      Data services are healthy" -ForegroundColor Green
 
 Write-Host "[2/5] Restoring PostgreSQL database..." -ForegroundColor Yellow
-# First, drop existing data and restore
 Get-Content ".\migration-backup\database.sql" | docker exec -i oakcloud-postgres psql -U oakcloud oakcloud
 Write-Host "      Database restored" -ForegroundColor Green
 
 Write-Host "[3/5] Restoring MinIO data (documents/files)..." -ForegroundColor Yellow
-# Stop minio temporarily to restore data
-docker compose stop minio
-docker run --rm `
-    -v oakcloud_minio_data:/data `
-    -v "${PWD}\migration-backup:/backup" `
-    alpine sh -c "rm -rf /data/* && tar xvf /backup/minio_data.tar -C /data" 2>$null
-docker compose start minio
+# Restore MinIO data to bind-mounted local directory
+docker compose -f oakcloud_db.yml stop minio
+if (-not (Test-Path ".\docker-data\minio")) {
+    New-Item -ItemType Directory -Path ".\docker-data\minio" | Out-Null
+}
+tar xvf ".\migration-backup\minio_data.tar" -C ".\docker-data\minio" 2>$null
+docker compose -f oakcloud_db.yml start minio
 Write-Host "      MinIO data restored" -ForegroundColor Green
 
-Write-Host "[4/5] Restoring Redis data..." -ForegroundColor Yellow
+Write-Host "[4/5] Starting app services and restoring Redis..." -ForegroundColor Yellow
+docker compose up -d
+# Wait for Redis to be healthy
+Start-Sleep -Seconds 5
 if (Test-Path ".\migration-backup\redis_data.tar") {
     docker compose stop redis
     docker run --rm `
@@ -109,8 +111,9 @@ Write-Host "  App:          http://localhost:3000" -ForegroundColor Gray
 Write-Host "  MinIO Console: http://localhost:9001" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Useful commands:" -ForegroundColor White
-Write-Host "  docker compose logs -f        # View logs" -ForegroundColor Gray
-Write-Host "  docker compose restart        # Restart services" -ForegroundColor Gray
-Write-Host "  docker compose down           # Stop services" -ForegroundColor Gray
-Write-Host "  docker compose up -d          # Start services" -ForegroundColor Gray
+Write-Host "  docker compose -f oakcloud_db.yml logs -f  # View DB/MinIO logs" -ForegroundColor Gray
+Write-Host "  docker compose logs -f                     # View app logs" -ForegroundColor Gray
+Write-Host "  docker compose -f oakcloud_db.yml up -d    # Start data services" -ForegroundColor Gray
+Write-Host "  docker compose up -d                       # Start app services" -ForegroundColor Gray
+Write-Host "  docker compose down                        # Stop app (data persists)" -ForegroundColor Gray
 Write-Host ""

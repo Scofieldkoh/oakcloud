@@ -147,7 +147,7 @@ export default function EditCompanyPage({
               unit: (registeredAddress as { unit?: string }).unit || undefined,
               buildingName: (registeredAddress as { buildingName?: string }).buildingName || undefined,
               postalCode: (registeredAddress as { postalCode?: string }).postalCode || undefined,
-              country: (registeredAddress as { country?: string }).country || 'SINGAPORE',
+              country: (registeredAddress as { country?: string }).country || 'Singapore',
             }
           : undefined,
       });
@@ -448,8 +448,8 @@ export default function EditCompanyPage({
                   type="text"
                   {...register('registeredAddress.country')}
                   className="input input-sm"
-                  placeholder="SINGAPORE"
-                  defaultValue="SINGAPORE"
+                  placeholder="Singapore"
+                  defaultValue="Singapore"
                 />
               </div>
               <div>

@@ -118,7 +118,29 @@ export const ModelName = {
   TenantBackup: 'TenantBackup',
   BackupSchedule: 'BackupSchedule',
   ChartOfAccount: 'ChartOfAccount',
-  ChartOfAccountsMapping: 'ChartOfAccountsMapping'
+  ChartOfAccountsMapping: 'ChartOfAccountsMapping',
+  workflow_artifacts: 'workflow_artifacts',
+  workflow_billing_states: 'workflow_billing_states',
+  workflow_blockers: 'workflow_blockers',
+  workflow_client_group_members: 'workflow_client_group_members',
+  workflow_client_groups: 'workflow_client_groups',
+  workflow_communication_log_entries: 'workflow_communication_log_entries',
+  workflow_cross_dependencies: 'workflow_cross_dependencies',
+  workflow_deviations: 'workflow_deviations',
+  workflow_engagement_services: 'workflow_engagement_services',
+  workflow_engagements: 'workflow_engagements',
+  workflow_instances: 'workflow_instances',
+  workflow_milestone_templates: 'workflow_milestone_templates',
+  workflow_milestones: 'workflow_milestones',
+  workflow_notification_log: 'workflow_notification_log',
+  workflow_program_requirements: 'workflow_program_requirements',
+  workflow_project_instances: 'workflow_project_instances',
+  workflow_project_settings: 'workflow_project_settings',
+  workflow_scheduled_instances_queue: 'workflow_scheduled_instances_queue',
+  workflow_service_definitions: 'workflow_service_definitions',
+  workflow_task_dependencies: 'workflow_task_dependencies',
+  workflow_task_items: 'workflow_task_items',
+  workflow_task_templates: 'workflow_task_templates'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1470,6 +1492,457 @@ export const ChartOfAccountsMappingScalarFieldEnum = {
 } as const
 
 export type ChartOfAccountsMappingScalarFieldEnum = (typeof ChartOfAccountsMappingScalarFieldEnum)[keyof typeof ChartOfAccountsMappingScalarFieldEnum]
+
+
+export const Workflow_artifactsScalarFieldEnum = {
+  id: 'id',
+  workflow_instance_id: 'workflow_instance_id',
+  milestone_id: 'milestone_id',
+  task_item_id: 'task_item_id',
+  artifact_type: 'artifact_type',
+  name: 'name',
+  description: 'description',
+  file_url: 'file_url',
+  file_name: 'file_name',
+  file_size_bytes: 'file_size_bytes',
+  mime_type: 'mime_type',
+  text_content: 'text_content',
+  uploaded_by: 'uploaded_by',
+  is_mandatory_artifact: 'is_mandatory_artifact',
+  created_at: 'created_at',
+  source_type: 'source_type',
+  source_document_id: 'source_document_id',
+  source_processing_document_id: 'source_processing_document_id',
+  source_generated_document_id: 'source_generated_document_id',
+  source_document_share_id: 'source_document_share_id'
+} as const
+
+export type Workflow_artifactsScalarFieldEnum = (typeof Workflow_artifactsScalarFieldEnum)[keyof typeof Workflow_artifactsScalarFieldEnum]
+
+
+export const Workflow_billing_statesScalarFieldEnum = {
+  id: 'id',
+  workflow_instance_id: 'workflow_instance_id',
+  status: 'status',
+  trigger_reached_at: 'trigger_reached_at',
+  trigger_milestone_id: 'trigger_milestone_id',
+  billing_amount: 'billing_amount',
+  billing_currency: 'billing_currency',
+  invoice_raised: 'invoice_raised',
+  xero_invoice_number: 'xero_invoice_number',
+  invoice_raised_at: 'invoice_raised_at',
+  invoice_raised_by: 'invoice_raised_by',
+  notes: 'notes',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_billing_statesScalarFieldEnum = (typeof Workflow_billing_statesScalarFieldEnum)[keyof typeof Workflow_billing_statesScalarFieldEnum]
+
+
+export const Workflow_blockersScalarFieldEnum = {
+  id: 'id',
+  workflow_instance_id: 'workflow_instance_id',
+  milestone_id: 'milestone_id',
+  blocker_type: 'blocker_type',
+  description: 'description',
+  assumption_text: 'assumption_text',
+  assumption_communicated: 'assumption_communicated',
+  owner_id: 'owner_id',
+  expected_resolution_date: 'expected_resolution_date',
+  status: 'status',
+  escalation_level: 'escalation_level',
+  resolution_note: 'resolution_note',
+  resolved_by: 'resolved_by',
+  resolved_at: 'resolved_at',
+  raised_by: 'raised_by',
+  raised_at: 'raised_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_blockersScalarFieldEnum = (typeof Workflow_blockersScalarFieldEnum)[keyof typeof Workflow_blockersScalarFieldEnum]
+
+
+export const Workflow_client_group_membersScalarFieldEnum = {
+  id: 'id',
+  client_group_id: 'client_group_id',
+  company_id: 'company_id',
+  created_at: 'created_at'
+} as const
+
+export type Workflow_client_group_membersScalarFieldEnum = (typeof Workflow_client_group_membersScalarFieldEnum)[keyof typeof Workflow_client_group_membersScalarFieldEnum]
+
+
+export const Workflow_client_groupsScalarFieldEnum = {
+  id: 'id',
+  tenant_id: 'tenant_id',
+  name: 'name',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_client_groupsScalarFieldEnum = (typeof Workflow_client_groupsScalarFieldEnum)[keyof typeof Workflow_client_groupsScalarFieldEnum]
+
+
+export const Workflow_communication_log_entriesScalarFieldEnum = {
+  id: 'id',
+  workflow_instance_id: 'workflow_instance_id',
+  channel: 'channel',
+  direction: 'direction',
+  contact_id: 'contact_id',
+  contact_name: 'contact_name',
+  summary: 'summary',
+  logged_by: 'logged_by',
+  communication_date: 'communication_date',
+  created_at: 'created_at'
+} as const
+
+export type Workflow_communication_log_entriesScalarFieldEnum = (typeof Workflow_communication_log_entriesScalarFieldEnum)[keyof typeof Workflow_communication_log_entriesScalarFieldEnum]
+
+
+export const Workflow_cross_dependenciesScalarFieldEnum = {
+  id: 'id',
+  predecessor_workflow_id: 'predecessor_workflow_id',
+  predecessor_milestone_id: 'predecessor_milestone_id',
+  predecessor_task_id: 'predecessor_task_id',
+  successor_workflow_id: 'successor_workflow_id',
+  successor_milestone_id: 'successor_milestone_id',
+  successor_task_id: 'successor_task_id',
+  dependency_type: 'dependency_type',
+  lag_days: 'lag_days',
+  created_by: 'created_by',
+  created_at: 'created_at'
+} as const
+
+export type Workflow_cross_dependenciesScalarFieldEnum = (typeof Workflow_cross_dependenciesScalarFieldEnum)[keyof typeof Workflow_cross_dependenciesScalarFieldEnum]
+
+
+export const Workflow_deviationsScalarFieldEnum = {
+  id: 'id',
+  workflow_instance_id: 'workflow_instance_id',
+  deviation_type: 'deviation_type',
+  reason: 'reason',
+  affected_entity_type: 'affected_entity_type',
+  affected_entity_id: 'affected_entity_id',
+  approved_by: 'approved_by',
+  created_at: 'created_at'
+} as const
+
+export type Workflow_deviationsScalarFieldEnum = (typeof Workflow_deviationsScalarFieldEnum)[keyof typeof Workflow_deviationsScalarFieldEnum]
+
+
+export const Workflow_engagement_servicesScalarFieldEnum = {
+  id: 'id',
+  engagement_id: 'engagement_id',
+  service_definition_id: 'service_definition_id',
+  billing_type: 'billing_type',
+  billing_amount: 'billing_amount',
+  billing_currency: 'billing_currency',
+  is_active: 'is_active',
+  notes: 'notes',
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  auto_spawn_enabled: 'auto_spawn_enabled',
+  auto_spawn_mode: 'auto_spawn_mode',
+  recurrence_period_type: 'recurrence_period_type',
+  spawn_lead_days_override: 'spawn_lead_days_override'
+} as const
+
+export type Workflow_engagement_servicesScalarFieldEnum = (typeof Workflow_engagement_servicesScalarFieldEnum)[keyof typeof Workflow_engagement_servicesScalarFieldEnum]
+
+
+export const Workflow_engagementsScalarFieldEnum = {
+  id: 'id',
+  tenant_id: 'tenant_id',
+  company_id: 'company_id',
+  name: 'name',
+  status: 'status',
+  commencement_date: 'commencement_date',
+  end_date: 'end_date',
+  is_ad_hoc: 'is_ad_hoc',
+  master_agreement_reference: 'master_agreement_reference',
+  sow_reference: 'sow_reference',
+  sow_document_url: 'sow_document_url',
+  pricing_notes: 'pricing_notes',
+  director_poc_id: 'director_poc_id',
+  notes: 'notes',
+  created_by: 'created_by',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_engagementsScalarFieldEnum = (typeof Workflow_engagementsScalarFieldEnum)[keyof typeof Workflow_engagementsScalarFieldEnum]
+
+
+export const Workflow_instancesScalarFieldEnum = {
+  id: 'id',
+  tenant_id: 'tenant_id',
+  engagement_id: 'engagement_id',
+  company_id: 'company_id',
+  engagement_service_id: 'engagement_service_id',
+  service_definition_id: 'service_definition_id',
+  service_definition_version: 'service_definition_version',
+  period_label: 'period_label',
+  period_start_date: 'period_start_date',
+  period_end_date: 'period_end_date',
+  status: 'status',
+  status_before_hold: 'status_before_hold',
+  internal_sla_date: 'internal_sla_date',
+  statutory_deadline_date: 'statutory_deadline_date',
+  statutory_deadline_label: 'statutory_deadline_label',
+  assigned_owner_id: 'assigned_owner_id',
+  spawn_type: 'spawn_type',
+  on_hold_reason: 'on_hold_reason',
+  on_hold_resume_date: 'on_hold_resume_date',
+  cancelled_reason: 'cancelled_reason',
+  cancelled_at: 'cancelled_at',
+  cancelled_by: 'cancelled_by',
+  notes: 'notes',
+  regulatory_breach: 'regulatory_breach',
+  created_by: 'created_by',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_instancesScalarFieldEnum = (typeof Workflow_instancesScalarFieldEnum)[keyof typeof Workflow_instancesScalarFieldEnum]
+
+
+export const Workflow_milestone_templatesScalarFieldEnum = {
+  id: 'id',
+  service_definition_id: 'service_definition_id',
+  name: 'name',
+  description: 'description',
+  display_order: 'display_order',
+  milestone_type: 'milestone_type',
+  sla_days_from_period_end: 'sla_days_from_period_end',
+  sla_days_from_previous: 'sla_days_from_previous',
+  sla_description: 'sla_description',
+  requires_mandatory_artifact: 'requires_mandatory_artifact',
+  mandatory_artifact_description: 'mandatory_artifact_description',
+  reviewer_role: 'reviewer_role',
+  is_skippable: 'is_skippable',
+  is_billing_trigger: 'is_billing_trigger',
+  created_at: 'created_at'
+} as const
+
+export type Workflow_milestone_templatesScalarFieldEnum = (typeof Workflow_milestone_templatesScalarFieldEnum)[keyof typeof Workflow_milestone_templatesScalarFieldEnum]
+
+
+export const Workflow_milestonesScalarFieldEnum = {
+  id: 'id',
+  workflow_instance_id: 'workflow_instance_id',
+  milestone_template_id: 'milestone_template_id',
+  name: 'name',
+  description: 'description',
+  display_order: 'display_order',
+  milestone_type: 'milestone_type',
+  status: 'status',
+  owner_id: 'owner_id',
+  internal_sla_date: 'internal_sla_date',
+  is_billing_trigger: 'is_billing_trigger',
+  requires_mandatory_artifact: 'requires_mandatory_artifact',
+  mandatory_artifact_description: 'mandatory_artifact_description',
+  is_skippable: 'is_skippable',
+  approval_document_sent_date: 'approval_document_sent_date',
+  approval_document_sent_method: 'approval_document_sent_method',
+  approval_contact_id: 'approval_contact_id',
+  approved: 'approved',
+  approved_at: 'approved_at',
+  approver_name: 'approver_name',
+  reviewed_by: 'reviewed_by',
+  reviewed_at: 'reviewed_at',
+  rejection_reason: 'rejection_reason',
+  completed_by: 'completed_by',
+  completed_at: 'completed_at',
+  started_at: 'started_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_milestonesScalarFieldEnum = (typeof Workflow_milestonesScalarFieldEnum)[keyof typeof Workflow_milestonesScalarFieldEnum]
+
+
+export const Workflow_notification_logScalarFieldEnum = {
+  id: 'id',
+  tenant_id: 'tenant_id',
+  recipient_user_id: 'recipient_user_id',
+  notification_type: 'notification_type',
+  channel: 'channel',
+  subject: 'subject',
+  body: 'body',
+  related_entity_type: 'related_entity_type',
+  related_entity_id: 'related_entity_id',
+  status: 'status',
+  sent_at: 'sent_at',
+  error_message: 'error_message',
+  created_at: 'created_at',
+  read_at: 'read_at'
+} as const
+
+export type Workflow_notification_logScalarFieldEnum = (typeof Workflow_notification_logScalarFieldEnum)[keyof typeof Workflow_notification_logScalarFieldEnum]
+
+
+export const Workflow_program_requirementsScalarFieldEnum = {
+  id: 'id',
+  engagement_id: 'engagement_id',
+  requirement_type: 'requirement_type',
+  code: 'code',
+  config: 'config',
+  is_compliance_critical: 'is_compliance_critical',
+  requires_explicit_confirmation: 'requires_explicit_confirmation',
+  status: 'status',
+  satisfied_by_type: 'satisfied_by_type',
+  satisfied_by_id: 'satisfied_by_id',
+  satisfied_at: 'satisfied_at',
+  confirmed_by_id: 'confirmed_by_id',
+  confirmed_at: 'confirmed_at',
+  stale_detected_at: 'stale_detected_at',
+  stale_grace_ends_at: 'stale_grace_ends_at',
+  stale_reopen_at: 'stale_reopen_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_program_requirementsScalarFieldEnum = (typeof Workflow_program_requirementsScalarFieldEnum)[keyof typeof Workflow_program_requirementsScalarFieldEnum]
+
+
+export const Workflow_project_instancesScalarFieldEnum = {
+  id: 'id',
+  company_id: 'company_id',
+  tenant_id: 'tenant_id',
+  project_name: 'project_name',
+  start_date: 'start_date',
+  due_date: 'due_date',
+  recurrence_months: 'recurrence_months',
+  source_instance_id: 'source_instance_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_project_instancesScalarFieldEnum = (typeof Workflow_project_instancesScalarFieldEnum)[keyof typeof Workflow_project_instancesScalarFieldEnum]
+
+
+export const Workflow_project_settingsScalarFieldEnum = {
+  company_id: 'company_id',
+  tenant_id: 'tenant_id',
+  project_name: 'project_name',
+  start_date: 'start_date',
+  due_date: 'due_date',
+  recurrence_months: 'recurrence_months',
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  billing_mode: 'billing_mode',
+  billing_fixed_price: 'billing_fixed_price',
+  billing_currency: 'billing_currency',
+  billing_tiered_pricing: 'billing_tiered_pricing',
+  workspace_state: 'workspace_state'
+} as const
+
+export type Workflow_project_settingsScalarFieldEnum = (typeof Workflow_project_settingsScalarFieldEnum)[keyof typeof Workflow_project_settingsScalarFieldEnum]
+
+
+export const Workflow_scheduled_instances_queueScalarFieldEnum = {
+  id: 'id',
+  tenant_id: 'tenant_id',
+  engagement_service_id: 'engagement_service_id',
+  company_id: 'company_id',
+  service_definition_id: 'service_definition_id',
+  period_label: 'period_label',
+  period_start_date: 'period_start_date',
+  period_end_date: 'period_end_date',
+  proposed_sla_date: 'proposed_sla_date',
+  statutory_deadline_date: 'statutory_deadline_date',
+  proposed_owner_id: 'proposed_owner_id',
+  spawn_mode: 'spawn_mode',
+  status: 'status',
+  workflow_instance_id: 'workflow_instance_id',
+  unique_key: 'unique_key',
+  confirmed_by: 'confirmed_by',
+  confirmed_at: 'confirmed_at',
+  rejection_reason: 'rejection_reason',
+  generated_at: 'generated_at',
+  expires_at: 'expires_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_scheduled_instances_queueScalarFieldEnum = (typeof Workflow_scheduled_instances_queueScalarFieldEnum)[keyof typeof Workflow_scheduled_instances_queueScalarFieldEnum]
+
+
+export const Workflow_service_definitionsScalarFieldEnum = {
+  id: 'id',
+  tenant_id: 'tenant_id',
+  name: 'name',
+  description: 'description',
+  category: 'category',
+  default_period_type: 'default_period_type',
+  statutory_deadline_type: 'statutory_deadline_type',
+  statutory_deadline_notes: 'statutory_deadline_notes',
+  internal_sla_days: 'internal_sla_days',
+  risk_level: 'risk_level',
+  requires_review_milestone: 'requires_review_milestone',
+  billing_trigger_milestone_order: 'billing_trigger_milestone_order',
+  spawn_lead_days: 'spawn_lead_days',
+  is_active: 'is_active',
+  version: 'version',
+  created_by: 'created_by',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Workflow_service_definitionsScalarFieldEnum = (typeof Workflow_service_definitionsScalarFieldEnum)[keyof typeof Workflow_service_definitionsScalarFieldEnum]
+
+
+export const Workflow_task_dependenciesScalarFieldEnum = {
+  id: 'id',
+  predecessor_task_id: 'predecessor_task_id',
+  successor_task_id: 'successor_task_id',
+  lag_days: 'lag_days',
+  created_by: 'created_by',
+  created_at: 'created_at'
+} as const
+
+export type Workflow_task_dependenciesScalarFieldEnum = (typeof Workflow_task_dependenciesScalarFieldEnum)[keyof typeof Workflow_task_dependenciesScalarFieldEnum]
+
+
+export const Workflow_task_itemsScalarFieldEnum = {
+  id: 'id',
+  milestone_id: 'milestone_id',
+  task_template_id: 'task_template_id',
+  name: 'name',
+  description: 'description',
+  is_required: 'is_required',
+  display_order: 'display_order',
+  status: 'status',
+  completed_by: 'completed_by',
+  completed_at: 'completed_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  owner_id: 'owner_id',
+  due_date: 'due_date',
+  estimated_minutes: 'estimated_minutes',
+  actual_minutes: 'actual_minutes',
+  automation_rule_code: 'automation_rule_code',
+  automation_config: 'automation_config'
+} as const
+
+export type Workflow_task_itemsScalarFieldEnum = (typeof Workflow_task_itemsScalarFieldEnum)[keyof typeof Workflow_task_itemsScalarFieldEnum]
+
+
+export const Workflow_task_templatesScalarFieldEnum = {
+  id: 'id',
+  milestone_template_id: 'milestone_template_id',
+  name: 'name',
+  description: 'description',
+  is_required: 'is_required',
+  display_order: 'display_order',
+  created_at: 'created_at',
+  automation_rule_code: 'automation_rule_code',
+  automation_config: 'automation_config'
+} as const
+
+export type Workflow_task_templatesScalarFieldEnum = (typeof Workflow_task_templatesScalarFieldEnum)[keyof typeof Workflow_task_templatesScalarFieldEnum]
 
 
 export const SortOrder = {

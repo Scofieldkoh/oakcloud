@@ -225,9 +225,9 @@ export const ConnectorProvider = {
   OPENAI: 'OPENAI',
   ANTHROPIC: 'ANTHROPIC',
   GOOGLE: 'GOOGLE',
-  OPENROUTER: 'OPENROUTER',
   ONEDRIVE: 'ONEDRIVE',
-  SHAREPOINT: 'SHAREPOINT'
+  SHAREPOINT: 'SHAREPOINT',
+  OPENROUTER: 'OPENROUTER'
 } as const
 
 export type ConnectorProvider = (typeof ConnectorProvider)[keyof typeof ConnectorProvider]
@@ -698,3 +698,254 @@ export const AccountStatus = {
 } as const
 
 export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus]
+
+
+export const WorkflowArtifactSourceType = {
+  INLINE: 'INLINE',
+  DOCUMENT: 'DOCUMENT',
+  PROCESSING_DOCUMENT: 'PROCESSING_DOCUMENT',
+  GENERATED_DOCUMENT: 'GENERATED_DOCUMENT',
+  DOCUMENT_SHARE: 'DOCUMENT_SHARE'
+} as const
+
+export type WorkflowArtifactSourceType = (typeof WorkflowArtifactSourceType)[keyof typeof WorkflowArtifactSourceType]
+
+
+export const WorkflowArtifactType = {
+  UPLOADED_DOCUMENT: 'UPLOADED_DOCUMENT',
+  SYSTEM_RECORD: 'SYSTEM_RECORD',
+  FILING_CONFIRMATION: 'FILING_CONFIRMATION',
+  APPROVAL_RECORD: 'APPROVAL_RECORD',
+  COMMUNICATION_RECORD: 'COMMUNICATION_RECORD'
+} as const
+
+export type WorkflowArtifactType = (typeof WorkflowArtifactType)[keyof typeof WorkflowArtifactType]
+
+
+export const WorkflowBillingStateStatus = {
+  NOT_TRIGGERED: 'NOT_TRIGGERED',
+  TRIGGERED_PENDING: 'TRIGGERED_PENDING',
+  INVOICE_RAISED: 'INVOICE_RAISED',
+  CLOSED: 'CLOSED'
+} as const
+
+export type WorkflowBillingStateStatus = (typeof WorkflowBillingStateStatus)[keyof typeof WorkflowBillingStateStatus]
+
+
+export const WorkflowBillingType = {
+  FIXED_RETAINER: 'FIXED_RETAINER',
+  MILESTONE_BASED: 'MILESTONE_BASED',
+  MANUAL: 'MANUAL'
+} as const
+
+export type WorkflowBillingType = (typeof WorkflowBillingType)[keyof typeof WorkflowBillingType]
+
+
+export const WorkflowBlockerStatus = {
+  OPEN: 'OPEN',
+  ESCALATED: 'ESCALATED',
+  RESOLVED: 'RESOLVED',
+  CLOSED_WITH_WORKFLOW: 'CLOSED_WITH_WORKFLOW'
+} as const
+
+export type WorkflowBlockerStatus = (typeof WorkflowBlockerStatus)[keyof typeof WorkflowBlockerStatus]
+
+
+export const WorkflowBlockerType = {
+  AWAITING_CLIENT_DOCUMENT: 'AWAITING_CLIENT_DOCUMENT',
+  AWAITING_CLIENT_APPROVAL: 'AWAITING_CLIENT_APPROVAL',
+  AWAITING_EXTERNAL_PARTY: 'AWAITING_EXTERNAL_PARTY',
+  WORKING_ON_ASSUMPTION: 'WORKING_ON_ASSUMPTION',
+  INTERNAL_DEPENDENCY: 'INTERNAL_DEPENDENCY',
+  INTERNAL_BLOCKER: 'INTERNAL_BLOCKER',
+  OTHER: 'OTHER'
+} as const
+
+export type WorkflowBlockerType = (typeof WorkflowBlockerType)[keyof typeof WorkflowBlockerType]
+
+
+export const WorkflowCommunicationChannel = {
+  EMAIL: 'EMAIL',
+  WHATSAPP: 'WHATSAPP',
+  PHONE: 'PHONE',
+  MEETING: 'MEETING',
+  OTHER: 'OTHER'
+} as const
+
+export type WorkflowCommunicationChannel = (typeof WorkflowCommunicationChannel)[keyof typeof WorkflowCommunicationChannel]
+
+
+export const WorkflowCommunicationDirection = {
+  INBOUND: 'INBOUND',
+  OUTBOUND: 'OUTBOUND'
+} as const
+
+export type WorkflowCommunicationDirection = (typeof WorkflowCommunicationDirection)[keyof typeof WorkflowCommunicationDirection]
+
+
+export const WorkflowCrossDependencyType = {
+  BLOCKING: 'BLOCKING',
+  SOFT_WARNING: 'SOFT_WARNING',
+  INFO: 'INFO'
+} as const
+
+export type WorkflowCrossDependencyType = (typeof WorkflowCrossDependencyType)[keyof typeof WorkflowCrossDependencyType]
+
+
+export const WorkflowDeviationType = {
+  MILESTONE_SKIPPED: 'MILESTONE_SKIPPED',
+  REQUIRED_TASK_REMOVED: 'REQUIRED_TASK_REMOVED',
+  MILESTONE_ADDED: 'MILESTONE_ADDED',
+  TASK_ADDED: 'TASK_ADDED',
+  DEADLINE_EXTENDED: 'DEADLINE_EXTENDED',
+  DEPENDENCY_OVERRIDDEN: 'DEPENDENCY_OVERRIDDEN',
+  REVIEWER_CONSTRAINT_OVERRIDDEN: 'REVIEWER_CONSTRAINT_OVERRIDDEN',
+  SCOPE_CHANGE: 'SCOPE_CHANGE',
+  OTHER: 'OTHER'
+} as const
+
+export type WorkflowDeviationType = (typeof WorkflowDeviationType)[keyof typeof WorkflowDeviationType]
+
+
+export const WorkflowEngagementStatus = {
+  PENDING: 'PENDING',
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+  TERMINATED: 'TERMINATED'
+} as const
+
+export type WorkflowEngagementStatus = (typeof WorkflowEngagementStatus)[keyof typeof WorkflowEngagementStatus]
+
+
+export const WorkflowInstanceStatus = {
+  SCHEDULED: 'SCHEDULED',
+  OPEN: 'OPEN',
+  BLOCKED: 'BLOCKED',
+  IN_REVIEW: 'IN_REVIEW',
+  AWAITING_CLIENT_APPROVAL: 'AWAITING_CLIENT_APPROVAL',
+  DELIVERED: 'DELIVERED',
+  BILLED: 'BILLED',
+  CLOSED: 'CLOSED',
+  CANCELLED: 'CANCELLED',
+  ON_HOLD: 'ON_HOLD'
+} as const
+
+export type WorkflowInstanceStatus = (typeof WorkflowInstanceStatus)[keyof typeof WorkflowInstanceStatus]
+
+
+export const WorkflowMilestoneStatus = {
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  BLOCKED: 'BLOCKED',
+  AWAITING_REVIEW: 'AWAITING_REVIEW',
+  AWAITING_APPROVAL: 'AWAITING_APPROVAL',
+  COMPLETE: 'COMPLETE',
+  REJECTED: 'REJECTED',
+  SKIPPED: 'SKIPPED'
+} as const
+
+export type WorkflowMilestoneStatus = (typeof WorkflowMilestoneStatus)[keyof typeof WorkflowMilestoneStatus]
+
+
+export const WorkflowMilestoneType = {
+  EXECUTION: 'EXECUTION',
+  REVIEW: 'REVIEW',
+  CLIENT_APPROVAL_GATE: 'CLIENT_APPROVAL_GATE',
+  ADMIN: 'ADMIN'
+} as const
+
+export type WorkflowMilestoneType = (typeof WorkflowMilestoneType)[keyof typeof WorkflowMilestoneType]
+
+
+export const WorkflowNotificationChannel = {
+  EMAIL: 'EMAIL',
+  IN_APP: 'IN_APP',
+  WHATSAPP: 'WHATSAPP'
+} as const
+
+export type WorkflowNotificationChannel = (typeof WorkflowNotificationChannel)[keyof typeof WorkflowNotificationChannel]
+
+
+export const WorkflowNotificationStatus = {
+  PENDING: 'PENDING',
+  SENT: 'SENT',
+  FAILED: 'FAILED',
+  SUPPRESSED: 'SUPPRESSED'
+} as const
+
+export type WorkflowNotificationStatus = (typeof WorkflowNotificationStatus)[keyof typeof WorkflowNotificationStatus]
+
+
+export const WorkflowPeriodType = {
+  MONTHLY: 'MONTHLY',
+  QUARTERLY: 'QUARTERLY',
+  ANNUAL: 'ANNUAL',
+  ONE_OFF: 'ONE_OFF'
+} as const
+
+export type WorkflowPeriodType = (typeof WorkflowPeriodType)[keyof typeof WorkflowPeriodType]
+
+
+export const WorkflowProgramRequirementStatus = {
+  MISSING: 'MISSING',
+  SATISFIED: 'SATISFIED',
+  STALE: 'STALE'
+} as const
+
+export type WorkflowProgramRequirementStatus = (typeof WorkflowProgramRequirementStatus)[keyof typeof WorkflowProgramRequirementStatus]
+
+
+export const WorkflowProgramRequirementType = {
+  DOCUMENT: 'DOCUMENT',
+  CONTACT: 'CONTACT',
+  COMPANY_FIELD: 'COMPANY_FIELD'
+} as const
+
+export type WorkflowProgramRequirementType = (typeof WorkflowProgramRequirementType)[keyof typeof WorkflowProgramRequirementType]
+
+
+export const WorkflowRiskLevel = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH'
+} as const
+
+export type WorkflowRiskLevel = (typeof WorkflowRiskLevel)[keyof typeof WorkflowRiskLevel]
+
+
+export const WorkflowScheduledQueueStatus = {
+  PENDING: 'PENDING',
+  CONFIRMED: 'CONFIRMED',
+  SPAWNED: 'SPAWNED',
+  REJECTED: 'REJECTED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type WorkflowScheduledQueueStatus = (typeof WorkflowScheduledQueueStatus)[keyof typeof WorkflowScheduledQueueStatus]
+
+
+export const WorkflowServiceCategory = {
+  RECURRING_COMPLIANCE: 'RECURRING_COMPLIANCE',
+  PROJECT: 'PROJECT',
+  AD_HOC: 'AD_HOC'
+} as const
+
+export type WorkflowServiceCategory = (typeof WorkflowServiceCategory)[keyof typeof WorkflowServiceCategory]
+
+
+export const WorkflowSpawnType = {
+  AUTO: 'AUTO',
+  MANUAL: 'MANUAL',
+  DIRECTOR_CONFIRMED: 'DIRECTOR_CONFIRMED'
+} as const
+
+export type WorkflowSpawnType = (typeof WorkflowSpawnType)[keyof typeof WorkflowSpawnType]
+
+
+export const WorkflowTaskItemStatus = {
+  OPEN: 'OPEN',
+  COMPLETE: 'COMPLETE',
+  NA: 'NA'
+} as const
+
+export type WorkflowTaskItemStatus = (typeof WorkflowTaskItemStatus)[keyof typeof WorkflowTaskItemStatus]

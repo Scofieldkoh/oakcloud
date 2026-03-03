@@ -584,14 +584,14 @@ export type DocumentRevisionWhereInput = {
   approvedById?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   approvedAt?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   supersededAt?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
-  processingDocument?: Prisma.XOR<Prisma.ProcessingDocumentScalarRelationFilter, Prisma.ProcessingDocumentWhereInput>
+  items?: Prisma.DocumentRevisionLineItemListRelationFilter
   basedOnRevision?: Prisma.XOR<Prisma.DocumentRevisionNullableScalarRelationFilter, Prisma.DocumentRevisionWhereInput> | null
   derivedRevisions?: Prisma.DocumentRevisionListRelationFilter
   extraction?: Prisma.XOR<Prisma.DocumentExtractionNullableScalarRelationFilter, Prisma.DocumentExtractionWhereInput> | null
-  currentForDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
-  items?: Prisma.DocumentRevisionLineItemListRelationFilter
-  matchGroupItems?: Prisma.MatchGroupItemListRelationFilter
+  processingDocument?: Prisma.XOR<Prisma.ProcessingDocumentScalarRelationFilter, Prisma.ProcessingDocumentWhereInput>
   postings?: Prisma.ExternalPostingListRelationFilter
+  matchGroupItems?: Prisma.MatchGroupItemListRelationFilter
+  currentForDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
 }
 
 export type DocumentRevisionOrderByWithRelationInput = {
@@ -643,14 +643,14 @@ export type DocumentRevisionOrderByWithRelationInput = {
   approvedById?: Prisma.SortOrderInput | Prisma.SortOrder
   approvedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   supersededAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  processingDocument?: Prisma.ProcessingDocumentOrderByWithRelationInput
+  items?: Prisma.DocumentRevisionLineItemOrderByRelationAggregateInput
   basedOnRevision?: Prisma.DocumentRevisionOrderByWithRelationInput
   derivedRevisions?: Prisma.DocumentRevisionOrderByRelationAggregateInput
   extraction?: Prisma.DocumentExtractionOrderByWithRelationInput
-  currentForDocument?: Prisma.ProcessingDocumentOrderByWithRelationInput
-  items?: Prisma.DocumentRevisionLineItemOrderByRelationAggregateInput
-  matchGroupItems?: Prisma.MatchGroupItemOrderByRelationAggregateInput
+  processingDocument?: Prisma.ProcessingDocumentOrderByWithRelationInput
   postings?: Prisma.ExternalPostingOrderByRelationAggregateInput
+  matchGroupItems?: Prisma.MatchGroupItemOrderByRelationAggregateInput
+  currentForDocument?: Prisma.ProcessingDocumentOrderByWithRelationInput
 }
 
 export type DocumentRevisionWhereUniqueInput = Prisma.AtLeast<{
@@ -706,14 +706,14 @@ export type DocumentRevisionWhereUniqueInput = Prisma.AtLeast<{
   approvedById?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   approvedAt?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   supersededAt?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
-  processingDocument?: Prisma.XOR<Prisma.ProcessingDocumentScalarRelationFilter, Prisma.ProcessingDocumentWhereInput>
+  items?: Prisma.DocumentRevisionLineItemListRelationFilter
   basedOnRevision?: Prisma.XOR<Prisma.DocumentRevisionNullableScalarRelationFilter, Prisma.DocumentRevisionWhereInput> | null
   derivedRevisions?: Prisma.DocumentRevisionListRelationFilter
   extraction?: Prisma.XOR<Prisma.DocumentExtractionNullableScalarRelationFilter, Prisma.DocumentExtractionWhereInput> | null
-  currentForDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
-  items?: Prisma.DocumentRevisionLineItemListRelationFilter
-  matchGroupItems?: Prisma.MatchGroupItemListRelationFilter
+  processingDocument?: Prisma.XOR<Prisma.ProcessingDocumentScalarRelationFilter, Prisma.ProcessingDocumentWhereInput>
   postings?: Prisma.ExternalPostingListRelationFilter
+  matchGroupItems?: Prisma.MatchGroupItemListRelationFilter
+  currentForDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
 }, "id" | "processingDocumentId_revisionNumber">
 
 export type DocumentRevisionOrderByWithAggregationInput = {
@@ -872,14 +872,14 @@ export type DocumentRevisionCreateInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
+  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
   basedOnRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutDerivedRevisionsInput
   derivedRevisions?: Prisma.DocumentRevisionCreateNestedManyWithoutBasedOnRevisionInput
   extraction?: Prisma.DocumentExtractionCreateNestedOneWithoutRevisionsInput
-  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
-  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
   postings?: Prisma.ExternalPostingCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionUncheckedCreateInput = {
@@ -931,11 +931,11 @@ export type DocumentRevisionUncheckedCreateInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
   items?: Prisma.DocumentRevisionLineItemUncheckedCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
   postings?: Prisma.ExternalPostingUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionUpdateInput = {
@@ -984,14 +984,14 @@ export type DocumentRevisionUpdateInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
+  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
   basedOnRevision?: Prisma.DocumentRevisionUpdateOneWithoutDerivedRevisionsNestedInput
   derivedRevisions?: Prisma.DocumentRevisionUpdateManyWithoutBasedOnRevisionNestedInput
   extraction?: Prisma.DocumentExtractionUpdateOneWithoutRevisionsNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
-  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
   postings?: Prisma.ExternalPostingUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateInput = {
@@ -1043,11 +1043,11 @@ export type DocumentRevisionUncheckedUpdateInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
   items?: Prisma.DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
   postings?: Prisma.ExternalPostingUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionCreateManyInput = {
@@ -1200,15 +1200,15 @@ export type DocumentRevisionUncheckedUpdateManyInput = {
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
-export type DocumentRevisionNullableScalarRelationFilter = {
-  is?: Prisma.DocumentRevisionWhereInput | null
-  isNot?: Prisma.DocumentRevisionWhereInput | null
-}
-
 export type DocumentRevisionListRelationFilter = {
   every?: Prisma.DocumentRevisionWhereInput
   some?: Prisma.DocumentRevisionWhereInput
   none?: Prisma.DocumentRevisionWhereInput
+}
+
+export type DocumentRevisionNullableScalarRelationFilter = {
+  is?: Prisma.DocumentRevisionWhereInput | null
+  isNot?: Prisma.DocumentRevisionWhereInput | null
 }
 
 export type DocumentRevisionOrderByRelationAggregateInput = {
@@ -1398,12 +1398,6 @@ export type DocumentRevisionScalarRelationFilter = {
   isNot?: Prisma.DocumentRevisionWhereInput
 }
 
-export type DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput = {
-  create?: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput>
-  connectOrCreate?: Prisma.DocumentRevisionCreateOrConnectWithoutCurrentForDocumentInput
-  connect?: Prisma.DocumentRevisionWhereUniqueInput
-}
-
 export type DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput = {
   create?: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutProcessingDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput> | Prisma.DocumentRevisionCreateWithoutProcessingDocumentInput[] | Prisma.DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput[]
   connectOrCreate?: Prisma.DocumentRevisionCreateOrConnectWithoutProcessingDocumentInput | Prisma.DocumentRevisionCreateOrConnectWithoutProcessingDocumentInput[]
@@ -1411,21 +1405,17 @@ export type DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput = {
   connect?: Prisma.DocumentRevisionWhereUniqueInput | Prisma.DocumentRevisionWhereUniqueInput[]
 }
 
+export type DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput = {
+  create?: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput>
+  connectOrCreate?: Prisma.DocumentRevisionCreateOrConnectWithoutCurrentForDocumentInput
+  connect?: Prisma.DocumentRevisionWhereUniqueInput
+}
+
 export type DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput = {
   create?: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutProcessingDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput> | Prisma.DocumentRevisionCreateWithoutProcessingDocumentInput[] | Prisma.DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput[]
   connectOrCreate?: Prisma.DocumentRevisionCreateOrConnectWithoutProcessingDocumentInput | Prisma.DocumentRevisionCreateOrConnectWithoutProcessingDocumentInput[]
   createMany?: Prisma.DocumentRevisionCreateManyProcessingDocumentInputEnvelope
   connect?: Prisma.DocumentRevisionWhereUniqueInput | Prisma.DocumentRevisionWhereUniqueInput[]
-}
-
-export type DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput = {
-  create?: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput>
-  connectOrCreate?: Prisma.DocumentRevisionCreateOrConnectWithoutCurrentForDocumentInput
-  upsert?: Prisma.DocumentRevisionUpsertWithoutCurrentForDocumentInput
-  disconnect?: Prisma.DocumentRevisionWhereInput | boolean
-  delete?: Prisma.DocumentRevisionWhereInput | boolean
-  connect?: Prisma.DocumentRevisionWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentRevisionUpdateToOneWithWhereWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUpdateWithoutCurrentForDocumentInput>, Prisma.DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput>
 }
 
 export type DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput = {
@@ -1440,6 +1430,16 @@ export type DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput = {
   update?: Prisma.DocumentRevisionUpdateWithWhereUniqueWithoutProcessingDocumentInput | Prisma.DocumentRevisionUpdateWithWhereUniqueWithoutProcessingDocumentInput[]
   updateMany?: Prisma.DocumentRevisionUpdateManyWithWhereWithoutProcessingDocumentInput | Prisma.DocumentRevisionUpdateManyWithWhereWithoutProcessingDocumentInput[]
   deleteMany?: Prisma.DocumentRevisionScalarWhereInput | Prisma.DocumentRevisionScalarWhereInput[]
+}
+
+export type DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput>
+  connectOrCreate?: Prisma.DocumentRevisionCreateOrConnectWithoutCurrentForDocumentInput
+  upsert?: Prisma.DocumentRevisionUpsertWithoutCurrentForDocumentInput
+  disconnect?: Prisma.DocumentRevisionWhereInput | boolean
+  delete?: Prisma.DocumentRevisionWhereInput | boolean
+  connect?: Prisma.DocumentRevisionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentRevisionUpdateToOneWithWhereWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUpdateWithoutCurrentForDocumentInput>, Prisma.DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput>
 }
 
 export type DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput = {
@@ -1640,6 +1640,126 @@ export type DocumentRevisionUpdateOneRequiredWithoutPostingsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentRevisionUpdateToOneWithWhereWithoutPostingsInput, Prisma.DocumentRevisionUpdateWithoutPostingsInput>, Prisma.DocumentRevisionUncheckedUpdateWithoutPostingsInput>
 }
 
+export type DocumentRevisionCreateWithoutProcessingDocumentInput = {
+  id?: string
+  revisionNumber: number
+  revisionType: $Enums.RevisionType
+  status?: $Enums.RevisionStatus
+  reason?: string | null
+  documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
+  vendorName?: string | null
+  vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
+  documentNumber?: string | null
+  documentDate?: Date | string | null
+  dueDate?: Date | string | null
+  currency: string
+  subtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  taxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  roundingMode?: $Enums.RoundingMode
+  gstTreatment?: $Enums.GstTreatment | null
+  supplierGstNo?: string | null
+  homeCurrency?: string | null
+  homeExchangeRateSource?: $Enums.ExchangeRateSource | null
+  homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  exchangeRateDate?: Date | string | null
+  homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
+  validationStatus?: $Enums.ValidationStatus
+  validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  documentKey?: string | null
+  documentKeyVersion?: string | null
+  documentKeyConfidence?: number | null
+  headerEvidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  postingStatus?: $Enums.RevisionPostingStatus
+  postedAt?: Date | string | null
+  postingLock?: boolean
+  reconciliationStatus?: $Enums.RevisionReconciliationStatus
+  searchText?: string | null
+  createdById: string
+  createdAt?: Date | string
+  approvedById?: string | null
+  approvedAt?: Date | string | null
+  supersededAt?: Date | string | null
+  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
+  basedOnRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutDerivedRevisionsInput
+  derivedRevisions?: Prisma.DocumentRevisionCreateNestedManyWithoutBasedOnRevisionInput
+  extraction?: Prisma.DocumentExtractionCreateNestedOneWithoutRevisionsInput
+  postings?: Prisma.ExternalPostingCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
+}
+
+export type DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput = {
+  id?: string
+  basedOnRevisionId?: string | null
+  extractionId?: string | null
+  revisionNumber: number
+  revisionType: $Enums.RevisionType
+  status?: $Enums.RevisionStatus
+  reason?: string | null
+  documentCategory: $Enums.DocumentCategory
+  documentSubCategory?: $Enums.DocumentSubCategory | null
+  vendorName?: string | null
+  vendorId?: string | null
+  customerName?: string | null
+  customerId?: string | null
+  documentNumber?: string | null
+  documentDate?: Date | string | null
+  dueDate?: Date | string | null
+  currency: string
+  subtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  taxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  roundingMode?: $Enums.RoundingMode
+  gstTreatment?: $Enums.GstTreatment | null
+  supplierGstNo?: string | null
+  homeCurrency?: string | null
+  homeExchangeRateSource?: $Enums.ExchangeRateSource | null
+  homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  exchangeRateDate?: Date | string | null
+  homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: boolean
+  validationStatus?: $Enums.ValidationStatus
+  validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  documentKey?: string | null
+  documentKeyVersion?: string | null
+  documentKeyConfidence?: number | null
+  headerEvidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  postingStatus?: $Enums.RevisionPostingStatus
+  postedAt?: Date | string | null
+  postingLock?: boolean
+  reconciliationStatus?: $Enums.RevisionReconciliationStatus
+  searchText?: string | null
+  createdById: string
+  createdAt?: Date | string
+  approvedById?: string | null
+  approvedAt?: Date | string | null
+  supersededAt?: Date | string | null
+  items?: Prisma.DocumentRevisionLineItemUncheckedCreateNestedManyWithoutRevisionInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
+  postings?: Prisma.ExternalPostingUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
+}
+
+export type DocumentRevisionCreateOrConnectWithoutProcessingDocumentInput = {
+  where: Prisma.DocumentRevisionWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutProcessingDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput>
+}
+
+export type DocumentRevisionCreateManyProcessingDocumentInputEnvelope = {
+  data: Prisma.DocumentRevisionCreateManyProcessingDocumentInput | Prisma.DocumentRevisionCreateManyProcessingDocumentInput[]
+  skipDuplicates?: boolean
+}
+
 export type DocumentRevisionCreateWithoutCurrentForDocumentInput = {
   id?: string
   revisionNumber: number
@@ -1686,13 +1806,13 @@ export type DocumentRevisionCreateWithoutCurrentForDocumentInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
+  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
   basedOnRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutDerivedRevisionsInput
   derivedRevisions?: Prisma.DocumentRevisionCreateNestedManyWithoutBasedOnRevisionInput
   extraction?: Prisma.DocumentExtractionCreateNestedOneWithoutRevisionsInput
-  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
   postings?: Prisma.ExternalPostingCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
 }
 
 export type DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput = {
@@ -1744,256 +1864,15 @@ export type DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
   items?: Prisma.DocumentRevisionLineItemUncheckedCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
   postings?: Prisma.ExternalPostingUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
 }
 
 export type DocumentRevisionCreateOrConnectWithoutCurrentForDocumentInput = {
   where: Prisma.DocumentRevisionWhereUniqueInput
   create: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput>
-}
-
-export type DocumentRevisionCreateWithoutProcessingDocumentInput = {
-  id?: string
-  revisionNumber: number
-  revisionType: $Enums.RevisionType
-  status?: $Enums.RevisionStatus
-  reason?: string | null
-  documentCategory: $Enums.DocumentCategory
-  documentSubCategory?: $Enums.DocumentSubCategory | null
-  vendorName?: string | null
-  vendorId?: string | null
-  customerName?: string | null
-  customerId?: string | null
-  documentNumber?: string | null
-  documentDate?: Date | string | null
-  dueDate?: Date | string | null
-  currency: string
-  subtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  taxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
-  roundingMode?: $Enums.RoundingMode
-  gstTreatment?: $Enums.GstTreatment | null
-  supplierGstNo?: string | null
-  homeCurrency?: string | null
-  homeExchangeRateSource?: $Enums.ExchangeRateSource | null
-  homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  exchangeRateDate?: Date | string | null
-  homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  isHomeExchangeRateOverride?: boolean
-  validationStatus?: $Enums.ValidationStatus
-  validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  documentKey?: string | null
-  documentKeyVersion?: string | null
-  documentKeyConfidence?: number | null
-  headerEvidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  postingStatus?: $Enums.RevisionPostingStatus
-  postedAt?: Date | string | null
-  postingLock?: boolean
-  reconciliationStatus?: $Enums.RevisionReconciliationStatus
-  searchText?: string | null
-  createdById: string
-  createdAt?: Date | string
-  approvedById?: string | null
-  approvedAt?: Date | string | null
-  supersededAt?: Date | string | null
-  basedOnRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutDerivedRevisionsInput
-  derivedRevisions?: Prisma.DocumentRevisionCreateNestedManyWithoutBasedOnRevisionInput
-  extraction?: Prisma.DocumentExtractionCreateNestedOneWithoutRevisionsInput
-  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
-  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
-  postings?: Prisma.ExternalPostingCreateNestedManyWithoutDocumentRevisionInput
-}
-
-export type DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput = {
-  id?: string
-  basedOnRevisionId?: string | null
-  extractionId?: string | null
-  revisionNumber: number
-  revisionType: $Enums.RevisionType
-  status?: $Enums.RevisionStatus
-  reason?: string | null
-  documentCategory: $Enums.DocumentCategory
-  documentSubCategory?: $Enums.DocumentSubCategory | null
-  vendorName?: string | null
-  vendorId?: string | null
-  customerName?: string | null
-  customerId?: string | null
-  documentNumber?: string | null
-  documentDate?: Date | string | null
-  dueDate?: Date | string | null
-  currency: string
-  subtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  taxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
-  roundingMode?: $Enums.RoundingMode
-  gstTreatment?: $Enums.GstTreatment | null
-  supplierGstNo?: string | null
-  homeCurrency?: string | null
-  homeExchangeRateSource?: $Enums.ExchangeRateSource | null
-  homeExchangeRate?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  exchangeRateDate?: Date | string | null
-  homeEquivalent?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  homeSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  homeTaxAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  isHomeExchangeRateOverride?: boolean
-  validationStatus?: $Enums.ValidationStatus
-  validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  documentKey?: string | null
-  documentKeyVersion?: string | null
-  documentKeyConfidence?: number | null
-  headerEvidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  postingStatus?: $Enums.RevisionPostingStatus
-  postedAt?: Date | string | null
-  postingLock?: boolean
-  reconciliationStatus?: $Enums.RevisionReconciliationStatus
-  searchText?: string | null
-  createdById: string
-  createdAt?: Date | string
-  approvedById?: string | null
-  approvedAt?: Date | string | null
-  supersededAt?: Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
-  items?: Prisma.DocumentRevisionLineItemUncheckedCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
-  postings?: Prisma.ExternalPostingUncheckedCreateNestedManyWithoutDocumentRevisionInput
-}
-
-export type DocumentRevisionCreateOrConnectWithoutProcessingDocumentInput = {
-  where: Prisma.DocumentRevisionWhereUniqueInput
-  create: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutProcessingDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput>
-}
-
-export type DocumentRevisionCreateManyProcessingDocumentInputEnvelope = {
-  data: Prisma.DocumentRevisionCreateManyProcessingDocumentInput | Prisma.DocumentRevisionCreateManyProcessingDocumentInput[]
-  skipDuplicates?: boolean
-}
-
-export type DocumentRevisionUpsertWithoutCurrentForDocumentInput = {
-  update: Prisma.XOR<Prisma.DocumentRevisionUpdateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput>
-  create: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput>
-  where?: Prisma.DocumentRevisionWhereInput
-}
-
-export type DocumentRevisionUpdateToOneWithWhereWithoutCurrentForDocumentInput = {
-  where?: Prisma.DocumentRevisionWhereInput
-  data: Prisma.XOR<Prisma.DocumentRevisionUpdateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput>
-}
-
-export type DocumentRevisionUpdateWithoutCurrentForDocumentInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
-  revisionType?: Prisma.EnumRevisionTypeFieldUpdateOperationsInput | $Enums.RevisionType
-  status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
-  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
-  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
-  vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  subtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  taxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  roundingMode?: Prisma.EnumRoundingModeFieldUpdateOperationsInput | $Enums.RoundingMode
-  gstTreatment?: Prisma.NullableEnumGstTreatmentFieldUpdateOperationsInput | $Enums.GstTreatment | null
-  supplierGstNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  homeExchangeRateSource?: Prisma.NullableEnumExchangeRateSourceFieldUpdateOperationsInput | $Enums.ExchangeRateSource | null
-  homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
-  validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentKeyVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentKeyConfidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  headerEvidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  postingStatus?: Prisma.EnumRevisionPostingStatusFieldUpdateOperationsInput | $Enums.RevisionPostingStatus
-  postedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  postingLock?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  reconciliationStatus?: Prisma.EnumRevisionReconciliationStatusFieldUpdateOperationsInput | $Enums.RevisionReconciliationStatus
-  searchText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdById?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
-  basedOnRevision?: Prisma.DocumentRevisionUpdateOneWithoutDerivedRevisionsNestedInput
-  derivedRevisions?: Prisma.DocumentRevisionUpdateManyWithoutBasedOnRevisionNestedInput
-  extraction?: Prisma.DocumentExtractionUpdateOneWithoutRevisionsNestedInput
-  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
-  postings?: Prisma.ExternalPostingUpdateManyWithoutDocumentRevisionNestedInput
-}
-
-export type DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  processingDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
-  basedOnRevisionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  extractionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
-  revisionType?: Prisma.EnumRevisionTypeFieldUpdateOperationsInput | $Enums.RevisionType
-  status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
-  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
-  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
-  vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  subtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  taxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  roundingMode?: Prisma.EnumRoundingModeFieldUpdateOperationsInput | $Enums.RoundingMode
-  gstTreatment?: Prisma.NullableEnumGstTreatmentFieldUpdateOperationsInput | $Enums.GstTreatment | null
-  supplierGstNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  homeExchangeRateSource?: Prisma.NullableEnumExchangeRateSourceFieldUpdateOperationsInput | $Enums.ExchangeRateSource | null
-  homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
-  validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentKeyVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  documentKeyConfidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  headerEvidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  postingStatus?: Prisma.EnumRevisionPostingStatusFieldUpdateOperationsInput | $Enums.RevisionPostingStatus
-  postedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  postingLock?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  reconciliationStatus?: Prisma.EnumRevisionReconciliationStatusFieldUpdateOperationsInput | $Enums.RevisionReconciliationStatus
-  searchText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdById?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
-  items?: Prisma.DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
-  postings?: Prisma.ExternalPostingUncheckedUpdateManyWithoutDocumentRevisionNestedInput
 }
 
 export type DocumentRevisionUpsertWithWhereUniqueWithoutProcessingDocumentInput = {
@@ -2066,6 +1945,127 @@ export type DocumentRevisionScalarWhereInput = {
   supersededAt?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
 }
 
+export type DocumentRevisionUpsertWithoutCurrentForDocumentInput = {
+  update: Prisma.XOR<Prisma.DocumentRevisionUpdateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput>
+  create: Prisma.XOR<Prisma.DocumentRevisionCreateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput>
+  where?: Prisma.DocumentRevisionWhereInput
+}
+
+export type DocumentRevisionUpdateToOneWithWhereWithoutCurrentForDocumentInput = {
+  where?: Prisma.DocumentRevisionWhereInput
+  data: Prisma.XOR<Prisma.DocumentRevisionUpdateWithoutCurrentForDocumentInput, Prisma.DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput>
+}
+
+export type DocumentRevisionUpdateWithoutCurrentForDocumentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  revisionType?: Prisma.EnumRevisionTypeFieldUpdateOperationsInput | $Enums.RevisionType
+  status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
+  vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  taxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  roundingMode?: Prisma.EnumRoundingModeFieldUpdateOperationsInput | $Enums.RoundingMode
+  gstTreatment?: Prisma.NullableEnumGstTreatmentFieldUpdateOperationsInput | $Enums.GstTreatment | null
+  supplierGstNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  homeExchangeRateSource?: Prisma.NullableEnumExchangeRateSourceFieldUpdateOperationsInput | $Enums.ExchangeRateSource | null
+  homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
+  validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentKeyVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentKeyConfidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  headerEvidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  postingStatus?: Prisma.EnumRevisionPostingStatusFieldUpdateOperationsInput | $Enums.RevisionPostingStatus
+  postedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  postingLock?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  reconciliationStatus?: Prisma.EnumRevisionReconciliationStatusFieldUpdateOperationsInput | $Enums.RevisionReconciliationStatus
+  searchText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
+  basedOnRevision?: Prisma.DocumentRevisionUpdateOneWithoutDerivedRevisionsNestedInput
+  derivedRevisions?: Prisma.DocumentRevisionUpdateManyWithoutBasedOnRevisionNestedInput
+  extraction?: Prisma.DocumentExtractionUpdateOneWithoutRevisionsNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
+  postings?: Prisma.ExternalPostingUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+}
+
+export type DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  processingDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
+  basedOnRevisionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  extractionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  revisionNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  revisionType?: Prisma.EnumRevisionTypeFieldUpdateOperationsInput | $Enums.RevisionType
+  status?: Prisma.EnumRevisionStatusFieldUpdateOperationsInput | $Enums.RevisionStatus
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentCategory?: Prisma.EnumDocumentCategoryFieldUpdateOperationsInput | $Enums.DocumentCategory
+  documentSubCategory?: Prisma.NullableEnumDocumentSubCategoryFieldUpdateOperationsInput | $Enums.DocumentSubCategory | null
+  vendorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  taxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  roundingMode?: Prisma.EnumRoundingModeFieldUpdateOperationsInput | $Enums.RoundingMode
+  gstTreatment?: Prisma.NullableEnumGstTreatmentFieldUpdateOperationsInput | $Enums.GstTreatment | null
+  supplierGstNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  homeExchangeRateSource?: Prisma.NullableEnumExchangeRateSourceFieldUpdateOperationsInput | $Enums.ExchangeRateSource | null
+  homeExchangeRate?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  exchangeRateDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeEquivalent?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeSubtotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  homeTaxAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  isHomeExchangeRateOverride?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  validationStatus?: Prisma.EnumValidationStatusFieldUpdateOperationsInput | $Enums.ValidationStatus
+  validationIssues?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  documentKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentKeyVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentKeyConfidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  headerEvidenceJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  postingStatus?: Prisma.EnumRevisionPostingStatusFieldUpdateOperationsInput | $Enums.RevisionPostingStatus
+  postedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  postingLock?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  reconciliationStatus?: Prisma.EnumRevisionReconciliationStatusFieldUpdateOperationsInput | $Enums.RevisionReconciliationStatus
+  searchText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  items?: Prisma.DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionNestedInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
+  postings?: Prisma.ExternalPostingUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+}
+
 export type DocumentRevisionCreateWithoutExtractionInput = {
   id?: string
   revisionNumber: number
@@ -2112,13 +2112,13 @@ export type DocumentRevisionCreateWithoutExtractionInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
+  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
   basedOnRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutDerivedRevisionsInput
   derivedRevisions?: Prisma.DocumentRevisionCreateNestedManyWithoutBasedOnRevisionInput
-  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
-  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
   postings?: Prisma.ExternalPostingCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionUncheckedCreateWithoutExtractionInput = {
@@ -2169,11 +2169,11 @@ export type DocumentRevisionUncheckedCreateWithoutExtractionInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
   items?: Prisma.DocumentRevisionLineItemUncheckedCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
   postings?: Prisma.ExternalPostingUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionCreateOrConnectWithoutExtractionInput = {
@@ -2248,13 +2248,13 @@ export type DocumentRevisionCreateWithoutDerivedRevisionsInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
+  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
   basedOnRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutDerivedRevisionsInput
   extraction?: Prisma.DocumentExtractionCreateNestedOneWithoutRevisionsInput
-  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
-  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
   postings?: Prisma.ExternalPostingCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionUncheckedCreateWithoutDerivedRevisionsInput = {
@@ -2306,10 +2306,10 @@ export type DocumentRevisionUncheckedCreateWithoutDerivedRevisionsInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
   items?: Prisma.DocumentRevisionLineItemUncheckedCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
   postings?: Prisma.ExternalPostingUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionCreateOrConnectWithoutDerivedRevisionsInput = {
@@ -2363,13 +2363,13 @@ export type DocumentRevisionCreateWithoutBasedOnRevisionInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
+  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
   derivedRevisions?: Prisma.DocumentRevisionCreateNestedManyWithoutBasedOnRevisionInput
   extraction?: Prisma.DocumentExtractionCreateNestedOneWithoutRevisionsInput
-  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
-  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
   postings?: Prisma.ExternalPostingCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionUncheckedCreateWithoutBasedOnRevisionInput = {
@@ -2420,11 +2420,11 @@ export type DocumentRevisionUncheckedCreateWithoutBasedOnRevisionInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
   items?: Prisma.DocumentRevisionLineItemUncheckedCreateNestedManyWithoutRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
   postings?: Prisma.ExternalPostingUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionCreateOrConnectWithoutBasedOnRevisionInput = {
@@ -2494,13 +2494,13 @@ export type DocumentRevisionUpdateWithoutDerivedRevisionsInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
+  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
   basedOnRevision?: Prisma.DocumentRevisionUpdateOneWithoutDerivedRevisionsNestedInput
   extraction?: Prisma.DocumentExtractionUpdateOneWithoutRevisionsNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
-  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
   postings?: Prisma.ExternalPostingUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateWithoutDerivedRevisionsInput = {
@@ -2552,10 +2552,10 @@ export type DocumentRevisionUncheckedUpdateWithoutDerivedRevisionsInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
   items?: Prisma.DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
   postings?: Prisma.ExternalPostingUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUpsertWithWhereUniqueWithoutBasedOnRevisionInput = {
@@ -2620,13 +2620,13 @@ export type DocumentRevisionCreateWithoutItemsInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
   basedOnRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutDerivedRevisionsInput
   derivedRevisions?: Prisma.DocumentRevisionCreateNestedManyWithoutBasedOnRevisionInput
   extraction?: Prisma.DocumentExtractionCreateNestedOneWithoutRevisionsInput
-  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
   postings?: Prisma.ExternalPostingCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionUncheckedCreateWithoutItemsInput = {
@@ -2679,9 +2679,9 @@ export type DocumentRevisionUncheckedCreateWithoutItemsInput = {
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
   derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
   postings?: Prisma.ExternalPostingUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionCreateOrConnectWithoutItemsInput = {
@@ -2746,13 +2746,13 @@ export type DocumentRevisionUpdateWithoutItemsInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
   basedOnRevision?: Prisma.DocumentRevisionUpdateOneWithoutDerivedRevisionsNestedInput
   derivedRevisions?: Prisma.DocumentRevisionUpdateManyWithoutBasedOnRevisionNestedInput
   extraction?: Prisma.DocumentExtractionUpdateOneWithoutRevisionsNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
   postings?: Prisma.ExternalPostingUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateWithoutItemsInput = {
@@ -2805,9 +2805,9 @@ export type DocumentRevisionUncheckedUpdateWithoutItemsInput = {
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
   postings?: Prisma.ExternalPostingUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionCreateWithoutMatchGroupItemsInput = {
@@ -2856,13 +2856,13 @@ export type DocumentRevisionCreateWithoutMatchGroupItemsInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
+  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
   basedOnRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutDerivedRevisionsInput
   derivedRevisions?: Prisma.DocumentRevisionCreateNestedManyWithoutBasedOnRevisionInput
   extraction?: Prisma.DocumentExtractionCreateNestedOneWithoutRevisionsInput
-  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
-  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
+  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
   postings?: Prisma.ExternalPostingCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionUncheckedCreateWithoutMatchGroupItemsInput = {
@@ -2914,10 +2914,10 @@ export type DocumentRevisionUncheckedCreateWithoutMatchGroupItemsInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
   items?: Prisma.DocumentRevisionLineItemUncheckedCreateNestedManyWithoutRevisionInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
   postings?: Prisma.ExternalPostingUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionCreateOrConnectWithoutMatchGroupItemsInput = {
@@ -2982,13 +2982,13 @@ export type DocumentRevisionUpdateWithoutMatchGroupItemsInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
+  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
   basedOnRevision?: Prisma.DocumentRevisionUpdateOneWithoutDerivedRevisionsNestedInput
   derivedRevisions?: Prisma.DocumentRevisionUpdateManyWithoutBasedOnRevisionNestedInput
   extraction?: Prisma.DocumentExtractionUpdateOneWithoutRevisionsNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
-  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
   postings?: Prisma.ExternalPostingUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateWithoutMatchGroupItemsInput = {
@@ -3040,10 +3040,10 @@ export type DocumentRevisionUncheckedUpdateWithoutMatchGroupItemsInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
   items?: Prisma.DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionNestedInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
   postings?: Prisma.ExternalPostingUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionCreateWithoutPostingsInput = {
@@ -3092,13 +3092,13 @@ export type DocumentRevisionCreateWithoutPostingsInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
+  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
   basedOnRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutDerivedRevisionsInput
   derivedRevisions?: Prisma.DocumentRevisionCreateNestedManyWithoutBasedOnRevisionInput
   extraction?: Prisma.DocumentExtractionCreateNestedOneWithoutRevisionsInput
-  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
-  items?: Prisma.DocumentRevisionLineItemCreateNestedManyWithoutRevisionInput
+  processingDocument: Prisma.ProcessingDocumentCreateNestedOneWithoutRevisionsInput
   matchGroupItems?: Prisma.MatchGroupItemCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionUncheckedCreateWithoutPostingsInput = {
@@ -3150,10 +3150,10 @@ export type DocumentRevisionUncheckedCreateWithoutPostingsInput = {
   approvedById?: string | null
   approvedAt?: Date | string | null
   supersededAt?: Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
   items?: Prisma.DocumentRevisionLineItemUncheckedCreateNestedManyWithoutRevisionInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutBasedOnRevisionInput
   matchGroupItems?: Prisma.MatchGroupItemUncheckedCreateNestedManyWithoutDocumentRevisionInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutCurrentRevisionInput
 }
 
 export type DocumentRevisionCreateOrConnectWithoutPostingsInput = {
@@ -3218,13 +3218,13 @@ export type DocumentRevisionUpdateWithoutPostingsInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
+  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
   basedOnRevision?: Prisma.DocumentRevisionUpdateOneWithoutDerivedRevisionsNestedInput
   derivedRevisions?: Prisma.DocumentRevisionUpdateManyWithoutBasedOnRevisionNestedInput
   extraction?: Prisma.DocumentExtractionUpdateOneWithoutRevisionsNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
-  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
   matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateWithoutPostingsInput = {
@@ -3276,10 +3276,10 @@ export type DocumentRevisionUncheckedUpdateWithoutPostingsInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
   items?: Prisma.DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionNestedInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
   matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionCreateManyProcessingDocumentInput = {
@@ -3378,13 +3378,13 @@ export type DocumentRevisionUpdateWithoutProcessingDocumentInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
   basedOnRevision?: Prisma.DocumentRevisionUpdateOneWithoutDerivedRevisionsNestedInput
   derivedRevisions?: Prisma.DocumentRevisionUpdateManyWithoutBasedOnRevisionNestedInput
   extraction?: Prisma.DocumentExtractionUpdateOneWithoutRevisionsNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
-  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
   postings?: Prisma.ExternalPostingUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateWithoutProcessingDocumentInput = {
@@ -3435,11 +3435,11 @@ export type DocumentRevisionUncheckedUpdateWithoutProcessingDocumentInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
   items?: Prisma.DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
   postings?: Prisma.ExternalPostingUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentInput = {
@@ -3588,13 +3588,13 @@ export type DocumentRevisionUpdateWithoutExtractionInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
+  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
   basedOnRevision?: Prisma.DocumentRevisionUpdateOneWithoutDerivedRevisionsNestedInput
   derivedRevisions?: Prisma.DocumentRevisionUpdateManyWithoutBasedOnRevisionNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
-  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
   postings?: Prisma.ExternalPostingUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateWithoutExtractionInput = {
@@ -3645,11 +3645,11 @@ export type DocumentRevisionUncheckedUpdateWithoutExtractionInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
   items?: Prisma.DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
   postings?: Prisma.ExternalPostingUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateManyWithoutExtractionInput = {
@@ -3798,13 +3798,13 @@ export type DocumentRevisionUpdateWithoutBasedOnRevisionInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
+  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
   derivedRevisions?: Prisma.DocumentRevisionUpdateManyWithoutBasedOnRevisionNestedInput
   extraction?: Prisma.DocumentExtractionUpdateOneWithoutRevisionsNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
-  items?: Prisma.DocumentRevisionLineItemUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneRequiredWithoutRevisionsNestedInput
   postings?: Prisma.ExternalPostingUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateWithoutBasedOnRevisionInput = {
@@ -3855,11 +3855,11 @@ export type DocumentRevisionUncheckedUpdateWithoutBasedOnRevisionInput = {
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supersededAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
-  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
   items?: Prisma.DocumentRevisionLineItemUncheckedUpdateManyWithoutRevisionNestedInput
-  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  derivedRevisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionNestedInput
   postings?: Prisma.ExternalPostingUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  matchGroupItems?: Prisma.MatchGroupItemUncheckedUpdateManyWithoutDocumentRevisionNestedInput
+  currentForDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutCurrentRevisionNestedInput
 }
 
 export type DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionInput = {
@@ -3918,17 +3918,17 @@ export type DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionInput = {
  */
 
 export type DocumentRevisionCountOutputType = {
-  derivedRevisions: number
   items: number
-  matchGroupItems: number
+  derivedRevisions: number
   postings: number
+  matchGroupItems: number
 }
 
 export type DocumentRevisionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  derivedRevisions?: boolean | DocumentRevisionCountOutputTypeCountDerivedRevisionsArgs
   items?: boolean | DocumentRevisionCountOutputTypeCountItemsArgs
-  matchGroupItems?: boolean | DocumentRevisionCountOutputTypeCountMatchGroupItemsArgs
+  derivedRevisions?: boolean | DocumentRevisionCountOutputTypeCountDerivedRevisionsArgs
   postings?: boolean | DocumentRevisionCountOutputTypeCountPostingsArgs
+  matchGroupItems?: boolean | DocumentRevisionCountOutputTypeCountMatchGroupItemsArgs
 }
 
 /**
@@ -3944,13 +3944,6 @@ export type DocumentRevisionCountOutputTypeDefaultArgs<ExtArgs extends runtime.T
 /**
  * DocumentRevisionCountOutputType without action
  */
-export type DocumentRevisionCountOutputTypeCountDerivedRevisionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentRevisionWhereInput
-}
-
-/**
- * DocumentRevisionCountOutputType without action
- */
 export type DocumentRevisionCountOutputTypeCountItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DocumentRevisionLineItemWhereInput
 }
@@ -3958,8 +3951,8 @@ export type DocumentRevisionCountOutputTypeCountItemsArgs<ExtArgs extends runtim
 /**
  * DocumentRevisionCountOutputType without action
  */
-export type DocumentRevisionCountOutputTypeCountMatchGroupItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.MatchGroupItemWhereInput
+export type DocumentRevisionCountOutputTypeCountDerivedRevisionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentRevisionWhereInput
 }
 
 /**
@@ -3967,6 +3960,13 @@ export type DocumentRevisionCountOutputTypeCountMatchGroupItemsArgs<ExtArgs exte
  */
 export type DocumentRevisionCountOutputTypeCountPostingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ExternalPostingWhereInput
+}
+
+/**
+ * DocumentRevisionCountOutputType without action
+ */
+export type DocumentRevisionCountOutputTypeCountMatchGroupItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MatchGroupItemWhereInput
 }
 
 
@@ -4019,14 +4019,14 @@ export type DocumentRevisionSelect<ExtArgs extends runtime.Types.Extensions.Inte
   approvedById?: boolean
   approvedAt?: boolean
   supersededAt?: boolean
-  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
+  items?: boolean | Prisma.DocumentRevision$itemsArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
   derivedRevisions?: boolean | Prisma.DocumentRevision$derivedRevisionsArgs<ExtArgs>
   extraction?: boolean | Prisma.DocumentRevision$extractionArgs<ExtArgs>
-  currentForDocument?: boolean | Prisma.DocumentRevision$currentForDocumentArgs<ExtArgs>
-  items?: boolean | Prisma.DocumentRevision$itemsArgs<ExtArgs>
-  matchGroupItems?: boolean | Prisma.DocumentRevision$matchGroupItemsArgs<ExtArgs>
+  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
   postings?: boolean | Prisma.DocumentRevision$postingsArgs<ExtArgs>
+  matchGroupItems?: boolean | Prisma.DocumentRevision$matchGroupItemsArgs<ExtArgs>
+  currentForDocument?: boolean | Prisma.DocumentRevision$currentForDocumentArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentRevisionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentRevision"]>
 
@@ -4079,9 +4079,9 @@ export type DocumentRevisionSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   approvedById?: boolean
   approvedAt?: boolean
   supersededAt?: boolean
-  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
   extraction?: boolean | Prisma.DocumentRevision$extractionArgs<ExtArgs>
+  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentRevision"]>
 
 export type DocumentRevisionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -4133,9 +4133,9 @@ export type DocumentRevisionSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   approvedById?: boolean
   approvedAt?: boolean
   supersededAt?: boolean
-  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
   extraction?: boolean | Prisma.DocumentRevision$extractionArgs<ExtArgs>
+  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentRevision"]>
 
 export type DocumentRevisionSelectScalar = {
@@ -4191,38 +4191,38 @@ export type DocumentRevisionSelectScalar = {
 
 export type DocumentRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "processingDocumentId" | "basedOnRevisionId" | "extractionId" | "revisionNumber" | "revisionType" | "status" | "reason" | "documentCategory" | "documentSubCategory" | "vendorName" | "vendorId" | "customerName" | "customerId" | "documentNumber" | "documentDate" | "dueDate" | "currency" | "subtotal" | "taxAmount" | "totalAmount" | "roundingMode" | "gstTreatment" | "supplierGstNo" | "homeCurrency" | "homeExchangeRateSource" | "homeExchangeRate" | "exchangeRateDate" | "homeEquivalent" | "homeSubtotal" | "homeTaxAmount" | "isHomeExchangeRateOverride" | "validationStatus" | "validationIssues" | "documentKey" | "documentKeyVersion" | "documentKeyConfidence" | "headerEvidenceJson" | "postingStatus" | "postedAt" | "postingLock" | "reconciliationStatus" | "searchText" | "createdById" | "createdAt" | "approvedById" | "approvedAt" | "supersededAt", ExtArgs["result"]["documentRevision"]>
 export type DocumentRevisionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
+  items?: boolean | Prisma.DocumentRevision$itemsArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
   derivedRevisions?: boolean | Prisma.DocumentRevision$derivedRevisionsArgs<ExtArgs>
   extraction?: boolean | Prisma.DocumentRevision$extractionArgs<ExtArgs>
-  currentForDocument?: boolean | Prisma.DocumentRevision$currentForDocumentArgs<ExtArgs>
-  items?: boolean | Prisma.DocumentRevision$itemsArgs<ExtArgs>
-  matchGroupItems?: boolean | Prisma.DocumentRevision$matchGroupItemsArgs<ExtArgs>
+  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
   postings?: boolean | Prisma.DocumentRevision$postingsArgs<ExtArgs>
+  matchGroupItems?: boolean | Prisma.DocumentRevision$matchGroupItemsArgs<ExtArgs>
+  currentForDocument?: boolean | Prisma.DocumentRevision$currentForDocumentArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentRevisionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DocumentRevisionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
   extraction?: boolean | Prisma.DocumentRevision$extractionArgs<ExtArgs>
+  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
 }
 export type DocumentRevisionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
   extraction?: boolean | Prisma.DocumentRevision$extractionArgs<ExtArgs>
+  processingDocument?: boolean | Prisma.ProcessingDocumentDefaultArgs<ExtArgs>
 }
 
 export type $DocumentRevisionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "DocumentRevision"
   objects: {
-    processingDocument: Prisma.$ProcessingDocumentPayload<ExtArgs>
+    items: Prisma.$DocumentRevisionLineItemPayload<ExtArgs>[]
     basedOnRevision: Prisma.$DocumentRevisionPayload<ExtArgs> | null
     derivedRevisions: Prisma.$DocumentRevisionPayload<ExtArgs>[]
     extraction: Prisma.$DocumentExtractionPayload<ExtArgs> | null
-    currentForDocument: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
-    items: Prisma.$DocumentRevisionLineItemPayload<ExtArgs>[]
-    matchGroupItems: Prisma.$MatchGroupItemPayload<ExtArgs>[]
+    processingDocument: Prisma.$ProcessingDocumentPayload<ExtArgs>
     postings: Prisma.$ExternalPostingPayload<ExtArgs>[]
+    matchGroupItems: Prisma.$MatchGroupItemPayload<ExtArgs>[]
+    currentForDocument: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -4667,14 +4667,14 @@ readonly fields: DocumentRevisionFieldRefs;
  */
 export interface Prisma__DocumentRevisionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  processingDocument<T extends Prisma.ProcessingDocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  items<T extends Prisma.DocumentRevision$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentRevisionLineItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   basedOnRevision<T extends Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>>): Prisma.Prisma__DocumentRevisionClient<runtime.Types.Result.GetResult<Prisma.$DocumentRevisionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   derivedRevisions<T extends Prisma.DocumentRevision$derivedRevisionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$derivedRevisionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentRevisionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   extraction<T extends Prisma.DocumentRevision$extractionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$extractionArgs<ExtArgs>>): Prisma.Prisma__DocumentExtractionClient<runtime.Types.Result.GetResult<Prisma.$DocumentExtractionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  currentForDocument<T extends Prisma.DocumentRevision$currentForDocumentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$currentForDocumentArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  items<T extends Prisma.DocumentRevision$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentRevisionLineItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  matchGroupItems<T extends Prisma.DocumentRevision$matchGroupItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$matchGroupItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchGroupItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  processingDocument<T extends Prisma.ProcessingDocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   postings<T extends Prisma.DocumentRevision$postingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$postingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExternalPostingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  matchGroupItems<T extends Prisma.DocumentRevision$matchGroupItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$matchGroupItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchGroupItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  currentForDocument<T extends Prisma.DocumentRevision$currentForDocumentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentRevision$currentForDocumentArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5148,6 +5148,30 @@ export type DocumentRevisionDeleteManyArgs<ExtArgs extends runtime.Types.Extensi
 }
 
 /**
+ * DocumentRevision.items
+ */
+export type DocumentRevision$itemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentRevisionLineItem
+   */
+  select?: Prisma.DocumentRevisionLineItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentRevisionLineItem
+   */
+  omit?: Prisma.DocumentRevisionLineItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentRevisionLineItemInclude<ExtArgs> | null
+  where?: Prisma.DocumentRevisionLineItemWhereInput
+  orderBy?: Prisma.DocumentRevisionLineItemOrderByWithRelationInput | Prisma.DocumentRevisionLineItemOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentRevisionLineItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentRevisionLineItemScalarFieldEnum | Prisma.DocumentRevisionLineItemScalarFieldEnum[]
+}
+
+/**
  * DocumentRevision.basedOnRevision
  */
 export type DocumentRevision$basedOnRevisionArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -5210,46 +5234,27 @@ export type DocumentRevision$extractionArgs<ExtArgs extends runtime.Types.Extens
 }
 
 /**
- * DocumentRevision.currentForDocument
+ * DocumentRevision.postings
  */
-export type DocumentRevision$currentForDocumentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type DocumentRevision$postingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the ProcessingDocument
+   * Select specific fields to fetch from the ExternalPosting
    */
-  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
+  select?: Prisma.ExternalPostingSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the ProcessingDocument
+   * Omit specific fields from the ExternalPosting
    */
-  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
+  omit?: Prisma.ExternalPostingOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
-  where?: Prisma.ProcessingDocumentWhereInput
-}
-
-/**
- * DocumentRevision.items
- */
-export type DocumentRevision$itemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentRevisionLineItem
-   */
-  select?: Prisma.DocumentRevisionLineItemSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentRevisionLineItem
-   */
-  omit?: Prisma.DocumentRevisionLineItemOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentRevisionLineItemInclude<ExtArgs> | null
-  where?: Prisma.DocumentRevisionLineItemWhereInput
-  orderBy?: Prisma.DocumentRevisionLineItemOrderByWithRelationInput | Prisma.DocumentRevisionLineItemOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentRevisionLineItemWhereUniqueInput
+  include?: Prisma.ExternalPostingInclude<ExtArgs> | null
+  where?: Prisma.ExternalPostingWhereInput
+  orderBy?: Prisma.ExternalPostingOrderByWithRelationInput | Prisma.ExternalPostingOrderByWithRelationInput[]
+  cursor?: Prisma.ExternalPostingWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.DocumentRevisionLineItemScalarFieldEnum | Prisma.DocumentRevisionLineItemScalarFieldEnum[]
+  distinct?: Prisma.ExternalPostingScalarFieldEnum | Prisma.ExternalPostingScalarFieldEnum[]
 }
 
 /**
@@ -5277,27 +5282,22 @@ export type DocumentRevision$matchGroupItemsArgs<ExtArgs extends runtime.Types.E
 }
 
 /**
- * DocumentRevision.postings
+ * DocumentRevision.currentForDocument
  */
-export type DocumentRevision$postingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type DocumentRevision$currentForDocumentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the ExternalPosting
+   * Select specific fields to fetch from the ProcessingDocument
    */
-  select?: Prisma.ExternalPostingSelect<ExtArgs> | null
+  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the ExternalPosting
+   * Omit specific fields from the ProcessingDocument
    */
-  omit?: Prisma.ExternalPostingOmit<ExtArgs> | null
+  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.ExternalPostingInclude<ExtArgs> | null
-  where?: Prisma.ExternalPostingWhereInput
-  orderBy?: Prisma.ExternalPostingOrderByWithRelationInput | Prisma.ExternalPostingOrderByWithRelationInput[]
-  cursor?: Prisma.ExternalPostingWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ExternalPostingScalarFieldEnum | Prisma.ExternalPostingScalarFieldEnum[]
+  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
+  where?: Prisma.ProcessingDocumentWhereInput
 }
 
 /**

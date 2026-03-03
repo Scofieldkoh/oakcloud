@@ -328,15 +328,16 @@ export type GeneratedDocumentWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"GeneratedDocument"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"GeneratedDocument"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
-  template?: Prisma.XOR<Prisma.DocumentTemplateNullableScalarRelationFilter, Prisma.DocumentTemplateWhereInput> | null
-  company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
-  finalizedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-  createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  sections?: Prisma.DocumentSectionListRelationFilter
-  shares?: Prisma.DocumentShareListRelationFilter
   comments?: Prisma.DocumentCommentListRelationFilter
   drafts?: Prisma.DocumentDraftListRelationFilter
+  sections?: Prisma.DocumentSectionListRelationFilter
+  shares?: Prisma.DocumentShareListRelationFilter
+  company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
+  createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  finalizedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  template?: Prisma.XOR<Prisma.DocumentTemplateNullableScalarRelationFilter, Prisma.DocumentTemplateWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  workflow_artifacts?: Prisma.Workflow_artifactsListRelationFilter
 }
 
 export type GeneratedDocumentOrderByWithRelationInput = {
@@ -360,15 +361,16 @@ export type GeneratedDocumentOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  tenant?: Prisma.TenantOrderByWithRelationInput
-  template?: Prisma.DocumentTemplateOrderByWithRelationInput
-  company?: Prisma.CompanyOrderByWithRelationInput
-  finalizedBy?: Prisma.UserOrderByWithRelationInput
-  createdBy?: Prisma.UserOrderByWithRelationInput
-  sections?: Prisma.DocumentSectionOrderByRelationAggregateInput
-  shares?: Prisma.DocumentShareOrderByRelationAggregateInput
   comments?: Prisma.DocumentCommentOrderByRelationAggregateInput
   drafts?: Prisma.DocumentDraftOrderByRelationAggregateInput
+  sections?: Prisma.DocumentSectionOrderByRelationAggregateInput
+  shares?: Prisma.DocumentShareOrderByRelationAggregateInput
+  company?: Prisma.CompanyOrderByWithRelationInput
+  createdBy?: Prisma.UserOrderByWithRelationInput
+  finalizedBy?: Prisma.UserOrderByWithRelationInput
+  template?: Prisma.DocumentTemplateOrderByWithRelationInput
+  tenant?: Prisma.TenantOrderByWithRelationInput
+  workflow_artifacts?: Prisma.workflow_artifactsOrderByRelationAggregateInput
 }
 
 export type GeneratedDocumentWhereUniqueInput = Prisma.AtLeast<{
@@ -395,15 +397,16 @@ export type GeneratedDocumentWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"GeneratedDocument"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"GeneratedDocument"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
-  template?: Prisma.XOR<Prisma.DocumentTemplateNullableScalarRelationFilter, Prisma.DocumentTemplateWhereInput> | null
-  company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
-  finalizedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-  createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  sections?: Prisma.DocumentSectionListRelationFilter
-  shares?: Prisma.DocumentShareListRelationFilter
   comments?: Prisma.DocumentCommentListRelationFilter
   drafts?: Prisma.DocumentDraftListRelationFilter
+  sections?: Prisma.DocumentSectionListRelationFilter
+  shares?: Prisma.DocumentShareListRelationFilter
+  company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
+  createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  finalizedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  template?: Prisma.XOR<Prisma.DocumentTemplateNullableScalarRelationFilter, Prisma.DocumentTemplateWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  workflow_artifacts?: Prisma.Workflow_artifactsListRelationFilter
 }, "id">
 
 export type GeneratedDocumentOrderByWithAggregationInput = {
@@ -476,15 +479,16 @@ export type GeneratedDocumentCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
-  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateInput = {
@@ -508,10 +512,11 @@ export type GeneratedDocumentUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUpdateInput = {
@@ -530,15 +535,16 @@ export type GeneratedDocumentUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
-  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateInput = {
@@ -562,10 +568,11 @@ export type GeneratedDocumentUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentCreateManyInput = {
@@ -718,6 +725,11 @@ export type GeneratedDocumentSumOrderByAggregateInput = {
 export type GeneratedDocumentScalarRelationFilter = {
   is?: Prisma.GeneratedDocumentWhereInput
   isNot?: Prisma.GeneratedDocumentWhereInput
+}
+
+export type GeneratedDocumentNullableScalarRelationFilter = {
+  is?: Prisma.GeneratedDocumentWhereInput | null
+  isNot?: Prisma.GeneratedDocumentWhereInput | null
 }
 
 export type GeneratedDocumentCreateNestedManyWithoutTenantInput = {
@@ -990,6 +1002,22 @@ export type GeneratedDocumentUpdateOneRequiredWithoutDraftsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.GeneratedDocumentUpdateToOneWithWhereWithoutDraftsInput, Prisma.GeneratedDocumentUpdateWithoutDraftsInput>, Prisma.GeneratedDocumentUncheckedUpdateWithoutDraftsInput>
 }
 
+export type GeneratedDocumentCreateNestedOneWithoutWorkflow_artifactsInput = {
+  create?: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutWorkflow_artifactsInput, Prisma.GeneratedDocumentUncheckedCreateWithoutWorkflow_artifactsInput>
+  connectOrCreate?: Prisma.GeneratedDocumentCreateOrConnectWithoutWorkflow_artifactsInput
+  connect?: Prisma.GeneratedDocumentWhereUniqueInput
+}
+
+export type GeneratedDocumentUpdateOneWithoutWorkflow_artifactsNestedInput = {
+  create?: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutWorkflow_artifactsInput, Prisma.GeneratedDocumentUncheckedCreateWithoutWorkflow_artifactsInput>
+  connectOrCreate?: Prisma.GeneratedDocumentCreateOrConnectWithoutWorkflow_artifactsInput
+  upsert?: Prisma.GeneratedDocumentUpsertWithoutWorkflow_artifactsInput
+  disconnect?: Prisma.GeneratedDocumentWhereInput | boolean
+  delete?: Prisma.GeneratedDocumentWhereInput | boolean
+  connect?: Prisma.GeneratedDocumentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.GeneratedDocumentUpdateToOneWithWhereWithoutWorkflow_artifactsInput, Prisma.GeneratedDocumentUpdateWithoutWorkflow_artifactsInput>, Prisma.GeneratedDocumentUncheckedUpdateWithoutWorkflow_artifactsInput>
+}
+
 export type GeneratedDocumentCreateWithoutTenantInput = {
   id?: string
   templateVersion?: number | null
@@ -1006,14 +1034,15 @@ export type GeneratedDocumentCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
-  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutTenantInput = {
@@ -1036,10 +1065,11 @@ export type GeneratedDocumentUncheckedCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutTenantInput = {
@@ -1110,14 +1140,15 @@ export type GeneratedDocumentCreateWithoutCreatedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutCreatedByInput = {
@@ -1140,10 +1171,11 @@ export type GeneratedDocumentUncheckedCreateWithoutCreatedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutCreatedByInput = {
@@ -1172,14 +1204,15 @@ export type GeneratedDocumentCreateWithoutFinalizedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
-  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutFinalizedByInput = {
@@ -1202,10 +1235,11 @@ export type GeneratedDocumentUncheckedCreateWithoutFinalizedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutFinalizedByInput = {
@@ -1266,14 +1300,15 @@ export type GeneratedDocumentCreateWithoutCompanyInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
-  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutCompanyInput = {
@@ -1296,10 +1331,11 @@ export type GeneratedDocumentUncheckedCreateWithoutCompanyInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutCompanyInput = {
@@ -1344,14 +1380,15 @@ export type GeneratedDocumentCreateWithoutTemplateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
-  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutTemplateInput = {
@@ -1374,10 +1411,11 @@ export type GeneratedDocumentUncheckedCreateWithoutTemplateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutTemplateInput = {
@@ -1422,14 +1460,15 @@ export type GeneratedDocumentCreateWithoutSectionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutSectionsInput = {
@@ -1453,9 +1492,10 @@ export type GeneratedDocumentUncheckedCreateWithoutSectionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutSectionsInput = {
@@ -1490,14 +1530,15 @@ export type GeneratedDocumentUpdateWithoutSectionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutSectionsInput = {
@@ -1521,9 +1562,10 @@ export type GeneratedDocumentUncheckedUpdateWithoutSectionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentCreateWithoutSharesInput = {
@@ -1542,14 +1584,15 @@ export type GeneratedDocumentCreateWithoutSharesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
-  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutSharesInput = {
@@ -1573,9 +1616,10 @@ export type GeneratedDocumentUncheckedCreateWithoutSharesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutSharesInput = {
@@ -1610,14 +1654,15 @@ export type GeneratedDocumentUpdateWithoutSharesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
-  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutSharesInput = {
@@ -1641,9 +1686,10 @@ export type GeneratedDocumentUncheckedUpdateWithoutSharesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentCreateWithoutCommentsInput = {
@@ -1662,14 +1708,15 @@ export type GeneratedDocumentCreateWithoutCommentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
   shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
-  drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutCommentsInput = {
@@ -1693,9 +1740,10 @@ export type GeneratedDocumentUncheckedCreateWithoutCommentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
   shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
-  drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutCommentsInput = {
@@ -1730,14 +1778,15 @@ export type GeneratedDocumentUpdateWithoutCommentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
   shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
-  drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutCommentsInput = {
@@ -1761,9 +1810,10 @@ export type GeneratedDocumentUncheckedUpdateWithoutCommentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
   shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
-  drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentCreateWithoutDraftsInput = {
@@ -1782,14 +1832,15 @@ export type GeneratedDocumentCreateWithoutDraftsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
   shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
-  comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutDraftsInput = {
@@ -1813,9 +1864,10 @@ export type GeneratedDocumentUncheckedCreateWithoutDraftsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
   shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
-  comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutDraftsInput = {
@@ -1850,14 +1902,15 @@ export type GeneratedDocumentUpdateWithoutDraftsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
   shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
-  comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutDraftsInput = {
@@ -1881,9 +1934,134 @@ export type GeneratedDocumentUncheckedUpdateWithoutDraftsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
   shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
+}
+
+export type GeneratedDocumentCreateWithoutWorkflow_artifactsInput = {
+  id?: string
+  templateVersion?: number | null
+  title: string
+  content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.GeneratedDocumentStatus
+  finalizedAt?: Date | string | null
+  unfinalizedAt?: Date | string | null
+  useLetterhead?: boolean
+  shareExpiryHours?: number | null
+  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
+  drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutGeneratedDocumentsInput
+}
+
+export type GeneratedDocumentUncheckedCreateWithoutWorkflow_artifactsInput = {
+  id?: string
+  tenantId: string
+  templateId?: string | null
+  templateVersion?: number | null
+  companyId?: string | null
+  title: string
+  content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.GeneratedDocumentStatus
+  finalizedAt?: Date | string | null
+  finalizedById?: string | null
+  unfinalizedAt?: Date | string | null
+  useLetterhead?: boolean
+  shareExpiryHours?: number | null
+  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdById: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
+  drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
+  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
+}
+
+export type GeneratedDocumentCreateOrConnectWithoutWorkflow_artifactsInput = {
+  where: Prisma.GeneratedDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutWorkflow_artifactsInput, Prisma.GeneratedDocumentUncheckedCreateWithoutWorkflow_artifactsInput>
+}
+
+export type GeneratedDocumentUpsertWithoutWorkflow_artifactsInput = {
+  update: Prisma.XOR<Prisma.GeneratedDocumentUpdateWithoutWorkflow_artifactsInput, Prisma.GeneratedDocumentUncheckedUpdateWithoutWorkflow_artifactsInput>
+  create: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutWorkflow_artifactsInput, Prisma.GeneratedDocumentUncheckedCreateWithoutWorkflow_artifactsInput>
+  where?: Prisma.GeneratedDocumentWhereInput
+}
+
+export type GeneratedDocumentUpdateToOneWithWhereWithoutWorkflow_artifactsInput = {
+  where?: Prisma.GeneratedDocumentWhereInput
+  data: Prisma.XOR<Prisma.GeneratedDocumentUpdateWithoutWorkflow_artifactsInput, Prisma.GeneratedDocumentUncheckedUpdateWithoutWorkflow_artifactsInput>
+}
+
+export type GeneratedDocumentUpdateWithoutWorkflow_artifactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
+  finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
+  drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+}
+
+export type GeneratedDocumentUncheckedUpdateWithoutWorkflow_artifactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
+  finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
+  drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type GeneratedDocumentCreateManyTenantInput = {
@@ -1924,14 +2102,15 @@ export type GeneratedDocumentUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
-  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutTenantInput = {
@@ -1954,10 +2133,11 @@ export type GeneratedDocumentUncheckedUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutTenantInput = {
@@ -2042,14 +2222,15 @@ export type GeneratedDocumentUpdateWithoutCreatedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutCreatedByInput = {
@@ -2072,10 +2253,11 @@ export type GeneratedDocumentUncheckedUpdateWithoutCreatedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutCreatedByInput = {
@@ -2116,14 +2298,15 @@ export type GeneratedDocumentUpdateWithoutFinalizedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
-  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutFinalizedByInput = {
@@ -2146,10 +2329,11 @@ export type GeneratedDocumentUncheckedUpdateWithoutFinalizedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByInput = {
@@ -2212,14 +2396,15 @@ export type GeneratedDocumentUpdateWithoutCompanyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
-  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutCompanyInput = {
@@ -2242,10 +2427,11 @@ export type GeneratedDocumentUncheckedUpdateWithoutCompanyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutCompanyInput = {
@@ -2308,14 +2494,15 @@ export type GeneratedDocumentUpdateWithoutTemplateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
-  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutTemplateInput = {
@@ -2338,10 +2525,11 @@ export type GeneratedDocumentUncheckedUpdateWithoutTemplateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
+  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutTemplateInput = {
@@ -2372,17 +2560,19 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutTemplateInput = {
  */
 
 export type GeneratedDocumentCountOutputType = {
-  sections: number
-  shares: number
   comments: number
   drafts: number
+  sections: number
+  shares: number
+  workflow_artifacts: number
 }
 
 export type GeneratedDocumentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  sections?: boolean | GeneratedDocumentCountOutputTypeCountSectionsArgs
-  shares?: boolean | GeneratedDocumentCountOutputTypeCountSharesArgs
   comments?: boolean | GeneratedDocumentCountOutputTypeCountCommentsArgs
   drafts?: boolean | GeneratedDocumentCountOutputTypeCountDraftsArgs
+  sections?: boolean | GeneratedDocumentCountOutputTypeCountSectionsArgs
+  shares?: boolean | GeneratedDocumentCountOutputTypeCountSharesArgs
+  workflow_artifacts?: boolean | GeneratedDocumentCountOutputTypeCountWorkflow_artifactsArgs
 }
 
 /**
@@ -2393,6 +2583,20 @@ export type GeneratedDocumentCountOutputTypeDefaultArgs<ExtArgs extends runtime.
    * Select specific fields to fetch from the GeneratedDocumentCountOutputType
    */
   select?: Prisma.GeneratedDocumentCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * GeneratedDocumentCountOutputType without action
+ */
+export type GeneratedDocumentCountOutputTypeCountCommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentCommentWhereInput
+}
+
+/**
+ * GeneratedDocumentCountOutputType without action
+ */
+export type GeneratedDocumentCountOutputTypeCountDraftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentDraftWhereInput
 }
 
 /**
@@ -2412,15 +2616,8 @@ export type GeneratedDocumentCountOutputTypeCountSharesArgs<ExtArgs extends runt
 /**
  * GeneratedDocumentCountOutputType without action
  */
-export type GeneratedDocumentCountOutputTypeCountCommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentCommentWhereInput
-}
-
-/**
- * GeneratedDocumentCountOutputType without action
- */
-export type GeneratedDocumentCountOutputTypeCountDraftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentDraftWhereInput
+export type GeneratedDocumentCountOutputTypeCountWorkflow_artifactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_artifactsWhereInput
 }
 
 
@@ -2445,15 +2642,16 @@ export type GeneratedDocumentSelect<ExtArgs extends runtime.Types.Extensions.Int
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
-  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
-  company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
-  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
-  createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  sections?: boolean | Prisma.GeneratedDocument$sectionsArgs<ExtArgs>
-  shares?: boolean | Prisma.GeneratedDocument$sharesArgs<ExtArgs>
   comments?: boolean | Prisma.GeneratedDocument$commentsArgs<ExtArgs>
   drafts?: boolean | Prisma.GeneratedDocument$draftsArgs<ExtArgs>
+  sections?: boolean | Prisma.GeneratedDocument$sectionsArgs<ExtArgs>
+  shares?: boolean | Prisma.GeneratedDocument$sharesArgs<ExtArgs>
+  company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
+  createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
+  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  workflow_artifacts?: boolean | Prisma.GeneratedDocument$workflow_artifactsArgs<ExtArgs>
   _count?: boolean | Prisma.GeneratedDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["generatedDocument"]>
 
@@ -2478,11 +2676,11 @@ export type GeneratedDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.T
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
-  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
   company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
-  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
+  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["generatedDocument"]>
 
 export type GeneratedDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -2506,11 +2704,11 @@ export type GeneratedDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
-  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
   company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
-  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
+  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["generatedDocument"]>
 
 export type GeneratedDocumentSelectScalar = {
@@ -2538,44 +2736,46 @@ export type GeneratedDocumentSelectScalar = {
 
 export type GeneratedDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "templateId" | "templateVersion" | "companyId" | "title" | "content" | "contentJson" | "status" | "finalizedAt" | "finalizedById" | "unfinalizedAt" | "useLetterhead" | "shareExpiryHours" | "placeholderData" | "metadata" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["generatedDocument"]>
 export type GeneratedDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
-  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
-  company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
-  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
-  createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  sections?: boolean | Prisma.GeneratedDocument$sectionsArgs<ExtArgs>
-  shares?: boolean | Prisma.GeneratedDocument$sharesArgs<ExtArgs>
   comments?: boolean | Prisma.GeneratedDocument$commentsArgs<ExtArgs>
   drafts?: boolean | Prisma.GeneratedDocument$draftsArgs<ExtArgs>
+  sections?: boolean | Prisma.GeneratedDocument$sectionsArgs<ExtArgs>
+  shares?: boolean | Prisma.GeneratedDocument$sharesArgs<ExtArgs>
+  company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
+  createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
+  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  workflow_artifacts?: boolean | Prisma.GeneratedDocument$workflow_artifactsArgs<ExtArgs>
   _count?: boolean | Prisma.GeneratedDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type GeneratedDocumentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
-  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
   company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
-  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
+  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }
 export type GeneratedDocumentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
-  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
   company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
-  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
+  template?: boolean | Prisma.GeneratedDocument$templateArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }
 
 export type $GeneratedDocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "GeneratedDocument"
   objects: {
-    tenant: Prisma.$TenantPayload<ExtArgs>
-    template: Prisma.$DocumentTemplatePayload<ExtArgs> | null
-    company: Prisma.$CompanyPayload<ExtArgs> | null
-    finalizedBy: Prisma.$UserPayload<ExtArgs> | null
-    createdBy: Prisma.$UserPayload<ExtArgs>
-    sections: Prisma.$DocumentSectionPayload<ExtArgs>[]
-    shares: Prisma.$DocumentSharePayload<ExtArgs>[]
     comments: Prisma.$DocumentCommentPayload<ExtArgs>[]
     drafts: Prisma.$DocumentDraftPayload<ExtArgs>[]
+    sections: Prisma.$DocumentSectionPayload<ExtArgs>[]
+    shares: Prisma.$DocumentSharePayload<ExtArgs>[]
+    company: Prisma.$CompanyPayload<ExtArgs> | null
+    createdBy: Prisma.$UserPayload<ExtArgs>
+    finalizedBy: Prisma.$UserPayload<ExtArgs> | null
+    template: Prisma.$DocumentTemplatePayload<ExtArgs> | null
+    tenant: Prisma.$TenantPayload<ExtArgs>
+    workflow_artifacts: Prisma.$workflow_artifactsPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2992,15 +3192,16 @@ readonly fields: GeneratedDocumentFieldRefs;
  */
 export interface Prisma__GeneratedDocumentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  template<T extends Prisma.GeneratedDocument$templateArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$templateArgs<ExtArgs>>): Prisma.Prisma__DocumentTemplateClient<runtime.Types.Result.GetResult<Prisma.$DocumentTemplatePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  company<T extends Prisma.GeneratedDocument$companyArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$companyArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  finalizedBy<T extends Prisma.GeneratedDocument$finalizedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  sections<T extends Prisma.GeneratedDocument$sectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$sectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentSectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  shares<T extends Prisma.GeneratedDocument$sharesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$sharesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentSharePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   comments<T extends Prisma.GeneratedDocument$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentCommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   drafts<T extends Prisma.GeneratedDocument$draftsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$draftsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentDraftPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sections<T extends Prisma.GeneratedDocument$sectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$sectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentSectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  shares<T extends Prisma.GeneratedDocument$sharesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$sharesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentSharePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  company<T extends Prisma.GeneratedDocument$companyArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$companyArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  finalizedBy<T extends Prisma.GeneratedDocument$finalizedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  template<T extends Prisma.GeneratedDocument$templateArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$templateArgs<ExtArgs>>): Prisma.Prisma__DocumentTemplateClient<runtime.Types.Result.GetResult<Prisma.$DocumentTemplatePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  workflow_artifacts<T extends Prisma.GeneratedDocument$workflow_artifactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$workflow_artifactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_artifactsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3446,60 +3647,51 @@ export type GeneratedDocumentDeleteManyArgs<ExtArgs extends runtime.Types.Extens
 }
 
 /**
- * GeneratedDocument.template
+ * GeneratedDocument.comments
  */
-export type GeneratedDocument$templateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type GeneratedDocument$commentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the DocumentTemplate
+   * Select specific fields to fetch from the DocumentComment
    */
-  select?: Prisma.DocumentTemplateSelect<ExtArgs> | null
+  select?: Prisma.DocumentCommentSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the DocumentTemplate
+   * Omit specific fields from the DocumentComment
    */
-  omit?: Prisma.DocumentTemplateOmit<ExtArgs> | null
+  omit?: Prisma.DocumentCommentOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.DocumentTemplateInclude<ExtArgs> | null
-  where?: Prisma.DocumentTemplateWhereInput
+  include?: Prisma.DocumentCommentInclude<ExtArgs> | null
+  where?: Prisma.DocumentCommentWhereInput
+  orderBy?: Prisma.DocumentCommentOrderByWithRelationInput | Prisma.DocumentCommentOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentCommentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentCommentScalarFieldEnum | Prisma.DocumentCommentScalarFieldEnum[]
 }
 
 /**
- * GeneratedDocument.company
+ * GeneratedDocument.drafts
  */
-export type GeneratedDocument$companyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type GeneratedDocument$draftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Company
+   * Select specific fields to fetch from the DocumentDraft
    */
-  select?: Prisma.CompanySelect<ExtArgs> | null
+  select?: Prisma.DocumentDraftSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Company
+   * Omit specific fields from the DocumentDraft
    */
-  omit?: Prisma.CompanyOmit<ExtArgs> | null
+  omit?: Prisma.DocumentDraftOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.CompanyInclude<ExtArgs> | null
-  where?: Prisma.CompanyWhereInput
-}
-
-/**
- * GeneratedDocument.finalizedBy
- */
-export type GeneratedDocument$finalizedByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the User
-   */
-  select?: Prisma.UserSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the User
-   */
-  omit?: Prisma.UserOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.UserInclude<ExtArgs> | null
-  where?: Prisma.UserWhereInput
+  include?: Prisma.DocumentDraftInclude<ExtArgs> | null
+  where?: Prisma.DocumentDraftWhereInput
+  orderBy?: Prisma.DocumentDraftOrderByWithRelationInput | Prisma.DocumentDraftOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentDraftWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentDraftScalarFieldEnum | Prisma.DocumentDraftScalarFieldEnum[]
 }
 
 /**
@@ -3551,51 +3743,84 @@ export type GeneratedDocument$sharesArgs<ExtArgs extends runtime.Types.Extension
 }
 
 /**
- * GeneratedDocument.comments
+ * GeneratedDocument.company
  */
-export type GeneratedDocument$commentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type GeneratedDocument$companyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the DocumentComment
+   * Select specific fields to fetch from the Company
    */
-  select?: Prisma.DocumentCommentSelect<ExtArgs> | null
+  select?: Prisma.CompanySelect<ExtArgs> | null
   /**
-   * Omit specific fields from the DocumentComment
+   * Omit specific fields from the Company
    */
-  omit?: Prisma.DocumentCommentOmit<ExtArgs> | null
+  omit?: Prisma.CompanyOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.DocumentCommentInclude<ExtArgs> | null
-  where?: Prisma.DocumentCommentWhereInput
-  orderBy?: Prisma.DocumentCommentOrderByWithRelationInput | Prisma.DocumentCommentOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentCommentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentCommentScalarFieldEnum | Prisma.DocumentCommentScalarFieldEnum[]
+  include?: Prisma.CompanyInclude<ExtArgs> | null
+  where?: Prisma.CompanyWhereInput
 }
 
 /**
- * GeneratedDocument.drafts
+ * GeneratedDocument.finalizedBy
  */
-export type GeneratedDocument$draftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type GeneratedDocument$finalizedByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the DocumentDraft
+   * Select specific fields to fetch from the User
    */
-  select?: Prisma.DocumentDraftSelect<ExtArgs> | null
+  select?: Prisma.UserSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the DocumentDraft
+   * Omit specific fields from the User
    */
-  omit?: Prisma.DocumentDraftOmit<ExtArgs> | null
+  omit?: Prisma.UserOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.DocumentDraftInclude<ExtArgs> | null
-  where?: Prisma.DocumentDraftWhereInput
-  orderBy?: Prisma.DocumentDraftOrderByWithRelationInput | Prisma.DocumentDraftOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentDraftWhereUniqueInput
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
+}
+
+/**
+ * GeneratedDocument.template
+ */
+export type GeneratedDocument$templateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentTemplate
+   */
+  select?: Prisma.DocumentTemplateSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentTemplate
+   */
+  omit?: Prisma.DocumentTemplateOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentTemplateInclude<ExtArgs> | null
+  where?: Prisma.DocumentTemplateWhereInput
+}
+
+/**
+ * GeneratedDocument.workflow_artifacts
+ */
+export type GeneratedDocument$workflow_artifactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_artifacts
+   */
+  select?: Prisma.workflow_artifactsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_artifacts
+   */
+  omit?: Prisma.workflow_artifactsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_artifactsInclude<ExtArgs> | null
+  where?: Prisma.workflow_artifactsWhereInput
+  orderBy?: Prisma.workflow_artifactsOrderByWithRelationInput | Prisma.workflow_artifactsOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_artifactsWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.DocumentDraftScalarFieldEnum | Prisma.DocumentDraftScalarFieldEnum[]
+  distinct?: Prisma.Workflow_artifactsScalarFieldEnum | Prisma.Workflow_artifactsScalarFieldEnum[]
 }
 
 /**

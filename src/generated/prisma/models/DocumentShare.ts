@@ -304,9 +304,10 @@ export type DocumentShareWhereInput = {
   createdById?: Prisma.StringFilter<"DocumentShare"> | string
   createdAt?: Prisma.DateTimeFilter<"DocumentShare"> | Date | string
   revokedAt?: Prisma.DateTimeNullableFilter<"DocumentShare"> | Date | string | null
-  document?: Prisma.XOR<Prisma.GeneratedDocumentScalarRelationFilter, Prisma.GeneratedDocumentWhereInput>
-  createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   comments?: Prisma.DocumentCommentListRelationFilter
+  createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  document?: Prisma.XOR<Prisma.GeneratedDocumentScalarRelationFilter, Prisma.GeneratedDocumentWhereInput>
+  workflow_artifacts?: Prisma.Workflow_artifactsListRelationFilter
 }
 
 export type DocumentShareOrderByWithRelationInput = {
@@ -326,9 +327,10 @@ export type DocumentShareOrderByWithRelationInput = {
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   revokedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  document?: Prisma.GeneratedDocumentOrderByWithRelationInput
-  createdBy?: Prisma.UserOrderByWithRelationInput
   comments?: Prisma.DocumentCommentOrderByRelationAggregateInput
+  createdBy?: Prisma.UserOrderByWithRelationInput
+  document?: Prisma.GeneratedDocumentOrderByWithRelationInput
+  workflow_artifacts?: Prisma.workflow_artifactsOrderByRelationAggregateInput
 }
 
 export type DocumentShareWhereUniqueInput = Prisma.AtLeast<{
@@ -351,9 +353,10 @@ export type DocumentShareWhereUniqueInput = Prisma.AtLeast<{
   createdById?: Prisma.StringFilter<"DocumentShare"> | string
   createdAt?: Prisma.DateTimeFilter<"DocumentShare"> | Date | string
   revokedAt?: Prisma.DateTimeNullableFilter<"DocumentShare"> | Date | string | null
-  document?: Prisma.XOR<Prisma.GeneratedDocumentScalarRelationFilter, Prisma.GeneratedDocumentWhereInput>
-  createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   comments?: Prisma.DocumentCommentListRelationFilter
+  createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  document?: Prisma.XOR<Prisma.GeneratedDocumentScalarRelationFilter, Prisma.GeneratedDocumentWhereInput>
+  workflow_artifacts?: Prisma.Workflow_artifactsListRelationFilter
 }, "id" | "shareToken">
 
 export type DocumentShareOrderByWithAggregationInput = {
@@ -417,9 +420,10 @@ export type DocumentShareCreateInput = {
   notifyOnView?: boolean
   createdAt?: Date | string
   revokedAt?: Date | string | null
-  document: Prisma.GeneratedDocumentCreateNestedOneWithoutSharesInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedSharesInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutShareInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedSharesInput
+  document: Prisma.GeneratedDocumentCreateNestedOneWithoutSharesInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutDocument_sharesInput
 }
 
 export type DocumentShareUncheckedCreateInput = {
@@ -440,6 +444,7 @@ export type DocumentShareUncheckedCreateInput = {
   createdAt?: Date | string
   revokedAt?: Date | string | null
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutShareInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutDocument_sharesInput
 }
 
 export type DocumentShareUpdateInput = {
@@ -457,9 +462,10 @@ export type DocumentShareUpdateInput = {
   notifyOnView?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  document?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutSharesNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedSharesNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutShareNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedSharesNestedInput
+  document?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutSharesNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutDocument_sharesNestedInput
 }
 
 export type DocumentShareUncheckedUpdateInput = {
@@ -480,6 +486,7 @@ export type DocumentShareUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutShareNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutDocument_sharesNestedInput
 }
 
 export type DocumentShareCreateManyInput = {
@@ -726,6 +733,22 @@ export type DocumentShareUpdateOneWithoutCommentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentShareUpdateToOneWithWhereWithoutCommentsInput, Prisma.DocumentShareUpdateWithoutCommentsInput>, Prisma.DocumentShareUncheckedUpdateWithoutCommentsInput>
 }
 
+export type DocumentShareCreateNestedOneWithoutWorkflow_artifactsInput = {
+  create?: Prisma.XOR<Prisma.DocumentShareCreateWithoutWorkflow_artifactsInput, Prisma.DocumentShareUncheckedCreateWithoutWorkflow_artifactsInput>
+  connectOrCreate?: Prisma.DocumentShareCreateOrConnectWithoutWorkflow_artifactsInput
+  connect?: Prisma.DocumentShareWhereUniqueInput
+}
+
+export type DocumentShareUpdateOneWithoutWorkflow_artifactsNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentShareCreateWithoutWorkflow_artifactsInput, Prisma.DocumentShareUncheckedCreateWithoutWorkflow_artifactsInput>
+  connectOrCreate?: Prisma.DocumentShareCreateOrConnectWithoutWorkflow_artifactsInput
+  upsert?: Prisma.DocumentShareUpsertWithoutWorkflow_artifactsInput
+  disconnect?: Prisma.DocumentShareWhereInput | boolean
+  delete?: Prisma.DocumentShareWhereInput | boolean
+  connect?: Prisma.DocumentShareWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentShareUpdateToOneWithWhereWithoutWorkflow_artifactsInput, Prisma.DocumentShareUpdateWithoutWorkflow_artifactsInput>, Prisma.DocumentShareUncheckedUpdateWithoutWorkflow_artifactsInput>
+}
+
 export type DocumentShareCreateWithoutCreatedByInput = {
   id?: string
   shareToken: string
@@ -741,8 +764,9 @@ export type DocumentShareCreateWithoutCreatedByInput = {
   notifyOnView?: boolean
   createdAt?: Date | string
   revokedAt?: Date | string | null
-  document: Prisma.GeneratedDocumentCreateNestedOneWithoutSharesInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutShareInput
+  document: Prisma.GeneratedDocumentCreateNestedOneWithoutSharesInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutDocument_sharesInput
 }
 
 export type DocumentShareUncheckedCreateWithoutCreatedByInput = {
@@ -762,6 +786,7 @@ export type DocumentShareUncheckedCreateWithoutCreatedByInput = {
   createdAt?: Date | string
   revokedAt?: Date | string | null
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutShareInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutDocument_sharesInput
 }
 
 export type DocumentShareCreateOrConnectWithoutCreatedByInput = {
@@ -827,8 +852,9 @@ export type DocumentShareCreateWithoutDocumentInput = {
   notifyOnView?: boolean
   createdAt?: Date | string
   revokedAt?: Date | string | null
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedSharesInput
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutShareInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedSharesInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutDocument_sharesInput
 }
 
 export type DocumentShareUncheckedCreateWithoutDocumentInput = {
@@ -848,6 +874,7 @@ export type DocumentShareUncheckedCreateWithoutDocumentInput = {
   createdAt?: Date | string
   revokedAt?: Date | string | null
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutShareInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutDocument_sharesInput
 }
 
 export type DocumentShareCreateOrConnectWithoutDocumentInput = {
@@ -891,8 +918,9 @@ export type DocumentShareCreateWithoutCommentsInput = {
   notifyOnView?: boolean
   createdAt?: Date | string
   revokedAt?: Date | string | null
-  document: Prisma.GeneratedDocumentCreateNestedOneWithoutSharesInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedSharesInput
+  document: Prisma.GeneratedDocumentCreateNestedOneWithoutSharesInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutDocument_sharesInput
 }
 
 export type DocumentShareUncheckedCreateWithoutCommentsInput = {
@@ -912,6 +940,7 @@ export type DocumentShareUncheckedCreateWithoutCommentsInput = {
   createdById: string
   createdAt?: Date | string
   revokedAt?: Date | string | null
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutDocument_sharesInput
 }
 
 export type DocumentShareCreateOrConnectWithoutCommentsInput = {
@@ -945,8 +974,9 @@ export type DocumentShareUpdateWithoutCommentsInput = {
   notifyOnView?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  document?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutSharesNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedSharesNestedInput
+  document?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutSharesNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutDocument_sharesNestedInput
 }
 
 export type DocumentShareUncheckedUpdateWithoutCommentsInput = {
@@ -966,6 +996,103 @@ export type DocumentShareUncheckedUpdateWithoutCommentsInput = {
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutDocument_sharesNestedInput
+}
+
+export type DocumentShareCreateWithoutWorkflow_artifactsInput = {
+  id?: string
+  shareToken: string
+  expiresAt?: Date | string | null
+  passwordHash?: string | null
+  isActive?: boolean
+  viewCount?: number
+  lastViewedAt?: Date | string | null
+  allowedActions?: Prisma.DocumentShareCreateallowedActionsInput | string[]
+  allowComments?: boolean
+  commentRateLimit?: number
+  notifyOnComment?: boolean
+  notifyOnView?: boolean
+  createdAt?: Date | string
+  revokedAt?: Date | string | null
+  comments?: Prisma.DocumentCommentCreateNestedManyWithoutShareInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedSharesInput
+  document: Prisma.GeneratedDocumentCreateNestedOneWithoutSharesInput
+}
+
+export type DocumentShareUncheckedCreateWithoutWorkflow_artifactsInput = {
+  id?: string
+  documentId: string
+  shareToken: string
+  expiresAt?: Date | string | null
+  passwordHash?: string | null
+  isActive?: boolean
+  viewCount?: number
+  lastViewedAt?: Date | string | null
+  allowedActions?: Prisma.DocumentShareCreateallowedActionsInput | string[]
+  allowComments?: boolean
+  commentRateLimit?: number
+  notifyOnComment?: boolean
+  notifyOnView?: boolean
+  createdById: string
+  createdAt?: Date | string
+  revokedAt?: Date | string | null
+  comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutShareInput
+}
+
+export type DocumentShareCreateOrConnectWithoutWorkflow_artifactsInput = {
+  where: Prisma.DocumentShareWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentShareCreateWithoutWorkflow_artifactsInput, Prisma.DocumentShareUncheckedCreateWithoutWorkflow_artifactsInput>
+}
+
+export type DocumentShareUpsertWithoutWorkflow_artifactsInput = {
+  update: Prisma.XOR<Prisma.DocumentShareUpdateWithoutWorkflow_artifactsInput, Prisma.DocumentShareUncheckedUpdateWithoutWorkflow_artifactsInput>
+  create: Prisma.XOR<Prisma.DocumentShareCreateWithoutWorkflow_artifactsInput, Prisma.DocumentShareUncheckedCreateWithoutWorkflow_artifactsInput>
+  where?: Prisma.DocumentShareWhereInput
+}
+
+export type DocumentShareUpdateToOneWithWhereWithoutWorkflow_artifactsInput = {
+  where?: Prisma.DocumentShareWhereInput
+  data: Prisma.XOR<Prisma.DocumentShareUpdateWithoutWorkflow_artifactsInput, Prisma.DocumentShareUncheckedUpdateWithoutWorkflow_artifactsInput>
+}
+
+export type DocumentShareUpdateWithoutWorkflow_artifactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  shareToken?: Prisma.StringFieldUpdateOperationsInput | string
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastViewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  allowedActions?: Prisma.DocumentShareUpdateallowedActionsInput | string[]
+  allowComments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  commentRateLimit?: Prisma.IntFieldUpdateOperationsInput | number
+  notifyOnComment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  notifyOnView?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  comments?: Prisma.DocumentCommentUpdateManyWithoutShareNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedSharesNestedInput
+  document?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutSharesNestedInput
+}
+
+export type DocumentShareUncheckedUpdateWithoutWorkflow_artifactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  shareToken?: Prisma.StringFieldUpdateOperationsInput | string
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastViewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  allowedActions?: Prisma.DocumentShareUpdateallowedActionsInput | string[]
+  allowComments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  commentRateLimit?: Prisma.IntFieldUpdateOperationsInput | number
+  notifyOnComment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  notifyOnView?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutShareNestedInput
 }
 
 export type DocumentShareCreateManyCreatedByInput = {
@@ -1001,8 +1128,9 @@ export type DocumentShareUpdateWithoutCreatedByInput = {
   notifyOnView?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  document?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutSharesNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutShareNestedInput
+  document?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutSharesNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutDocument_sharesNestedInput
 }
 
 export type DocumentShareUncheckedUpdateWithoutCreatedByInput = {
@@ -1022,6 +1150,7 @@ export type DocumentShareUncheckedUpdateWithoutCreatedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutShareNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutDocument_sharesNestedInput
 }
 
 export type DocumentShareUncheckedUpdateManyWithoutCreatedByInput = {
@@ -1075,8 +1204,9 @@ export type DocumentShareUpdateWithoutDocumentInput = {
   notifyOnView?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedSharesNestedInput
   comments?: Prisma.DocumentCommentUpdateManyWithoutShareNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedSharesNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutDocument_sharesNestedInput
 }
 
 export type DocumentShareUncheckedUpdateWithoutDocumentInput = {
@@ -1096,6 +1226,7 @@ export type DocumentShareUncheckedUpdateWithoutDocumentInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   revokedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutShareNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutDocument_sharesNestedInput
 }
 
 export type DocumentShareUncheckedUpdateManyWithoutDocumentInput = {
@@ -1123,10 +1254,12 @@ export type DocumentShareUncheckedUpdateManyWithoutDocumentInput = {
 
 export type DocumentShareCountOutputType = {
   comments: number
+  workflow_artifacts: number
 }
 
 export type DocumentShareCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comments?: boolean | DocumentShareCountOutputTypeCountCommentsArgs
+  workflow_artifacts?: boolean | DocumentShareCountOutputTypeCountWorkflow_artifactsArgs
 }
 
 /**
@@ -1144,6 +1277,13 @@ export type DocumentShareCountOutputTypeDefaultArgs<ExtArgs extends runtime.Type
  */
 export type DocumentShareCountOutputTypeCountCommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DocumentCommentWhereInput
+}
+
+/**
+ * DocumentShareCountOutputType without action
+ */
+export type DocumentShareCountOutputTypeCountWorkflow_artifactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_artifactsWhereInput
 }
 
 
@@ -1164,9 +1304,10 @@ export type DocumentShareSelect<ExtArgs extends runtime.Types.Extensions.Interna
   createdById?: boolean
   createdAt?: boolean
   revokedAt?: boolean
-  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
-  createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   comments?: boolean | Prisma.DocumentShare$commentsArgs<ExtArgs>
+  createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
+  workflow_artifacts?: boolean | Prisma.DocumentShare$workflow_artifactsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentShareCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentShare"]>
 
@@ -1187,8 +1328,8 @@ export type DocumentShareSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   createdById?: boolean
   createdAt?: boolean
   revokedAt?: boolean
-  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentShare"]>
 
 export type DocumentShareSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1208,8 +1349,8 @@ export type DocumentShareSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   createdById?: boolean
   createdAt?: boolean
   revokedAt?: boolean
-  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentShare"]>
 
 export type DocumentShareSelectScalar = {
@@ -1233,26 +1374,28 @@ export type DocumentShareSelectScalar = {
 
 export type DocumentShareOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "shareToken" | "expiresAt" | "passwordHash" | "isActive" | "viewCount" | "lastViewedAt" | "allowedActions" | "allowComments" | "commentRateLimit" | "notifyOnComment" | "notifyOnView" | "createdById" | "createdAt" | "revokedAt", ExtArgs["result"]["documentShare"]>
 export type DocumentShareInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
-  createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   comments?: boolean | Prisma.DocumentShare$commentsArgs<ExtArgs>
+  createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
+  workflow_artifacts?: boolean | Prisma.DocumentShare$workflow_artifactsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentShareCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DocumentShareIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
 }
 export type DocumentShareIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
 }
 
 export type $DocumentSharePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "DocumentShare"
   objects: {
-    document: Prisma.$GeneratedDocumentPayload<ExtArgs>
-    createdBy: Prisma.$UserPayload<ExtArgs>
     comments: Prisma.$DocumentCommentPayload<ExtArgs>[]
+    createdBy: Prisma.$UserPayload<ExtArgs>
+    document: Prisma.$GeneratedDocumentPayload<ExtArgs>
+    workflow_artifacts: Prisma.$workflow_artifactsPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1665,9 +1808,10 @@ readonly fields: DocumentShareFieldRefs;
  */
 export interface Prisma__DocumentShareClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  document<T extends Prisma.GeneratedDocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__GeneratedDocumentClient<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   comments<T extends Prisma.DocumentShare$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentShare$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentCommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  document<T extends Prisma.GeneratedDocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__GeneratedDocumentClient<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  workflow_artifacts<T extends Prisma.DocumentShare$workflow_artifactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentShare$workflow_artifactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_artifactsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2130,6 +2274,30 @@ export type DocumentShare$commentsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.DocumentCommentScalarFieldEnum | Prisma.DocumentCommentScalarFieldEnum[]
+}
+
+/**
+ * DocumentShare.workflow_artifacts
+ */
+export type DocumentShare$workflow_artifactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_artifacts
+   */
+  select?: Prisma.workflow_artifactsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_artifacts
+   */
+  omit?: Prisma.workflow_artifactsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_artifactsInclude<ExtArgs> | null
+  where?: Prisma.workflow_artifactsWhereInput
+  orderBy?: Prisma.workflow_artifactsOrderByWithRelationInput | Prisma.workflow_artifactsOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_artifactsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_artifactsScalarFieldEnum | Prisma.Workflow_artifactsScalarFieldEnum[]
 }
 
 /**

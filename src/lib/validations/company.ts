@@ -145,7 +145,7 @@ export const companyAddressSchema = z.object({
   unit: z.string().max(10).optional().nullable(),
   buildingName: z.string().max(200).optional().nullable(),
   postalCode: z.string().min(5).max(10),
-  country: z.string().default('SINGAPORE'),
+  country: z.string().default('Singapore'),
   effectiveFrom: z.string().optional().nullable().transform((val) => {
     if (!val) return null;
     if (val.includes('T')) return val;

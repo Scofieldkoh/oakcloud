@@ -54,5 +54,8 @@ uploads/*
 logs
 *.log
 
+# Docker data (bind-mounted volumes)
+docker-data/
+
 # Ralph (deprecated)
 ralph-claude

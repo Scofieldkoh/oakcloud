@@ -544,24 +544,30 @@ export type CompanyWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Company"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"Company"> | string | null
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
-  formerNames?: Prisma.CompanyFormerNameListRelationFilter
-  addresses?: Prisma.CompanyAddressListRelationFilter
-  officers?: Prisma.CompanyOfficerListRelationFilter
-  shareholders?: Prisma.CompanyShareholderListRelationFilter
-  shareCapital?: Prisma.ShareCapitalListRelationFilter
-  charges?: Prisma.CompanyChargeListRelationFilter
-  documents?: Prisma.DocumentListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
-  contacts?: Prisma.CompanyContactListRelationFilter
-  roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
-  userAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
-  noteTabs?: Prisma.NoteTabListRelationFilter
-  generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
-  documentTags?: Prisma.DocumentTagListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
+  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  addresses?: Prisma.CompanyAddressListRelationFilter
+  charges?: Prisma.CompanyChargeListRelationFilter
+  contacts?: Prisma.CompanyContactListRelationFilter
+  formerNames?: Prisma.CompanyFormerNameListRelationFilter
+  officers?: Prisma.CompanyOfficerListRelationFilter
+  shareholders?: Prisma.CompanyShareholderListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
+  documentTags?: Prisma.DocumentTagListRelationFilter
+  documents?: Prisma.DocumentListRelationFilter
+  generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
+  noteTabs?: Prisma.NoteTabListRelationFilter
+  shareCapital?: Prisma.ShareCapitalListRelationFilter
+  userAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
+  roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
+  workflow_client_group_members?: Prisma.Workflow_client_group_membersListRelationFilter
+  workflow_engagements?: Prisma.Workflow_engagementsListRelationFilter
+  workflow_instances?: Prisma.Workflow_instancesListRelationFilter
+  workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
+  workflow_project_settings?: Prisma.XOR<Prisma.Workflow_project_settingsNullableScalarRelationFilter, Prisma.workflow_project_settingsWhereInput> | null
+  workflow_scheduled_instances_queue?: Prisma.Workflow_scheduled_instances_queueListRelationFilter
 }
 
 export type CompanyOrderByWithRelationInput = {
@@ -609,24 +615,30 @@ export type CompanyOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedReason?: Prisma.SortOrderInput | Prisma.SortOrder
-  tenant?: Prisma.TenantOrderByWithRelationInput
-  formerNames?: Prisma.CompanyFormerNameOrderByRelationAggregateInput
-  addresses?: Prisma.CompanyAddressOrderByRelationAggregateInput
-  officers?: Prisma.CompanyOfficerOrderByRelationAggregateInput
-  shareholders?: Prisma.CompanyShareholderOrderByRelationAggregateInput
-  shareCapital?: Prisma.ShareCapitalOrderByRelationAggregateInput
-  charges?: Prisma.CompanyChargeOrderByRelationAggregateInput
-  documents?: Prisma.DocumentOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
-  contacts?: Prisma.CompanyContactOrderByRelationAggregateInput
-  roleAssignments?: Prisma.UserRoleAssignmentOrderByRelationAggregateInput
-  userAssignments?: Prisma.UserCompanyAssignmentOrderByRelationAggregateInput
-  noteTabs?: Prisma.NoteTabOrderByRelationAggregateInput
-  generatedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
-  documentTags?: Prisma.DocumentTagOrderByRelationAggregateInput
   chartOfAccounts?: Prisma.ChartOfAccountOrderByRelationAggregateInput
   accountMappings?: Prisma.ChartOfAccountsMappingOrderByRelationAggregateInput
+  tenant?: Prisma.TenantOrderByWithRelationInput
+  addresses?: Prisma.CompanyAddressOrderByRelationAggregateInput
+  charges?: Prisma.CompanyChargeOrderByRelationAggregateInput
+  contacts?: Prisma.CompanyContactOrderByRelationAggregateInput
+  formerNames?: Prisma.CompanyFormerNameOrderByRelationAggregateInput
+  officers?: Prisma.CompanyOfficerOrderByRelationAggregateInput
+  shareholders?: Prisma.CompanyShareholderOrderByRelationAggregateInput
   contactDetails?: Prisma.ContactDetailOrderByRelationAggregateInput
+  documentTags?: Prisma.DocumentTagOrderByRelationAggregateInput
+  documents?: Prisma.DocumentOrderByRelationAggregateInput
+  generatedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
+  noteTabs?: Prisma.NoteTabOrderByRelationAggregateInput
+  shareCapital?: Prisma.ShareCapitalOrderByRelationAggregateInput
+  userAssignments?: Prisma.UserCompanyAssignmentOrderByRelationAggregateInput
+  roleAssignments?: Prisma.UserRoleAssignmentOrderByRelationAggregateInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersOrderByRelationAggregateInput
+  workflow_engagements?: Prisma.workflow_engagementsOrderByRelationAggregateInput
+  workflow_instances?: Prisma.workflow_instancesOrderByRelationAggregateInput
+  workflow_project_instances?: Prisma.workflow_project_instancesOrderByRelationAggregateInput
+  workflow_project_settings?: Prisma.workflow_project_settingsOrderByWithRelationInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueOrderByRelationAggregateInput
 }
 
 export type CompanyWhereUniqueInput = Prisma.AtLeast<{
@@ -678,24 +690,30 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Company"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"Company"> | string | null
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
-  formerNames?: Prisma.CompanyFormerNameListRelationFilter
-  addresses?: Prisma.CompanyAddressListRelationFilter
-  officers?: Prisma.CompanyOfficerListRelationFilter
-  shareholders?: Prisma.CompanyShareholderListRelationFilter
-  shareCapital?: Prisma.ShareCapitalListRelationFilter
-  charges?: Prisma.CompanyChargeListRelationFilter
-  documents?: Prisma.DocumentListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
-  contacts?: Prisma.CompanyContactListRelationFilter
-  roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
-  userAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
-  noteTabs?: Prisma.NoteTabListRelationFilter
-  generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
-  documentTags?: Prisma.DocumentTagListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
+  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  addresses?: Prisma.CompanyAddressListRelationFilter
+  charges?: Prisma.CompanyChargeListRelationFilter
+  contacts?: Prisma.CompanyContactListRelationFilter
+  formerNames?: Prisma.CompanyFormerNameListRelationFilter
+  officers?: Prisma.CompanyOfficerListRelationFilter
+  shareholders?: Prisma.CompanyShareholderListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
+  documentTags?: Prisma.DocumentTagListRelationFilter
+  documents?: Prisma.DocumentListRelationFilter
+  generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
+  noteTabs?: Prisma.NoteTabListRelationFilter
+  shareCapital?: Prisma.ShareCapitalListRelationFilter
+  userAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
+  roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
+  workflow_client_group_members?: Prisma.Workflow_client_group_membersListRelationFilter
+  workflow_engagements?: Prisma.Workflow_engagementsListRelationFilter
+  workflow_instances?: Prisma.Workflow_instancesListRelationFilter
+  workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
+  workflow_project_settings?: Prisma.XOR<Prisma.Workflow_project_settingsNullableScalarRelationFilter, Prisma.workflow_project_settingsWhereInput> | null
+  workflow_scheduled_instances_queue?: Prisma.Workflow_scheduled_instances_queueListRelationFilter
 }, "id" | "tenantId_uen">
 
 export type CompanyOrderByWithAggregationInput = {
@@ -844,24 +862,30 @@ export type CompanyCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateInput = {
@@ -909,23 +933,29 @@ export type CompanyUncheckedCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUpdateInput = {
@@ -972,24 +1002,30 @@ export type CompanyUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateInput = {
@@ -1037,23 +1073,29 @@ export type CompanyUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateManyInput = {
@@ -1698,6 +1740,90 @@ export type CompanyUpdateOneRequiredWithoutAccountMappingsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutAccountMappingsInput, Prisma.CompanyUpdateWithoutAccountMappingsInput>, Prisma.CompanyUncheckedUpdateWithoutAccountMappingsInput>
 }
 
+export type CompanyCreateNestedOneWithoutWorkflow_client_group_membersInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_client_group_membersInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutWorkflow_client_group_membersNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_client_group_membersInput
+  upsert?: Prisma.CompanyUpsertWithoutWorkflow_client_group_membersInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_client_group_membersInput, Prisma.CompanyUpdateWithoutWorkflow_client_group_membersInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput>
+}
+
+export type CompanyCreateNestedOneWithoutWorkflow_engagementsInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_engagementsInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_engagementsInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutWorkflow_engagementsNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_engagementsInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_engagementsInput
+  upsert?: Prisma.CompanyUpsertWithoutWorkflow_engagementsInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_engagementsInput, Prisma.CompanyUpdateWithoutWorkflow_engagementsInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_engagementsInput>
+}
+
+export type CompanyCreateNestedOneWithoutWorkflow_instancesInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_instancesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_instancesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutWorkflow_instancesNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_instancesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_instancesInput
+  upsert?: Prisma.CompanyUpsertWithoutWorkflow_instancesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_instancesInput, Prisma.CompanyUpdateWithoutWorkflow_instancesInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_instancesInput>
+}
+
+export type CompanyCreateNestedOneWithoutWorkflow_project_instancesInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_instancesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_project_instancesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_instancesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_project_instancesInput
+  upsert?: Prisma.CompanyUpsertWithoutWorkflow_project_instancesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_project_instancesInput, Prisma.CompanyUpdateWithoutWorkflow_project_instancesInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput>
+}
+
+export type CompanyCreateNestedOneWithoutWorkflow_project_settingsInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_settingsInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_project_settingsInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutWorkflow_project_settingsNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_settingsInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_project_settingsInput
+  upsert?: Prisma.CompanyUpsertWithoutWorkflow_project_settingsInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_project_settingsInput, Prisma.CompanyUpdateWithoutWorkflow_project_settingsInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput>
+}
+
+export type CompanyCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput
+  upsert?: Prisma.CompanyUpsertWithoutWorkflow_scheduled_instances_queueInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
+}
+
 export type CompanyCreateWithoutTenantInput = {
   id?: string
   uen: string
@@ -1742,23 +1868,29 @@ export type CompanyCreateWithoutTenantInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutTenantInput = {
@@ -1805,23 +1937,29 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutTenantInput = {
@@ -1944,23 +2082,29 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -2008,22 +2152,28 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -2086,23 +2236,29 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -2150,22 +2306,28 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutUserAssignmentsInput = {
@@ -2212,23 +2374,29 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
@@ -2276,22 +2444,28 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutUserAssignmentsInput = {
@@ -2354,23 +2528,29 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
@@ -2418,22 +2598,28 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutFormerNamesInput = {
@@ -2480,23 +2666,29 @@ export type CompanyCreateWithoutFormerNamesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutFormerNamesInput = {
@@ -2544,22 +2736,28 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutFormerNamesInput = {
@@ -2622,23 +2820,29 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
@@ -2686,22 +2890,28 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutAddressesInput = {
@@ -2748,23 +2958,29 @@ export type CompanyCreateWithoutAddressesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutAddressesInput = {
@@ -2812,22 +3028,28 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutAddressesInput = {
@@ -2890,23 +3112,29 @@ export type CompanyUpdateWithoutAddressesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAddressesInput = {
@@ -2954,22 +3182,28 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutContactsInput = {
@@ -3016,23 +3250,29 @@ export type CompanyCreateWithoutContactsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutContactsInput = {
@@ -3080,22 +3320,28 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutContactsInput = {
@@ -3158,23 +3404,29 @@ export type CompanyUpdateWithoutContactsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactsInput = {
@@ -3222,22 +3474,28 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutContactDetailsInput = {
@@ -3284,23 +3542,29 @@ export type CompanyCreateWithoutContactDetailsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutContactDetailsInput = {
@@ -3348,22 +3612,28 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutContactDetailsInput = {
@@ -3426,23 +3696,29 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
@@ -3490,22 +3766,28 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutOfficersInput = {
@@ -3552,23 +3834,29 @@ export type CompanyCreateWithoutOfficersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutOfficersInput = {
@@ -3616,22 +3904,28 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutOfficersInput = {
@@ -3694,23 +3988,29 @@ export type CompanyUpdateWithoutOfficersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutOfficersInput = {
@@ -3758,22 +4058,28 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutShareCapitalInput = {
@@ -3820,23 +4126,29 @@ export type CompanyCreateWithoutShareCapitalInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutShareCapitalInput = {
@@ -3884,22 +4196,28 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutShareCapitalInput = {
@@ -3962,23 +4280,29 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
@@ -4026,22 +4350,28 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutShareholdersInput = {
@@ -4088,23 +4418,29 @@ export type CompanyCreateWithoutShareholdersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutShareholdersInput = {
@@ -4152,22 +4488,28 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutShareholdersInput = {
@@ -4230,23 +4572,29 @@ export type CompanyUpdateWithoutShareholdersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareholdersInput = {
@@ -4294,22 +4642,28 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutChargesInput = {
@@ -4356,23 +4710,29 @@ export type CompanyCreateWithoutChargesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutChargesInput = {
@@ -4420,22 +4780,28 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutChargesInput = {
@@ -4498,23 +4864,29 @@ export type CompanyUpdateWithoutChargesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChargesInput = {
@@ -4562,22 +4934,28 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutDocumentsInput = {
@@ -4624,23 +5002,29 @@ export type CompanyCreateWithoutDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentsInput = {
@@ -4688,22 +5072,28 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentsInput = {
@@ -4766,23 +5156,29 @@ export type CompanyUpdateWithoutDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentsInput = {
@@ -4830,22 +5226,28 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutAuditLogsInput = {
@@ -4892,23 +5294,29 @@ export type CompanyCreateWithoutAuditLogsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditLogsInput = {
@@ -4956,22 +5364,28 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditLogsInput = {
@@ -5034,23 +5448,29 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
@@ -5098,22 +5518,28 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutNoteTabsInput = {
@@ -5160,23 +5586,29 @@ export type CompanyCreateWithoutNoteTabsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutNoteTabsInput = {
@@ -5224,22 +5656,28 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutNoteTabsInput = {
@@ -5302,23 +5740,29 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
@@ -5366,22 +5810,28 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutGeneratedDocumentsInput = {
@@ -5428,23 +5878,29 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -5492,22 +5948,28 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -5570,23 +6032,29 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -5634,22 +6102,28 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutDocumentTagsInput = {
@@ -5696,23 +6170,29 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
@@ -5760,22 +6240,28 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentTagsInput = {
@@ -5838,23 +6324,29 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
@@ -5902,22 +6394,28 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutChartOfAccountsInput = {
@@ -5964,23 +6462,29 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
@@ -6028,22 +6532,28 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutChartOfAccountsInput = {
@@ -6106,23 +6616,29 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -6170,22 +6686,28 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateWithoutAccountMappingsInput = {
@@ -6232,23 +6754,29 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
@@ -6296,22 +6824,28 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
 }
 
 export type CompanyCreateOrConnectWithoutAccountMappingsInput = {
@@ -6374,23 +6908,29 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
@@ -6438,22 +6978,1780 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyCreateWithoutWorkflow_client_group_membersInput = {
+  id?: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyCreateOrConnectWithoutWorkflow_client_group_membersInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput>
+}
+
+export type CompanyUpsertWithoutWorkflow_client_group_membersInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutWorkflow_client_group_membersInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput>
+}
+
+export type CompanyUpdateWithoutWorkflow_client_group_membersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyCreateWithoutWorkflow_engagementsInput = {
+  id?: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyUncheckedCreateWithoutWorkflow_engagementsInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyCreateOrConnectWithoutWorkflow_engagementsInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_engagementsInput>
+}
+
+export type CompanyUpsertWithoutWorkflow_engagementsInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_engagementsInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_engagementsInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutWorkflow_engagementsInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_engagementsInput>
+}
+
+export type CompanyUpdateWithoutWorkflow_engagementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutWorkflow_engagementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyCreateWithoutWorkflow_instancesInput = {
+  id?: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyUncheckedCreateWithoutWorkflow_instancesInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyCreateOrConnectWithoutWorkflow_instancesInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_instancesInput>
+}
+
+export type CompanyUpsertWithoutWorkflow_instancesInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_instancesInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_instancesInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutWorkflow_instancesInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_instancesInput>
+}
+
+export type CompanyUpdateWithoutWorkflow_instancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutWorkflow_instancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyCreateWithoutWorkflow_project_instancesInput = {
+  id?: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyUncheckedCreateWithoutWorkflow_project_instancesInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyCreateOrConnectWithoutWorkflow_project_instancesInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_instancesInput>
+}
+
+export type CompanyUpsertWithoutWorkflow_project_instancesInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_instancesInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutWorkflow_project_instancesInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput>
+}
+
+export type CompanyUpdateWithoutWorkflow_project_instancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyCreateWithoutWorkflow_project_settingsInput = {
+  id?: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyUncheckedCreateWithoutWorkflow_project_settingsInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyCreateOrConnectWithoutWorkflow_project_settingsInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_settingsInput>
+}
+
+export type CompanyUpsertWithoutWorkflow_project_settingsInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_settingsInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutWorkflow_project_settingsInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput>
+}
+
+export type CompanyUpdateWithoutWorkflow_project_settingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyCreateWithoutWorkflow_scheduled_instances_queueInput = {
+  id?: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+}
+
+export type CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+}
+
+export type CompanyCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+}
+
+export type CompanyUpsertWithoutWorkflow_scheduled_instances_queueInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutWorkflow_scheduled_instances_queueInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
+}
+
+export type CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
 }
 
 export type CompanyCreateManyTenantInput = {
@@ -6546,23 +8844,29 @@ export type CompanyUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTenantInput = {
@@ -6609,23 +8913,29 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
 }
 
 export type CompanyUncheckedUpdateManyWithoutTenantInput = {
@@ -6680,43 +8990,53 @@ export type CompanyUncheckedUpdateManyWithoutTenantInput = {
  */
 
 export type CompanyCountOutputType = {
-  formerNames: number
-  addresses: number
-  officers: number
-  shareholders: number
-  shareCapital: number
-  charges: number
-  documents: number
   auditLogs: number
-  contacts: number
-  roleAssignments: number
-  userAssignments: number
-  noteTabs: number
-  generatedDocuments: number
-  documentTags: number
   chartOfAccounts: number
   accountMappings: number
+  addresses: number
+  charges: number
+  contacts: number
+  formerNames: number
+  officers: number
+  shareholders: number
   contactDetails: number
+  documentTags: number
+  documents: number
+  generatedDocuments: number
+  noteTabs: number
+  shareCapital: number
+  userAssignments: number
+  roleAssignments: number
+  workflow_client_group_members: number
+  workflow_engagements: number
+  workflow_instances: number
+  workflow_project_instances: number
+  workflow_scheduled_instances_queue: number
 }
 
 export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  formerNames?: boolean | CompanyCountOutputTypeCountFormerNamesArgs
-  addresses?: boolean | CompanyCountOutputTypeCountAddressesArgs
-  officers?: boolean | CompanyCountOutputTypeCountOfficersArgs
-  shareholders?: boolean | CompanyCountOutputTypeCountShareholdersArgs
-  shareCapital?: boolean | CompanyCountOutputTypeCountShareCapitalArgs
-  charges?: boolean | CompanyCountOutputTypeCountChargesArgs
-  documents?: boolean | CompanyCountOutputTypeCountDocumentsArgs
   auditLogs?: boolean | CompanyCountOutputTypeCountAuditLogsArgs
-  contacts?: boolean | CompanyCountOutputTypeCountContactsArgs
-  roleAssignments?: boolean | CompanyCountOutputTypeCountRoleAssignmentsArgs
-  userAssignments?: boolean | CompanyCountOutputTypeCountUserAssignmentsArgs
-  noteTabs?: boolean | CompanyCountOutputTypeCountNoteTabsArgs
-  generatedDocuments?: boolean | CompanyCountOutputTypeCountGeneratedDocumentsArgs
-  documentTags?: boolean | CompanyCountOutputTypeCountDocumentTagsArgs
   chartOfAccounts?: boolean | CompanyCountOutputTypeCountChartOfAccountsArgs
   accountMappings?: boolean | CompanyCountOutputTypeCountAccountMappingsArgs
+  addresses?: boolean | CompanyCountOutputTypeCountAddressesArgs
+  charges?: boolean | CompanyCountOutputTypeCountChargesArgs
+  contacts?: boolean | CompanyCountOutputTypeCountContactsArgs
+  formerNames?: boolean | CompanyCountOutputTypeCountFormerNamesArgs
+  officers?: boolean | CompanyCountOutputTypeCountOfficersArgs
+  shareholders?: boolean | CompanyCountOutputTypeCountShareholdersArgs
   contactDetails?: boolean | CompanyCountOutputTypeCountContactDetailsArgs
+  documentTags?: boolean | CompanyCountOutputTypeCountDocumentTagsArgs
+  documents?: boolean | CompanyCountOutputTypeCountDocumentsArgs
+  generatedDocuments?: boolean | CompanyCountOutputTypeCountGeneratedDocumentsArgs
+  noteTabs?: boolean | CompanyCountOutputTypeCountNoteTabsArgs
+  shareCapital?: boolean | CompanyCountOutputTypeCountShareCapitalArgs
+  userAssignments?: boolean | CompanyCountOutputTypeCountUserAssignmentsArgs
+  roleAssignments?: boolean | CompanyCountOutputTypeCountRoleAssignmentsArgs
+  workflow_client_group_members?: boolean | CompanyCountOutputTypeCountWorkflow_client_group_membersArgs
+  workflow_engagements?: boolean | CompanyCountOutputTypeCountWorkflow_engagementsArgs
+  workflow_instances?: boolean | CompanyCountOutputTypeCountWorkflow_instancesArgs
+  workflow_project_instances?: boolean | CompanyCountOutputTypeCountWorkflow_project_instancesArgs
+  workflow_scheduled_instances_queue?: boolean | CompanyCountOutputTypeCountWorkflow_scheduled_instances_queueArgs
 }
 
 /**
@@ -6732,99 +9052,8 @@ export type CompanyCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exte
 /**
  * CompanyCountOutputType without action
  */
-export type CompanyCountOutputTypeCountFormerNamesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CompanyFormerNameWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountAddressesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CompanyAddressWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountOfficersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CompanyOfficerWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountShareholdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CompanyShareholderWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountShareCapitalArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ShareCapitalWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountChargesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CompanyChargeWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
 export type CompanyCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AuditLogWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountContactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CompanyContactWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountRoleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.UserRoleAssignmentWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountUserAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.UserCompanyAssignmentWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountNoteTabsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.NoteTabWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountGeneratedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.GeneratedDocumentWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountDocumentTagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentTagWhereInput
 }
 
 /**
@@ -6844,8 +9073,134 @@ export type CompanyCountOutputTypeCountAccountMappingsArgs<ExtArgs extends runti
 /**
  * CompanyCountOutputType without action
  */
+export type CompanyCountOutputTypeCountAddressesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanyAddressWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountChargesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanyChargeWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountContactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanyContactWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountFormerNamesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanyFormerNameWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountOfficersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanyOfficerWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountShareholdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanyShareholderWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
 export type CompanyCountOutputTypeCountContactDetailsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ContactDetailWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountDocumentTagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentTagWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountGeneratedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.GeneratedDocumentWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountNoteTabsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NoteTabWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountShareCapitalArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ShareCapitalWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountUserAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserCompanyAssignmentWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountRoleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserRoleAssignmentWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountWorkflow_client_group_membersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_client_group_membersWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountWorkflow_engagementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_engagementsWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountWorkflow_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_instancesWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountWorkflow_project_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_project_instancesWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountWorkflow_scheduled_instances_queueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_scheduled_instances_queueWhereInput
 }
 
 
@@ -6894,24 +9249,30 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   updatedAt?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
-  formerNames?: boolean | Prisma.Company$formerNamesArgs<ExtArgs>
-  addresses?: boolean | Prisma.Company$addressesArgs<ExtArgs>
-  officers?: boolean | Prisma.Company$officersArgs<ExtArgs>
-  shareholders?: boolean | Prisma.Company$shareholdersArgs<ExtArgs>
-  shareCapital?: boolean | Prisma.Company$shareCapitalArgs<ExtArgs>
-  charges?: boolean | Prisma.Company$chargesArgs<ExtArgs>
-  documents?: boolean | Prisma.Company$documentsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.Company$auditLogsArgs<ExtArgs>
-  contacts?: boolean | Prisma.Company$contactsArgs<ExtArgs>
-  roleAssignments?: boolean | Prisma.Company$roleAssignmentsArgs<ExtArgs>
-  userAssignments?: boolean | Prisma.Company$userAssignmentsArgs<ExtArgs>
-  noteTabs?: boolean | Prisma.Company$noteTabsArgs<ExtArgs>
-  generatedDocuments?: boolean | Prisma.Company$generatedDocumentsArgs<ExtArgs>
-  documentTags?: boolean | Prisma.Company$documentTagsArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
   accountMappings?: boolean | Prisma.Company$accountMappingsArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  addresses?: boolean | Prisma.Company$addressesArgs<ExtArgs>
+  charges?: boolean | Prisma.Company$chargesArgs<ExtArgs>
+  contacts?: boolean | Prisma.Company$contactsArgs<ExtArgs>
+  formerNames?: boolean | Prisma.Company$formerNamesArgs<ExtArgs>
+  officers?: boolean | Prisma.Company$officersArgs<ExtArgs>
+  shareholders?: boolean | Prisma.Company$shareholdersArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Company$contactDetailsArgs<ExtArgs>
+  documentTags?: boolean | Prisma.Company$documentTagsArgs<ExtArgs>
+  documents?: boolean | Prisma.Company$documentsArgs<ExtArgs>
+  generatedDocuments?: boolean | Prisma.Company$generatedDocumentsArgs<ExtArgs>
+  noteTabs?: boolean | Prisma.Company$noteTabsArgs<ExtArgs>
+  shareCapital?: boolean | Prisma.Company$shareCapitalArgs<ExtArgs>
+  userAssignments?: boolean | Prisma.Company$userAssignmentsArgs<ExtArgs>
+  roleAssignments?: boolean | Prisma.Company$roleAssignmentsArgs<ExtArgs>
+  workflow_client_group_members?: boolean | Prisma.Company$workflow_client_group_membersArgs<ExtArgs>
+  workflow_engagements?: boolean | Prisma.Company$workflow_engagementsArgs<ExtArgs>
+  workflow_instances?: boolean | Prisma.Company$workflow_instancesArgs<ExtArgs>
+  workflow_project_instances?: boolean | Prisma.Company$workflow_project_instancesArgs<ExtArgs>
+  workflow_project_settings?: boolean | Prisma.Company$workflow_project_settingsArgs<ExtArgs>
+  workflow_scheduled_instances_queue?: boolean | Prisma.Company$workflow_scheduled_instances_queueArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -7060,24 +9421,30 @@ export type CompanySelectScalar = {
 
 export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["company"]>
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
-  formerNames?: boolean | Prisma.Company$formerNamesArgs<ExtArgs>
-  addresses?: boolean | Prisma.Company$addressesArgs<ExtArgs>
-  officers?: boolean | Prisma.Company$officersArgs<ExtArgs>
-  shareholders?: boolean | Prisma.Company$shareholdersArgs<ExtArgs>
-  shareCapital?: boolean | Prisma.Company$shareCapitalArgs<ExtArgs>
-  charges?: boolean | Prisma.Company$chargesArgs<ExtArgs>
-  documents?: boolean | Prisma.Company$documentsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.Company$auditLogsArgs<ExtArgs>
-  contacts?: boolean | Prisma.Company$contactsArgs<ExtArgs>
-  roleAssignments?: boolean | Prisma.Company$roleAssignmentsArgs<ExtArgs>
-  userAssignments?: boolean | Prisma.Company$userAssignmentsArgs<ExtArgs>
-  noteTabs?: boolean | Prisma.Company$noteTabsArgs<ExtArgs>
-  generatedDocuments?: boolean | Prisma.Company$generatedDocumentsArgs<ExtArgs>
-  documentTags?: boolean | Prisma.Company$documentTagsArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
   accountMappings?: boolean | Prisma.Company$accountMappingsArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  addresses?: boolean | Prisma.Company$addressesArgs<ExtArgs>
+  charges?: boolean | Prisma.Company$chargesArgs<ExtArgs>
+  contacts?: boolean | Prisma.Company$contactsArgs<ExtArgs>
+  formerNames?: boolean | Prisma.Company$formerNamesArgs<ExtArgs>
+  officers?: boolean | Prisma.Company$officersArgs<ExtArgs>
+  shareholders?: boolean | Prisma.Company$shareholdersArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Company$contactDetailsArgs<ExtArgs>
+  documentTags?: boolean | Prisma.Company$documentTagsArgs<ExtArgs>
+  documents?: boolean | Prisma.Company$documentsArgs<ExtArgs>
+  generatedDocuments?: boolean | Prisma.Company$generatedDocumentsArgs<ExtArgs>
+  noteTabs?: boolean | Prisma.Company$noteTabsArgs<ExtArgs>
+  shareCapital?: boolean | Prisma.Company$shareCapitalArgs<ExtArgs>
+  userAssignments?: boolean | Prisma.Company$userAssignmentsArgs<ExtArgs>
+  roleAssignments?: boolean | Prisma.Company$roleAssignmentsArgs<ExtArgs>
+  workflow_client_group_members?: boolean | Prisma.Company$workflow_client_group_membersArgs<ExtArgs>
+  workflow_engagements?: boolean | Prisma.Company$workflow_engagementsArgs<ExtArgs>
+  workflow_instances?: boolean | Prisma.Company$workflow_instancesArgs<ExtArgs>
+  workflow_project_instances?: boolean | Prisma.Company$workflow_project_instancesArgs<ExtArgs>
+  workflow_project_settings?: boolean | Prisma.Company$workflow_project_settingsArgs<ExtArgs>
+  workflow_scheduled_instances_queue?: boolean | Prisma.Company$workflow_scheduled_instances_queueArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -7090,24 +9457,30 @@ export type CompanyIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
 export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Company"
   objects: {
-    tenant: Prisma.$TenantPayload<ExtArgs>
-    formerNames: Prisma.$CompanyFormerNamePayload<ExtArgs>[]
-    addresses: Prisma.$CompanyAddressPayload<ExtArgs>[]
-    officers: Prisma.$CompanyOfficerPayload<ExtArgs>[]
-    shareholders: Prisma.$CompanyShareholderPayload<ExtArgs>[]
-    shareCapital: Prisma.$ShareCapitalPayload<ExtArgs>[]
-    charges: Prisma.$CompanyChargePayload<ExtArgs>[]
-    documents: Prisma.$DocumentPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
-    contacts: Prisma.$CompanyContactPayload<ExtArgs>[]
-    roleAssignments: Prisma.$UserRoleAssignmentPayload<ExtArgs>[]
-    userAssignments: Prisma.$UserCompanyAssignmentPayload<ExtArgs>[]
-    noteTabs: Prisma.$NoteTabPayload<ExtArgs>[]
-    generatedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
-    documentTags: Prisma.$DocumentTagPayload<ExtArgs>[]
     chartOfAccounts: Prisma.$ChartOfAccountPayload<ExtArgs>[]
     accountMappings: Prisma.$ChartOfAccountsMappingPayload<ExtArgs>[]
+    tenant: Prisma.$TenantPayload<ExtArgs>
+    addresses: Prisma.$CompanyAddressPayload<ExtArgs>[]
+    charges: Prisma.$CompanyChargePayload<ExtArgs>[]
+    contacts: Prisma.$CompanyContactPayload<ExtArgs>[]
+    formerNames: Prisma.$CompanyFormerNamePayload<ExtArgs>[]
+    officers: Prisma.$CompanyOfficerPayload<ExtArgs>[]
+    shareholders: Prisma.$CompanyShareholderPayload<ExtArgs>[]
     contactDetails: Prisma.$ContactDetailPayload<ExtArgs>[]
+    documentTags: Prisma.$DocumentTagPayload<ExtArgs>[]
+    documents: Prisma.$DocumentPayload<ExtArgs>[]
+    generatedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
+    noteTabs: Prisma.$NoteTabPayload<ExtArgs>[]
+    shareCapital: Prisma.$ShareCapitalPayload<ExtArgs>[]
+    userAssignments: Prisma.$UserCompanyAssignmentPayload<ExtArgs>[]
+    roleAssignments: Prisma.$UserRoleAssignmentPayload<ExtArgs>[]
+    workflow_client_group_members: Prisma.$workflow_client_group_membersPayload<ExtArgs>[]
+    workflow_engagements: Prisma.$workflow_engagementsPayload<ExtArgs>[]
+    workflow_instances: Prisma.$workflow_instancesPayload<ExtArgs>[]
+    workflow_project_instances: Prisma.$workflow_project_instancesPayload<ExtArgs>[]
+    workflow_project_settings: Prisma.$workflow_project_settingsPayload<ExtArgs> | null
+    workflow_scheduled_instances_queue: Prisma.$workflow_scheduled_instances_queuePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -7548,24 +9921,30 @@ readonly fields: CompanyFieldRefs;
  */
 export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  formerNames<T extends Prisma.Company$formerNamesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$formerNamesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyFormerNamePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  addresses<T extends Prisma.Company$addressesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$addressesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyAddressPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  officers<T extends Prisma.Company$officersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$officersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyOfficerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  shareholders<T extends Prisma.Company$shareholdersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$shareholdersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyShareholderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  shareCapital<T extends Prisma.Company$shareCapitalArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$shareCapitalArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShareCapitalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  charges<T extends Prisma.Company$chargesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$chargesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyChargePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  documents<T extends Prisma.Company$documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.Company$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  contacts<T extends Prisma.Company$contactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$contactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyContactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  roleAssignments<T extends Prisma.Company$roleAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$roleAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserRoleAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  userAssignments<T extends Prisma.Company$userAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$userAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserCompanyAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  noteTabs<T extends Prisma.Company$noteTabsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$noteTabsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NoteTabPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  generatedDocuments<T extends Prisma.Company$generatedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$generatedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  documentTags<T extends Prisma.Company$documentTagsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$documentTagsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentTagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   chartOfAccounts<T extends Prisma.Company$chartOfAccountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$chartOfAccountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   accountMappings<T extends Prisma.Company$accountMappingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$accountMappingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountsMappingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  addresses<T extends Prisma.Company$addressesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$addressesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyAddressPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  charges<T extends Prisma.Company$chargesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$chargesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyChargePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  contacts<T extends Prisma.Company$contactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$contactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyContactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  formerNames<T extends Prisma.Company$formerNamesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$formerNamesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyFormerNamePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  officers<T extends Prisma.Company$officersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$officersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyOfficerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  shareholders<T extends Prisma.Company$shareholdersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$shareholdersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyShareholderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   contactDetails<T extends Prisma.Company$contactDetailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$contactDetailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  documentTags<T extends Prisma.Company$documentTagsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$documentTagsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentTagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  documents<T extends Prisma.Company$documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  generatedDocuments<T extends Prisma.Company$generatedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$generatedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  noteTabs<T extends Prisma.Company$noteTabsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$noteTabsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NoteTabPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  shareCapital<T extends Prisma.Company$shareCapitalArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$shareCapitalArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShareCapitalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  userAssignments<T extends Prisma.Company$userAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$userAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserCompanyAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  roleAssignments<T extends Prisma.Company$roleAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$roleAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserRoleAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_client_group_members<T extends Prisma.Company$workflow_client_group_membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_client_group_membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_client_group_membersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_engagements<T extends Prisma.Company$workflow_engagementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_engagementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_engagementsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_instances<T extends Prisma.Company$workflow_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_project_instances<T extends Prisma.Company$workflow_project_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_project_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_project_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_project_settings<T extends Prisma.Company$workflow_project_settingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_project_settingsArgs<ExtArgs>>): Prisma.Prisma__workflow_project_settingsClient<runtime.Types.Result.GetResult<Prisma.$workflow_project_settingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  workflow_scheduled_instances_queue<T extends Prisma.Company$workflow_scheduled_instances_queueArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_scheduled_instances_queueArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_scheduled_instances_queuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8035,174 +10414,6 @@ export type CompanyDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
 }
 
 /**
- * Company.formerNames
- */
-export type Company$formerNamesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CompanyFormerName
-   */
-  select?: Prisma.CompanyFormerNameSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CompanyFormerName
-   */
-  omit?: Prisma.CompanyFormerNameOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CompanyFormerNameInclude<ExtArgs> | null
-  where?: Prisma.CompanyFormerNameWhereInput
-  orderBy?: Prisma.CompanyFormerNameOrderByWithRelationInput | Prisma.CompanyFormerNameOrderByWithRelationInput[]
-  cursor?: Prisma.CompanyFormerNameWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CompanyFormerNameScalarFieldEnum | Prisma.CompanyFormerNameScalarFieldEnum[]
-}
-
-/**
- * Company.addresses
- */
-export type Company$addressesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CompanyAddress
-   */
-  select?: Prisma.CompanyAddressSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CompanyAddress
-   */
-  omit?: Prisma.CompanyAddressOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CompanyAddressInclude<ExtArgs> | null
-  where?: Prisma.CompanyAddressWhereInput
-  orderBy?: Prisma.CompanyAddressOrderByWithRelationInput | Prisma.CompanyAddressOrderByWithRelationInput[]
-  cursor?: Prisma.CompanyAddressWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CompanyAddressScalarFieldEnum | Prisma.CompanyAddressScalarFieldEnum[]
-}
-
-/**
- * Company.officers
- */
-export type Company$officersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CompanyOfficer
-   */
-  select?: Prisma.CompanyOfficerSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CompanyOfficer
-   */
-  omit?: Prisma.CompanyOfficerOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CompanyOfficerInclude<ExtArgs> | null
-  where?: Prisma.CompanyOfficerWhereInput
-  orderBy?: Prisma.CompanyOfficerOrderByWithRelationInput | Prisma.CompanyOfficerOrderByWithRelationInput[]
-  cursor?: Prisma.CompanyOfficerWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CompanyOfficerScalarFieldEnum | Prisma.CompanyOfficerScalarFieldEnum[]
-}
-
-/**
- * Company.shareholders
- */
-export type Company$shareholdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CompanyShareholder
-   */
-  select?: Prisma.CompanyShareholderSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CompanyShareholder
-   */
-  omit?: Prisma.CompanyShareholderOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CompanyShareholderInclude<ExtArgs> | null
-  where?: Prisma.CompanyShareholderWhereInput
-  orderBy?: Prisma.CompanyShareholderOrderByWithRelationInput | Prisma.CompanyShareholderOrderByWithRelationInput[]
-  cursor?: Prisma.CompanyShareholderWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CompanyShareholderScalarFieldEnum | Prisma.CompanyShareholderScalarFieldEnum[]
-}
-
-/**
- * Company.shareCapital
- */
-export type Company$shareCapitalArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ShareCapital
-   */
-  select?: Prisma.ShareCapitalSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ShareCapital
-   */
-  omit?: Prisma.ShareCapitalOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ShareCapitalInclude<ExtArgs> | null
-  where?: Prisma.ShareCapitalWhereInput
-  orderBy?: Prisma.ShareCapitalOrderByWithRelationInput | Prisma.ShareCapitalOrderByWithRelationInput[]
-  cursor?: Prisma.ShareCapitalWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ShareCapitalScalarFieldEnum | Prisma.ShareCapitalScalarFieldEnum[]
-}
-
-/**
- * Company.charges
- */
-export type Company$chargesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CompanyCharge
-   */
-  select?: Prisma.CompanyChargeSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CompanyCharge
-   */
-  omit?: Prisma.CompanyChargeOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CompanyChargeInclude<ExtArgs> | null
-  where?: Prisma.CompanyChargeWhereInput
-  orderBy?: Prisma.CompanyChargeOrderByWithRelationInput | Prisma.CompanyChargeOrderByWithRelationInput[]
-  cursor?: Prisma.CompanyChargeWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CompanyChargeScalarFieldEnum | Prisma.CompanyChargeScalarFieldEnum[]
-}
-
-/**
- * Company.documents
- */
-export type Company$documentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Document
-   */
-  select?: Prisma.DocumentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Document
-   */
-  omit?: Prisma.DocumentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentInclude<ExtArgs> | null
-  where?: Prisma.DocumentWhereInput
-  orderBy?: Prisma.DocumentOrderByWithRelationInput | Prisma.DocumentOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentScalarFieldEnum | Prisma.DocumentScalarFieldEnum[]
-}
-
-/**
  * Company.auditLogs
  */
 export type Company$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -8224,150 +10435,6 @@ export type Company$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.AuditLogScalarFieldEnum | Prisma.AuditLogScalarFieldEnum[]
-}
-
-/**
- * Company.contacts
- */
-export type Company$contactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CompanyContact
-   */
-  select?: Prisma.CompanyContactSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CompanyContact
-   */
-  omit?: Prisma.CompanyContactOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CompanyContactInclude<ExtArgs> | null
-  where?: Prisma.CompanyContactWhereInput
-  orderBy?: Prisma.CompanyContactOrderByWithRelationInput | Prisma.CompanyContactOrderByWithRelationInput[]
-  cursor?: Prisma.CompanyContactWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CompanyContactScalarFieldEnum | Prisma.CompanyContactScalarFieldEnum[]
-}
-
-/**
- * Company.roleAssignments
- */
-export type Company$roleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the UserRoleAssignment
-   */
-  select?: Prisma.UserRoleAssignmentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the UserRoleAssignment
-   */
-  omit?: Prisma.UserRoleAssignmentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.UserRoleAssignmentInclude<ExtArgs> | null
-  where?: Prisma.UserRoleAssignmentWhereInput
-  orderBy?: Prisma.UserRoleAssignmentOrderByWithRelationInput | Prisma.UserRoleAssignmentOrderByWithRelationInput[]
-  cursor?: Prisma.UserRoleAssignmentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.UserRoleAssignmentScalarFieldEnum | Prisma.UserRoleAssignmentScalarFieldEnum[]
-}
-
-/**
- * Company.userAssignments
- */
-export type Company$userAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the UserCompanyAssignment
-   */
-  select?: Prisma.UserCompanyAssignmentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the UserCompanyAssignment
-   */
-  omit?: Prisma.UserCompanyAssignmentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.UserCompanyAssignmentInclude<ExtArgs> | null
-  where?: Prisma.UserCompanyAssignmentWhereInput
-  orderBy?: Prisma.UserCompanyAssignmentOrderByWithRelationInput | Prisma.UserCompanyAssignmentOrderByWithRelationInput[]
-  cursor?: Prisma.UserCompanyAssignmentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.UserCompanyAssignmentScalarFieldEnum | Prisma.UserCompanyAssignmentScalarFieldEnum[]
-}
-
-/**
- * Company.noteTabs
- */
-export type Company$noteTabsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the NoteTab
-   */
-  select?: Prisma.NoteTabSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the NoteTab
-   */
-  omit?: Prisma.NoteTabOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.NoteTabInclude<ExtArgs> | null
-  where?: Prisma.NoteTabWhereInput
-  orderBy?: Prisma.NoteTabOrderByWithRelationInput | Prisma.NoteTabOrderByWithRelationInput[]
-  cursor?: Prisma.NoteTabWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.NoteTabScalarFieldEnum | Prisma.NoteTabScalarFieldEnum[]
-}
-
-/**
- * Company.generatedDocuments
- */
-export type Company$generatedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the GeneratedDocument
-   */
-  select?: Prisma.GeneratedDocumentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the GeneratedDocument
-   */
-  omit?: Prisma.GeneratedDocumentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.GeneratedDocumentInclude<ExtArgs> | null
-  where?: Prisma.GeneratedDocumentWhereInput
-  orderBy?: Prisma.GeneratedDocumentOrderByWithRelationInput | Prisma.GeneratedDocumentOrderByWithRelationInput[]
-  cursor?: Prisma.GeneratedDocumentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.GeneratedDocumentScalarFieldEnum | Prisma.GeneratedDocumentScalarFieldEnum[]
-}
-
-/**
- * Company.documentTags
- */
-export type Company$documentTagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentTag
-   */
-  select?: Prisma.DocumentTagSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentTag
-   */
-  omit?: Prisma.DocumentTagOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentTagInclude<ExtArgs> | null
-  where?: Prisma.DocumentTagWhereInput
-  orderBy?: Prisma.DocumentTagOrderByWithRelationInput | Prisma.DocumentTagOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentTagWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentTagScalarFieldEnum | Prisma.DocumentTagScalarFieldEnum[]
 }
 
 /**
@@ -8419,6 +10486,150 @@ export type Company$accountMappingsArgs<ExtArgs extends runtime.Types.Extensions
 }
 
 /**
+ * Company.addresses
+ */
+export type Company$addressesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanyAddress
+   */
+  select?: Prisma.CompanyAddressSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanyAddress
+   */
+  omit?: Prisma.CompanyAddressOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyAddressInclude<ExtArgs> | null
+  where?: Prisma.CompanyAddressWhereInput
+  orderBy?: Prisma.CompanyAddressOrderByWithRelationInput | Prisma.CompanyAddressOrderByWithRelationInput[]
+  cursor?: Prisma.CompanyAddressWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanyAddressScalarFieldEnum | Prisma.CompanyAddressScalarFieldEnum[]
+}
+
+/**
+ * Company.charges
+ */
+export type Company$chargesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanyCharge
+   */
+  select?: Prisma.CompanyChargeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanyCharge
+   */
+  omit?: Prisma.CompanyChargeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyChargeInclude<ExtArgs> | null
+  where?: Prisma.CompanyChargeWhereInput
+  orderBy?: Prisma.CompanyChargeOrderByWithRelationInput | Prisma.CompanyChargeOrderByWithRelationInput[]
+  cursor?: Prisma.CompanyChargeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanyChargeScalarFieldEnum | Prisma.CompanyChargeScalarFieldEnum[]
+}
+
+/**
+ * Company.contacts
+ */
+export type Company$contactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanyContact
+   */
+  select?: Prisma.CompanyContactSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanyContact
+   */
+  omit?: Prisma.CompanyContactOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyContactInclude<ExtArgs> | null
+  where?: Prisma.CompanyContactWhereInput
+  orderBy?: Prisma.CompanyContactOrderByWithRelationInput | Prisma.CompanyContactOrderByWithRelationInput[]
+  cursor?: Prisma.CompanyContactWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanyContactScalarFieldEnum | Prisma.CompanyContactScalarFieldEnum[]
+}
+
+/**
+ * Company.formerNames
+ */
+export type Company$formerNamesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanyFormerName
+   */
+  select?: Prisma.CompanyFormerNameSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanyFormerName
+   */
+  omit?: Prisma.CompanyFormerNameOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyFormerNameInclude<ExtArgs> | null
+  where?: Prisma.CompanyFormerNameWhereInput
+  orderBy?: Prisma.CompanyFormerNameOrderByWithRelationInput | Prisma.CompanyFormerNameOrderByWithRelationInput[]
+  cursor?: Prisma.CompanyFormerNameWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanyFormerNameScalarFieldEnum | Prisma.CompanyFormerNameScalarFieldEnum[]
+}
+
+/**
+ * Company.officers
+ */
+export type Company$officersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanyOfficer
+   */
+  select?: Prisma.CompanyOfficerSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanyOfficer
+   */
+  omit?: Prisma.CompanyOfficerOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyOfficerInclude<ExtArgs> | null
+  where?: Prisma.CompanyOfficerWhereInput
+  orderBy?: Prisma.CompanyOfficerOrderByWithRelationInput | Prisma.CompanyOfficerOrderByWithRelationInput[]
+  cursor?: Prisma.CompanyOfficerWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanyOfficerScalarFieldEnum | Prisma.CompanyOfficerScalarFieldEnum[]
+}
+
+/**
+ * Company.shareholders
+ */
+export type Company$shareholdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanyShareholder
+   */
+  select?: Prisma.CompanyShareholderSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanyShareholder
+   */
+  omit?: Prisma.CompanyShareholderOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyShareholderInclude<ExtArgs> | null
+  where?: Prisma.CompanyShareholderWhereInput
+  orderBy?: Prisma.CompanyShareholderOrderByWithRelationInput | Prisma.CompanyShareholderOrderByWithRelationInput[]
+  cursor?: Prisma.CompanyShareholderWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanyShareholderScalarFieldEnum | Prisma.CompanyShareholderScalarFieldEnum[]
+}
+
+/**
  * Company.contactDetails
  */
 export type Company$contactDetailsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -8440,6 +10651,313 @@ export type Company$contactDetailsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.ContactDetailScalarFieldEnum | Prisma.ContactDetailScalarFieldEnum[]
+}
+
+/**
+ * Company.documentTags
+ */
+export type Company$documentTagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentTag
+   */
+  select?: Prisma.DocumentTagSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentTag
+   */
+  omit?: Prisma.DocumentTagOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentTagInclude<ExtArgs> | null
+  where?: Prisma.DocumentTagWhereInput
+  orderBy?: Prisma.DocumentTagOrderByWithRelationInput | Prisma.DocumentTagOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentTagWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentTagScalarFieldEnum | Prisma.DocumentTagScalarFieldEnum[]
+}
+
+/**
+ * Company.documents
+ */
+export type Company$documentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Document
+   */
+  select?: Prisma.DocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Document
+   */
+  omit?: Prisma.DocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentInclude<ExtArgs> | null
+  where?: Prisma.DocumentWhereInput
+  orderBy?: Prisma.DocumentOrderByWithRelationInput | Prisma.DocumentOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentScalarFieldEnum | Prisma.DocumentScalarFieldEnum[]
+}
+
+/**
+ * Company.generatedDocuments
+ */
+export type Company$generatedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the GeneratedDocument
+   */
+  select?: Prisma.GeneratedDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the GeneratedDocument
+   */
+  omit?: Prisma.GeneratedDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.GeneratedDocumentInclude<ExtArgs> | null
+  where?: Prisma.GeneratedDocumentWhereInput
+  orderBy?: Prisma.GeneratedDocumentOrderByWithRelationInput | Prisma.GeneratedDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.GeneratedDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.GeneratedDocumentScalarFieldEnum | Prisma.GeneratedDocumentScalarFieldEnum[]
+}
+
+/**
+ * Company.noteTabs
+ */
+export type Company$noteTabsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NoteTab
+   */
+  select?: Prisma.NoteTabSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NoteTab
+   */
+  omit?: Prisma.NoteTabOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NoteTabInclude<ExtArgs> | null
+  where?: Prisma.NoteTabWhereInput
+  orderBy?: Prisma.NoteTabOrderByWithRelationInput | Prisma.NoteTabOrderByWithRelationInput[]
+  cursor?: Prisma.NoteTabWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NoteTabScalarFieldEnum | Prisma.NoteTabScalarFieldEnum[]
+}
+
+/**
+ * Company.shareCapital
+ */
+export type Company$shareCapitalArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ShareCapital
+   */
+  select?: Prisma.ShareCapitalSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ShareCapital
+   */
+  omit?: Prisma.ShareCapitalOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ShareCapitalInclude<ExtArgs> | null
+  where?: Prisma.ShareCapitalWhereInput
+  orderBy?: Prisma.ShareCapitalOrderByWithRelationInput | Prisma.ShareCapitalOrderByWithRelationInput[]
+  cursor?: Prisma.ShareCapitalWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ShareCapitalScalarFieldEnum | Prisma.ShareCapitalScalarFieldEnum[]
+}
+
+/**
+ * Company.userAssignments
+ */
+export type Company$userAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserCompanyAssignment
+   */
+  select?: Prisma.UserCompanyAssignmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserCompanyAssignment
+   */
+  omit?: Prisma.UserCompanyAssignmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserCompanyAssignmentInclude<ExtArgs> | null
+  where?: Prisma.UserCompanyAssignmentWhereInput
+  orderBy?: Prisma.UserCompanyAssignmentOrderByWithRelationInput | Prisma.UserCompanyAssignmentOrderByWithRelationInput[]
+  cursor?: Prisma.UserCompanyAssignmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserCompanyAssignmentScalarFieldEnum | Prisma.UserCompanyAssignmentScalarFieldEnum[]
+}
+
+/**
+ * Company.roleAssignments
+ */
+export type Company$roleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserRoleAssignment
+   */
+  select?: Prisma.UserRoleAssignmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserRoleAssignment
+   */
+  omit?: Prisma.UserRoleAssignmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserRoleAssignmentInclude<ExtArgs> | null
+  where?: Prisma.UserRoleAssignmentWhereInput
+  orderBy?: Prisma.UserRoleAssignmentOrderByWithRelationInput | Prisma.UserRoleAssignmentOrderByWithRelationInput[]
+  cursor?: Prisma.UserRoleAssignmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserRoleAssignmentScalarFieldEnum | Prisma.UserRoleAssignmentScalarFieldEnum[]
+}
+
+/**
+ * Company.workflow_client_group_members
+ */
+export type Company$workflow_client_group_membersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_client_group_members
+   */
+  select?: Prisma.workflow_client_group_membersSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_client_group_members
+   */
+  omit?: Prisma.workflow_client_group_membersOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_client_group_membersInclude<ExtArgs> | null
+  where?: Prisma.workflow_client_group_membersWhereInput
+  orderBy?: Prisma.workflow_client_group_membersOrderByWithRelationInput | Prisma.workflow_client_group_membersOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_client_group_membersWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_client_group_membersScalarFieldEnum | Prisma.Workflow_client_group_membersScalarFieldEnum[]
+}
+
+/**
+ * Company.workflow_engagements
+ */
+export type Company$workflow_engagementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_engagements
+   */
+  select?: Prisma.workflow_engagementsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_engagements
+   */
+  omit?: Prisma.workflow_engagementsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_engagementsInclude<ExtArgs> | null
+  where?: Prisma.workflow_engagementsWhereInput
+  orderBy?: Prisma.workflow_engagementsOrderByWithRelationInput | Prisma.workflow_engagementsOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_engagementsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_engagementsScalarFieldEnum | Prisma.Workflow_engagementsScalarFieldEnum[]
+}
+
+/**
+ * Company.workflow_instances
+ */
+export type Company$workflow_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_instances
+   */
+  select?: Prisma.workflow_instancesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_instances
+   */
+  omit?: Prisma.workflow_instancesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_instancesInclude<ExtArgs> | null
+  where?: Prisma.workflow_instancesWhereInput
+  orderBy?: Prisma.workflow_instancesOrderByWithRelationInput | Prisma.workflow_instancesOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_instancesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_instancesScalarFieldEnum | Prisma.Workflow_instancesScalarFieldEnum[]
+}
+
+/**
+ * Company.workflow_project_instances
+ */
+export type Company$workflow_project_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_project_instances
+   */
+  select?: Prisma.workflow_project_instancesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_project_instances
+   */
+  omit?: Prisma.workflow_project_instancesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_project_instancesInclude<ExtArgs> | null
+  where?: Prisma.workflow_project_instancesWhereInput
+  orderBy?: Prisma.workflow_project_instancesOrderByWithRelationInput | Prisma.workflow_project_instancesOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_project_instancesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_project_instancesScalarFieldEnum | Prisma.Workflow_project_instancesScalarFieldEnum[]
+}
+
+/**
+ * Company.workflow_project_settings
+ */
+export type Company$workflow_project_settingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_project_settings
+   */
+  select?: Prisma.workflow_project_settingsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_project_settings
+   */
+  omit?: Prisma.workflow_project_settingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_project_settingsInclude<ExtArgs> | null
+  where?: Prisma.workflow_project_settingsWhereInput
+}
+
+/**
+ * Company.workflow_scheduled_instances_queue
+ */
+export type Company$workflow_scheduled_instances_queueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_scheduled_instances_queue
+   */
+  select?: Prisma.workflow_scheduled_instances_queueSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_scheduled_instances_queue
+   */
+  omit?: Prisma.workflow_scheduled_instances_queueOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_scheduled_instances_queueInclude<ExtArgs> | null
+  where?: Prisma.workflow_scheduled_instances_queueWhereInput
+  orderBy?: Prisma.workflow_scheduled_instances_queueOrderByWithRelationInput | Prisma.workflow_scheduled_instances_queueOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_scheduled_instances_queueWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_scheduled_instances_queueScalarFieldEnum | Prisma.Workflow_scheduled_instances_queueScalarFieldEnum[]
 }
 
 /**

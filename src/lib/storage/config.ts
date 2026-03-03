@@ -35,7 +35,8 @@ export function getStorageConfig(): StorageConfig {
     process.env.S3_IS_MINIO === 'true' ||
     s3Endpoint.includes('localhost') ||
     s3Endpoint.includes('127.0.0.1') ||
-    s3Endpoint.includes('minio');
+    s3Endpoint.includes('minio') ||
+    s3Endpoint.includes('host.docker.internal');
 
   return {
     provider,

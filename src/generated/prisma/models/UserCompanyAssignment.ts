@@ -190,8 +190,8 @@ export type UserCompanyAssignmentWhereInput = {
   isPrimary?: Prisma.BoolFilter<"UserCompanyAssignment"> | boolean
   createdAt?: Prisma.DateTimeFilter<"UserCompanyAssignment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"UserCompanyAssignment"> | Date | string
-  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
+  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
 export type UserCompanyAssignmentOrderByWithRelationInput = {
@@ -201,8 +201,8 @@ export type UserCompanyAssignmentOrderByWithRelationInput = {
   isPrimary?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  user?: Prisma.UserOrderByWithRelationInput
   company?: Prisma.CompanyOrderByWithRelationInput
+  user?: Prisma.UserOrderByWithRelationInput
 }
 
 export type UserCompanyAssignmentWhereUniqueInput = Prisma.AtLeast<{
@@ -216,8 +216,8 @@ export type UserCompanyAssignmentWhereUniqueInput = Prisma.AtLeast<{
   isPrimary?: Prisma.BoolFilter<"UserCompanyAssignment"> | boolean
   createdAt?: Prisma.DateTimeFilter<"UserCompanyAssignment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"UserCompanyAssignment"> | Date | string
-  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
+  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "userId_companyId">
 
 export type UserCompanyAssignmentOrderByWithAggregationInput = {
@@ -249,8 +249,8 @@ export type UserCompanyAssignmentCreateInput = {
   isPrimary?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  user: Prisma.UserCreateNestedOneWithoutCompanyAssignmentsInput
   company: Prisma.CompanyCreateNestedOneWithoutUserAssignmentsInput
+  user: Prisma.UserCreateNestedOneWithoutCompanyAssignmentsInput
 }
 
 export type UserCompanyAssignmentUncheckedCreateInput = {
@@ -267,8 +267,8 @@ export type UserCompanyAssignmentUpdateInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  user?: Prisma.UserUpdateOneRequiredWithoutCompanyAssignmentsNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutUserAssignmentsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutCompanyAssignmentsNestedInput
 }
 
 export type UserCompanyAssignmentUncheckedUpdateInput = {
@@ -600,8 +600,8 @@ export type UserCompanyAssignmentSelect<ExtArgs extends runtime.Types.Extensions
   isPrimary?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userCompanyAssignment"]>
 
 export type UserCompanyAssignmentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -611,8 +611,8 @@ export type UserCompanyAssignmentSelectCreateManyAndReturn<ExtArgs extends runti
   isPrimary?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userCompanyAssignment"]>
 
 export type UserCompanyAssignmentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -622,8 +622,8 @@ export type UserCompanyAssignmentSelectUpdateManyAndReturn<ExtArgs extends runti
   isPrimary?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userCompanyAssignment"]>
 
 export type UserCompanyAssignmentSelectScalar = {
@@ -637,23 +637,23 @@ export type UserCompanyAssignmentSelectScalar = {
 
 export type UserCompanyAssignmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "companyId" | "isPrimary" | "createdAt" | "updatedAt", ExtArgs["result"]["userCompanyAssignment"]>
 export type UserCompanyAssignmentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 export type UserCompanyAssignmentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 export type UserCompanyAssignmentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 
 export type $UserCompanyAssignmentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "UserCompanyAssignment"
   objects: {
-    user: Prisma.$UserPayload<ExtArgs>
     company: Prisma.$CompanyPayload<ExtArgs>
+    user: Prisma.$UserPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1056,8 +1056,8 @@ readonly fields: UserCompanyAssignmentFieldRefs;
  */
 export interface Prisma__UserCompanyAssignmentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   company<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

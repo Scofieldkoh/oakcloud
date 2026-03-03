@@ -88,19 +88,22 @@ npm install
 # 2. Set up environment
 cp .env.example .env
 
-# 3. Start infrastructure (PostgreSQL, Redis, MinIO)
+# 3. Start data services (PostgreSQL, MinIO) — persists in ./docker-data/
+npm run docker:db:up
+
+# 4. Start app services (Redis, etc.)
 npm run docker:up
 
-# 4. Initialize database
+# 5. Initialize database
 npm run db:generate && npm run db:push && npm run db:seed
 
-# 5. Start development server
+# 6. Start development server
 npm run dev
 ```
 
 **Access:**
 - Frontend: http://localhost:3000
-- MinIO Console: http://localhost:9001 (`oakcloud` / `oakcloud_minio_secret`)
+- MinIO Console: http://localhost:9001 (`oakcloud` / `Preparefortrouble!`)
 
 **Default Login:**
 - Super Admin: `admin@oaktreesolutions.com.sg` / `Preparefortrouble!`

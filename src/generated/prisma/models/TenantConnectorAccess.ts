@@ -190,8 +190,8 @@ export type TenantConnectorAccessWhereInput = {
   isEnabled?: Prisma.BoolFilter<"TenantConnectorAccess"> | boolean
   createdAt?: Prisma.DateTimeFilter<"TenantConnectorAccess"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"TenantConnectorAccess"> | Date | string
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   connector?: Prisma.XOR<Prisma.ConnectorScalarRelationFilter, Prisma.ConnectorWhereInput>
+  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
 }
 
 export type TenantConnectorAccessOrderByWithRelationInput = {
@@ -201,8 +201,8 @@ export type TenantConnectorAccessOrderByWithRelationInput = {
   isEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  tenant?: Prisma.TenantOrderByWithRelationInput
   connector?: Prisma.ConnectorOrderByWithRelationInput
+  tenant?: Prisma.TenantOrderByWithRelationInput
 }
 
 export type TenantConnectorAccessWhereUniqueInput = Prisma.AtLeast<{
@@ -216,8 +216,8 @@ export type TenantConnectorAccessWhereUniqueInput = Prisma.AtLeast<{
   isEnabled?: Prisma.BoolFilter<"TenantConnectorAccess"> | boolean
   createdAt?: Prisma.DateTimeFilter<"TenantConnectorAccess"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"TenantConnectorAccess"> | Date | string
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   connector?: Prisma.XOR<Prisma.ConnectorScalarRelationFilter, Prisma.ConnectorWhereInput>
+  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
 }, "id" | "tenantId_connectorId">
 
 export type TenantConnectorAccessOrderByWithAggregationInput = {
@@ -249,8 +249,8 @@ export type TenantConnectorAccessCreateInput = {
   isEnabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  tenant: Prisma.TenantCreateNestedOneWithoutConnectorAccessInput
   connector: Prisma.ConnectorCreateNestedOneWithoutTenantAccessInput
+  tenant: Prisma.TenantCreateNestedOneWithoutConnectorAccessInput
 }
 
 export type TenantConnectorAccessUncheckedCreateInput = {
@@ -267,8 +267,8 @@ export type TenantConnectorAccessUpdateInput = {
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutConnectorAccessNestedInput
   connector?: Prisma.ConnectorUpdateOneRequiredWithoutTenantAccessNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutConnectorAccessNestedInput
 }
 
 export type TenantConnectorAccessUncheckedUpdateInput = {
@@ -600,8 +600,8 @@ export type TenantConnectorAccessSelect<ExtArgs extends runtime.Types.Extensions
   isEnabled?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tenantConnectorAccess"]>
 
 export type TenantConnectorAccessSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -611,8 +611,8 @@ export type TenantConnectorAccessSelectCreateManyAndReturn<ExtArgs extends runti
   isEnabled?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tenantConnectorAccess"]>
 
 export type TenantConnectorAccessSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -622,8 +622,8 @@ export type TenantConnectorAccessSelectUpdateManyAndReturn<ExtArgs extends runti
   isEnabled?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tenantConnectorAccess"]>
 
 export type TenantConnectorAccessSelectScalar = {
@@ -637,23 +637,23 @@ export type TenantConnectorAccessSelectScalar = {
 
 export type TenantConnectorAccessOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "connectorId" | "isEnabled" | "createdAt" | "updatedAt", ExtArgs["result"]["tenantConnectorAccess"]>
 export type TenantConnectorAccessInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }
 export type TenantConnectorAccessIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }
 export type TenantConnectorAccessIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }
 
 export type $TenantConnectorAccessPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "TenantConnectorAccess"
   objects: {
-    tenant: Prisma.$TenantPayload<ExtArgs>
     connector: Prisma.$ConnectorPayload<ExtArgs>
+    tenant: Prisma.$TenantPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1056,8 +1056,8 @@ readonly fields: TenantConnectorAccessFieldRefs;
  */
 export interface Prisma__TenantConnectorAccessClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   connector<T extends Prisma.ConnectorDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ConnectorDefaultArgs<ExtArgs>>): Prisma.Prisma__ConnectorClient<runtime.Types.Result.GetResult<Prisma.$ConnectorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

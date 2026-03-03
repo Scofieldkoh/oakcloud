@@ -508,26 +508,27 @@ export type ProcessingDocumentWhereInput = {
   retentionUntil?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"ProcessingDocument"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ProcessingDocument"> | Date | string
-  document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.DocumentWhereInput>
-  parentProcessingDoc?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
-  children?: Prisma.ProcessingDocumentListRelationFilter
-  duplicateOf?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
-  duplicates?: Prisma.ProcessingDocumentListRelationFilter
-  rootDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
-  versions?: Prisma.ProcessingDocumentListRelationFilter
-  currentRevision?: Prisma.XOR<Prisma.DocumentRevisionNullableScalarRelationFilter, Prisma.DocumentRevisionWhereInput> | null
-  pages?: Prisma.DocumentPageListRelationFilter
+  derivedFiles?: Prisma.DocumentDerivedFileListRelationFilter
   extractions?: Prisma.DocumentExtractionListRelationFilter
+  linkedFrom?: Prisma.DocumentLinkListRelationFilter
+  linkedTo?: Prisma.DocumentLinkListRelationFilter
+  pages?: Prisma.DocumentPageListRelationFilter
   revisions?: Prisma.DocumentRevisionListRelationFilter
+  stateEvents?: Prisma.DocumentStateEventListRelationFilter
   duplicateDecisions?: Prisma.DuplicateDecisionListRelationFilter
   processingAttempts?: Prisma.ProcessingAttemptListRelationFilter
   processingCheckpoints?: Prisma.ProcessingCheckpointListRelationFilter
-  stateEvents?: Prisma.DocumentStateEventListRelationFilter
-  derivedFiles?: Prisma.DocumentDerivedFileListRelationFilter
-  splitPlans?: Prisma.SplitPlanListRelationFilter
-  linkedFrom?: Prisma.DocumentLinkListRelationFilter
-  linkedTo?: Prisma.DocumentLinkListRelationFilter
   documentTags?: Prisma.ProcessingDocumentTagListRelationFilter
+  currentRevision?: Prisma.XOR<Prisma.DocumentRevisionNullableScalarRelationFilter, Prisma.DocumentRevisionWhereInput> | null
+  document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.DocumentWhereInput>
+  duplicateOf?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
+  duplicates?: Prisma.ProcessingDocumentListRelationFilter
+  parentProcessingDoc?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
+  children?: Prisma.ProcessingDocumentListRelationFilter
+  rootDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
+  versions?: Prisma.ProcessingDocumentListRelationFilter
+  splitPlans?: Prisma.SplitPlanListRelationFilter
+  workflow_artifacts?: Prisma.Workflow_artifactsListRelationFilter
 }
 
 export type ProcessingDocumentOrderByWithRelationInput = {
@@ -570,26 +571,27 @@ export type ProcessingDocumentOrderByWithRelationInput = {
   retentionUntil?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  document?: Prisma.DocumentOrderByWithRelationInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentOrderByWithRelationInput
-  children?: Prisma.ProcessingDocumentOrderByRelationAggregateInput
-  duplicateOf?: Prisma.ProcessingDocumentOrderByWithRelationInput
-  duplicates?: Prisma.ProcessingDocumentOrderByRelationAggregateInput
-  rootDocument?: Prisma.ProcessingDocumentOrderByWithRelationInput
-  versions?: Prisma.ProcessingDocumentOrderByRelationAggregateInput
-  currentRevision?: Prisma.DocumentRevisionOrderByWithRelationInput
-  pages?: Prisma.DocumentPageOrderByRelationAggregateInput
+  derivedFiles?: Prisma.DocumentDerivedFileOrderByRelationAggregateInput
   extractions?: Prisma.DocumentExtractionOrderByRelationAggregateInput
+  linkedFrom?: Prisma.DocumentLinkOrderByRelationAggregateInput
+  linkedTo?: Prisma.DocumentLinkOrderByRelationAggregateInput
+  pages?: Prisma.DocumentPageOrderByRelationAggregateInput
   revisions?: Prisma.DocumentRevisionOrderByRelationAggregateInput
+  stateEvents?: Prisma.DocumentStateEventOrderByRelationAggregateInput
   duplicateDecisions?: Prisma.DuplicateDecisionOrderByRelationAggregateInput
   processingAttempts?: Prisma.ProcessingAttemptOrderByRelationAggregateInput
   processingCheckpoints?: Prisma.ProcessingCheckpointOrderByRelationAggregateInput
-  stateEvents?: Prisma.DocumentStateEventOrderByRelationAggregateInput
-  derivedFiles?: Prisma.DocumentDerivedFileOrderByRelationAggregateInput
-  splitPlans?: Prisma.SplitPlanOrderByRelationAggregateInput
-  linkedFrom?: Prisma.DocumentLinkOrderByRelationAggregateInput
-  linkedTo?: Prisma.DocumentLinkOrderByRelationAggregateInput
   documentTags?: Prisma.ProcessingDocumentTagOrderByRelationAggregateInput
+  currentRevision?: Prisma.DocumentRevisionOrderByWithRelationInput
+  document?: Prisma.DocumentOrderByWithRelationInput
+  duplicateOf?: Prisma.ProcessingDocumentOrderByWithRelationInput
+  duplicates?: Prisma.ProcessingDocumentOrderByRelationAggregateInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentOrderByWithRelationInput
+  children?: Prisma.ProcessingDocumentOrderByRelationAggregateInput
+  rootDocument?: Prisma.ProcessingDocumentOrderByWithRelationInput
+  versions?: Prisma.ProcessingDocumentOrderByRelationAggregateInput
+  splitPlans?: Prisma.SplitPlanOrderByRelationAggregateInput
+  workflow_artifacts?: Prisma.workflow_artifactsOrderByRelationAggregateInput
 }
 
 export type ProcessingDocumentWhereUniqueInput = Prisma.AtLeast<{
@@ -635,26 +637,27 @@ export type ProcessingDocumentWhereUniqueInput = Prisma.AtLeast<{
   retentionUntil?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"ProcessingDocument"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ProcessingDocument"> | Date | string
-  document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.DocumentWhereInput>
-  parentProcessingDoc?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
-  children?: Prisma.ProcessingDocumentListRelationFilter
-  duplicateOf?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
-  duplicates?: Prisma.ProcessingDocumentListRelationFilter
-  rootDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
-  versions?: Prisma.ProcessingDocumentListRelationFilter
-  currentRevision?: Prisma.XOR<Prisma.DocumentRevisionNullableScalarRelationFilter, Prisma.DocumentRevisionWhereInput> | null
-  pages?: Prisma.DocumentPageListRelationFilter
+  derivedFiles?: Prisma.DocumentDerivedFileListRelationFilter
   extractions?: Prisma.DocumentExtractionListRelationFilter
+  linkedFrom?: Prisma.DocumentLinkListRelationFilter
+  linkedTo?: Prisma.DocumentLinkListRelationFilter
+  pages?: Prisma.DocumentPageListRelationFilter
   revisions?: Prisma.DocumentRevisionListRelationFilter
+  stateEvents?: Prisma.DocumentStateEventListRelationFilter
   duplicateDecisions?: Prisma.DuplicateDecisionListRelationFilter
   processingAttempts?: Prisma.ProcessingAttemptListRelationFilter
   processingCheckpoints?: Prisma.ProcessingCheckpointListRelationFilter
-  stateEvents?: Prisma.DocumentStateEventListRelationFilter
-  derivedFiles?: Prisma.DocumentDerivedFileListRelationFilter
-  splitPlans?: Prisma.SplitPlanListRelationFilter
-  linkedFrom?: Prisma.DocumentLinkListRelationFilter
-  linkedTo?: Prisma.DocumentLinkListRelationFilter
   documentTags?: Prisma.ProcessingDocumentTagListRelationFilter
+  currentRevision?: Prisma.XOR<Prisma.DocumentRevisionNullableScalarRelationFilter, Prisma.DocumentRevisionWhereInput> | null
+  document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.DocumentWhereInput>
+  duplicateOf?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
+  duplicates?: Prisma.ProcessingDocumentListRelationFilter
+  parentProcessingDoc?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
+  children?: Prisma.ProcessingDocumentListRelationFilter
+  rootDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
+  versions?: Prisma.ProcessingDocumentListRelationFilter
+  splitPlans?: Prisma.SplitPlanListRelationFilter
+  workflow_artifacts?: Prisma.Workflow_artifactsListRelationFilter
 }, "id" | "documentId" | "currentRevisionId">
 
 export type ProcessingDocumentOrderByWithAggregationInput = {
@@ -784,26 +787,27 @@ export type ProcessingDocumentCreateInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateInput = {
@@ -846,21 +850,22 @@ export type ProcessingDocumentUncheckedCreateInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUpdateInput = {
@@ -898,26 +903,27 @@ export type ProcessingDocumentUpdateInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateInput = {
@@ -960,21 +966,22 @@ export type ProcessingDocumentUncheckedUpdateInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateManyInput = {
@@ -1294,19 +1301,6 @@ export type ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProcessingDocumentUpdateToOneWithWhereWithoutDocumentInput, Prisma.ProcessingDocumentUpdateWithoutDocumentInput>, Prisma.ProcessingDocumentUncheckedUpdateWithoutDocumentInput>
 }
 
-export type ProcessingDocumentCreateNestedOneWithoutChildrenInput = {
-  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedCreateWithoutChildrenInput>
-  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutChildrenInput
-  connect?: Prisma.ProcessingDocumentWhereUniqueInput
-}
-
-export type ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput = {
-  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput> | Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput[]
-  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput | Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput[]
-  createMany?: Prisma.ProcessingDocumentCreateManyParentProcessingDocInputEnvelope
-  connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-}
-
 export type ProcessingDocumentCreateNestedOneWithoutDuplicatesInput = {
   create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutDuplicatesInput, Prisma.ProcessingDocumentUncheckedCreateWithoutDuplicatesInput>
   connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutDuplicatesInput
@@ -1317,6 +1311,19 @@ export type ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput = {
   create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutDuplicateOfInput, Prisma.ProcessingDocumentUncheckedCreateWithoutDuplicateOfInput> | Prisma.ProcessingDocumentCreateWithoutDuplicateOfInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutDuplicateOfInput[]
   connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutDuplicateOfInput | Prisma.ProcessingDocumentCreateOrConnectWithoutDuplicateOfInput[]
   createMany?: Prisma.ProcessingDocumentCreateManyDuplicateOfInputEnvelope
+  connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+}
+
+export type ProcessingDocumentCreateNestedOneWithoutChildrenInput = {
+  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedCreateWithoutChildrenInput>
+  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutChildrenInput
+  connect?: Prisma.ProcessingDocumentWhereUniqueInput
+}
+
+export type ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput = {
+  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput> | Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput[]
+  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput | Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput[]
+  createMany?: Prisma.ProcessingDocumentCreateManyParentProcessingDocInputEnvelope
   connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
 }
 
@@ -1333,17 +1340,17 @@ export type ProcessingDocumentCreateNestedManyWithoutRootDocumentInput = {
   connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
 }
 
-export type ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput = {
-  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput> | Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput[]
-  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput | Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput[]
-  createMany?: Prisma.ProcessingDocumentCreateManyParentProcessingDocInputEnvelope
-  connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-}
-
 export type ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput = {
   create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutDuplicateOfInput, Prisma.ProcessingDocumentUncheckedCreateWithoutDuplicateOfInput> | Prisma.ProcessingDocumentCreateWithoutDuplicateOfInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutDuplicateOfInput[]
   connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutDuplicateOfInput | Prisma.ProcessingDocumentCreateOrConnectWithoutDuplicateOfInput[]
   createMany?: Prisma.ProcessingDocumentCreateManyDuplicateOfInputEnvelope
+  connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+}
+
+export type ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput = {
+  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput> | Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput[]
+  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput | Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput[]
+  createMany?: Prisma.ProcessingDocumentCreateManyParentProcessingDocInputEnvelope
   connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
 }
 
@@ -1378,30 +1385,6 @@ export type EnumUploadSourceFieldUpdateOperationsInput = {
   set?: $Enums.UploadSource
 }
 
-export type ProcessingDocumentUpdateOneWithoutChildrenNestedInput = {
-  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedCreateWithoutChildrenInput>
-  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutChildrenInput
-  upsert?: Prisma.ProcessingDocumentUpsertWithoutChildrenInput
-  disconnect?: Prisma.ProcessingDocumentWhereInput | boolean
-  delete?: Prisma.ProcessingDocumentWhereInput | boolean
-  connect?: Prisma.ProcessingDocumentWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ProcessingDocumentUpdateToOneWithWhereWithoutChildrenInput, Prisma.ProcessingDocumentUpdateWithoutChildrenInput>, Prisma.ProcessingDocumentUncheckedUpdateWithoutChildrenInput>
-}
-
-export type ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput = {
-  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput> | Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput[]
-  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput | Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput[]
-  upsert?: Prisma.ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput[]
-  createMany?: Prisma.ProcessingDocumentCreateManyParentProcessingDocInputEnvelope
-  set?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-  disconnect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-  delete?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-  connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-  update?: Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput[]
-  updateMany?: Prisma.ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput[]
-  deleteMany?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
-}
-
 export type ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput = {
   create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutDuplicatesInput, Prisma.ProcessingDocumentUncheckedCreateWithoutDuplicatesInput>
   connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutDuplicatesInput
@@ -1423,6 +1406,30 @@ export type ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput = {
   connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
   update?: Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutDuplicateOfInput | Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutDuplicateOfInput[]
   updateMany?: Prisma.ProcessingDocumentUpdateManyWithWhereWithoutDuplicateOfInput | Prisma.ProcessingDocumentUpdateManyWithWhereWithoutDuplicateOfInput[]
+  deleteMany?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
+}
+
+export type ProcessingDocumentUpdateOneWithoutChildrenNestedInput = {
+  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedCreateWithoutChildrenInput>
+  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutChildrenInput
+  upsert?: Prisma.ProcessingDocumentUpsertWithoutChildrenInput
+  disconnect?: Prisma.ProcessingDocumentWhereInput | boolean
+  delete?: Prisma.ProcessingDocumentWhereInput | boolean
+  connect?: Prisma.ProcessingDocumentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProcessingDocumentUpdateToOneWithWhereWithoutChildrenInput, Prisma.ProcessingDocumentUpdateWithoutChildrenInput>, Prisma.ProcessingDocumentUncheckedUpdateWithoutChildrenInput>
+}
+
+export type ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput = {
+  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput> | Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput[]
+  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput | Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput[]
+  upsert?: Prisma.ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput[]
+  createMany?: Prisma.ProcessingDocumentCreateManyParentProcessingDocInputEnvelope
+  set?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+  disconnect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+  delete?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+  connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+  update?: Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput[]
+  updateMany?: Prisma.ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput[]
   deleteMany?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
 }
 
@@ -1450,20 +1457,6 @@ export type ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput = {
   deleteMany?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
 }
 
-export type ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput = {
-  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput> | Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput[]
-  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput | Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput[]
-  upsert?: Prisma.ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput[]
-  createMany?: Prisma.ProcessingDocumentCreateManyParentProcessingDocInputEnvelope
-  set?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-  disconnect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-  delete?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-  connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
-  update?: Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput[]
-  updateMany?: Prisma.ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput[]
-  deleteMany?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
-}
-
 export type ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput = {
   create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutDuplicateOfInput, Prisma.ProcessingDocumentUncheckedCreateWithoutDuplicateOfInput> | Prisma.ProcessingDocumentCreateWithoutDuplicateOfInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutDuplicateOfInput[]
   connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutDuplicateOfInput | Prisma.ProcessingDocumentCreateOrConnectWithoutDuplicateOfInput[]
@@ -1475,6 +1468,20 @@ export type ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput =
   connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
   update?: Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutDuplicateOfInput | Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutDuplicateOfInput[]
   updateMany?: Prisma.ProcessingDocumentUpdateManyWithWhereWithoutDuplicateOfInput | Prisma.ProcessingDocumentUpdateManyWithWhereWithoutDuplicateOfInput[]
+  deleteMany?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
+}
+
+export type ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput = {
+  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput> | Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput[] | Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput[]
+  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput | Prisma.ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput[]
+  upsert?: Prisma.ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput[]
+  createMany?: Prisma.ProcessingDocumentCreateManyParentProcessingDocInputEnvelope
+  set?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+  disconnect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+  delete?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+  connect?: Prisma.ProcessingDocumentWhereUniqueInput | Prisma.ProcessingDocumentWhereUniqueInput[]
+  update?: Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput[]
+  updateMany?: Prisma.ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput | Prisma.ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput[]
   deleteMany?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
 }
 
@@ -1692,6 +1699,22 @@ export type ProcessingDocumentUpdateOneRequiredWithoutDerivedFilesNestedInput = 
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProcessingDocumentUpdateToOneWithWhereWithoutDerivedFilesInput, Prisma.ProcessingDocumentUpdateWithoutDerivedFilesInput>, Prisma.ProcessingDocumentUncheckedUpdateWithoutDerivedFilesInput>
 }
 
+export type ProcessingDocumentCreateNestedOneWithoutWorkflow_artifactsInput = {
+  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutWorkflow_artifactsInput, Prisma.ProcessingDocumentUncheckedCreateWithoutWorkflow_artifactsInput>
+  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutWorkflow_artifactsInput
+  connect?: Prisma.ProcessingDocumentWhereUniqueInput
+}
+
+export type ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput = {
+  create?: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutWorkflow_artifactsInput, Prisma.ProcessingDocumentUncheckedCreateWithoutWorkflow_artifactsInput>
+  connectOrCreate?: Prisma.ProcessingDocumentCreateOrConnectWithoutWorkflow_artifactsInput
+  upsert?: Prisma.ProcessingDocumentUpsertWithoutWorkflow_artifactsInput
+  disconnect?: Prisma.ProcessingDocumentWhereInput | boolean
+  delete?: Prisma.ProcessingDocumentWhereInput | boolean
+  connect?: Prisma.ProcessingDocumentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProcessingDocumentUpdateToOneWithWhereWithoutWorkflow_artifactsInput, Prisma.ProcessingDocumentUpdateWithoutWorkflow_artifactsInput>, Prisma.ProcessingDocumentUncheckedUpdateWithoutWorkflow_artifactsInput>
+}
+
 export type ProcessingDocumentCreateWithoutDocumentInput = {
   id?: string
   isContainer?: boolean
@@ -1727,25 +1750,26 @@ export type ProcessingDocumentCreateWithoutDocumentInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutDocumentInput = {
@@ -1787,21 +1811,22 @@ export type ProcessingDocumentUncheckedCreateWithoutDocumentInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutDocumentInput = {
@@ -1855,25 +1880,26 @@ export type ProcessingDocumentUpdateWithoutDocumentInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutDocumentInput = {
@@ -1915,260 +1941,22 @@ export type ProcessingDocumentUncheckedUpdateWithoutDocumentInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-}
-
-export type ProcessingDocumentCreateWithoutChildrenInput = {
-  id?: string
-  isContainer?: boolean
-  pageFrom?: number | null
-  pageTo?: number | null
-  pageCount?: number | null
-  fileHash?: string | null
-  perceptualHash?: string | null
-  isEncryptedPdf?: boolean
-  isPasswordProtected?: boolean
-  contentTypeDetected?: string | null
-  pipelineStatus?: $Enums.PipelineStatus
-  processingPriority?: $Enums.ProcessingPriority
-  slaDeadline?: Date | string | null
-  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  errorCount?: number
-  firstErrorAt?: Date | string | null
-  canRetry?: boolean
-  nextRetryAt?: Date | string | null
-  deadLetterAt?: Date | string | null
-  duplicateStatus?: $Enums.DuplicateStatus
-  duplicateScore?: number | null
-  duplicateReason?: string | null
-  version?: number
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  lockVersion?: number
-  lockedById?: string | null
-  lockedAt?: Date | string | null
-  lockExpiresAt?: Date | string | null
-  uploadSource?: $Enums.UploadSource
-  legalHold?: boolean
-  retentionUntil?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
-  duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
-  processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
-  documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
-}
-
-export type ProcessingDocumentUncheckedCreateWithoutChildrenInput = {
-  id?: string
-  documentId: string
-  isContainer?: boolean
-  parentProcessingDocId?: string | null
-  pageFrom?: number | null
-  pageTo?: number | null
-  pageCount?: number | null
-  fileHash?: string | null
-  perceptualHash?: string | null
-  isEncryptedPdf?: boolean
-  isPasswordProtected?: boolean
-  contentTypeDetected?: string | null
-  pipelineStatus?: $Enums.PipelineStatus
-  processingPriority?: $Enums.ProcessingPriority
-  slaDeadline?: Date | string | null
-  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  errorCount?: number
-  firstErrorAt?: Date | string | null
-  canRetry?: boolean
-  nextRetryAt?: Date | string | null
-  deadLetterAt?: Date | string | null
-  duplicateStatus?: $Enums.DuplicateStatus
-  duplicateOfId?: string | null
-  duplicateScore?: number | null
-  duplicateReason?: string | null
-  rootDocumentId?: string | null
-  version?: number
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  currentRevisionId?: string | null
-  lockVersion?: number
-  lockedById?: string | null
-  lockedAt?: Date | string | null
-  lockExpiresAt?: Date | string | null
-  uploadSource?: $Enums.UploadSource
-  legalHold?: boolean
-  retentionUntil?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
-  documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
-}
-
-export type ProcessingDocumentCreateOrConnectWithoutChildrenInput = {
-  where: Prisma.ProcessingDocumentWhereUniqueInput
-  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedCreateWithoutChildrenInput>
-}
-
-export type ProcessingDocumentCreateWithoutParentProcessingDocInput = {
-  id?: string
-  isContainer?: boolean
-  pageFrom?: number | null
-  pageTo?: number | null
-  pageCount?: number | null
-  fileHash?: string | null
-  perceptualHash?: string | null
-  isEncryptedPdf?: boolean
-  isPasswordProtected?: boolean
-  contentTypeDetected?: string | null
-  pipelineStatus?: $Enums.PipelineStatus
-  processingPriority?: $Enums.ProcessingPriority
-  slaDeadline?: Date | string | null
-  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  errorCount?: number
-  firstErrorAt?: Date | string | null
-  canRetry?: boolean
-  nextRetryAt?: Date | string | null
-  deadLetterAt?: Date | string | null
-  duplicateStatus?: $Enums.DuplicateStatus
-  duplicateScore?: number | null
-  duplicateReason?: string | null
-  version?: number
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  lockVersion?: number
-  lockedById?: string | null
-  lockedAt?: Date | string | null
-  lockExpiresAt?: Date | string | null
-  uploadSource?: $Enums.UploadSource
-  legalHold?: boolean
-  retentionUntil?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
-  duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
-  processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
-  documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
-}
-
-export type ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput = {
-  id?: string
-  documentId: string
-  isContainer?: boolean
-  pageFrom?: number | null
-  pageTo?: number | null
-  pageCount?: number | null
-  fileHash?: string | null
-  perceptualHash?: string | null
-  isEncryptedPdf?: boolean
-  isPasswordProtected?: boolean
-  contentTypeDetected?: string | null
-  pipelineStatus?: $Enums.PipelineStatus
-  processingPriority?: $Enums.ProcessingPriority
-  slaDeadline?: Date | string | null
-  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  errorCount?: number
-  firstErrorAt?: Date | string | null
-  canRetry?: boolean
-  nextRetryAt?: Date | string | null
-  deadLetterAt?: Date | string | null
-  duplicateStatus?: $Enums.DuplicateStatus
-  duplicateOfId?: string | null
-  duplicateScore?: number | null
-  duplicateReason?: string | null
-  rootDocumentId?: string | null
-  version?: number
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  currentRevisionId?: string | null
-  lockVersion?: number
-  lockedById?: string | null
-  lockedAt?: Date | string | null
-  lockExpiresAt?: Date | string | null
-  uploadSource?: $Enums.UploadSource
-  legalHold?: boolean
-  retentionUntil?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
-  documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
-}
-
-export type ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput = {
-  where: Prisma.ProcessingDocumentWhereUniqueInput
-  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput>
-}
-
-export type ProcessingDocumentCreateManyParentProcessingDocInputEnvelope = {
-  data: Prisma.ProcessingDocumentCreateManyParentProcessingDocInput | Prisma.ProcessingDocumentCreateManyParentProcessingDocInput[]
-  skipDuplicates?: boolean
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutDuplicatesInput = {
@@ -2206,25 +1994,26 @@ export type ProcessingDocumentCreateWithoutDuplicatesInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutDuplicatesInput = {
@@ -2267,20 +2056,21 @@ export type ProcessingDocumentUncheckedCreateWithoutDuplicatesInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutDuplicatesInput = {
@@ -2323,25 +2113,26 @@ export type ProcessingDocumentCreateWithoutDuplicateOfInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutDuplicateOfInput = {
@@ -2383,21 +2174,22 @@ export type ProcessingDocumentUncheckedCreateWithoutDuplicateOfInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutDuplicateOfInput = {
@@ -2407,6 +2199,249 @@ export type ProcessingDocumentCreateOrConnectWithoutDuplicateOfInput = {
 
 export type ProcessingDocumentCreateManyDuplicateOfInputEnvelope = {
   data: Prisma.ProcessingDocumentCreateManyDuplicateOfInput | Prisma.ProcessingDocumentCreateManyDuplicateOfInput[]
+  skipDuplicates?: boolean
+}
+
+export type ProcessingDocumentCreateWithoutChildrenInput = {
+  id?: string
+  isContainer?: boolean
+  pageFrom?: number | null
+  pageTo?: number | null
+  pageCount?: number | null
+  fileHash?: string | null
+  perceptualHash?: string | null
+  isEncryptedPdf?: boolean
+  isPasswordProtected?: boolean
+  contentTypeDetected?: string | null
+  pipelineStatus?: $Enums.PipelineStatus
+  processingPriority?: $Enums.ProcessingPriority
+  slaDeadline?: Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: number
+  firstErrorAt?: Date | string | null
+  canRetry?: boolean
+  nextRetryAt?: Date | string | null
+  deadLetterAt?: Date | string | null
+  duplicateStatus?: $Enums.DuplicateStatus
+  duplicateScore?: number | null
+  duplicateReason?: string | null
+  version?: number
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  lockVersion?: number
+  lockedById?: string | null
+  lockedAt?: Date | string | null
+  lockExpiresAt?: Date | string | null
+  uploadSource?: $Enums.UploadSource
+  legalHold?: boolean
+  retentionUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
+  documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
+}
+
+export type ProcessingDocumentUncheckedCreateWithoutChildrenInput = {
+  id?: string
+  documentId: string
+  isContainer?: boolean
+  parentProcessingDocId?: string | null
+  pageFrom?: number | null
+  pageTo?: number | null
+  pageCount?: number | null
+  fileHash?: string | null
+  perceptualHash?: string | null
+  isEncryptedPdf?: boolean
+  isPasswordProtected?: boolean
+  contentTypeDetected?: string | null
+  pipelineStatus?: $Enums.PipelineStatus
+  processingPriority?: $Enums.ProcessingPriority
+  slaDeadline?: Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: number
+  firstErrorAt?: Date | string | null
+  canRetry?: boolean
+  nextRetryAt?: Date | string | null
+  deadLetterAt?: Date | string | null
+  duplicateStatus?: $Enums.DuplicateStatus
+  duplicateOfId?: string | null
+  duplicateScore?: number | null
+  duplicateReason?: string | null
+  rootDocumentId?: string | null
+  version?: number
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  currentRevisionId?: string | null
+  lockVersion?: number
+  lockedById?: string | null
+  lockedAt?: Date | string | null
+  lockExpiresAt?: Date | string | null
+  uploadSource?: $Enums.UploadSource
+  legalHold?: boolean
+  retentionUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
+}
+
+export type ProcessingDocumentCreateOrConnectWithoutChildrenInput = {
+  where: Prisma.ProcessingDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedCreateWithoutChildrenInput>
+}
+
+export type ProcessingDocumentCreateWithoutParentProcessingDocInput = {
+  id?: string
+  isContainer?: boolean
+  pageFrom?: number | null
+  pageTo?: number | null
+  pageCount?: number | null
+  fileHash?: string | null
+  perceptualHash?: string | null
+  isEncryptedPdf?: boolean
+  isPasswordProtected?: boolean
+  contentTypeDetected?: string | null
+  pipelineStatus?: $Enums.PipelineStatus
+  processingPriority?: $Enums.ProcessingPriority
+  slaDeadline?: Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: number
+  firstErrorAt?: Date | string | null
+  canRetry?: boolean
+  nextRetryAt?: Date | string | null
+  deadLetterAt?: Date | string | null
+  duplicateStatus?: $Enums.DuplicateStatus
+  duplicateScore?: number | null
+  duplicateReason?: string | null
+  version?: number
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  lockVersion?: number
+  lockedById?: string | null
+  lockedAt?: Date | string | null
+  lockExpiresAt?: Date | string | null
+  uploadSource?: $Enums.UploadSource
+  legalHold?: boolean
+  retentionUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
+  documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
+}
+
+export type ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput = {
+  id?: string
+  documentId: string
+  isContainer?: boolean
+  pageFrom?: number | null
+  pageTo?: number | null
+  pageCount?: number | null
+  fileHash?: string | null
+  perceptualHash?: string | null
+  isEncryptedPdf?: boolean
+  isPasswordProtected?: boolean
+  contentTypeDetected?: string | null
+  pipelineStatus?: $Enums.PipelineStatus
+  processingPriority?: $Enums.ProcessingPriority
+  slaDeadline?: Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: number
+  firstErrorAt?: Date | string | null
+  canRetry?: boolean
+  nextRetryAt?: Date | string | null
+  deadLetterAt?: Date | string | null
+  duplicateStatus?: $Enums.DuplicateStatus
+  duplicateOfId?: string | null
+  duplicateScore?: number | null
+  duplicateReason?: string | null
+  rootDocumentId?: string | null
+  version?: number
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  currentRevisionId?: string | null
+  lockVersion?: number
+  lockedById?: string | null
+  lockedAt?: Date | string | null
+  lockExpiresAt?: Date | string | null
+  uploadSource?: $Enums.UploadSource
+  legalHold?: boolean
+  retentionUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
+}
+
+export type ProcessingDocumentCreateOrConnectWithoutParentProcessingDocInput = {
+  where: Prisma.ProcessingDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput>
+}
+
+export type ProcessingDocumentCreateManyParentProcessingDocInputEnvelope = {
+  data: Prisma.ProcessingDocumentCreateManyParentProcessingDocInput | Prisma.ProcessingDocumentCreateManyParentProcessingDocInput[]
   skipDuplicates?: boolean
 }
 
@@ -2445,25 +2480,26 @@ export type ProcessingDocumentCreateWithoutVersionsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutVersionsInput = {
@@ -2506,20 +2542,21 @@ export type ProcessingDocumentUncheckedCreateWithoutVersionsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutVersionsInput = {
@@ -2562,25 +2599,26 @@ export type ProcessingDocumentCreateWithoutRootDocumentInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutRootDocumentInput = {
@@ -2622,21 +2660,22 @@ export type ProcessingDocumentUncheckedCreateWithoutRootDocumentInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutRootDocumentInput = {
@@ -2647,190 +2686,6 @@ export type ProcessingDocumentCreateOrConnectWithoutRootDocumentInput = {
 export type ProcessingDocumentCreateManyRootDocumentInputEnvelope = {
   data: Prisma.ProcessingDocumentCreateManyRootDocumentInput | Prisma.ProcessingDocumentCreateManyRootDocumentInput[]
   skipDuplicates?: boolean
-}
-
-export type ProcessingDocumentUpsertWithoutChildrenInput = {
-  update: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutChildrenInput>
-  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedCreateWithoutChildrenInput>
-  where?: Prisma.ProcessingDocumentWhereInput
-}
-
-export type ProcessingDocumentUpdateToOneWithWhereWithoutChildrenInput = {
-  where?: Prisma.ProcessingDocumentWhereInput
-  data: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutChildrenInput>
-}
-
-export type ProcessingDocumentUpdateWithoutChildrenInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
-  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
-  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
-  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
-  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  version?: Prisma.IntFieldUpdateOperationsInput | number
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
-  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
-  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
-  processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
-  documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
-}
-
-export type ProcessingDocumentUncheckedUpdateWithoutChildrenInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
-  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
-  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
-  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
-  duplicateOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rootDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  version?: Prisma.IntFieldUpdateOperationsInput | number
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  currentRevisionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
-  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
-  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
-  documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-}
-
-export type ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput = {
-  where: Prisma.ProcessingDocumentWhereUniqueInput
-  update: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutParentProcessingDocInput>
-  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput>
-}
-
-export type ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput = {
-  where: Prisma.ProcessingDocumentWhereUniqueInput
-  data: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutParentProcessingDocInput>
-}
-
-export type ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput = {
-  where: Prisma.ProcessingDocumentScalarWhereInput
-  data: Prisma.XOR<Prisma.ProcessingDocumentUpdateManyMutationInput, Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocInput>
-}
-
-export type ProcessingDocumentScalarWhereInput = {
-  AND?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
-  OR?: Prisma.ProcessingDocumentScalarWhereInput[]
-  NOT?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
-  id?: Prisma.StringFilter<"ProcessingDocument"> | string
-  documentId?: Prisma.StringFilter<"ProcessingDocument"> | string
-  isContainer?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
-  parentProcessingDocId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  pageFrom?: Prisma.IntNullableFilter<"ProcessingDocument"> | number | null
-  pageTo?: Prisma.IntNullableFilter<"ProcessingDocument"> | number | null
-  pageCount?: Prisma.IntNullableFilter<"ProcessingDocument"> | number | null
-  fileHash?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  perceptualHash?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  isEncryptedPdf?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
-  isPasswordProtected?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
-  contentTypeDetected?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  pipelineStatus?: Prisma.EnumPipelineStatusFilter<"ProcessingDocument"> | $Enums.PipelineStatus
-  processingPriority?: Prisma.EnumProcessingPriorityFilter<"ProcessingDocument"> | $Enums.ProcessingPriority
-  slaDeadline?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
-  lastError?: Prisma.JsonNullableFilter<"ProcessingDocument">
-  errorCount?: Prisma.IntFilter<"ProcessingDocument"> | number
-  firstErrorAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
-  canRetry?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
-  nextRetryAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
-  deadLetterAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
-  duplicateStatus?: Prisma.EnumDuplicateStatusFilter<"ProcessingDocument"> | $Enums.DuplicateStatus
-  duplicateOfId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  duplicateScore?: Prisma.FloatNullableFilter<"ProcessingDocument"> | number | null
-  duplicateReason?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  rootDocumentId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  version?: Prisma.IntFilter<"ProcessingDocument"> | number
-  deletedAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
-  deletedReason?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  currentRevisionId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  lockVersion?: Prisma.IntFilter<"ProcessingDocument"> | number
-  lockedById?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
-  lockedAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
-  lockExpiresAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
-  uploadSource?: Prisma.EnumUploadSourceFilter<"ProcessingDocument"> | $Enums.UploadSource
-  legalHold?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
-  retentionUntil?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
-  createdAt?: Prisma.DateTimeFilter<"ProcessingDocument"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"ProcessingDocument"> | Date | string
 }
 
 export type ProcessingDocumentUpsertWithoutDuplicatesInput = {
@@ -2879,25 +2734,26 @@ export type ProcessingDocumentUpdateWithoutDuplicatesInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutDuplicatesInput = {
@@ -2940,20 +2796,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutDuplicatesInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUpsertWithWhereUniqueWithoutDuplicateOfInput = {
@@ -2970,6 +2827,192 @@ export type ProcessingDocumentUpdateWithWhereUniqueWithoutDuplicateOfInput = {
 export type ProcessingDocumentUpdateManyWithWhereWithoutDuplicateOfInput = {
   where: Prisma.ProcessingDocumentScalarWhereInput
   data: Prisma.XOR<Prisma.ProcessingDocumentUpdateManyMutationInput, Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfInput>
+}
+
+export type ProcessingDocumentScalarWhereInput = {
+  AND?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
+  OR?: Prisma.ProcessingDocumentScalarWhereInput[]
+  NOT?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
+  id?: Prisma.StringFilter<"ProcessingDocument"> | string
+  documentId?: Prisma.StringFilter<"ProcessingDocument"> | string
+  isContainer?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
+  parentProcessingDocId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  pageFrom?: Prisma.IntNullableFilter<"ProcessingDocument"> | number | null
+  pageTo?: Prisma.IntNullableFilter<"ProcessingDocument"> | number | null
+  pageCount?: Prisma.IntNullableFilter<"ProcessingDocument"> | number | null
+  fileHash?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  perceptualHash?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  isEncryptedPdf?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
+  isPasswordProtected?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
+  contentTypeDetected?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  pipelineStatus?: Prisma.EnumPipelineStatusFilter<"ProcessingDocument"> | $Enums.PipelineStatus
+  processingPriority?: Prisma.EnumProcessingPriorityFilter<"ProcessingDocument"> | $Enums.ProcessingPriority
+  slaDeadline?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
+  lastError?: Prisma.JsonNullableFilter<"ProcessingDocument">
+  errorCount?: Prisma.IntFilter<"ProcessingDocument"> | number
+  firstErrorAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
+  canRetry?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
+  nextRetryAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
+  deadLetterAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
+  duplicateStatus?: Prisma.EnumDuplicateStatusFilter<"ProcessingDocument"> | $Enums.DuplicateStatus
+  duplicateOfId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  duplicateScore?: Prisma.FloatNullableFilter<"ProcessingDocument"> | number | null
+  duplicateReason?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  rootDocumentId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  version?: Prisma.IntFilter<"ProcessingDocument"> | number
+  deletedAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
+  deletedReason?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  currentRevisionId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  lockVersion?: Prisma.IntFilter<"ProcessingDocument"> | number
+  lockedById?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
+  lockedAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
+  lockExpiresAt?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
+  uploadSource?: Prisma.EnumUploadSourceFilter<"ProcessingDocument"> | $Enums.UploadSource
+  legalHold?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
+  retentionUntil?: Prisma.DateTimeNullableFilter<"ProcessingDocument"> | Date | string | null
+  createdAt?: Prisma.DateTimeFilter<"ProcessingDocument"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"ProcessingDocument"> | Date | string
+}
+
+export type ProcessingDocumentUpsertWithoutChildrenInput = {
+  update: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutChildrenInput>
+  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedCreateWithoutChildrenInput>
+  where?: Prisma.ProcessingDocumentWhereInput
+}
+
+export type ProcessingDocumentUpdateToOneWithWhereWithoutChildrenInput = {
+  where?: Prisma.ProcessingDocumentWhereInput
+  data: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutChildrenInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutChildrenInput>
+}
+
+export type ProcessingDocumentUpdateWithoutChildrenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
+  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
+  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
+  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
+  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
+  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
+  documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
+}
+
+export type ProcessingDocumentUncheckedUpdateWithoutChildrenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
+  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
+  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
+  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
+  duplicateOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rootDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentRevisionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
+  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
+}
+
+export type ProcessingDocumentUpsertWithWhereUniqueWithoutParentProcessingDocInput = {
+  where: Prisma.ProcessingDocumentWhereUniqueInput
+  update: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutParentProcessingDocInput>
+  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput>
+}
+
+export type ProcessingDocumentUpdateWithWhereUniqueWithoutParentProcessingDocInput = {
+  where: Prisma.ProcessingDocumentWhereUniqueInput
+  data: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutParentProcessingDocInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutParentProcessingDocInput>
+}
+
+export type ProcessingDocumentUpdateManyWithWhereWithoutParentProcessingDocInput = {
+  where: Prisma.ProcessingDocumentScalarWhereInput
+  data: Prisma.XOR<Prisma.ProcessingDocumentUpdateManyMutationInput, Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocInput>
 }
 
 export type ProcessingDocumentUpsertWithoutVersionsInput = {
@@ -3018,25 +3061,26 @@ export type ProcessingDocumentUpdateWithoutVersionsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutVersionsInput = {
@@ -3079,20 +3123,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutVersionsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUpsertWithWhereUniqueWithoutRootDocumentInput = {
@@ -3146,25 +3191,26 @@ export type ProcessingDocumentCreateWithoutLinkedFromInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutLinkedFromInput = {
@@ -3207,20 +3253,21 @@ export type ProcessingDocumentUncheckedCreateWithoutLinkedFromInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutLinkedFromInput = {
@@ -3263,25 +3310,26 @@ export type ProcessingDocumentCreateWithoutLinkedToInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutLinkedToInput = {
@@ -3324,20 +3372,21 @@ export type ProcessingDocumentUncheckedCreateWithoutLinkedToInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutLinkedToInput = {
@@ -3391,25 +3440,26 @@ export type ProcessingDocumentUpdateWithoutLinkedFromInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutLinkedFromInput = {
@@ -3452,20 +3502,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutLinkedFromInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUpsertWithoutLinkedToInput = {
@@ -3514,25 +3565,26 @@ export type ProcessingDocumentUpdateWithoutLinkedToInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutLinkedToInput = {
@@ -3575,20 +3627,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutLinkedToInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutDocumentTagsInput = {
@@ -3626,25 +3679,26 @@ export type ProcessingDocumentCreateWithoutDocumentTagsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
   splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutDocumentTagsInput = {
@@ -3687,20 +3741,21 @@ export type ProcessingDocumentUncheckedCreateWithoutDocumentTagsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
   splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutDocumentTagsInput = {
@@ -3754,25 +3809,26 @@ export type ProcessingDocumentUpdateWithoutDocumentTagsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
   splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutDocumentTagsInput = {
@@ -3815,20 +3871,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutDocumentTagsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
   splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutPagesInput = {
@@ -3866,25 +3923,26 @@ export type ProcessingDocumentCreateWithoutPagesInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutPagesInput = {
@@ -3927,20 +3985,21 @@ export type ProcessingDocumentUncheckedCreateWithoutPagesInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutPagesInput = {
@@ -3994,25 +4053,26 @@ export type ProcessingDocumentUpdateWithoutPagesInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutPagesInput = {
@@ -4055,20 +4115,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutPagesInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutExtractionsInput = {
@@ -4106,25 +4167,26 @@ export type ProcessingDocumentCreateWithoutExtractionsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutExtractionsInput = {
@@ -4167,20 +4229,21 @@ export type ProcessingDocumentUncheckedCreateWithoutExtractionsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutExtractionsInput = {
@@ -4234,25 +4297,26 @@ export type ProcessingDocumentUpdateWithoutExtractionsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutExtractionsInput = {
@@ -4295,20 +4359,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutExtractionsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutRevisionsInput = {
@@ -4346,25 +4411,26 @@ export type ProcessingDocumentCreateWithoutRevisionsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutRevisionsInput = {
@@ -4407,20 +4473,21 @@ export type ProcessingDocumentUncheckedCreateWithoutRevisionsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutRevisionsInput = {
@@ -4463,25 +4530,26 @@ export type ProcessingDocumentCreateWithoutCurrentRevisionInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutCurrentRevisionInput = {
@@ -4523,21 +4591,22 @@ export type ProcessingDocumentUncheckedCreateWithoutCurrentRevisionInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutCurrentRevisionInput = {
@@ -4591,25 +4660,26 @@ export type ProcessingDocumentUpdateWithoutRevisionsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutRevisionsInput = {
@@ -4652,20 +4722,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutRevisionsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUpsertWithoutCurrentRevisionInput = {
@@ -4714,25 +4785,26 @@ export type ProcessingDocumentUpdateWithoutCurrentRevisionInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutCurrentRevisionInput = {
@@ -4774,21 +4846,22 @@ export type ProcessingDocumentUncheckedUpdateWithoutCurrentRevisionInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutDuplicateDecisionsInput = {
@@ -4826,25 +4899,26 @@ export type ProcessingDocumentCreateWithoutDuplicateDecisionsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
-  processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
   linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
   linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutDuplicateDecisionsInput = {
@@ -4887,20 +4961,21 @@ export type ProcessingDocumentUncheckedCreateWithoutDuplicateDecisionsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
   linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutDuplicateDecisionsInput = {
@@ -4954,25 +5029,26 @@ export type ProcessingDocumentUpdateWithoutDuplicateDecisionsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
-  processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
   linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
   linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutDuplicateDecisionsInput = {
@@ -5015,20 +5091,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutDuplicateDecisionsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
   linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutProcessingAttemptsInput = {
@@ -5066,25 +5143,26 @@ export type ProcessingDocumentCreateWithoutProcessingAttemptsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
-  duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
   linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
   linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutProcessingAttemptsInput = {
@@ -5127,20 +5205,21 @@ export type ProcessingDocumentUncheckedCreateWithoutProcessingAttemptsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
   linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutProcessingAttemptsInput = {
@@ -5194,25 +5273,26 @@ export type ProcessingDocumentUpdateWithoutProcessingAttemptsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
   linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
   linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutProcessingAttemptsInput = {
@@ -5255,20 +5335,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutProcessingAttemptsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
   linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutProcessingCheckpointsInput = {
@@ -5306,25 +5387,26 @@ export type ProcessingDocumentCreateWithoutProcessingCheckpointsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
-  duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
-  processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
   linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
   linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutProcessingCheckpointsInput = {
@@ -5367,20 +5449,21 @@ export type ProcessingDocumentUncheckedCreateWithoutProcessingCheckpointsInput =
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
   linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutProcessingCheckpointsInput = {
@@ -5434,25 +5517,26 @@ export type ProcessingDocumentUpdateWithoutProcessingCheckpointsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
-  processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
   linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
   linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutProcessingCheckpointsInput = {
@@ -5495,20 +5579,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutProcessingCheckpointsInput =
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
   linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutSplitPlansInput = {
@@ -5546,25 +5631,26 @@ export type ProcessingDocumentCreateWithoutSplitPlansInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutSplitPlansInput = {
@@ -5607,20 +5693,21 @@ export type ProcessingDocumentUncheckedCreateWithoutSplitPlansInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutSplitPlansInput = {
@@ -5674,25 +5761,26 @@ export type ProcessingDocumentUpdateWithoutSplitPlansInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutSplitPlansInput = {
@@ -5735,20 +5823,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutSplitPlansInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutStateEventsInput = {
@@ -5786,25 +5875,26 @@ export type ProcessingDocumentCreateWithoutStateEventsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutStateEventsInput = {
@@ -5847,20 +5937,21 @@ export type ProcessingDocumentUncheckedCreateWithoutStateEventsInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutStateEventsInput = {
@@ -5914,25 +6005,26 @@ export type ProcessingDocumentUpdateWithoutStateEventsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutStateEventsInput = {
@@ -5975,20 +6067,21 @@ export type ProcessingDocumentUncheckedUpdateWithoutStateEventsInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentCreateWithoutDerivedFilesInput = {
@@ -6026,25 +6119,26 @@ export type ProcessingDocumentCreateWithoutDerivedFilesInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
-  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
-  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
-  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
-  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
-  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
-  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
-  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentUncheckedCreateWithoutDerivedFilesInput = {
@@ -6087,20 +6181,21 @@ export type ProcessingDocumentUncheckedCreateWithoutDerivedFilesInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
-  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
-  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
   revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
-  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutProcessing_documentsInput
 }
 
 export type ProcessingDocumentCreateOrConnectWithoutDerivedFilesInput = {
@@ -6154,25 +6249,26 @@ export type ProcessingDocumentUpdateWithoutDerivedFilesInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutDerivedFilesInput = {
@@ -6215,26 +6311,85 @@ export type ProcessingDocumentUncheckedUpdateWithoutDerivedFilesInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
-export type ProcessingDocumentCreateManyParentProcessingDocInput = {
+export type ProcessingDocumentCreateWithoutWorkflow_artifactsInput = {
+  id?: string
+  isContainer?: boolean
+  pageFrom?: number | null
+  pageTo?: number | null
+  pageCount?: number | null
+  fileHash?: string | null
+  perceptualHash?: string | null
+  isEncryptedPdf?: boolean
+  isPasswordProtected?: boolean
+  contentTypeDetected?: string | null
+  pipelineStatus?: $Enums.PipelineStatus
+  processingPriority?: $Enums.ProcessingPriority
+  slaDeadline?: Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: number
+  firstErrorAt?: Date | string | null
+  canRetry?: boolean
+  nextRetryAt?: Date | string | null
+  deadLetterAt?: Date | string | null
+  duplicateStatus?: $Enums.DuplicateStatus
+  duplicateScore?: number | null
+  duplicateReason?: string | null
+  version?: number
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  lockVersion?: number
+  lockedById?: string | null
+  lockedAt?: Date | string | null
+  lockExpiresAt?: Date | string | null
+  uploadSource?: $Enums.UploadSource
+  legalHold?: boolean
+  retentionUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointCreateNestedManyWithoutProcessingDocumentInput
+  documentTags?: Prisma.ProcessingDocumentTagCreateNestedManyWithoutProcessingDocumentInput
+  currentRevision?: Prisma.DocumentRevisionCreateNestedOneWithoutCurrentForDocumentInput
+  document: Prisma.DocumentCreateNestedOneWithoutProcessingDocumentInput
+  duplicateOf?: Prisma.ProcessingDocumentCreateNestedOneWithoutDuplicatesInput
+  duplicates?: Prisma.ProcessingDocumentCreateNestedManyWithoutDuplicateOfInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentCreateNestedOneWithoutChildrenInput
+  children?: Prisma.ProcessingDocumentCreateNestedManyWithoutParentProcessingDocInput
+  rootDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutVersionsInput
+  versions?: Prisma.ProcessingDocumentCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanCreateNestedManyWithoutProcessingDocumentInput
+}
+
+export type ProcessingDocumentUncheckedCreateWithoutWorkflow_artifactsInput = {
   id?: string
   documentId: string
   isContainer?: boolean
+  parentProcessingDocId?: string | null
   pageFrom?: number | null
   pageTo?: number | null
   pageCount?: number | null
@@ -6270,6 +6425,151 @@ export type ProcessingDocumentCreateManyParentProcessingDocInput = {
   retentionUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  extractions?: Prisma.DocumentExtractionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutSourceDocumentInput
+  linkedTo?: Prisma.DocumentLinkUncheckedCreateNestedManyWithoutTargetDocumentInput
+  pages?: Prisma.DocumentPageUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  revisions?: Prisma.DocumentRevisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  documentTags?: Prisma.ProcessingDocumentTagUncheckedCreateNestedManyWithoutProcessingDocumentInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutDuplicateOfInput
+  children?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutParentProcessingDocInput
+  versions?: Prisma.ProcessingDocumentUncheckedCreateNestedManyWithoutRootDocumentInput
+  splitPlans?: Prisma.SplitPlanUncheckedCreateNestedManyWithoutProcessingDocumentInput
+}
+
+export type ProcessingDocumentCreateOrConnectWithoutWorkflow_artifactsInput = {
+  where: Prisma.ProcessingDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutWorkflow_artifactsInput, Prisma.ProcessingDocumentUncheckedCreateWithoutWorkflow_artifactsInput>
+}
+
+export type ProcessingDocumentUpsertWithoutWorkflow_artifactsInput = {
+  update: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutWorkflow_artifactsInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutWorkflow_artifactsInput>
+  create: Prisma.XOR<Prisma.ProcessingDocumentCreateWithoutWorkflow_artifactsInput, Prisma.ProcessingDocumentUncheckedCreateWithoutWorkflow_artifactsInput>
+  where?: Prisma.ProcessingDocumentWhereInput
+}
+
+export type ProcessingDocumentUpdateToOneWithWhereWithoutWorkflow_artifactsInput = {
+  where?: Prisma.ProcessingDocumentWhereInput
+  data: Prisma.XOR<Prisma.ProcessingDocumentUpdateWithoutWorkflow_artifactsInput, Prisma.ProcessingDocumentUncheckedUpdateWithoutWorkflow_artifactsInput>
+}
+
+export type ProcessingDocumentUpdateWithoutWorkflow_artifactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
+  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
+  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
+  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
+  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
+  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
+  documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+}
+
+export type ProcessingDocumentUncheckedUpdateWithoutWorkflow_artifactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
+  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
+  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
+  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
+  duplicateOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rootDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentRevisionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
+  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
 }
 
 export type ProcessingDocumentCreateManyDuplicateOfInput = {
@@ -6295,6 +6595,47 @@ export type ProcessingDocumentCreateManyDuplicateOfInput = {
   nextRetryAt?: Date | string | null
   deadLetterAt?: Date | string | null
   duplicateStatus?: $Enums.DuplicateStatus
+  duplicateScore?: number | null
+  duplicateReason?: string | null
+  rootDocumentId?: string | null
+  version?: number
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  currentRevisionId?: string | null
+  lockVersion?: number
+  lockedById?: string | null
+  lockedAt?: Date | string | null
+  lockExpiresAt?: Date | string | null
+  uploadSource?: $Enums.UploadSource
+  legalHold?: boolean
+  retentionUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type ProcessingDocumentCreateManyParentProcessingDocInput = {
+  id?: string
+  documentId: string
+  isContainer?: boolean
+  pageFrom?: number | null
+  pageTo?: number | null
+  pageCount?: number | null
+  fileHash?: string | null
+  perceptualHash?: string | null
+  isEncryptedPdf?: boolean
+  isPasswordProtected?: boolean
+  contentTypeDetected?: string | null
+  pipelineStatus?: $Enums.PipelineStatus
+  processingPriority?: $Enums.ProcessingPriority
+  slaDeadline?: Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: number
+  firstErrorAt?: Date | string | null
+  canRetry?: boolean
+  nextRetryAt?: Date | string | null
+  deadLetterAt?: Date | string | null
+  duplicateStatus?: $Enums.DuplicateStatus
+  duplicateOfId?: string | null
   duplicateScore?: number | null
   duplicateReason?: string | null
   rootDocumentId?: string | null
@@ -6354,159 +6695,6 @@ export type ProcessingDocumentCreateManyRootDocumentInput = {
   updatedAt?: Date | string
 }
 
-export type ProcessingDocumentUpdateWithoutParentProcessingDocInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
-  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
-  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
-  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
-  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  version?: Prisma.IntFieldUpdateOperationsInput | number
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
-  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
-  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
-  processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
-  documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
-}
-
-export type ProcessingDocumentUncheckedUpdateWithoutParentProcessingDocInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
-  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
-  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
-  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
-  duplicateOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rootDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  version?: Prisma.IntFieldUpdateOperationsInput | number
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  currentRevisionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
-  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
-  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
-  documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-}
-
-export type ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
-  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
-  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
-  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
-  duplicateOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rootDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  version?: Prisma.IntFieldUpdateOperationsInput | number
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  currentRevisionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
-  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
-  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
 export type ProcessingDocumentUpdateWithoutDuplicateOfInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -6542,25 +6730,26 @@ export type ProcessingDocumentUpdateWithoutDuplicateOfInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutDuplicateOfInput = {
@@ -6602,21 +6791,22 @@ export type ProcessingDocumentUncheckedUpdateWithoutDuplicateOfInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfInput = {
@@ -6642,6 +6832,161 @@ export type ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfInput = {
   nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
+  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rootDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentRevisionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
+  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ProcessingDocumentUpdateWithoutParentProcessingDocInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
+  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
+  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
+  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
+  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
+  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
+  documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  rootDocument?: Prisma.ProcessingDocumentUpdateOneWithoutVersionsNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
+}
+
+export type ProcessingDocumentUncheckedUpdateWithoutParentProcessingDocInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
+  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
+  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
+  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
+  duplicateOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rootDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentRevisionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lockExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  uploadSource?: Prisma.EnumUploadSourceFieldUpdateOperationsInput | $Enums.UploadSource
+  legalHold?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
+}
+
+export type ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fileHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  perceptualHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEncryptedPdf?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPasswordProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contentTypeDetected?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pipelineStatus?: Prisma.EnumPipelineStatusFieldUpdateOperationsInput | $Enums.PipelineStatus
+  processingPriority?: Prisma.EnumProcessingPriorityFieldUpdateOperationsInput | $Enums.ProcessingPriority
+  slaDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastError?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  errorCount?: Prisma.IntFieldUpdateOperationsInput | number
+  firstErrorAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  canRetry?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextRetryAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deadLetterAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  duplicateStatus?: Prisma.EnumDuplicateStatusFieldUpdateOperationsInput | $Enums.DuplicateStatus
+  duplicateOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duplicateScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   duplicateReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rootDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6695,25 +7040,26 @@ export type ProcessingDocumentUpdateWithoutRootDocumentInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
-  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
-  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
-  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
-  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
-  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
-  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUpdateManyWithoutProcessingDocumentNestedInput
+  currentRevision?: Prisma.DocumentRevisionUpdateOneWithoutCurrentForDocumentNestedInput
+  document?: Prisma.DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput
+  duplicateOf?: Prisma.ProcessingDocumentUpdateOneWithoutDuplicatesNestedInput
+  duplicates?: Prisma.ProcessingDocumentUpdateManyWithoutDuplicateOfNestedInput
+  parentProcessingDoc?: Prisma.ProcessingDocumentUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.ProcessingDocumentUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateWithoutRootDocumentInput = {
@@ -6755,21 +7101,22 @@ export type ProcessingDocumentUncheckedUpdateWithoutRootDocumentInput = {
   retentionUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
-  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
-  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
-  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   extractions?: Prisma.DocumentExtractionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
+  pages?: Prisma.DocumentPageUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   revisions?: Prisma.DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   duplicateDecisions?: Prisma.DuplicateDecisionUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingAttempts?: Prisma.ProcessingAttemptUncheckedUpdateManyWithoutProcessingDocumentNestedInput
   processingCheckpoints?: Prisma.ProcessingCheckpointUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  stateEvents?: Prisma.DocumentStateEventUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  derivedFiles?: Prisma.DocumentDerivedFileUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
-  linkedFrom?: Prisma.DocumentLinkUncheckedUpdateManyWithoutSourceDocumentNestedInput
-  linkedTo?: Prisma.DocumentLinkUncheckedUpdateManyWithoutTargetDocumentNestedInput
   documentTags?: Prisma.ProcessingDocumentTagUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  duplicates?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfNestedInput
+  children?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocNestedInput
+  versions?: Prisma.ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentNestedInput
+  splitPlans?: Prisma.SplitPlanUncheckedUpdateManyWithoutProcessingDocumentNestedInput
+  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsNestedInput
 }
 
 export type ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentInput = {
@@ -6819,39 +7166,41 @@ export type ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentInput = {
  */
 
 export type ProcessingDocumentCountOutputType = {
-  children: number
-  duplicates: number
-  versions: number
-  pages: number
+  derivedFiles: number
   extractions: number
+  linkedFrom: number
+  linkedTo: number
+  pages: number
   revisions: number
+  stateEvents: number
   duplicateDecisions: number
   processingAttempts: number
   processingCheckpoints: number
-  stateEvents: number
-  derivedFiles: number
-  splitPlans: number
-  linkedFrom: number
-  linkedTo: number
   documentTags: number
+  duplicates: number
+  children: number
+  versions: number
+  splitPlans: number
+  workflow_artifacts: number
 }
 
 export type ProcessingDocumentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  children?: boolean | ProcessingDocumentCountOutputTypeCountChildrenArgs
-  duplicates?: boolean | ProcessingDocumentCountOutputTypeCountDuplicatesArgs
-  versions?: boolean | ProcessingDocumentCountOutputTypeCountVersionsArgs
-  pages?: boolean | ProcessingDocumentCountOutputTypeCountPagesArgs
+  derivedFiles?: boolean | ProcessingDocumentCountOutputTypeCountDerivedFilesArgs
   extractions?: boolean | ProcessingDocumentCountOutputTypeCountExtractionsArgs
+  linkedFrom?: boolean | ProcessingDocumentCountOutputTypeCountLinkedFromArgs
+  linkedTo?: boolean | ProcessingDocumentCountOutputTypeCountLinkedToArgs
+  pages?: boolean | ProcessingDocumentCountOutputTypeCountPagesArgs
   revisions?: boolean | ProcessingDocumentCountOutputTypeCountRevisionsArgs
+  stateEvents?: boolean | ProcessingDocumentCountOutputTypeCountStateEventsArgs
   duplicateDecisions?: boolean | ProcessingDocumentCountOutputTypeCountDuplicateDecisionsArgs
   processingAttempts?: boolean | ProcessingDocumentCountOutputTypeCountProcessingAttemptsArgs
   processingCheckpoints?: boolean | ProcessingDocumentCountOutputTypeCountProcessingCheckpointsArgs
-  stateEvents?: boolean | ProcessingDocumentCountOutputTypeCountStateEventsArgs
-  derivedFiles?: boolean | ProcessingDocumentCountOutputTypeCountDerivedFilesArgs
-  splitPlans?: boolean | ProcessingDocumentCountOutputTypeCountSplitPlansArgs
-  linkedFrom?: boolean | ProcessingDocumentCountOutputTypeCountLinkedFromArgs
-  linkedTo?: boolean | ProcessingDocumentCountOutputTypeCountLinkedToArgs
   documentTags?: boolean | ProcessingDocumentCountOutputTypeCountDocumentTagsArgs
+  duplicates?: boolean | ProcessingDocumentCountOutputTypeCountDuplicatesArgs
+  children?: boolean | ProcessingDocumentCountOutputTypeCountChildrenArgs
+  versions?: boolean | ProcessingDocumentCountOutputTypeCountVersionsArgs
+  splitPlans?: boolean | ProcessingDocumentCountOutputTypeCountSplitPlansArgs
+  workflow_artifacts?: boolean | ProcessingDocumentCountOutputTypeCountWorkflow_artifactsArgs
 }
 
 /**
@@ -6867,29 +7216,8 @@ export type ProcessingDocumentCountOutputTypeDefaultArgs<ExtArgs extends runtime
 /**
  * ProcessingDocumentCountOutputType without action
  */
-export type ProcessingDocumentCountOutputTypeCountChildrenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ProcessingDocumentWhereInput
-}
-
-/**
- * ProcessingDocumentCountOutputType without action
- */
-export type ProcessingDocumentCountOutputTypeCountDuplicatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ProcessingDocumentWhereInput
-}
-
-/**
- * ProcessingDocumentCountOutputType without action
- */
-export type ProcessingDocumentCountOutputTypeCountVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ProcessingDocumentWhereInput
-}
-
-/**
- * ProcessingDocumentCountOutputType without action
- */
-export type ProcessingDocumentCountOutputTypeCountPagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentPageWhereInput
+export type ProcessingDocumentCountOutputTypeCountDerivedFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentDerivedFileWhereInput
 }
 
 /**
@@ -6902,8 +7230,36 @@ export type ProcessingDocumentCountOutputTypeCountExtractionsArgs<ExtArgs extend
 /**
  * ProcessingDocumentCountOutputType without action
  */
+export type ProcessingDocumentCountOutputTypeCountLinkedFromArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentLinkWhereInput
+}
+
+/**
+ * ProcessingDocumentCountOutputType without action
+ */
+export type ProcessingDocumentCountOutputTypeCountLinkedToArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentLinkWhereInput
+}
+
+/**
+ * ProcessingDocumentCountOutputType without action
+ */
+export type ProcessingDocumentCountOutputTypeCountPagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentPageWhereInput
+}
+
+/**
+ * ProcessingDocumentCountOutputType without action
+ */
 export type ProcessingDocumentCountOutputTypeCountRevisionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DocumentRevisionWhereInput
+}
+
+/**
+ * ProcessingDocumentCountOutputType without action
+ */
+export type ProcessingDocumentCountOutputTypeCountStateEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentStateEventWhereInput
 }
 
 /**
@@ -6930,15 +7286,29 @@ export type ProcessingDocumentCountOutputTypeCountProcessingCheckpointsArgs<ExtA
 /**
  * ProcessingDocumentCountOutputType without action
  */
-export type ProcessingDocumentCountOutputTypeCountStateEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentStateEventWhereInput
+export type ProcessingDocumentCountOutputTypeCountDocumentTagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProcessingDocumentTagWhereInput
 }
 
 /**
  * ProcessingDocumentCountOutputType without action
  */
-export type ProcessingDocumentCountOutputTypeCountDerivedFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentDerivedFileWhereInput
+export type ProcessingDocumentCountOutputTypeCountDuplicatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProcessingDocumentWhereInput
+}
+
+/**
+ * ProcessingDocumentCountOutputType without action
+ */
+export type ProcessingDocumentCountOutputTypeCountChildrenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProcessingDocumentWhereInput
+}
+
+/**
+ * ProcessingDocumentCountOutputType without action
+ */
+export type ProcessingDocumentCountOutputTypeCountVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProcessingDocumentWhereInput
 }
 
 /**
@@ -6951,22 +7321,8 @@ export type ProcessingDocumentCountOutputTypeCountSplitPlansArgs<ExtArgs extends
 /**
  * ProcessingDocumentCountOutputType without action
  */
-export type ProcessingDocumentCountOutputTypeCountLinkedFromArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentLinkWhereInput
-}
-
-/**
- * ProcessingDocumentCountOutputType without action
- */
-export type ProcessingDocumentCountOutputTypeCountLinkedToArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentLinkWhereInput
-}
-
-/**
- * ProcessingDocumentCountOutputType without action
- */
-export type ProcessingDocumentCountOutputTypeCountDocumentTagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ProcessingDocumentTagWhereInput
+export type ProcessingDocumentCountOutputTypeCountWorkflow_artifactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_artifactsWhereInput
 }
 
 
@@ -7010,26 +7366,27 @@ export type ProcessingDocumentSelect<ExtArgs extends runtime.Types.Extensions.In
   retentionUntil?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
-  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
-  children?: boolean | Prisma.ProcessingDocument$childrenArgs<ExtArgs>
-  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
-  duplicates?: boolean | Prisma.ProcessingDocument$duplicatesArgs<ExtArgs>
-  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
-  versions?: boolean | Prisma.ProcessingDocument$versionsArgs<ExtArgs>
-  currentRevision?: boolean | Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>
-  pages?: boolean | Prisma.ProcessingDocument$pagesArgs<ExtArgs>
+  derivedFiles?: boolean | Prisma.ProcessingDocument$derivedFilesArgs<ExtArgs>
   extractions?: boolean | Prisma.ProcessingDocument$extractionsArgs<ExtArgs>
+  linkedFrom?: boolean | Prisma.ProcessingDocument$linkedFromArgs<ExtArgs>
+  linkedTo?: boolean | Prisma.ProcessingDocument$linkedToArgs<ExtArgs>
+  pages?: boolean | Prisma.ProcessingDocument$pagesArgs<ExtArgs>
   revisions?: boolean | Prisma.ProcessingDocument$revisionsArgs<ExtArgs>
+  stateEvents?: boolean | Prisma.ProcessingDocument$stateEventsArgs<ExtArgs>
   duplicateDecisions?: boolean | Prisma.ProcessingDocument$duplicateDecisionsArgs<ExtArgs>
   processingAttempts?: boolean | Prisma.ProcessingDocument$processingAttemptsArgs<ExtArgs>
   processingCheckpoints?: boolean | Prisma.ProcessingDocument$processingCheckpointsArgs<ExtArgs>
-  stateEvents?: boolean | Prisma.ProcessingDocument$stateEventsArgs<ExtArgs>
-  derivedFiles?: boolean | Prisma.ProcessingDocument$derivedFilesArgs<ExtArgs>
-  splitPlans?: boolean | Prisma.ProcessingDocument$splitPlansArgs<ExtArgs>
-  linkedFrom?: boolean | Prisma.ProcessingDocument$linkedFromArgs<ExtArgs>
-  linkedTo?: boolean | Prisma.ProcessingDocument$linkedToArgs<ExtArgs>
   documentTags?: boolean | Prisma.ProcessingDocument$documentTagsArgs<ExtArgs>
+  currentRevision?: boolean | Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>
+  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
+  duplicates?: boolean | Prisma.ProcessingDocument$duplicatesArgs<ExtArgs>
+  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
+  children?: boolean | Prisma.ProcessingDocument$childrenArgs<ExtArgs>
+  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
+  versions?: boolean | Prisma.ProcessingDocument$versionsArgs<ExtArgs>
+  splitPlans?: boolean | Prisma.ProcessingDocument$splitPlansArgs<ExtArgs>
+  workflow_artifacts?: boolean | Prisma.ProcessingDocument$workflow_artifactsArgs<ExtArgs>
   _count?: boolean | Prisma.ProcessingDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["processingDocument"]>
 
@@ -7073,11 +7430,11 @@ export type ProcessingDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.
   retentionUntil?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
-  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
-  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
-  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
   currentRevision?: boolean | Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>
+  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
+  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
+  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
 }, ExtArgs["result"]["processingDocument"]>
 
 export type ProcessingDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -7120,11 +7477,11 @@ export type ProcessingDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.
   retentionUntil?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
-  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
-  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
-  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
   currentRevision?: boolean | Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>
+  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
+  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
+  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
 }, ExtArgs["result"]["processingDocument"]>
 
 export type ProcessingDocumentSelectScalar = {
@@ -7171,66 +7528,68 @@ export type ProcessingDocumentSelectScalar = {
 
 export type ProcessingDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "isContainer" | "parentProcessingDocId" | "pageFrom" | "pageTo" | "pageCount" | "fileHash" | "perceptualHash" | "isEncryptedPdf" | "isPasswordProtected" | "contentTypeDetected" | "pipelineStatus" | "processingPriority" | "slaDeadline" | "lastError" | "errorCount" | "firstErrorAt" | "canRetry" | "nextRetryAt" | "deadLetterAt" | "duplicateStatus" | "duplicateOfId" | "duplicateScore" | "duplicateReason" | "rootDocumentId" | "version" | "deletedAt" | "deletedReason" | "currentRevisionId" | "lockVersion" | "lockedById" | "lockedAt" | "lockExpiresAt" | "uploadSource" | "legalHold" | "retentionUntil" | "createdAt" | "updatedAt", ExtArgs["result"]["processingDocument"]>
 export type ProcessingDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
-  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
-  children?: boolean | Prisma.ProcessingDocument$childrenArgs<ExtArgs>
-  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
-  duplicates?: boolean | Prisma.ProcessingDocument$duplicatesArgs<ExtArgs>
-  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
-  versions?: boolean | Prisma.ProcessingDocument$versionsArgs<ExtArgs>
-  currentRevision?: boolean | Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>
-  pages?: boolean | Prisma.ProcessingDocument$pagesArgs<ExtArgs>
+  derivedFiles?: boolean | Prisma.ProcessingDocument$derivedFilesArgs<ExtArgs>
   extractions?: boolean | Prisma.ProcessingDocument$extractionsArgs<ExtArgs>
+  linkedFrom?: boolean | Prisma.ProcessingDocument$linkedFromArgs<ExtArgs>
+  linkedTo?: boolean | Prisma.ProcessingDocument$linkedToArgs<ExtArgs>
+  pages?: boolean | Prisma.ProcessingDocument$pagesArgs<ExtArgs>
   revisions?: boolean | Prisma.ProcessingDocument$revisionsArgs<ExtArgs>
+  stateEvents?: boolean | Prisma.ProcessingDocument$stateEventsArgs<ExtArgs>
   duplicateDecisions?: boolean | Prisma.ProcessingDocument$duplicateDecisionsArgs<ExtArgs>
   processingAttempts?: boolean | Prisma.ProcessingDocument$processingAttemptsArgs<ExtArgs>
   processingCheckpoints?: boolean | Prisma.ProcessingDocument$processingCheckpointsArgs<ExtArgs>
-  stateEvents?: boolean | Prisma.ProcessingDocument$stateEventsArgs<ExtArgs>
-  derivedFiles?: boolean | Prisma.ProcessingDocument$derivedFilesArgs<ExtArgs>
-  splitPlans?: boolean | Prisma.ProcessingDocument$splitPlansArgs<ExtArgs>
-  linkedFrom?: boolean | Prisma.ProcessingDocument$linkedFromArgs<ExtArgs>
-  linkedTo?: boolean | Prisma.ProcessingDocument$linkedToArgs<ExtArgs>
   documentTags?: boolean | Prisma.ProcessingDocument$documentTagsArgs<ExtArgs>
+  currentRevision?: boolean | Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>
+  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
+  duplicates?: boolean | Prisma.ProcessingDocument$duplicatesArgs<ExtArgs>
+  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
+  children?: boolean | Prisma.ProcessingDocument$childrenArgs<ExtArgs>
+  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
+  versions?: boolean | Prisma.ProcessingDocument$versionsArgs<ExtArgs>
+  splitPlans?: boolean | Prisma.ProcessingDocument$splitPlansArgs<ExtArgs>
+  workflow_artifacts?: boolean | Prisma.ProcessingDocument$workflow_artifactsArgs<ExtArgs>
   _count?: boolean | Prisma.ProcessingDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProcessingDocumentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
-  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
-  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
-  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
   currentRevision?: boolean | Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>
+  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
+  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
+  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
 }
 export type ProcessingDocumentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
-  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
-  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
-  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
   currentRevision?: boolean | Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>
+  document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  duplicateOf?: boolean | Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>
+  parentProcessingDoc?: boolean | Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>
+  rootDocument?: boolean | Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>
 }
 
 export type $ProcessingDocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ProcessingDocument"
   objects: {
-    document: Prisma.$DocumentPayload<ExtArgs>
-    parentProcessingDoc: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
-    children: Prisma.$ProcessingDocumentPayload<ExtArgs>[]
-    duplicateOf: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
-    duplicates: Prisma.$ProcessingDocumentPayload<ExtArgs>[]
-    rootDocument: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
-    versions: Prisma.$ProcessingDocumentPayload<ExtArgs>[]
-    currentRevision: Prisma.$DocumentRevisionPayload<ExtArgs> | null
-    pages: Prisma.$DocumentPagePayload<ExtArgs>[]
+    derivedFiles: Prisma.$DocumentDerivedFilePayload<ExtArgs>[]
     extractions: Prisma.$DocumentExtractionPayload<ExtArgs>[]
+    linkedFrom: Prisma.$DocumentLinkPayload<ExtArgs>[]
+    linkedTo: Prisma.$DocumentLinkPayload<ExtArgs>[]
+    pages: Prisma.$DocumentPagePayload<ExtArgs>[]
     revisions: Prisma.$DocumentRevisionPayload<ExtArgs>[]
+    stateEvents: Prisma.$DocumentStateEventPayload<ExtArgs>[]
     duplicateDecisions: Prisma.$DuplicateDecisionPayload<ExtArgs>[]
     processingAttempts: Prisma.$ProcessingAttemptPayload<ExtArgs>[]
     processingCheckpoints: Prisma.$ProcessingCheckpointPayload<ExtArgs>[]
-    stateEvents: Prisma.$DocumentStateEventPayload<ExtArgs>[]
-    derivedFiles: Prisma.$DocumentDerivedFilePayload<ExtArgs>[]
-    splitPlans: Prisma.$SplitPlanPayload<ExtArgs>[]
-    linkedFrom: Prisma.$DocumentLinkPayload<ExtArgs>[]
-    linkedTo: Prisma.$DocumentLinkPayload<ExtArgs>[]
     documentTags: Prisma.$ProcessingDocumentTagPayload<ExtArgs>[]
+    currentRevision: Prisma.$DocumentRevisionPayload<ExtArgs> | null
+    document: Prisma.$DocumentPayload<ExtArgs>
+    duplicateOf: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
+    duplicates: Prisma.$ProcessingDocumentPayload<ExtArgs>[]
+    parentProcessingDoc: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
+    children: Prisma.$ProcessingDocumentPayload<ExtArgs>[]
+    rootDocument: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
+    versions: Prisma.$ProcessingDocumentPayload<ExtArgs>[]
+    splitPlans: Prisma.$SplitPlanPayload<ExtArgs>[]
+    workflow_artifacts: Prisma.$workflow_artifactsPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -7666,26 +8025,27 @@ readonly fields: ProcessingDocumentFieldRefs;
  */
 export interface Prisma__ProcessingDocumentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  document<T extends Prisma.DocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__DocumentClient<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  parentProcessingDoc<T extends Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  children<T extends Prisma.ProcessingDocument$childrenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$childrenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  duplicateOf<T extends Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  duplicates<T extends Prisma.ProcessingDocument$duplicatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$duplicatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  rootDocument<T extends Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  versions<T extends Prisma.ProcessingDocument$versionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$versionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  currentRevision<T extends Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>>): Prisma.Prisma__DocumentRevisionClient<runtime.Types.Result.GetResult<Prisma.$DocumentRevisionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  pages<T extends Prisma.ProcessingDocument$pagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$pagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentPagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  derivedFiles<T extends Prisma.ProcessingDocument$derivedFilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$derivedFilesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentDerivedFilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   extractions<T extends Prisma.ProcessingDocument$extractionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$extractionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentExtractionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  linkedFrom<T extends Prisma.ProcessingDocument$linkedFromArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$linkedFromArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  linkedTo<T extends Prisma.ProcessingDocument$linkedToArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$linkedToArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  pages<T extends Prisma.ProcessingDocument$pagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$pagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentPagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   revisions<T extends Prisma.ProcessingDocument$revisionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$revisionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentRevisionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  stateEvents<T extends Prisma.ProcessingDocument$stateEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$stateEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentStateEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   duplicateDecisions<T extends Prisma.ProcessingDocument$duplicateDecisionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$duplicateDecisionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DuplicateDecisionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   processingAttempts<T extends Prisma.ProcessingDocument$processingAttemptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$processingAttemptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessingAttemptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   processingCheckpoints<T extends Prisma.ProcessingDocument$processingCheckpointsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$processingCheckpointsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessingCheckpointPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  stateEvents<T extends Prisma.ProcessingDocument$stateEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$stateEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentStateEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  derivedFiles<T extends Prisma.ProcessingDocument$derivedFilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$derivedFilesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentDerivedFilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  splitPlans<T extends Prisma.ProcessingDocument$splitPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$splitPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SplitPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  linkedFrom<T extends Prisma.ProcessingDocument$linkedFromArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$linkedFromArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  linkedTo<T extends Prisma.ProcessingDocument$linkedToArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$linkedToArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   documentTags<T extends Prisma.ProcessingDocument$documentTagsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$documentTagsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentTagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  currentRevision<T extends Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$currentRevisionArgs<ExtArgs>>): Prisma.Prisma__DocumentRevisionClient<runtime.Types.Result.GetResult<Prisma.$DocumentRevisionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  document<T extends Prisma.DocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__DocumentClient<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  duplicateOf<T extends Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$duplicateOfArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  duplicates<T extends Prisma.ProcessingDocument$duplicatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$duplicatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  parentProcessingDoc<T extends Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$parentProcessingDocArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  children<T extends Prisma.ProcessingDocument$childrenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$childrenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  rootDocument<T extends Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$rootDocumentArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  versions<T extends Prisma.ProcessingDocument$versionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$versionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  splitPlans<T extends Prisma.ProcessingDocument$splitPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$splitPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SplitPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_artifacts<T extends Prisma.ProcessingDocument$workflow_artifactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessingDocument$workflow_artifactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_artifactsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8150,175 +8510,27 @@ export type ProcessingDocumentDeleteManyArgs<ExtArgs extends runtime.Types.Exten
 }
 
 /**
- * ProcessingDocument.parentProcessingDoc
+ * ProcessingDocument.derivedFiles
  */
-export type ProcessingDocument$parentProcessingDocArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type ProcessingDocument$derivedFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the ProcessingDocument
+   * Select specific fields to fetch from the DocumentDerivedFile
    */
-  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
+  select?: Prisma.DocumentDerivedFileSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the ProcessingDocument
+   * Omit specific fields from the DocumentDerivedFile
    */
-  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
+  omit?: Prisma.DocumentDerivedFileOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
-  where?: Prisma.ProcessingDocumentWhereInput
-}
-
-/**
- * ProcessingDocument.children
- */
-export type ProcessingDocument$childrenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ProcessingDocument
-   */
-  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ProcessingDocument
-   */
-  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
-  where?: Prisma.ProcessingDocumentWhereInput
-  orderBy?: Prisma.ProcessingDocumentOrderByWithRelationInput | Prisma.ProcessingDocumentOrderByWithRelationInput[]
-  cursor?: Prisma.ProcessingDocumentWhereUniqueInput
+  include?: Prisma.DocumentDerivedFileInclude<ExtArgs> | null
+  where?: Prisma.DocumentDerivedFileWhereInput
+  orderBy?: Prisma.DocumentDerivedFileOrderByWithRelationInput | Prisma.DocumentDerivedFileOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentDerivedFileWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.ProcessingDocumentScalarFieldEnum | Prisma.ProcessingDocumentScalarFieldEnum[]
-}
-
-/**
- * ProcessingDocument.duplicateOf
- */
-export type ProcessingDocument$duplicateOfArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ProcessingDocument
-   */
-  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ProcessingDocument
-   */
-  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
-  where?: Prisma.ProcessingDocumentWhereInput
-}
-
-/**
- * ProcessingDocument.duplicates
- */
-export type ProcessingDocument$duplicatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ProcessingDocument
-   */
-  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ProcessingDocument
-   */
-  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
-  where?: Prisma.ProcessingDocumentWhereInput
-  orderBy?: Prisma.ProcessingDocumentOrderByWithRelationInput | Prisma.ProcessingDocumentOrderByWithRelationInput[]
-  cursor?: Prisma.ProcessingDocumentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ProcessingDocumentScalarFieldEnum | Prisma.ProcessingDocumentScalarFieldEnum[]
-}
-
-/**
- * ProcessingDocument.rootDocument
- */
-export type ProcessingDocument$rootDocumentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ProcessingDocument
-   */
-  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ProcessingDocument
-   */
-  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
-  where?: Prisma.ProcessingDocumentWhereInput
-}
-
-/**
- * ProcessingDocument.versions
- */
-export type ProcessingDocument$versionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ProcessingDocument
-   */
-  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ProcessingDocument
-   */
-  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
-  where?: Prisma.ProcessingDocumentWhereInput
-  orderBy?: Prisma.ProcessingDocumentOrderByWithRelationInput | Prisma.ProcessingDocumentOrderByWithRelationInput[]
-  cursor?: Prisma.ProcessingDocumentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ProcessingDocumentScalarFieldEnum | Prisma.ProcessingDocumentScalarFieldEnum[]
-}
-
-/**
- * ProcessingDocument.currentRevision
- */
-export type ProcessingDocument$currentRevisionArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentRevision
-   */
-  select?: Prisma.DocumentRevisionSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentRevision
-   */
-  omit?: Prisma.DocumentRevisionOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentRevisionInclude<ExtArgs> | null
-  where?: Prisma.DocumentRevisionWhereInput
-}
-
-/**
- * ProcessingDocument.pages
- */
-export type ProcessingDocument$pagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentPage
-   */
-  select?: Prisma.DocumentPageSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentPage
-   */
-  omit?: Prisma.DocumentPageOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentPageInclude<ExtArgs> | null
-  where?: Prisma.DocumentPageWhereInput
-  orderBy?: Prisma.DocumentPageOrderByWithRelationInput | Prisma.DocumentPageOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentPageWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentPageScalarFieldEnum | Prisma.DocumentPageScalarFieldEnum[]
+  distinct?: Prisma.DocumentDerivedFileScalarFieldEnum | Prisma.DocumentDerivedFileScalarFieldEnum[]
 }
 
 /**
@@ -8346,6 +8558,78 @@ export type ProcessingDocument$extractionsArgs<ExtArgs extends runtime.Types.Ext
 }
 
 /**
+ * ProcessingDocument.linkedFrom
+ */
+export type ProcessingDocument$linkedFromArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentLink
+   */
+  select?: Prisma.DocumentLinkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentLink
+   */
+  omit?: Prisma.DocumentLinkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentLinkInclude<ExtArgs> | null
+  where?: Prisma.DocumentLinkWhereInput
+  orderBy?: Prisma.DocumentLinkOrderByWithRelationInput | Prisma.DocumentLinkOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentLinkWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentLinkScalarFieldEnum | Prisma.DocumentLinkScalarFieldEnum[]
+}
+
+/**
+ * ProcessingDocument.linkedTo
+ */
+export type ProcessingDocument$linkedToArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentLink
+   */
+  select?: Prisma.DocumentLinkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentLink
+   */
+  omit?: Prisma.DocumentLinkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentLinkInclude<ExtArgs> | null
+  where?: Prisma.DocumentLinkWhereInput
+  orderBy?: Prisma.DocumentLinkOrderByWithRelationInput | Prisma.DocumentLinkOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentLinkWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentLinkScalarFieldEnum | Prisma.DocumentLinkScalarFieldEnum[]
+}
+
+/**
+ * ProcessingDocument.pages
+ */
+export type ProcessingDocument$pagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentPage
+   */
+  select?: Prisma.DocumentPageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentPage
+   */
+  omit?: Prisma.DocumentPageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentPageInclude<ExtArgs> | null
+  where?: Prisma.DocumentPageWhereInput
+  orderBy?: Prisma.DocumentPageOrderByWithRelationInput | Prisma.DocumentPageOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentPageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentPageScalarFieldEnum | Prisma.DocumentPageScalarFieldEnum[]
+}
+
+/**
  * ProcessingDocument.revisions
  */
 export type ProcessingDocument$revisionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -8367,6 +8651,30 @@ export type ProcessingDocument$revisionsArgs<ExtArgs extends runtime.Types.Exten
   take?: number
   skip?: number
   distinct?: Prisma.DocumentRevisionScalarFieldEnum | Prisma.DocumentRevisionScalarFieldEnum[]
+}
+
+/**
+ * ProcessingDocument.stateEvents
+ */
+export type ProcessingDocument$stateEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentStateEvent
+   */
+  select?: Prisma.DocumentStateEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentStateEvent
+   */
+  omit?: Prisma.DocumentStateEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentStateEventInclude<ExtArgs> | null
+  where?: Prisma.DocumentStateEventWhereInput
+  orderBy?: Prisma.DocumentStateEventOrderByWithRelationInput | Prisma.DocumentStateEventOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentStateEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentStateEventScalarFieldEnum | Prisma.DocumentStateEventScalarFieldEnum[]
 }
 
 /**
@@ -8442,51 +8750,175 @@ export type ProcessingDocument$processingCheckpointsArgs<ExtArgs extends runtime
 }
 
 /**
- * ProcessingDocument.stateEvents
+ * ProcessingDocument.documentTags
  */
-export type ProcessingDocument$stateEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type ProcessingDocument$documentTagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the DocumentStateEvent
+   * Select specific fields to fetch from the ProcessingDocumentTag
    */
-  select?: Prisma.DocumentStateEventSelect<ExtArgs> | null
+  select?: Prisma.ProcessingDocumentTagSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the DocumentStateEvent
+   * Omit specific fields from the ProcessingDocumentTag
    */
-  omit?: Prisma.DocumentStateEventOmit<ExtArgs> | null
+  omit?: Prisma.ProcessingDocumentTagOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.DocumentStateEventInclude<ExtArgs> | null
-  where?: Prisma.DocumentStateEventWhereInput
-  orderBy?: Prisma.DocumentStateEventOrderByWithRelationInput | Prisma.DocumentStateEventOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentStateEventWhereUniqueInput
+  include?: Prisma.ProcessingDocumentTagInclude<ExtArgs> | null
+  where?: Prisma.ProcessingDocumentTagWhereInput
+  orderBy?: Prisma.ProcessingDocumentTagOrderByWithRelationInput | Prisma.ProcessingDocumentTagOrderByWithRelationInput[]
+  cursor?: Prisma.ProcessingDocumentTagWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.DocumentStateEventScalarFieldEnum | Prisma.DocumentStateEventScalarFieldEnum[]
+  distinct?: Prisma.ProcessingDocumentTagScalarFieldEnum | Prisma.ProcessingDocumentTagScalarFieldEnum[]
 }
 
 /**
- * ProcessingDocument.derivedFiles
+ * ProcessingDocument.currentRevision
  */
-export type ProcessingDocument$derivedFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type ProcessingDocument$currentRevisionArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the DocumentDerivedFile
+   * Select specific fields to fetch from the DocumentRevision
    */
-  select?: Prisma.DocumentDerivedFileSelect<ExtArgs> | null
+  select?: Prisma.DocumentRevisionSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the DocumentDerivedFile
+   * Omit specific fields from the DocumentRevision
    */
-  omit?: Prisma.DocumentDerivedFileOmit<ExtArgs> | null
+  omit?: Prisma.DocumentRevisionOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.DocumentDerivedFileInclude<ExtArgs> | null
-  where?: Prisma.DocumentDerivedFileWhereInput
-  orderBy?: Prisma.DocumentDerivedFileOrderByWithRelationInput | Prisma.DocumentDerivedFileOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentDerivedFileWhereUniqueInput
+  include?: Prisma.DocumentRevisionInclude<ExtArgs> | null
+  where?: Prisma.DocumentRevisionWhereInput
+}
+
+/**
+ * ProcessingDocument.duplicateOf
+ */
+export type ProcessingDocument$duplicateOfArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProcessingDocument
+   */
+  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProcessingDocument
+   */
+  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
+  where?: Prisma.ProcessingDocumentWhereInput
+}
+
+/**
+ * ProcessingDocument.duplicates
+ */
+export type ProcessingDocument$duplicatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProcessingDocument
+   */
+  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProcessingDocument
+   */
+  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
+  where?: Prisma.ProcessingDocumentWhereInput
+  orderBy?: Prisma.ProcessingDocumentOrderByWithRelationInput | Prisma.ProcessingDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.ProcessingDocumentWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.DocumentDerivedFileScalarFieldEnum | Prisma.DocumentDerivedFileScalarFieldEnum[]
+  distinct?: Prisma.ProcessingDocumentScalarFieldEnum | Prisma.ProcessingDocumentScalarFieldEnum[]
+}
+
+/**
+ * ProcessingDocument.parentProcessingDoc
+ */
+export type ProcessingDocument$parentProcessingDocArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProcessingDocument
+   */
+  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProcessingDocument
+   */
+  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
+  where?: Prisma.ProcessingDocumentWhereInput
+}
+
+/**
+ * ProcessingDocument.children
+ */
+export type ProcessingDocument$childrenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProcessingDocument
+   */
+  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProcessingDocument
+   */
+  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
+  where?: Prisma.ProcessingDocumentWhereInput
+  orderBy?: Prisma.ProcessingDocumentOrderByWithRelationInput | Prisma.ProcessingDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.ProcessingDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProcessingDocumentScalarFieldEnum | Prisma.ProcessingDocumentScalarFieldEnum[]
+}
+
+/**
+ * ProcessingDocument.rootDocument
+ */
+export type ProcessingDocument$rootDocumentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProcessingDocument
+   */
+  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProcessingDocument
+   */
+  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
+  where?: Prisma.ProcessingDocumentWhereInput
+}
+
+/**
+ * ProcessingDocument.versions
+ */
+export type ProcessingDocument$versionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProcessingDocument
+   */
+  select?: Prisma.ProcessingDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProcessingDocument
+   */
+  omit?: Prisma.ProcessingDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProcessingDocumentInclude<ExtArgs> | null
+  where?: Prisma.ProcessingDocumentWhereInput
+  orderBy?: Prisma.ProcessingDocumentOrderByWithRelationInput | Prisma.ProcessingDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.ProcessingDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProcessingDocumentScalarFieldEnum | Prisma.ProcessingDocumentScalarFieldEnum[]
 }
 
 /**
@@ -8514,75 +8946,27 @@ export type ProcessingDocument$splitPlansArgs<ExtArgs extends runtime.Types.Exte
 }
 
 /**
- * ProcessingDocument.linkedFrom
+ * ProcessingDocument.workflow_artifacts
  */
-export type ProcessingDocument$linkedFromArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type ProcessingDocument$workflow_artifactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the DocumentLink
+   * Select specific fields to fetch from the workflow_artifacts
    */
-  select?: Prisma.DocumentLinkSelect<ExtArgs> | null
+  select?: Prisma.workflow_artifactsSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the DocumentLink
+   * Omit specific fields from the workflow_artifacts
    */
-  omit?: Prisma.DocumentLinkOmit<ExtArgs> | null
+  omit?: Prisma.workflow_artifactsOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.DocumentLinkInclude<ExtArgs> | null
-  where?: Prisma.DocumentLinkWhereInput
-  orderBy?: Prisma.DocumentLinkOrderByWithRelationInput | Prisma.DocumentLinkOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentLinkWhereUniqueInput
+  include?: Prisma.workflow_artifactsInclude<ExtArgs> | null
+  where?: Prisma.workflow_artifactsWhereInput
+  orderBy?: Prisma.workflow_artifactsOrderByWithRelationInput | Prisma.workflow_artifactsOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_artifactsWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.DocumentLinkScalarFieldEnum | Prisma.DocumentLinkScalarFieldEnum[]
-}
-
-/**
- * ProcessingDocument.linkedTo
- */
-export type ProcessingDocument$linkedToArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentLink
-   */
-  select?: Prisma.DocumentLinkSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentLink
-   */
-  omit?: Prisma.DocumentLinkOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentLinkInclude<ExtArgs> | null
-  where?: Prisma.DocumentLinkWhereInput
-  orderBy?: Prisma.DocumentLinkOrderByWithRelationInput | Prisma.DocumentLinkOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentLinkWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentLinkScalarFieldEnum | Prisma.DocumentLinkScalarFieldEnum[]
-}
-
-/**
- * ProcessingDocument.documentTags
- */
-export type ProcessingDocument$documentTagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ProcessingDocumentTag
-   */
-  select?: Prisma.ProcessingDocumentTagSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ProcessingDocumentTag
-   */
-  omit?: Prisma.ProcessingDocumentTagOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ProcessingDocumentTagInclude<ExtArgs> | null
-  where?: Prisma.ProcessingDocumentTagWhereInput
-  orderBy?: Prisma.ProcessingDocumentTagOrderByWithRelationInput | Prisma.ProcessingDocumentTagOrderByWithRelationInput[]
-  cursor?: Prisma.ProcessingDocumentTagWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ProcessingDocumentTagScalarFieldEnum | Prisma.ProcessingDocumentTagScalarFieldEnum[]
+  distinct?: Prisma.Workflow_artifactsScalarFieldEnum | Prisma.Workflow_artifactsScalarFieldEnum[]
 }
 
 /**

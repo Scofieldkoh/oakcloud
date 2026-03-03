@@ -157,6 +157,7 @@ Important:
   DATE : 07 AUG 2025
   Parse the date format (DD MMM YYYY) into YYYY-MM-DD format for receiptDate
 - For FREE BUSINESS PROFILE documents (no receipt number), use "FREE" as the receiptNo value
+- Country names and nationalities must use title case (e.g. "Singapore", "Malaysia", "United States"), never full caps (e.g. NOT "SINGAPORE")
 
 Respond ONLY with valid JSON, no markdown or explanation.`;
 

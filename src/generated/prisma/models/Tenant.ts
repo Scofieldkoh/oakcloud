@@ -332,25 +332,33 @@ export type TenantWhereInput = {
   activatedAt?: Prisma.DateTimeNullableFilter<"Tenant"> | Date | string | null
   suspendedAt?: Prisma.DateTimeNullableFilter<"Tenant"> | Date | string | null
   suspendReason?: Prisma.StringNullableFilter<"Tenant"> | string | null
-  users?: Prisma.UserListRelationFilter
-  companies?: Prisma.CompanyListRelationFilter
-  contacts?: Prisma.ContactListRelationFilter
-  documents?: Prisma.DocumentListRelationFilter
-  auditLogs?: Prisma.AuditLogListRelationFilter
-  roles?: Prisma.RoleListRelationFilter
-  connectors?: Prisma.ConnectorListRelationFilter
-  connectorAccess?: Prisma.TenantConnectorAccessListRelationFilter
-  connectorUsageLogs?: Prisma.ConnectorUsageLogListRelationFilter
-  documentTemplates?: Prisma.DocumentTemplateListRelationFilter
-  generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
-  letterhead?: Prisma.XOR<Prisma.TenantLetterheadNullableScalarRelationFilter, Prisma.TenantLetterheadWhereInput> | null
-  templatePartials?: Prisma.TemplatePartialListRelationFilter
   aiConversations?: Prisma.AiConversationListRelationFilter
-  backups?: Prisma.TenantBackupListRelationFilter
+  auditLogs?: Prisma.AuditLogListRelationFilter
   backupSchedule?: Prisma.XOR<Prisma.BackupScheduleNullableScalarRelationFilter, Prisma.BackupScheduleWhereInput> | null
-  exchangeRates?: Prisma.ExchangeRateListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
+  companies?: Prisma.CompanyListRelationFilter
+  connectorUsageLogs?: Prisma.ConnectorUsageLogListRelationFilter
+  connectors?: Prisma.ConnectorListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
+  contacts?: Prisma.ContactListRelationFilter
+  documentTemplates?: Prisma.DocumentTemplateListRelationFilter
+  documents?: Prisma.DocumentListRelationFilter
+  exchangeRates?: Prisma.ExchangeRateListRelationFilter
+  generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
+  roles?: Prisma.RoleListRelationFilter
+  templatePartials?: Prisma.TemplatePartialListRelationFilter
+  backups?: Prisma.TenantBackupListRelationFilter
+  connectorAccess?: Prisma.TenantConnectorAccessListRelationFilter
+  letterhead?: Prisma.XOR<Prisma.TenantLetterheadNullableScalarRelationFilter, Prisma.TenantLetterheadWhereInput> | null
+  users?: Prisma.UserListRelationFilter
+  workflow_client_groups?: Prisma.Workflow_client_groupsListRelationFilter
+  workflow_engagements?: Prisma.Workflow_engagementsListRelationFilter
+  workflow_instances?: Prisma.Workflow_instancesListRelationFilter
+  workflow_notification_log?: Prisma.Workflow_notification_logListRelationFilter
+  workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
+  workflow_project_settings?: Prisma.Workflow_project_settingsListRelationFilter
+  workflow_scheduled_instances_queue?: Prisma.Workflow_scheduled_instances_queueListRelationFilter
+  workflow_service_definitions?: Prisma.Workflow_service_definitionsListRelationFilter
 }
 
 export type TenantOrderByWithRelationInput = {
@@ -373,25 +381,33 @@ export type TenantOrderByWithRelationInput = {
   activatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   suspendedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   suspendReason?: Prisma.SortOrderInput | Prisma.SortOrder
-  users?: Prisma.UserOrderByRelationAggregateInput
-  companies?: Prisma.CompanyOrderByRelationAggregateInput
-  contacts?: Prisma.ContactOrderByRelationAggregateInput
-  documents?: Prisma.DocumentOrderByRelationAggregateInput
-  auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
-  roles?: Prisma.RoleOrderByRelationAggregateInput
-  connectors?: Prisma.ConnectorOrderByRelationAggregateInput
-  connectorAccess?: Prisma.TenantConnectorAccessOrderByRelationAggregateInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogOrderByRelationAggregateInput
-  documentTemplates?: Prisma.DocumentTemplateOrderByRelationAggregateInput
-  generatedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
-  letterhead?: Prisma.TenantLetterheadOrderByWithRelationInput
-  templatePartials?: Prisma.TemplatePartialOrderByRelationAggregateInput
   aiConversations?: Prisma.AiConversationOrderByRelationAggregateInput
-  backups?: Prisma.TenantBackupOrderByRelationAggregateInput
+  auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
   backupSchedule?: Prisma.BackupScheduleOrderByWithRelationInput
-  exchangeRates?: Prisma.ExchangeRateOrderByRelationAggregateInput
   chartOfAccounts?: Prisma.ChartOfAccountOrderByRelationAggregateInput
+  companies?: Prisma.CompanyOrderByRelationAggregateInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogOrderByRelationAggregateInput
+  connectors?: Prisma.ConnectorOrderByRelationAggregateInput
   contactDetails?: Prisma.ContactDetailOrderByRelationAggregateInput
+  contacts?: Prisma.ContactOrderByRelationAggregateInput
+  documentTemplates?: Prisma.DocumentTemplateOrderByRelationAggregateInput
+  documents?: Prisma.DocumentOrderByRelationAggregateInput
+  exchangeRates?: Prisma.ExchangeRateOrderByRelationAggregateInput
+  generatedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
+  roles?: Prisma.RoleOrderByRelationAggregateInput
+  templatePartials?: Prisma.TemplatePartialOrderByRelationAggregateInput
+  backups?: Prisma.TenantBackupOrderByRelationAggregateInput
+  connectorAccess?: Prisma.TenantConnectorAccessOrderByRelationAggregateInput
+  letterhead?: Prisma.TenantLetterheadOrderByWithRelationInput
+  users?: Prisma.UserOrderByRelationAggregateInput
+  workflow_client_groups?: Prisma.workflow_client_groupsOrderByRelationAggregateInput
+  workflow_engagements?: Prisma.workflow_engagementsOrderByRelationAggregateInput
+  workflow_instances?: Prisma.workflow_instancesOrderByRelationAggregateInput
+  workflow_notification_log?: Prisma.workflow_notification_logOrderByRelationAggregateInput
+  workflow_project_instances?: Prisma.workflow_project_instancesOrderByRelationAggregateInput
+  workflow_project_settings?: Prisma.workflow_project_settingsOrderByRelationAggregateInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueOrderByRelationAggregateInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsOrderByRelationAggregateInput
 }
 
 export type TenantWhereUniqueInput = Prisma.AtLeast<{
@@ -417,25 +433,33 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   activatedAt?: Prisma.DateTimeNullableFilter<"Tenant"> | Date | string | null
   suspendedAt?: Prisma.DateTimeNullableFilter<"Tenant"> | Date | string | null
   suspendReason?: Prisma.StringNullableFilter<"Tenant"> | string | null
-  users?: Prisma.UserListRelationFilter
-  companies?: Prisma.CompanyListRelationFilter
-  contacts?: Prisma.ContactListRelationFilter
-  documents?: Prisma.DocumentListRelationFilter
-  auditLogs?: Prisma.AuditLogListRelationFilter
-  roles?: Prisma.RoleListRelationFilter
-  connectors?: Prisma.ConnectorListRelationFilter
-  connectorAccess?: Prisma.TenantConnectorAccessListRelationFilter
-  connectorUsageLogs?: Prisma.ConnectorUsageLogListRelationFilter
-  documentTemplates?: Prisma.DocumentTemplateListRelationFilter
-  generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
-  letterhead?: Prisma.XOR<Prisma.TenantLetterheadNullableScalarRelationFilter, Prisma.TenantLetterheadWhereInput> | null
-  templatePartials?: Prisma.TemplatePartialListRelationFilter
   aiConversations?: Prisma.AiConversationListRelationFilter
-  backups?: Prisma.TenantBackupListRelationFilter
+  auditLogs?: Prisma.AuditLogListRelationFilter
   backupSchedule?: Prisma.XOR<Prisma.BackupScheduleNullableScalarRelationFilter, Prisma.BackupScheduleWhereInput> | null
-  exchangeRates?: Prisma.ExchangeRateListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
+  companies?: Prisma.CompanyListRelationFilter
+  connectorUsageLogs?: Prisma.ConnectorUsageLogListRelationFilter
+  connectors?: Prisma.ConnectorListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
+  contacts?: Prisma.ContactListRelationFilter
+  documentTemplates?: Prisma.DocumentTemplateListRelationFilter
+  documents?: Prisma.DocumentListRelationFilter
+  exchangeRates?: Prisma.ExchangeRateListRelationFilter
+  generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
+  roles?: Prisma.RoleListRelationFilter
+  templatePartials?: Prisma.TemplatePartialListRelationFilter
+  backups?: Prisma.TenantBackupListRelationFilter
+  connectorAccess?: Prisma.TenantConnectorAccessListRelationFilter
+  letterhead?: Prisma.XOR<Prisma.TenantLetterheadNullableScalarRelationFilter, Prisma.TenantLetterheadWhereInput> | null
+  users?: Prisma.UserListRelationFilter
+  workflow_client_groups?: Prisma.Workflow_client_groupsListRelationFilter
+  workflow_engagements?: Prisma.Workflow_engagementsListRelationFilter
+  workflow_instances?: Prisma.Workflow_instancesListRelationFilter
+  workflow_notification_log?: Prisma.Workflow_notification_logListRelationFilter
+  workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
+  workflow_project_settings?: Prisma.Workflow_project_settingsListRelationFilter
+  workflow_scheduled_instances_queue?: Prisma.Workflow_scheduled_instances_queueListRelationFilter
+  workflow_service_definitions?: Prisma.Workflow_service_definitionsListRelationFilter
 }, "id" | "slug">
 
 export type TenantOrderByWithAggregationInput = {
@@ -510,25 +534,33 @@ export type TenantCreateInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateInput = {
@@ -551,25 +583,33 @@ export type TenantUncheckedCreateInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUpdateInput = {
@@ -592,25 +632,33 @@ export type TenantUpdateInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateInput = {
@@ -633,25 +681,33 @@ export type TenantUncheckedUpdateInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateManyInput = {
@@ -1114,6 +1170,118 @@ export type TenantUpdateOneWithoutChartOfAccountsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutChartOfAccountsInput, Prisma.TenantUpdateWithoutChartOfAccountsInput>, Prisma.TenantUncheckedUpdateWithoutChartOfAccountsInput>
 }
 
+export type TenantCreateNestedOneWithoutWorkflow_client_groupsInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_client_groupsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_client_groupsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_client_groupsInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutWorkflow_client_groupsNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_client_groupsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_client_groupsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_client_groupsInput
+  upsert?: Prisma.TenantUpsertWithoutWorkflow_client_groupsInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutWorkflow_client_groupsInput, Prisma.TenantUpdateWithoutWorkflow_client_groupsInput>, Prisma.TenantUncheckedUpdateWithoutWorkflow_client_groupsInput>
+}
+
+export type TenantCreateNestedOneWithoutWorkflow_engagementsInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_engagementsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_engagementsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_engagementsInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutWorkflow_engagementsNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_engagementsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_engagementsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_engagementsInput
+  upsert?: Prisma.TenantUpsertWithoutWorkflow_engagementsInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutWorkflow_engagementsInput, Prisma.TenantUpdateWithoutWorkflow_engagementsInput>, Prisma.TenantUncheckedUpdateWithoutWorkflow_engagementsInput>
+}
+
+export type TenantCreateNestedOneWithoutWorkflow_instancesInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_instancesInput, Prisma.TenantUncheckedCreateWithoutWorkflow_instancesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_instancesInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutWorkflow_instancesNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_instancesInput, Prisma.TenantUncheckedCreateWithoutWorkflow_instancesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_instancesInput
+  upsert?: Prisma.TenantUpsertWithoutWorkflow_instancesInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutWorkflow_instancesInput, Prisma.TenantUpdateWithoutWorkflow_instancesInput>, Prisma.TenantUncheckedUpdateWithoutWorkflow_instancesInput>
+}
+
+export type TenantCreateNestedOneWithoutWorkflow_notification_logInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_notification_logInput, Prisma.TenantUncheckedCreateWithoutWorkflow_notification_logInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_notification_logInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutWorkflow_notification_logNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_notification_logInput, Prisma.TenantUncheckedCreateWithoutWorkflow_notification_logInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_notification_logInput
+  upsert?: Prisma.TenantUpsertWithoutWorkflow_notification_logInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutWorkflow_notification_logInput, Prisma.TenantUpdateWithoutWorkflow_notification_logInput>, Prisma.TenantUncheckedUpdateWithoutWorkflow_notification_logInput>
+}
+
+export type TenantCreateNestedOneWithoutWorkflow_project_instancesInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_project_instancesInput, Prisma.TenantUncheckedCreateWithoutWorkflow_project_instancesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_project_instancesInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_project_instancesInput, Prisma.TenantUncheckedCreateWithoutWorkflow_project_instancesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_project_instancesInput
+  upsert?: Prisma.TenantUpsertWithoutWorkflow_project_instancesInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutWorkflow_project_instancesInput, Prisma.TenantUpdateWithoutWorkflow_project_instancesInput>, Prisma.TenantUncheckedUpdateWithoutWorkflow_project_instancesInput>
+}
+
+export type TenantCreateNestedOneWithoutWorkflow_project_settingsInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_project_settingsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_project_settingsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_project_settingsInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutWorkflow_project_settingsNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_project_settingsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_project_settingsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_project_settingsInput
+  upsert?: Prisma.TenantUpsertWithoutWorkflow_project_settingsInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutWorkflow_project_settingsInput, Prisma.TenantUpdateWithoutWorkflow_project_settingsInput>, Prisma.TenantUncheckedUpdateWithoutWorkflow_project_settingsInput>
+}
+
+export type TenantCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.TenantUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.TenantUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput
+  upsert?: Prisma.TenantUpsertWithoutWorkflow_scheduled_instances_queueInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutWorkflow_scheduled_instances_queueInput, Prisma.TenantUpdateWithoutWorkflow_scheduled_instances_queueInput>, Prisma.TenantUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
+}
+
+export type TenantCreateNestedOneWithoutWorkflow_service_definitionsInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_service_definitionsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_service_definitionsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_service_definitionsInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutWorkflow_service_definitionsNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_service_definitionsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_service_definitionsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutWorkflow_service_definitionsInput
+  upsert?: Prisma.TenantUpsertWithoutWorkflow_service_definitionsInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutWorkflow_service_definitionsInput, Prisma.TenantUpdateWithoutWorkflow_service_definitionsInput>, Prisma.TenantUncheckedUpdateWithoutWorkflow_service_definitionsInput>
+}
+
 export type TenantCreateWithoutRolesInput = {
   id?: string
   name: string
@@ -1134,24 +1302,32 @@ export type TenantCreateWithoutRolesInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutRolesInput = {
@@ -1174,24 +1350,32 @@ export type TenantUncheckedCreateWithoutRolesInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutRolesInput = {
@@ -1230,24 +1414,32 @@ export type TenantUpdateWithoutRolesInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutRolesInput = {
@@ -1270,24 +1462,32 @@ export type TenantUncheckedUpdateWithoutRolesInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutUsersInput = {
@@ -1310,24 +1510,32 @@ export type TenantCreateWithoutUsersInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutUsersInput = {
@@ -1350,24 +1558,32 @@ export type TenantUncheckedCreateWithoutUsersInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutUsersInput = {
@@ -1406,24 +1622,32 @@ export type TenantUpdateWithoutUsersInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutUsersInput = {
@@ -1446,24 +1670,32 @@ export type TenantUncheckedUpdateWithoutUsersInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutCompaniesInput = {
@@ -1486,24 +1718,32 @@ export type TenantCreateWithoutCompaniesInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutCompaniesInput = {
@@ -1526,24 +1766,32 @@ export type TenantUncheckedCreateWithoutCompaniesInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutCompaniesInput = {
@@ -1582,24 +1830,32 @@ export type TenantUpdateWithoutCompaniesInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutCompaniesInput = {
@@ -1622,24 +1878,32 @@ export type TenantUncheckedUpdateWithoutCompaniesInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutContactsInput = {
@@ -1662,24 +1926,32 @@ export type TenantCreateWithoutContactsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutContactsInput = {
@@ -1702,24 +1974,32 @@ export type TenantUncheckedCreateWithoutContactsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutContactsInput = {
@@ -1758,24 +2038,32 @@ export type TenantUpdateWithoutContactsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutContactsInput = {
@@ -1798,24 +2086,32 @@ export type TenantUncheckedUpdateWithoutContactsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutContactDetailsInput = {
@@ -1838,24 +2134,32 @@ export type TenantCreateWithoutContactDetailsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutContactDetailsInput = {
@@ -1878,24 +2182,32 @@ export type TenantUncheckedCreateWithoutContactDetailsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutContactDetailsInput = {
@@ -1934,24 +2246,32 @@ export type TenantUpdateWithoutContactDetailsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutContactDetailsInput = {
@@ -1974,24 +2294,32 @@ export type TenantUncheckedUpdateWithoutContactDetailsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutDocumentsInput = {
@@ -2014,24 +2342,32 @@ export type TenantCreateWithoutDocumentsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutDocumentsInput = {
@@ -2054,24 +2390,32 @@ export type TenantUncheckedCreateWithoutDocumentsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutDocumentsInput = {
@@ -2110,24 +2454,32 @@ export type TenantUpdateWithoutDocumentsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutDocumentsInput = {
@@ -2150,24 +2502,32 @@ export type TenantUncheckedUpdateWithoutDocumentsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutAuditLogsInput = {
@@ -2190,24 +2550,32 @@ export type TenantCreateWithoutAuditLogsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutAuditLogsInput = {
@@ -2230,24 +2598,32 @@ export type TenantUncheckedCreateWithoutAuditLogsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutAuditLogsInput = {
@@ -2286,24 +2662,32 @@ export type TenantUpdateWithoutAuditLogsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAuditLogsInput = {
@@ -2326,24 +2710,32 @@ export type TenantUncheckedUpdateWithoutAuditLogsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutConnectorsInput = {
@@ -2366,24 +2758,32 @@ export type TenantCreateWithoutConnectorsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutConnectorsInput = {
@@ -2406,24 +2806,32 @@ export type TenantUncheckedCreateWithoutConnectorsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutConnectorsInput = {
@@ -2462,24 +2870,32 @@ export type TenantUpdateWithoutConnectorsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutConnectorsInput = {
@@ -2502,24 +2918,32 @@ export type TenantUncheckedUpdateWithoutConnectorsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutConnectorAccessInput = {
@@ -2542,24 +2966,32 @@ export type TenantCreateWithoutConnectorAccessInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutConnectorAccessInput = {
@@ -2582,24 +3014,32 @@ export type TenantUncheckedCreateWithoutConnectorAccessInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutConnectorAccessInput = {
@@ -2638,24 +3078,32 @@ export type TenantUpdateWithoutConnectorAccessInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutConnectorAccessInput = {
@@ -2678,24 +3126,32 @@ export type TenantUncheckedUpdateWithoutConnectorAccessInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutConnectorUsageLogsInput = {
@@ -2718,24 +3174,32 @@ export type TenantCreateWithoutConnectorUsageLogsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutConnectorUsageLogsInput = {
@@ -2758,24 +3222,32 @@ export type TenantUncheckedCreateWithoutConnectorUsageLogsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutConnectorUsageLogsInput = {
@@ -2814,24 +3286,32 @@ export type TenantUpdateWithoutConnectorUsageLogsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutConnectorUsageLogsInput = {
@@ -2854,24 +3334,32 @@ export type TenantUncheckedUpdateWithoutConnectorUsageLogsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutDocumentTemplatesInput = {
@@ -2894,24 +3382,32 @@ export type TenantCreateWithoutDocumentTemplatesInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
   companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
   contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
   documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutDocumentTemplatesInput = {
@@ -2934,24 +3430,32 @@ export type TenantUncheckedCreateWithoutDocumentTemplatesInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
   companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
   contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutDocumentTemplatesInput = {
@@ -2990,24 +3494,32 @@ export type TenantUpdateWithoutDocumentTemplatesInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
   companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
   contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutDocumentTemplatesInput = {
@@ -3030,24 +3542,32 @@ export type TenantUncheckedUpdateWithoutDocumentTemplatesInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
   companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
   contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutGeneratedDocumentsInput = {
@@ -3070,24 +3590,32 @@ export type TenantCreateWithoutGeneratedDocumentsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -3110,24 +3638,32 @@ export type TenantUncheckedCreateWithoutGeneratedDocumentsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -3166,24 +3702,32 @@ export type TenantUpdateWithoutGeneratedDocumentsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -3206,24 +3750,32 @@ export type TenantUncheckedUpdateWithoutGeneratedDocumentsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutLetterheadInput = {
@@ -3246,24 +3798,32 @@ export type TenantCreateWithoutLetterheadInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutLetterheadInput = {
@@ -3286,24 +3846,32 @@ export type TenantUncheckedCreateWithoutLetterheadInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutLetterheadInput = {
@@ -3342,24 +3910,32 @@ export type TenantUpdateWithoutLetterheadInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutLetterheadInput = {
@@ -3382,24 +3958,32 @@ export type TenantUncheckedUpdateWithoutLetterheadInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutTemplatePartialsInput = {
@@ -3422,24 +4006,32 @@ export type TenantCreateWithoutTemplatePartialsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutTemplatePartialsInput = {
@@ -3462,24 +4054,32 @@ export type TenantUncheckedCreateWithoutTemplatePartialsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutTemplatePartialsInput = {
@@ -3518,24 +4118,32 @@ export type TenantUpdateWithoutTemplatePartialsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutTemplatePartialsInput = {
@@ -3558,24 +4166,32 @@ export type TenantUncheckedUpdateWithoutTemplatePartialsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutAiConversationsInput = {
@@ -3598,24 +4214,32 @@ export type TenantCreateWithoutAiConversationsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
   connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
   documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
   templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutAiConversationsInput = {
@@ -3638,24 +4262,32 @@ export type TenantUncheckedCreateWithoutAiConversationsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
   connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
   documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
   templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutAiConversationsInput = {
@@ -3694,24 +4326,32 @@ export type TenantUpdateWithoutAiConversationsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
   connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
   documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
   templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAiConversationsInput = {
@@ -3734,24 +4374,32 @@ export type TenantUncheckedUpdateWithoutAiConversationsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
   connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
   documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
   templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutExchangeRatesInput = {
@@ -3774,24 +4422,32 @@ export type TenantCreateWithoutExchangeRatesInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutExchangeRatesInput = {
@@ -3814,24 +4470,32 @@ export type TenantUncheckedCreateWithoutExchangeRatesInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutExchangeRatesInput = {
@@ -3870,24 +4534,32 @@ export type TenantUpdateWithoutExchangeRatesInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutExchangeRatesInput = {
@@ -3910,24 +4582,32 @@ export type TenantUncheckedUpdateWithoutExchangeRatesInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutBackupsInput = {
@@ -3950,24 +4630,32 @@ export type TenantCreateWithoutBackupsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutBackupsInput = {
@@ -3990,24 +4678,32 @@ export type TenantUncheckedCreateWithoutBackupsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutBackupsInput = {
@@ -4046,24 +4742,32 @@ export type TenantUpdateWithoutBackupsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutBackupsInput = {
@@ -4086,24 +4790,32 @@ export type TenantUncheckedUpdateWithoutBackupsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutBackupScheduleInput = {
@@ -4126,24 +4838,32 @@ export type TenantCreateWithoutBackupScheduleInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutBackupScheduleInput = {
@@ -4166,24 +4886,32 @@ export type TenantUncheckedCreateWithoutBackupScheduleInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutBackupScheduleInput = {
@@ -4222,24 +4950,32 @@ export type TenantUpdateWithoutBackupScheduleInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutBackupScheduleInput = {
@@ -4262,24 +4998,32 @@ export type TenantUncheckedUpdateWithoutBackupScheduleInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantCreateWithoutChartOfAccountsInput = {
@@ -4302,24 +5046,32 @@ export type TenantCreateWithoutChartOfAccountsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantUncheckedCreateWithoutChartOfAccountsInput = {
@@ -4342,24 +5094,32 @@ export type TenantUncheckedCreateWithoutChartOfAccountsInput = {
   activatedAt?: Date | string | null
   suspendedAt?: Date | string | null
   suspendReason?: string | null
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
   aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
 }
 
 export type TenantCreateOrConnectWithoutChartOfAccountsInput = {
@@ -4398,24 +5158,32 @@ export type TenantUpdateWithoutChartOfAccountsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -4438,24 +5206,1696 @@ export type TenantUncheckedUpdateWithoutChartOfAccountsInput = {
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
   aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantCreateWithoutWorkflow_client_groupsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantUncheckedCreateWithoutWorkflow_client_groupsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantCreateOrConnectWithoutWorkflow_client_groupsInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_client_groupsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_client_groupsInput>
+}
+
+export type TenantUpsertWithoutWorkflow_client_groupsInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_client_groupsInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_client_groupsInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_client_groupsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_client_groupsInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutWorkflow_client_groupsInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_client_groupsInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_client_groupsInput>
+}
+
+export type TenantUpdateWithoutWorkflow_client_groupsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutWorkflow_client_groupsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantCreateWithoutWorkflow_engagementsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantUncheckedCreateWithoutWorkflow_engagementsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantCreateOrConnectWithoutWorkflow_engagementsInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_engagementsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_engagementsInput>
+}
+
+export type TenantUpsertWithoutWorkflow_engagementsInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_engagementsInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_engagementsInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_engagementsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_engagementsInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutWorkflow_engagementsInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_engagementsInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_engagementsInput>
+}
+
+export type TenantUpdateWithoutWorkflow_engagementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutWorkflow_engagementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantCreateWithoutWorkflow_instancesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantUncheckedCreateWithoutWorkflow_instancesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantCreateOrConnectWithoutWorkflow_instancesInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_instancesInput, Prisma.TenantUncheckedCreateWithoutWorkflow_instancesInput>
+}
+
+export type TenantUpsertWithoutWorkflow_instancesInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_instancesInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_instancesInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_instancesInput, Prisma.TenantUncheckedCreateWithoutWorkflow_instancesInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutWorkflow_instancesInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_instancesInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_instancesInput>
+}
+
+export type TenantUpdateWithoutWorkflow_instancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutWorkflow_instancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantCreateWithoutWorkflow_notification_logInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantUncheckedCreateWithoutWorkflow_notification_logInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantCreateOrConnectWithoutWorkflow_notification_logInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_notification_logInput, Prisma.TenantUncheckedCreateWithoutWorkflow_notification_logInput>
+}
+
+export type TenantUpsertWithoutWorkflow_notification_logInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_notification_logInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_notification_logInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_notification_logInput, Prisma.TenantUncheckedCreateWithoutWorkflow_notification_logInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutWorkflow_notification_logInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_notification_logInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_notification_logInput>
+}
+
+export type TenantUpdateWithoutWorkflow_notification_logInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutWorkflow_notification_logInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantCreateWithoutWorkflow_project_instancesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantUncheckedCreateWithoutWorkflow_project_instancesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantCreateOrConnectWithoutWorkflow_project_instancesInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_project_instancesInput, Prisma.TenantUncheckedCreateWithoutWorkflow_project_instancesInput>
+}
+
+export type TenantUpsertWithoutWorkflow_project_instancesInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_project_instancesInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_project_instancesInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_project_instancesInput, Prisma.TenantUncheckedCreateWithoutWorkflow_project_instancesInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutWorkflow_project_instancesInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_project_instancesInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_project_instancesInput>
+}
+
+export type TenantUpdateWithoutWorkflow_project_instancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutWorkflow_project_instancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantCreateWithoutWorkflow_project_settingsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantUncheckedCreateWithoutWorkflow_project_settingsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantCreateOrConnectWithoutWorkflow_project_settingsInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_project_settingsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_project_settingsInput>
+}
+
+export type TenantUpsertWithoutWorkflow_project_settingsInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_project_settingsInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_project_settingsInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_project_settingsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_project_settingsInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutWorkflow_project_settingsInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_project_settingsInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_project_settingsInput>
+}
+
+export type TenantUpdateWithoutWorkflow_project_settingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutWorkflow_project_settingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantCreateWithoutWorkflow_scheduled_instances_queueInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.TenantUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+}
+
+export type TenantUpsertWithoutWorkflow_scheduled_instances_queueInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_scheduled_instances_queueInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.TenantUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutWorkflow_scheduled_instances_queueInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_scheduled_instances_queueInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
+}
+
+export type TenantUpdateWithoutWorkflow_scheduled_instances_queueInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantCreateWithoutWorkflow_service_definitionsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantUncheckedCreateWithoutWorkflow_service_definitionsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.TenantStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutTenantInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutTenantInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.TenantBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutTenantInput
+  letterhead?: Prisma.TenantLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
+}
+
+export type TenantCreateOrConnectWithoutWorkflow_service_definitionsInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_service_definitionsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_service_definitionsInput>
+}
+
+export type TenantUpsertWithoutWorkflow_service_definitionsInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_service_definitionsInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_service_definitionsInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutWorkflow_service_definitionsInput, Prisma.TenantUncheckedCreateWithoutWorkflow_service_definitionsInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutWorkflow_service_definitionsInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutWorkflow_service_definitionsInput, Prisma.TenantUncheckedUpdateWithoutWorkflow_service_definitionsInput>
+}
+
+export type TenantUpdateWithoutWorkflow_service_definitionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutWorkflow_service_definitionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumTenantStatusFieldUpdateOperationsInput | $Enums.TenantStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutTenantNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutTenantNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.TenantBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput
+  letterhead?: Prisma.TenantLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
 }
 
 
@@ -4464,43 +6904,59 @@ export type TenantUncheckedUpdateWithoutChartOfAccountsInput = {
  */
 
 export type TenantCountOutputType = {
-  users: number
-  companies: number
-  contacts: number
-  documents: number
-  auditLogs: number
-  roles: number
-  connectors: number
-  connectorAccess: number
-  connectorUsageLogs: number
-  documentTemplates: number
-  generatedDocuments: number
-  templatePartials: number
   aiConversations: number
-  backups: number
-  exchangeRates: number
+  auditLogs: number
   chartOfAccounts: number
+  companies: number
+  connectorUsageLogs: number
+  connectors: number
   contactDetails: number
+  contacts: number
+  documentTemplates: number
+  documents: number
+  exchangeRates: number
+  generatedDocuments: number
+  roles: number
+  templatePartials: number
+  backups: number
+  connectorAccess: number
+  users: number
+  workflow_client_groups: number
+  workflow_engagements: number
+  workflow_instances: number
+  workflow_notification_log: number
+  workflow_project_instances: number
+  workflow_project_settings: number
+  workflow_scheduled_instances_queue: number
+  workflow_service_definitions: number
 }
 
 export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  users?: boolean | TenantCountOutputTypeCountUsersArgs
-  companies?: boolean | TenantCountOutputTypeCountCompaniesArgs
-  contacts?: boolean | TenantCountOutputTypeCountContactsArgs
-  documents?: boolean | TenantCountOutputTypeCountDocumentsArgs
-  auditLogs?: boolean | TenantCountOutputTypeCountAuditLogsArgs
-  roles?: boolean | TenantCountOutputTypeCountRolesArgs
-  connectors?: boolean | TenantCountOutputTypeCountConnectorsArgs
-  connectorAccess?: boolean | TenantCountOutputTypeCountConnectorAccessArgs
-  connectorUsageLogs?: boolean | TenantCountOutputTypeCountConnectorUsageLogsArgs
-  documentTemplates?: boolean | TenantCountOutputTypeCountDocumentTemplatesArgs
-  generatedDocuments?: boolean | TenantCountOutputTypeCountGeneratedDocumentsArgs
-  templatePartials?: boolean | TenantCountOutputTypeCountTemplatePartialsArgs
   aiConversations?: boolean | TenantCountOutputTypeCountAiConversationsArgs
-  backups?: boolean | TenantCountOutputTypeCountBackupsArgs
-  exchangeRates?: boolean | TenantCountOutputTypeCountExchangeRatesArgs
+  auditLogs?: boolean | TenantCountOutputTypeCountAuditLogsArgs
   chartOfAccounts?: boolean | TenantCountOutputTypeCountChartOfAccountsArgs
+  companies?: boolean | TenantCountOutputTypeCountCompaniesArgs
+  connectorUsageLogs?: boolean | TenantCountOutputTypeCountConnectorUsageLogsArgs
+  connectors?: boolean | TenantCountOutputTypeCountConnectorsArgs
   contactDetails?: boolean | TenantCountOutputTypeCountContactDetailsArgs
+  contacts?: boolean | TenantCountOutputTypeCountContactsArgs
+  documentTemplates?: boolean | TenantCountOutputTypeCountDocumentTemplatesArgs
+  documents?: boolean | TenantCountOutputTypeCountDocumentsArgs
+  exchangeRates?: boolean | TenantCountOutputTypeCountExchangeRatesArgs
+  generatedDocuments?: boolean | TenantCountOutputTypeCountGeneratedDocumentsArgs
+  roles?: boolean | TenantCountOutputTypeCountRolesArgs
+  templatePartials?: boolean | TenantCountOutputTypeCountTemplatePartialsArgs
+  backups?: boolean | TenantCountOutputTypeCountBackupsArgs
+  connectorAccess?: boolean | TenantCountOutputTypeCountConnectorAccessArgs
+  users?: boolean | TenantCountOutputTypeCountUsersArgs
+  workflow_client_groups?: boolean | TenantCountOutputTypeCountWorkflow_client_groupsArgs
+  workflow_engagements?: boolean | TenantCountOutputTypeCountWorkflow_engagementsArgs
+  workflow_instances?: boolean | TenantCountOutputTypeCountWorkflow_instancesArgs
+  workflow_notification_log?: boolean | TenantCountOutputTypeCountWorkflow_notification_logArgs
+  workflow_project_instances?: boolean | TenantCountOutputTypeCountWorkflow_project_instancesArgs
+  workflow_project_settings?: boolean | TenantCountOutputTypeCountWorkflow_project_settingsArgs
+  workflow_scheduled_instances_queue?: boolean | TenantCountOutputTypeCountWorkflow_scheduled_instances_queueArgs
+  workflow_service_definitions?: boolean | TenantCountOutputTypeCountWorkflow_service_definitionsArgs
 }
 
 /**
@@ -4516,29 +6972,8 @@ export type TenantCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exten
 /**
  * TenantCountOutputType without action
  */
-export type TenantCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.UserWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountCompaniesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CompanyWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountContactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ContactWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentWhereInput
+export type TenantCountOutputTypeCountAiConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AiConversationWhereInput
 }
 
 /**
@@ -4551,22 +6986,15 @@ export type TenantCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Type
 /**
  * TenantCountOutputType without action
  */
-export type TenantCountOutputTypeCountRolesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.RoleWhereInput
+export type TenantCountOutputTypeCountChartOfAccountsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ChartOfAccountWhereInput
 }
 
 /**
  * TenantCountOutputType without action
  */
-export type TenantCountOutputTypeCountConnectorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ConnectorWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountConnectorAccessArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.TenantConnectorAccessWhereInput
+export type TenantCountOutputTypeCountCompaniesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanyWhereInput
 }
 
 /**
@@ -4579,6 +7007,27 @@ export type TenantCountOutputTypeCountConnectorUsageLogsArgs<ExtArgs extends run
 /**
  * TenantCountOutputType without action
  */
+export type TenantCountOutputTypeCountConnectorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ConnectorWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountContactDetailsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ContactDetailWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountContactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ContactWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
 export type TenantCountOutputTypeCountDocumentTemplatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DocumentTemplateWhereInput
 }
@@ -4586,29 +7035,8 @@ export type TenantCountOutputTypeCountDocumentTemplatesArgs<ExtArgs extends runt
 /**
  * TenantCountOutputType without action
  */
-export type TenantCountOutputTypeCountGeneratedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.GeneratedDocumentWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountTemplatePartialsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.TemplatePartialWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountAiConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AiConversationWhereInput
-}
-
-/**
- * TenantCountOutputType without action
- */
-export type TenantCountOutputTypeCountBackupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.TenantBackupWhereInput
+export type TenantCountOutputTypeCountDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentWhereInput
 }
 
 /**
@@ -4621,15 +7049,99 @@ export type TenantCountOutputTypeCountExchangeRatesArgs<ExtArgs extends runtime.
 /**
  * TenantCountOutputType without action
  */
-export type TenantCountOutputTypeCountChartOfAccountsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ChartOfAccountWhereInput
+export type TenantCountOutputTypeCountGeneratedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.GeneratedDocumentWhereInput
 }
 
 /**
  * TenantCountOutputType without action
  */
-export type TenantCountOutputTypeCountContactDetailsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ContactDetailWhereInput
+export type TenantCountOutputTypeCountRolesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RoleWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountTemplatePartialsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TemplatePartialWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountBackupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TenantBackupWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountConnectorAccessArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TenantConnectorAccessWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountWorkflow_client_groupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_client_groupsWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountWorkflow_engagementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_engagementsWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountWorkflow_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_instancesWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountWorkflow_notification_logArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_notification_logWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountWorkflow_project_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_project_instancesWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountWorkflow_project_settingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_project_settingsWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountWorkflow_scheduled_instances_queueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_scheduled_instances_queueWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountWorkflow_service_definitionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.workflow_service_definitionsWhereInput
 }
 
 
@@ -4653,25 +7165,33 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   activatedAt?: boolean
   suspendedAt?: boolean
   suspendReason?: boolean
-  users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
-  companies?: boolean | Prisma.Tenant$companiesArgs<ExtArgs>
-  contacts?: boolean | Prisma.Tenant$contactsArgs<ExtArgs>
-  documents?: boolean | Prisma.Tenant$documentsArgs<ExtArgs>
-  auditLogs?: boolean | Prisma.Tenant$auditLogsArgs<ExtArgs>
-  roles?: boolean | Prisma.Tenant$rolesArgs<ExtArgs>
-  connectors?: boolean | Prisma.Tenant$connectorsArgs<ExtArgs>
-  connectorAccess?: boolean | Prisma.Tenant$connectorAccessArgs<ExtArgs>
-  connectorUsageLogs?: boolean | Prisma.Tenant$connectorUsageLogsArgs<ExtArgs>
-  documentTemplates?: boolean | Prisma.Tenant$documentTemplatesArgs<ExtArgs>
-  generatedDocuments?: boolean | Prisma.Tenant$generatedDocumentsArgs<ExtArgs>
-  letterhead?: boolean | Prisma.Tenant$letterheadArgs<ExtArgs>
-  templatePartials?: boolean | Prisma.Tenant$templatePartialsArgs<ExtArgs>
   aiConversations?: boolean | Prisma.Tenant$aiConversationsArgs<ExtArgs>
-  backups?: boolean | Prisma.Tenant$backupsArgs<ExtArgs>
+  auditLogs?: boolean | Prisma.Tenant$auditLogsArgs<ExtArgs>
   backupSchedule?: boolean | Prisma.Tenant$backupScheduleArgs<ExtArgs>
-  exchangeRates?: boolean | Prisma.Tenant$exchangeRatesArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Tenant$chartOfAccountsArgs<ExtArgs>
+  companies?: boolean | Prisma.Tenant$companiesArgs<ExtArgs>
+  connectorUsageLogs?: boolean | Prisma.Tenant$connectorUsageLogsArgs<ExtArgs>
+  connectors?: boolean | Prisma.Tenant$connectorsArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Tenant$contactDetailsArgs<ExtArgs>
+  contacts?: boolean | Prisma.Tenant$contactsArgs<ExtArgs>
+  documentTemplates?: boolean | Prisma.Tenant$documentTemplatesArgs<ExtArgs>
+  documents?: boolean | Prisma.Tenant$documentsArgs<ExtArgs>
+  exchangeRates?: boolean | Prisma.Tenant$exchangeRatesArgs<ExtArgs>
+  generatedDocuments?: boolean | Prisma.Tenant$generatedDocumentsArgs<ExtArgs>
+  roles?: boolean | Prisma.Tenant$rolesArgs<ExtArgs>
+  templatePartials?: boolean | Prisma.Tenant$templatePartialsArgs<ExtArgs>
+  backups?: boolean | Prisma.Tenant$backupsArgs<ExtArgs>
+  connectorAccess?: boolean | Prisma.Tenant$connectorAccessArgs<ExtArgs>
+  letterhead?: boolean | Prisma.Tenant$letterheadArgs<ExtArgs>
+  users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
+  workflow_client_groups?: boolean | Prisma.Tenant$workflow_client_groupsArgs<ExtArgs>
+  workflow_engagements?: boolean | Prisma.Tenant$workflow_engagementsArgs<ExtArgs>
+  workflow_instances?: boolean | Prisma.Tenant$workflow_instancesArgs<ExtArgs>
+  workflow_notification_log?: boolean | Prisma.Tenant$workflow_notification_logArgs<ExtArgs>
+  workflow_project_instances?: boolean | Prisma.Tenant$workflow_project_instancesArgs<ExtArgs>
+  workflow_project_settings?: boolean | Prisma.Tenant$workflow_project_settingsArgs<ExtArgs>
+  workflow_scheduled_instances_queue?: boolean | Prisma.Tenant$workflow_scheduled_instances_queueArgs<ExtArgs>
+  workflow_service_definitions?: boolean | Prisma.Tenant$workflow_service_definitionsArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tenant"]>
 
@@ -4743,25 +7263,33 @@ export type TenantSelectScalar = {
 
 export type TenantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "status" | "contactEmail" | "contactPhone" | "settings" | "maxUsers" | "maxCompanies" | "maxStorageMb" | "logoUrl" | "primaryColor" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason" | "activatedAt" | "suspendedAt" | "suspendReason", ExtArgs["result"]["tenant"]>
 export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
-  companies?: boolean | Prisma.Tenant$companiesArgs<ExtArgs>
-  contacts?: boolean | Prisma.Tenant$contactsArgs<ExtArgs>
-  documents?: boolean | Prisma.Tenant$documentsArgs<ExtArgs>
-  auditLogs?: boolean | Prisma.Tenant$auditLogsArgs<ExtArgs>
-  roles?: boolean | Prisma.Tenant$rolesArgs<ExtArgs>
-  connectors?: boolean | Prisma.Tenant$connectorsArgs<ExtArgs>
-  connectorAccess?: boolean | Prisma.Tenant$connectorAccessArgs<ExtArgs>
-  connectorUsageLogs?: boolean | Prisma.Tenant$connectorUsageLogsArgs<ExtArgs>
-  documentTemplates?: boolean | Prisma.Tenant$documentTemplatesArgs<ExtArgs>
-  generatedDocuments?: boolean | Prisma.Tenant$generatedDocumentsArgs<ExtArgs>
-  letterhead?: boolean | Prisma.Tenant$letterheadArgs<ExtArgs>
-  templatePartials?: boolean | Prisma.Tenant$templatePartialsArgs<ExtArgs>
   aiConversations?: boolean | Prisma.Tenant$aiConversationsArgs<ExtArgs>
-  backups?: boolean | Prisma.Tenant$backupsArgs<ExtArgs>
+  auditLogs?: boolean | Prisma.Tenant$auditLogsArgs<ExtArgs>
   backupSchedule?: boolean | Prisma.Tenant$backupScheduleArgs<ExtArgs>
-  exchangeRates?: boolean | Prisma.Tenant$exchangeRatesArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Tenant$chartOfAccountsArgs<ExtArgs>
+  companies?: boolean | Prisma.Tenant$companiesArgs<ExtArgs>
+  connectorUsageLogs?: boolean | Prisma.Tenant$connectorUsageLogsArgs<ExtArgs>
+  connectors?: boolean | Prisma.Tenant$connectorsArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Tenant$contactDetailsArgs<ExtArgs>
+  contacts?: boolean | Prisma.Tenant$contactsArgs<ExtArgs>
+  documentTemplates?: boolean | Prisma.Tenant$documentTemplatesArgs<ExtArgs>
+  documents?: boolean | Prisma.Tenant$documentsArgs<ExtArgs>
+  exchangeRates?: boolean | Prisma.Tenant$exchangeRatesArgs<ExtArgs>
+  generatedDocuments?: boolean | Prisma.Tenant$generatedDocumentsArgs<ExtArgs>
+  roles?: boolean | Prisma.Tenant$rolesArgs<ExtArgs>
+  templatePartials?: boolean | Prisma.Tenant$templatePartialsArgs<ExtArgs>
+  backups?: boolean | Prisma.Tenant$backupsArgs<ExtArgs>
+  connectorAccess?: boolean | Prisma.Tenant$connectorAccessArgs<ExtArgs>
+  letterhead?: boolean | Prisma.Tenant$letterheadArgs<ExtArgs>
+  users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
+  workflow_client_groups?: boolean | Prisma.Tenant$workflow_client_groupsArgs<ExtArgs>
+  workflow_engagements?: boolean | Prisma.Tenant$workflow_engagementsArgs<ExtArgs>
+  workflow_instances?: boolean | Prisma.Tenant$workflow_instancesArgs<ExtArgs>
+  workflow_notification_log?: boolean | Prisma.Tenant$workflow_notification_logArgs<ExtArgs>
+  workflow_project_instances?: boolean | Prisma.Tenant$workflow_project_instancesArgs<ExtArgs>
+  workflow_project_settings?: boolean | Prisma.Tenant$workflow_project_settingsArgs<ExtArgs>
+  workflow_scheduled_instances_queue?: boolean | Prisma.Tenant$workflow_scheduled_instances_queueArgs<ExtArgs>
+  workflow_service_definitions?: boolean | Prisma.Tenant$workflow_service_definitionsArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TenantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -4770,25 +7298,33 @@ export type TenantIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
 export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Tenant"
   objects: {
-    users: Prisma.$UserPayload<ExtArgs>[]
-    companies: Prisma.$CompanyPayload<ExtArgs>[]
-    contacts: Prisma.$ContactPayload<ExtArgs>[]
-    documents: Prisma.$DocumentPayload<ExtArgs>[]
-    auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
-    roles: Prisma.$RolePayload<ExtArgs>[]
-    connectors: Prisma.$ConnectorPayload<ExtArgs>[]
-    connectorAccess: Prisma.$TenantConnectorAccessPayload<ExtArgs>[]
-    connectorUsageLogs: Prisma.$ConnectorUsageLogPayload<ExtArgs>[]
-    documentTemplates: Prisma.$DocumentTemplatePayload<ExtArgs>[]
-    generatedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
-    letterhead: Prisma.$TenantLetterheadPayload<ExtArgs> | null
-    templatePartials: Prisma.$TemplatePartialPayload<ExtArgs>[]
     aiConversations: Prisma.$AiConversationPayload<ExtArgs>[]
-    backups: Prisma.$TenantBackupPayload<ExtArgs>[]
+    auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     backupSchedule: Prisma.$BackupSchedulePayload<ExtArgs> | null
-    exchangeRates: Prisma.$ExchangeRatePayload<ExtArgs>[]
     chartOfAccounts: Prisma.$ChartOfAccountPayload<ExtArgs>[]
+    companies: Prisma.$CompanyPayload<ExtArgs>[]
+    connectorUsageLogs: Prisma.$ConnectorUsageLogPayload<ExtArgs>[]
+    connectors: Prisma.$ConnectorPayload<ExtArgs>[]
     contactDetails: Prisma.$ContactDetailPayload<ExtArgs>[]
+    contacts: Prisma.$ContactPayload<ExtArgs>[]
+    documentTemplates: Prisma.$DocumentTemplatePayload<ExtArgs>[]
+    documents: Prisma.$DocumentPayload<ExtArgs>[]
+    exchangeRates: Prisma.$ExchangeRatePayload<ExtArgs>[]
+    generatedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
+    roles: Prisma.$RolePayload<ExtArgs>[]
+    templatePartials: Prisma.$TemplatePartialPayload<ExtArgs>[]
+    backups: Prisma.$TenantBackupPayload<ExtArgs>[]
+    connectorAccess: Prisma.$TenantConnectorAccessPayload<ExtArgs>[]
+    letterhead: Prisma.$TenantLetterheadPayload<ExtArgs> | null
+    users: Prisma.$UserPayload<ExtArgs>[]
+    workflow_client_groups: Prisma.$workflow_client_groupsPayload<ExtArgs>[]
+    workflow_engagements: Prisma.$workflow_engagementsPayload<ExtArgs>[]
+    workflow_instances: Prisma.$workflow_instancesPayload<ExtArgs>[]
+    workflow_notification_log: Prisma.$workflow_notification_logPayload<ExtArgs>[]
+    workflow_project_instances: Prisma.$workflow_project_instancesPayload<ExtArgs>[]
+    workflow_project_settings: Prisma.$workflow_project_settingsPayload<ExtArgs>[]
+    workflow_scheduled_instances_queue: Prisma.$workflow_scheduled_instances_queuePayload<ExtArgs>[]
+    workflow_service_definitions: Prisma.$workflow_service_definitionsPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -5204,25 +7740,33 @@ readonly fields: TenantFieldRefs;
  */
 export interface Prisma__TenantClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  users<T extends Prisma.Tenant$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  companies<T extends Prisma.Tenant$companiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$companiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  contacts<T extends Prisma.Tenant$contactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$contactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  documents<T extends Prisma.Tenant$documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  auditLogs<T extends Prisma.Tenant$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  roles<T extends Prisma.Tenant$rolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$rolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  connectors<T extends Prisma.Tenant$connectorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$connectorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConnectorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  connectorAccess<T extends Prisma.Tenant$connectorAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$connectorAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantConnectorAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  connectorUsageLogs<T extends Prisma.Tenant$connectorUsageLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$connectorUsageLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConnectorUsageLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  documentTemplates<T extends Prisma.Tenant$documentTemplatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$documentTemplatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentTemplatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  generatedDocuments<T extends Prisma.Tenant$generatedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$generatedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  letterhead<T extends Prisma.Tenant$letterheadArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$letterheadArgs<ExtArgs>>): Prisma.Prisma__TenantLetterheadClient<runtime.Types.Result.GetResult<Prisma.$TenantLetterheadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  templatePartials<T extends Prisma.Tenant$templatePartialsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$templatePartialsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TemplatePartialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   aiConversations<T extends Prisma.Tenant$aiConversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$aiConversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiConversationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  backups<T extends Prisma.Tenant$backupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$backupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantBackupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  auditLogs<T extends Prisma.Tenant$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   backupSchedule<T extends Prisma.Tenant$backupScheduleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$backupScheduleArgs<ExtArgs>>): Prisma.Prisma__BackupScheduleClient<runtime.Types.Result.GetResult<Prisma.$BackupSchedulePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  exchangeRates<T extends Prisma.Tenant$exchangeRatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$exchangeRatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExchangeRatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   chartOfAccounts<T extends Prisma.Tenant$chartOfAccountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$chartOfAccountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  companies<T extends Prisma.Tenant$companiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$companiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  connectorUsageLogs<T extends Prisma.Tenant$connectorUsageLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$connectorUsageLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConnectorUsageLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  connectors<T extends Prisma.Tenant$connectorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$connectorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConnectorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   contactDetails<T extends Prisma.Tenant$contactDetailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$contactDetailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  contacts<T extends Prisma.Tenant$contactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$contactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  documentTemplates<T extends Prisma.Tenant$documentTemplatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$documentTemplatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentTemplatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  documents<T extends Prisma.Tenant$documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  exchangeRates<T extends Prisma.Tenant$exchangeRatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$exchangeRatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExchangeRatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  generatedDocuments<T extends Prisma.Tenant$generatedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$generatedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  roles<T extends Prisma.Tenant$rolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$rolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  templatePartials<T extends Prisma.Tenant$templatePartialsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$templatePartialsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TemplatePartialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  backups<T extends Prisma.Tenant$backupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$backupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantBackupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  connectorAccess<T extends Prisma.Tenant$connectorAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$connectorAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantConnectorAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  letterhead<T extends Prisma.Tenant$letterheadArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$letterheadArgs<ExtArgs>>): Prisma.Prisma__TenantLetterheadClient<runtime.Types.Result.GetResult<Prisma.$TenantLetterheadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  users<T extends Prisma.Tenant$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_client_groups<T extends Prisma.Tenant$workflow_client_groupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$workflow_client_groupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_client_groupsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_engagements<T extends Prisma.Tenant$workflow_engagementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$workflow_engagementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_engagementsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_instances<T extends Prisma.Tenant$workflow_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$workflow_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_notification_log<T extends Prisma.Tenant$workflow_notification_logArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$workflow_notification_logArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_notification_logPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_project_instances<T extends Prisma.Tenant$workflow_project_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$workflow_project_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_project_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_project_settings<T extends Prisma.Tenant$workflow_project_settingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$workflow_project_settingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_project_settingsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_scheduled_instances_queue<T extends Prisma.Tenant$workflow_scheduled_instances_queueArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$workflow_scheduled_instances_queueArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_scheduled_instances_queuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflow_service_definitions<T extends Prisma.Tenant$workflow_service_definitionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$workflow_service_definitionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_service_definitionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5659,99 +8203,27 @@ export type TenantDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 /**
- * Tenant.users
+ * Tenant.aiConversations
  */
-export type Tenant$usersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Tenant$aiConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the User
+   * Select specific fields to fetch from the AiConversation
    */
-  select?: Prisma.UserSelect<ExtArgs> | null
+  select?: Prisma.AiConversationSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the User
+   * Omit specific fields from the AiConversation
    */
-  omit?: Prisma.UserOmit<ExtArgs> | null
+  omit?: Prisma.AiConversationOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.UserInclude<ExtArgs> | null
-  where?: Prisma.UserWhereInput
-  orderBy?: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[]
-  cursor?: Prisma.UserWhereUniqueInput
+  include?: Prisma.AiConversationInclude<ExtArgs> | null
+  where?: Prisma.AiConversationWhereInput
+  orderBy?: Prisma.AiConversationOrderByWithRelationInput | Prisma.AiConversationOrderByWithRelationInput[]
+  cursor?: Prisma.AiConversationWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.UserScalarFieldEnum | Prisma.UserScalarFieldEnum[]
-}
-
-/**
- * Tenant.companies
- */
-export type Tenant$companiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Company
-   */
-  select?: Prisma.CompanySelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Company
-   */
-  omit?: Prisma.CompanyOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CompanyInclude<ExtArgs> | null
-  where?: Prisma.CompanyWhereInput
-  orderBy?: Prisma.CompanyOrderByWithRelationInput | Prisma.CompanyOrderByWithRelationInput[]
-  cursor?: Prisma.CompanyWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CompanyScalarFieldEnum | Prisma.CompanyScalarFieldEnum[]
-}
-
-/**
- * Tenant.contacts
- */
-export type Tenant$contactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Contact
-   */
-  select?: Prisma.ContactSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Contact
-   */
-  omit?: Prisma.ContactOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ContactInclude<ExtArgs> | null
-  where?: Prisma.ContactWhereInput
-  orderBy?: Prisma.ContactOrderByWithRelationInput | Prisma.ContactOrderByWithRelationInput[]
-  cursor?: Prisma.ContactWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ContactScalarFieldEnum | Prisma.ContactScalarFieldEnum[]
-}
-
-/**
- * Tenant.documents
- */
-export type Tenant$documentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Document
-   */
-  select?: Prisma.DocumentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Document
-   */
-  omit?: Prisma.DocumentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentInclude<ExtArgs> | null
-  where?: Prisma.DocumentWhereInput
-  orderBy?: Prisma.DocumentOrderByWithRelationInput | Prisma.DocumentOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentScalarFieldEnum | Prisma.DocumentScalarFieldEnum[]
+  distinct?: Prisma.AiConversationScalarFieldEnum | Prisma.AiConversationScalarFieldEnum[]
 }
 
 /**
@@ -5779,241 +8251,6 @@ export type Tenant$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 /**
- * Tenant.roles
- */
-export type Tenant$rolesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Role
-   */
-  select?: Prisma.RoleSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Role
-   */
-  omit?: Prisma.RoleOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.RoleInclude<ExtArgs> | null
-  where?: Prisma.RoleWhereInput
-  orderBy?: Prisma.RoleOrderByWithRelationInput | Prisma.RoleOrderByWithRelationInput[]
-  cursor?: Prisma.RoleWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.RoleScalarFieldEnum | Prisma.RoleScalarFieldEnum[]
-}
-
-/**
- * Tenant.connectors
- */
-export type Tenant$connectorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Connector
-   */
-  select?: Prisma.ConnectorSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Connector
-   */
-  omit?: Prisma.ConnectorOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ConnectorInclude<ExtArgs> | null
-  where?: Prisma.ConnectorWhereInput
-  orderBy?: Prisma.ConnectorOrderByWithRelationInput | Prisma.ConnectorOrderByWithRelationInput[]
-  cursor?: Prisma.ConnectorWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ConnectorScalarFieldEnum | Prisma.ConnectorScalarFieldEnum[]
-}
-
-/**
- * Tenant.connectorAccess
- */
-export type Tenant$connectorAccessArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the TenantConnectorAccess
-   */
-  select?: Prisma.TenantConnectorAccessSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the TenantConnectorAccess
-   */
-  omit?: Prisma.TenantConnectorAccessOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.TenantConnectorAccessInclude<ExtArgs> | null
-  where?: Prisma.TenantConnectorAccessWhereInput
-  orderBy?: Prisma.TenantConnectorAccessOrderByWithRelationInput | Prisma.TenantConnectorAccessOrderByWithRelationInput[]
-  cursor?: Prisma.TenantConnectorAccessWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.TenantConnectorAccessScalarFieldEnum | Prisma.TenantConnectorAccessScalarFieldEnum[]
-}
-
-/**
- * Tenant.connectorUsageLogs
- */
-export type Tenant$connectorUsageLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ConnectorUsageLog
-   */
-  select?: Prisma.ConnectorUsageLogSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ConnectorUsageLog
-   */
-  omit?: Prisma.ConnectorUsageLogOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ConnectorUsageLogInclude<ExtArgs> | null
-  where?: Prisma.ConnectorUsageLogWhereInput
-  orderBy?: Prisma.ConnectorUsageLogOrderByWithRelationInput | Prisma.ConnectorUsageLogOrderByWithRelationInput[]
-  cursor?: Prisma.ConnectorUsageLogWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ConnectorUsageLogScalarFieldEnum | Prisma.ConnectorUsageLogScalarFieldEnum[]
-}
-
-/**
- * Tenant.documentTemplates
- */
-export type Tenant$documentTemplatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentTemplate
-   */
-  select?: Prisma.DocumentTemplateSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentTemplate
-   */
-  omit?: Prisma.DocumentTemplateOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentTemplateInclude<ExtArgs> | null
-  where?: Prisma.DocumentTemplateWhereInput
-  orderBy?: Prisma.DocumentTemplateOrderByWithRelationInput | Prisma.DocumentTemplateOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentTemplateWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentTemplateScalarFieldEnum | Prisma.DocumentTemplateScalarFieldEnum[]
-}
-
-/**
- * Tenant.generatedDocuments
- */
-export type Tenant$generatedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the GeneratedDocument
-   */
-  select?: Prisma.GeneratedDocumentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the GeneratedDocument
-   */
-  omit?: Prisma.GeneratedDocumentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.GeneratedDocumentInclude<ExtArgs> | null
-  where?: Prisma.GeneratedDocumentWhereInput
-  orderBy?: Prisma.GeneratedDocumentOrderByWithRelationInput | Prisma.GeneratedDocumentOrderByWithRelationInput[]
-  cursor?: Prisma.GeneratedDocumentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.GeneratedDocumentScalarFieldEnum | Prisma.GeneratedDocumentScalarFieldEnum[]
-}
-
-/**
- * Tenant.letterhead
- */
-export type Tenant$letterheadArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the TenantLetterhead
-   */
-  select?: Prisma.TenantLetterheadSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the TenantLetterhead
-   */
-  omit?: Prisma.TenantLetterheadOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.TenantLetterheadInclude<ExtArgs> | null
-  where?: Prisma.TenantLetterheadWhereInput
-}
-
-/**
- * Tenant.templatePartials
- */
-export type Tenant$templatePartialsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the TemplatePartial
-   */
-  select?: Prisma.TemplatePartialSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the TemplatePartial
-   */
-  omit?: Prisma.TemplatePartialOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.TemplatePartialInclude<ExtArgs> | null
-  where?: Prisma.TemplatePartialWhereInput
-  orderBy?: Prisma.TemplatePartialOrderByWithRelationInput | Prisma.TemplatePartialOrderByWithRelationInput[]
-  cursor?: Prisma.TemplatePartialWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.TemplatePartialScalarFieldEnum | Prisma.TemplatePartialScalarFieldEnum[]
-}
-
-/**
- * Tenant.aiConversations
- */
-export type Tenant$aiConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the AiConversation
-   */
-  select?: Prisma.AiConversationSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the AiConversation
-   */
-  omit?: Prisma.AiConversationOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.AiConversationInclude<ExtArgs> | null
-  where?: Prisma.AiConversationWhereInput
-  orderBy?: Prisma.AiConversationOrderByWithRelationInput | Prisma.AiConversationOrderByWithRelationInput[]
-  cursor?: Prisma.AiConversationWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.AiConversationScalarFieldEnum | Prisma.AiConversationScalarFieldEnum[]
-}
-
-/**
- * Tenant.backups
- */
-export type Tenant$backupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the TenantBackup
-   */
-  select?: Prisma.TenantBackupSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the TenantBackup
-   */
-  omit?: Prisma.TenantBackupOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.TenantBackupInclude<ExtArgs> | null
-  where?: Prisma.TenantBackupWhereInput
-  orderBy?: Prisma.TenantBackupOrderByWithRelationInput | Prisma.TenantBackupOrderByWithRelationInput[]
-  cursor?: Prisma.TenantBackupWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.TenantBackupScalarFieldEnum | Prisma.TenantBackupScalarFieldEnum[]
-}
-
-/**
  * Tenant.backupSchedule
  */
 export type Tenant$backupScheduleArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -6030,30 +8267,6 @@ export type Tenant$backupScheduleArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   include?: Prisma.BackupScheduleInclude<ExtArgs> | null
   where?: Prisma.BackupScheduleWhereInput
-}
-
-/**
- * Tenant.exchangeRates
- */
-export type Tenant$exchangeRatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ExchangeRate
-   */
-  select?: Prisma.ExchangeRateSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ExchangeRate
-   */
-  omit?: Prisma.ExchangeRateOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ExchangeRateInclude<ExtArgs> | null
-  where?: Prisma.ExchangeRateWhereInput
-  orderBy?: Prisma.ExchangeRateOrderByWithRelationInput | Prisma.ExchangeRateOrderByWithRelationInput[]
-  cursor?: Prisma.ExchangeRateWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ExchangeRateScalarFieldEnum | Prisma.ExchangeRateScalarFieldEnum[]
 }
 
 /**
@@ -6081,6 +8294,78 @@ export type Tenant$chartOfAccountsArgs<ExtArgs extends runtime.Types.Extensions.
 }
 
 /**
+ * Tenant.companies
+ */
+export type Tenant$companiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Company
+   */
+  select?: Prisma.CompanySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Company
+   */
+  omit?: Prisma.CompanyOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyInclude<ExtArgs> | null
+  where?: Prisma.CompanyWhereInput
+  orderBy?: Prisma.CompanyOrderByWithRelationInput | Prisma.CompanyOrderByWithRelationInput[]
+  cursor?: Prisma.CompanyWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanyScalarFieldEnum | Prisma.CompanyScalarFieldEnum[]
+}
+
+/**
+ * Tenant.connectorUsageLogs
+ */
+export type Tenant$connectorUsageLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ConnectorUsageLog
+   */
+  select?: Prisma.ConnectorUsageLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ConnectorUsageLog
+   */
+  omit?: Prisma.ConnectorUsageLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ConnectorUsageLogInclude<ExtArgs> | null
+  where?: Prisma.ConnectorUsageLogWhereInput
+  orderBy?: Prisma.ConnectorUsageLogOrderByWithRelationInput | Prisma.ConnectorUsageLogOrderByWithRelationInput[]
+  cursor?: Prisma.ConnectorUsageLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ConnectorUsageLogScalarFieldEnum | Prisma.ConnectorUsageLogScalarFieldEnum[]
+}
+
+/**
+ * Tenant.connectors
+ */
+export type Tenant$connectorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Connector
+   */
+  select?: Prisma.ConnectorSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Connector
+   */
+  omit?: Prisma.ConnectorOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ConnectorInclude<ExtArgs> | null
+  where?: Prisma.ConnectorWhereInput
+  orderBy?: Prisma.ConnectorOrderByWithRelationInput | Prisma.ConnectorOrderByWithRelationInput[]
+  cursor?: Prisma.ConnectorWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ConnectorScalarFieldEnum | Prisma.ConnectorScalarFieldEnum[]
+}
+
+/**
  * Tenant.contactDetails
  */
 export type Tenant$contactDetailsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -6102,6 +8387,457 @@ export type Tenant$contactDetailsArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.ContactDetailScalarFieldEnum | Prisma.ContactDetailScalarFieldEnum[]
+}
+
+/**
+ * Tenant.contacts
+ */
+export type Tenant$contactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Contact
+   */
+  select?: Prisma.ContactSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Contact
+   */
+  omit?: Prisma.ContactOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ContactInclude<ExtArgs> | null
+  where?: Prisma.ContactWhereInput
+  orderBy?: Prisma.ContactOrderByWithRelationInput | Prisma.ContactOrderByWithRelationInput[]
+  cursor?: Prisma.ContactWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ContactScalarFieldEnum | Prisma.ContactScalarFieldEnum[]
+}
+
+/**
+ * Tenant.documentTemplates
+ */
+export type Tenant$documentTemplatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentTemplate
+   */
+  select?: Prisma.DocumentTemplateSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentTemplate
+   */
+  omit?: Prisma.DocumentTemplateOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentTemplateInclude<ExtArgs> | null
+  where?: Prisma.DocumentTemplateWhereInput
+  orderBy?: Prisma.DocumentTemplateOrderByWithRelationInput | Prisma.DocumentTemplateOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentTemplateWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentTemplateScalarFieldEnum | Prisma.DocumentTemplateScalarFieldEnum[]
+}
+
+/**
+ * Tenant.documents
+ */
+export type Tenant$documentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Document
+   */
+  select?: Prisma.DocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Document
+   */
+  omit?: Prisma.DocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentInclude<ExtArgs> | null
+  where?: Prisma.DocumentWhereInput
+  orderBy?: Prisma.DocumentOrderByWithRelationInput | Prisma.DocumentOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentScalarFieldEnum | Prisma.DocumentScalarFieldEnum[]
+}
+
+/**
+ * Tenant.exchangeRates
+ */
+export type Tenant$exchangeRatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ExchangeRate
+   */
+  select?: Prisma.ExchangeRateSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ExchangeRate
+   */
+  omit?: Prisma.ExchangeRateOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExchangeRateInclude<ExtArgs> | null
+  where?: Prisma.ExchangeRateWhereInput
+  orderBy?: Prisma.ExchangeRateOrderByWithRelationInput | Prisma.ExchangeRateOrderByWithRelationInput[]
+  cursor?: Prisma.ExchangeRateWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ExchangeRateScalarFieldEnum | Prisma.ExchangeRateScalarFieldEnum[]
+}
+
+/**
+ * Tenant.generatedDocuments
+ */
+export type Tenant$generatedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the GeneratedDocument
+   */
+  select?: Prisma.GeneratedDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the GeneratedDocument
+   */
+  omit?: Prisma.GeneratedDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.GeneratedDocumentInclude<ExtArgs> | null
+  where?: Prisma.GeneratedDocumentWhereInput
+  orderBy?: Prisma.GeneratedDocumentOrderByWithRelationInput | Prisma.GeneratedDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.GeneratedDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.GeneratedDocumentScalarFieldEnum | Prisma.GeneratedDocumentScalarFieldEnum[]
+}
+
+/**
+ * Tenant.roles
+ */
+export type Tenant$rolesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Role
+   */
+  select?: Prisma.RoleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Role
+   */
+  omit?: Prisma.RoleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RoleInclude<ExtArgs> | null
+  where?: Prisma.RoleWhereInput
+  orderBy?: Prisma.RoleOrderByWithRelationInput | Prisma.RoleOrderByWithRelationInput[]
+  cursor?: Prisma.RoleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RoleScalarFieldEnum | Prisma.RoleScalarFieldEnum[]
+}
+
+/**
+ * Tenant.templatePartials
+ */
+export type Tenant$templatePartialsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TemplatePartial
+   */
+  select?: Prisma.TemplatePartialSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TemplatePartial
+   */
+  omit?: Prisma.TemplatePartialOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TemplatePartialInclude<ExtArgs> | null
+  where?: Prisma.TemplatePartialWhereInput
+  orderBy?: Prisma.TemplatePartialOrderByWithRelationInput | Prisma.TemplatePartialOrderByWithRelationInput[]
+  cursor?: Prisma.TemplatePartialWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TemplatePartialScalarFieldEnum | Prisma.TemplatePartialScalarFieldEnum[]
+}
+
+/**
+ * Tenant.backups
+ */
+export type Tenant$backupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TenantBackup
+   */
+  select?: Prisma.TenantBackupSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TenantBackup
+   */
+  omit?: Prisma.TenantBackupOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TenantBackupInclude<ExtArgs> | null
+  where?: Prisma.TenantBackupWhereInput
+  orderBy?: Prisma.TenantBackupOrderByWithRelationInput | Prisma.TenantBackupOrderByWithRelationInput[]
+  cursor?: Prisma.TenantBackupWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TenantBackupScalarFieldEnum | Prisma.TenantBackupScalarFieldEnum[]
+}
+
+/**
+ * Tenant.connectorAccess
+ */
+export type Tenant$connectorAccessArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TenantConnectorAccess
+   */
+  select?: Prisma.TenantConnectorAccessSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TenantConnectorAccess
+   */
+  omit?: Prisma.TenantConnectorAccessOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TenantConnectorAccessInclude<ExtArgs> | null
+  where?: Prisma.TenantConnectorAccessWhereInput
+  orderBy?: Prisma.TenantConnectorAccessOrderByWithRelationInput | Prisma.TenantConnectorAccessOrderByWithRelationInput[]
+  cursor?: Prisma.TenantConnectorAccessWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TenantConnectorAccessScalarFieldEnum | Prisma.TenantConnectorAccessScalarFieldEnum[]
+}
+
+/**
+ * Tenant.letterhead
+ */
+export type Tenant$letterheadArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TenantLetterhead
+   */
+  select?: Prisma.TenantLetterheadSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TenantLetterhead
+   */
+  omit?: Prisma.TenantLetterheadOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TenantLetterheadInclude<ExtArgs> | null
+  where?: Prisma.TenantLetterheadWhereInput
+}
+
+/**
+ * Tenant.users
+ */
+export type Tenant$usersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
+  orderBy?: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[]
+  cursor?: Prisma.UserWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserScalarFieldEnum | Prisma.UserScalarFieldEnum[]
+}
+
+/**
+ * Tenant.workflow_client_groups
+ */
+export type Tenant$workflow_client_groupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_client_groups
+   */
+  select?: Prisma.workflow_client_groupsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_client_groups
+   */
+  omit?: Prisma.workflow_client_groupsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_client_groupsInclude<ExtArgs> | null
+  where?: Prisma.workflow_client_groupsWhereInput
+  orderBy?: Prisma.workflow_client_groupsOrderByWithRelationInput | Prisma.workflow_client_groupsOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_client_groupsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_client_groupsScalarFieldEnum | Prisma.Workflow_client_groupsScalarFieldEnum[]
+}
+
+/**
+ * Tenant.workflow_engagements
+ */
+export type Tenant$workflow_engagementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_engagements
+   */
+  select?: Prisma.workflow_engagementsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_engagements
+   */
+  omit?: Prisma.workflow_engagementsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_engagementsInclude<ExtArgs> | null
+  where?: Prisma.workflow_engagementsWhereInput
+  orderBy?: Prisma.workflow_engagementsOrderByWithRelationInput | Prisma.workflow_engagementsOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_engagementsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_engagementsScalarFieldEnum | Prisma.Workflow_engagementsScalarFieldEnum[]
+}
+
+/**
+ * Tenant.workflow_instances
+ */
+export type Tenant$workflow_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_instances
+   */
+  select?: Prisma.workflow_instancesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_instances
+   */
+  omit?: Prisma.workflow_instancesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_instancesInclude<ExtArgs> | null
+  where?: Prisma.workflow_instancesWhereInput
+  orderBy?: Prisma.workflow_instancesOrderByWithRelationInput | Prisma.workflow_instancesOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_instancesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_instancesScalarFieldEnum | Prisma.Workflow_instancesScalarFieldEnum[]
+}
+
+/**
+ * Tenant.workflow_notification_log
+ */
+export type Tenant$workflow_notification_logArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_notification_log
+   */
+  select?: Prisma.workflow_notification_logSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_notification_log
+   */
+  omit?: Prisma.workflow_notification_logOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_notification_logInclude<ExtArgs> | null
+  where?: Prisma.workflow_notification_logWhereInput
+  orderBy?: Prisma.workflow_notification_logOrderByWithRelationInput | Prisma.workflow_notification_logOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_notification_logWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_notification_logScalarFieldEnum | Prisma.Workflow_notification_logScalarFieldEnum[]
+}
+
+/**
+ * Tenant.workflow_project_instances
+ */
+export type Tenant$workflow_project_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_project_instances
+   */
+  select?: Prisma.workflow_project_instancesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_project_instances
+   */
+  omit?: Prisma.workflow_project_instancesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_project_instancesInclude<ExtArgs> | null
+  where?: Prisma.workflow_project_instancesWhereInput
+  orderBy?: Prisma.workflow_project_instancesOrderByWithRelationInput | Prisma.workflow_project_instancesOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_project_instancesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_project_instancesScalarFieldEnum | Prisma.Workflow_project_instancesScalarFieldEnum[]
+}
+
+/**
+ * Tenant.workflow_project_settings
+ */
+export type Tenant$workflow_project_settingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_project_settings
+   */
+  select?: Prisma.workflow_project_settingsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_project_settings
+   */
+  omit?: Prisma.workflow_project_settingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_project_settingsInclude<ExtArgs> | null
+  where?: Prisma.workflow_project_settingsWhereInput
+  orderBy?: Prisma.workflow_project_settingsOrderByWithRelationInput | Prisma.workflow_project_settingsOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_project_settingsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_project_settingsScalarFieldEnum | Prisma.Workflow_project_settingsScalarFieldEnum[]
+}
+
+/**
+ * Tenant.workflow_scheduled_instances_queue
+ */
+export type Tenant$workflow_scheduled_instances_queueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_scheduled_instances_queue
+   */
+  select?: Prisma.workflow_scheduled_instances_queueSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_scheduled_instances_queue
+   */
+  omit?: Prisma.workflow_scheduled_instances_queueOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_scheduled_instances_queueInclude<ExtArgs> | null
+  where?: Prisma.workflow_scheduled_instances_queueWhereInput
+  orderBy?: Prisma.workflow_scheduled_instances_queueOrderByWithRelationInput | Prisma.workflow_scheduled_instances_queueOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_scheduled_instances_queueWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_scheduled_instances_queueScalarFieldEnum | Prisma.Workflow_scheduled_instances_queueScalarFieldEnum[]
+}
+
+/**
+ * Tenant.workflow_service_definitions
+ */
+export type Tenant$workflow_service_definitionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the workflow_service_definitions
+   */
+  select?: Prisma.workflow_service_definitionsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the workflow_service_definitions
+   */
+  omit?: Prisma.workflow_service_definitionsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.workflow_service_definitionsInclude<ExtArgs> | null
+  where?: Prisma.workflow_service_definitionsWhereInput
+  orderBy?: Prisma.workflow_service_definitionsOrderByWithRelationInput | Prisma.workflow_service_definitionsOrderByWithRelationInput[]
+  cursor?: Prisma.workflow_service_definitionsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Workflow_service_definitionsScalarFieldEnum | Prisma.Workflow_service_definitionsScalarFieldEnum[]
 }
 
 /**
