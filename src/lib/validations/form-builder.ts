@@ -25,6 +25,9 @@ export const shortInputTypeSchema = z.enum([
   'info_text',
   'info_image',
   'info_url',
+  'info_heading_1',
+  'info_heading_2',
+  'info_heading_3',
 ]);
 
 export const fieldValidationSchema = z

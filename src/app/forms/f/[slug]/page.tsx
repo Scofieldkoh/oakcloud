@@ -378,7 +378,7 @@ export default function PublicFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background-primary p-4 sm:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8 flex items-center justify-center">
         <div className="text-sm text-text-secondary">Loading form...</div>
       </div>
     );
@@ -386,7 +386,7 @@ export default function PublicFormPage() {
 
   if (error || !form) {
     return (
-      <div className="min-h-screen bg-background-primary p-4 sm:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8 flex items-center justify-center">
         <div className="max-w-md rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300">
           {error || 'Form not found'}
         </div>
@@ -400,12 +400,17 @@ export default function PublicFormPage() {
       : null;
 
     return (
-      <div className="min-h-screen bg-background-primary p-4 sm:p-8 flex items-center justify-center">
-        <div className="w-full max-w-xl rounded-lg border border-border-primary bg-background-elevated p-6 sm:p-8 text-center">
-          <h1 className="text-xl font-semibold text-text-primary">Submission received</h1>
-          <p className="mt-2 text-sm text-text-secondary">Thank you. Your response has been submitted successfully.</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8 flex items-center justify-center">
+        <div className="w-full max-w-xl rounded-xl bg-white p-6 sm:p-8 shadow-sm">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-6 w-6 text-status-success shrink-0" />
+            <div>
+              <h1 className="text-lg font-semibold text-text-primary">Response submitted</h1>
+              <p className="text-sm text-text-secondary">Your response has been recorded.</p>
+            </div>
+          </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <div className="mt-6 flex flex-wrap items-center gap-2">
             <Button
               variant="primary"
               size="sm"
@@ -420,10 +425,10 @@ export default function PublicFormPage() {
             </Button>
           </div>
           {!downloadHref && (
-            <p className="mt-2 text-xs text-text-secondary">Download link expired. Please submit the form again to generate a new PDF link.</p>
+            <p className="mt-2 text-xs text-text-muted">Download link expired. Submit the form again to generate a new link.</p>
           )}
 
-          <div className="mt-5 rounded-lg border border-border-primary bg-background-primary p-3 text-left">
+          <div className="mt-6 rounded-lg border border-border-primary/50 bg-background-primary p-3">
             <label className="mb-1.5 block text-xs font-medium text-text-secondary">Email a PDF copy</label>
             <div className="flex flex-col gap-2 sm:flex-row">
               <input
@@ -434,7 +439,7 @@ export default function PublicFormPage() {
                   if (emailFeedback) setEmailFeedback(null);
                 }}
                 placeholder="name@example.com"
-                className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150"
               />
               <Button
                 type="button"
@@ -457,18 +462,28 @@ export default function PublicFormPage() {
   }
 
   return (
-    <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-background-primary p-4 sm:p-8')}>
-      <div className={cn('mx-auto max-w-4xl rounded-xl border border-border-primary bg-background-elevated', isEmbed ? 'rounded-none border-none' : 'p-4 sm:p-8')}>
+    <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8')}>
+      <div className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
         {!isEmbed && (
-          <>
-            <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">{form.title}</h1>
-            {form.description && <p className="mt-1 text-sm text-text-secondary">{form.description}</p>}
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-text-primary">{form.title}</h1>
+            {form.description && <p className="mt-2 text-base text-text-secondary leading-relaxed">{form.description}</p>}
             {isPreview && (
               <p className="mt-2 text-xs text-text-muted">
                 Preview mode. Publish the form to accept uploads and submissions.
               </p>
             )}
-          </>
+            <div className="mt-4 h-[3px] w-12 rounded-full bg-oak-primary" />
+          </div>
+        )}
+
+        {pages.length > 1 && (
+          <div className="mb-6 h-[3px] w-full overflow-hidden rounded-full bg-border-primary/40">
+            <div
+              className="h-full rounded-full bg-oak-primary transition-all duration-300 ease-out"
+              style={{ width: `${((currentPage + 1) / pages.length) * 100}%` }}
+            />
+          </div>
         )}
 
         <div className={cn('grid grid-cols-12 gap-4', !isEmbed && 'mt-4')}>
@@ -494,6 +509,30 @@ export default function PublicFormPage() {
             const tooltipText = showTooltip ? field.helpText!.trim() : null;
 
             if (field.type === 'PARAGRAPH') {
+              const headingType = field.inputType === 'info_heading_1' ? 'h1'
+                : field.inputType === 'info_heading_2' ? 'h2'
+                : field.inputType === 'info_heading_3' ? 'h3'
+                : null;
+
+              if (headingType) {
+                const headingClasses = {
+                  h1: 'text-xl font-bold text-text-primary mt-6 mb-2',
+                  h2: 'text-lg font-semibold text-text-primary mt-4 mb-1.5',
+                  h3: 'text-base font-semibold text-text-primary mt-3 mb-1',
+                };
+                const Tag = headingType as 'h1' | 'h2' | 'h3';
+                return (
+                  <div key={field.id} className={widthClass}>
+                    <Tag className={headingClasses[headingType]}>
+                      {field.label || field.subtext}
+                    </Tag>
+                    {field.subtext && field.label && (
+                      <p className="text-sm text-text-secondary">{field.subtext}</p>
+                    )}
+                  </div>
+                );
+              }
+
               if (infoType === 'info_image') {
                 const imageUrl = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
                 return (
@@ -560,13 +599,17 @@ export default function PublicFormPage() {
 
             return (
               <div key={field.id} className={widthClass}>
+                <div className={cn(
+                  "rounded-xl border bg-white p-5 shadow-sm transition-shadow duration-150 hover:shadow-md",
+                  errorText ? "border-status-error/40 ring-1 ring-status-error/20" : "border-border-primary/50"
+                )}>
                 {!field.hideLabel && (
                   renderLabelAsText ? (
-                    <p id={labelId} className="mb-1.5 block text-base font-semibold text-text-primary">
+                    <p id={labelId} className="mb-1.5 block text-sm font-medium text-text-secondary">
                       <span className="inline-flex items-center gap-1.5">
                         <span>
                           {accessibleLabel}
-                          {field.isRequired && <span className="text-status-error"> *</span>}
+                          {field.isRequired && <span className="text-oak-primary"> *</span>}
                         </span>
                         {tooltipText && (
                           <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
@@ -578,11 +621,11 @@ export default function PublicFormPage() {
                       </span>
                     </p>
                   ) : (
-                    <label htmlFor={controlId} id={labelId} className="mb-1.5 block text-base font-semibold text-text-primary">
+                    <label htmlFor={controlId} id={labelId} className="mb-1.5 block text-sm font-medium text-text-secondary">
                       <span className="inline-flex items-center gap-1.5">
                         <span>
                           {accessibleLabel}
-                          {field.isRequired && <span className="text-status-error"> *</span>}
+                          {field.isRequired && <span className="text-oak-primary"> *</span>}
                         </span>
                         {tooltipText && (
                           <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
@@ -609,7 +652,11 @@ export default function PublicFormPage() {
                     aria-label={field.hideLabel ? accessibleLabel : undefined}
                     aria-invalid={errorText ? 'true' : undefined}
                     aria-describedby={describedBy}
-                    className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                    className={cn(
+                      "w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60",
+                      "focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150",
+                      field.isReadOnly && "bg-background-secondary cursor-not-allowed opacity-70"
+                    )}
                   />
                 )}
 
@@ -637,7 +684,11 @@ export default function PublicFormPage() {
                     aria-label={field.hideLabel ? accessibleLabel : undefined}
                     aria-invalid={errorText ? 'true' : undefined}
                     aria-describedby={describedBy}
-                    className="w-full min-h-24 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                    className={cn(
+                      "w-full min-h-24 rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60",
+                      "focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150 resize-y",
+                      field.isReadOnly && "bg-background-secondary cursor-not-allowed opacity-70"
+                    )}
                   />
                 )}
 
@@ -650,7 +701,7 @@ export default function PublicFormPage() {
                     aria-label={field.hideLabel ? accessibleLabel : undefined}
                     aria-invalid={errorText ? 'true' : undefined}
                     aria-describedby={describedBy}
-                    className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                    className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150"
                   >
                     <option value="">Select an option</option>
                     {options.map((option) => (
@@ -669,16 +720,33 @@ export default function PublicFormPage() {
                   >
                     {options.map((option, index) => {
                       const optionId = `${fieldDomId}-option-${index}`;
+                      const isSelected = value === option;
                       return (
-                        <label key={option} htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
+                        <label
+                          key={option}
+                          htmlFor={optionId}
+                          className={cn(
+                            "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
+                            isSelected
+                              ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
+                              : "border-transparent text-text-primary hover:bg-background-secondary/50"
+                          )}
+                        >
                           <input
                             id={optionId}
                             type="radio"
                             name={field.key}
                             value={option}
-                            checked={value === option}
+                            checked={isSelected}
                             onChange={() => setFieldValue(field.key, option)}
+                            className="sr-only"
                           />
+                          <span className={cn(
+                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150",
+                            isSelected ? "border-oak-primary" : "border-border-primary"
+                          )}>
+                            {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-oak-primary" />}
+                          </span>
                           {option}
                         </label>
                       );
@@ -696,14 +764,23 @@ export default function PublicFormPage() {
                   >
                     {options.map((option, index) => {
                       const current = Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-                      const checked = current.includes(option);
+                      const isChecked = current.includes(option);
                       const optionId = `${fieldDomId}-option-${index}-${toDomSafeId(option)}`;
                       return (
-                        <label key={option} htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
+                        <label
+                          key={option}
+                          htmlFor={optionId}
+                          className={cn(
+                            "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
+                            isChecked
+                              ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
+                              : "border-transparent text-text-primary hover:bg-background-secondary/50"
+                          )}
+                        >
                           <input
                             id={optionId}
                             type="checkbox"
-                            checked={checked}
+                            checked={isChecked}
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setFieldValue(field.key, [...current, option]);
@@ -711,7 +788,18 @@ export default function PublicFormPage() {
                                 setFieldValue(field.key, current.filter((item) => item !== option));
                               }
                             }}
+                            className="sr-only"
                           />
+                          <span className={cn(
+                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-150",
+                            isChecked ? "border-oak-primary bg-oak-primary" : "border-border-primary"
+                          )}>
+                            {isChecked && (
+                              <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M2 6l3 3 5-5" />
+                              </svg>
+                            )}
+                          </span>
                           {option}
                         </label>
                       );
@@ -721,8 +809,8 @@ export default function PublicFormPage() {
 
                 {field.type === 'FILE_UPLOAD' && (
                   <div className={cn(
-                    'rounded-lg border border-dashed bg-background-primary p-4 text-center',
-                    uploadStatus ? 'border-status-success/40' : 'border-border-primary'
+                    'rounded-xl border border-dashed bg-background-primary/50 p-6 text-center transition-colors duration-150',
+                    uploadStatus ? 'border-status-success/40' : 'border-border-primary/60 hover:border-oak-primary/40'
                   )}>
                     <UploadCloud className="mx-auto mb-2 h-8 w-8 text-text-muted" />
                     <label htmlFor={controlId} className="text-sm text-text-primary underline cursor-pointer">
@@ -781,34 +869,55 @@ export default function PublicFormPage() {
                 {errorText && !useDateSelector && (
                   <p id={errorId} className="mt-1 text-xs text-status-error">{errorText}</p>
                 )}
+                </div>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-8 flex items-center justify-between">
           {currentPage > 0 ? (
-            <Button variant="secondary" size="sm" leftIcon={<ArrowLeft className="w-4 h-4" />} onClick={() => setCurrentPage((prev) => prev - 1)}>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => prev - 1)}
+              className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
+            >
+              <ArrowLeft className="h-4 w-4" />
               Back
-            </Button>
+            </button>
           ) : <div />}
 
-          {currentPage < pages.length - 1 ? (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                if (!validateCurrentPage()) return;
-                setCurrentPage((prev) => prev + 1);
-              }}
-            >
-              Continue
-            </Button>
-          ) : (
-            <Button variant="primary" size="sm" onClick={submitForm} isLoading={isSubmitting} disabled={isPreview}>
-              {isPreview ? 'Preview mode' : 'Submit'}
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            {pages.length > 1 && (
+              <span className="text-xs text-text-muted">
+                {currentPage + 1} of {pages.length}
+              </span>
+            )}
+            {currentPage < pages.length - 1 ? (
+              <Button
+                variant="primary"
+                size="sm"
+                className="rounded-xl px-6 py-2.5 transition-transform duration-150 hover:scale-[1.02]"
+                onClick={() => {
+                  if (!validateCurrentPage()) return;
+                  setCurrentPage((prev) => prev + 1);
+                }}
+              >
+                Continue
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                className="rounded-xl px-6 py-2.5 transition-transform duration-150 hover:scale-[1.02]"
+                onClick={submitForm}
+                isLoading={isSubmitting}
+                disabled={isPreview}
+              >
+                {isPreview ? 'Preview mode' : 'Submit'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

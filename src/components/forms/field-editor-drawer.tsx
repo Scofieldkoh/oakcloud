@@ -14,7 +14,7 @@ const FIELD_DRAWER_MIN_WIDTH = 360;
 const FIELD_DRAWER_MAX_WIDTH = 860;
 const FIELD_DRAWER_DEFAULT_WIDTH = 460;
 const FIELD_DRAWER_WIDTH_STORAGE_KEY = 'form_builder_field_drawer_width';
-const INFO_INPUT_TYPES: ReadonlyArray<ShortInputType> = ['info_text', 'info_image', 'info_url'];
+const INFO_INPUT_TYPES: ReadonlyArray<ShortInputType> = ['info_text', 'info_image', 'info_url', 'info_heading_1', 'info_heading_2', 'info_heading_3'];
 
 export function FieldEditorDrawer({
   field,
@@ -205,6 +205,9 @@ export function FieldEditorDrawer({
                       <option value="info_text">Text block</option>
                       <option value="info_image">Image</option>
                       <option value="info_url">URL / Link</option>
+                      <option value="info_heading_1">Heading 1</option>
+                      <option value="info_heading_2">Heading 2</option>
+                      <option value="info_heading_3">Heading 3</option>
                     </select>
                   </div>
 

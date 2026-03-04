@@ -33,7 +33,10 @@ export type ShortInputType =
   | 'date'
   | 'info_text'
   | 'info_image'
-  | 'info_url';
+  | 'info_url'
+  | 'info_heading_1'
+  | 'info_heading_2'
+  | 'info_heading_3';
 
 export type ValidationConfig = {
   minLength?: number;
