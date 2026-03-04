@@ -8,6 +8,7 @@ import { SingleDateInput } from '@/components/ui/single-date-input';
 import { SignaturePad } from '@/components/forms/signature-pad';
 import { Tooltip } from '@/components/ui/tooltip';
 import { WIDTH_CLASS, parseObject, parseOptions, isEmptyValue, evaluateCondition, type PublicFormField as PublicField, type PublicFormDefinition } from '@/lib/form-utils';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 
@@ -699,21 +700,15 @@ export default function PublicFormPage() {
                 )}
 
                 {field.type === 'DROPDOWN' && (
-                  <select
-                    id={controlId}
+                  <SearchableSelect
+                    options={options.map((opt) => ({ value: opt, label: opt }))}
                     value={typeof value === 'string' ? value : ''}
-                    onChange={(e) => setFieldValue(field.key, e.target.value)}
-                    required={field.isRequired}
-                    aria-label={field.hideLabel ? accessibleLabel : undefined}
-                    aria-invalid={errorText ? 'true' : undefined}
-                    aria-describedby={describedBy}
-                    className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150"
-                  >
-                    <option value="">Select an option</option>
-                    {options.map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => setFieldValue(field.key, val)}
+                    placeholder="Select an option"
+                    clearable={false}
+                    showKeyboardHints={false}
+                    containerClassName="h-10"
+                  />
                 )}
 
                 {field.type === 'SINGLE_CHOICE' && (
