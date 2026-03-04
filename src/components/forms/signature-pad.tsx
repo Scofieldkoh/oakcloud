@@ -6,9 +6,11 @@ import { RotateCcw } from 'lucide-react';
 export function SignaturePad({
   value,
   onChange,
+  ariaLabel = 'Signature field',
 }: {
   value?: string;
   onChange: (dataUrl: string) => void;
+  ariaLabel?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -99,6 +101,7 @@ export function SignaturePad({
         <canvas
           ref={canvasRef}
           className="h-full w-full touch-none cursor-crosshair"
+          aria-label={ariaLabel}
           onPointerDown={startDrawing}
           onPointerMove={draw}
           onPointerUp={stopDrawing}

@@ -185,8 +185,10 @@ export default function FormsPage() {
       <div className="mb-4 rounded-lg border border-border-primary bg-background-elevated p-3">
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <div className="relative flex-1 min-w-[220px]">
+            <label htmlFor="forms-search" className="sr-only">Search forms</label>
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <input
+              id="forms-search"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -197,20 +199,24 @@ export default function FormsPage() {
             />
           </div>
 
-          <select
-            value={statusValue}
-            onChange={(e) => {
-              const value = e.target.value as FormStatus | '';
-              setStatus(value || undefined);
-              setPage(1);
-            }}
-            className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-oak-primary"
-          >
-            <option value="">All statuses</option>
-            <option value="DRAFT">Draft</option>
-            <option value="PUBLISHED">Published</option>
-            <option value="ARCHIVED">Archived</option>
-          </select>
+          <div>
+            <label htmlFor="forms-status" className="sr-only">Filter by status</label>
+            <select
+              id="forms-status"
+              value={statusValue}
+              onChange={(e) => {
+                const value = e.target.value as FormStatus | '';
+                setStatus(value || undefined);
+                setPage(1);
+              }}
+              className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-oak-primary"
+            >
+              <option value="">All statuses</option>
+              <option value="DRAFT">Draft</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -243,38 +249,30 @@ export default function FormsPage() {
         {!isLoading && data?.forms.map((form) => (
           <div
             key={form.id}
-            className="rounded-lg border border-border-primary bg-background-elevated p-4 cursor-pointer transition-colors hover:border-border-secondary"
-            role="link"
-            tabIndex={0}
-            onClick={() => router.push(`/forms/${form.id}`)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                router.push(`/forms/${form.id}`);
-              }
-            }}
+            className="rounded-lg border border-border-primary bg-background-elevated p-4 transition-colors hover:border-border-secondary"
           >
             <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/forms/${form.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="truncate text-base font-semibold text-text-primary hover:text-oak-light"
-                  >
-                    {form.title}
-                  </Link>
-                  <span className="rounded px-2 py-0.5 text-2xs font-medium bg-background-tertiary text-text-secondary uppercase">
-                    {form.status.toLowerCase()}
-                  </span>
-                </div>
+                <Link
+                  href={`/forms/${form.id}`}
+                  className="block rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-base font-semibold text-text-primary hover:text-oak-light">
+                      {form.title}
+                    </span>
+                    <span className="rounded px-2 py-0.5 text-2xs font-medium bg-background-tertiary text-text-secondary uppercase">
+                      {form.status.toLowerCase()}
+                    </span>
+                  </div>
 
-                <p className="mt-1 text-xs text-text-muted">
-                  {form.fieldCount} fields | {form.responseCount} responses | {form.conversionRate}% conversion
-                </p>
+                  <p className="mt-1 text-xs text-text-muted">
+                    {form.fieldCount} fields | {form.responseCount} responses | {form.conversionRate}% conversion
+                  </p>
+                </Link>
               </div>
 
-              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-1.5">
                 {(() => {
                   const isPublished = form.status === 'PUBLISHED';
                   return (

@@ -91,6 +91,29 @@ export async function requireTenantContext(
   return { tenantId: result.tenantId };
 }
 
+/**
+ * Synchronous tenant ID resolver for API routes.
+ * Throws on missing tenant context (handled by createErrorResponse).
+ */
+export function resolveTenantId(
+  session: SessionUser,
+  requestedTenantId?: string | null
+): string {
+  if (session.isSuperAdmin) {
+    const tenantId = requestedTenantId || session.tenantId;
+    if (!tenantId) {
+      throw new Error('Tenant context required');
+    }
+    return tenantId;
+  }
+
+  if (!session.tenantId) {
+    throw new Error('Tenant context required');
+  }
+
+  return session.tenantId;
+}
+
 // ============================================================================
 // Error Response Helpers
 // ============================================================================

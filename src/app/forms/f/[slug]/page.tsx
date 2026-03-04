@@ -5,102 +5,9 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SignaturePad } from '@/components/forms/signature-pad';
+import { WIDTH_CLASS, parseOptions, isEmptyValue, evaluateCondition, type PublicFormField as PublicField, type PublicFormDefinition } from '@/lib/form-utils';
 import { cn } from '@/lib/utils';
-
-interface PublicField {
-  id: string;
-  type:
-    | 'SHORT_TEXT'
-    | 'LONG_TEXT'
-    | 'SINGLE_CHOICE'
-    | 'MULTIPLE_CHOICE'
-    | 'DROPDOWN'
-    | 'FILE_UPLOAD'
-    | 'SIGNATURE'
-    | 'PARAGRAPH'
-    | 'HTML'
-    | 'PAGE_BREAK'
-    | 'HIDDEN';
-  label: string | null;
-  key: string;
-  placeholder: string | null;
-  subtext: string | null;
-  helpText: string | null;
-  inputType: string | null;
-  options: unknown;
-  validation: unknown;
-  condition: unknown;
-  isRequired: boolean;
-  hideLabel: boolean;
-  isReadOnly: boolean;
-  layoutWidth: number;
-  position: number;
-}
-
-interface PublicFormDefinition {
-  id: string;
-  slug: string;
-  title: string;
-  description: string | null;
-  fields: PublicField[];
-  status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-}
-
-const WIDTH_CLASS: Record<number, string> = {
-  25: 'col-span-12 md:col-span-3',
-  33: 'col-span-12 md:col-span-4',
-  50: 'col-span-12 md:col-span-6',
-  66: 'col-span-12 md:col-span-8',
-  75: 'col-span-12 md:col-span-9',
-  100: 'col-span-12',
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function parseOptions(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === 'string');
-}
-
-function isEmptyValue(value: unknown): boolean {
-  if (value === null || value === undefined) return true;
-  if (typeof value === 'string') return value.trim().length === 0;
-  if (Array.isArray(value)) return value.length === 0;
-  return false;
-}
-
-function evaluateCondition(condition: unknown, answers: Record<string, unknown>): boolean {
-  if (!isRecord(condition)) return true;
-
-  const fieldKey = typeof condition.fieldKey === 'string' ? condition.fieldKey : null;
-  const operator = typeof condition.operator === 'string' ? condition.operator : null;
-  const expected = condition.value;
-
-  if (!fieldKey || !operator) return true;
-
-  const actual = answers[fieldKey];
-
-  switch (operator) {
-    case 'equals':
-      return actual === expected;
-    case 'not_equals':
-      return actual !== expected;
-    case 'contains':
-      if (Array.isArray(actual)) return actual.includes(expected);
-      if (typeof actual === 'string' && typeof expected === 'string') {
-        return actual.toLowerCase().includes(expected.toLowerCase());
-      }
-      return false;
-    case 'is_empty':
-      return isEmptyValue(actual);
-    case 'not_empty':
-      return !isEmptyValue(actual);
-    default:
-      return true;
-  }
-}
+import DOMPurify from 'dompurify';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NAME_HINT_PATTERN = /(full[\s_-]?name|first[\s_-]?name|last[\s_-]?name|name)/i;
@@ -114,6 +21,15 @@ function normalizeOptionalText(value: unknown, maxLength: number): string | null
   if (trimmed.length > maxLength) return null;
   if (DATA_URI_PATTERN.test(trimmed)) return null;
   return trimmed;
+}
+
+function toDomSafeId(value: string): string {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return normalized || 'field';
 }
 
 export default function PublicFormPage() {
@@ -418,6 +334,14 @@ export default function PublicFormPage() {
             const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
             const value = answers[field.key];
             const errorText = fieldErrors[field.key];
+            const fieldDomId = `form-field-${toDomSafeId(field.id || field.key)}`;
+            const controlId = `${fieldDomId}-control`;
+            const labelId = `${fieldDomId}-label`;
+            const hintId = field.subtext ? `${fieldDomId}-hint` : undefined;
+            const errorId = errorText ? `${fieldDomId}-error` : undefined;
+            const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
+            const accessibleLabel = field.label || field.key;
+            const renderLabelAsText = ['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'SIGNATURE'].includes(field.type);
 
             if (field.type === 'PARAGRAPH') {
               return (
@@ -430,7 +354,7 @@ export default function PublicFormPage() {
             if (field.type === 'HTML') {
               return (
                 <div key={field.id} className={widthClass}>
-                  <div className="text-sm text-text-primary" dangerouslySetInnerHTML={{ __html: field.subtext || '' }} />
+                  <div className="text-sm text-text-primary" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(field.subtext || '') }} />
                 </div>
               );
             }
@@ -440,38 +364,60 @@ export default function PublicFormPage() {
             return (
               <div key={field.id} className={widthClass}>
                 {!field.hideLabel && (
-                  <label className="mb-1.5 block text-base font-semibold text-text-primary">
-                    {field.label || field.key}
-                    {field.isRequired && <span className="text-status-error"> *</span>}
-                  </label>
+                  renderLabelAsText ? (
+                    <p id={labelId} className="mb-1.5 block text-base font-semibold text-text-primary">
+                      {accessibleLabel}
+                      {field.isRequired && <span className="text-status-error"> *</span>}
+                    </p>
+                  ) : (
+                    <label htmlFor={controlId} id={labelId} className="mb-1.5 block text-base font-semibold text-text-primary">
+                      {accessibleLabel}
+                      {field.isRequired && <span className="text-status-error"> *</span>}
+                    </label>
+                  )
                 )}
-                {field.subtext && <p className="mb-2 text-sm text-text-secondary">{field.subtext}</p>}
+                {field.subtext && <p id={hintId} className="mb-2 text-sm text-text-secondary">{field.subtext}</p>}
 
                 {field.type === 'SHORT_TEXT' && (
                   <input
+                    id={controlId}
                     type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}
                     value={typeof value === 'string' ? value : ''}
                     onChange={(e) => setFieldValue(field.key, e.target.value)}
                     placeholder={field.placeholder || ''}
                     readOnly={field.isReadOnly}
+                    required={field.isRequired}
+                    aria-label={field.hideLabel ? accessibleLabel : undefined}
+                    aria-invalid={errorText ? 'true' : undefined}
+                    aria-describedby={describedBy}
                     className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
                   />
                 )}
 
                 {field.type === 'LONG_TEXT' && (
                   <textarea
+                    id={controlId}
                     value={typeof value === 'string' ? value : ''}
                     onChange={(e) => setFieldValue(field.key, e.target.value)}
                     placeholder={field.placeholder || ''}
                     readOnly={field.isReadOnly}
+                    required={field.isRequired}
+                    aria-label={field.hideLabel ? accessibleLabel : undefined}
+                    aria-invalid={errorText ? 'true' : undefined}
+                    aria-describedby={describedBy}
                     className="w-full min-h-24 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
                   />
                 )}
 
                 {field.type === 'DROPDOWN' && (
                   <select
+                    id={controlId}
                     value={typeof value === 'string' ? value : ''}
                     onChange={(e) => setFieldValue(field.key, e.target.value)}
+                    required={field.isRequired}
+                    aria-label={field.hideLabel ? accessibleLabel : undefined}
+                    aria-invalid={errorText ? 'true' : undefined}
+                    aria-describedby={describedBy}
                     className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
                   >
                     <option value="">Select an option</option>
@@ -482,30 +428,48 @@ export default function PublicFormPage() {
                 )}
 
                 {field.type === 'SINGLE_CHOICE' && (
-                  <div className="space-y-2">
-                    {options.map((option) => (
-                      <label key={option} className="flex items-center gap-2 text-sm text-text-primary">
-                        <input
-                          type="radio"
-                          name={field.key}
-                          value={option}
-                          checked={value === option}
-                          onChange={() => setFieldValue(field.key, option)}
-                        />
-                        {option}
-                      </label>
-                    ))}
-                  </div>
+                  <fieldset
+                    className="space-y-2"
+                    aria-label={field.hideLabel ? accessibleLabel : undefined}
+                    aria-labelledby={field.hideLabel ? undefined : labelId}
+                    aria-describedby={describedBy}
+                    aria-invalid={errorText ? 'true' : undefined}
+                  >
+                    {options.map((option, index) => {
+                      const optionId = `${fieldDomId}-option-${index}`;
+                      return (
+                        <label key={option} htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
+                          <input
+                            id={optionId}
+                            type="radio"
+                            name={field.key}
+                            value={option}
+                            checked={value === option}
+                            onChange={() => setFieldValue(field.key, option)}
+                          />
+                          {option}
+                        </label>
+                      );
+                    })}
+                  </fieldset>
                 )}
 
                 {field.type === 'MULTIPLE_CHOICE' && (
-                  <div className="space-y-2">
-                    {options.map((option) => {
+                  <fieldset
+                    className="space-y-2"
+                    aria-label={field.hideLabel ? accessibleLabel : undefined}
+                    aria-labelledby={field.hideLabel ? undefined : labelId}
+                    aria-describedby={describedBy}
+                    aria-invalid={errorText ? 'true' : undefined}
+                  >
+                    {options.map((option, index) => {
                       const current = Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
                       const checked = current.includes(option);
+                      const optionId = `${fieldDomId}-option-${index}-${toDomSafeId(option)}`;
                       return (
-                        <label key={option} className="flex items-center gap-2 text-sm text-text-primary">
+                        <label key={option} htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
                           <input
+                            id={optionId}
                             type="checkbox"
                             checked={checked}
                             onChange={(e) => {
@@ -520,40 +484,52 @@ export default function PublicFormPage() {
                         </label>
                       );
                     })}
-                  </div>
+                  </fieldset>
                 )}
 
                 {field.type === 'FILE_UPLOAD' && (
                   <div className="rounded-lg border border-dashed border-border-primary bg-background-primary p-4 text-center">
                     <UploadCloud className="mx-auto mb-2 h-8 w-8 text-text-muted" />
-                    <label className="text-sm text-text-primary underline cursor-pointer">
+                    <label htmlFor={controlId} className="text-sm text-text-primary underline cursor-pointer">
                       Upload a file
-                      <input
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            uploadFile(field.key, file);
-                          }
-                        }}
-                      />
                     </label>
+                    <input
+                      id={controlId}
+                      type="file"
+                      className="sr-only"
+                      aria-label={field.hideLabel ? accessibleLabel : undefined}
+                      aria-invalid={errorText ? 'true' : undefined}
+                      aria-describedby={describedBy}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          uploadFile(field.key, file);
+                        }
+                      }}
+                    />
                     <p className="mt-1 text-xs text-text-muted">
-                      {uploadingField === field.key ? 'Uploading...' : 'or drag and drop'}
+                      {uploadingField === field.key ? 'Uploading...' : 'Select a file to upload'}
                     </p>
                   </div>
                 )}
 
                 {field.type === 'SIGNATURE' && (
-                  <SignaturePad
-                    value={typeof value === 'string' ? value : ''}
-                    onChange={(next) => setFieldValue(field.key, next)}
-                  />
+                  <div
+                    role="group"
+                    aria-label={field.hideLabel ? accessibleLabel : undefined}
+                    aria-labelledby={field.hideLabel ? undefined : labelId}
+                    aria-describedby={describedBy}
+                  >
+                    <SignaturePad
+                      value={typeof value === 'string' ? value : ''}
+                      onChange={(next) => setFieldValue(field.key, next)}
+                      ariaLabel={accessibleLabel}
+                    />
+                  </div>
                 )}
 
                 {errorText && (
-                  <p className="mt-1 text-xs text-status-error">{errorText}</p>
+                  <p id={errorId} className="mt-1 text-xs text-status-error">{errorText}</p>
                 )}
               </div>
             );

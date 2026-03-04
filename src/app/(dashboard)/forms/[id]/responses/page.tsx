@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Download, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Pagination } from '@/components/ui/pagination';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useForm, useFormResponses } from '@/hooks/use-forms';
@@ -32,10 +31,10 @@ function safeCell(value: unknown): string {
 
 export default function FormResponsesPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const formId = params.id;
 
   const [page, setPage] = useState(1);
-  const [selectedSubmission, setSelectedSubmission] = useState<Record<string, unknown> | null>(null);
 
   const { data: form, isLoading: isFormLoading, error: formError } = useForm(formId);
   const { data, isLoading, error } = useFormResponses(formId, page, PAGE_SIZE);
@@ -114,6 +113,10 @@ export default function FormResponsesPage() {
     ? `/forms/f/${form.slug}`
     : `/forms/f/${form.slug}?preview=1&formId=${form.id}&tenantId=${form.tenantId}`;
 
+  function handleOpenPreview() {
+    window.open(viewHref, '_blank', 'noopener,noreferrer');
+  }
+
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -128,12 +131,12 @@ export default function FormResponsesPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <a href={viewHref} target="_blank" rel="noreferrer">
-            <Button variant="secondary" size="sm">{form.status === 'PUBLISHED' ? 'View' : 'Preview'}</Button>
-          </a>
-          <Link href={`/forms/${form.id}/builder`}>
-            <Button variant="secondary" size="sm">Edit Form</Button>
-          </Link>
+          <Button variant="secondary" size="sm" onClick={handleOpenPreview}>
+            {form.status === 'PUBLISHED' ? 'View' : 'Preview'}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => router.push(`/forms/${form.id}/builder`)}>
+            Edit Form
+          </Button>
           <Button variant="primary" size="sm" leftIcon={<Download className="w-4 h-4" />} onClick={exportCsv}>
             Export CSV
           </Button>
@@ -220,7 +223,7 @@ export default function FormResponsesPage() {
                         <button
                           type="button"
                           className="rounded p-1.5 text-text-secondary hover:bg-background-tertiary hover:text-text-primary"
-                          onClick={() => setSelectedSubmission(submission as unknown as Record<string, unknown>)}
+                          onClick={() => router.push(`/forms/${form.id}/responses/${submission.id}`)}
                           aria-label="View submission"
                         >
                           <Eye className="w-4 h-4" />
@@ -245,24 +248,6 @@ export default function FormResponsesPage() {
           />
         )}
       </div>
-
-      <Modal
-        isOpen={!!selectedSubmission}
-        onClose={() => setSelectedSubmission(null)}
-        title="Submission details"
-        size="lg"
-      >
-        <ModalBody>
-          <pre className="max-h-[60vh] overflow-auto rounded-lg border border-border-primary bg-background-primary p-3 text-xs text-text-primary">
-            {selectedSubmission ? JSON.stringify(selectedSubmission, null, 2) : ''}
-          </pre>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={() => setSelectedSubmission(null)}>
-            Close
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 }

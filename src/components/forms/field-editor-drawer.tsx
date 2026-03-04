@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { X } from 'lucide-react';
 import { FormInput } from '@/components/ui/form-input';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
@@ -99,7 +100,7 @@ export function FieldEditorDrawer({
             className="rounded p-2 text-text-secondary hover:bg-background-tertiary hover:text-text-primary"
             aria-label="Close field editor"
           >
-            ?
+            <X className="h-4 w-4" />
           </button>
         </div>
 

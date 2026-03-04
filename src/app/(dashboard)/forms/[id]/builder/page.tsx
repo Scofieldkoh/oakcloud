@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   closestCenter,
   DndContext,
@@ -31,6 +31,7 @@ import {
   FIELD_TYPE_LABEL,
   defaultField,
   fromServerField,
+  newClientId,
   normalizeKey,
   serializeBuilderState,
   toPayloadFields,
@@ -43,6 +44,7 @@ function resequence(nextFields: BuilderField[]): BuilderField[] {
 
 export default function FormBuilderPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const { success, error: showError } = useToast();
   const formId = params.id;
 
@@ -110,13 +112,10 @@ export default function FormBuilderPage() {
     [tagsText]
   );
 
-  const stateSnapshot = serializeBuilderState({
-    title,
-    description,
-    status,
-    tags,
-    fields,
-  });
+  const stateSnapshot = useMemo(
+    () => serializeBuilderState({ title, description, status, tags, fields }),
+    [title, description, status, tags, fields]
+  );
 
   const isDirty = isHydrated && !!baselineSnapshot.current && stateSnapshot !== baselineSnapshot.current;
   useUnsavedChangesWarning(isDirty, true);
@@ -228,24 +227,26 @@ export default function FormBuilderPage() {
   }
 
   function addField(type: BuilderField['type']) {
+    const createdClientId = newClientId();
     setFields((prev) => {
-      const next = [...prev, defaultField(type, prev.length)];
-      const created = next[next.length - 1];
-      setSelectedFieldId(type === 'PAGE_BREAK' ? null : created.clientId);
+      const created = { ...defaultField(type, prev.length), clientId: createdClientId };
+      const next = [...prev, created];
       return resequence(next);
     });
+    setSelectedFieldId(type === 'PAGE_BREAK' ? null : createdClientId);
   }
 
   function insertFieldAfter(afterClientId: string, type: BuilderField['type'] = 'SHORT_TEXT') {
+    const createdClientId = newClientId();
     setFields((prev) => {
       const afterIndex = prev.findIndex((field) => field.clientId === afterClientId);
       const insertAt = afterIndex >= 0 ? afterIndex + 1 : prev.length;
-      const created = defaultField(type, insertAt);
+      const created = { ...defaultField(type, insertAt), clientId: createdClientId };
       const next = [...prev];
       next.splice(insertAt, 0, created);
-      setSelectedFieldId(type === 'PAGE_BREAK' ? null : created.clientId);
       return resequence(next);
     });
+    setSelectedFieldId(type === 'PAGE_BREAK' ? null : createdClientId);
   }
 
   function duplicateField(clientId: string) {
@@ -359,6 +360,10 @@ export default function FormBuilderPage() {
     }
   }
 
+  function handleOpenPreview() {
+    window.open(viewHref, '_blank', 'noopener,noreferrer');
+  }
+
   useKeyboardShortcuts(
     [
       {
@@ -372,12 +377,14 @@ export default function FormBuilderPage() {
       {
         key: 'e',
         ctrl: true,
+        shift: true,
         handler: () => addField('SHORT_TEXT'),
         description: 'Add element',
       },
       {
-        key: 'p',
+        key: 'b',
         ctrl: true,
+        shift: true,
         handler: () => addField('PAGE_BREAK'),
         description: 'Add page break',
       },
@@ -432,9 +439,9 @@ export default function FormBuilderPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <a href={viewHref} target="_blank" rel="noreferrer" className="inline-flex">
-            <Button variant="secondary" size="sm">{isPublished ? 'View' : 'Preview'}</Button>
-          </a>
+          <Button variant="secondary" size="sm" onClick={handleOpenPreview}>
+            {isPublished ? 'View' : 'Preview'}
+          </Button>
           {isPublished && (
             <Button
               variant="secondary"
@@ -445,9 +452,9 @@ export default function FormBuilderPage() {
               Copy Public Link
             </Button>
           )}
-          <Link href={`/forms/${form.id}/responses`}>
-            <Button variant="secondary" size="sm">Responses</Button>
-          </Link>
+          <Button variant="secondary" size="sm" onClick={() => router.push(`/forms/${form.id}/responses`)}>
+            Responses
+          </Button>
           {!isPublished && (
             <Button variant="primary" size="sm" onClick={handlePublish} isLoading={updateForm.isPending}>
               Publish
@@ -550,14 +557,14 @@ export default function FormBuilderPage() {
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Button variant="secondary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => addField('SHORT_TEXT')}>
-            Element <span className="ml-1 text-2xs text-text-muted">Ctrl/Cmd+E</span>
+            Element <span className="ml-1 text-2xs text-text-muted">Ctrl/Cmd+Shift+E</span>
           </Button>
           <Button variant="secondary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => addField('PAGE_BREAK')}>
-            Page <span className="ml-1 text-2xs text-text-muted">Ctrl/Cmd+P</span>
+            Page <span className="ml-1 text-2xs text-text-muted">Ctrl/Cmd+Shift+B</span>
           </Button>
           <div className="text-xs text-text-muted">
             To publish: click <span className="font-medium text-text-primary">Publish</span> at the top right.
-            <span className="ml-2">Shortcuts: Ctrl/Cmd+S save, Ctrl/Cmd+E add element, Ctrl/Cmd+P add page, Ctrl/Cmd+Shift+P publish.</span>
+            <span className="ml-2">Shortcuts: Ctrl/Cmd+S save, Ctrl/Cmd+Shift+E add element, Ctrl/Cmd+Shift+B add page, Ctrl/Cmd+Shift+P publish.</span>
           </div>
         </div>
       </div>

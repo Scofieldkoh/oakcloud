@@ -9,7 +9,9 @@ import {
   type FormSubmission,
   type FormUpload,
 } from '@/generated/prisma';
+import { fromBuffer } from 'file-type';
 import { createAuditLog } from '@/lib/audit';
+import { normalizeKey, parseObject, isEmptyValue, evaluateCondition, type PublicFormField, type PublicFormDefinition } from '@/lib/form-utils';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
 import type { TenantAwareParams } from '@/lib/types';
@@ -48,6 +50,11 @@ export interface FormResponsesResult {
   chart: Array<{ date: string; responses: number }>;
 }
 
+export interface FormResponseDetailResult {
+  submission: FormSubmission;
+  uploads: FormUpload[];
+}
+
 export interface RecentFormSubmissionItem {
   id: string;
   formId: string;
@@ -60,33 +67,7 @@ export interface RecentFormSubmissionItem {
   status: FormSubmissionStatus;
 }
 
-export interface PublicFormField {
-  id: string;
-  type: FormFieldType;
-  label: string | null;
-  key: string;
-  placeholder: string | null;
-  subtext: string | null;
-  helpText: string | null;
-  inputType: string | null;
-  options: Prisma.JsonValue | null;
-  validation: Prisma.JsonValue | null;
-  condition: Prisma.JsonValue | null;
-  isRequired: boolean;
-  hideLabel: boolean;
-  isReadOnly: boolean;
-  layoutWidth: number;
-  position: number;
-}
-
-export interface PublicFormDefinition {
-  id: string;
-  slug: string;
-  title: string;
-  description: string | null;
-  settings: Prisma.JsonValue | null;
-  fields: PublicFormField[];
-}
+export type { PublicFormField, PublicFormDefinition };
 
 const MAX_SLUG_ATTEMPTS = 10;
 
@@ -97,17 +78,6 @@ function toJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.Json
   return value as Prisma.InputJsonValue;
 }
 
-function normalizeKey(raw: string): string {
-  const cleaned = raw
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-
-  if (!cleaned) return 'field';
-  if (/^[a-z]/.test(cleaned)) return cleaned;
-  return `field_${cleaned}`;
-}
 
 function makeUniqueKey(base: string, used: Set<string>): string {
   let candidate = base;
@@ -181,7 +151,7 @@ function normalizeFieldsForPersistence(fields: FormFieldInput[]): Array<{
 
 async function generateUniqueFormSlug(): Promise<string> {
   for (let i = 0; i < MAX_SLUG_ATTEMPTS; i += 1) {
-    const slug = randomBytes(4).toString('hex');
+    const slug = randomBytes(8).toString('hex');
     const existing = await prisma.form.findUnique({ where: { slug }, select: { id: true } });
     if (!existing) {
       return slug;
@@ -586,6 +556,35 @@ export async function getFormResponses(
   };
 }
 
+export async function getFormResponseById(
+  formId: string,
+  submissionId: string,
+  tenantId: string
+): Promise<FormResponseDetailResult> {
+  const submission = await prisma.formSubmission.findFirst({
+    where: {
+      id: submissionId,
+      formId,
+      tenantId,
+    },
+  });
+
+  if (!submission) {
+    throw new Error('Submission not found');
+  }
+
+  const uploads = await prisma.formUpload.findMany({
+    where: {
+      formId,
+      submissionId,
+      tenantId,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return { submission, uploads };
+}
+
 export async function listRecentFormSubmissions(
   tenantId: string,
   limit: number = 10
@@ -661,58 +660,6 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
   };
 }
 
-function parseObject(value: Prisma.JsonValue | null): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
-  }
-
-  return value as Record<string, unknown>;
-}
-
-function isEmptyValue(value: unknown): boolean {
-  if (value === null || value === undefined) return true;
-  if (typeof value === 'string') return value.trim().length === 0;
-  if (Array.isArray(value)) return value.length === 0;
-  return false;
-}
-
-function evaluateCondition(
-  condition: Record<string, unknown> | null,
-  answers: Record<string, unknown>
-): boolean {
-  if (!condition) return true;
-
-  const fieldKey = typeof condition.fieldKey === 'string' ? condition.fieldKey : null;
-  const operator = typeof condition.operator === 'string' ? condition.operator : null;
-
-  if (!fieldKey || !operator) {
-    return true;
-  }
-
-  const actual = answers[fieldKey];
-  const expected = condition.value;
-
-  switch (operator) {
-    case 'equals':
-      return actual === expected;
-    case 'not_equals':
-      return actual !== expected;
-    case 'contains':
-      if (Array.isArray(actual)) {
-        return actual.includes(expected);
-      }
-      if (typeof actual === 'string' && typeof expected === 'string') {
-        return actual.toLowerCase().includes(expected.toLowerCase());
-      }
-      return false;
-    case 'is_empty':
-      return isEmptyValue(actual);
-    case 'not_empty':
-      return !isEmptyValue(actual);
-    default:
-      return true;
-  }
-}
 
 export async function createPublicUpload(
   slug: string,
@@ -753,17 +700,20 @@ export async function createPublicUpload(
     throw new Error(`File exceeds ${maxFileSizeMb} MB limit`);
   }
 
-  if (allowedMimeTypes.length > 0 && !allowedMimeTypes.includes(file.type)) {
-    throw new Error('File type is not allowed');
-  }
-
   const extension = StorageKeys.getExtension(file.name, file.type);
   const uploadId = randomUUID();
   const storageKey = `${form.tenantId}/forms/${form.id}/uploads/${uploadId}${extension}`;
   const content = Buffer.from(await file.arrayBuffer());
 
+  const detected = await fromBuffer(content);
+  const actualMime = detected?.mime || file.type || 'application/octet-stream';
+
+  if (allowedMimeTypes.length > 0 && !allowedMimeTypes.includes(actualMime)) {
+    throw new Error('File type is not allowed');
+  }
+
   await storage.upload(storageKey, content, {
-    contentType: file.type || 'application/octet-stream',
+    contentType: actualMime,
     metadata: {
       formId: form.id,
       fieldId: field.id,
@@ -781,7 +731,7 @@ export async function createPublicUpload(
       fieldId: field.id,
       storageKey,
       fileName: file.name,
-      mimeType: file.type || 'application/octet-stream',
+      mimeType: actualMime,
       sizeBytes: file.size,
     },
   });

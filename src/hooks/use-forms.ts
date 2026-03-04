@@ -1,49 +1,25 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Form, FormField, FormStatus, FormSubmission } from '@/generated/prisma';
+import type { Form, FormStatus } from '@/generated/prisma';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import type { CreateFormInput, FormFieldInput, UpdateFormInput } from '@/lib/validations/form-builder';
+import type {
+  FormListItem,
+  FormListResult,
+  FormDetail,
+  FormResponsesResult,
+  FormResponseDetailResult,
+  RecentFormSubmissionItem,
+} from '@/services/form-builder.service';
 
-export interface FormListItem extends Form {
-  fieldCount: number;
-  responseCount: number;
-  conversionRate: number;
-}
+export type { FormListItem, FormListResult, FormDetail, FormResponsesResult, FormResponseDetailResult };
 
-export interface FormListResult {
-  forms: FormListItem[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface FormDetail extends Form {
-  fields: FormField[];
-}
-
-export interface FormResponsesResult {
-  submissions: FormSubmission[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-  chart: Array<{ date: string; responses: number }>;
-}
-
-export interface RecentFormSubmission {
-  id: string;
-  formId: string;
-  formTitle: string;
-  formSlug: string;
-  formStatus: FormStatus;
+export type RecentFormSubmission = Omit<RecentFormSubmissionItem, 'submittedAt' | 'status'> & {
   submittedAt: string;
-  respondentName: string | null;
-  respondentEmail: string | null;
   status: string;
-}
+};
 
 export interface FormListParams {
   query?: string;
@@ -103,6 +79,20 @@ async function fetchFormResponses(
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || 'Failed to fetch responses');
+  }
+
+  return response.json();
+}
+
+async function fetchFormResponse(
+  id: string,
+  submissionId: string,
+  tenantId?: string | null
+): Promise<FormResponseDetailResult> {
+  const response = await fetch(withTenant(`/api/forms/${id}/responses/${submissionId}`, tenantId));
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch response');
   }
 
   return response.json();
@@ -198,6 +188,8 @@ export const formKeys = {
   detail: (id: string, tenantId?: string | null) => [...formKeys.all, 'detail', id, tenantId] as const,
   responses: (id: string, page: number, limit: number, tenantId?: string | null) =>
     [...formKeys.all, 'responses', id, page, limit, tenantId] as const,
+  responseDetail: (id: string, submissionId: string, tenantId?: string | null) =>
+    [...formKeys.all, 'response-detail', id, submissionId, tenantId] as const,
   recentSubmissions: (limit: number, tenantId?: string | null) =>
     [...formKeys.all, 'recent-submissions', limit, tenantId] as const,
 };
@@ -243,6 +235,17 @@ export function useFormResponses(id: string | null, page: number = 1, limit: num
     queryFn: () => fetchFormResponses(id!, page, limit, activeTenantId),
     enabled: !!id && (session?.isSuperAdmin ? !!activeTenantId : true),
     placeholderData: (previousData) => previousData,
+  });
+}
+
+export function useFormResponse(id: string | null, submissionId: string | null) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useQuery({
+    queryKey: formKeys.responseDetail(id || '', submissionId || '', activeTenantId),
+    queryFn: () => fetchFormResponse(id!, submissionId!, activeTenantId),
+    enabled: !!id && !!submissionId && (session?.isSuperAdmin ? !!activeTenantId : true),
   });
 }
 

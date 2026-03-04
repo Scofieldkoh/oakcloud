@@ -1,4 +1,7 @@
+import { normalizeKey, isRecord, WIDTH_CLASS } from '@/lib/form-utils';
 import type { FormFieldInput } from '@/lib/validations/form-builder';
+
+export { normalizeKey, WIDTH_CLASS } from '@/lib/form-utils';
 
 export const FIELD_TYPE_OPTIONS: Array<{ value: FormFieldInput['type']; label: string }> = [
   { value: 'SHORT_TEXT', label: 'Short answer (Input)' },
@@ -21,14 +24,6 @@ export const FIELD_TYPE_LABEL: Record<FormFieldInput['type'], string> = FIELD_TY
 
 export const WIDTH_OPTIONS: Array<25 | 33 | 50 | 66 | 75 | 100> = [25, 33, 50, 66, 75, 100];
 
-export const WIDTH_CLASS: Record<number, string> = {
-  25: 'col-span-12 md:col-span-3',
-  33: 'col-span-12 md:col-span-4',
-  50: 'col-span-12 md:col-span-6',
-  66: 'col-span-12 md:col-span-8',
-  75: 'col-span-12 md:col-span-9',
-  100: 'col-span-12',
-};
 
 export type ShortInputType = 'text' | 'email' | 'phone' | 'number' | 'date';
 
@@ -75,17 +70,6 @@ export function newClientId(): string {
   return `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function normalizeKey(value: string): string {
-  const cleaned = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-
-  if (!cleaned) return 'field';
-  if (/^[a-z]/.test(cleaned)) return cleaned;
-  return `field_${cleaned}`;
-}
 
 export function defaultField(type: FormFieldInput['type'], position: number): BuilderField {
   const label = type === 'PAGE_BREAK' ? 'Page break' : 'Untitled field';
@@ -113,9 +97,6 @@ export function defaultField(type: FormFieldInput['type'], position: number): Bu
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
-}
 
 function parseFieldOptions(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
