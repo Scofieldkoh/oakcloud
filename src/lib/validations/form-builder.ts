@@ -116,6 +116,8 @@ export const publicSubmissionSchema = z.object({
     (value) => {
       if (typeof value !== 'string') return value;
       const trimmed = value.trim();
+      if (/^data:image\/[a-z0-9.+-]+;base64,/i.test(trimmed)) return null;
+      if (trimmed.length > 200) return null;
       return trimmed.length === 0 ? null : trimmed;
     },
     z.string().max(200).optional().nullable()
@@ -124,6 +126,7 @@ export const publicSubmissionSchema = z.object({
     (value) => {
       if (typeof value !== 'string') return value;
       const trimmed = value.trim().toLowerCase();
+      if (trimmed.length > 320) return null;
       return trimmed.length === 0 ? null : trimmed;
     },
     z.string().email().max(320).optional().nullable()

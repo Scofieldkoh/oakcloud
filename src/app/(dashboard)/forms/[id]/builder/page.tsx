@@ -24,6 +24,7 @@ import { FormInput } from '@/components/ui/form-input';
 import { useToast } from '@/components/ui/toast';
 import { useForm, useUpdateForm } from '@/hooks/use-forms';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { FieldEditorDrawer } from '@/components/forms/field-editor-drawer';
 import { SortableFieldCard } from '@/components/forms/sortable-field-card';
 import {
@@ -122,11 +123,11 @@ export default function FormBuilderPage() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const collisionDetection: CollisionDetection = (args) => {
-    const pointerCollisions = pointerWithin(args);
+    const pointerCollisions = pointerWithin(args).filter((collision) => collision.id !== args.active.id);
     if (pointerCollisions.length > 0) {
       return pointerCollisions;
     }
-    return closestCenter(args);
+    return closestCenter(args).filter((collision) => collision.id !== args.active.id);
   };
   const selectedField = fields.find(
     (field) => field.clientId === selectedFieldId && field.type !== 'PAGE_BREAK'
@@ -170,15 +171,15 @@ export default function FormBuilderPage() {
     }
 
     setDragOverId(overId);
-    const activeRect = event.active.rect.current.translated ?? event.active.rect.current.initial;
+    const activeInitialRect = event.active.rect.current.initial;
     const overRect = event.over?.rect;
 
-    if (activeRect && overRect) {
-      const activeCenterX = activeRect.left + activeRect.width / 2;
-      const activeCenterY = activeRect.top + activeRect.height / 2;
+    if (activeInitialRect && overRect) {
+      const activeCenterX = activeInitialRect.left + event.delta.x + activeInitialRect.width / 2;
+      const activeCenterY = activeInitialRect.top + event.delta.y + activeInitialRect.height / 2;
       const overCenterX = overRect.left + overRect.width / 2;
       const overCenterY = overRect.top + overRect.height / 2;
-      const sameRow = Math.abs(activeCenterY - overCenterY) < Math.min(activeRect.height, overRect.height) * 0.6;
+      const sameRow = Math.abs(activeCenterY - overCenterY) < Math.min(activeInitialRect.height, overRect.height) * 0.6;
 
       setDragDropPosition(
         sameRow
@@ -230,6 +231,18 @@ export default function FormBuilderPage() {
     setFields((prev) => {
       const next = [...prev, defaultField(type, prev.length)];
       const created = next[next.length - 1];
+      setSelectedFieldId(type === 'PAGE_BREAK' ? null : created.clientId);
+      return resequence(next);
+    });
+  }
+
+  function insertFieldAfter(afterClientId: string, type: BuilderField['type'] = 'SHORT_TEXT') {
+    setFields((prev) => {
+      const afterIndex = prev.findIndex((field) => field.clientId === afterClientId);
+      const insertAt = afterIndex >= 0 ? afterIndex + 1 : prev.length;
+      const created = defaultField(type, insertAt);
+      const next = [...prev];
+      next.splice(insertAt, 0, created);
       setSelectedFieldId(type === 'PAGE_BREAK' ? null : created.clientId);
       return resequence(next);
     });
@@ -345,6 +358,43 @@ export default function FormBuilderPage() {
       showError('Failed to copy public link');
     }
   }
+
+  useKeyboardShortcuts(
+    [
+      {
+        key: 's',
+        ctrl: true,
+        handler: () => {
+          void handleSave();
+        },
+        description: 'Save form',
+      },
+      {
+        key: 'e',
+        ctrl: true,
+        handler: () => addField('SHORT_TEXT'),
+        description: 'Add element',
+      },
+      {
+        key: 'p',
+        ctrl: true,
+        handler: () => addField('PAGE_BREAK'),
+        description: 'Add page break',
+      },
+      {
+        key: 'p',
+        ctrl: true,
+        shift: true,
+        handler: () => {
+          if (status !== 'PUBLISHED') {
+            void handlePublish();
+          }
+        },
+        description: 'Publish form',
+      },
+    ],
+    !!form
+  );
 
   if (isLoading) {
     return (
@@ -466,6 +516,7 @@ export default function FormBuilderPage() {
                   isDropTarget={dragActiveId !== null && dragOverId === field.clientId && dragActiveId !== field.clientId}
                   dropPosition={dragActiveId !== null && dragOverId === field.clientId && dragActiveId !== field.clientId ? dragDropPosition : null}
                   onSelect={selectField}
+                  onAddBelow={(clientId) => insertFieldAfter(clientId, 'SHORT_TEXT')}
                   onDuplicate={duplicateField}
                   onDelete={deleteField}
                   onSetWidth={setFieldWidth}
@@ -499,13 +550,14 @@ export default function FormBuilderPage() {
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Button variant="secondary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => addField('SHORT_TEXT')}>
-            Element
+            Element <span className="ml-1 text-2xs text-text-muted">Ctrl/Cmd+E</span>
           </Button>
           <Button variant="secondary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => addField('PAGE_BREAK')}>
-            Page
+            Page <span className="ml-1 text-2xs text-text-muted">Ctrl/Cmd+P</span>
           </Button>
           <div className="text-xs text-text-muted">
             To publish: click <span className="font-medium text-text-primary">Publish</span> at the top right.
+            <span className="ml-2">Shortcuts: Ctrl/Cmd+S save, Ctrl/Cmd+E add element, Ctrl/Cmd+P add page, Ctrl/Cmd+Shift+P publish.</span>
           </div>
         </div>
       </div>

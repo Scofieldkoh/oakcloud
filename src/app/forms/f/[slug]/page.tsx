@@ -103,6 +103,18 @@ function evaluateCondition(condition: unknown, answers: Record<string, unknown>)
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const NAME_HINT_PATTERN = /(full[\s_-]?name|first[\s_-]?name|last[\s_-]?name|name)/i;
+const EMAIL_HINT_PATTERN = /email/i;
+const DATA_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
+
+function normalizeOptionalText(value: unknown, maxLength: number): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > maxLength) return null;
+  if (DATA_URI_PATTERN.test(trimmed)) return null;
+  return trimmed;
+}
 
 export default function PublicFormPage() {
   const params = useParams<{ slug: string }>();
@@ -293,17 +305,28 @@ export default function PublicFormPage() {
         Object.entries(answers).filter(([, value]) => value !== undefined)
       );
 
-      const nameCandidate = typeof answers.full_name === 'string'
-        ? answers.full_name
-        : (typeof answers.name === 'string' ? answers.name : '');
-      const respondentName = nameCandidate.trim().length > 0 ? nameCandidate.trim() : null;
+      const shortTextFields = form.fields.filter((field) => field.type === 'SHORT_TEXT');
+      const inferredNameField = shortTextFields.find((field) => {
+        const hint = `${field.key} ${field.label || ''}`;
+        return NAME_HINT_PATTERN.test(hint);
+      });
+      const fallbackNameAnswer = answers.full_name ?? answers.name;
+      const respondentName = normalizeOptionalText(
+        inferredNameField ? answers[inferredNameField.key] : fallbackNameAnswer,
+        200
+      );
 
-      const emailCandidate = typeof answers.email_address === 'string'
-        ? answers.email_address
-        : (typeof answers.email === 'string' ? answers.email : '');
-      const trimmedEmail = emailCandidate.trim();
-      const respondentEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)
-        ? trimmedEmail
+      const inferredEmailField = shortTextFields.find((field) => {
+        const hint = `${field.key} ${field.label || ''}`;
+        return field.inputType === 'email' || EMAIL_HINT_PATTERN.test(hint);
+      });
+      const fallbackEmailAnswer = answers.email_address ?? answers.email;
+      const normalizedEmailCandidate = normalizeOptionalText(
+        inferredEmailField ? answers[inferredEmailField.key] : fallbackEmailAnswer,
+        320
+      );
+      const respondentEmail = normalizedEmailCandidate && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmailCandidate)
+        ? normalizedEmailCandidate.toLowerCase()
         : null;
 
       const response = await fetch(`/api/forms/public/${slug}/submit`, {
