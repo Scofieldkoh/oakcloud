@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { ArrowLeft, UploadCloud } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download, Info, Mail, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { SignaturePad } from '@/components/forms/signature-pad';
-import { WIDTH_CLASS, parseOptions, isEmptyValue, evaluateCondition, type PublicFormField as PublicField, type PublicFormDefinition } from '@/lib/form-utils';
+import { Tooltip } from '@/components/ui/tooltip';
+import { WIDTH_CLASS, parseObject, parseOptions, isEmptyValue, evaluateCondition, type PublicFormField as PublicField, type PublicFormDefinition } from '@/lib/form-utils';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 
@@ -13,6 +15,13 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 const NAME_HINT_PATTERN = /(full[\s_-]?name|first[\s_-]?name|last[\s_-]?name|name)/i;
 const EMAIL_HINT_PATTERN = /email/i;
 const DATA_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
+
+type UploadStatus = {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+};
 
 function normalizeOptionalText(value: unknown, maxLength: number): string | null {
   if (typeof value !== 'string') return null;
@@ -32,6 +41,28 @@ function toDomSafeId(value: string): string {
   return normalized || 'field';
 }
 
+function formatFileSize(sizeBytes: number): string {
+  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) return '0 B';
+  if (sizeBytes < 1024) return `${sizeBytes} B`;
+  if (sizeBytes < 1024 * 1024) return `${(sizeBytes / 1024).toFixed(1)} KB`;
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function isTooltipEnabled(field: PublicField): boolean {
+  const validation = parseObject(field.validation);
+  return validation?.tooltipEnabled === true && typeof field.helpText === 'string' && field.helpText.trim().length > 0;
+}
+
+function isValidHttpUrl(value: string | null): value is string {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export default function PublicFormPage() {
   const params = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
@@ -40,7 +71,6 @@ export default function PublicFormPage() {
   const isPreview = searchParams.get('preview') === '1';
   const previewFormId = searchParams.get('formId');
   const previewTenantId = searchParams.get('tenantId');
-
   const [form, setForm] = useState<PublicFormDefinition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,8 +78,14 @@ export default function PublicFormPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [currentPage, setCurrentPage] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [pdfDownloadToken, setPdfDownloadToken] = useState<string | null>(null);
+  const [pdfEmailAccessToken, setPdfEmailAccessToken] = useState<string | null>(null);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [uploadedByFieldKey, setUploadedByFieldKey] = useState<Record<string, UploadStatus>>({});
+  const [pdfRecipientEmail, setPdfRecipientEmail] = useState('');
+  const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
@@ -184,11 +220,25 @@ export default function PublicFormPage() {
       }
 
       setFieldValue(fieldKey, [data.id]);
+      setUploadedByFieldKey((prev) => ({
+        ...prev,
+        [fieldKey]: {
+          id: data.id,
+          fileName: typeof data.fileName === 'string' ? data.fileName : 'Uploaded file',
+          mimeType: typeof data.mimeType === 'string' ? data.mimeType : 'application/octet-stream',
+          sizeBytes: typeof data.sizeBytes === 'number' ? data.sizeBytes : 0,
+        },
+      }));
     } catch (err) {
       setFieldErrors((prev) => ({
         ...prev,
         [fieldKey]: err instanceof Error ? err.message : 'Upload failed',
       }));
+      setUploadedByFieldKey((prev) => {
+        const next = { ...prev };
+        delete next[fieldKey];
+        return next;
+      });
     } finally {
       setUploadingField(null);
     }
@@ -276,11 +326,53 @@ export default function PublicFormPage() {
         );
       }
 
-      setSubmitted(true);
+      setSubmissionId(typeof data.id === 'string' ? data.id : null);
+      setPdfDownloadToken(typeof data.pdfDownloadToken === 'string' ? data.pdfDownloadToken : null);
+      setPdfEmailAccessToken(typeof data.pdfEmailAccessToken === 'string' ? data.pdfEmailAccessToken : null);
+      setEmailFeedback(null);
+      setPdfRecipientEmail(respondentEmail || '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Submission failed');
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function sendSubmissionPdfEmail() {
+    if (!submissionId) return;
+    if (!pdfEmailAccessToken) {
+      setEmailFeedback('This email action has expired. Please resubmit the form to request a PDF email.');
+      return;
+    }
+
+    const normalizedEmail = pdfRecipientEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setEmailFeedback('Enter a valid email address');
+      return;
+    }
+
+    setIsSendingEmail(true);
+    setEmailFeedback(null);
+    try {
+      const response = await fetch(`/api/forms/public/${slug}/submissions/${submissionId}/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          accessToken: pdfEmailAccessToken,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send email');
+      }
+
+      setEmailFeedback(`PDF link sent to ${normalizedEmail}`);
+    } catch (err) {
+      setEmailFeedback(err instanceof Error ? err.message : 'Failed to send email');
+    } finally {
+      setIsSendingEmail(false);
     }
   }
 
@@ -302,12 +394,63 @@ export default function PublicFormPage() {
     );
   }
 
-  if (submitted) {
+  if (submissionId) {
+    const downloadHref = pdfDownloadToken
+      ? `/api/forms/public/${encodeURIComponent(slug)}/submissions/${encodeURIComponent(submissionId)}/pdf?token=${encodeURIComponent(pdfDownloadToken)}`
+      : null;
+
     return (
       <div className="min-h-screen bg-background-primary p-4 sm:p-8 flex items-center justify-center">
-        <div className="max-w-md rounded-lg border border-border-primary bg-background-elevated p-8 text-center">
+        <div className="w-full max-w-xl rounded-lg border border-border-primary bg-background-elevated p-6 sm:p-8 text-center">
           <h1 className="text-xl font-semibold text-text-primary">Submission received</h1>
           <p className="mt-2 text-sm text-text-secondary">Thank you. Your response has been submitted successfully.</p>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Download className="h-4 w-4" />}
+              onClick={() => {
+                if (!downloadHref) return;
+                window.open(downloadHref, '_blank', 'noopener,noreferrer');
+              }}
+              disabled={!downloadHref}
+            >
+              Download PDF
+            </Button>
+          </div>
+          {!downloadHref && (
+            <p className="mt-2 text-xs text-text-secondary">Download link expired. Please submit the form again to generate a new PDF link.</p>
+          )}
+
+          <div className="mt-5 rounded-lg border border-border-primary bg-background-primary p-3 text-left">
+            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Email a PDF copy</label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                type="email"
+                value={pdfRecipientEmail}
+                onChange={(e) => {
+                  setPdfRecipientEmail(e.target.value);
+                  if (emailFeedback) setEmailFeedback(null);
+                }}
+                placeholder="name@example.com"
+                className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                leftIcon={<Mail className="h-4 w-4" />}
+                onClick={sendSubmissionPdfEmail}
+                isLoading={isSendingEmail}
+              >
+                Send
+              </Button>
+            </div>
+            {emailFeedback && (
+              <p className="mt-2 text-xs text-text-secondary">{emailFeedback}</p>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -334,6 +477,10 @@ export default function PublicFormPage() {
             const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
             const value = answers[field.key];
             const errorText = fieldErrors[field.key];
+            const uploadStatus = uploadedByFieldKey[field.key];
+            const infoType = field.type === 'PARAGRAPH'
+              ? (field.inputType === 'info_image' || field.inputType === 'info_url' ? field.inputType : 'info_text')
+              : null;
             const fieldDomId = `form-field-${toDomSafeId(field.id || field.key)}`;
             const controlId = `${fieldDomId}-control`;
             const labelId = `${fieldDomId}-label`;
@@ -342,11 +489,61 @@ export default function PublicFormPage() {
             const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
             const accessibleLabel = field.label || field.key;
             const renderLabelAsText = ['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'SIGNATURE'].includes(field.type);
+            const useDateSelector = field.type === 'SHORT_TEXT' && field.inputType === 'date';
+            const showTooltip = isTooltipEnabled(field);
+            const tooltipText = showTooltip ? field.helpText!.trim() : null;
 
             if (field.type === 'PARAGRAPH') {
+              if (infoType === 'info_image') {
+                const imageUrl = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
+                return (
+                  <div key={field.id} className={widthClass}>
+                    <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary">
+                      {imageUrl ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element -- image source is user-provided URL for informational block */}
+                          <img src={imageUrl} alt={field.subtext || field.label || 'Information image'} className="max-h-96 w-full object-contain" />
+                          {field.subtext && (
+                            <p className="border-t border-border-primary px-3 py-2 text-xs text-text-secondary">{field.subtext}</p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="px-3 py-4 text-sm text-text-secondary">
+                          Add a valid image URL in field settings.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
+              if (infoType === 'info_url') {
+                const href = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
+                return (
+                  <div key={field.id} className={widthClass}>
+                    <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm">
+                      {href ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="break-all text-text-primary underline hover:text-text-secondary"
+                        >
+                          {field.subtext || field.label || href}
+                        </a>
+                      ) : (
+                        <span className="text-text-secondary">Add a valid URL in field settings.</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={field.id} className={widthClass}>
-                  <div className="text-sm text-text-primary whitespace-pre-wrap">{field.subtext || field.label}</div>
+                  <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary whitespace-pre-wrap">
+                    {field.subtext || field.label}
+                  </div>
                 </div>
               );
             }
@@ -366,19 +563,41 @@ export default function PublicFormPage() {
                 {!field.hideLabel && (
                   renderLabelAsText ? (
                     <p id={labelId} className="mb-1.5 block text-base font-semibold text-text-primary">
-                      {accessibleLabel}
-                      {field.isRequired && <span className="text-status-error"> *</span>}
+                      <span className="inline-flex items-center gap-1.5">
+                        <span>
+                          {accessibleLabel}
+                          {field.isRequired && <span className="text-status-error"> *</span>}
+                        </span>
+                        {tooltipText && (
+                          <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
+                            <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
+                              <Info className="h-3.5 w-3.5" />
+                            </span>
+                          </Tooltip>
+                        )}
+                      </span>
                     </p>
                   ) : (
                     <label htmlFor={controlId} id={labelId} className="mb-1.5 block text-base font-semibold text-text-primary">
-                      {accessibleLabel}
-                      {field.isRequired && <span className="text-status-error"> *</span>}
+                      <span className="inline-flex items-center gap-1.5">
+                        <span>
+                          {accessibleLabel}
+                          {field.isRequired && <span className="text-status-error"> *</span>}
+                        </span>
+                        {tooltipText && (
+                          <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
+                            <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
+                              <Info className="h-3.5 w-3.5" />
+                            </span>
+                          </Tooltip>
+                        )}
+                      </span>
                     </label>
                   )
                 )}
                 {field.subtext && <p id={hintId} className="mb-2 text-sm text-text-secondary">{field.subtext}</p>}
 
-                {field.type === 'SHORT_TEXT' && (
+                {field.type === 'SHORT_TEXT' && !useDateSelector && (
                   <input
                     id={controlId}
                     type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}
@@ -391,6 +610,19 @@ export default function PublicFormPage() {
                     aria-invalid={errorText ? 'true' : undefined}
                     aria-describedby={describedBy}
                     className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                  />
+                )}
+
+                {useDateSelector && (
+                  <SingleDateInput
+                    value={typeof value === 'string' ? value : ''}
+                    onChange={(next) => setFieldValue(field.key, next)}
+                    placeholder={field.placeholder || 'dd/mm/yyyy'}
+                    disabled={field.isReadOnly}
+                    required={field.isRequired}
+                    error={errorText}
+                    ariaLabel={field.hideLabel ? accessibleLabel : undefined}
+                    className="w-full"
                   />
                 )}
 
@@ -488,10 +720,13 @@ export default function PublicFormPage() {
                 )}
 
                 {field.type === 'FILE_UPLOAD' && (
-                  <div className="rounded-lg border border-dashed border-border-primary bg-background-primary p-4 text-center">
+                  <div className={cn(
+                    'rounded-lg border border-dashed bg-background-primary p-4 text-center',
+                    uploadStatus ? 'border-status-success/40' : 'border-border-primary'
+                  )}>
                     <UploadCloud className="mx-auto mb-2 h-8 w-8 text-text-muted" />
                     <label htmlFor={controlId} className="text-sm text-text-primary underline cursor-pointer">
-                      Upload a file
+                      {uploadStatus ? 'Replace file' : 'Upload a file'}
                     </label>
                     <input
                       id={controlId}
@@ -508,8 +743,23 @@ export default function PublicFormPage() {
                       }}
                     />
                     <p className="mt-1 text-xs text-text-muted">
-                      {uploadingField === field.key ? 'Uploading...' : 'Select a file to upload'}
+                      {uploadingField === field.key
+                        ? 'Uploading...'
+                        : uploadStatus
+                          ? 'File uploaded successfully'
+                          : 'Select a file to upload'}
                     </p>
+                    {uploadStatus && (
+                      <div className="mt-3 rounded-md border border-status-success/30 bg-status-success/5 px-2.5 py-2 text-left">
+                        <div className="flex items-start gap-2 text-sm text-text-primary">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 text-status-success" />
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{uploadStatus.fileName}</p>
+                            <p className="text-xs text-text-secondary">{formatFileSize(uploadStatus.sizeBytes)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -528,7 +778,7 @@ export default function PublicFormPage() {
                   </div>
                 )}
 
-                {errorText && (
+                {errorText && !useDateSelector && (
                   <p id={errorId} className="mt-1 text-xs text-status-error">{errorText}</p>
                 )}
               </div>

@@ -36,10 +36,39 @@ import {
   serializeBuilderState,
   toPayloadFields,
 } from '@/components/forms/builder-utils';
+import {
+  RESPONSE_COLUMN_STATUS_ID,
+  RESPONSE_COLUMN_SUBMITTED_ID,
+  isSummaryEligibleFieldType,
+  normalizeResponseColumnOrder,
+  parseFormResponseTableSettings,
+  sanitizeResponseColumnWidths,
+  writeFormResponseTableSettings,
+} from '@/lib/form-utils';
 import type { BuilderField } from '@/components/forms/builder-utils';
 
 function resequence(nextFields: BuilderField[]): BuilderField[] {
   return nextFields.map((field, index) => ({ ...field, position: index }));
+}
+
+function normalizeSlugSegment(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+}
+
+function getBuilderFieldTypeLabel(field: BuilderField): string {
+  if (field.type !== 'PARAGRAPH') {
+    return FIELD_TYPE_LABEL[field.type];
+  }
+
+  if (field.inputType === 'info_image') return 'Information / Image';
+  if (field.inputType === 'info_url') return 'Information / URL';
+  return 'Information / Text block';
 }
 
 export default function FormBuilderPage() {
@@ -53,6 +82,7 @@ export default function FormBuilderPage() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [slug, setSlug] = useState('');
   const [status, setStatus] = useState<'DRAFT' | 'PUBLISHED' | 'ARCHIVED'>('DRAFT');
   const [tagsText, setTagsText] = useState('');
   const [fields, setFields] = useState<BuilderField[]>([]);
@@ -72,6 +102,9 @@ export default function FormBuilderPage() {
   useEffect(() => {
     if (!form) return;
 
+    const responseTableSettings = parseFormResponseTableSettings(form.settings);
+    const summaryFieldKeySet = new Set(responseTableSettings.summaryFieldKeys);
+
     const mappedFields = form.fields.map((field) => fromServerField({
       id: field.id,
       type: field.type,
@@ -89,10 +122,13 @@ export default function FormBuilderPage() {
       isReadOnly: field.isReadOnly,
       layoutWidth: field.layoutWidth,
       position: field.position,
+    }, {
+      showOnSummary: summaryFieldKeySet.has(field.key) && isSummaryEligibleFieldType(field.type),
     }));
 
     setTitle(form.title);
     setDescription(form.description || '');
+    setSlug(form.slug);
     setStatus(form.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED');
     setTagsText(form.tags.join(', '));
     setFields(mappedFields);
@@ -101,6 +137,7 @@ export default function FormBuilderPage() {
     baselineSnapshot.current = serializeBuilderState({
       title: form.title,
       description: form.description || '',
+      slug: form.slug,
       status: form.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
       tags: form.tags,
       fields: mappedFields,
@@ -113,8 +150,8 @@ export default function FormBuilderPage() {
   );
 
   const stateSnapshot = useMemo(
-    () => serializeBuilderState({ title, description, status, tags, fields }),
-    [title, description, status, tags, fields]
+    () => serializeBuilderState({ title, description, slug, status, tags, fields }),
+    [title, description, slug, status, tags, fields]
   );
 
   const isDirty = isHydrated && !!baselineSnapshot.current && stateSnapshot !== baselineSnapshot.current;
@@ -270,6 +307,7 @@ export default function FormBuilderPage() {
   }
 
   function deleteField(clientId: string) {
+    if (!window.confirm('Delete this field?')) return;
     setFields((prev) => {
       const next = prev.filter((field) => field.clientId !== clientId);
       if (selectedFieldId === clientId) {
@@ -295,10 +333,20 @@ export default function FormBuilderPage() {
 
   async function persistForm(nextStatus: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED', successMessage: string) {
     try {
+      if (!form) return;
+
       if (!title.trim()) {
         showError('Form title is required');
         return;
       }
+
+      const normalizedSlug = normalizeSlugSegment(slug);
+      if (normalizedSlug.length < 3) {
+        showError('Custom URL segment must be at least 3 characters');
+        return;
+      }
+
+      setSlug(normalizedSlug);
 
       const normalizedKeys = new Set<string>();
       const correctedFields = fields.map((field, index) => {
@@ -314,11 +362,48 @@ export default function FormBuilderPage() {
 
       setFields(correctedFields);
 
+      const responseTableSettings = parseFormResponseTableSettings(form.settings);
+      const enabledSummaryFieldKeys = correctedFields
+        .filter((field) => field.showOnSummary && isSummaryEligibleFieldType(field.type))
+        .map((field) => field.key);
+
+      const enabledSummaryFieldSet = new Set(enabledSummaryFieldKeys);
+      const nextSummaryFieldKeys: string[] = [];
+
+      for (const key of responseTableSettings.summaryFieldKeys) {
+        if (!enabledSummaryFieldSet.has(key)) continue;
+        nextSummaryFieldKeys.push(key);
+        enabledSummaryFieldSet.delete(key);
+      }
+
+      for (const field of correctedFields) {
+        if (!enabledSummaryFieldSet.has(field.key)) continue;
+        nextSummaryFieldKeys.push(field.key);
+        enabledSummaryFieldSet.delete(field.key);
+      }
+
+      const baseColumnIds = [
+        RESPONSE_COLUMN_SUBMITTED_ID,
+        ...nextSummaryFieldKeys,
+        RESPONSE_COLUMN_STATUS_ID,
+      ];
+
+      const nextColumnOrder = normalizeResponseColumnOrder(baseColumnIds, responseTableSettings.columnOrder);
+      const nextColumnWidths = sanitizeResponseColumnWidths(responseTableSettings.columnWidths, baseColumnIds);
+
+      const nextSettings = writeFormResponseTableSettings(form.settings, {
+        summaryFieldKeys: nextSummaryFieldKeys,
+        columnOrder: nextColumnOrder,
+        columnWidths: nextColumnWidths,
+      });
+
       const saved = await updateForm.mutateAsync({
         title: title.trim(),
         description: description.trim() || null,
+        slug: normalizedSlug,
         status: nextStatus,
         tags,
+        settings: nextSettings,
         fields: toPayloadFields(correctedFields),
         reason: 'Manual form builder save',
       });
@@ -328,6 +413,7 @@ export default function FormBuilderPage() {
       baselineSnapshot.current = serializeBuilderState({
         title: saved.title,
         description: saved.description || '',
+        slug: saved.slug,
         status: saved.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
         tags: saved.tags,
         fields: correctedFields,
@@ -352,7 +438,7 @@ export default function FormBuilderPage() {
 
     try {
       const origin = window.location.origin;
-      const link = `${origin}/forms/f/${form.slug}`;
+      const link = `${origin}/forms/f/${slug || form.slug}`;
       await navigator.clipboard.writeText(link);
       success('Public link copied');
     } catch {
@@ -423,9 +509,12 @@ export default function FormBuilderPage() {
   }
 
   const isPublished = status === 'PUBLISHED';
+  const effectiveSlug = slug || form.slug;
+  const publicOrigin = isHydrated ? window.location.origin : 'https://service.oakcloud.app';
+  const publicUrlPreview = `${publicOrigin}/forms/f/${effectiveSlug || 'your-form-url'}`;
   const viewHref = isPublished
-    ? `/forms/f/${form.slug}`
-    : `/forms/f/${form.slug}?preview=1&formId=${form.id}&tenantId=${form.tenantId}`;
+    ? `/forms/f/${effectiveSlug}`
+    : `/forms/f/${effectiveSlug}?preview=1&formId=${form.id}&tenantId=${form.tenantId}`;
 
   return (
     <div className="p-4 sm:p-6">
@@ -488,6 +577,16 @@ export default function FormBuilderPage() {
                 </select>
               </div>
               <FormInput label="Tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="kyc, onboarding" />
+              <FormInput
+                label="Custom URL segment"
+                value={slug}
+                onChange={(e) => setSlug(normalizeSlugSegment(e.target.value))}
+                placeholder="kyc-onboarding"
+                hint="Use lowercase letters, numbers, and hyphens."
+              />
+              <div className="text-2xs text-text-muted">
+                Public URL: <span className="font-mono text-text-secondary">{publicUrlPreview}</span>
+              </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-text-secondary">Description</label>
                 <textarea
@@ -541,7 +640,7 @@ export default function FormBuilderPage() {
                   {dragActiveField.label || 'Untitled field'}
                 </div>
                 <div className="truncate text-xs text-text-secondary">
-                  {FIELD_TYPE_LABEL[dragActiveField.type]}
+                  {getBuilderFieldTypeLabel(dragActiveField)}
                   {dragActiveField.key ? ` | ${dragActiveField.key}` : ''}
                 </div>
               </div>

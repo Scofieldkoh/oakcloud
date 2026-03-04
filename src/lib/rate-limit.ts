@@ -131,6 +131,24 @@ export const RATE_LIMIT_CONFIGS = {
     maxRequests: 100,
     windowMs: 60 * 1000, // 1 minute
   } as RateLimitConfig,
+
+  /** Public form view: 60 requests per minute per IP+slug */
+  FORM_VIEW: {
+    maxRequests: 60,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
+  /** Public form submission: 10 per minute per IP+slug */
+  FORM_SUBMIT: {
+    maxRequests: 10,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
+  /** Public form file upload: 20 per minute per IP+slug */
+  FORM_UPLOAD: {
+    maxRequests: 20,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
 } as const;
 
 // ============================================================================

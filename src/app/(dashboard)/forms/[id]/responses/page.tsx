@@ -1,15 +1,38 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Download, Eye } from 'lucide-react';
+import { ChevronLeft, Download, Eye, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { Tooltip } from '@/components/ui/tooltip';
-import { useForm, useFormResponses } from '@/hooks/use-forms';
+import { useToast } from '@/components/ui/toast';
+import { useForm, useFormResponses, useUpdateForm, type FormResponsesResult } from '@/hooks/use-forms';
+import {
+  RESPONSE_COLUMN_STATUS_ID,
+  RESPONSE_COLUMN_SUBMITTED_ID,
+  clampResponseColumnWidth,
+  isSummaryEligibleFieldType,
+  normalizeResponseColumnOrder,
+  parseFormResponseTableSettings,
+  sanitizeResponseColumnWidths,
+  writeFormResponseTableSettings,
+} from '@/lib/form-utils';
+import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 20;
+type SubmissionItem = FormResponsesResult['submissions'][number];
+
+type SummaryColumnDef = {
+  id: string;
+  kind: 'submitted' | 'status' | 'field';
+  label: string;
+  fieldKey?: string;
+  fieldType?: string;
+  minWidth: number;
+  defaultWidth: number;
+};
 
 function formatDate(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
@@ -22,72 +45,242 @@ function formatDate(value: string | Date): string {
   });
 }
 
-function safeCell(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (Array.isArray(value)) return value.join('; ');
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
+function toAnswerRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+  return value as Record<string, unknown>;
+}
+
+function defaultFieldColumnWidth(fieldType: string): number {
+  if (fieldType === 'LONG_TEXT') return 280;
+  if (fieldType === 'FILE_UPLOAD') return 220;
+  return 180;
+}
+
+function formatSummaryCellValue(fieldType: string, value: unknown): string {
+  if (value === null || value === undefined) return '-';
+
+  if (fieldType === 'SIGNATURE') {
+    return typeof value === 'string' && value.trim().length > 0 ? 'Signed' : '-';
+  }
+
+  if (fieldType === 'FILE_UPLOAD') {
+    if (Array.isArray(value)) {
+      return value.length > 0 ? `${value.length} file${value.length > 1 ? 's' : ''}` : '-';
+    }
+    return typeof value === 'string' && value.trim().length > 0 ? value : '-';
+  }
+
+  if (Array.isArray(value)) {
+    const text = value.map((item) => String(item)).join(', ').trim();
+    return text || '-';
+  }
+
+  if (typeof value === 'object') {
+    try {
+      const text = JSON.stringify(value);
+      return text.length > 0 ? text : '-';
+    } catch {
+      return '-';
+    }
+  }
+
+  const text = String(value).trim();
+  return text || '-';
 }
 
 export default function FormResponsesPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { error: showError } = useToast();
   const formId = params.id;
 
   const [page, setPage] = useState(1);
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+  const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
+
+  const columnOrderRef = useRef<string[]>([]);
+  const columnWidthsRef = useRef<Record<string, number>>({});
 
   const { data: form, isLoading: isFormLoading, error: formError } = useForm(formId);
   const { data, isLoading, error } = useFormResponses(formId, page, PAGE_SIZE);
+  const updateForm = useUpdateForm(formId);
+
+  useEffect(() => {
+    columnOrderRef.current = columnOrder;
+  }, [columnOrder]);
+
+  useEffect(() => {
+    columnWidthsRef.current = columnWidths;
+  }, [columnWidths]);
 
   const conversionRate = useMemo(() => {
     if (!form || form.viewsCount === 0) return 0;
     return Number(((form.submissionsCount / form.viewsCount) * 100).toFixed(1));
   }, [form]);
 
-  const chartPoints = useMemo(() => {
-    const points = data?.chart || [];
-    if (points.length === 0) return '';
+  const summaryColumns = useMemo(() => {
+    if (!form) return [] as SummaryColumnDef[];
 
-    const max = Math.max(...points.map((point) => point.responses), 1);
-    return points
-      .map((point, index) => {
-        const x = (index / (points.length - 1 || 1)) * 100;
-        const y = 100 - (point.responses / max) * 100;
-        return `${x},${y}`;
-      })
-      .join(' ');
-  }, [data?.chart]);
+    const responseTableSettings = parseFormResponseTableSettings(form.settings);
+    const fieldByKey = new Map(form.fields.map((field) => [field.key, field]));
 
-  function exportCsv() {
-    if (!data || !form) return;
+    return responseTableSettings.summaryFieldKeys
+      .map((fieldKey) => fieldByKey.get(fieldKey))
+      .filter((field): field is (typeof form.fields)[number] => !!field && isSummaryEligibleFieldType(field.type))
+      .map((field) => ({
+        id: field.key,
+        kind: 'field' as const,
+        label: field.label || field.key,
+        fieldKey: field.key,
+        fieldType: field.type,
+        minWidth: 140,
+        defaultWidth: defaultFieldColumnWidth(field.type),
+      }));
+  }, [form]);
 
-    const fieldKeys = form.fields.map((field) => field.key);
-    const header = ['submission_id', 'submitted_at', 'respondent_name', 'respondent_email', ...fieldKeys];
+  const columnMap = useMemo(() => {
+    const map = new Map<string, SummaryColumnDef>();
 
-    const rows = data.submissions.map((submission) => {
-      const answers = (submission.answers || {}) as Record<string, unknown>;
-      return [
-        submission.id,
-        new Date(submission.submittedAt).toISOString(),
-        submission.respondentName || '',
-        submission.respondentEmail || '',
-        ...fieldKeys.map((key) => safeCell(answers[key])),
-      ];
+    map.set(RESPONSE_COLUMN_SUBMITTED_ID, {
+      id: RESPONSE_COLUMN_SUBMITTED_ID,
+      kind: 'submitted',
+      label: 'Submitted',
+      minWidth: 170,
+      defaultWidth: 200,
     });
 
-    const csv = [header, ...rows]
-      .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+    for (const column of summaryColumns) {
+      map.set(column.id, column);
+    }
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'form'}-responses.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    map.set(RESPONSE_COLUMN_STATUS_ID, {
+      id: RESPONSE_COLUMN_STATUS_ID,
+      kind: 'status',
+      label: 'Status',
+      minWidth: 120,
+      defaultWidth: 130,
+    });
+
+    return map;
+  }, [summaryColumns]);
+
+  const baseColumnIds = useMemo(() => Array.from(columnMap.keys()), [columnMap]);
+  const baseColumnSignature = useMemo(() => baseColumnIds.join('|'), [baseColumnIds]);
+
+  useEffect(() => {
+    if (!form) return;
+
+    const responseTableSettings = parseFormResponseTableSettings(form.settings);
+    const nextColumnOrder = normalizeResponseColumnOrder(baseColumnIds, responseTableSettings.columnOrder);
+    const nextColumnWidths = sanitizeResponseColumnWidths(responseTableSettings.columnWidths, baseColumnIds);
+
+    setColumnOrder(nextColumnOrder);
+    setColumnWidths(nextColumnWidths);
+  }, [form, baseColumnSignature, baseColumnIds]);
+
+  const orderedColumns = useMemo(() => {
+    const resolvedOrder = normalizeResponseColumnOrder(baseColumnIds, columnOrder);
+    return resolvedOrder
+      .map((columnId) => columnMap.get(columnId))
+      .filter((column): column is SummaryColumnDef => !!column);
+  }, [baseColumnIds, columnOrder, columnMap]);
+
+  async function persistLayout(nextOrder: string[], nextWidths: Record<string, number>) {
+    if (!form) return;
+
+    const summaryFieldKeys = summaryColumns.map((column) => column.id);
+    const baseIds = [
+      RESPONSE_COLUMN_SUBMITTED_ID,
+      ...summaryFieldKeys,
+      RESPONSE_COLUMN_STATUS_ID,
+    ];
+
+    const sanitizedOrder = normalizeResponseColumnOrder(baseIds, nextOrder);
+    const sanitizedWidths = sanitizeResponseColumnWidths(nextWidths, baseIds);
+
+    const nextSettings = writeFormResponseTableSettings(form.settings, {
+      summaryFieldKeys,
+      columnOrder: sanitizedOrder,
+      columnWidths: sanitizedWidths,
+    });
+
+    try {
+      await updateForm.mutateAsync({
+        settings: nextSettings,
+        reason: 'Updated responses summary table layout',
+      });
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to save table layout');
+    }
+  }
+
+  function reorderColumns(sourceColumnId: string, targetColumnId: string) {
+    const currentOrder = normalizeResponseColumnOrder(baseColumnIds, columnOrderRef.current);
+    const fromIndex = currentOrder.indexOf(sourceColumnId);
+    const toIndex = currentOrder.indexOf(targetColumnId);
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
+
+    const nextOrder = [...currentOrder];
+    const [moved] = nextOrder.splice(fromIndex, 1);
+    if (!moved) return;
+    nextOrder.splice(toIndex, 0, moved);
+
+    setColumnOrder(nextOrder);
+    void persistLayout(nextOrder, columnWidthsRef.current);
+  }
+
+  function startColumnResize(event: ReactPointerEvent<HTMLDivElement>, column: SummaryColumnDef) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startX = event.clientX;
+    const startWidth = columnWidthsRef.current[column.id] ?? column.defaultWidth;
+    let latestWidth = startWidth;
+
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const delta = moveEvent.clientX - startX;
+      latestWidth = clampResponseColumnWidth(Math.max(column.minWidth, startWidth + delta));
+      setColumnWidths((prev) => ({ ...prev, [column.id]: latestWidth }));
+    };
+
+    const onUp = () => {
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+
+      const nextWidths = { ...columnWidthsRef.current, [column.id]: latestWidth };
+      setColumnWidths(nextWidths);
+      void persistLayout(columnOrderRef.current, nextWidths);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  async function exportCsv() {
+    if (!form) return;
+    try {
+      const res = await fetch(`/api/forms/${formId}/responses/export`);
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'responses.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch {
+      // Export failure is non-blocking for this page.
+    }
   }
 
   if (isFormLoading) {
@@ -115,6 +308,19 @@ export default function FormResponsesPage() {
 
   function handleOpenPreview() {
     window.open(viewHref, '_blank', 'noopener,noreferrer');
+  }
+
+  function openSubmissionDetail(submissionId: string) {
+    router.push(`/forms/${form!.id}/responses/${submissionId}`);
+  }
+
+  function renderCell(submission: SubmissionItem, column: SummaryColumnDef): string {
+    if (column.kind === 'submitted') return formatDate(submission.submittedAt);
+    if (column.kind === 'status') return submission.status;
+
+    const answers = toAnswerRecord(submission.answers);
+    const value = answers[column.fieldKey || ''];
+    return formatSummaryCellValue(column.fieldType || 'SHORT_TEXT', value);
   }
 
   return (
@@ -158,28 +364,10 @@ export default function FormResponsesPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border-primary bg-background-elevated p-4 mb-4">
-        <h2 className="text-base font-semibold text-text-primary mb-2">Visits and responses within the last 14 days</h2>
-        <div className="h-52 rounded border border-border-primary bg-background-primary p-3">
-          {chartPoints ? (
-            <svg viewBox="0 0 100 100" className="h-full w-full" preserveAspectRatio="none" aria-label="Responses trend chart">
-              <polyline
-                fill="none"
-                stroke="var(--oak-500, #294d44)"
-                strokeWidth="2"
-                points={chartPoints}
-              />
-            </svg>
-          ) : (
-            <div className="h-full flex items-center justify-center text-sm text-text-muted">
-              No response data yet.
-            </div>
-          )}
-        </div>
-      </div>
-
       <div className="rounded-lg border border-border-primary bg-background-elevated overflow-hidden">
-        <div className="border-b border-border-primary px-4 py-3 text-sm font-medium text-text-primary">Submissions</div>
+        <div className="border-b border-border-primary px-4 py-3 text-sm font-medium text-text-primary">
+          Submissions
+        </div>
 
         {error && (
           <div className="px-4 py-3 text-sm text-red-600 dark:text-red-300">
@@ -201,29 +389,89 @@ export default function FormResponsesPage() {
 
         {!isLoading && data && data.submissions.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full min-w-[760px] table-fixed text-sm">
               <thead className="bg-background-primary">
                 <tr className="text-left text-xs text-text-secondary">
-                  <th className="px-4 py-2 font-medium">Submitted</th>
-                  <th className="px-4 py-2 font-medium">Respondent</th>
-                  <th className="px-4 py-2 font-medium">Email</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                  <th className="px-4 py-2 font-medium">Actions</th>
+                  {orderedColumns.map((column) => {
+                    const width = columnWidths[column.id] ?? column.defaultWidth;
+                    return (
+                      <th
+                        key={column.id}
+                        style={{ width: `${width}px`, minWidth: `${column.minWidth}px` }}
+                        className={cn(
+                          'relative px-4 py-2 font-medium select-none',
+                          draggedColumnId === column.id && 'opacity-50'
+                        )}
+                        draggable
+                        onDragStart={(event) => {
+                          setDraggedColumnId(column.id);
+                          event.dataTransfer.effectAllowed = 'move';
+                          event.dataTransfer.setData('text/plain', column.id);
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = 'move';
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const sourceColumnId = draggedColumnId || event.dataTransfer.getData('text/plain');
+                          if (!sourceColumnId) return;
+                          reorderColumns(sourceColumnId, column.id);
+                          setDraggedColumnId(null);
+                        }}
+                        onDragEnd={() => setDraggedColumnId(null)}
+                      >
+                        <div className="inline-flex items-center gap-1.5">
+                          <GripVertical className="h-3.5 w-3.5 text-text-muted" />
+                          <span className="truncate">{column.label}</span>
+                        </div>
+                        <div
+                          onPointerDown={(event) => startColumnResize(event, column)}
+                          className="absolute top-0 -right-2 h-full w-4 cursor-col-resize hover:bg-border-secondary/60 z-10 touch-none"
+                          title="Drag to resize"
+                        />
+                      </th>
+                    );
+                  })}
+                  <th className="px-4 py-2 font-medium w-20">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {data.submissions.map((submission) => (
-                  <tr key={submission.id} className="border-t border-border-primary text-text-primary">
-                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(submission.submittedAt)}</td>
-                    <td className="px-4 py-3">{submission.respondentName || '-'}</td>
-                    <td className="px-4 py-3">{submission.respondentEmail || '-'}</td>
-                    <td className="px-4 py-3">{submission.status}</td>
+                  <tr
+                    key={submission.id}
+                    className="cursor-pointer border-t border-border-primary text-text-primary hover:bg-background-primary/60"
+                    onClick={() => openSubmissionDetail(submission.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openSubmissionDetail(submission.id);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Open submission details"
+                  >
+                    {orderedColumns.map((column) => (
+                      <td
+                        key={`${submission.id}:${column.id}`}
+                        style={{ width: `${columnWidths[column.id] ?? column.defaultWidth}px` }}
+                        className="px-4 py-3 align-top"
+                      >
+                        <span className="line-clamp-2 break-words">
+                          {renderCell(submission, column)}
+                        </span>
+                      </td>
+                    ))}
                     <td className="px-4 py-3">
                       <Tooltip content="View submission">
                         <button
                           type="button"
                           className="rounded p-1.5 text-text-secondary hover:bg-background-tertiary hover:text-text-primary"
-                          onClick={() => router.push(`/forms/${form.id}/responses/${submission.id}`)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openSubmissionDetail(submission.id);
+                          }}
                           aria-label="View submission"
                         >
                           <Eye className="w-4 h-4" />

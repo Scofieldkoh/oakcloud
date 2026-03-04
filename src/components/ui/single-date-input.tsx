@@ -29,6 +29,8 @@ export interface SingleDateInputProps {
   hint?: string;
   /** Whether the field is required */
   required?: boolean;
+  /** Accessible label when visible label is omitted */
+  ariaLabel?: string;
 }
 
 // Custom styles for react-day-picker v9 - using oak design system colors
@@ -232,6 +234,7 @@ export function SingleDateInput({
   error,
   hint,
   required,
+  ariaLabel,
 }: SingleDateInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [month, setMonth] = useState<Date>(() => parseISODate(value) || new Date());
@@ -446,6 +449,7 @@ export function SingleDateInput({
           placeholder={placeholder}
           disabled={disabled}
           autoComplete="off"
+          aria-label={ariaLabel}
           aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           className={cn(
             'flex-1 h-full px-3 bg-transparent text-sm text-text-primary placeholder-text-muted',

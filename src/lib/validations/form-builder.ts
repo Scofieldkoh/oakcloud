@@ -16,7 +16,16 @@ export const formFieldTypeSchema = z.enum([
   'HIDDEN',
 ]);
 
-export const shortInputTypeSchema = z.enum(['text', 'email', 'phone', 'number', 'date']);
+export const shortInputTypeSchema = z.enum([
+  'text',
+  'email',
+  'phone',
+  'number',
+  'date',
+  'info_text',
+  'info_image',
+  'info_url',
+]);
 
 export const fieldValidationSchema = z
   .object({
@@ -27,6 +36,7 @@ export const fieldValidationSchema = z
     pattern: z.string().max(500).optional(),
     maxFileSizeMb: z.number().int().min(1).max(100).optional(),
     allowedMimeTypes: z.array(z.string().min(1).max(120)).max(20).optional(),
+    tooltipEnabled: z.boolean().optional(),
   })
   .refine(
     (value) => {
@@ -87,11 +97,20 @@ export const createFormSchema = z.object({
   status: formStatusSchema.optional().default('DRAFT'),
 });
 
+export const formSlugSchema = z
+  .string()
+  .trim()
+  .min(3, 'URL segment must be at least 3 characters')
+  .max(80, 'URL segment must be at most 80 characters')
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers, and single hyphens only');
+
 export const updateFormSchema = z.object({
   title: z.string().min(1).max(120).optional(),
   description: z.string().max(2000).optional().nullable(),
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   status: formStatusSchema.optional(),
+  slug: formSlugSchema.optional(),
+  settings: z.record(z.unknown()).optional().nullable(),
 });
 
 export const saveFormFieldsSchema = z.object({

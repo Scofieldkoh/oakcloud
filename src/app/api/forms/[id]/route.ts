@@ -51,7 +51,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     let updatedAny = false;
 
     const formPatchCandidate: Record<string, unknown> = {};
-    for (const key of ['title', 'description', 'status', 'tags']) {
+    for (const key of ['title', 'description', 'status', 'tags', 'slug', 'settings']) {
       if (key in body) {
         formPatchCandidate[key] = body[key];
       }

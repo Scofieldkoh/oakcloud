@@ -1,4 +1,4 @@
-import { normalizeKey, isRecord, WIDTH_CLASS } from '@/lib/form-utils';
+import { normalizeKey, isRecord } from '@/lib/form-utils';
 import type { FormFieldInput } from '@/lib/validations/form-builder';
 
 export { normalizeKey, WIDTH_CLASS } from '@/lib/form-utils';
@@ -9,7 +9,7 @@ export const FIELD_TYPE_OPTIONS: Array<{ value: FormFieldInput['type']; label: s
   { value: 'SINGLE_CHOICE', label: 'Single choice' },
   { value: 'MULTIPLE_CHOICE', label: 'Multiple choice' },
   { value: 'DROPDOWN', label: 'Dropdown' },
-  { value: 'PARAGRAPH', label: 'Paragraph / Text' },
+  { value: 'PARAGRAPH', label: 'Information block' },
   { value: 'HTML', label: 'HTML / Code' },
   { value: 'FILE_UPLOAD', label: 'File upload' },
   { value: 'SIGNATURE', label: 'eSignature' },
@@ -25,7 +25,15 @@ export const FIELD_TYPE_LABEL: Record<FormFieldInput['type'], string> = FIELD_TY
 export const WIDTH_OPTIONS: Array<25 | 33 | 50 | 66 | 75 | 100> = [25, 33, 50, 66, 75, 100];
 
 
-export type ShortInputType = 'text' | 'email' | 'phone' | 'number' | 'date';
+export type ShortInputType =
+  | 'text'
+  | 'email'
+  | 'phone'
+  | 'number'
+  | 'date'
+  | 'info_text'
+  | 'info_image'
+  | 'info_url';
 
 export type ValidationConfig = {
   minLength?: number;
@@ -35,6 +43,7 @@ export type ValidationConfig = {
   pattern?: string;
   maxFileSizeMb?: number;
   allowedMimeTypes?: string[];
+  tooltipEnabled?: boolean;
 };
 
 export type ConditionConfig = {
@@ -59,6 +68,7 @@ export interface BuilderField {
   isRequired: boolean;
   hideLabel: boolean;
   isReadOnly: boolean;
+  showOnSummary: boolean;
   layoutWidth: 25 | 33 | 50 | 66 | 75 | 100;
   position: number;
 }
@@ -83,7 +93,7 @@ export function defaultField(type: FormFieldInput['type'], position: number): Bu
     placeholder: '',
     subtext: '',
     helpText: '',
-    inputType: 'text',
+    inputType: type === 'PARAGRAPH' ? 'info_text' : 'text',
     options: type === 'SINGLE_CHOICE' || type === 'MULTIPLE_CHOICE' || type === 'DROPDOWN'
       ? ['Option 1', 'Option 2']
       : [],
@@ -92,6 +102,7 @@ export function defaultField(type: FormFieldInput['type'], position: number): Bu
     isRequired: false,
     hideLabel: false,
     isReadOnly: false,
+    showOnSummary: false,
     layoutWidth: 100,
     position,
   };
@@ -120,10 +131,10 @@ export function fromServerField(field: {
   isReadOnly: boolean;
   layoutWidth: number;
   position: number;
-}): BuilderField {
+}, options?: { showOnSummary?: boolean }): BuilderField {
   const validation = isRecord(field.validation) ? field.validation as ValidationConfig : null;
   const condition = isRecord(field.condition) ? field.condition as ConditionConfig : null;
-  const inputType = (field.inputType || 'text') as ShortInputType;
+  const inputType = (field.inputType || (field.type === 'PARAGRAPH' ? 'info_text' : 'text')) as ShortInputType;
 
   return {
     clientId: field.id,
@@ -141,6 +152,7 @@ export function fromServerField(field: {
     isRequired: field.isRequired,
     hideLabel: field.hideLabel,
     isReadOnly: field.isReadOnly,
+    showOnSummary: options?.showOnSummary ?? false,
     layoutWidth: WIDTH_OPTIONS.includes(field.layoutWidth as 25 | 33 | 50 | 66 | 75 | 100)
       ? (field.layoutWidth as 25 | 33 | 50 | 66 | 75 | 100)
       : 100,
@@ -157,7 +169,7 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
     placeholder: field.placeholder || null,
     subtext: field.subtext || null,
     helpText: field.helpText || null,
-    inputType: field.type === 'SHORT_TEXT' ? field.inputType : null,
+    inputType: field.type === 'SHORT_TEXT' || field.type === 'PARAGRAPH' ? field.inputType : null,
     options: (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN')
       ? field.options.filter(Boolean)
       : null,
@@ -174,6 +186,7 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
 export function serializeBuilderState(input: {
   title: string;
   description: string;
+  slug: string;
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   tags: string[];
   fields: BuilderField[];
@@ -181,6 +194,7 @@ export function serializeBuilderState(input: {
   return JSON.stringify({
     title: input.title.trim(),
     description: input.description.trim(),
+    slug: input.slug.trim(),
     status: input.status,
     tags: input.tags,
     fields: input.fields.map((field, idx) => ({
@@ -197,6 +211,7 @@ export function serializeBuilderState(input: {
       isRequired: field.isRequired,
       hideLabel: field.hideLabel,
       isReadOnly: field.isReadOnly,
+      showOnSummary: field.showOnSummary,
       layoutWidth: field.layoutWidth,
       position: idx,
     })),

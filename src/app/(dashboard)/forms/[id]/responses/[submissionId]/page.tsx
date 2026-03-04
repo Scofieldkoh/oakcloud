@@ -3,9 +3,10 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Check, ChevronLeft, Copy } from 'lucide-react';
+import { Check, ChevronLeft, Copy, Download } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import type { FormUpload } from '@/generated/prisma';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { useForm, useFormResponse } from '@/hooks/use-forms';
 import { WIDTH_CLASS, evaluateCondition, isEmptyValue } from '@/lib/form-utils';
@@ -71,6 +72,16 @@ function formatFileSize(sizeBytes: number): string {
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function isValidHttpUrl(value: string | null): value is string {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export default function FormResponseDetailPage() {
   const params = useParams<{ id: string; submissionId: string }>();
   const formId = params.id;
@@ -103,9 +114,9 @@ export default function FormResponseDetailPage() {
   }, [responseDetail?.uploads]);
 
   const responsePages = useMemo(() => {
-    if (!form || !submission) return [] as typeof form.fields[][];
+    if (!form || !submission) return [] as NonNullable<typeof form>['fields'][number][][];
 
-    const pages: typeof form.fields[][] = [[]];
+    const pages: typeof form.fields[number][][] = [[]];
     for (const field of form.fields) {
       if (field.type === 'PAGE_BREAK') {
         pages.push([]);
@@ -163,22 +174,36 @@ export default function FormResponseDetailPage() {
     );
   }
 
-  const tenantQuery = form.tenantId ? `?tenantId=${encodeURIComponent(form.tenantId)}` : '';
+  const tenantQuery = form!.tenantId ? `?tenantId=${encodeURIComponent(form!.tenantId)}` : '';
 
   function getUploadHref(uploadId: string): string {
-    return `/api/forms/${encodeURIComponent(form.id)}/responses/${encodeURIComponent(submission.id)}/uploads/${encodeURIComponent(uploadId)}${tenantQuery}`;
+    return `/api/forms/${encodeURIComponent(form!.id)}/responses/${encodeURIComponent(submission!.id)}/uploads/${encodeURIComponent(uploadId)}${tenantQuery}`;
+  }
+
+  function getExportPdfHref(): string {
+    return `/api/forms/${encodeURIComponent(form!.id)}/responses/${encodeURIComponent(submission!.id)}/export/pdf${tenantQuery}`;
   }
 
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-4">
-        <Link
-          href={`/forms/${form.id}/responses`}
-          className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Back to Responses
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Link
+            href={`/forms/${form.id}/responses`}
+            className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Responses
+          </Link>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Download className="w-4 h-4" />}
+            onClick={() => window.open(getExportPdfHref(), '_blank', 'noopener,noreferrer')}
+          >
+            Export PDF
+          </Button>
+        </div>
         <h1 className="mt-1 text-xl sm:text-2xl font-semibold text-text-primary">Submission response</h1>
         <p className="mt-1 text-sm text-text-secondary">{form.title}</p>
       </div>
@@ -227,8 +252,54 @@ export default function FormResponseDetailPage() {
                     return ids.map((id) => uploadsById.get(id)?.fileName || id).join('\n');
                   })()
                   : toCopyValue(field.type, value);
+                const infoType = field.type === 'PARAGRAPH'
+                  ? (field.inputType === 'info_image' || field.inputType === 'info_url' ? field.inputType : 'info_text')
+                  : null;
 
                 if (field.type === 'PARAGRAPH') {
+                  if (infoType === 'info_image') {
+                    const imageUrl = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
+                    return (
+                      <div key={field.id} className={widthClass}>
+                        <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary">
+                          {imageUrl ? (
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element -- user-configurable informational image URL */}
+                              <img src={imageUrl} alt={field.subtext || field.label || 'Information image'} className="max-h-72 w-full object-contain" />
+                              {field.subtext && (
+                                <p className="border-t border-border-primary px-3 py-2 text-xs text-text-secondary">{field.subtext}</p>
+                              )}
+                            </>
+                          ) : (
+                            <div className="px-3 py-3 text-sm text-text-muted">No valid image URL configured.</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (infoType === 'info_url') {
+                    const href = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
+                    return (
+                      <div key={field.id} className={widthClass}>
+                        <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm">
+                          {href ? (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="break-all text-text-primary underline hover:text-text-secondary"
+                            >
+                              {field.subtext || field.label || href}
+                            </a>
+                          ) : (
+                            <span className="text-text-muted">No valid URL configured.</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={field.id} className={widthClass}>
                       <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary whitespace-pre-wrap">

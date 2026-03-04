@@ -146,6 +146,7 @@ export default function FormsPage() {
   }
 
   async function handleDelete(formId: string) {
+    if (!window.confirm('Are you sure you want to archive this form? It will no longer be accessible.')) return;
     try {
       await deleteForm.mutateAsync({ id: formId, reason: 'Removed from forms list' });
       success('Form archived');
@@ -396,7 +397,7 @@ export default function FormsPage() {
                   key={submission.id}
                   type="button"
                   className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-background-primary"
-                  onClick={() => router.push(`/forms/${submission.formId}/responses`)}
+                  onClick={() => router.push(`/forms/${submission.formId}/responses/${submission.id}`)}
                 >
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-text-primary">{submission.formTitle}</div>

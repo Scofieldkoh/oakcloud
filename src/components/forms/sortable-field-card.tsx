@@ -9,6 +9,16 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { FIELD_TYPE_LABEL, WIDTH_CLASS, WIDTH_OPTIONS } from './builder-utils';
 import type { BuilderField } from './builder-utils';
 
+function getFieldTypeLabel(field: BuilderField): string {
+  if (field.type !== 'PARAGRAPH') {
+    return FIELD_TYPE_LABEL[field.type];
+  }
+
+  if (field.inputType === 'info_image') return 'Information / Image';
+  if (field.inputType === 'info_url') return 'Information / URL';
+  return 'Information / Text block';
+}
+
 export function SortableFieldCard({
   field,
   selected,
@@ -116,7 +126,15 @@ export function SortableFieldCard({
   );
 
   return (
-    <div ref={setCardRef} style={style} className={cn(WIDTH_CLASS[field.layoutWidth], 'group/field relative min-w-0')}>
+    <div
+      ref={setCardRef}
+      style={style}
+      className={cn(
+        WIDTH_CLASS[field.layoutWidth],
+        'group/field relative min-w-0',
+        (showWidthOptions || showActionMenu) && 'z-[70]'
+      )}
+    >
       {isDropTarget && dropPosition && (
         <div
           className={cn(
@@ -127,7 +145,7 @@ export function SortableFieldCard({
       )}
       <div
         className={cn(
-          'rounded-lg border border-dashed bg-background-elevated px-3 py-3 transition-colors',
+          'overflow-visible rounded-lg border border-dashed bg-background-elevated px-3 py-3 transition-colors',
           field.type === 'PAGE_BREAK'
             ? 'border-orange-300 dark:border-orange-700 bg-orange-50/40 dark:bg-orange-900/10'
             : 'border-border-primary hover:border-border-secondary',
@@ -160,7 +178,7 @@ export function SortableFieldCard({
               {field.label || 'Untitled field'}
             </div>
             <div className="truncate text-xs text-text-secondary">
-              {FIELD_TYPE_LABEL[field.type]}
+              {getFieldTypeLabel(field)}
               {field.key ? ` | ${field.key}` : ''}
             </div>
           </button>
@@ -183,7 +201,7 @@ export function SortableFieldCard({
                 </Tooltip>
 
                 {showActionMenu && (
-                  <div className="absolute right-0 top-full z-40 mt-2 rounded-lg border border-border-primary bg-background-primary p-1.5 shadow-elevation-2">
+                  <div className="absolute right-0 top-full z-[80] mt-2 rounded-lg border border-border-primary bg-background-primary p-1.5 shadow-elevation-2">
                     <div className="flex items-center gap-1">
                       {field.type !== 'PAGE_BREAK' && (
                         <button
@@ -255,7 +273,7 @@ export function SortableFieldCard({
                     </Tooltip>
 
                     {showWidthOptions && (
-                      <div className="absolute right-0 top-full z-40 mt-2 rounded-lg border border-border-primary bg-background-primary p-1.5 shadow-elevation-2">
+                      <div className="absolute right-0 top-full z-[80] mt-2 rounded-lg border border-border-primary bg-background-primary p-1.5 shadow-elevation-2">
                         {widthOptionsPanel}
                       </div>
                     )}

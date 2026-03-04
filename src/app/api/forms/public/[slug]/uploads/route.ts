@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { checkRateLimit, getClientIp, getRateLimitKey, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { publicUploadSchema } from '@/lib/validations/form-builder';
 import { createPublicUpload } from '@/services/form-builder.service';
 
@@ -10,6 +11,13 @@ interface RouteParams {
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { slug } = await params;
+
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(getRateLimitKey('form-upload', `${ip}:${slug}`), RATE_LIMIT_CONFIGS.FORM_UPLOAD);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const formData = await request.formData();
 
     const fileValue = formData.get('file');

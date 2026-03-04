@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID } from 'crypto';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import {
   FormFieldType,
   FormStatus,
@@ -14,6 +15,7 @@ import { createAuditLog } from '@/lib/audit';
 import { normalizeKey, parseObject, isEmptyValue, evaluateCondition, type PublicFormField, type PublicFormDefinition } from '@/lib/form-utils';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
+import { getAppBaseUrl, sendEmail } from '@/lib/email';
 import type { TenantAwareParams } from '@/lib/types';
 import type {
   CreateFormInput,
@@ -70,6 +72,273 @@ export interface RecentFormSubmissionItem {
 export type { PublicFormField, PublicFormDefinition };
 
 const MAX_SLUG_ATTEMPTS = 10;
+const PDF_PAGE_WIDTH = 595.28; // A4 width in points
+const PDF_PAGE_HEIGHT = 841.89; // A4 height in points
+const PDF_MARGIN_X = 42;
+const PDF_MARGIN_Y = 44;
+
+function toAnswerRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+  return value as Record<string, unknown>;
+}
+
+function toUploadIds(value: unknown): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function safePdfText(value: string): string {
+  return value
+    .replace(/\r\n/g, '\n')
+    .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '?');
+}
+
+function wrapPdfText(
+  text: string,
+  font: { widthOfTextAtSize: (text: string, size: number) => number },
+  size: number,
+  maxWidth: number
+): string[] {
+  const lines: string[] = [];
+  const paragraphs = safePdfText(text).split('\n');
+
+  for (const paragraph of paragraphs) {
+    const trimmed = paragraph.trim();
+    if (!trimmed) {
+      lines.push('');
+      continue;
+    }
+
+    const words = trimmed.split(/\s+/);
+    let current = '';
+
+    for (const word of words) {
+      const next = current ? `${current} ${word}` : word;
+      if (font.widthOfTextAtSize(next, size) <= maxWidth) {
+        current = next;
+        continue;
+      }
+
+      if (current) {
+        lines.push(current);
+      }
+
+      if (font.widthOfTextAtSize(word, size) <= maxWidth) {
+        current = word;
+        continue;
+      }
+
+      let chunk = '';
+      for (const char of word) {
+        const chunkNext = `${chunk}${char}`;
+        if (font.widthOfTextAtSize(chunkNext, size) <= maxWidth) {
+          chunk = chunkNext;
+          continue;
+        }
+        if (chunk) {
+          lines.push(chunk);
+        }
+        chunk = char;
+      }
+      current = chunk;
+    }
+
+    lines.push(current);
+  }
+
+  return lines.length > 0 ? lines : [''];
+}
+
+function formatResponseFieldValue(
+  field: FormField,
+  value: unknown,
+  uploadsById: Map<string, FormUpload>
+): string {
+  if (value === null || value === undefined || value === '') {
+    if (field.type === 'PARAGRAPH') {
+      if (field.inputType === 'info_image') {
+        return field.placeholder?.trim() ? `Image: ${field.placeholder.trim()}` : 'Image block';
+      }
+      if (field.inputType === 'info_url') {
+        const link = field.placeholder?.trim();
+        const linkLabel = field.subtext?.trim();
+        if (link) return linkLabel ? `${linkLabel} (${link})` : link;
+        return 'URL block';
+      }
+      return field.subtext?.trim() || field.label?.trim() || '-';
+    }
+
+    return '-';
+  }
+
+  if (field.type === 'FILE_UPLOAD') {
+    const ids = toUploadIds(value);
+    if (ids.length === 0) return '-';
+    return ids
+      .map((id) => uploadsById.get(id)?.fileName || id)
+      .join(', ');
+  }
+
+  if (field.type === 'SIGNATURE') {
+    if (typeof value === 'string' && value.trim().length > 0) return 'Signature captured';
+    return '-';
+  }
+
+  if (field.type === 'MULTIPLE_CHOICE' && Array.isArray(value)) {
+    const text = value
+      .map((item) => String(item))
+      .join(', ')
+      .trim();
+    return text || '-';
+  }
+
+  if (field.type === 'HTML') {
+    const html = field.subtext || '';
+    const plainText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return plainText || '-';
+  }
+
+  if (Array.isArray(value)) {
+    const text = value.map((item) => String(item)).join(', ').trim();
+    return text || '-';
+  }
+
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '-';
+    }
+  }
+
+  const text = String(value).trim();
+  return text || '-';
+}
+
+async function buildSubmissionPdfBuffer(input: {
+  formTitle: string;
+  submittedAt: Date;
+  respondentName: string | null;
+  respondentEmail: string | null;
+  status: FormSubmissionStatus;
+  fields: FormField[];
+  answers: Record<string, unknown>;
+  uploads: FormUpload[];
+}): Promise<Buffer> {
+  const pdf = await PDFDocument.create();
+  const regularFont = await pdf.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdf.embedFont(StandardFonts.HelveticaBold);
+
+  let page = pdf.addPage([PDF_PAGE_WIDTH, PDF_PAGE_HEIGHT]);
+  let y = PDF_PAGE_HEIGHT - PDF_MARGIN_Y;
+  const contentWidth = PDF_PAGE_WIDTH - PDF_MARGIN_X * 2;
+  const baseLineHeight = 4;
+
+  function ensureSpace(points: number): void {
+    if (y - points >= PDF_MARGIN_Y) return;
+    page = pdf.addPage([PDF_PAGE_WIDTH, PDF_PAGE_HEIGHT]);
+    y = PDF_PAGE_HEIGHT - PDF_MARGIN_Y;
+  }
+
+  function drawWrapped(
+    text: string,
+    options: {
+      size: number;
+      bold?: boolean;
+      indent?: number;
+      color?: [number, number, number];
+      spacingAfter?: number;
+      allowEmpty?: boolean;
+    }
+  ): void {
+    const indent = options.indent || 0;
+    const lines = wrapPdfText(text, options.bold ? boldFont : regularFont, options.size, contentWidth - indent);
+    const font = options.bold ? boldFont : regularFont;
+    const [r, g, b] = options.color || [0.13, 0.16, 0.2];
+    const lineHeight = options.size + baseLineHeight;
+    const drawLines = options.allowEmpty ? lines : lines.filter((line) => line.length > 0);
+
+    for (const line of drawLines) {
+      ensureSpace(lineHeight);
+      page.drawText(safePdfText(line || ' '), {
+        x: PDF_MARGIN_X + indent,
+        y: y - options.size,
+        size: options.size,
+        font,
+        color: rgb(r, g, b),
+      });
+      y -= lineHeight;
+    }
+
+    y -= options.spacingAfter || 0;
+  }
+
+  const uploadsById = new Map(input.uploads.map((upload) => [upload.id, upload]));
+
+  drawWrapped(input.formTitle || 'Form response', {
+    size: 18,
+    bold: true,
+    color: [0.08, 0.16, 0.28],
+    spacingAfter: 4,
+  });
+  drawWrapped(
+    `Submitted: ${new Date(input.submittedAt).toLocaleString('en-SG')} | Status: ${input.status}`,
+    { size: 10, color: [0.35, 0.39, 0.46], spacingAfter: 2 }
+  );
+  drawWrapped(`Respondent: ${input.respondentName || '-'}`, { size: 10, color: [0.35, 0.39, 0.46] });
+  drawWrapped(`Email: ${input.respondentEmail || '-'}`, { size: 10, color: [0.35, 0.39, 0.46], spacingAfter: 8 });
+
+  const pages: FormField[][] = [[]];
+  for (const field of input.fields) {
+    if (field.type === 'PAGE_BREAK') {
+      pages.push([]);
+      continue;
+    }
+    if (field.type === 'HIDDEN') continue;
+    if (!evaluateCondition(field.condition, input.answers)) continue;
+    pages[pages.length - 1].push(field);
+  }
+
+  const visiblePages = pages.filter((fields) => fields.length > 0);
+
+  for (let pageIndex = 0; pageIndex < visiblePages.length; pageIndex += 1) {
+    const fields = visiblePages[pageIndex];
+
+    if (visiblePages.length > 1) {
+      drawWrapped(`Page ${pageIndex + 1}`, {
+        size: 12,
+        bold: true,
+        color: [0.1, 0.2, 0.36],
+        spacingAfter: 2,
+      });
+    }
+
+    for (const field of fields) {
+      const label = field.label?.trim() || field.key;
+      const value = formatResponseFieldValue(field, input.answers[field.key], uploadsById);
+      drawWrapped(label, { size: 10, bold: true, spacingAfter: 1 });
+      drawWrapped(value, { size: 10, indent: 8, spacingAfter: 5, allowEmpty: true });
+    }
+  }
+
+  return Buffer.from(await pdf.save());
+}
+
+function toPdfFileName(formTitle: string, submissionId: string): string {
+  const safeTitle = formTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'form-response';
+  return `${safeTitle}-${submissionId.slice(0, 8)}.pdf`;
+}
 
 function toJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
   if (value === undefined || value === null) {
@@ -280,6 +549,22 @@ export async function updateForm(
     throw new Error('Form not found');
   }
 
+  const nextSlug = data.slug !== undefined ? data.slug.trim() : undefined;
+  if (nextSlug !== undefined && nextSlug.length === 0) {
+    throw new Error('Public URL segment is required');
+  }
+
+  if (nextSlug !== undefined && nextSlug !== existing.slug) {
+    const conflict = await prisma.form.findUnique({
+      where: { slug: nextSlug },
+      select: { id: true },
+    });
+
+    if (conflict && conflict.id !== existing.id) {
+      throw new Error('Public URL segment is already in use');
+    }
+  }
+
   const updated = await prisma.form.update({
     where: { id: formId },
     data: {
@@ -287,6 +572,8 @@ export async function updateForm(
       ...(data.description !== undefined ? { description: data.description?.trim() || null } : {}),
       ...(data.tags !== undefined ? { tags: data.tags } : {}),
       ...(data.status !== undefined ? { status: data.status as FormStatus } : {}),
+      ...(nextSlug !== undefined ? { slug: nextSlug } : {}),
+      ...(data.settings !== undefined ? { settings: toJsonInput(data.settings) } : {}),
       updatedById: params.userId,
     },
   });
@@ -585,6 +872,62 @@ export async function getFormResponseById(
   return { submission, uploads };
 }
 
+export async function exportFormResponsePdf(
+  formId: string,
+  submissionId: string,
+  tenantId: string
+): Promise<{ buffer: Buffer; fileName: string }> {
+  const form = await prisma.form.findFirst({
+    where: { id: formId, tenantId, deletedAt: null },
+    include: {
+      fields: {
+        orderBy: { position: 'asc' },
+      },
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const submission = await prisma.formSubmission.findFirst({
+    where: {
+      id: submissionId,
+      formId,
+      tenantId,
+    },
+  });
+
+  if (!submission) {
+    throw new Error('Submission not found');
+  }
+
+  const uploads = await prisma.formUpload.findMany({
+    where: {
+      formId,
+      submissionId,
+      tenantId,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const buffer = await buildSubmissionPdfBuffer({
+    formTitle: form.title,
+    submittedAt: submission.submittedAt,
+    respondentName: submission.respondentName,
+    respondentEmail: submission.respondentEmail,
+    status: submission.status,
+    fields: form.fields,
+    answers: toAnswerRecord(submission.answers),
+    uploads,
+  });
+
+  return {
+    buffer,
+    fileName: toPdfFileName(form.title, submission.id),
+  };
+}
+
 export async function listRecentFormSubmissions(
   tenantId: string,
   limit: number = 10
@@ -785,6 +1128,52 @@ export async function createPublicSubmission(
     }
   }
 
+  const validKeys = new Set(form.fields.map((f) => f.key));
+  const sanitizedAnswers: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(answers)) {
+    if (!validKeys.has(key)) continue;
+
+    const field = form.fields.find((f) => f.key === key);
+    if (!field) continue;
+
+    switch (field.type) {
+      case 'SHORT_TEXT':
+      case 'LONG_TEXT':
+      case 'DROPDOWN':
+      case 'SINGLE_CHOICE':
+        if (typeof value === 'string') {
+          sanitizedAnswers[key] = value.slice(0, 10_000);
+        }
+        break;
+      case 'MULTIPLE_CHOICE':
+        if (Array.isArray(value)) {
+          sanitizedAnswers[key] = value
+            .filter((v): v is string => typeof v === 'string')
+            .slice(0, 100)
+            .map((v) => v.slice(0, 10_000));
+        }
+        break;
+      case 'FILE_UPLOAD':
+      case 'SIGNATURE':
+        if (typeof value === 'string') {
+          sanitizedAnswers[key] = value.slice(0, 500_000);
+        } else if (Array.isArray(value)) {
+          sanitizedAnswers[key] = value
+            .filter((v): v is string => typeof v === 'string')
+            .slice(0, 20);
+        }
+        break;
+      case 'HIDDEN':
+        if (typeof value === 'string') {
+          sanitizedAnswers[key] = value.slice(0, 10_000);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   const uploadIds = [...new Set(input.uploadIds || [])];
 
   return prisma.$transaction(async (tx) => {
@@ -810,7 +1199,7 @@ export async function createPublicSubmission(
         status: FormSubmissionStatus.COMPLETED,
         respondentName: input.respondentName?.trim() || null,
         respondentEmail: input.respondentEmail?.trim() || null,
-        answers: answers as Prisma.InputJsonValue,
+        answers: sanitizedAnswers as Prisma.InputJsonValue,
         metadata: toJsonInput(input.metadata ?? null),
       },
     });
@@ -837,6 +1226,110 @@ export async function createPublicSubmission(
 
     return submission;
   });
+}
+
+async function getPublishedFormSubmissionContext(slug: string, submissionId: string): Promise<{
+  form: Form & { fields: FormField[] };
+  submission: FormSubmission;
+  uploads: FormUpload[];
+}> {
+  const form = await prisma.form.findFirst({
+    where: {
+      slug,
+      status: 'PUBLISHED',
+      deletedAt: null,
+    },
+    include: {
+      fields: {
+        orderBy: { position: 'asc' },
+      },
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const submission = await prisma.formSubmission.findFirst({
+    where: {
+      id: submissionId,
+      formId: form.id,
+      tenantId: form.tenantId,
+    },
+  });
+
+  if (!submission) {
+    throw new Error('Submission not found');
+  }
+
+  const uploads = await prisma.formUpload.findMany({
+    where: {
+      formId: form.id,
+      submissionId: submission.id,
+      tenantId: form.tenantId,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return { form, submission, uploads };
+}
+
+export async function exportPublicFormResponsePdf(
+  slug: string,
+  submissionId: string
+): Promise<{ buffer: Buffer; fileName: string }> {
+  const { form, submission, uploads } = await getPublishedFormSubmissionContext(slug, submissionId);
+
+  const buffer = await buildSubmissionPdfBuffer({
+    formTitle: form.title,
+    submittedAt: submission.submittedAt,
+    respondentName: submission.respondentName,
+    respondentEmail: submission.respondentEmail,
+    status: submission.status,
+    fields: form.fields,
+    answers: toAnswerRecord(submission.answers),
+    uploads,
+  });
+
+  return {
+    buffer,
+    fileName: toPdfFileName(form.title, submission.id),
+  };
+}
+
+export async function emailPublicFormResponsePdfLink(
+  slug: string,
+  submissionId: string,
+  recipientEmail: string,
+  downloadToken: string
+): Promise<void> {
+  const { form, submission } = await getPublishedFormSubmissionContext(slug, submissionId);
+
+  const email = recipientEmail.trim().toLowerCase();
+  const downloadUrl = `${getAppBaseUrl()}/api/forms/public/${encodeURIComponent(slug)}/submissions/${encodeURIComponent(submission.id)}/pdf?token=${encodeURIComponent(downloadToken)}`;
+  const submissionDate = new Date(submission.submittedAt).toLocaleString('en-SG');
+  const safeFormTitle = form.title.replace(/[<>&]/g, (match) => (
+    match === '<' ? '&lt;' : match === '>' ? '&gt;' : '&amp;'
+  ));
+
+  const subject = `Form response PDF: ${form.title}`;
+  const html = `
+    <p>Hello,</p>
+    <p>Your response PDF for <strong>${safeFormTitle}</strong> is ready.</p>
+    <p>Submitted on: ${submissionDate}</p>
+    <p><a href="${downloadUrl}">Download response PDF</a></p>
+    <p>If you did not request this email, you can ignore it.</p>
+  `;
+
+  const result = await sendEmail({
+    to: email,
+    subject,
+    html,
+  });
+
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to send email');
+  }
 }
 
 export async function getSubmissionUploads(
@@ -867,6 +1360,57 @@ export async function getSubmissionUploads(
   });
 }
 
+export async function exportFormResponsesCsv(
+  formId: string,
+  tenantId: string
+): Promise<{ csv: string; fileName: string }> {
+  const form = await prisma.form.findFirst({
+    where: { id: formId, tenantId, deletedAt: null },
+    include: { fields: { orderBy: { position: 'asc' } } },
+  });
+
+  if (!form) throw new Error('Form not found');
+
+  const submissions = await prisma.formSubmission.findMany({
+    where: { formId, tenantId },
+    orderBy: { submittedAt: 'desc' },
+  });
+
+  const displayFields = form.fields.filter(
+    (f) => !['PAGE_BREAK', 'PARAGRAPH', 'HTML'].includes(f.type)
+  );
+  const fieldKeys = displayFields.map((f) => f.key);
+  const fieldLabels = displayFields.map((f) => f.label || f.key);
+
+  const header = ['submission_id', 'submitted_at', 'respondent_name', 'respondent_email', ...fieldLabels];
+
+  const safeCell = (value: unknown): string => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
+  };
+
+  const rows = submissions.map((sub) => {
+    const answers = (sub.answers || {}) as Record<string, unknown>;
+    return [
+      sub.id,
+      new Date(sub.submittedAt).toISOString(),
+      sub.respondentName || '',
+      sub.respondentEmail || '',
+      ...fieldKeys.map((key) => safeCell(answers[key])),
+    ];
+  });
+
+  const csv = [header, ...rows]
+    .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+
+  const fileName = `${form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'form'}-responses.csv`;
+
+  return { csv, fileName };
+}
+
 export async function getSubmissionUploadById(
   formId: string,
   submissionId: string,
@@ -881,4 +1425,31 @@ export async function getSubmissionUploadById(
       tenantId,
     },
   });
+}
+
+export async function cleanupOrphanedUploads(maxAgeHours: number = 24): Promise<number> {
+  const cutoff = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000);
+
+  const orphans = await prisma.formUpload.findMany({
+    where: {
+      submissionId: null,
+      createdAt: { lt: cutoff },
+    },
+    select: { id: true, storageKey: true },
+  });
+
+  if (orphans.length === 0) return 0;
+
+  await Promise.allSettled(
+    orphans.map((orphan) => storage.delete(orphan.storageKey))
+  );
+
+  await prisma.formUpload.deleteMany({
+    where: {
+      id: { in: orphans.map((o) => o.id) },
+      submissionId: null,
+    },
+  });
+
+  return orphans.length;
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 
 import { X } from 'lucide-react';
 import { FormInput } from '@/components/ui/form-input';
 import { Toggle } from '@/components/ui/toggle';
+import { isSummaryEligibleFieldType } from '@/lib/form-utils';
 import { cn } from '@/lib/utils';
 import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS } from './builder-utils';
 import type { FormFieldInput } from '@/lib/validations/form-builder';
@@ -13,6 +14,7 @@ const FIELD_DRAWER_MIN_WIDTH = 360;
 const FIELD_DRAWER_MAX_WIDTH = 860;
 const FIELD_DRAWER_DEFAULT_WIDTH = 460;
 const FIELD_DRAWER_WIDTH_STORAGE_KEY = 'form_builder_field_drawer_width';
+const INFO_INPUT_TYPES: ReadonlyArray<ShortInputType> = ['info_text', 'info_image', 'info_url'];
 
 export function FieldEditorDrawer({
   field,
@@ -34,6 +36,7 @@ export function FieldEditorDrawer({
   const conditionalCandidates = allFields.filter(
     (f) => f.clientId !== field.clientId && !['PAGE_BREAK', 'PARAGRAPH', 'HTML'].includes(f.type)
   );
+  const canShowOnSummary = isSummaryEligibleFieldType(field.type);
 
   useEffect(() => {
     const saved = Number(window.localStorage.getItem(FIELD_DRAWER_WIDTH_STORAGE_KEY));
@@ -139,9 +142,17 @@ export function FieldEditorDrawer({
                     const nextType = e.target.value as FormFieldInput['type'];
                     const next = { ...field, type: nextType };
                     if (nextType === 'PAGE_BREAK') next.layoutWidth = 100;
-                    if (nextType === 'SHORT_TEXT' && !next.inputType) next.inputType = 'text';
+                    if (nextType === 'SHORT_TEXT' && (!next.inputType || INFO_INPUT_TYPES.includes(next.inputType))) {
+                      next.inputType = 'text';
+                    }
+                    if (nextType === 'PARAGRAPH' && !INFO_INPUT_TYPES.includes(next.inputType)) {
+                      next.inputType = 'info_text';
+                    }
                     if (['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN'].includes(nextType) && next.options.length === 0) {
                       next.options = ['Option 1', 'Option 2'];
+                    }
+                    if (!isSummaryEligibleFieldType(nextType)) {
+                      next.showOnSummary = false;
                     }
                     onChange(next);
                   }}
@@ -182,6 +193,69 @@ export function FieldEditorDrawer({
                 </div>
               )}
 
+              {field.type === 'PARAGRAPH' && (
+                <>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Information type</label>
+                    <select
+                      value={INFO_INPUT_TYPES.includes(field.inputType) ? field.inputType : 'info_text'}
+                      onChange={(e) => onChange({ ...field, inputType: e.target.value as ShortInputType })}
+                      className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                    >
+                      <option value="info_text">Text block</option>
+                      <option value="info_image">Image</option>
+                      <option value="info_url">URL / Link</option>
+                    </select>
+                  </div>
+
+                  {(field.inputType === 'info_text' || !INFO_INPUT_TYPES.includes(field.inputType)) && (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-text-secondary">Text block content</label>
+                      <textarea
+                        value={field.subtext}
+                        onChange={(e) => onChange({ ...field, subtext: e.target.value })}
+                        className="w-full min-h-24 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                        placeholder="Enter informational text shown to respondents"
+                      />
+                    </div>
+                  )}
+
+                  {field.inputType === 'info_image' && (
+                    <>
+                      <FormInput
+                        label="Image URL"
+                        value={field.placeholder}
+                        onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
+                        placeholder="https://example.com/image.png"
+                      />
+                      <FormInput
+                        label="Caption / alt text"
+                        value={field.subtext}
+                        onChange={(e) => onChange({ ...field, subtext: e.target.value })}
+                        placeholder="Optional caption"
+                      />
+                    </>
+                  )}
+
+                  {field.inputType === 'info_url' && (
+                    <>
+                      <FormInput
+                        label="URL"
+                        value={field.placeholder}
+                        onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
+                        placeholder="https://example.com"
+                      />
+                      <FormInput
+                        label="Link label"
+                        value={field.subtext}
+                        onChange={(e) => onChange({ ...field, subtext: e.target.value })}
+                        placeholder="Open resource"
+                      />
+                    </>
+                  )}
+                </>
+              )}
+
               {(field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN') && (
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-text-secondary">Options</label>
@@ -189,7 +263,9 @@ export function FieldEditorDrawer({
                     value={field.options.join('\n')}
                     onChange={(e) => onChange({
                       ...field,
-                      options: e.target.value.split('\n').map((line) => line.trim()).filter(Boolean),
+                      // Keep blank lines while editing so Enter can create a new option row.
+                      // Empty rows are filtered out later during payload serialization.
+                      options: e.target.value.split('\n').map((line) => line.trim()),
                     })}
                     className="w-full min-h-24 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
                     placeholder="One option per line"
@@ -197,7 +273,7 @@ export function FieldEditorDrawer({
                 </div>
               )}
 
-              {field.type !== 'PAGE_BREAK' && (
+              {field.type !== 'PAGE_BREAK' && field.type !== 'PARAGRAPH' && (
                 <>
                   <FormInput
                     label="Placeholder"
@@ -224,7 +300,42 @@ export function FieldEditorDrawer({
                 <Toggle checked={field.isRequired} onChange={(checked) => onChange({ ...field, isRequired: checked })} label="Field is required" size="sm" />
                 <Toggle checked={field.hideLabel} onChange={(checked) => onChange({ ...field, hideLabel: checked })} label="Hide label" size="sm" />
                 <Toggle checked={field.isReadOnly} onChange={(checked) => onChange({ ...field, isReadOnly: checked })} label="Read only" size="sm" />
+                <Toggle
+                  checked={field.validation?.tooltipEnabled === true}
+                  onChange={(checked) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      tooltipEnabled: checked,
+                    },
+                  })}
+                  label="Tooltip"
+                  description="Show an information icon beside this field label."
+                  size="sm"
+                />
+                <Toggle
+                  checked={field.showOnSummary}
+                  onChange={(checked) => onChange({ ...field, showOnSummary: checked })}
+                  label="Show on summary"
+                  description={canShowOnSummary
+                    ? 'Show this field as a column on the Responses page.'
+                    : 'This field type cannot be shown on the responses summary table.'}
+                  size="sm"
+                  disabled={!canShowOnSummary}
+                />
               </div>
+
+              {field.validation?.tooltipEnabled === true && (
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip content</label>
+                  <textarea
+                    value={field.helpText}
+                    onChange={(e) => onChange({ ...field, helpText: e.target.value })}
+                    className="w-full min-h-20 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                    placeholder="Guidance shown when users hover the info icon"
+                  />
+                </div>
+              )}
             </>
           )}
 
