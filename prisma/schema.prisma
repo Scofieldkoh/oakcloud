@@ -39,6 +39,10 @@ model Tenant {
   documentTemplates                  DocumentTemplate[]
   documents                          Document[]
   exchangeRates                      ExchangeRate[]
+  formFields                         FormField[]
+  formSubmissions                    FormSubmission[]
+  formUploads                        FormUpload[]
+  forms                              Form[]
   generatedDocuments                 GeneratedDocument[]
   roles                              Role[]
   templatePartials                   TemplatePartial[]
@@ -1544,6 +1548,104 @@ model ReconciliationPeriod {
   @@map("reconciliation_periods")
 }
 
+model Form {
+  id               String           @id @default(uuid())
+  tenantId         String           @map("tenant_id")
+  title            String
+  description      String?
+  slug             String           @unique
+  status           FormStatus       @default(DRAFT)
+  tags             String[]         @default([])
+  settings         Json?
+  viewsCount       Int              @default(0) @map("views_count")
+  submissionsCount Int              @default(0) @map("submissions_count")
+  createdById      String?          @map("created_by_id")
+  updatedById      String?          @map("updated_by_id")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  deletedAt        DateTime?        @map("deleted_at")
+  fields           FormField[]
+  submissions      FormSubmission[]
+  tenant           Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploads          FormUpload[]
+
+  @@index([tenantId, status, deletedAt])
+  @@index([tenantId, createdAt])
+  @@index([slug])
+  @@map("forms")
+}
+
+model FormField {
+  id          String        @id @default(uuid())
+  formId      String        @map("form_id")
+  tenantId    String        @map("tenant_id")
+  type        FormFieldType
+  label       String?
+  key         String        @map("field_key")
+  placeholder String?
+  subtext     String?
+  helpText    String?       @map("help_text")
+  inputType   String?       @map("input_type")
+  options     Json?
+  validation  Json?
+  condition   Json?
+  isRequired  Boolean       @default(false) @map("is_required")
+  hideLabel   Boolean       @default(false) @map("hide_label")
+  isReadOnly  Boolean       @default(false) @map("is_read_only")
+  layoutWidth Int           @default(100) @map("layout_width")
+  position    Int
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  form        Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, key])
+  @@index([formId, position])
+  @@index([tenantId, formId])
+  @@map("form_fields")
+}
+
+model FormSubmission {
+  id              String               @id @default(uuid())
+  formId          String               @map("form_id")
+  tenantId        String               @map("tenant_id")
+  status          FormSubmissionStatus @default(COMPLETED)
+  respondentName  String?              @map("respondent_name")
+  respondentEmail String?              @map("respondent_email")
+  answers         Json
+  metadata        Json?
+  submittedAt     DateTime             @default(now()) @map("submitted_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  form            Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploads         FormUpload[]
+
+  @@index([formId, submittedAt])
+  @@index([tenantId, submittedAt])
+  @@map("form_submissions")
+}
+
+model FormUpload {
+  id           String          @id @default(uuid())
+  tenantId     String          @map("tenant_id")
+  formId       String          @map("form_id")
+  submissionId String?         @map("submission_id")
+  fieldId      String?         @map("field_id")
+  storageKey   String          @map("storage_key")
+  fileName     String          @map("file_name")
+  mimeType     String          @map("mime_type")
+  sizeBytes    Int             @map("size_bytes")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  form         Form            @relation(fields: [formId], references: [id], onDelete: Cascade)
+  submission   FormSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([formId, createdAt])
+  @@index([submissionId])
+  @@index([tenantId, formId])
+  @@map("form_uploads")
+}
+
 model ClientPortalUser {
   id             String          @id @default(uuid())
   tenantId       String          @map("tenant_id")
@@ -2826,6 +2928,32 @@ enum PeriodStatus {
   PERIOD_OPEN
   PERIOD_LOCKED
   PERIOD_CLOSED
+}
+
+enum FormStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum FormFieldType {
+  SHORT_TEXT
+  LONG_TEXT
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  DROPDOWN
+  FILE_UPLOAD
+  SIGNATURE
+  PARAGRAPH
+  HTML
+  PAGE_BREAK
+  HIDDEN
+}
+
+enum FormSubmissionStatus {
+  COMPLETED
+  PARTIAL
+  SPAM
 }
 
 enum ClientRequestStatus {

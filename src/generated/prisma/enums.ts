@@ -621,6 +621,41 @@ export const PeriodStatus = {
 export type PeriodStatus = (typeof PeriodStatus)[keyof typeof PeriodStatus]
 
 
+export const FormStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED'
+} as const
+
+export type FormStatus = (typeof FormStatus)[keyof typeof FormStatus]
+
+
+export const FormFieldType = {
+  SHORT_TEXT: 'SHORT_TEXT',
+  LONG_TEXT: 'LONG_TEXT',
+  SINGLE_CHOICE: 'SINGLE_CHOICE',
+  MULTIPLE_CHOICE: 'MULTIPLE_CHOICE',
+  DROPDOWN: 'DROPDOWN',
+  FILE_UPLOAD: 'FILE_UPLOAD',
+  SIGNATURE: 'SIGNATURE',
+  PARAGRAPH: 'PARAGRAPH',
+  HTML: 'HTML',
+  PAGE_BREAK: 'PAGE_BREAK',
+  HIDDEN: 'HIDDEN'
+} as const
+
+export type FormFieldType = (typeof FormFieldType)[keyof typeof FormFieldType]
+
+
+export const FormSubmissionStatus = {
+  COMPLETED: 'COMPLETED',
+  PARTIAL: 'PARTIAL',
+  SPAM: 'SPAM'
+} as const
+
+export type FormSubmissionStatus = (typeof FormSubmissionStatus)[keyof typeof FormSubmissionStatus]
+
+
 export const ClientRequestStatus = {
   REQUEST_PENDING: 'REQUEST_PENDING',
   REQUEST_IN_PROGRESS: 'REQUEST_IN_PROGRESS',

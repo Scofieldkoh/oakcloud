@@ -442,6 +442,10 @@ export const ModelName = {
   MatchGroup: 'MatchGroup',
   MatchGroupItem: 'MatchGroupItem',
   ReconciliationPeriod: 'ReconciliationPeriod',
+  Form: 'Form',
+  FormField: 'FormField',
+  FormSubmission: 'FormSubmission',
+  FormUpload: 'FormUpload',
   ClientPortalUser: 'ClientPortalUser',
   ClientRequest: 'ClientRequest',
   Communication: 'Communication',
@@ -489,7 +493,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -4785,6 +4789,302 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Form: {
+      payload: Prisma.$FormPayload<ExtArgs>
+      fields: Prisma.FormFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload>
+        }
+        findFirst: {
+          args: Prisma.FormFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload>
+        }
+        findMany: {
+          args: Prisma.FormFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload>[]
+        }
+        create: {
+          args: Prisma.FormCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload>
+        }
+        createMany: {
+          args: Prisma.FormCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload>[]
+        }
+        delete: {
+          args: Prisma.FormDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload>
+        }
+        update: {
+          args: Prisma.FormUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload>
+        }
+        deleteMany: {
+          args: Prisma.FormDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload>[]
+        }
+        upsert: {
+          args: Prisma.FormUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormPayload>
+        }
+        aggregate: {
+          args: Prisma.FormAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateForm>
+        }
+        groupBy: {
+          args: Prisma.FormGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormCountAggregateOutputType> | number
+        }
+      }
+    }
+    FormField: {
+      payload: Prisma.$FormFieldPayload<ExtArgs>
+      fields: Prisma.FormFieldFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormFieldFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormFieldFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload>
+        }
+        findFirst: {
+          args: Prisma.FormFieldFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormFieldFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload>
+        }
+        findMany: {
+          args: Prisma.FormFieldFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload>[]
+        }
+        create: {
+          args: Prisma.FormFieldCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload>
+        }
+        createMany: {
+          args: Prisma.FormFieldCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormFieldCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload>[]
+        }
+        delete: {
+          args: Prisma.FormFieldDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload>
+        }
+        update: {
+          args: Prisma.FormFieldUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload>
+        }
+        deleteMany: {
+          args: Prisma.FormFieldDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormFieldUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormFieldUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload>[]
+        }
+        upsert: {
+          args: Prisma.FormFieldUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormFieldPayload>
+        }
+        aggregate: {
+          args: Prisma.FormFieldAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFormField>
+        }
+        groupBy: {
+          args: Prisma.FormFieldGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormFieldGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormFieldCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormFieldCountAggregateOutputType> | number
+        }
+      }
+    }
+    FormSubmission: {
+      payload: Prisma.$FormSubmissionPayload<ExtArgs>
+      fields: Prisma.FormSubmissionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormSubmissionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormSubmissionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload>
+        }
+        findFirst: {
+          args: Prisma.FormSubmissionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormSubmissionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload>
+        }
+        findMany: {
+          args: Prisma.FormSubmissionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload>[]
+        }
+        create: {
+          args: Prisma.FormSubmissionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload>
+        }
+        createMany: {
+          args: Prisma.FormSubmissionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormSubmissionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload>[]
+        }
+        delete: {
+          args: Prisma.FormSubmissionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload>
+        }
+        update: {
+          args: Prisma.FormSubmissionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload>
+        }
+        deleteMany: {
+          args: Prisma.FormSubmissionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormSubmissionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormSubmissionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload>[]
+        }
+        upsert: {
+          args: Prisma.FormSubmissionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormSubmissionPayload>
+        }
+        aggregate: {
+          args: Prisma.FormSubmissionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFormSubmission>
+        }
+        groupBy: {
+          args: Prisma.FormSubmissionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormSubmissionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormSubmissionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormSubmissionCountAggregateOutputType> | number
+        }
+      }
+    }
+    FormUpload: {
+      payload: Prisma.$FormUploadPayload<ExtArgs>
+      fields: Prisma.FormUploadFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormUploadFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormUploadFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload>
+        }
+        findFirst: {
+          args: Prisma.FormUploadFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormUploadFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload>
+        }
+        findMany: {
+          args: Prisma.FormUploadFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload>[]
+        }
+        create: {
+          args: Prisma.FormUploadCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload>
+        }
+        createMany: {
+          args: Prisma.FormUploadCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormUploadCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload>[]
+        }
+        delete: {
+          args: Prisma.FormUploadDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload>
+        }
+        update: {
+          args: Prisma.FormUploadUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload>
+        }
+        deleteMany: {
+          args: Prisma.FormUploadDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormUploadUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormUploadUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload>[]
+        }
+        upsert: {
+          args: Prisma.FormUploadUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUploadPayload>
+        }
+        aggregate: {
+          args: Prisma.FormUploadAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFormUpload>
+        }
+        groupBy: {
+          args: Prisma.FormUploadGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormUploadGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormUploadCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormUploadCountAggregateOutputType> | number
+        }
+      }
+    }
     ClientPortalUser: {
       payload: Prisma.$ClientPortalUserPayload<ExtArgs>
       fields: Prisma.ClientPortalUserFieldRefs
@@ -8326,6 +8626,85 @@ export const ReconciliationPeriodScalarFieldEnum = {
 export type ReconciliationPeriodScalarFieldEnum = (typeof ReconciliationPeriodScalarFieldEnum)[keyof typeof ReconciliationPeriodScalarFieldEnum]
 
 
+export const FormScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  title: 'title',
+  description: 'description',
+  slug: 'slug',
+  status: 'status',
+  tags: 'tags',
+  settings: 'settings',
+  viewsCount: 'viewsCount',
+  submissionsCount: 'submissionsCount',
+  createdById: 'createdById',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type FormScalarFieldEnum = (typeof FormScalarFieldEnum)[keyof typeof FormScalarFieldEnum]
+
+
+export const FormFieldScalarFieldEnum = {
+  id: 'id',
+  formId: 'formId',
+  tenantId: 'tenantId',
+  type: 'type',
+  label: 'label',
+  key: 'key',
+  placeholder: 'placeholder',
+  subtext: 'subtext',
+  helpText: 'helpText',
+  inputType: 'inputType',
+  options: 'options',
+  validation: 'validation',
+  condition: 'condition',
+  isRequired: 'isRequired',
+  hideLabel: 'hideLabel',
+  isReadOnly: 'isReadOnly',
+  layoutWidth: 'layoutWidth',
+  position: 'position',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormFieldScalarFieldEnum = (typeof FormFieldScalarFieldEnum)[keyof typeof FormFieldScalarFieldEnum]
+
+
+export const FormSubmissionScalarFieldEnum = {
+  id: 'id',
+  formId: 'formId',
+  tenantId: 'tenantId',
+  status: 'status',
+  respondentName: 'respondentName',
+  respondentEmail: 'respondentEmail',
+  answers: 'answers',
+  metadata: 'metadata',
+  submittedAt: 'submittedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type FormSubmissionScalarFieldEnum = (typeof FormSubmissionScalarFieldEnum)[keyof typeof FormSubmissionScalarFieldEnum]
+
+
+export const FormUploadScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  formId: 'formId',
+  submissionId: 'submissionId',
+  fieldId: 'fieldId',
+  storageKey: 'storageKey',
+  fileName: 'fileName',
+  mimeType: 'mimeType',
+  sizeBytes: 'sizeBytes',
+  createdAt: 'createdAt'
+} as const
+
+export type FormUploadScalarFieldEnum = (typeof FormUploadScalarFieldEnum)[keyof typeof FormUploadScalarFieldEnum]
+
+
 export const ClientPortalUserScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -9754,6 +10133,48 @@ export type ListEnumPeriodStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
 
 
 /**
+ * Reference to a field of type 'FormStatus'
+ */
+export type EnumFormStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FormStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'FormStatus[]'
+ */
+export type ListEnumFormStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FormStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'FormFieldType'
+ */
+export type EnumFormFieldTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FormFieldType'>
+    
+
+
+/**
+ * Reference to a field of type 'FormFieldType[]'
+ */
+export type ListEnumFormFieldTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FormFieldType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'FormSubmissionStatus'
+ */
+export type EnumFormSubmissionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FormSubmissionStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'FormSubmissionStatus[]'
+ */
+export type ListEnumFormSubmissionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FormSubmissionStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'ClientRequestStatus'
  */
 export type EnumClientRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ClientRequestStatus'>
@@ -10395,6 +10816,10 @@ export type GlobalOmitConfig = {
   matchGroup?: Prisma.MatchGroupOmit
   matchGroupItem?: Prisma.MatchGroupItemOmit
   reconciliationPeriod?: Prisma.ReconciliationPeriodOmit
+  form?: Prisma.FormOmit
+  formField?: Prisma.FormFieldOmit
+  formSubmission?: Prisma.FormSubmissionOmit
+  formUpload?: Prisma.FormUploadOmit
   clientPortalUser?: Prisma.ClientPortalUserOmit
   clientRequest?: Prisma.ClientRequestOmit
   communication?: Prisma.CommunicationOmit

@@ -1,0 +1,49 @@
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { publicUploadSchema } from '@/lib/validations/form-builder';
+import { createPublicUpload } from '@/services/form-builder.service';
+
+interface RouteParams {
+  params: Promise<{ slug: string }>;
+}
+
+export async function POST(request: Request, { params }: RouteParams) {
+  try {
+    const { slug } = await params;
+    const formData = await request.formData();
+
+    const fileValue = formData.get('file');
+    const fieldKeyValue = formData.get('fieldKey');
+
+    if (!fileValue || !(fileValue instanceof File)) {
+      return NextResponse.json({ error: 'File is required' }, { status: 400 });
+    }
+
+    const parsed = publicUploadSchema.parse({
+      fieldKey: typeof fieldKeyValue === 'string' ? fieldKeyValue : '',
+    });
+
+    const upload = await createPublicUpload(slug, parsed.fieldKey, fileValue);
+
+    return NextResponse.json(
+      {
+        id: upload.id,
+        fieldId: upload.fieldId,
+        fileName: upload.fileName,
+        mimeType: upload.mimeType,
+        sizeBytes: upload.sizeBytes,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Invalid upload payload', details: error.errors }, { status: 400 });
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

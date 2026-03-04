@@ -330,6 +330,26 @@ export type MatchGroupItem = Prisma.MatchGroupItemModel
  */
 export type ReconciliationPeriod = Prisma.ReconciliationPeriodModel
 /**
+ * Model Form
+ * 
+ */
+export type Form = Prisma.FormModel
+/**
+ * Model FormField
+ * 
+ */
+export type FormField = Prisma.FormFieldModel
+/**
+ * Model FormSubmission
+ * 
+ */
+export type FormSubmission = Prisma.FormSubmissionModel
+/**
+ * Model FormUpload
+ * 
+ */
+export type FormUpload = Prisma.FormUploadModel
+/**
  * Model ClientPortalUser
  * 
  */

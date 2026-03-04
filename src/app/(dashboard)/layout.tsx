@@ -1,8 +1,10 @@
 'use client';
 
+import { Suspense } from 'react';
 import { Sidebar } from '@/components/ui/sidebar';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { NavigationProgress } from '@/components/ui/navigation-progress';
 import { useUIStore } from '@/stores/ui-store';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
@@ -25,6 +27,9 @@ export default function DashboardLayout({
         Skip to main content
       </a>
       <div className="min-h-screen bg-background-primary">
+        <Suspense>
+          <NavigationProgress />
+        </Suspense>
         <Sidebar />
         <main
           id="main-content"

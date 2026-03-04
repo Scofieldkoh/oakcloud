@@ -109,6 +109,10 @@ export const ModelName = {
   MatchGroup: 'MatchGroup',
   MatchGroupItem: 'MatchGroupItem',
   ReconciliationPeriod: 'ReconciliationPeriod',
+  Form: 'Form',
+  FormField: 'FormField',
+  FormSubmission: 'FormSubmission',
+  FormUpload: 'FormUpload',
   ClientPortalUser: 'ClientPortalUser',
   ClientRequest: 'ClientRequest',
   Communication: 'Communication',
@@ -1291,6 +1295,85 @@ export const ReconciliationPeriodScalarFieldEnum = {
 } as const
 
 export type ReconciliationPeriodScalarFieldEnum = (typeof ReconciliationPeriodScalarFieldEnum)[keyof typeof ReconciliationPeriodScalarFieldEnum]
+
+
+export const FormScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  title: 'title',
+  description: 'description',
+  slug: 'slug',
+  status: 'status',
+  tags: 'tags',
+  settings: 'settings',
+  viewsCount: 'viewsCount',
+  submissionsCount: 'submissionsCount',
+  createdById: 'createdById',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type FormScalarFieldEnum = (typeof FormScalarFieldEnum)[keyof typeof FormScalarFieldEnum]
+
+
+export const FormFieldScalarFieldEnum = {
+  id: 'id',
+  formId: 'formId',
+  tenantId: 'tenantId',
+  type: 'type',
+  label: 'label',
+  key: 'key',
+  placeholder: 'placeholder',
+  subtext: 'subtext',
+  helpText: 'helpText',
+  inputType: 'inputType',
+  options: 'options',
+  validation: 'validation',
+  condition: 'condition',
+  isRequired: 'isRequired',
+  hideLabel: 'hideLabel',
+  isReadOnly: 'isReadOnly',
+  layoutWidth: 'layoutWidth',
+  position: 'position',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormFieldScalarFieldEnum = (typeof FormFieldScalarFieldEnum)[keyof typeof FormFieldScalarFieldEnum]
+
+
+export const FormSubmissionScalarFieldEnum = {
+  id: 'id',
+  formId: 'formId',
+  tenantId: 'tenantId',
+  status: 'status',
+  respondentName: 'respondentName',
+  respondentEmail: 'respondentEmail',
+  answers: 'answers',
+  metadata: 'metadata',
+  submittedAt: 'submittedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type FormSubmissionScalarFieldEnum = (typeof FormSubmissionScalarFieldEnum)[keyof typeof FormSubmissionScalarFieldEnum]
+
+
+export const FormUploadScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  formId: 'formId',
+  submissionId: 'submissionId',
+  fieldId: 'fieldId',
+  storageKey: 'storageKey',
+  fileName: 'fileName',
+  mimeType: 'mimeType',
+  sizeBytes: 'sizeBytes',
+  createdAt: 'createdAt'
+} as const
+
+export type FormUploadScalarFieldEnum = (typeof FormUploadScalarFieldEnum)[keyof typeof FormUploadScalarFieldEnum]
 
 
 export const ClientPortalUserScalarFieldEnum = {
