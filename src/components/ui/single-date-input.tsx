@@ -429,7 +429,7 @@ export function SingleDateInput({
       <div
         ref={containerRef}
         className={cn(
-          'h-8 w-full flex items-center rounded-lg border',
+          'h-10 w-full flex items-center rounded-lg border',
           'bg-background-primary dark:bg-background-secondary border-border-primary',
           'hover:border-border-secondary transition-colors',
           'focus-within:ring-2 focus-within:ring-oak-primary/30 focus-within:border-oak-primary',

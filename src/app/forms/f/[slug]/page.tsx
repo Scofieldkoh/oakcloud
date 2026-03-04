@@ -465,7 +465,7 @@ export default function PublicFormPage() {
     <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8')}>
       <div className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
         {!isEmbed && (
-          <div className="mb-8">
+          <div className="mb-6">
             <h1 className="text-2xl font-bold text-text-primary">{form.title}</h1>
             {form.description && <p className="mt-2 text-base text-text-secondary leading-relaxed">{form.description}</p>}
             {isPreview && (
@@ -473,16 +473,22 @@ export default function PublicFormPage() {
                 Preview mode. Publish the form to accept uploads and submissions.
               </p>
             )}
-            <div className="mt-4 h-[3px] w-12 rounded-full bg-oak-primary" />
+            {pages.length <= 1 && <div className="mt-4 h-[3px] w-12 rounded-full bg-oak-primary" />}
           </div>
         )}
 
         {pages.length > 1 && (
-          <div className="mb-6 h-[3px] w-full overflow-hidden rounded-full bg-border-primary/40">
-            <div
-              className="h-full rounded-full bg-oak-primary transition-all duration-300 ease-out"
-              style={{ width: `${((currentPage + 1) / pages.length) * 100}%` }}
-            />
+          <div className="mb-6">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-xs font-medium text-text-secondary">Page {currentPage + 1} of {pages.length}</span>
+              <span className="text-xs text-text-muted">{Math.round(((currentPage + 1) / pages.length) * 100)}%</span>
+            </div>
+            <div className="h-[3px] w-full overflow-hidden rounded-full bg-border-primary/40">
+              <div
+                className="h-full rounded-full bg-oak-primary transition-all duration-300 ease-out"
+                style={{ width: `${((currentPage + 1) / pages.length) * 100}%` }}
+              />
+            </div>
           </div>
         )}
 
@@ -729,7 +735,7 @@ export default function PublicFormPage() {
                             "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
                             isSelected
                               ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
-                              : "border-transparent text-text-primary hover:bg-background-secondary/50"
+                              : "border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60"
                           )}
                         >
                           <input
@@ -774,7 +780,7 @@ export default function PublicFormPage() {
                             "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
                             isChecked
                               ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
-                              : "border-transparent text-text-primary hover:bg-background-secondary/50"
+                              : "border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60"
                           )}
                         >
                           <input
