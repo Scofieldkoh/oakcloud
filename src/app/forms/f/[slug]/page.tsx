@@ -1118,9 +1118,7 @@ export default function PublicFormPage() {
   }
 
   function renderCardField(
-    field: PublicField,
-    fieldIndexInGroup: number,
-    groupFields: PublicField[]
+    field: PublicField
   ): React.ReactNode {
     const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
     const value = answers[field.key];
@@ -1138,24 +1136,9 @@ export default function PublicFormPage() {
     const tooltipText = showTooltip ? field.helpText!.trim() : null;
     const uploadStatus = uploadedByFieldKey[field.key];
 
-    // Determine if this field starts a new row (needs a top divider)
-    let needsDivider = false;
-    if (fieldIndexInGroup > 0) {
-      let sum = 0;
-      for (let i = 0; i < fieldIndexInGroup; i++) {
-        const w = groupFields[i].layoutWidth || 100;
-        sum += Math.round((w / 100) * 12);
-        if (sum >= 12) sum = 0;
-      }
-      needsDivider = sum === 0;
-    }
-
     return (
       <React.Fragment key={field.id}>
-        {needsDivider && (
-          <div className="col-span-12 border-t border-border-primary/20" />
-        )}
-        <div className={cn(widthClass, needsDivider && 'mt-4')}>
+        <div className={widthClass}>
           {/* Label */}
           {!field.hideLabel && (
             renderLabelAsText ? (
@@ -1567,9 +1550,9 @@ export default function PublicFormPage() {
                       : 'border-border-primary/50'
                   )}>
                     <div className="p-5">
-                      <div className="grid grid-cols-12 gap-x-4">
-                        {groupFields.map((field, fieldIndexInGroup) =>
-                          renderCardField(field, fieldIndexInGroup, groupFields)
+                      <div className="grid grid-cols-12 gap-x-4 gap-y-5">
+                        {groupFields.map((field) =>
+                          renderCardField(field)
                         )}
                       </div>
                     </div>
