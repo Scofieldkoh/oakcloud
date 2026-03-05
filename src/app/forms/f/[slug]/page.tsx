@@ -207,12 +207,8 @@ function buildRenderGroups(fields: PublicField[]): RenderItem[] {
       continue;
     }
 
-    // Repeat markers are standalone
-    if (field.key.startsWith('__repeat_start__') || field.key.startsWith('__repeat_end__')) {
-      flushGroup();
-      items.push({ kind: 'standalone', field });
-      continue;
-    }
+    // Note: repeat section markers (inputType === 'repeat_start'/'repeat_end') are PAGE_BREAK fields,
+    // already captured as standalone above. They are handled in renderStandaloneField.
 
     // Heading blocks: flush current group, become next group's heading
     if (
@@ -363,6 +359,27 @@ export default function PublicFormPage() {
     const pageFields = pages[currentPage] || [];
     return pageFields.filter((field) => evaluateCondition(field.condition, answers));
   }, [pages, currentPage, answers]);
+
+  // Pre-compute which field IDs belong inside repeat sections (should not render as standalone)
+  const hiddenFieldIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (let i = 0; i < visibleFields.length; i++) {
+      const field = visibleFields[i];
+      if (!isRepeatStartMarker(field)) continue;
+      let cursor = i + 1;
+      while (cursor < visibleFields.length) {
+        const candidate = visibleFields[cursor];
+        if (isRepeatEndMarker(candidate)) {
+          ids.add(candidate.id);
+          break;
+        }
+        if (isRepeatStartMarker(candidate)) break;
+        ids.add(candidate.id);
+        cursor += 1;
+      }
+    }
+    return ids;
+  }, [visibleFields]);
 
   function setFieldValue(key: string, value: unknown) {
     setAnswers((prev) => ({ ...prev, [key]: value }));
@@ -827,14 +844,11 @@ export default function PublicFormPage() {
       const fieldIndex = visibleFields.findIndex((f) => f.id === field.id);
       let cursor = fieldIndex + 1;
 
+      // Collect section fields (hiddenFieldIds already pre-computed via useMemo)
       while (cursor < visibleFields.length) {
         const candidate = visibleFields[cursor];
-        if (isRepeatEndMarker(candidate)) {
-          hiddenFieldIds.add(candidate.id);
-          break;
-        }
+        if (isRepeatEndMarker(candidate)) break;
         if (isRepeatStartMarker(candidate)) break;
-        hiddenFieldIds.add(candidate.id);
         if (candidate.type !== 'PAGE_BREAK') sectionFields.push(candidate);
         cursor += 1;
       }
@@ -1496,7 +1510,6 @@ export default function PublicFormPage() {
     );
   }
 
-  const hiddenFieldIds = new Set<string>();
   const renderItems = buildRenderGroups(visibleFields);
 
   return (
