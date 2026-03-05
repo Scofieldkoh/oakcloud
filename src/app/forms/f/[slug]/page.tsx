@@ -192,7 +192,8 @@ function buildRenderGroups(fields: PublicField[]): RenderItem[] {
   let currentGroup: RenderGroup | null = null;
 
   function flushGroup() {
-    if (currentGroup && currentGroup.fields.length > 0) {
+    // Push group if it has fields OR a heading (heading-only groups still render the heading above an empty card slot)
+    if (currentGroup && (currentGroup.fields.length > 0 || currentGroup.heading !== null)) {
       items.push(currentGroup);
     }
     currentGroup = null;
@@ -206,7 +207,7 @@ function buildRenderGroups(fields: PublicField[]): RenderItem[] {
     }
 
     // Repeat markers are standalone
-    if (field.key?.startsWith('__repeat_start__') || field.key?.startsWith('__repeat_end__')) {
+    if (field.key.startsWith('__repeat_start__') || field.key.startsWith('__repeat_end__')) {
       flushGroup();
       items.push({ kind: 'standalone', field });
       continue;
